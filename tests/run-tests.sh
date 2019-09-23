@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TESTS="loadstore1 loadstore2"
+TESTS="loadstore1 loadstore2 loadstore3"
 FAILED="no"
 FAILEDTESTS=""
 
