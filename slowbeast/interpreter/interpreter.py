@@ -139,7 +139,7 @@ class Interpreter:
             nextInst = self._execs.call(instr, fun, mapping)
         elif isinstance(instr, Return):
             if len(instr.getOperands()) == 0: # returns nothing
-                self._execs.ret()
+                rs = self._execs.ret()
             else:
                 ret = self.eval(instr.getOperand(0))
                 rs = self._execs.ret()

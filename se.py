@@ -14,10 +14,8 @@ if __name__ == "__main__":
 
     A = Alloc(Constant(4))
     B0.append(A)
-    B0.append(Store(FOO.getArgument(0), A))
-    L = Load(A)
-    B0.append(L)
-    B0.append(Return(L))
+    B0.append(Store(FOO.getArgument(0), FOO.getArgument(1)))
+    B0.append(Return(None))
 
     P.addFun(FOO)
 
@@ -48,16 +46,18 @@ if __name__ == "__main__":
     B2.append(Store(A, A1))
     L = Load(A1)
     B2.append(L)
-    CALL = Call(FOO, L, A)
+    CALL = Call(FOO, L, A1)
     B2.append(CALL)
     C = Cmp(Cmp.EQ, ADD, L2)
     B2.append(C)
-    C2 = Cmp(Cmp.EQ, A, CALL)
+    L = Load(A1)
+    C2 = Cmp(Cmp.EQ, A, L)
+    B2.append(L)
     B2.append(C2)
     B2.append(Assume(C, C2))
     B2.append(Branch(C, B3, B3))
 
-    B3.append(Return(A1))
+    B3.append(Return(Constant(0)))
 
 
     P.addFun(F)

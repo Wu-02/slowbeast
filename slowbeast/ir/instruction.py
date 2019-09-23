@@ -69,7 +69,7 @@ class Store(Instruction):
        #assert isinstance(val, Constant) or\
        #       isinstance(val, ValueInstruction) or\
        #       isinstance(val, Argument)
-        assert isinstance(to, ValueInstruction)
+       # assert isinstance(to, ValueInstruction)
 
     def getPointerOperand(self):
         return self.getOperand(1)
@@ -168,9 +168,14 @@ class Call(ValueInstruction):
 
 class Return(Instruction):
     def __init__(self, val = None):
-        super(Return, self).__init__([val])
+        if val is None:
+            super(Return, self).__init__([])
+        else:
+            super(Return, self).__init__([val])
 
     def __str__(self):
+        if len(self.getOperands()) == 0:
+            return "ret"
         return "ret {0}".format(self.getOperand(0).asValue())
 
 class Print(Instruction):
