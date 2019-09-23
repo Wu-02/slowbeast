@@ -1,39 +1,31 @@
 from . memory import Memory
-
-# class CallStack:
-#     class Frame:
-#         def __init__(self):
-#             self.values = {}
-
-#         def set(self, what, v):
-#             self.values[what] = v
-
-#         def get(self, v):
-#             return self.values.get(v)
-
-#     def __init__(self):
-#         self._cs = []
+from . calls import CallStack
 
 class ExecutionState:
     def __init__(self, pc, m = Memory(), v = {}):
         # program counter
         self.pc = pc
-        # state of memory
+        # memory objects
         self.memory = m
-        # top-level values (values of computation of instructions)
-        self.values = v
+        # state of the global memory
+        self.globals = {}
+        # callstack containing top-level values for the current
+        # function (values of computation of instructions)
+        self.cs = CallStack(v)
 
     def set(self, what, v):
-        self.values[what] = v
+        self.cs.set(what, v)
 
     def get(self, v):
-        return self.values.get(v)
+        ret = self.cs.get(v)
+        if ret is None:
+            ret = self.globals.get(v)
+        return ret
 
-    def read(self, frm):
-        o = self.eval(frm)
-        return o.read()
+    def call(self, callsite, fun, argsMapping = {}):
+        self.cs.push(callsite, fun, argsMapping)
+        return fun.getBBlock(0).getInstruction(0)
 
-    def write(self, v, to):
-        o = self.eval(to)
-        return o.write(v)
+    def ret(self):
+        return self.cs.pop()
 

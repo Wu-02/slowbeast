@@ -8,6 +8,19 @@ from slowbeast.interpreter.interpreter import *
 if __name__ == "__main__":
     P = Program()
 
+    FOO = Function("foo", 2)
+
+    B0 = BBlock(FOO)
+
+    A = Alloc(Constant(4))
+    B0.append(A)
+    B0.append(Store(FOO.getArgument(0), A))
+    L = Load(A)
+    B0.append(L)
+    B0.append(Return(L))
+
+    P.addFun(FOO)
+
     F = Function("main")
 
     B0 = BBlock(F)
@@ -35,15 +48,21 @@ if __name__ == "__main__":
     B2.append(Store(A, A1))
     L = Load(A1)
     B2.append(L)
+    CALL = Call(FOO, L, A)
+    B2.append(CALL)
     C = Cmp(Cmp.EQ, ADD, L2)
     B2.append(C)
-    C2 = Cmp(Cmp.EQ, A, L)
+    C2 = Cmp(Cmp.EQ, A, CALL)
     B2.append(C2)
     B2.append(Assume(C, C2))
     B2.append(Branch(C, B3, B3))
 
+    B3.append(Return(A1))
+
+
     P.addFun(F)
     P.setEntry(F)
+
     P.dump()
 
     I = Interpreter(P)

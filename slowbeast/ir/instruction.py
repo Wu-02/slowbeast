@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from . bblock import BBlock # due to assertions
+from . argument import Argument
 
 class Constant:
     def __init__(self, c):
@@ -65,7 +66,9 @@ class ValueInstruction(Instruction):
 class Store(Instruction):
     def __init__(self, val, to):
         super(Store, self).__init__([val, to])
-        assert isinstance(val, Constant) or isinstance(val, ValueInstruction)
+       #assert isinstance(val, Constant) or\
+       #       isinstance(val, ValueInstruction) or\
+       #       isinstance(val, Argument)
         assert isinstance(to, ValueInstruction)
 
     def getPointerOperand(self):
@@ -146,7 +149,7 @@ class Branch(Instruction):
                                                self.getTrueSuccessor().asValue(),
                                                self.getFalseSuccessor().asValue())
 
-class Call(Instruction):
+class Call(ValueInstruction):
     def __init__(self, wht, *operands):
         super(Call, self).__init__([*operands])
         self._function = wht
@@ -154,15 +157,21 @@ class Call(Instruction):
     def getCalledFunction(self):
         return self._function
 
+    def getReturnValue(self):
+        return self._function
+
     def __str__(self):
-        return "call {0}".format(self.getCalledFunction())
+        r = "x{0} = call {1}(".format(self.getID(),
+                                      self.getCalledFunction().asValue())
+        r += ', '.join(map(lambda x: x.asValue(), self.getOperands()))
+        return r + ')'
 
 class Return(Instruction):
     def __init__(self, val = None):
-        super(Return, self).__init__([val, to])
+        super(Return, self).__init__([val])
 
     def __str__(self):
-        return "ret {0}".format(self.getOperand(0))
+        return "ret {0}".format(self.getOperand(0).asValue())
 
 class Print(Instruction):
     def __init__(self, *operands):

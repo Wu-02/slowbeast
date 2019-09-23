@@ -15,9 +15,8 @@ class Interpreter:
 
     def dump(self):
         print("-- Interpreter state --")
-        print("-- Values:")
-        for x, v in self._execs.values.items():
-            print(x.asValue(), ' -> ', v)
+        print("-- Call stack:")
+        self._execs.cs.dump()
         print("-- Memory:")
         self._execs.memory.dump()
         print("-- -- -- -- -- -- -- --")
@@ -37,6 +36,9 @@ class Interpreter:
         except ExecutionError as e:
             print("Execution error while executing '{0}': {1}".format(self._execs.pc, str(e)))
             self.dump()
+        except Exception as e:
+            self.dump()
+            raise e
 
     def step(self):
         """ execute the current instruction and modify the state accordingly """
@@ -125,11 +127,30 @@ class Interpreter:
             elif instr.getOperation() == BinaryOperation.DIV:
                 r = op1 / op2
             else:
-                raise NotImplemented("Binary operation")
+                raise NotImplementedError("Binary operation: " + str(instr))
 
             self._execs.set(instr, r)
+        elif isinstance(instr, Call):
+            fun = instr.getCalledFunction()
+            # map values to arguments
+            assert len(instr.getOperands()) == len(fun.getArguments())
+            mapping = {x : self.eval(y) for (x, y)\
+                       in zip(fun.getArguments(), instr.getOperands())}
+            nextInst = self._execs.call(instr, fun, mapping)
+        elif isinstance(instr, Return):
+            if len(instr.getOperands()) == 0: # returns nothing
+                self._execs.ret()
+            else:
+                ret = self.eval(instr.getOperand(0))
+                rs = self._execs.ret()
+                if rs is None: # popped the last frame
+                    if isinstance(ret, Pointer):
+                        raise ExecutionError("Returnin a pointer from main")
+                    sys.exit(ret)
+                self._execs.set(rs, ret)
+            nextInst = rs.getNextInstruction()
         else:
-            raise NotImplemented(str(instr))
+            raise NotImplementedError(str(instr))
 
         self._execs.pc = nextInst
         if self._execs.pc is None: # we have no other instruction to continue
