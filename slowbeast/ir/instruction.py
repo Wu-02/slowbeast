@@ -3,19 +3,6 @@
 from . bblock import BBlock # due to assertions
 from . argument import Argument
 
-class Constant:
-    def __init__(self, c):
-        self.value = c
-
-    def asValue(self):
-        return str(self.value)
-
-    def getValue(self):
-        return self.value
-
-    def __str__(self):
-        return str(self.value)
-
 class Instruction:
     valuesCounter = 0
 
@@ -82,15 +69,21 @@ class Store(Instruction):
                                          self.getPointerOperand().asValue())
 
 class Load(ValueInstruction):
-    def __init__(self, frm):
+    """ Load 'bw' bytes from 'frm' """
+    def __init__(self, frm, bw):
         super(Load, self).__init__([frm])
+        self.bytes = bw
+
+    def getBytesNum(self):
+        return self.bytes
 
     def getPointerOperand(self):
         return self.getOperand(0)
 
     def __str__(self):
-        return "x{0} = load {1}".format(self.getID(),
-                                        self.getPointerOperand().asValue())
+        return "x{0} = load {1}:{2}".format(self.getID(),
+                                             self.getPointerOperand().asValue(),
+                                             self.bytes)
 
 class Alloc(ValueInstruction):
     def __init__(self, size):
@@ -176,7 +169,7 @@ class Return(Instruction):
     def __str__(self):
         if len(self.getOperands()) == 0:
             return "ret"
-        return "ret {0}".format(self.getOperand(0).asValue())
+        return "ret {0}".format(str(self.getOperand(0)))
 
 class Print(Instruction):
     def __init__(self, *operands):

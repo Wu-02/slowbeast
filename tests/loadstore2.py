@@ -16,16 +16,16 @@ if __name__ == "__main__":
 
     B0 = BBlock(F)
 
-    A = Alloc(Constant(8))
+    A = Alloc(Constant(8, 4))
     B0.append(A)
     B0.append(Store(A, A))
-    L1 = Load(A)
+    L1 = Load(A, 4)
     B0.append(L1)
-    B0.append(Print(Constant("Loaded: "), L1, Constant("\n")))
+    B0.append(Print(Constant("Loaded: ", 8), L1))
     C2 = Cmp(Cmp.EQ, L1, A)
     B0.append(C2)
     B0.append(Assert(C2))
-    B0.append(Return(Constant(0)))
+    B0.append(Return(Constant(0, 4)))
 
     P.addFun(F)
     P.setEntry(F)

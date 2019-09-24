@@ -35,6 +35,6 @@ class BBlock:
         return 'bblock {0}'.format(self.getID())
 
     def dump(self, ind = 0):
-        print(''.join([' ' for x in range(0, ind)]), "; bblock ", self.getID())
+        print('\n', ''.join([' ' for x in range(0, ind)]), "; bblock", self.getID())
         for i in self._instructions:
             i.dump(ind)

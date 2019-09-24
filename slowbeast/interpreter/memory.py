@@ -1,21 +1,10 @@
+import sys
+from os.path import join, abspath, dirname
+pth = join(dirname(__file__), '..')
+sys.path.append(abspath(pth))
+
 from . errors import ExecutionError
-
-class Pointer:
-    def __init__(self, obj, off = 0):
-        self.object = obj
-        self.offset = off
-
-    def __str__(self):
-        return "({0}, {1})".format(self.object.asValue(), self.offset)
-
-    def asValue(self):
-        return str(self)
-
-    def __eq__(self, oth):
-        return self.object == oth.object and self.offset == oth.offset
-
-    def dump(self):
-        print(self)
+from ir.value import *
 
 class MemoryObject:
     ids = 0
@@ -29,27 +18,43 @@ class MemoryObject:
         self.name = nm # for debugging
         self.allocation = None # which allocation allocated this memory
 
+    def getID(self):
+        return self._id
+
+    def getSize(self):
+        return self.size
+
     def setAllocation(self, a):
         self.allocation = a
 
     def write(self, x, off = 0):
         assert off == 0 # not implemented otherwise
+        assert isinstance(x, Value)
+        if x.getByteWidth() > self.size:
+            raise ExecutionError("Written value too big for the object")
         self.value = x
 
-    def read(self, off = 0):
+    def read(self, bts, off = 0):
         assert off == 0 # not implemented otherwise
         if self.value is None:
             raise ExecutionError("Read from uninitialized variable")
+
+        if self.size < bts:
+            raise ExecutionError("Read {0} bytes from object of size {1}"\
+                                  .format(bts, self.size))
         return self.value
+
+    def __eq__(self, oth):
+        return self._id == oth._id
 
     def __str__(self):
         if hasattr(self.value, 'asValue'):
             v = self.value.asValue()
         else:
             v = self.value
-        return "mo{0} ({1} alloc. by {2}), {3}b -> {4}".format(self._id, self.name,
-                                                               self.allocation.asValue() if self.allocation else "unknown",
-                                                               self.size, v)
+        return "mo{0} ({1} alloc. by {2}), {3} -> {4}".format(self._id, self.name,
+                                                              self.allocation.asValue() if self.allocation else "unknown",
+                                                              self.size, v)
 
     def asValue(self):
         return "mo{0}".format(self._id)
