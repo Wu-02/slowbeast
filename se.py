@@ -16,7 +16,7 @@ if __name__ == "__main__":
     A = Alloc(Constant(4, 4))
     B0.append(A)
     B0.append(Store(FOO.getArgument(0), FOO.getArgument(1)))
-    B0.append(Return(None))
+    B0.append(Return(Constant(3, 2)))
 
     P.addFun(FOO)
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     P.addFun(F)
     P.setEntry(F)
 
-    #P.dump()
+    P.dump()
 
     I = Interpreter(P)
-    I.run()
+    I.run(debug=True)

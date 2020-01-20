@@ -1,4 +1,4 @@
-import sys 
+import sys
 from os.path import join, abspath, dirname
 pth = join(dirname(__file__), '..')
 sys.path.append(abspath(pth))
@@ -29,10 +29,10 @@ class Interpreter:
             raise ExecutionError("Use of uninitialized variable {0}".format(v))
         return value
 
-    def run(self):
+    def run(self, debug=False):
         try:
             while self._execs:
-                self.step()
+                self.step(debug)
         except ExecutionError as e:
             print("Execution error while executing '{0}': {1}".format(self._execs.pc, str(e)))
             self.dump()
@@ -41,12 +41,16 @@ class Interpreter:
             self.dump()
             raise e
 
-    def step(self):
+    def step(self, debug=False):
         """ execute the current instruction and modify the state accordingly """
         instr = self._execs.pc
         # next instruction (may be overridden by commands
         nextInst = self._execs.pc.getNextInstruction()
         m = self._execs.memory
+
+        # debug print
+        if debug:
+            sys.stderr.write("[sb dbg]: {0}\n".format(instr))
 
         # TODO: add an opcode to instruction and check only the opcode
         if isinstance(instr, Store):
