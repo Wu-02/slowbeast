@@ -64,7 +64,9 @@ if __name__ == "__main__":
     P.addFun(F)
     P.setEntry(F)
 
-    P.dump()
+    #P.dump()
 
-    I = Interpreter(P)
-    I.run(debug=True)
+    I = Interpreter(P, dbg=False)
+    ec = I.run()
+
+    print('== exited with code {0} =='.format(ec))

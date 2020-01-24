@@ -1,10 +1,6 @@
 import sys
-from os.path import join, abspath, dirname
-pth = join(dirname(__file__), '..')
-sys.path.append(abspath(pth))
-
 from . errors import ExecutionError
-from ir.value import *
+from .. ir.value import *
 
 class MemoryObject:
     ids = 0

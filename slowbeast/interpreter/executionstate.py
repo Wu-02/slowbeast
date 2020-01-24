@@ -1,3 +1,4 @@
+from .. ir.value import Constant
 from . memory import Memory
 from . calls import CallStack
 
@@ -12,6 +13,14 @@ class ExecutionState:
         # callstack containing top-level values for the current
         # function (values of computation of instructions)
         self.cs = CallStack(v)
+
+    def eval(self, v):
+        if isinstance(v, Constant):
+            return v
+        value = self.get(v)
+        if value is None:
+            raise ExecutionError("Use of uninitialized variable {0}".format(v))
+        return value
 
     def set(self, what, v):
         self.cs.set(what, v)

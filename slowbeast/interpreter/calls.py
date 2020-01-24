@@ -15,7 +15,7 @@ class CallStack:
         def dump(self):
             for x, v in self.values.items():
                 print(x.asValue(), ' -> ', v.asValue())
-            
+
 
     def __init__(self, fun = None, v = {}):
         self._cs = [CallStack.Frame(fun, None, v)]
