@@ -18,7 +18,7 @@ class CallStack:
 
 
     def __init__(self, fun = None, v = {}):
-        self._cs = [CallStack.Frame(fun, None, v)]
+        self._cs = []
 
     def frame(self, idx = -1):
         return self._cs[idx]
@@ -43,7 +43,7 @@ class CallStack:
     def dump(self):
         n = 0
         for f in self._cs:
-            print(" -- {0}: {1} --".format(n, f.function))
+            print(" -- {0}: {1} --".format(n, f.function.getName()))
             f.dump()
             n += 1
 

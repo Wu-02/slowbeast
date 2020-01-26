@@ -5,24 +5,18 @@ from . errors import ExecutionError
 class Interpreter:
     def __init__(self, program, dbg=False):
         self._program = program
-        self._execs = ExecutionState(program.getEntry().getBBlock(0).getInstruction(0))
         self._executor = Executor(dbg)
-        self._ec = None
+
+        self._execs = ExecutionState(None)
+        self._execs.pushCall(None, program.getEntry())
 
     def dump(self):
-        print("-- Interpreter state --")
-        if not self._execs:
-            print("No state")
-            return
-        print("-- Call stack:")
-        self._execs.cs.dump()
-        print("-- Memory:")
-        self._execs.memory.dump()
-        print("-- -- -- -- -- -- -- --")
+        assert self._execs
+        self._execs.dump()
 
     def run(self):
         try:
-            while self._execs:
+            while self._execs.pc:
                 self.step()
         except ExecutionError as e:
             print("Execution error while executing '{0}': {1}".format(self._execs.pc, str(e)))
@@ -32,15 +26,20 @@ class Interpreter:
             self.dump()
             raise e
 
-        return self._ec
+        if self._execs.hasError():
+            print("Error while executing '{0}'".format(self._execs))
+            print(self._execs.getError())
+            self.dump()
+            return -1
+        elif self._execs.exited():
+            return self._execs.getExitCode()
+
+        return None
 
     def step(self):
         """ execute the current instruction and modify the state accordingly """
 
-        self._ec = self._executor.execute(self._execs, self._execs.pc)
-
-        if self._execs.pc is None: # we have no other instruction to continue
-            self.dump()
-            self._execs = None
-
+        states = self._executor.execute(self._execs, self._execs.pc)
+        assert len(states) == 1
+        self._execs = states[0]
 

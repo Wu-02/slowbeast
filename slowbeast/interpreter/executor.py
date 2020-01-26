@@ -18,6 +18,8 @@ class Executor:
         to.object.write(value, to.offset)
         state.pc = state.pc.getNextInstruction()
 
+        return [state]
+
     def execLoad(self, state, instr):
         assert isinstance(instr, Load)
         frm = state.eval(instr.getPointerOperand())
@@ -25,12 +27,16 @@ class Executor:
         state.set(instr, frm.object.read(instr.getBytesNum(), frm.offset))
         state.pc = state.pc.getNextInstruction()
 
+        return [state]
+
     def execAlloc(self, state, instr):
         assert isinstance(instr, Alloc)
         o = state.memory.allocate(instr.getSize().value)
         o.object.setAllocation(instr)
         state.set(instr, o)
         state.pc = state.pc.getNextInstruction()
+
+        return [state]
 
     def execCmp(self, state, instr):
         assert isinstance(instr, Cmp)
@@ -64,6 +70,8 @@ class Executor:
         state.set(instr, Constant(x, 1))
         state.pc = state.pc.getNextInstruction()
 
+        return [state]
+
     def execPrint(self, state, instr):
         assert isinstance(instr, Print)
         for x in instr.getOperands():
@@ -75,6 +83,8 @@ class Executor:
         sys.stdout.flush()
 
         state.pc = state.pc.getNextInstruction()
+
+        return [state]
 
     def execBranch(self, state, instr):
         assert isinstance(instr, Branch)
@@ -95,26 +105,32 @@ class Executor:
         else:
             state.pc = None
 
+        return [state]
+
     def execAssert(self, state, instr):
         assert isinstance(instr, Assert)
         for o in instr.getOperands():
             v = state.eval(o)
             assert isinstance(v, Constant)
             if v.getValue() != True:
-                raise ExecutionError("Assertion failed: {0} is {1} (!= True)".format(o, v))
+                state.setError(ExecutionError("Assertion failed: {0} is {1} (!= True)".format(o, v)))
+                return [state]
+
         state.pc = state.pc.getNextInstruction()
+        return [state]
 
     def execAssume(self, state, instr):
         assert isinstance(instr, Assume)
-        # assume is the same as assert during interpretation, but to make it different,
-        # just make it dump the state and continue the execution
+        state.pc = state.pc.getNextInstruction()
         for o in instr.getOperands():
             v = state.eval(o)
             assert isinstance(v, Constant)
             if v.getValue() != True:
                 print("Assumption failed: {0} == {1} (!= True)".format(o, v))
+                state.dump()
                 break
-        state.pc = state.pc.getNextInstruction()
+
+        return [state]
 
     def execBinaryOp(self, state, instr):
         assert isinstance(instr, BinaryOperation)
@@ -174,6 +190,7 @@ class Executor:
 
         state.set(instr, r)
         state.pc = state.pc.getNextInstruction()
+        return [state]
 
     def execCall(self, state, instr):
         assert isinstance(instr, Call)
@@ -184,27 +201,27 @@ class Executor:
         assert len(instr.getOperands()) == len(fun.getArguments())
         mapping = {x : state.eval(y) for (x, y)\
                    in zip(fun.getArguments(), instr.getOperands())}
-        state.pc = state.call(instr, fun, mapping)
+        state.pushCall(instr, fun, mapping)
+        return [state]
 
     def execRet(self, state, instr):
         if self._debug:
             sys.stderr.write("[sb dbg]: -- RET --\n")
         assert isinstance(instr, Return)
-        if len(instr.getOperands()) == 0: # returns nothing
-            rs = state.ret()
-        else:
+        rs = state.popCall()
+        if len(instr.getOperands()) != 0: # returns nothing
             ret = state.eval(instr.getOperand(0))
-            rs = state.ret()
             if rs is None: # popped the last frame
                 if ret.isPointer():
-                    raise ExecutionError("Returning a pointer from main function")
+                    state.setError(ExecutionError("Returning a pointer from main function"))
+                    return [state]
                 assert isinstance(ret, Constant)
-                state.pc = None
-                return ret.getValue()
+                state.setExited(ret.getValue())
+                return [state]
             state.set(rs, ret)
 
         state.pc = rs.getNextInstruction()
-        return None
+        return [state]
 
     def execute(self, state, instr):
         """
@@ -217,30 +234,30 @@ class Executor:
             sys.stderr.write("[sb dbg]: {0}\n".format(instr))
 
         # TODO: add an opcode to instruction and check only the opcode
-        ec = None
+        states = None
         if isinstance(instr, Store):
-            self.execStore(state, instr)
+            states = self.execStore(state, instr)
         elif isinstance(instr, Load):
-            self.execLoad(state, instr)
+            states = self.execLoad(state, instr)
         elif isinstance(instr, Alloc):
-            self.execAlloc(state, instr)
+            states = self.execAlloc(state, instr)
         elif isinstance(instr, Cmp):
-            self.execCmp(state, instr)
+            states = self.execCmp(state, instr)
         elif isinstance(instr, Print):
-            self.execPrint(state, instr)
+            states = self.execPrint(state, instr)
         elif isinstance(instr, Branch):
-            self.execBranch(state, instr)
+            states = self.execBranch(state, instr)
         elif isinstance(instr, Assert):
-            self.execAssert(state, instr)
+            states = self.execAssert(state, instr)
         elif isinstance(instr, Assume):
-            self.execAssume(state, instr)
+            states = self.execAssume(state, instr)
         elif isinstance(instr, BinaryOperation):
-            self.execBinaryOp(state, instr)
+            states = self.execBinaryOp(state, instr)
         elif isinstance(instr, Call):
-            self.execCall(state, instr)
+            states = self.execCall(state, instr)
         elif isinstance(instr, Return):
-            ec = self.execRet(state, instr)
+            states = self.execRet(state, instr)
         else:
             raise NotImplementedError(str(instr))
 
-        return ec
+        return states

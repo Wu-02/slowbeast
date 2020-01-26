@@ -16,6 +16,7 @@ if __name__ == "__main__":
     A = Alloc(Constant(4, 4))
     B0.append(A)
     B0.append(Store(FOO.getArgument(0), FOO.getArgument(1)))
+    B0.append(Assume(Constant(False, 1)))
     B0.append(Return(Constant(3, 2)))
 
     P.addFun(FOO)
@@ -55,7 +56,8 @@ if __name__ == "__main__":
     C2 = Cmp(Cmp.EQ, A, L)
     B2.append(L)
     B2.append(C2)
-    B2.append(Assume(C, C2))
+    #B2.append(Assume(C, C2))
+    #B2.append(Assume(Constant(False, 1), C2))
     B2.append(Branch(C, B3, B3))
 
     B3.append(Return(Constant(0, 4)))
@@ -66,7 +68,7 @@ if __name__ == "__main__":
 
     #P.dump()
 
-    I = Interpreter(P, dbg=False)
+    I = Interpreter(P, dbg=True)
     ec = I.run()
 
     print('== exited with code {0} =='.format(ec))
