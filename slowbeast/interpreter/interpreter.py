@@ -1,3 +1,4 @@
+from .. util.debugging import print_stderr
 from . executionstate import ExecutionState
 from . executor import Executor
 from . errors import ExecutionError
@@ -19,15 +20,18 @@ class Interpreter:
             while self._execs.pc:
                 self.step()
         except ExecutionError as e:
-            print("Execution error while executing '{0}': {1}".format(self._execs.pc, str(e)))
+            print_stderr("Execution error while executing '{0}': {1}".format(self._execs.pc, str(e)),
+                         color='RED')
             self.dump()
         except Exception as e:
-            print("Fatal error while executing '{0}'".format(self._execs.pc))
+            print_stderr("Fatal error while executing '{0}'".format(self._execs.pc),
+                         color='RED')
             self.dump()
             raise e
 
         if self._execs.hasError():
-            print("Error while executing '{0}'".format(self._execs))
+            print_stderr("Error while executing '{0}'".format(self._execs),
+                         color='RED')
             print(self._execs.getError())
             self.dump()
             return -1
