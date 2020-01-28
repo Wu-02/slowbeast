@@ -1,6 +1,7 @@
 from .. ir.value import Constant
 from . memory import Memory
 from . calls import CallStack
+from . errors import ExecutionError
 
 class ExecutionStatus:
     READY = 1
@@ -116,6 +117,5 @@ class ExecutionState:
         print("-- Memory:")
         self.memory.dump()
         print("-- -- -- -- -- -- -- --")
-
 
 

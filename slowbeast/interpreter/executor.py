@@ -1,4 +1,5 @@
 import sys
+from .. util.debugging import dbg
 from .. ir.instruction import *
 from .. ir.value import *
 from . errors import ExecutionError
@@ -7,8 +8,8 @@ class Executor:
     """
     Class that takes care of executing single instructions
     """
-    def __init__(self, dbg=False):
-        self._debug = dbg
+    def __init__(self):
+        pass
 
     def execStore(self, state, instr):
         assert isinstance(instr, Store)
@@ -31,7 +32,7 @@ class Executor:
 
     def execAlloc(self, state, instr):
         assert isinstance(instr, Alloc)
-        o = state.memory.allocate(instr.getSize().value)
+        o = state.memory.allocate(instr.getSize().getValue())
         o.object.setAllocation(instr)
         state.set(instr, o)
         state.pc = state.pc.getNextInstruction()
@@ -50,8 +51,8 @@ class Executor:
             op1 = op1.offset
             op2 = op2.offset
         else:
-            op1 = op1.value
-            op2 = op2.value
+            op1 = op1.getValue()
+            op2 = op2.getValue()
         x = None
         p = instr.getPredicate()
         if p == Cmp.LE:
@@ -90,7 +91,7 @@ class Executor:
         assert isinstance(instr, Branch)
         c = instr.getCondition()
         assert isinstance(c, ValueInstruction) or c.isConstant()
-        cv = state.eval(instr.getCondition()).value
+        cv = state.eval(instr.getCondition()).getValue()
 
         if cv == True:
             succ = instr.getTrueSuccessor()
@@ -146,16 +147,16 @@ class Executor:
                 assert isinstance(op2c, Constant)
                 # adding a constant -- create a pointer
                 # to the object with the right offset
-                op2c = Pointer(op1c.object, op2c.value)
+                op2c = Pointer(op1c.object, op2c.getValue())
         elif op2c.isPointer():
             if not op1c.isPointer():
                 assert isinstance(op1c, Constant)
                 # adding a constant -- create a pointer
                 # to the object with the right offset
-                op1c = Pointer(op2c.object, op1c.value)
+                op1c = Pointer(op2c.object, op1c.getValue())
         else:
-            op1 = op1c.value
-            op2 = op2c.value
+            op1 = op1c.getValue()
+            op2 = op2c.getValue()
 
         if op1c.isPointer() and op1c.object != op2c.object:
             raise ExecutionError("Pointer arithmetic on unrelated pointers")
@@ -195,8 +196,10 @@ class Executor:
     def execCall(self, state, instr):
         assert isinstance(instr, Call)
         fun = instr.getCalledFunction()
-        if self._debug:
-            sys.stderr.write("[sb dbg]: -- CALL {0} --\n".format(fun.getName()))
+        dbg("-- CALL {0} --".format(fun.getName()))
+        if fun.isUndefined():
+            state.setError(ExecutionError("Called undefined function: {0}".format(fun.getName())))
+            return [state]
         # map values to arguments
         assert len(instr.getOperands()) == len(fun.getArguments())
         mapping = {x : state.eval(y) for (x, y)\
@@ -205,8 +208,7 @@ class Executor:
         return [state]
 
     def execRet(self, state, instr):
-        if self._debug:
-            sys.stderr.write("[sb dbg]: -- RET --\n")
+        dbg("-- RET --")
         assert isinstance(instr, Return)
         rs = state.popCall()
         if len(instr.getOperands()) != 0: # returns nothing
@@ -230,8 +232,7 @@ class Executor:
         TODO: exceptional termination (like assert?)
         """
         # debug print
-        if self._debug:
-            sys.stderr.write("[sb dbg]: {0}\n".format(instr))
+        dbg(str(instr))
 
         # TODO: add an opcode to instruction and check only the opcode
         states = None

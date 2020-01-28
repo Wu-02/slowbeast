@@ -3,9 +3,9 @@ from . executor import Executor
 from . errors import ExecutionError
 
 class Interpreter:
-    def __init__(self, program, dbg=False):
+    def __init__(self, program, executor = Executor()):
         self._program = program
-        self._executor = Executor(dbg)
+        self._executor = executor
 
         self._execs = ExecutionState(None)
         self._execs.pushCall(None, program.getEntry())

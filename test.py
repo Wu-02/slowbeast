@@ -4,21 +4,16 @@ from slowbeast.ir.bblock import *
 from slowbeast.ir.instruction import *
 from slowbeast.ir.function import *
 
-from slowbeast.symexe.symbolicexecution import *
-
-from slowbeast.util.debugging import *
+from slowbeast.interpreter.interpreter import *
 
 if __name__ == "__main__":
-    set_debugging()
-
     P = Program()
 
-    ND = Function("nondet_int")
     FOO = Function("foo", 2)
 
     B0 = BBlock(FOO)
 
-    A = Alloc(Constant(8, 4))
+    A = Alloc(Constant(4, 4))
     B0.append(A)
     B0.append(Store(FOO.getArgument(0), FOO.getArgument(1)))
     B0.append(Assume(Constant(False, 1)))
@@ -35,12 +30,8 @@ if __name__ == "__main__":
 
     A = Alloc(Constant(4, 4))
     B0.append(A)
-    nd = Call(ND)
-    cnd = Cmp(Cmp.LE, nd, Constant(2, 32))
-    B0.append(nd)
-    B0.append(Store(nd, A))
-    B0.append(cnd)
-    B0.append(Branch(cnd, B1, B2))
+    B0.append(Store(Constant(7, 4), A))
+    B0.append(Branch(Constant(True, 1), B1, B1))
 
     L1 = Load(A, 4)
     B1.append(L1)
@@ -75,9 +66,9 @@ if __name__ == "__main__":
     P.addFun(F)
     P.setEntry(F)
 
-    P.dump()
+    #P.dump()
 
-    SE = SymbolicExecutor(P)
-    ec = SE.run()
+    I = Interpreter(P, dbg=True)
+    ec = I.run()
 
     print('== exited with code {0} =='.format(ec))
