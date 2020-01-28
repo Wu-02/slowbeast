@@ -54,14 +54,23 @@ class ExecutionState:
         self.pc = pc
         # memory objects
         self.memory = m
-        # state of the global memory
-        # FIXME: move globals into memory
-        self.globals = {}
         # callstack containing top-level values for the current
         # function (values of computation of instructions)
         self.cs = CallStack(v)
         # status of the execution: ready/exited/errored/etc.
         self.status = ExecutionStatus()
+
+    def copyTo(self, rhs):
+        assert isinstance(rhs, ExecutionState)
+        rhs.pc = self.pc
+        rhs.memory = self.memory
+        rhs.cs = self.cs
+        rhs.status = self.status
+
+    def copy(self):
+        new = ExecutionState()
+        self.copyTo(new)
+        return new
 
     def setError(self, e):
         self.pc = None

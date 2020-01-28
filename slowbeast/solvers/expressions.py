@@ -1,8 +1,9 @@
-from pysmt.shortcuts import Or, And, Not, Symbol
+from pysmt.shortcuts import Or, And, Not, Symbol, BV
 from pysmt.typing import BVType
 
 from .. ir.types import Type
 from .. ir.value import Value
+from .. domains.concrete import ConcreteDomain
 
 class Expr(Value):
     """
@@ -52,6 +53,15 @@ class ExprManager:
         self._names[name] = s
         return s
 
+    def lift(self, v):
+        assert isinstance(v, Value)
+        if isinstance(v, Expr):
+            return v
+
+        if v.isConstant():
+            # FIXME: is 64 right?
+            return Expr(BV(v.getValue(), v.getType().getBitWidth()), v.getType())
+
     def Int1(self, name):
         return self.var(name, 1)
 
@@ -68,15 +78,84 @@ class ExprManager:
         return self.var(name, 64)
 
     def And(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.And(a, b)
+        a = self.lift(a)
+        b = self.lift(b)
         assert isinstance(a, Expr)
         assert isinstance(b, Expr)
-        #assert a.getType() == Bool
-        return Expr(And(a, b), Type(1))
-
-    def Not(self, a):
-        assert isinstance(a, Expr)
-        return Expr(Not(a), Type(1))
+        return Expr(And(a._expr, b._expr), Type(1))
 
     def Or(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Or(a, b)
+        a = self.lift(a)
+        b = self.lift(b)
         assert isinstance(a, Expr)
-        return Expr(Or(a, b), Type(1))
+        assert isinstance(b, Expr)
+        return Expr(Or(a._expr, b._expr), Type(1))
+
+    def Not(self, a):
+        if ConcreteDomain.belongto(a):
+            return ConcreteDomain.Not(a)
+        a = self.lift(a)
+        assert isinstance(a, Expr)
+        return Expr(Not(a._expr), Type(1))
+
+    ##
+    # Relational operators
+
+    def Le(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Le(a)
+        a = self.lift(a)
+        b = self.lift(b)
+        assert isinstance(a, Expr)
+        assert isinstance(b, Expr)
+        return Expr(a._expr <= b._expr, Type(1))
+
+    def Lt(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Lt(a)
+        a = self.lift(a)
+        b = self.lift(b)
+        assert isinstance(a, Expr)
+        assert isinstance(b, Expr)
+        return Expr(a._expr < b._expr, Type(1))
+
+    def Ge(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Ge(a)
+        a = self.lift(a)
+        b = self.lift(b)
+        assert isinstance(a, Expr)
+        assert isinstance(b, Expr)
+        return Expr(a._expr >= b._expr, Type(1))
+
+    def Gt(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Gt(a)
+        a = self.lift(a)
+        b = self.lift(b)
+        assert isinstance(a, Expr)
+        assert isinstance(b, Expr)
+        return Expr(a._expr > b._expr, Type(1))
+
+    def Eq(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Eq(a)
+        a = self.lift(a)
+        b = self.lift(b)
+        assert isinstance(a, Expr)
+        assert isinstance(b, Expr)
+        return Expr(a._expr == b._expr, Type(1))
+
+    def Ne(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Ne(a)
+        a = self.lift(a)
+        b = self.lift(b)
+        assert isinstance(a, Expr)
+        assert isinstance(b, Expr)
+        return Expr(a._expr != b._expr, Type(1))
+
