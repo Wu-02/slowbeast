@@ -76,6 +76,4 @@ if __name__ == "__main__":
     P.dump()
 
     SE = SymbolicExecutor(P)
-    ec = SE.run()
-
-    print('== exited with code {0} =='.format(ec))
+    SE.run()

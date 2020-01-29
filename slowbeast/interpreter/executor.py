@@ -4,7 +4,6 @@ from .. ir.instruction import *
 from .. ir.value import *
 from . errors import ExecutionError
 
-
 class Executor:
     """
     Class that takes care of executing single instructions
@@ -226,7 +225,7 @@ class Executor:
                     state.setError(
                         ExecutionError("Returning a pointer from main function"))
                     return [state]
-                assert isinstance(ret, Constant)
+                assert ret.isConstant()
                 state.setExited(ret.getValue())
                 return [state]
             state.set(rs, ret)

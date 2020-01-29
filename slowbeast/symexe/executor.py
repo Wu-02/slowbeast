@@ -4,11 +4,18 @@ from .. ir.value import Value
 from .. interpreter.executor import Executor as ConcreteExecutor
 from .. solvers.expressions import is_symbolic
 
+class SEStats:
+    def __init__(self):
+        # number of branch instructions
+        self.branchings = 0
+        # number of branch instructions where we forked
+        self.forks = 0
 
 class Executor(ConcreteExecutor):
     def __init__(self, solver):
         super(ConcreteExecutor, self).__init__()
         self.solver = solver
+        self.stats = SEStats()
 
     def fork(self, state, cond):
         E = self.solver.getExprManager()
@@ -36,10 +43,15 @@ class Executor(ConcreteExecutor):
             F = state.copy()
             F.setPathCondition(formula)
 
+        if T and F:
+            self.stats.forks += 1
+
         return T, F
 
     def execBranch(self, state, instr):
         assert isinstance(instr, Branch)
+        self.stats.branchings += 1
+
         cond = instr.getCondition()
         assert isinstance(cond, ValueInstruction) or cond.isConstant()
         E = self.solver.getExprManager()

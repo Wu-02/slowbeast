@@ -27,22 +27,26 @@ class Interpreter:
 
         # this is concrete execution
         assert len(self.states) == 1
-        s = self.states[-1]
-        self.states.pop()
+        s = self.states.pop()
+        assert len(self.states) == 0
         return s
 
     def run(self):
         self.states = self.getInitialStates(self.entry)
+
         try:
-            state = self.getNextState()
-            while state:
-                self.step(state)
+            while self.states:
                 state = self.getNextState()
+                newstates = self._executor.execute(state, state.pc)
+                assert len(newstates) == 1, "Concrete execution returned more than one state"
+                if newstates[0].isReady():
+                    self.states.append(newstates[0])
         except ExecutionError as e:
             print_stderr(
                 "Execution error while executing '{0}': {1}".format(
                     state, str(e)), color='RED')
             state.dump()
+            return -1
         except Exception as e:
             print_stderr("Fatal error while executing '{0}'".format(state.pc),
                          color='RED')
@@ -58,10 +62,5 @@ class Interpreter:
         elif state.exited():
             return state.getExitCode()
 
-        return None
+        raise RuntimeError("This line should be unreachable")
 
-    def step(self, state):
-        """ execute the current instruction and modify the state accordingly """
-        states = self._executor.execute(state, state.pc)
-        assert len(states) == 1
-        self.states += states

@@ -74,7 +74,6 @@ class ExecutionState:
         return new
 
     def setError(self, e):
-        self.pc = None
         self.status.setError(e)
 
     def hasError(self):
@@ -85,7 +84,6 @@ class ExecutionState:
         return self.status.getDetail()
 
     def setExited(self, ec):
-        self.pc = None
         self.status.setExited(ec)
 
     def exited(self):
@@ -94,6 +92,9 @@ class ExecutionState:
     def getExitCode(self):
         assert self.exited()
         return self.status.getDetail()
+
+    def isReady(self):
+        return self.status.isReady()
 
     def eval(self, v):
         if isinstance(v, Constant):
@@ -126,4 +127,3 @@ class ExecutionState:
         self.cs.dump()
         print("-- Memory:")
         self.memory.dump()
-        print("-- -- -- -- -- -- -- --")
