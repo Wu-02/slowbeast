@@ -13,6 +13,7 @@ class Stats:
         self.errors = 0
         self.instructions = 0
 
+
 class SymbolicExecutor(Interpreter):
     def __init__(self, P):
         self.solver = Solver()
@@ -49,7 +50,6 @@ class SymbolicExecutor(Interpreter):
                 dbg("state exited with exitcode {0}".format(s.getExitCode()))
                 self.stats.paths += 1
 
-
     def run(self):
         self.states = self.getInitialStates(self.entry)
 
@@ -70,12 +70,29 @@ class SymbolicExecutor(Interpreter):
             state.dump()
             raise e
 
-        print_stdout("Queued states: {0}".format(self.stats.queued), color='CYAN')
-        print_stdout("Executed instructions: {0}".format(self.stats.instructions), color='CYAN')
-        print_stdout("Executed paths: {0}".format(self.stats.paths), color='CYAN')
-        print_stdout("Executed branches: {0}".format(self._executor.stats.branchings), color='CYAN')
-        print_stdout("Executed forks: {0}".format(self._executor.stats.forks), color='CYAN')
-        print_stdout("Found errors: {0}".format(self.stats.errors), color='CYAN')
+        print_stdout(
+            "Queued states: {0}".format(
+                self.stats.queued),
+            color='CYAN')
+        print_stdout(
+            "Executed instructions: {0}".format(
+                self.stats.instructions),
+            color='CYAN')
+        print_stdout(
+            "Executed paths: {0}".format(
+                self.stats.paths),
+            color='CYAN')
+        print_stdout(
+            "Executed branches: {0}".format(
+                self._executor.stats.branchings),
+            color='CYAN')
+        print_stdout(
+            "Executed forks: {0}".format(
+                self._executor.stats.forks),
+            color='CYAN')
+        print_stdout(
+            "Found errors: {0}".format(
+                self.stats.errors),
+            color='CYAN')
 
         return 0
-

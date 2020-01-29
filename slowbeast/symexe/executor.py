@@ -4,12 +4,14 @@ from .. ir.value import Value
 from .. interpreter.executor import Executor as ConcreteExecutor
 from .. solvers.expressions import is_symbolic
 
+
 class SEStats:
     def __init__(self):
         # number of branch instructions
         self.branchings = 0
         # number of branch instructions where we forked
         self.forks = 0
+
 
 class Executor(ConcreteExecutor):
     def __init__(self, solver):

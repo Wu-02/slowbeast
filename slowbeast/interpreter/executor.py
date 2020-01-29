@@ -4,6 +4,7 @@ from .. ir.instruction import *
 from .. ir.value import *
 from . errors import ExecutionError
 
+
 class Executor:
     """
     Class that takes care of executing single instructions

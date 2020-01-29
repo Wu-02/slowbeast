@@ -38,7 +38,8 @@ class Interpreter:
             while self.states:
                 state = self.getNextState()
                 newstates = self._executor.execute(state, state.pc)
-                assert len(newstates) == 1, "Concrete execution returned more than one state"
+                assert len(
+                    newstates) == 1, "Concrete execution returned more than one state"
                 if newstates[0].isReady():
                     self.states.append(newstates[0])
         except ExecutionError as e:
@@ -63,4 +64,3 @@ class Interpreter:
             return state.getExitCode()
 
         raise RuntimeError("This line should be unreachable")
-
