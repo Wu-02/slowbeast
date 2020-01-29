@@ -31,13 +31,6 @@ class Interpreter:
         self.states.pop()
         return s
 
-    def dump(self):
-        if not self.states:
-            print("== dump: no states ==")
-        else:
-            for s in self.states:
-                s.dump()
-
     def run(self):
         self.states = self.getInitialStates(self.entry)
         try:
@@ -49,18 +42,18 @@ class Interpreter:
             print_stderr(
                 "Execution error while executing '{0}': {1}".format(
                     state, str(e)), color='RED')
-            self.dump()
+            state.dump()
         except Exception as e:
             print_stderr("Fatal error while executing '{0}'".format(state.pc),
                          color='RED')
-            self.dump()
+            state.dump()
             raise e
 
         if state.hasError():
             print_stderr("Error while executing '{0}'".format(state),
                          color='RED')
             print_stderr(state.getError(), color='BROWN')
-            self.dump()
+            state.dump()
             return -1
         elif state.exited():
             return state.getExitCode()

@@ -7,6 +7,8 @@ POINTER_BYTE_WIDTH = 8
 
 class Value:
     def __init__(self, bw, isptr=False):
+        assert isinstance(bw, int)
+        assert isinstance(isptr, bool)
         self._type = Type(bw, isptr)
 
     def getType(self):
@@ -28,6 +30,7 @@ class Value:
 
 class Constant(Value):
     def __init__(self, c, bw):
+        assert isinstance(c, int)
         super(Constant, self).__init__(bw)
         self._value = c
 

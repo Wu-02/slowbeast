@@ -14,6 +14,9 @@ class ExprManager:
     def __init__(self):
         self._names = {}
 
+    def Constant(self, c, bw):
+        return ConcreteDomain.Constant(c, bw)
+
     def Var(self, name, bw=64):
         assert isinstance(name, str)
         s = self._names.get(name)
@@ -106,7 +109,7 @@ class ExprManager:
 
     def Ne(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ne(a)
+            return ConcreteDomain.Ne(a, b)
         return SymbolicDomain.Ne(self.lift(a), self.lift(b))
 
     ##

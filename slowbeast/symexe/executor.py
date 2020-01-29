@@ -1,5 +1,6 @@
 from .. util.debugging import dbg
 from .. ir.instruction import *
+from .. ir.value import Value
 from .. interpreter.executor import Executor as ConcreteExecutor
 
 
@@ -11,6 +12,15 @@ class Executor(ConcreteExecutor):
     def fork(self, state, cond):
         E = self.solver.getExprManager()
         T, F = None, None
+
+        # cond may be constant if the condition is concrete
+        if cond.isConstant():
+            if cond.getValue() == True:
+                return state, None
+            elif cond.getValue() == False:
+                return None, state
+            else:
+                raise RuntimeError("Invalid condition: {0}".format(cond.getValue()))
         # FIXME: use implication as in the original King's paper?
         formula = E.And(state.getPathCondition(), cond)
         if self.solver.is_sat(formula):
@@ -26,9 +36,20 @@ class Executor(ConcreteExecutor):
 
     def execBranch(self, state, instr):
         assert isinstance(instr, Branch)
-        c = instr.getCondition()
-        assert isinstance(c, ValueInstruction) or c.isConstant()
-        cval = state.eval(c)
+        cond = instr.getCondition()
+        assert isinstance(cond, ValueInstruction) or cond.isConstant()
+        E = self.solver.getExprManager()
+        c = state.eval(cond)
+        assert isinstance(c, Value)
+        # solvers make difference between bitvectors and booleans, so we must
+        # take care of it here: if it is a bitvector, compare it to 0 (C semantics)
+        if c.isConstant():
+            cval = E.Ne(c, E.Constant(0, c.getType().getBitWidth()))
+        else:
+            # It already is an boolean expression
+            #assert isinstance(c, Expr)
+            assert c.getType().getBitWidth() == 1
+            cval = c
 
         trueBranch, falseBranch = self.fork(state, cval)
 

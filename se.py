@@ -50,7 +50,7 @@ if __name__ == "__main__":
     L2 = Load(A, 4)
     B1.append(L2)
     B1.append(Print(L2))
-    B1.append(Branch(Constant(True, 1), B2, B2))
+    B1.append(Branch(Constant(1, 1), B2, B2))
 
     A1 = Alloc(Constant(8, 4))
     B2.append(A1)

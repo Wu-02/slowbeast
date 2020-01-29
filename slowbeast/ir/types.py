@@ -1,6 +1,8 @@
 
 class Type:
     def __init__(self, bw, isptr=False):
+        assert isinstance(bw, int)
+        assert isinstance(isptr, bool) 
         self._bitwidth = bw
         self._isptr = isptr
 

@@ -15,7 +15,7 @@ class SEState(ExecutionState):
         self.pathCondition = pc
 
     def dump(self):
-        super(ExecutionState, self).dump()
+        ExecutionState.dump(self)
         print(" -- path condition --")
         print(self.getPathCondition())
 

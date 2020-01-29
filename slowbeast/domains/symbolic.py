@@ -70,6 +70,9 @@ class BVSymbolicDomain:
 
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
+    def Constant(c, bw):
+        return bv_const(c, bw)
+
     ##
     # variables
     def Var(name, bw=64):
