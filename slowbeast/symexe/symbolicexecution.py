@@ -9,7 +9,8 @@ class SymbolicExecutor(Interpreter):
         super(SymbolicExecutor, self).__init__(P, SExecutor(self.solver))
 
     def getInitialStates(self, entry):
-        s = SEState(None)
+        s = SEState()
+        s.setPathCondition(self.solver.getExprManager().getTrue())
         s.pushCall(None, entry)
         return [s]
 

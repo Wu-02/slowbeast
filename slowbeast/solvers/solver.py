@@ -1,6 +1,16 @@
-from pysmt.shortcuts import is_sat
+from .. domains.symbolic import _use_z3
+if _use_z3:
+    from z3 import Solver as Z3Solver
+
+    def is_sat(*args):
+        s = Z3Solver()
+        return s.check(*args)
+else:
+    from pysmt.shortcuts import is_sat
+
 from . expressions import ExprManager
 
+# FIXME add support for incremental solving
 class Solver:
     """
     Wrapper for SMT solver(s) used throughout this project

@@ -27,8 +27,9 @@ class Executor(ConcreteExecutor):
         assert isinstance(instr, Branch)
         c = instr.getCondition()
         assert isinstance(c, ValueInstruction) or c.isConstant()
+        cval = state.eval(c)
 
-        trueBranch, falseBranch = self.fork(state, c)
+        trueBranch, falseBranch = self.fork(state, cval)
 
         states = []
         if trueBranch:
