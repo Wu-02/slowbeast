@@ -92,12 +92,20 @@ class SymbolicExecutor(Interpreter):
         print_stdout(
             "Number of forks on branches: {0} (forked on {1}% of branches)".format(
                 self._executor.stats.branch_forks,
-                100*float(self._executor.stats.branch_forks) / self._executor.stats.branchings),
+                100 *
+                float(
+                    self._executor.stats.branch_forks) /
+                self._executor.stats.branchings),
             color='CYAN')
         # this includes e.g. forks on assertions/memory resolution/etc.
         print_stdout(
-            "Number of all forks: {0} (from {1} calls ({2}%) to fork())".format(self._executor.stats.forks, self._executor.stats.fork_calls,
-                100*float(self._executor.stats.forks) / self._executor.stats.fork_calls),
+            "Number of all forks: {0} (from {1} calls ({2}%) to fork())".format(
+                self._executor.stats.forks,
+                self._executor.stats.fork_calls,
+                100 *
+                float(
+                    self._executor.stats.forks) /
+                self._executor.stats.fork_calls),
             color='CYAN')
         print_stdout(
             "Found errors: {0}".format(

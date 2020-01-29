@@ -95,8 +95,10 @@ class Pointer(Value):
     def dump(self):
         print(self)
 
+
 def ConstantBool(c):
     return Constant(c, BoolType())
+
 
 ConstantTrue = ConstantBool(True)
 ConstantFalse = ConstantBool(False)

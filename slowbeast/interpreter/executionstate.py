@@ -36,7 +36,7 @@ class ExecutionStatus:
         self.value = ExecutionStatus.EXITED
 
     def setTerminated(self, reason):
-        #The state terminated for some other reason than regular exit
+        # The state terminated for some other reason than regular exit
         self.detail = reason
         self.value = ExecutionStatus.TERMINATED
 
@@ -135,7 +135,8 @@ class ExecutionState:
             return v
         value = self.get(v)
         if value is None:
-            raise ExecutionError("Use of uninitialized/unknown variable {0}".format(v))
+            raise ExecutionError(
+                "Use of uninitialized/unknown variable {0}".format(v))
         return value
 
     def set(self, what, v):
@@ -143,7 +144,7 @@ class ExecutionState:
 
     def get(self, v):
         ret = self.cs.get(v)
-        #if ret is None:
+        # if ret is None:
         #    ret = self.globals.get(v)
         return ret
 

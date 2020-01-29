@@ -52,7 +52,7 @@ class SEState(ExecutionState):
     def getConstraintsObj(self):
         return self.constraints
 
-   #def setPathCondition(self, pc):
+   # def setPathCondition(self, pc):
    #    if isinstance(pc, list):
    #        self.pathCondition = ConstraintsSet(pc)
    #    else:

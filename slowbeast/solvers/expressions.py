@@ -39,7 +39,7 @@ class ExprManager:
 
     def freshValue(self, name, bw=64):
         assert isinstance(name, str)
-        origname=name
+        origname = name
         cnt = 1
         s = self._names.get(name)
         while s:

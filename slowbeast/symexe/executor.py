@@ -229,7 +229,9 @@ class Executor(ConcreteExecutor):
             assert v.isBool()
             if v.isConstant():
                 if v.getValue() != True:
-                    state.setTerminated("Assumption failed: {0} == {1} (!= True)".format(o, v))
+                    state.setTerminated(
+                        "Assumption failed: {0} == {1} (!= True)".format(
+                            o, v))
                     return [state]
                 break
             else:
@@ -259,4 +261,3 @@ class Executor(ConcreteExecutor):
 
         assert states, "Generated no states"
         return states
-
