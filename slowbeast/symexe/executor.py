@@ -74,11 +74,11 @@ class Executor(ConcreteExecutor):
 
         states = []
         if trueBranch:
-            states.append(trueBranch)
             trueBranch.pc = instr.getTrueSuccessor().getInstruction(0)
-        elif falseBranch:
             states.append(trueBranch)
-            trueBranch.pc = instr.getFalseSuccessor().getInstruction(0)
+        if falseBranch:
+            falseBranch.pc = instr.getFalseSuccessor().getInstruction(0)
+            states.append(falseBranch)
         else:
             # at least one must be feasable...
             raise RuntimeError("Fatal Error: failed forking condition")
