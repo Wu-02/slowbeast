@@ -15,12 +15,15 @@ class Executor(ConcreteExecutor):
 
         # cond may be constant if the condition is concrete
         if cond.isConstant():
-            if cond.getValue() == True:
+            assert cond.isBool(), "Invalid constant"
+            if cond.getValue():
                 return state, None
             elif cond.getValue() == False:
                 return None, state
             else:
-                raise RuntimeError("Invalid condition: {0}".format(cond.getValue()))
+                raise RuntimeError(
+                    "Invalid condition: {0}".format(
+                        cond.getValue()))
         # FIXME: use implication as in the original King's paper?
         formula = E.And(state.getPathCondition(), cond)
         if self.solver.is_sat(formula):
@@ -42,7 +45,8 @@ class Executor(ConcreteExecutor):
         c = state.eval(cond)
         assert isinstance(c, Value)
         # solvers make difference between bitvectors and booleans, so we must
-        # take care of it here: if it is a bitvector, compare it to 0 (C semantics)
+        # take care of it here: if it is a bitvector, compare it to 0 (C
+        # semantics)
         if c.isConstant():
             cval = E.Ne(c, E.Constant(0, c.getType().getBitWidth()))
         else:
@@ -131,24 +135,25 @@ class Executor(ConcreteExecutor):
         # if one of the operands is a pointer,
         # lift the other to pointer too
         if op1.isPointer() or op2.isPointer():
-            raise NotImplementedError("Arithmetic on pointer not implemented yet")
-       #if op1c.isPointer():
+            raise NotImplementedError(
+                "Arithmetic on pointer not implemented yet")
+       # if op1c.isPointer():
        #    if not op2c.isPointer():
        #        assert isinstance(op2c, Constant)
        #        # adding a constant -- create a pointer
        #        # to the object with the right offset
        #        op2c = Pointer(op1c.object, op2c.getValue())
-       #elif op2c.isPointer():
+       # elif op2c.isPointer():
        #    if not op1c.isPointer():
        #        assert isinstance(op1c, Constant)
        #        # adding a constant -- create a pointer
        #        # to the object with the right offset
        #        op1c = Pointer(op2c.object, op1c.getValue())
-       #else:
+       # else:
        #    op1 = op1c.getValue()
        #    op2 = op2c.getValue()
 
-       #if op1c.isPointer() and op1c.object != op2c.object:
+       # if op1c.isPointer() and op1c.object != op2c.object:
        #    raise ExecutionError("Pointer arithmetic on unrelated pointers")
 
         r = None
@@ -167,5 +172,3 @@ class Executor(ConcreteExecutor):
         state.set(instr, r)
         state.pc = state.pc.getNextInstruction()
         return [state]
-
-

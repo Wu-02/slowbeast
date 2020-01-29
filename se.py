@@ -1,4 +1,5 @@
 from slowbeast.ir.value import Constant
+from slowbeast.ir.types import *
 from slowbeast.ir.program import *
 from slowbeast.ir.bblock import *
 from slowbeast.ir.instruction import *
@@ -18,11 +19,11 @@ if __name__ == "__main__":
 
     B0 = BBlock(FOO)
 
-    A = Alloc(Constant(8, 4))
+    A = Alloc(Constant(8, Type(4)))
     B0.append(A)
     B0.append(Store(FOO.getArgument(0), FOO.getArgument(1)))
-    B0.append(Assume(Constant(False, 1)))
-    B0.append(Return(Constant(3, 2)))
+    B0.append(Assume(Constant(False, BoolType())))
+    B0.append(Return(Constant(3, Type(2))))
 
     P.addFun(FOO)
 
@@ -33,10 +34,10 @@ if __name__ == "__main__":
     B2 = BBlock(F)
     B3 = BBlock(F)
 
-    A = Alloc(Constant(4, 4))
+    A = Alloc(Constant(4, Type(32)))
     B0.append(A)
     nd = Call(ND)
-    cnd = Cmp(Cmp.LE, nd, Constant(2, 32))
+    cnd = Cmp(Cmp.LE, nd, Constant(2, Type(32)))
     B0.append(nd)
     B0.append(Store(nd, A))
     B0.append(cnd)
@@ -44,15 +45,15 @@ if __name__ == "__main__":
 
     L1 = Load(A, 4)
     B1.append(L1)
-    ADD = Add(L1, Constant(1, 32))
+    ADD = Add(L1, Constant(1, Type(32)))
     B1.append(ADD)
     B1.append(Store(ADD, A))
     L2 = Load(A, 4)
     B1.append(L2)
     B1.append(Print(L2))
-    B1.append(Branch(Constant(1, 1), B2, B2))
+    B1.append(Branch(Constant(True, BoolType()), B2, B2))
 
-    A1 = Alloc(Constant(8, 4))
+    A1 = Alloc(Constant(8, Type(32)))
     B2.append(A1)
     B2.append(Store(A, A1))
     L = Load(A1, 4)
@@ -65,11 +66,9 @@ if __name__ == "__main__":
     C2 = Cmp(Cmp.EQ, A, L)
     B2.append(L)
     B2.append(C2)
-    #B2.append(Assume(C, C2))
-    #B2.append(Assume(Constant(False, 1), C2))
     B2.append(Branch(C, B3, B3))
 
-    B3.append(Return(Constant(0, 4)))
+    B3.append(Return(Constant(0, Type(32))))
 
     P.addFun(F)
     P.setEntry(F)

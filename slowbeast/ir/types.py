@@ -1,10 +1,14 @@
+##
+# We have three sorts of values:
+# boolean
+# value with a specified bitwidth
+# a pointer to a value (not boolean)
+
 
 class Type:
-    def __init__(self, bw, isptr=False):
+    def __init__(self, bw):
         assert isinstance(bw, int)
-        assert isinstance(isptr, bool) 
         self._bitwidth = bw
-        self._isptr = isptr
 
     def getByteWidth(self):
         return int(max(self._bitwidth / 8, 1))
@@ -13,13 +17,41 @@ class Type:
         return self._bitwidth
 
     def isPointer(self):
-        return self._isptr
+        return False
+
+    def isBool(self):
+        return False
 
     def __eq__(self, x):
-        return self._bitwidth == x._bitwidth and self._isptr == x._isptr
+
+        return self.isBool() == x.isBool() and\
+               self.isPointer() == x.isPointer() and\
+               self.getBitWidth() == x.getBitWidth()
 
     def __str__(self):
+        if self.isBool():
+            return 'bool'
         s = '{0}b'.format(self._bitwidth)
         if self.isPointer():
             s += '*'
         return s
+
+
+# FIXME: make this configurable
+POINTER_BIT_WIDTH = 64
+
+
+class PointerType(Type):
+    def __init__(self):
+        Type.__init__(self, POINTER_BIT_WIDTH)
+
+    def isPointer(self):
+        return True
+
+
+class BoolType(Type):
+    def __init__(self):
+        Type.__init__(self, 1)
+
+    def isBool(self):
+        return True

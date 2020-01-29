@@ -1,15 +1,12 @@
 #!/usr/bin/python
 
-from . types import Type
-
-POINTER_BYTE_WIDTH = 8
+from . types import Type, PointerType, BoolType
 
 
 class Value:
-    def __init__(self, bw, isptr=False):
-        assert isinstance(bw, int)
-        assert isinstance(isptr, bool)
-        self._type = Type(bw, isptr)
+    def __init__(self, ty):
+        assert isinstance(ty, Type)
+        self._type = ty
 
     def getType(self):
         return self._type
@@ -21,21 +18,37 @@ class Value:
         return self._type.getBitWidth()
 
     def isPointer(self):
-        assert not self._type.isPointer()
-        return False
+        return self._type.isPointer()
+
+    def isBool(self):
+        return self._type.isBool()
 
     def isConstant(self):
+        """
+        Is integer constant or boolean constant?
+        Overriden by the Constant class
+        """
         return False
 
 
 class Constant(Value):
-    def __init__(self, c, bw):
-        assert isinstance(c, int)
-        super(Constant, self).__init__(bw)
+    """
+    Integer constant or boolean
+    """
+
+    def __init__(self, c, ty):
+        assert isinstance(c, int) or isinstance(c, bool)
+        assert isinstance(ty, Type)
+        assert not isinstance(c, PointerType)
+        super(Constant, self).__init__(ty)
         self._value = c
 
+        assert self.isPointer() == False, "Incorrectly constructed pointer"
+        assert not self.isBool() or (c or c == False), "Invalid boolean constant"
+        assert self.isBool() or isinstance(c, int)
+
     def asValue(self):
-        return "{0}:{1}b".format(str(self._value), self.getBitWidth())
+        return "{0}:{1}".format(str(self._value), self.getType())
 
     def getValue(self):
         return self._value
@@ -49,9 +62,13 @@ class Constant(Value):
 
 class Pointer(Value):
     def __init__(self, obj, off=0):
-        super(Pointer, self).__init__(POINTER_BYTE_WIDTH, isptr=True)
+        super(Pointer, self).__init__(PointerType())
         self.object = obj
         self.offset = off
+
+        assert self.isPointer(), "Incorrectly constructed pointer"
+        assert self.isBool() == False, "Incorrectly constructed pointer"
+        assert self.isConstant() == False, "Incorrectly constructed pointer"
 
     def __str__(self):
         return "({0}, {1})".format(self.object.asValue(), self.offset)
@@ -61,10 +78,6 @@ class Pointer(Value):
 
     def __eq__(self, oth):
         return self.object == oth.object and self.offset == oth.offset
-
-    def isPointer(self):
-        assert self.getType().isPointer()
-        return True
 
     def dump(self):
         print(self)

@@ -86,9 +86,8 @@ class Load(ValueInstruction):
         return self.getOperand(0)
 
     def __str__(self):
-        return "x{0} = load {1}:{2}B".format(self.getID(),
-                                             self.getPointerOperand().asValue(),
-                                             self.bytes)
+        return "x{0} = load {1}:{2}B".format(
+            self.getID(), self.getPointerOperand().asValue(), self.bytes)
 
 
 class Alloc(ValueInstruction):

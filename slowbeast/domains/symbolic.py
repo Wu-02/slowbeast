@@ -1,5 +1,5 @@
 from .. ir.value import Value, Constant
-from .. ir.types import Type
+from .. ir.types import Type, BoolType
 _use_z3 = True
 if _use_z3:
     from z3 import Or, And, Not, BoolVal, BitVec, BitVecVal
@@ -33,7 +33,7 @@ class Expr(Value):
     """
 
     def __init__(self, e, t):
-        Value.__init__(self, t.getBitWidth(), isptr=False)
+        Value.__init__(self, t)
         self._expr = e
 
     def asValue(self):
@@ -97,55 +97,55 @@ class BVSymbolicDomain:
     # Logic operators
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(And(a._expr, b._expr), Type(1))
+        return Expr(And(a._expr, b._expr), BoolType())
 
     def Or(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(Or(a._expr, b._expr), Type(1))
+        return Expr(Or(a._expr, b._expr), BoolType())
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)
-        return Expr(Not(a._expr), Type(1))
+        return Expr(Not(a._expr), BoolType())
 
     def getTrue():
-        return Expr(TRUE(), Type(1))
+        return Expr(TRUE(), BoolType())
 
     def getFalse():
-        return Expr(FALSE(), Type(1))
+        return Expr(FALSE(), BoolType())
 
     ##
     # Relational operators
 
     def Le(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a._expr <= b._expr, Type(1))
+        return Expr(a._expr <= b._expr, BoolType())
 
     def Lt(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a._expr < b._expr, Type(1))
+        return Expr(a._expr < b._expr, BoolType())
 
     def Ge(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a._expr >= b._expr, Type(1))
+        return Expr(a._expr >= b._expr, BoolType())
 
     def Gt(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a._expr > b._expr, Type(1))
+        return Expr(a._expr > b._expr, BoolType())
 
     def Eq(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a._expr == b._expr, Type(1))
+        return Expr(a._expr == b._expr, BoolType())
 
     def Ne(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a._expr != b._expr, Type(1))
+        return Expr(a._expr != b._expr, BoolType())
 
     ##
     # Arithmetic operations
     def Add(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.getType() == b.getType(),\
-        "Operation on invalid types: {0} != {1}".format(
+            "Operation on invalid types: {0} != {1}".format(
             a.getType(), b.getType())
         result_ty = a.getType()
         return Expr(a._expr + b._expr, result_ty)
@@ -153,7 +153,7 @@ class BVSymbolicDomain:
     def Sub(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.getType() == b.getType(),\
-        "Operation on invalid types: {0} != {1}".format(
+            "Operation on invalid types: {0} != {1}".format(
             a.getType(), b.getType())
         result_ty = a.getType()
         return Expr(a._expr - b._expr, result_ty)
@@ -161,7 +161,7 @@ class BVSymbolicDomain:
     def Mul(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.getType() == b.getType(),\
-        "Operation on invalid types: {0} != {1}".format(
+            "Operation on invalid types: {0} != {1}".format(
             a.getType(), b.getType())
         result_ty = a.getType()
         return Expr(a._expr * b._expr, result_ty)
@@ -169,7 +169,7 @@ class BVSymbolicDomain:
     def Div(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.getType() == b.getType(),\
-        "Operation on invalid types: {0} != {1}".format(
+            "Operation on invalid types: {0} != {1}".format(
             a.getType(), b.getType())
         result_ty = a.getType()
         return Expr(a._expr / b._expr, result_ty)
