@@ -33,6 +33,8 @@ class Expr(Value):
     """
 
     def __init__(self, e, t):
+        assert not isinstance(e, int)
+        assert isinstance(t, Type)
         Value.__init__(self, t)
         self._expr = e
 

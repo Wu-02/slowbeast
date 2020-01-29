@@ -25,8 +25,8 @@ class Type:
     def __eq__(self, x):
 
         return self.isBool() == x.isBool() and\
-               self.isPointer() == x.isPointer() and\
-               self.getBitWidth() == x.getBitWidth()
+            self.isPointer() == x.isPointer() and\
+            self.getBitWidth() == x.getBitWidth()
 
     def __str__(self):
         if self.isBool():
@@ -55,3 +55,7 @@ class BoolType(Type):
 
     def isBool(self):
         return True
+
+
+SizeType = Type(POINTER_BIT_WIDTH)
+OffsetType = SizeType

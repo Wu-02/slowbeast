@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from . types import Type, PointerType, BoolType
+from . types import Type, PointerType, BoolType, POINTER_BIT_WIDTH
 
 
 class Value:
@@ -61,7 +61,8 @@ class Constant(Value):
 
 
 class Pointer(Value):
-    def __init__(self, obj, off=0):
+    def __init__(self, obj, off=Constant(0, Type(POINTER_BIT_WIDTH))):
+        assert isinstance(off, Value)
         super(Pointer, self).__init__(PointerType())
         self.object = obj
         self.offset = off
@@ -72,6 +73,12 @@ class Pointer(Value):
 
     def __str__(self):
         return "({0}, {1})".format(self.object.asValue(), self.offset)
+
+    def getObject(self):
+        return self.object
+
+    def getOffset(self):
+        return self.offset
 
     def asValue(self):
         return str(self)

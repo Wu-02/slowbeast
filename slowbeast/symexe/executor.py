@@ -2,6 +2,7 @@ from .. util.debugging import dbg
 from .. ir.instruction import *
 from .. ir.value import Value
 from .. interpreter.executor import Executor as ConcreteExecutor
+from .. solvers.expressions import is_symbolic
 
 
 class Executor(ConcreteExecutor):
@@ -51,8 +52,8 @@ class Executor(ConcreteExecutor):
             cval = E.Ne(c, E.Constant(0, c.getType().getBitWidth()))
         else:
             # It already is an boolean expression
-            #assert isinstance(c, Expr)
-            assert c.getType().getBitWidth() == 1
+            assert is_symbolic(c)
+            assert c.getType().isBool()
             cval = c
 
         trueBranch, falseBranch = self.fork(state, cval)
@@ -70,36 +71,61 @@ class Executor(ConcreteExecutor):
 
         return states
 
+    def cmpValues(self, p, op1, op2):
+        E = self.solver.getExprManager()
+        if p == Cmp.LE:
+            return E.Le(op1, op2)
+        elif p == Cmp.LT:
+            return E.Lt(op1, op2)
+        elif p == Cmp.GE:
+            return E.Ge(op1, op2)
+        elif p == Cmp.GT:
+            return E.Gt(op1, op2)
+        elif p == Cmp.EQ:
+            return E.Eq(op1, op2)
+        elif p == Cmp.NE:
+            return E.Ne(op1, op2)
+        else:
+            raise RuntimeError("Invalid comparison")
+
+    def cmpPointers(self, state, instr, p1, p2):
+        mo1 = p1.getObject()
+        mo2 = p2.getObject()
+        if is_symbolic(mo1) or is_symbolic(mo2):
+            raise NotImplementedError(
+                "Comparison of symbolic pointers unimplemented")
+
+        E = self.solver.getExprManager()
+        p = instr.getPredicate()
+        if mo1.getID() == mo2.getID():
+            state.set(instr, self.cmpValues(p, p1.getOffset(), p2.getOffset()))
+            state.pc = state.pc.getNextInstruction()
+            return [state]
+        else:
+            if p != Cmp.EQ and p != Cmp.NE:
+                raise NotImplementedError(
+                    "Comparison of pointers implemented only for "
+                    "(non-)equality or into the same object")
+            else:
+                state.set(instr, Constant(p == Cmp.NE, BoolType()))
+                state.pc = state.pc.getNextInstruction()
+                return [state]
+
+        raise RuntimeError("Invalid pointer comparison")
+
     def execCmp(self, state, instr):
         assert isinstance(instr, Cmp)
         op1 = state.eval(instr.getOperand(0))
         op2 = state.eval(instr.getOperand(1))
-        if op1.isPointer() or op2.isPointer():
-            raise NotImplementedError("Comparison of pointer unimplemented")
-        # if op1.isPointer():
-           # if not op2.isPointer():
-           #    # TODO: not implemented
-           #    raise ExecutionError("Comparison of pointer to a constant")
-           # if op1.object.getID() != op2.object.getID():
-           #    raise ExecutionError("Comparison of unrelated pointers")
-           #op1 = op1.offset
-           #op2 = op2.offset
-        x = None
-        E = self.solver.getExprManager()
-        p = instr.getPredicate()
-        if p == Cmp.LE:
-            x = E.Le(op1, op2)
-        elif p == Cmp.LT:
-            x = E.Lt(op1, op2)
-        elif p == Cmp.GE:
-            x = E.Ge(op1, op2)
-        elif p == Cmp.GT:
-            x = E.Gt(op1, op2)
-        elif p == Cmp.EQ:
-            x = E.Eq(op1, op2)
-        elif p == Cmp.NE:
-            x = E.Ne(op1, op2)
 
+        if op1.isPointer() or op2.isPointer():
+            if op1.isPointer() and op2.isPointer():
+                return self.cmpPointers(state, instr, op1, op2)
+            else:
+                raise NotImplementedError(
+                    "Comparison of pointer to a constant not implemented")
+
+        x = self.cmpValues(instr.getPredicate(), op1, op2)
         state.set(instr, x)
         state.pc = state.pc.getNextInstruction()
 

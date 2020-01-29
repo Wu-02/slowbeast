@@ -1,6 +1,7 @@
 import sys
 from . errors import ExecutionError
 from .. ir.value import *
+from .. ir.types import OffsetType
 
 
 class MemoryObject:
@@ -24,15 +25,15 @@ class MemoryObject:
     def setAllocation(self, a):
         self.allocation = a
 
-    def write(self, x, off=0):
-        assert off == 0  # not implemented otherwise
+    def write(self, x, off=Constant(0, OffsetType)):
+        assert off.getValue() == 0, "Writes to relative offset unimplemented"
         assert isinstance(x, Value)
         if x.getByteWidth() > self.size:
             raise ExecutionError("Written value too big for the object")
         self.value = x
 
-    def read(self, bts, off=0):
-        assert off == 0  # not implemented otherwise
+    def read(self, bts, off=Constant(0, OffsetType)):
+        assert off.getValue() == 0, "Writes to relative offset unimplemented"
         if self.value is None:
             raise ExecutionError("Read from uninitialized variable")
 
@@ -69,7 +70,7 @@ class Memory:
     def allocate(self, size, nm=None):
         o = MemoryObject(size, nm)
         self._objects.append(o)
-        return Pointer(o, 0)
+        return Pointer(o)
 
     # def write(self, x, to):
     #     self._vars[to] = x

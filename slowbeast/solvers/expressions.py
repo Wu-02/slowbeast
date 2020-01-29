@@ -4,6 +4,15 @@ from .. domains.concrete import ConcreteDomain
 from .. domains.symbolic import *
 
 
+def is_symbolic(v):
+    return SymbolicDomain.belongto(v)
+
+
+def is_concrete(v):
+    assert not ConcreteDomain.belongto(v) or not is_symbolic(v)
+    return ConcreteDomain.belongto(v)
+
+
 class ExprManager:
     """
     Takes care of creating (caching and optimizing) expressions.
@@ -84,27 +93,27 @@ class ExprManager:
 
     def Le(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Le(a)
+            return ConcreteDomain.Le(a, b)
         return SymbolicDomain.Le(self.lift(a), self.lift(b))
 
     def Lt(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Lt(a)
+            return ConcreteDomain.Lt(a, b)
         return SymbolicDomain.Lt(self.lift(a), self.lift(b))
 
     def Ge(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ge(a)
+            return ConcreteDomain.Ge(a, b)
         return SymbolicDomain.Ge(self.lift(a), self.lift(b))
 
     def Gt(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Gt(a)
+            return ConcreteDomain.Gt(a, b)
         return SymbolicDomain.Gt(self.lift(a), self.lift(b))
 
     def Eq(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Eq(a)
+            return ConcreteDomain.Eq(a, b)
         return SymbolicDomain.Eq(self.lift(a), self.lift(b))
 
     def Ne(self, a, b):
@@ -116,20 +125,20 @@ class ExprManager:
     # Artihmetic operations
     def Add(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ne(a)
+            return ConcreteDomain.Add(a, b)
         return SymbolicDomain.Add(self.lift(a), self.lift(b))
 
     def Sub(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ne(a)
+            return ConcreteDomain.Sub(a)
         return SymbolicDomain.Sub(self.lift(a), self.lift(b))
 
     def Mul(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ne(a)
+            return ConcreteDomain.Mul(a)
         return SymbolicDomain.Mul(self.lift(a), self.lift(b))
 
     def Div(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ne(a)
+            return ConcreteDomain.Div(a)
         return SymbolicDomain.Div(self.lift(a), self.lift(b))
