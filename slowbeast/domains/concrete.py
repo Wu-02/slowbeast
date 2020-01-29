@@ -52,3 +52,29 @@ class ConcreteDomain:
     def Ne(a, b):
         assert ConcreteDomain.belongto(a, b)
         return Constant(a.getValue() != b.getValue(), Type(1))
+
+    ##
+    # Arithmetic operations
+    def Add(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        result_ty = Type(max(a.getType().getBitWidth(),
+                             b.getType().getBitWidth()))
+        return Constant(a.getValue() + b.getValue(), result_ty)
+
+    def Sub(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        result_ty = Type(max(a.getType().getBitWidth(),
+                             b.getType().getBitWidth()))
+        return Constant(a.getValue() - b.getValue(), result_ty)
+
+    def Mul(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        result_ty = Type(2 * max(a.getType().getBitWidth(),
+                                 b.getType().getBitWidth()))
+        return Constant(a.getValue() * b.getValue(), result_ty)
+
+    def Div(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        result_ty = Type(max(a.getType().getBitWidth(),
+                             b.getType().getBitWidth()))
+        return Constant(a.getValue() / b.getValue(), result_ty)

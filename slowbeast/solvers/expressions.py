@@ -108,3 +108,25 @@ class ExprManager:
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Ne(a)
         return SymbolicDomain.Ne(self.lift(a), self.lift(b))
+
+    ##
+    # Artihmetic operations
+    def Add(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Ne(a)
+        return SymbolicDomain.Add(self.lift(a), self.lift(b))
+
+    def Sub(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Ne(a)
+        return SymbolicDomain.Sub(self.lift(a), self.lift(b))
+
+    def Mul(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Ne(a)
+        return SymbolicDomain.Mul(self.lift(a), self.lift(b))
+
+    def Div(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Ne(a)
+        return SymbolicDomain.Div(self.lift(a), self.lift(b))

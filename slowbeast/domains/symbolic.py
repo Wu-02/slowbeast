@@ -93,17 +93,15 @@ class BVSymbolicDomain:
     ##
     # Logic operators
     def And(a, b):
-        assert isinstance(a, Expr)
-        assert isinstance(b, Expr)
+        assert BVSymbolicDomain.belongto(a, b)
         return Expr(And(a._expr, b._expr), Type(1))
 
     def Or(a, b):
-        assert isinstance(a, Expr)
-        assert isinstance(b, Expr)
+        assert BVSymbolicDomain.belongto(a, b)
         return Expr(Or(a._expr, b._expr), Type(1))
 
     def Not(a):
-        assert isinstance(a, Expr)
+        assert BVSymbolicDomain.belongto(a)
         return Expr(Not(a._expr), Type(1))
 
     def getTrue():
@@ -116,37 +114,62 @@ class BVSymbolicDomain:
     # Relational operators
 
     def Le(a, b):
-        assert isinstance(a, Expr)
-        assert isinstance(b, Expr)
+        assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr <= b._expr, Type(1))
 
     def Lt(a, b):
-        assert isinstance(a, Expr)
-        assert isinstance(b, Expr)
+        assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr < b._expr, Type(1))
 
     def Ge(a, b):
-        assert isinstance(a, Expr)
-        assert isinstance(b, Expr)
+        assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr >= b._expr, Type(1))
 
     def Gt(a, b):
-        assert isinstance(a, Expr)
-        assert isinstance(b, Expr)
+        assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr > b._expr, Type(1))
 
     def Eq(a, b):
-        assert isinstance(a, Expr)
-        assert isinstance(b, Expr)
+        assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr == b._expr, Type(1))
 
     def Ne(a, b):
-        assert isinstance(a, Expr)
-        assert isinstance(b, Expr)
+        assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr != b._expr, Type(1))
 
     ##
     # Arithmetic operations
+    def Add(a, b):
+        assert BVSymbolicDomain.belongto(a, b)
+        assert a.getType() == b.getType(),
+        "Operation on invalid types: {0} != {1}".format(
+            a.getType(), b.getType())
+        result_ty = a.getType()
+        return Expr(a._expr + b._expr, result_ty)
+
+    def Sub(a, b):
+        assert BVSymbolicDomain.belongto(a, b)
+        assert a.getType() == b.getType(),
+        "Operation on invalid types: {0} != {1}".format(
+            a.getType(), b.getType())
+        result_ty = a.getType()
+        return Expr(a._expr - b._expr, result_ty)
+
+    def Mul(a, b):
+        assert BVSymbolicDomain.belongto(a, b)
+        assert a.getType() == b.getType(),
+        "Operation on invalid types: {0} != {1}".format(
+            a.getType(), b.getType())
+        result_ty = a.getType()
+        return Expr(a._expr * b._expr, result_ty)
+
+    def Div(a, b):
+        assert BVSymbolicDomain.belongto(a, b)
+        assert a.getType() == b.getType(),
+        "Operation on invalid types: {0} != {1}".format(
+            a.getType(), b.getType())
+        result_ty = a.getType()
+        return Expr(a._expr / b._expr, result_ty)
 
 
 # The default symbolic domain are bitvectors
