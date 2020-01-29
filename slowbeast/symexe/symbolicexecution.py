@@ -8,8 +8,10 @@ from .. util.debugging import print_stderr, print_stdout, dbg
 
 class Stats:
     def __init__(self):
-        self.queued = 0
+        # all paths (including ones that hit an error or terminated early)
         self.paths = 0
+        # paths that exited (the state is exited)
+        self.exited_paths = 0
         self.errors = 0
         self.instructions = 0
 
@@ -24,7 +26,6 @@ class SymbolicExecutor(Interpreter):
     def getInitialStates(self, entry):
         s = SEState()
         s.pushCall(None, entry)
-        self.stats.queued += 1
         return [s]
 
     def getNextState(self):
@@ -39,15 +40,18 @@ class SymbolicExecutor(Interpreter):
         for s in newstates:
             if s.isReady():
                 self.states.append(s)
-                self.stats.queued += 1
             elif s.hasError():
-                print_stderr(state.getError(), color='BROWN')
+                print_stderr(s.getError(), color='RED')
                 self.stats.errors += 1
+                self.stats.paths += 1
+            elif s.isTerminated():
+                print_stderr(s.getError(), color='BROWN')
                 self.stats.paths += 1
             else:
                 assert s.exited()
                 dbg("state exited with exitcode {0}".format(s.getExitCode()))
                 self.stats.paths += 1
+                self.stats.exited_paths += 1
 
     def run(self):
         self.states = self.getInitialStates(self.entry)
@@ -70,10 +74,6 @@ class SymbolicExecutor(Interpreter):
             raise e
 
         print_stdout(
-            "Queued states: {0}".format(
-                self.stats.queued),
-            color='CYAN')
-        print_stdout(
             "Executed instructions: {0}".format(
                 self.stats.instructions),
             color='CYAN')
@@ -82,12 +82,22 @@ class SymbolicExecutor(Interpreter):
                 self.stats.paths),
             color='CYAN')
         print_stdout(
-            "Executed branches: {0}".format(
+            "Paths that reached exit: {0}".format(
+                self.stats.exited_paths),
+            color='CYAN')
+        print_stdout(
+            "Executed branch instructions: {0}".format(
                 self._executor.stats.branchings),
             color='CYAN')
         print_stdout(
-            "Executed forks: {0}".format(
-                self._executor.stats.forks),
+            "Number of forks on branches: {0} (forked on {1}% of branches)".format(
+                self._executor.stats.branch_forks,
+                100*float(self._executor.stats.branch_forks) / self._executor.stats.branchings),
+            color='CYAN')
+        # this includes e.g. forks on assertions/memory resolution/etc.
+        print_stdout(
+            "Number of all forks: {0} (from {1} calls ({2}%) to fork())".format(self._executor.stats.forks, self._executor.stats.fork_calls,
+                100*float(self._executor.stats.forks) / self._executor.stats.fork_calls),
             color='CYAN')
         print_stdout(
             "Found errors: {0}".format(

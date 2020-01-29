@@ -130,7 +130,8 @@ class Executor:
         state.pc = state.pc.getNextInstruction()
         for o in instr.getOperands():
             v = state.eval(o)
-            assert isinstance(v, Constant)
+            assert v.isConstant()
+            assert v.isBool()
             if v.getValue() != True:
                 print("Assumption failed: {0} == {1} (!= True)".format(o, v))
                 state.dump()

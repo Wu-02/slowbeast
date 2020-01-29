@@ -39,10 +39,12 @@ class ExprManager:
 
     def freshValue(self, name, bw=64):
         assert isinstance(name, str)
+        origname=name
+        cnt = 1
         s = self._names.get(name)
         while s:
-            cnt = 1
-            name = "{0}_{1}".format(name, cnt)
+            cnt += 1
+            name = "{0}_{1}".format(origname, cnt)
             s = self._names.get(name)
 
         s = SymbolicDomain.Var(name, bw)

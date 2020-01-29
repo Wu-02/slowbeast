@@ -24,7 +24,6 @@ class Solver:
         return self.exprmanager
 
     def is_sat(self, *e):
-        print(e)
         return is_sat([x._expr for x in e])
 
     def freshValue(self, name, bw=64):

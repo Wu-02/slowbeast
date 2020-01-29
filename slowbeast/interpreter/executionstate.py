@@ -8,7 +8,8 @@ from copy import deepcopy
 class ExecutionStatus:
     READY = 1
     EXITED = 2
-    ERROR = 3
+    TERMINATED = 3
+    ERROR = 4
 
     def __init__(self, st=READY):
         self.value = st
@@ -34,23 +35,33 @@ class ExecutionStatus:
         self.detail = ec
         self.value = ExecutionStatus.EXITED
 
+    def setTerminated(self, reason):
+        #The state terminated for some other reason than regular exit
+        self.detail = reason
+        self.value = ExecutionStatus.TERMINATED
+
     def isError(self):
         return self.value == ExecutionStatus.ERROR
 
     def isExited(self):
         return self.value == ExecutionStatus.EXITED
 
+    def isTerminated(self):
+        return self.value == ExecutionStatus.TERMINATED
+
     def isReady(self):
         return self.value == ExecutionStatus.READY
 
-    def __str__(self):
+    def __repr__(self):
         if self.value == ExecutionStatus.READY:
             return 'READY'
         elif self.value == ExecutionStatus.ERROR:
             return 'ERROR'
         elif self.value == ExecutionStatus.EXITED:
             return 'EXITED'
-        assert False
+        elif self.value == ExecutionStatus.TERMINATED:
+            return 'TERMINATED'
+        raise RuntimeError("Invalid state status")
 
     def dump(self):
         print('status: {0}'.format(str(self)))
@@ -88,9 +99,6 @@ class ExecutionState:
     def copy(self):
         new = ExecutionState()
         self.copyTo(new)
-        self.dump()
-        print('copy')
-        new.dump()
         return new
 
     def setError(self, e):
@@ -100,11 +108,17 @@ class ExecutionState:
         return self.status.isError()
 
     def getError(self):
-        assert self.hasError()
+        assert self.hasError() or self.isTerminated()
         return self.status.getDetail()
 
     def setExited(self, ec):
         self.status.setExited(ec)
+
+    def setTerminated(self, reason):
+        self.status.setTerminated(reason)
+
+    def isTerminated(self):
+        return self.status.isTerminated()
 
     def exited(self):
         return self.status.isExited()

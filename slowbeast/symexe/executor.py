@@ -10,6 +10,10 @@ class SEStats:
         # number of branch instructions
         self.branchings = 0
         # number of branch instructions where we forked
+        self.branch_forks = 0
+        # number of times we called fork()
+        self.fork_calls = 0
+        # number of times when the call to fork() forked the execution
         self.forks = 0
 
 
@@ -20,6 +24,8 @@ class Executor(ConcreteExecutor):
         self.stats = SEStats()
 
     def fork(self, state, cond):
+        self.stats.fork_calls += 1
+
         E = self.solver.getExprManager()
         T, F = None, None
 
@@ -82,6 +88,9 @@ class Executor(ConcreteExecutor):
             states.append(falseBranch)
         # at least one must be feasable...
         assert trueBranch or falseBranch, "Fatal Error: failed forking condition"
+
+        if trueBranch and falseBranch:
+            self.stats.branch_forks += 1
 
         return states
 
@@ -212,3 +221,42 @@ class Executor(ConcreteExecutor):
         state.set(instr, r)
         state.pc = state.pc.getNextInstruction()
         return [state]
+
+    def execAssume(self, state, instr):
+        assert isinstance(instr, Assume)
+        for o in instr.getOperands():
+            v = state.eval(o)
+            assert v.isBool()
+            if v.isConstant():
+                if v.getValue() != True:
+                    state.setTerminated("Assumption failed: {0} == {1} (!= True)".format(o, v))
+                    return [state]
+                break
+            else:
+                state.addConstraint(v)
+
+        state.pc = state.pc.getNextInstruction()
+        return [state]
+
+    def execAssert(self, state, instr):
+        assert isinstance(instr, Assert)
+        states = []
+        for o in instr.getOperands():
+            v = state.eval(o)
+            assert v.isBool()
+            if v.isConstant():
+                if v.getValue() != True:
+                    state.setError("Assertion failed: {0} is False".format(o))
+                    states.append(state)
+            else:
+                okBranch, errBranch = self.fork(state, v)
+                if okBranch:
+                    okBranch.pc = okBranch.pc.getNextInstruction()
+                    states.append(okBranch)
+                if errBranch:
+                    errBranch.setError("Assertion failed: {0}".format(o))
+                    states.append(errBranch)
+
+        assert states, "Generated no states"
+        return states
+
