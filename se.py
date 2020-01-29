@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     L1 = Load(A, 4)
     B1.append(L1)
-    ADD = Add(L1, Constant(1, 1))
+    ADD = Add(L1, Constant(1, 32))
     B1.append(ADD)
     B1.append(Store(ADD, A))
     L2 = Load(A, 4)

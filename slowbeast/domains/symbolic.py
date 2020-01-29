@@ -141,7 +141,7 @@ class BVSymbolicDomain:
     # Arithmetic operations
     def Add(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType(),
+        assert a.getType() == b.getType(),\
         "Operation on invalid types: {0} != {1}".format(
             a.getType(), b.getType())
         result_ty = a.getType()
@@ -149,7 +149,7 @@ class BVSymbolicDomain:
 
     def Sub(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType(),
+        assert a.getType() == b.getType(),\
         "Operation on invalid types: {0} != {1}".format(
             a.getType(), b.getType())
         result_ty = a.getType()
@@ -157,7 +157,7 @@ class BVSymbolicDomain:
 
     def Mul(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType(),
+        assert a.getType() == b.getType(),\
         "Operation on invalid types: {0} != {1}".format(
             a.getType(), b.getType())
         result_ty = a.getType()
@@ -165,7 +165,7 @@ class BVSymbolicDomain:
 
     def Div(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType(),
+        assert a.getType() == b.getType(),\
         "Operation on invalid types: {0} != {1}".format(
             a.getType(), b.getType())
         result_ty = a.getType()

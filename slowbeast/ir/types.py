@@ -14,7 +14,7 @@ class Type:
         return self._isptr
 
     def __eq__(self, x):
-        return self._bitwidth == _x.bitwidth and self._isptr == x._isptr
+        return self._bitwidth == x._bitwidth and self._isptr == x._isptr
 
     def __str__(self):
         s = '{0}b'.format(self._bitwidth)

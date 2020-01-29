@@ -86,9 +86,9 @@ class Load(ValueInstruction):
         return self.getOperand(0)
 
     def __str__(self):
-        return "x{0} = load {1}:{2}".format(self.getID(),
-                                            self.getPointerOperand().asValue(),
-                                            self.bytes)
+        return "x{0} = load {1}:{2}B".format(self.getID(),
+                                             self.getPointerOperand().asValue(),
+                                             self.bytes)
 
 
 class Alloc(ValueInstruction):
@@ -100,7 +100,7 @@ class Alloc(ValueInstruction):
         return self._size
 
     def __str__(self):
-        return "x{0} = alloc {1}".format(self.getID(), self.getSize())
+        return "x{0} = alloc {1}B".format(self.getID(), self.getSize())
 
     # the allocations return pointers, we need to compare them
     def __lt__(self, other):
