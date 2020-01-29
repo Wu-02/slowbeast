@@ -1,7 +1,8 @@
 
 class BBlock:
     valueCounter = 0
-    def __init__(self, f = None):
+
+    def __init__(self, f=None):
         BBlock.valueCounter += 1
         self._id = BBlock.valueCounter
         self._instructions = []
@@ -34,7 +35,8 @@ class BBlock:
     def asValue(self):
         return 'bblock {0}'.format(self.getID())
 
-    def dump(self, ind = 0):
-        print('\n', ''.join([' ' for x in range(0, ind)]), "; bblock", self.getID())
+    def dump(self, ind=0):
+        print('\n', ''.join([' ' for x in range(0, ind)]),
+              "; bblock", self.getID())
         for i in self._instructions:
             i.dump(ind)

@@ -3,12 +3,13 @@ from . memory import Memory
 from . calls import CallStack
 from . errors import ExecutionError
 
+
 class ExecutionStatus:
     READY = 1
     EXITED = 2
     ERROR = 3
 
-    def __init__(self, st = READY):
+    def __init__(self, st=READY):
         self.value = st
         self.detail = None
 
@@ -49,7 +50,7 @@ class ExecutionStatus:
 
 
 class ExecutionState:
-    def __init__(self, pc, m = Memory(), v = {}):
+    def __init__(self, pc, m=Memory(), v={}):
         # program counter
         self.pc = pc
         # memory objects
@@ -111,7 +112,7 @@ class ExecutionState:
             ret = self.globals.get(v)
         return ret
 
-    def pushCall(self, callsite, fun, argsMapping = {}):
+    def pushCall(self, callsite, fun, argsMapping={}):
         self.cs.push(callsite, fun, argsMapping)
         self.pc = fun.getBBlock(0).getInstruction(0)
 
@@ -126,5 +127,3 @@ class ExecutionState:
         print("-- Memory:")
         self.memory.dump()
         print("-- -- -- -- -- -- -- --")
-
-

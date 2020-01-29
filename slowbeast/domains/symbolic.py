@@ -1,7 +1,9 @@
+from .. ir.value import Value, Constant
+from .. ir.types import Type
 _use_z3 = True
 if _use_z3:
     from z3 import Or, And, Not, BoolVal, BitVec, BitVecVal
-    
+
     def TRUE():
         return BoolVal(True)
 
@@ -23,14 +25,13 @@ else:
     def bv_const(v, bw):
         return BV(v, bw)
 
-from .. ir.types import Type
-from .. ir.value import Value, Constant
 
 class Expr(Value):
     """
     Wrapper around a formula that carries
     metadata like a type (and hash in the future, etc.)
     """
+
     def __init__(self, e, t):
         Value.__init__(self, t.getBitWidth(), isptr=False)
         self._expr = e
@@ -40,6 +41,7 @@ class Expr(Value):
 
     def __repr__(self):
         return "<{0}:{1}>".format(self._expr, self.getType())
+
 
 class BVSymbolicDomain:
     """
@@ -60,13 +62,17 @@ class BVSymbolicDomain:
             return v
 
         if v.isConstant():
-            return Expr(bv_const(v.getValue(), v.getType().getBitWidth()), v.getType())
+            return Expr(
+                bv_const(
+                    v.getValue(),
+                    v.getType().getBitWidth()),
+                v.getType())
 
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
     ##
     # variables
-    def Var(name, bw = 64):
+    def Var(name, bw=64):
         return Expr(bv(name, bw), Type(bw))
 
     def Int1(name):
@@ -141,6 +147,7 @@ class BVSymbolicDomain:
 
     ##
     # Arithmetic operations
+
 
 # The default symbolic domain are bitvectors
 SymbolicDomain = BVSymbolicDomain

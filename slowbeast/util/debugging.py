@@ -15,6 +15,7 @@ COLORS = {
     'RESET': '\033[0m'
 }
 
+
 def print_stream(msg, stream, prefix=None, print_nl=True, color=None):
     """
     Print message to stderr/stdout
@@ -30,17 +31,17 @@ def print_stream(msg, stream, prefix=None, print_nl=True, color=None):
     if not stream.isatty():
         color = None
 
-    if not color is None:
+    if color is not None:
         stream.write(COLORS[color])
 
     if msg == '':
         return
-    if not prefix is None:
+    if prefix is not None:
         stream.write(prefix)
 
     stream.write(msg)
 
-    if not color is None:
+    if color is not None:
         stream.write(COLORS['RESET'])
 
     if print_nl:
@@ -56,15 +57,17 @@ def print_stderr(msg, prefix=None, print_nl=True, color=None):
 def print_stdout(msg, prefix=None, print_nl=True, color=None):
     print_stream(msg, sys.stdout, prefix, print_nl, color)
 
+
 _is_debugging = False
+
 
 def set_debugging():
     global _is_debugging
     _is_debugging = True
 
-def dbg(msg, print_nl = True, color='GRAY'):
+
+def dbg(msg, print_nl=True, color='GRAY'):
     if not _is_debugging:
         return
 
     print_stderr(msg, "[sb] ", print_nl, color)
-

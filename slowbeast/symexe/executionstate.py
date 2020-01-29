@@ -1,9 +1,10 @@
 from .. interpreter.executionstate import ExecutionState
 
+
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
 
-    def __init__(self, pc = None):
+    def __init__(self, pc=None):
         ExecutionState.__init__(self, pc)
         self.pathCondition = None
 

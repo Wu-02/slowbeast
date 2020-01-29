@@ -1,7 +1,8 @@
 from . argument import Argument
 
+
 class Function:
-    def __init__(self, name, argNum = 0):
+    def __init__(self, name, argNum=0):
         self._name = name
         self._bblocks = []
         self._arguments = [Argument() for x in range(0, argNum)]

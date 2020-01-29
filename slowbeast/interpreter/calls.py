@@ -1,7 +1,7 @@
 
 class CallStack:
     class Frame:
-        def __init__(self, fun, returnsite = None, v = {}):
+        def __init__(self, fun, returnsite=None, v={}):
             self.function = fun
             self.values = v
             self.returnsite = returnsite
@@ -16,11 +16,10 @@ class CallStack:
             for x, v in self.values.items():
                 print(x.asValue(), ' -> ', v.asValue())
 
-
-    def __init__(self, fun = None, v = {}):
+    def __init__(self, fun=None, v={}):
         self._cs = []
 
-    def frame(self, idx = -1):
+    def frame(self, idx=-1):
         return self._cs[idx]
 
     def set(self, what, v):
@@ -46,4 +45,3 @@ class CallStack:
             print(" -- {0}: {1} --".format(n, f.function.getName()))
             f.dump()
             n += 1
-

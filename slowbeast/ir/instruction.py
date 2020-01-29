@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
-from . bblock import BBlock # due to assertions
+from . bblock import BBlock  # due to assertions
 from . argument import Argument
+
 
 class Instruction:
     valuesCounter = 0
 
-    def __init__(self, ops = []):
+    def __init__(self, ops=[]):
         Instruction.valuesCounter += 1
         self._id = Instruction.valuesCounter
         self._operands = ops
@@ -27,7 +28,7 @@ class Instruction:
         self._bblock = bb
         self._bblock_idx = idx
 
-    def dump(self, ind = 0):
+    def dump(self, ind=0):
         print(''.join([' ' for x in range(0, ind)]), self)
 
     def getNextInstruction(self):
@@ -44,16 +45,18 @@ class ValueInstruction(Instruction):
     """
     Instruction that returns a value
     """
-    def __init__(self, ops = []):
+
+    def __init__(self, ops=[]):
         super(ValueInstruction, self).__init__(ops)
 
     def asValue(self):
         return 'x{0}'.format(self.getID())
 
+
 class Store(Instruction):
     def __init__(self, val, to):
         super(Store, self).__init__([val, to])
-       #assert isinstance(val, Constant) or\
+       # assert isinstance(val, Constant) or\
        #       isinstance(val, ValueInstruction) or\
        #       isinstance(val, Argument)
        # assert isinstance(to, ValueInstruction)
@@ -68,8 +71,10 @@ class Store(Instruction):
         return "store {0} to {1}".format(self.getValueOperand().asValue(),
                                          self.getPointerOperand().asValue())
 
+
 class Load(ValueInstruction):
     """ Load 'bw' bytes from 'frm' """
+
     def __init__(self, frm, bw):
         super(Load, self).__init__([frm])
         self.bytes = bw
@@ -82,8 +87,9 @@ class Load(ValueInstruction):
 
     def __str__(self):
         return "x{0} = load {1}:{2}".format(self.getID(),
-                                             self.getPointerOperand().asValue(),
-                                             self.bytes)
+                                            self.getPointerOperand().asValue(),
+                                            self.bytes)
+
 
 class Alloc(ValueInstruction):
     def __init__(self, size):
@@ -120,8 +126,6 @@ class Alloc(ValueInstruction):
         return self.getID()
 
 
-
-
 class Branch(Instruction):
     def __init__(self, cond, b1, b2):
         super(Branch, self).__init__([cond, b1, b2])
@@ -138,9 +142,11 @@ class Branch(Instruction):
         return self.getOperand(2)
 
     def __str__(self):
-        return "branch {0} ? {1} : {2}".format(self.getCondition().asValue(),
-                                               self.getTrueSuccessor().asValue(),
-                                               self.getFalseSuccessor().asValue())
+        return "branch {0} ? {1} : {2}".format(
+            self.getCondition().asValue(),
+            self.getTrueSuccessor().asValue(),
+            self.getFalseSuccessor().asValue())
+
 
 class Call(ValueInstruction):
     def __init__(self, wht, *operands):
@@ -159,8 +165,9 @@ class Call(ValueInstruction):
         r += ', '.join(map(lambda x: x.asValue(), self.getOperands()))
         return r + ')'
 
+
 class Return(Instruction):
-    def __init__(self, val = None):
+    def __init__(self, val=None):
         if val is None:
             super(Return, self).__init__([])
         else:
@@ -171,6 +178,7 @@ class Return(Instruction):
             return "ret"
         return "ret {0}".format(str(self.getOperand(0)))
 
+
 class Print(Instruction):
     def __init__(self, *operands):
         super(Print, self).__init__([*operands])
@@ -179,17 +187,18 @@ class Print(Instruction):
         return self._function
 
     def __str__(self):
-        r='print '
+        r = 'print '
         for o in self._operands:
             r += o.asValue() + ' '
         return r
+
 
 class Assert(Instruction):
     def __init__(self, *operands):
         super(Assert, self).__init__([*operands])
 
     def __str__(self):
-        r='assert '
+        r = 'assert '
         n = 0
         for o in self._operands:
             if n > 0:
@@ -197,13 +206,14 @@ class Assert(Instruction):
             r += o.asValue()
             n += 1
         return r
+
 
 class Assume(Instruction):
     def __init__(self, *operands):
         super(Assume, self).__init__([*operands])
 
     def __str__(self):
-        r='assume '
+        r = 'assume '
         n = 0
         for o in self._operands:
             if n > 0:
@@ -211,6 +221,7 @@ class Assume(Instruction):
             r += o.asValue()
             n += 1
         return r
+
 
 class Cmp(ValueInstruction):
     LE = 1
@@ -242,16 +253,18 @@ class Cmp(ValueInstruction):
         return self._predicate
 
     def __str__(self):
-        return "{0} = cmp {1} {2} {3}".format(self.asValue(), self.getOperand(0).asValue(),
-                                              Cmp.predicateStr(self.getPredicate()),
-                                              self.getOperand(1).asValue())
+        return "{0} = cmp {1} {2} {3}".format(
+            self.asValue(), self.getOperand(0).asValue(), Cmp.predicateStr(
+                self.getPredicate()), self.getOperand(1).asValue())
 
 
 class UnaryOperation(ValueInstruction):
     NEG = 1
+
     def __init__(self, op, a):
         super(UnaryOperation, self).__init__([a])
         self._op = op
+
 
 class BinaryOperation(ValueInstruction):
     # arith
@@ -259,7 +272,7 @@ class BinaryOperation(ValueInstruction):
     SUB = 2
     MUL = 3
     DIV = 4
-    #logical
+    # logical
     #AND = 5
     #OR = 6
     # more logicals to come ...
@@ -275,6 +288,7 @@ class BinaryOperation(ValueInstruction):
     def getOperation(self):
         return self._op
 
+
 class Add(BinaryOperation):
     def __init__(self, a, b):
         super(Add, self).__init__(BinaryOperation.ADD, a, b)
@@ -283,6 +297,7 @@ class Add(BinaryOperation):
         return "x{0} = {1} + {2}".format(self.getID(),
                                          self.getOperand(0).asValue(),
                                          self.getOperand(1).asValue())
+
 
 class Sub(BinaryOperation):
     def __init__(self, a, b):
@@ -293,6 +308,7 @@ class Sub(BinaryOperation):
                                          self.getOperand(0).asValue(),
                                          self.getOperand(1).asValue())
 
+
 class Mul(BinaryOperation):
     def __init__(self, a, b):
         super(Mul, self).__init__(BinaryOperation.MUL, a, b)
@@ -302,6 +318,7 @@ class Mul(BinaryOperation):
                                          self.getOperand(0).asValue(),
                                          self.getOperand(1).asValue())
 
+
 class Div(BinaryOperation):
     def __init__(self, a, b):
         super(Div, self).__init__(BinaryOperation.DIV, a, b)
@@ -310,4 +327,3 @@ class Div(BinaryOperation):
         return "x{0} = {1} / {2}".format(self.getID(),
                                          self.getOperand(0).asValue(),
                                          self.getOperand(1).asValue())
-

@@ -3,8 +3,9 @@ from . executionstate import ExecutionState
 from . executor import Executor
 from . errors import ExecutionError
 
+
 class Interpreter:
-    def __init__(self, program, executor = Executor()):
+    def __init__(self, program, executor=Executor()):
         self._program = program
         self._executor = executor
 
@@ -45,8 +46,9 @@ class Interpreter:
                 self.step(state)
                 state = self.getNextState()
         except ExecutionError as e:
-            print_stderr("Execution error while executing '{0}': {1}".format(state, str(e)),
-                         color='RED')
+            print_stderr(
+                "Execution error while executing '{0}': {1}".format(
+                    state, str(e)), color='RED')
             self.dump()
         except Exception as e:
             print_stderr("Fatal error while executing '{0}'".format(state.pc),
@@ -70,4 +72,3 @@ class Interpreter:
         states = self._executor.execute(state, state.pc)
         assert len(states) == 1
         self.states += states
-

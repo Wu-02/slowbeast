@@ -1,6 +1,6 @@
 
 class Type:
-    def __init__(self, bw, isptr = False):
+    def __init__(self, bw, isptr=False):
         self._bitwidth = bw
         self._isptr = isptr
 
@@ -17,7 +17,7 @@ class Type:
         return self._bitwidth == _x.bitwidth and self._isptr == x._isptr
 
     def __str__(self):
-        s='{0}b'.format(self._bitwidth)
+        s = '{0}b'.format(self._bitwidth)
         if self.isPointer():
-            s+='*'
+            s += '*'
         return s

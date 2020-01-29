@@ -1,3 +1,4 @@
+from . expressions import ExprManager
 from .. domains.symbolic import _use_z3
 if _use_z3:
     from z3 import Solver as Z3Solver
@@ -8,9 +9,9 @@ if _use_z3:
 else:
     from pysmt.shortcuts import is_sat
 
-from . expressions import ExprManager
 
 # FIXME add support for incremental solving
+
 class Solver:
     """
     Wrapper for SMT solver(s) used throughout this project
@@ -25,8 +26,6 @@ class Solver:
     def is_sat(self, e):
         return is_sat(e._expr)
 
-    def freshValue(self, name, bw = 64):
+    def freshValue(self, name, bw=64):
         """ bw = bitwidth """
         return self.exprmanager.freshValue(name, bw)
-
-

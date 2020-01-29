@@ -4,10 +4,12 @@ from .. ir.instruction import *
 from .. ir.value import *
 from . errors import ExecutionError
 
+
 class Executor:
     """
     Class that takes care of executing single instructions
     """
+
     def __init__(self):
         pass
 
@@ -93,7 +95,7 @@ class Executor:
         assert isinstance(c, ValueInstruction) or c.isConstant()
         cv = state.eval(instr.getCondition()).getValue()
 
-        if cv == True:
+        if cv:
             succ = instr.getTrueSuccessor()
         elif cv == False:
             succ = instr.getFalseSuccessor()
@@ -114,7 +116,10 @@ class Executor:
             v = state.eval(o)
             assert isinstance(v, Constant)
             if v.getValue() != True:
-                state.setError(ExecutionError("Assertion failed: {0} is {1} (!= True)".format(o, v)))
+                state.setError(
+                    ExecutionError(
+                        "Assertion failed: {0} is {1} (!= True)".format(
+                            o, v)))
                 return [state]
 
         state.pc = state.pc.getNextInstruction()
@@ -198,11 +203,14 @@ class Executor:
         fun = instr.getCalledFunction()
         dbg("-- CALL {0} --".format(fun.getName()))
         if fun.isUndefined():
-            state.setError(ExecutionError("Called undefined function: {0}".format(fun.getName())))
+            state.setError(
+                ExecutionError(
+                    "Called undefined function: {0}".format(
+                        fun.getName())))
             return [state]
         # map values to arguments
         assert len(instr.getOperands()) == len(fun.getArguments())
-        mapping = {x : state.eval(y) for (x, y)\
+        mapping = {x: state.eval(y) for (x, y)
                    in zip(fun.getArguments(), instr.getOperands())}
         state.pushCall(instr, fun, mapping)
         return [state]
@@ -211,11 +219,12 @@ class Executor:
         dbg("-- RET --")
         assert isinstance(instr, Return)
         rs = state.popCall()
-        if len(instr.getOperands()) != 0: # returns nothing
+        if len(instr.getOperands()) != 0:  # returns nothing
             ret = state.eval(instr.getOperand(0))
-            if rs is None: # popped the last frame
+            if rs is None:  # popped the last frame
                 if ret.isPointer():
-                    state.setError(ExecutionError("Returning a pointer from main function"))
+                    state.setError(
+                        ExecutionError("Returning a pointer from main function"))
                     return [state]
                 assert isinstance(ret, Constant)
                 state.setExited(ret.getValue())

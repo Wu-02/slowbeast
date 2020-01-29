@@ -2,6 +2,7 @@ from .. util.debugging import dbg
 from .. ir.instruction import *
 from .. interpreter.executor import Executor as ConcreteExecutor
 
+
 class Executor(ConcreteExecutor):
     def __init__(self, solver):
         super(ConcreteExecutor, self).__init__()
@@ -50,11 +51,11 @@ class Executor(ConcreteExecutor):
         op2 = state.eval(instr.getOperand(1))
         if op1.isPointer() or op2.isPointer():
             raise NotImplementedError("Comparison of pointer unimplemented")
-        #if op1.isPointer():
-           #if not op2.isPointer():
+        # if op1.isPointer():
+           # if not op2.isPointer():
            #    # TODO: not implemented
            #    raise ExecutionError("Comparison of pointer to a constant")
-           #if op1.object.getID() != op2.object.getID():
+           # if op1.object.getID() != op2.object.getID():
            #    raise ExecutionError("Comparison of unrelated pointers")
            #op1 = op1.offset
            #op2 = op2.offset
@@ -89,7 +90,7 @@ class Executor(ConcreteExecutor):
 
         # map values to arguments
         assert len(instr.getOperands()) == len(fun.getArguments())
-        mapping = {x : state.eval(y) for (x, y)\
+        mapping = {x: state.eval(y) for (x, y)
                    in zip(fun.getArguments(), instr.getOperands())}
         state.pushCall(instr, fun, mapping)
         return [state]
@@ -101,4 +102,3 @@ class Executor(ConcreteExecutor):
         state.set(instr, val)
         state.pc = state.pc.getNextInstruction()
         return [state]
-

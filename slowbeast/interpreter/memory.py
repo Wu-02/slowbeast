@@ -2,17 +2,18 @@ import sys
 from . errors import ExecutionError
 from .. ir.value import *
 
+
 class MemoryObject:
     ids = 0
 
-    def __init__(self, size, nm = "unnamed"):
+    def __init__(self, size, nm="unnamed"):
         MemoryObject.ids += 1
         self._id = MemoryObject.ids
 
-        self.value = None # until we support composite objects, use just 'value'
+        self.value = None  # until we support composite objects, use just 'value'
         self.size = size
-        self.name = nm # for debugging
-        self.allocation = None # which allocation allocated this memory
+        self.name = nm  # for debugging
+        self.allocation = None  # which allocation allocated this memory
 
     def getID(self):
         return self._id
@@ -23,21 +24,21 @@ class MemoryObject:
     def setAllocation(self, a):
         self.allocation = a
 
-    def write(self, x, off = 0):
-        assert off == 0 # not implemented otherwise
+    def write(self, x, off=0):
+        assert off == 0  # not implemented otherwise
         assert isinstance(x, Value)
         if x.getByteWidth() > self.size:
             raise ExecutionError("Written value too big for the object")
         self.value = x
 
-    def read(self, bts, off = 0):
-        assert off == 0 # not implemented otherwise
+    def read(self, bts, off=0):
+        assert off == 0  # not implemented otherwise
         if self.value is None:
             raise ExecutionError("Read from uninitialized variable")
 
         if self.size < bts:
-            raise ExecutionError("Read {0} bytes from object of size {1}"\
-                                  .format(bts, self.size))
+            raise ExecutionError("Read {0} bytes from object of size {1}"
+                                 .format(bts, self.size))
         return self.value
 
     def __eq__(self, oth):
@@ -48,9 +49,11 @@ class MemoryObject:
             v = self.value.asValue()
         else:
             v = self.value
-        return "mo{0} ({1} alloc. by {2}), {3} -> {4}".format(self._id, self.name,
+        return "mo{0} ({1} alloc. by {2}), {3} -> {4}".format(self._id,
+                                                              self.name,
                                                               self.allocation.asValue() if self.allocation else "unknown",
-                                                              self.size, v)
+                                                              self.size,
+                                                              v)
 
     def asValue(self):
         return "mo{0}".format(self._id)
@@ -58,11 +61,12 @@ class MemoryObject:
     def dump(self):
         print(str(self))
 
+
 class Memory:
     def __init__(self):
         self._objects = []
 
-    def allocate(self, size, nm = None):
+    def allocate(self, size, nm=None):
         o = MemoryObject(size, nm)
         self._objects.append(o)
         return Pointer(o, 0)

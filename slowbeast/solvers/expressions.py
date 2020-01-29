@@ -3,6 +3,7 @@ from .. ir.value import Value
 from .. domains.concrete import ConcreteDomain
 from .. domains.symbolic import *
 
+
 class ExprManager:
     """
     Takes care of creating (caching and optimizing) expressions.
@@ -13,7 +14,7 @@ class ExprManager:
     def __init__(self):
         self._names = {}
 
-    def Var(self, name, bw = 64):
+    def Var(self, name, bw=64):
         assert isinstance(name, str)
         s = self._names.get(name)
         if s:
@@ -24,7 +25,7 @@ class ExprManager:
         assert s, "No var was created"
         return s
 
-    def freshValue(self, name, bw = 64):
+    def freshValue(self, name, bw=64):
         assert isinstance(name, str)
         s = self._names.get(name)
         while s:
@@ -107,4 +108,3 @@ class ExprManager:
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Ne(a)
         return SymbolicDomain.Ne(self.lift(a), self.lift(b))
-

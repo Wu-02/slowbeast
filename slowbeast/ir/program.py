@@ -27,5 +27,3 @@ class Program:
         for f in self._functions:
             f.dump()
             print('')
-
-

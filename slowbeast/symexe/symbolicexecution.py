@@ -3,6 +3,7 @@ from . executor import Executor as SExecutor
 from . executionstate import SEState
 from .. solvers.solver import Solver
 
+
 class SymbolicExecutor(Interpreter):
     def __init__(self, P):
         self.solver = Solver()
@@ -22,6 +23,3 @@ class SymbolicExecutor(Interpreter):
         s = self.states[-1]
         self.states.pop()
         return s
-
-
-

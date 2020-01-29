@@ -1,6 +1,7 @@
 from .. ir.types import Type
 from .. ir.value import Value, Constant
 
+
 class ConcreteDomain:
     """
     Takes care of handling concrete computations.
@@ -9,7 +10,7 @@ class ConcreteDomain:
     def belongto(*args):
         assert len(args) > 0
         for a in args:
-            assert isinstance(a, Value) 
+            assert isinstance(a, Value)
             if not a.isConstant():
                 return False
         return True
@@ -51,6 +52,3 @@ class ConcreteDomain:
     def Ne(a, b):
         assert ConcreteDomain.belongto(a, b)
         return Constant(a.getValue() != b.getValue(), Type(1))
-
-
-
