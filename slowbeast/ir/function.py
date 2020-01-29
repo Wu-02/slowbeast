@@ -7,6 +7,9 @@ class Function:
         self._bblocks = []
         self._arguments = [Argument() for x in range(0, argNum)]
 
+    def __eq__(self, other):
+        return self._name == other._name
+
     def isUndefined(self):
         return self._bblocks == []
 

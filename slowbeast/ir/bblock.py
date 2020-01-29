@@ -10,6 +10,9 @@ class BBlock:
         if f:
             f.addBBlock(self)
 
+    def __eq__(self, rhs):
+        return self._id == rhs._id
+
     def getID(self):
         return self._id
 

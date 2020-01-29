@@ -2,6 +2,7 @@ from .. ir.value import Constant
 from . memory import Memory
 from . calls import CallStack
 from . errors import ExecutionError
+from copy import deepcopy
 
 
 class ExecutionStatus:
@@ -12,6 +13,12 @@ class ExecutionStatus:
     def __init__(self, st=READY):
         self.value = st
         self.detail = None
+
+    def copy(self):
+        return deepcopy(self)
+
+    def __eq__(self, rhs):
+        return self.value == rhs.value and self.detail == rhs.detail
 
     def getStatus(self):
         return self.value
@@ -50,7 +57,7 @@ class ExecutionStatus:
 
 
 class ExecutionState:
-    def __init__(self, pc, m=Memory(), v={}):
+    def __init__(self, pc=None, m=Memory(), v={}):
         # program counter
         self.pc = pc
         # memory objects
@@ -61,16 +68,29 @@ class ExecutionState:
         # status of the execution: ready/exited/errored/etc.
         self.status = ExecutionStatus()
 
+    def __eq__(self, rhs):
+        if self is rhs:
+            return True
+        assert self.pc is not None and\
+            rhs.pc is not None
+        return self.pc == rhs.pc and\
+            self.status == rhs.status and\
+            self.cs == rhs.cs and\
+            self.memory == rhs.memory
+
     def copyTo(self, rhs):
         assert isinstance(rhs, ExecutionState)
         rhs.pc = self.pc
-        rhs.memory = self.memory
-        rhs.cs = self.cs
-        rhs.status = self.status
+        rhs.memory = self.memory.copy()
+        rhs.cs = self.cs.copy()
+        rhs.status = self.status.copy()
 
     def copy(self):
         new = ExecutionState()
         self.copyTo(new)
+        self.dump()
+        print('copy')
+        new.dump()
         return new
 
     def setError(self, e):
@@ -101,7 +121,7 @@ class ExecutionState:
             return v
         value = self.get(v)
         if value is None:
-            raise ExecutionError("Use of uninitialized variable {0}".format(v))
+            raise ExecutionError("Use of uninitialized/unknown variable {0}".format(v))
         return value
 
     def set(self, what, v):
@@ -109,8 +129,8 @@ class ExecutionState:
 
     def get(self, v):
         ret = self.cs.get(v)
-        if ret is None:
-            ret = self.globals.get(v)
+        #if ret is None:
+        #    ret = self.globals.get(v)
         return ret
 
     def pushCall(self, callsite, fun, argsMapping={}):

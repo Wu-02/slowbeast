@@ -1,4 +1,7 @@
 import sys
+from copy import deepcopy
+from .. util.debugging import dbg
+
 from . errors import ExecutionError
 from .. ir.value import *
 from .. ir.types import OffsetType
@@ -15,6 +18,14 @@ class MemoryObject:
         self.size = size
         self.name = nm  # for debugging
         self.allocation = None  # which allocation allocated this memory
+
+    def copy(self):
+        dbg('FIXME: add COW for memory objects')
+        # FIXME: add copy-on-write
+        return deepcopy(self)
+
+    def __eq__(self, rhs):
+        return self._id == rhs._id
 
     def getID(self):
         return self._id
@@ -66,6 +77,14 @@ class MemoryObject:
 class Memory:
     def __init__(self):
         self._objects = []
+
+    def copy(self):
+        dbg('FIXME: add COW for memory objects')
+        # FIXME: add copy-on-write
+        return deepcopy(self)
+
+    def __eq__(self, rhs):
+        return self._objects == rhs._objects
 
     def allocate(self, size, nm=None):
         o = MemoryObject(size, nm)

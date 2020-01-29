@@ -23,8 +23,9 @@ class Solver:
     def getExprManager(self):
         return self.exprmanager
 
-    def is_sat(self, e):
-        return is_sat(e._expr)
+    def is_sat(self, *e):
+        print(e)
+        return is_sat([x._expr for x in e])
 
     def freshValue(self, name, bw=64):
         """ bw = bitwidth """

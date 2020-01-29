@@ -1,3 +1,6 @@
+from copy import deepcopy
+from .. util.debugging import dbg
+
 
 class CallStack:
     class Frame:
@@ -5,6 +8,11 @@ class CallStack:
             self.function = fun
             self.values = v
             self.returnsite = returnsite
+
+        def __eq__(self, rhs):
+            return self.function == rhs.function and\
+                self.values == rhs.values and\
+                self.returnsite == rhs.returnsite
 
         def set(self, what, v):
             self.values[what] = v
@@ -18,6 +26,14 @@ class CallStack:
 
     def __init__(self, fun=None, v={}):
         self._cs = []
+
+    def copy(self):
+        dbg('FIXME: add COW for CallStack')
+        # FIXME: add copy-on-write
+        return deepcopy(self)
+
+    def __eq__(self, rhs):
+        return self._cs == rhs._cs
 
     def frame(self, idx=-1):
         return self._cs[idx]

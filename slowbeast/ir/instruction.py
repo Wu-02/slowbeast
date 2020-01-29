@@ -37,6 +37,12 @@ class Instruction:
         assert isinstance(self._bblock, BBlock)
         return self._bblock.getNextInstruction(self._bblock_idx)
 
+    def __eq__(self, other):
+        return self.getID() == other.getID()
+
+    def __ne__(self, other):
+        return not(self.__eq__(self, other))
+
     def __hash__(self):
         return self.getID()
 
@@ -113,12 +119,6 @@ class Alloc(ValueInstruction):
 
     def __ge__(self, other):
         return(self.getID() >= other.getID())
-
-    def __eq__(self, other):
-        return (self.getID() == other.getID())
-
-    def __ne__(self, other):
-        return not(self.__eq__(self, other))
 
     # must override the hash since we defined the operators
     def __hash__(self):

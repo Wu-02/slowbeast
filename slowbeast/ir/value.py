@@ -8,6 +8,9 @@ class Value:
         assert isinstance(ty, Type)
         self._type = ty
 
+    def __eq__(self, other):
+        raise NotImplementedError("This must be overriden")
+
     def getType(self):
         return self._type
 
@@ -59,6 +62,9 @@ class Constant(Value):
     def __str__(self):
         return str(self._value)
 
+    def __eq__(self, rhs):
+        return self._value == rhs._value and self.getType() == rhs.getType()
+
 
 class Pointer(Value):
     def __init__(self, obj, off=Constant(0, Type(POINTER_BIT_WIDTH))):
@@ -88,3 +94,9 @@ class Pointer(Value):
 
     def dump(self):
         print(self)
+
+def ConstantBool(c):
+    return Constant(c, BoolType())
+
+ConstantTrue = ConstantBool(True)
+ConstantFalse = ConstantBool(False)

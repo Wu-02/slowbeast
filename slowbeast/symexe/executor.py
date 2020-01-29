@@ -1,6 +1,6 @@
 from .. util.debugging import dbg
 from .. ir.instruction import *
-from .. ir.value import Value
+from .. ir.value import Value, ConstantBool
 from .. interpreter.executor import Executor as ConcreteExecutor
 from .. solvers.expressions import is_symbolic
 
@@ -35,15 +35,16 @@ class Executor(ConcreteExecutor):
                     "Invalid condition: {0}".format(
                         cond.getValue()))
         # FIXME: use implication as in the original King's paper?
-        formula = E.And(state.getPathCondition(), cond)
-        if self.solver.is_sat(formula):
+        constraints = state.getConstraints() + [cond]
+        if self.solver.is_sat(*constraints):
             T = state.copy()
-            T.setPathCondition(formula)
+            T.addConstraint(cond)
 
-        formula = E.And(state.getPathCondition(), E.Not(cond))
-        if self.solver.is_sat(formula):
+        ncond = E.Not(cond)
+        constraints = state.getConstraints() + [ncond]
+        if self.solver.is_sat(*constraints):
             F = state.copy()
-            F.setPathCondition(formula)
+            F.addConstraint(ncond)
 
         if T and F:
             self.stats.forks += 1
@@ -79,9 +80,8 @@ class Executor(ConcreteExecutor):
         if falseBranch:
             falseBranch.pc = instr.getFalseSuccessor().getInstruction(0)
             states.append(falseBranch)
-        else:
-            # at least one must be feasable...
-            raise RuntimeError("Fatal Error: failed forking condition")
+        # at least one must be feasable...
+        assert trueBranch or falseBranch, "Fatal Error: failed forking condition"
 
         return states
 
@@ -121,7 +121,7 @@ class Executor(ConcreteExecutor):
                     "Comparison of pointers implemented only for "
                     "(non-)equality or into the same object")
             else:
-                state.set(instr, Constant(p == Cmp.NE, BoolType()))
+                state.set(instr, ConstantBool(p == Cmp.NE))
                 state.pc = state.pc.getNextInstruction()
                 return [state]
 

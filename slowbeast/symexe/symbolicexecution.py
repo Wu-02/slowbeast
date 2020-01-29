@@ -23,7 +23,6 @@ class SymbolicExecutor(Interpreter):
 
     def getInitialStates(self, entry):
         s = SEState()
-        s.setPathCondition(self.solver.getExprManager().getTrue())
         s.pushCall(None, entry)
         self.stats.queued += 1
         return [s]
