@@ -4,6 +4,7 @@ from . bblock import BBlock  # due to assertions
 from . argument import Argument
 from . program import ProgramElement
 
+
 class Instruction(ProgramElement):
     valuesCounter = 0
 
@@ -162,7 +163,7 @@ class Call(ValueInstruction):
 
     def getReturnValue(self):
         raise NotImplementedError("No return values in funs yet")
-        #return self._function
+        # return self._function
 
     def __str__(self):
         r = "x{0} = call {1}(".format(self.getID(),
@@ -199,7 +200,7 @@ class Print(Instruction):
 
 
 class Assert(Instruction):
-    def __init__(self, cond, msg = None):
+    def __init__(self, cond, msg=None):
         super(Assert, self).__init__([cond, msg])
 
     def getMessage(self):
@@ -218,6 +219,7 @@ class Assert(Instruction):
         if m:
             r += ", \"{0}\"".format(m)
         return r
+
 
 class Assume(Instruction):
     def __init__(self, *operands):

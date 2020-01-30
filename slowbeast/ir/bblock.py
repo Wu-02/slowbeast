@@ -1,5 +1,6 @@
 from . program import ProgramElement
 
+
 class BBlock(ProgramElement):
     valueCounter = 0
 

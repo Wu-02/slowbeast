@@ -40,7 +40,9 @@ class MemoryObject:
         assert off.getValue() == 0, "Writes to relative offset unimplemented"
         assert isinstance(x, Value)
         if x.getByteWidth() > self.getSize():
-            raise ExecutionError("Written value too big for the object. Writing {0} B to {1} B".format(x.getByteWidth(), self.getSize()))
+            raise ExecutionError(
+                "Written value too big for the object. Writing {0} B to {1} B".format(
+                    x.getByteWidth(), self.getSize()))
         self.value = x
 
     def read(self, bts, off=Constant(0, OffsetType)):

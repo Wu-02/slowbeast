@@ -42,7 +42,7 @@ class Function(ProgramElement):
 
         for b in self._bblocks:
             b.dump(2)
-            print("") # newline
+            print("")  # newline
 
         if len(self._bblocks) > 0:
             print("nuf")

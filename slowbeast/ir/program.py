@@ -29,11 +29,13 @@ class Program:
             f.dump()
             print('')
 
+
 class ProgramElement:
     """
     Basic class for all elements of a program (functions, instructions, global values,
     basic blocks). Just anything to which we want to assign any metadata.
     """
+
     def __init__(self):
         """
         Metadata is a list of tuples (key, data).
@@ -49,7 +51,7 @@ class ProgramElement:
         assert isinstance(key, str)
         self._metadata.append((key, value))
 
-    def dump(self, ind = 0):
+    def dump(self, ind=0):
         for k, v in self._metadata:
             print("{0} ; {1} : {2}".format(
                   ''.join([' ' for x in range(0, ind)]),

@@ -1,5 +1,6 @@
 from . program import ProgramElement
 
+
 class Argument(ProgramElement):
     ids = 0
 
