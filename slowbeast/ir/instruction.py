@@ -195,19 +195,25 @@ class Print(Instruction):
 
 
 class Assert(Instruction):
-    def __init__(self, *operands):
-        super(Assert, self).__init__([*operands])
+    def __init__(self, cond, msg = None):
+        super(Assert, self).__init__([cond, msg])
+
+    def getMessage(self):
+        ops = self.getOperands()
+        assert len(ops) <= 2 and len(ops) >= 1
+        if len(ops) == 1:
+            return None
+        return ops[1]
+
+    def getCondition(self):
+        return self.getOperand(0)
 
     def __str__(self):
-        r = 'assert '
-        n = 0
-        for o in self._operands:
-            if n > 0:
-                r += ' && '
-            r += o.asValue()
-            n += 1
+        r = 'assert {0}'.format(self.getCondition().asValue())
+        m = self.getMessage()
+        if m:
+            r += ", \"{0}\"".format(m)
         return r
-
 
 class Assume(Instruction):
     def __init__(self, *operands):

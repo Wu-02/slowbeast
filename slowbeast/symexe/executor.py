@@ -243,21 +243,24 @@ class Executor(ConcreteExecutor):
     def execAssert(self, state, instr):
         assert isinstance(instr, Assert)
         states = []
-        for o in instr.getOperands():
-            v = state.eval(o)
-            assert v.isBool()
-            if v.isConstant():
-                if v.getValue() != True:
-                    state.setError("Assertion failed: {0} is False".format(o))
-                    states.append(state)
-            else:
-                okBranch, errBranch = self.fork(state, v)
-                if okBranch:
-                    okBranch.pc = okBranch.pc.getNextInstruction()
-                    states.append(okBranch)
-                if errBranch:
-                    errBranch.setError("Assertion failed: {0}".format(o))
-                    states.append(errBranch)
+        o = instr.getCondition()
+        msg = instr.getMessage()
+        if not msg:
+            msg = str(o)
+        v = state.eval(o)
+        assert v.isBool()
+        if v.isConstant():
+            if v.getValue() != True:
+                state.setError("Assertion failed: {0}".format(msg))
+                states.append(state)
+        else:
+            okBranch, errBranch = self.fork(state, v)
+            if okBranch:
+                okBranch.pc = okBranch.pc.getNextInstruction()
+                states.append(okBranch)
+            if errBranch:
+                errBranch.setError("Assertion failed: {0}".format(msg))
+                states.append(errBranch)
 
         assert states, "Generated no states"
         return states

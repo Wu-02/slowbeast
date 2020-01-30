@@ -6,7 +6,6 @@ from slowbeast.ir.instruction import *
 from slowbeast.ir.function import *
 
 from slowbeast.symexe.symbolicexecution import *
-
 from slowbeast.util.debugging import *
 
 if __name__ == "__main__":

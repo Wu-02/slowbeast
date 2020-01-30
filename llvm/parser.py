@@ -100,6 +100,10 @@ class Parser:
         self._mapping = {}
         self._metadata_opts = ['llvm']
 
+        # FIXME: get rid of this once we support
+        # parsing the stuff inside __assert_fail
+        self._special_funs = ['__assert_fail']
+
     def getOperand(self, op):
         ret = self._mapping.get(op)
         if not ret:
@@ -111,6 +115,9 @@ class Parser:
     def getBBlock(self, llvmb):
         return self._bblocks[llvmb]
 
+    def getFun(self, fn):
+        return self.program.getFunction(fn)
+
     def _addMapping(self, llinst, sbinst):
         if 'llvm' in self._metadata_opts:
             sbinst.addMetadata('llvm', str(llinst))
@@ -120,7 +127,13 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Array allocations not supported yet"
 
-        A = Alloc(getConstantInt(operands[0]))
+        tySize = getTypeSize(inst.type.element_type)
+        assert tySize and tySize > 0, "Invalid type size"
+        num = getConstantInt(operands[0])
+        assert num and num.getValue() > 0, "Invalid number of elements of allocation"
+
+        # XXX: shouldn't we use SizeType instead?
+        A = Alloc(Constant(tySize*num.getValue(), Type(num.getBitWidth())))
         self._addMapping(inst, A)
         return [A]
 
@@ -201,6 +214,36 @@ class Parser:
         self._addMapping(inst, B)
         return [B]
 
+    def _createSpecialCall(self, inst, fun):
+        if fun == '__assert_fail':
+            A = Assert(ConstantFalse, "assertion failed!")
+            self._addMapping(inst, A)
+            return [A]
+        else:
+            raise NotImplementedError("Unknown special function: {0}".format(fun))
+
+    def _createCall(self, inst):
+        #import pdb
+        #pdb.set_trace()
+        operands = getLLVMOperands(inst)
+        fun = operands[-1].name
+        if not fun:
+            raise NotImplementedError("Unsupported call: {0}".format(inst))
+
+        if fun in self._special_funs:
+            return self._createSpecialCall(inst, fun)
+
+        F = self.getFun(fun)
+        if not F:
+            raise NotImplementedError("Unknown function: {0}".format(fun))
+
+        return []
+
+    def _createUnreachable(self, inst):
+        A = Assert(ConstantFalse, "unreachable")
+        self._addMapping(inst, A)
+        return [A]
+
     def _parse_instruction(self, inst):
         if inst.opcode == 'alloca':
             return self._createAlloca(inst)
@@ -214,6 +257,10 @@ class Parser:
             return self._createCmp(inst)
         elif inst.opcode == 'br':
             return self._createBranch(inst)
+        elif inst.opcode == 'call':
+            return self._createCall(inst)
+        elif inst.opcode == 'unreachable':
+            return self._createUnreachable(inst)
         elif inst.opcode == 'add' or\
              inst.opcode == 'sub':
             return self._createArith(inst, inst.opcode)
@@ -241,8 +288,7 @@ class Parser:
         assert B.getFunction() is F
 
     def _parse_fun(self, f):
-        F = Function(f.name)
-        self.program.addFun(F)
+        F = self.getFun(f.name)
 
         # first create blocks as these can be operands to br instructions
         for b in f.blocks:
@@ -254,6 +300,11 @@ class Parser:
     def _parse_module(self, m):
         #XXX globals!
 
+        # create the function at first,
+        # because they may be operands of calls
+        for f in m.functions:
+            self.program.addFun(Function(f.name))
+
         for f in m.functions:
             self._parse_fun(f)
 
@@ -261,7 +312,7 @@ class Parser:
         m = _get_llvm_module(path)
         self._parse_module(m)
 
-        # FIXME: set entry
+        # FIXME: set entry here?
 
         return self.program
 
