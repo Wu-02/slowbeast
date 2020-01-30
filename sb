@@ -1,0 +1,43 @@
+#!/usr/bin/python3
+
+from llvm.parser import Parser
+import argparse
+import sys
+
+from slowbeast.symexe.symbolicexecution import SymbolicExecutor
+from slowbeast.util.debugging import set_debugging
+
+
+
+def createArgParser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('prog', nargs=1, help='program to be analyzed')
+    parser.add_argument('-dbg', action='store_true', help='write debugging messages')
+    parser.add_argument('-entry', default='main', help='entry function')
+
+    return parser
+
+if __name__ == "__main__":
+    cmd = createArgParser()
+    args = cmd.parse_args()
+
+    parser = Parser()
+    P = parser.parse(args.prog[0])
+    if not P:
+        sys.exit(1)
+
+    if args.dbg:
+        set_debugging()
+        P.dump()
+
+    entry = P.getFunction(args.entry)
+    if not entry:
+        print("Entry function not found: {0}".format(args.entry))
+        sys.exit(1)
+
+    P.setEntry(entry)
+    SE = SymbolicExecutor(P)
+    SE.run()
+
+    sys.exit(0)
+
