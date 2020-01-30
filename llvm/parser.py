@@ -102,7 +102,8 @@ class Parser:
 
         # FIXME: get rid of this once we support
         # parsing the stuff inside __assert_fail
-        self._special_funs = ['__assert_fail']
+        self._special_funs = ['__assert_fail',
+                              '__slowbeast_print']
 
     def getOperand(self, op):
         ret = self._mapping.get(op)
@@ -219,6 +220,10 @@ class Parser:
             A = Assert(ConstantFalse, "assertion failed!")
             self._addMapping(inst, A)
             return [A]
+        elif fun == '__slowbeast_print':
+            P = Print(*map(lambda x: self.getOperand(x), getLLVMOperands(inst)[:-1]))
+            self._addMapping(inst, P)
+            return [P]
         else:
             raise NotImplementedError("Unknown special function: {0}".format(fun))
 
