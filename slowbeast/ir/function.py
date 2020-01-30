@@ -1,8 +1,10 @@
 from . argument import Argument
+from . program import ProgramElement
 
 
-class Function:
+class Function(ProgramElement):
     def __init__(self, name, argNum=0):
+        super(Function, self).__init__()
         self._name = name
         self._bblocks = []
         self._arguments = [Argument() for x in range(0, argNum)]
@@ -32,6 +34,7 @@ class Function:
         return self._bblocks[idx]
 
     def dump(self):
+        super(Function, self).dump()
         print("fun",
               '{0}({1})'.format(self._name,
                                 ', '.join(map(lambda x: x.asValue(),
@@ -39,7 +42,8 @@ class Function:
 
         for b in self._bblocks:
             b.dump(2)
-        print("nuf")
+        if len(self._bblocks) > 0:
+            print("nuf")
 
     def asValue(self):
         return self._name

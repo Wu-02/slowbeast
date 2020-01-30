@@ -1,8 +1,10 @@
+from . program import ProgramElement
 
-class BBlock:
+class BBlock(ProgramElement):
     valueCounter = 0
 
     def __init__(self, f=None):
+        super(BBlock, self).__init__()
         BBlock.valueCounter += 1
         self._id = BBlock.valueCounter
         self._instructions = []
@@ -35,11 +37,15 @@ class BBlock:
     def setFunction(self, f):
         self._function = f
 
+    def getFunction(self):
+        return self._function
+
     def asValue(self):
         return 'bblock {0}'.format(self.getID())
 
     def dump(self, ind=0):
-        print('\n', ''.join([' ' for x in range(0, ind)]),
-              "; bblock", self.getID())
+        super(BBlock, self).dump(ind)
+        print(''.join([' ' for x in range(0, ind)]),
+              "; [bblock {0}]".format(self.getID()))
         for i in self._instructions:
             i.dump(ind)

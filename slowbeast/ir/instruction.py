@@ -2,12 +2,13 @@
 
 from . bblock import BBlock  # due to assertions
 from . argument import Argument
+from . program import ProgramElement
 
-
-class Instruction:
+class Instruction(ProgramElement):
     valuesCounter = 0
 
     def __init__(self, ops=[]):
+        super(Instruction, self).__init__()
         Instruction.valuesCounter += 1
         self._id = Instruction.valuesCounter
         self._operands = ops
@@ -29,6 +30,7 @@ class Instruction:
         self._bblock_idx = idx
 
     def dump(self, ind=0):
+        super(Instruction, self).dump(ind)
         print(''.join([' ' for x in range(0, ind)]), self)
 
     def getNextInstruction(self):
