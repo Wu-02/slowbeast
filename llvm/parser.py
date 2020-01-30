@@ -204,8 +204,10 @@ class Parser:
         operands = getLLVMOperands(inst)
         if len(operands) == 3:
             cond = self.getOperand(operands[0])
-            b1 = self.getBBlock(operands[1])
-            b2 = self.getBBlock(operands[2])
+            # XXX: whaat? for some reason, the bindings return
+            # the false branch as first
+            b1 = self.getBBlock(operands[2])
+            b2 = self.getBBlock(operands[1])
             B = Branch(cond, b1, b2)
         elif len(operands) == 1:
             b1 = self.getBBlock(operands[0])
@@ -221,7 +223,7 @@ class Parser:
             self._addMapping(inst, A)
             return [A]
         elif fun == '__slowbeast_print':
-            P = Print(*map(lambda x: self.getOperand(x), getLLVMOperands(inst)[:-1]))
+            P = Print(*[self.getOperand(x) for x in getLLVMOperands(inst)[:-1]])
             self._addMapping(inst, P)
             return [P]
         else:
@@ -232,6 +234,7 @@ class Parser:
         #pdb.set_trace()
         operands = getLLVMOperands(inst)
         fun = operands[-1].name
+        print(fun)
         if not fun:
             raise NotImplementedError("Unsupported call: {0}".format(inst))
 
@@ -242,7 +245,9 @@ class Parser:
         if not F:
             raise NotImplementedError("Unknown function: {0}".format(fun))
 
-        return []
+        C = Call(F, *[self.getOperand(x) for x in getLLVMOperands(inst)[:-1]])
+        self._addMapping(inst, C)
+        return [C]
 
     def _createUnreachable(self, inst):
         A = Assert(ConstantFalse, "unreachable")
@@ -284,7 +289,9 @@ class Parser:
             # the result of parsing one llvm instruction
             # may be several slowbeast instructions
             try:
-                for I in self._parse_instruction(inst):
+                instrs = self._parse_instruction(inst)
+                assert instrs, "No instruction was created"
+                for I in instrs:
                     B.append(I)
             except Exception as e:
                 print_stderr("Failed parsing llvm while parsing: {0}".format(inst), color="RED")

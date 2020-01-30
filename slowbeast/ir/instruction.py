@@ -25,6 +25,9 @@ class Instruction(ProgramElement):
     def getOperands(self):
         return self._operands
 
+    def getOperandsNum(self):
+        return len(self._operands)
+
     def setBasicBlock(self, bb, idx):
         self._bblock = bb
         self._bblock_idx = idx
@@ -158,7 +161,8 @@ class Call(ValueInstruction):
         return self._function
 
     def getReturnValue(self):
-        return self._function
+        raise NotImplementedError("No return values in funs yet")
+        #return self._function
 
     def __str__(self):
         r = "x{0} = call {1}(".format(self.getID(),

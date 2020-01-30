@@ -72,7 +72,7 @@ class Executor(ConcreteExecutor):
         if c.isConstant():
             cval = E.Ne(c, E.Constant(0, c.getType().getBitWidth()))
         else:
-            # It already is an boolean expression
+            # It already is a boolean expression
             assert is_symbolic(c)
             assert c.getType().isBool()
             cval = c
