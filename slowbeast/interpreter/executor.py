@@ -140,7 +140,8 @@ class Executor:
         return [state]
 
     def execUnaryOp(self, state, instr):
-        raise NotImplementedError("Concrete executor does not implement unary op yet")
+        raise NotImplementedError(
+            "Concrete executor does not implement unary op yet")
 
     def execBinaryOp(self, state, instr):
         assert isinstance(instr, BinaryOperation)

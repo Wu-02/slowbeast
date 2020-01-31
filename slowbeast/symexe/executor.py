@@ -121,7 +121,13 @@ class Executor(ConcreteExecutor):
         E = self.solver.getExprManager()
         p = instr.getPredicate()
         if mo1.getID() == mo2.getID():
-            state.set(instr, self.cmpValues(p, p1.getOffset(), p2.getOffset(), instr.isUnsigned()))
+            state.set(
+                instr,
+                self.cmpValues(
+                    p,
+                    p1.getOffset(),
+                    p2.getOffset(),
+                    instr.isUnsigned()))
             state.pc = state.pc.getNextInstruction()
             return [state]
         else:
@@ -235,7 +241,8 @@ class Executor(ConcreteExecutor):
             bw = instr.getBitWidth()
             r = E.SExt(op1, bw)
         else:
-            raise NotImplementedError("Unary instruction not implemented: {0}".format(instr))
+            raise NotImplementedError(
+                "Unary instruction not implemented: {0}".format(instr))
 
         state.set(instr, r)
         state.pc = state.pc.getNextInstruction()

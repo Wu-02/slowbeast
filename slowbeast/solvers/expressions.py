@@ -105,32 +105,32 @@ class ExprManager:
     ##
     # Relational operators
 
-    def Le(self, a, b, unsigned = False):
+    def Le(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Le(a, b, unsigned)
         return SymbolicDomain.Le(self.lift(a), self.lift(b), unsigned)
 
-    def Lt(self, a, b, unsigned = False):
+    def Lt(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Lt(a, b, unsigned)
         return SymbolicDomain.Lt(self.lift(a), self.lift(b), unsigned)
 
-    def Ge(self, a, b, unsigned = False):
+    def Ge(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Ge(a, b, unsigned)
         return SymbolicDomain.Ge(self.lift(a), self.lift(b), unsigned)
 
-    def Gt(self, a, b, unsigned = False):
+    def Gt(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Gt(a, b, unsigned)
         return SymbolicDomain.Gt(self.lift(a), self.lift(b), unsigned)
 
-    def Eq(self, a, b, unsigned = False):
+    def Eq(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Eq(a, b, unsigned)
         return SymbolicDomain.Eq(self.lift(a), self.lift(b), unsigned)
 
-    def Ne(self, a, b, unsigned = False):
+    def Ne(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Ne(a, b, unsigned)
         return SymbolicDomain.Ne(self.lift(a), self.lift(b), unsigned)

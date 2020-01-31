@@ -129,14 +129,25 @@ class BVSymbolicDomain:
         assert b.isConstant()
         assert a.getBitWidth() <= b.getValue(), "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
-        return Expr(BVZExt(b.getValue() - a.getBitWidth(), castToBV(a)), Type(b.getValue()))
+        return Expr(
+            BVZExt(
+                b.getValue() -
+                a.getBitWidth(),
+                castToBV(a)),
+            Type(
+                b.getValue()))
 
     def SExt(a, b):
         assert BVSymbolicDomain.belongto(a)
         assert b.isConstant()
         assert a.getBitWidth() <= b.getValue(), "Invalid sext argument"
-        return Expr(BVSExt(b.getValue() - a.getBitWidth(), castToBV(a)), Type(b.getValue()))
-
+        return Expr(
+            BVSExt(
+                b.getValue() -
+                a.getBitWidth(),
+                castToBV(a)),
+            Type(
+                b.getValue()))
 
     def getTrue():
         return Expr(TRUE(), BoolType())
@@ -147,35 +158,35 @@ class BVSymbolicDomain:
     ##
     # Relational operators
 
-    def Le(a, b, unsigned = False):
+    def Le(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if unsigned:
             return Expr(BVULE(a._expr, b._expr), BoolType())
         return Expr(a._expr <= b._expr, BoolType())
 
-    def Lt(a, b, unsigned = False):
+    def Lt(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if unsigned:
             return Expr(BVULT(a._expr, b._expr), BoolType())
         return Expr(a._expr < b._expr, BoolType())
 
-    def Ge(a, b, unsigned = False):
+    def Ge(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if unsigned:
             return Expr(BVUGE(a._expr, b._expr), BoolType())
         return Expr(a._expr >= b._expr, BoolType())
 
-    def Gt(a, b, unsigned = False):
+    def Gt(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if unsigned:
             return Expr(BVUGT(a._expr, b._expr), BoolType())
         return Expr(a._expr > b._expr, BoolType())
 
-    def Eq(a, b, unsigned = False):
+    def Eq(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr == b._expr, BoolType())
 
-    def Ne(a, b, unsigned = False):
+    def Ne(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr != b._expr, BoolType())
 

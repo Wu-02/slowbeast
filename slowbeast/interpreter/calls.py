@@ -1,6 +1,7 @@
 from copy import copy, deepcopy
 from .. util.debugging import dbg
 
+
 class CallStack:
     class Frame:
         def __init__(self, fun, returnsite=None, v={}):

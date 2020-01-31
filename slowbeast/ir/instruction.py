@@ -4,6 +4,7 @@ from . bblock import BBlock  # due to assertions
 from . argument import Argument
 from . program import ProgramElement
 
+
 class Instruction(ProgramElement):
 
     def __init__(self, ops=[]):
@@ -46,13 +47,13 @@ class Instruction(ProgramElement):
         return self._bblock.getNextInstruction(self._bblock_idx)
 
    # Defined in super class
-   #def __eq__(self, other):
+   # def __eq__(self, other):
    #    return self.getID() == other.getID()
 
-   #def __ne__(self, other):
+   # def __ne__(self, other):
    #    return not(self.__eq__(self, other))
 
-   #def __hash__(self):
+   # def __hash__(self):
    #    return self.getID()
 
 
@@ -131,7 +132,7 @@ class Alloc(ValueInstruction):
 
     # must override the hash since we defined the operators
     # defined in super class
-    #def __hash__(self):
+    # def __hash__(self):
     #    return self.getID()
 
 
@@ -248,7 +249,7 @@ class Cmp(ValueInstruction):
     EQ = 5
     NE = 6
 
-    def predicateStr(p, u = False):
+    def predicateStr(p, u=False):
         if p == Cmp.LE:
             s = '<='
         elif p == Cmp.LT:
@@ -269,7 +270,7 @@ class Cmp(ValueInstruction):
 
         return s
 
-    def __init__(self, p, val1, val2, unsgn = False):
+    def __init__(self, p, val1, val2, unsgn=False):
         super(Cmp, self).__init__([val1, val2])
         self._predicate = p
         self._unsigned = unsgn
@@ -286,8 +287,12 @@ class Cmp(ValueInstruction):
 
     def __str__(self):
         return "{0} = cmp {1} {2} {3}".format(
-            self.asValue(), self.getOperand(0).asValue(), Cmp.predicateStr(
-                self.getPredicate(), self.isUnsigned()), self.getOperand(1).asValue())
+            self.asValue(),
+            self.getOperand(0).asValue(),
+            Cmp.predicateStr(
+                self.getPredicate(),
+                self.isUnsigned()),
+            self.getOperand(1).asValue())
 
 
 class UnaryOperation(ValueInstruction):
@@ -306,6 +311,7 @@ class UnaryOperation(ValueInstruction):
     def getOperation(self):
         return self._op
 
+
 class Extend(UnaryOperation):
     def __init__(self, op, a, bw):
         assert bw.isConstant(), "Invalid bitwidth to extend"
@@ -322,8 +328,9 @@ class ZExt(Extend):
 
     def __str__(self):
         return "x{0} = zext {1} to {2}b".format(self.getID(),
-                                         self.getOperand(0).asValue(),
-                                         self.getBitWidth())
+                                                self.getOperand(0).asValue(),
+                                                self.getBitWidth())
+
 
 class SExt(Extend):
     def __init__(self, a, bw):
@@ -331,8 +338,8 @@ class SExt(Extend):
 
     def __str__(self):
         return "x{0} = sext {1} to {2}b".format(self.getID(),
-                                         self.getOperand(0).asValue(),
-                                         self.getBitWidth())
+                                                self.getOperand(0).asValue(),
+                                                self.getBitWidth())
 
 
 class BinaryOperation(ValueInstruction):
