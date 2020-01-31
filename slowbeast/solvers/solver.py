@@ -2,10 +2,13 @@ from . expressions import ExprManager
 from .. domains.symbolic import _use_z3
 if _use_z3:
     from z3 import Solver as Z3Solver
+    from z3 import sat, unsat
 
     def is_sat(*args):
         s = Z3Solver()
-        return s.check(*args)
+        r = s.check(*args)
+        assert r == sat or r == unsat, "Unhandled solver failure!"
+        return r == sat
 else:
     from pysmt.shortcuts import is_sat
 

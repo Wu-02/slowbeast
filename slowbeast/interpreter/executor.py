@@ -252,7 +252,8 @@ class Executor:
         TODO: exceptional termination (like assert?)
         """
         # debug print
-        dbg("{0}: {1}".format(instr.getFunction().getName(), str(instr)))
+        dbg("({2}) {0}: {1}".format(
+            instr.getFunction().getName(), str(instr), state.getID()))
 
         # TODO: add an opcode to instruction and check only the opcode
         states = None

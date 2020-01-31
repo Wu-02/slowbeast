@@ -26,10 +26,17 @@ class ConstraintsSet:
 
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
+    statesCounter = 0
 
     def __init__(self, pc=None):
         ExecutionState.__init__(self, pc)
         self.constraints = ConstraintsSet()
+
+        SEState.statesCounter += 1
+        self._id = SEState.statesCounter
+
+    def getID(self):
+        return self._id
 
     def __eq__(self, rhs):
         return super(SEState, self).__eq__(rhs) and\
