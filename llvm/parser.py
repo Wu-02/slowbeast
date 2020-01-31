@@ -33,13 +33,27 @@ def _getBitWidth(ty):
     return _getInt(ty[1:])
 
 def getTypeSizeInBits(ty):
-    if ty.is_pointer:
+    if not isinstance(ty, str) and ty.is_pointer:
         #FIXME: get it from target triple
         return 64
 
+    sty = str(ty)
+    if sty.startswith('['):
+        print()
+        parts = sty[1:-1].split()
+        print(parts)
+        if len(parts) != 3 or parts[1] != 'x':
+            return None
+        elemType = getTypeSizeInBits(parts[2])
+        num = _getInt(parts[0])
+        print(elemType)
+        print(num)
+        if elemType and num:
+            return elemType * num
+        return None
     else:
-        assert '*' not in str(ty)
-        return _getBitWidth(str(ty))
+        assert '*' not in sty
+        return _getBitWidth(sty)
 
 def getTypeSize(ty):
     ts = getTypeSizeInBits(ty)
