@@ -220,6 +220,23 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.getNextInstruction()
         return [state]
 
+    def execUnaryOp(self, state, instr):
+        assert isinstance(instr, UnaryOperation)
+        op1 = state.eval(instr.getOperand(0))
+        E = self.solver.getExprManager()
+        if instr.getOperation() == UnaryOperation.ZEXT:
+            bw = instr.getBitWidth()
+            r = E.ZExt(op1, bw)
+        elif instr.getOperation() == UnaryOperation.SEXT:
+            bw = instr.getBitWidth()
+            r = E.SExt(op1, bw)
+        else:
+            raise NotImplementedError("Unary instruction not implemented: {0}".format(instr))
+
+        state.set(instr, r)
+        state.pc = state.pc.getNextInstruction()
+        return [state]
+
     def execAssume(self, state, instr):
         assert isinstance(instr, Assume)
         for o in instr.getOperands():

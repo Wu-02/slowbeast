@@ -3,11 +3,13 @@ from .. ir.types import Type, BoolType
 
 _use_z3 = True
 if _use_z3:
-    from z3 import Or, And, Not, BoolVal, BitVec, BitVecVal
+    from z3 import If, Or, And, Not, BoolVal, BitVec, BitVecVal
     from z3 import ULT as BVULT
     from z3 import ULE as BVULE
     from z3 import UGT as BVUGT
     from z3 import UGE as BVUGE
+    from z3 import ZeroExt as BVZExt
+    from z3 import SignExt as BVSExt
 
     def TRUE():
         return BoolVal(True)
@@ -21,9 +23,15 @@ if _use_z3:
     def bv_const(v, bw):
         return BitVecVal(v, bw)
 
+    def castToBV(b):
+        if not b.isBool():
+            return b._expr
+        return If(b._expr, bv_const(1, 1), bv_const(0, 1))
+
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
     from pysmt.shortcuts import BVULT, BVULE, BVUGT, BVUGE
+    from pysmt.shortcuts import BVZext, BVSext
     from pysmt.typing import BVType
 
     def bv(name, bw):
@@ -116,6 +124,20 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a)
         return Expr(Not(a._expr), BoolType())
 
+    def ZExt(a, b):
+        assert BVSymbolicDomain.belongto(a)
+        assert b.isConstant()
+        assert a.getBitWidth() <= b.getValue(), "Invalid zext argument"
+        # BVZExt takes only 'increase' of the bitwidth
+        return Expr(BVZExt(b.getValue() - a.getBitWidth(), castToBV(a)), Type(b.getValue()))
+
+    def SExt(a, b):
+        assert BVSymbolicDomain.belongto(a)
+        assert b.isConstant()
+        assert a.getBitWidth() <= b.getValue(), "Invalid sext argument"
+        return Expr(BVSExt(b.getValue() - a.getBitWidth(), castToBV(a)), Type(b.getValue()))
+
+
     def getTrue():
         return Expr(TRUE(), BoolType())
 
@@ -155,6 +177,8 @@ class BVSymbolicDomain:
 
     def Ne(a, b, unsigned = False):
         assert BVSymbolicDomain.belongto(a, b)
+        print(a._expr, b._expr, unsigned)
+        print(a._expr.sort(), b._expr.sort())
         return Expr(a._expr != b._expr, BoolType())
 
     ##

@@ -248,7 +248,7 @@ class Cmp(ValueInstruction):
     EQ = 5
     NE = 6
 
-    def predicateStr(p):
+    def predicateStr(p, u = False):
         if p == Cmp.LE:
             s = '<='
         elif p == Cmp.LT:
@@ -292,10 +292,47 @@ class Cmp(ValueInstruction):
 
 class UnaryOperation(ValueInstruction):
     NEG = 1
+    ZEXT = 2
+    SEXT = 3
+
+    def __check(op):
+        assert op >= UnaryOperation.NEG and op <= UnaryOperation.SEXT
 
     def __init__(self, op, a):
         super(UnaryOperation, self).__init__([a])
+        UnaryOperation.__check(op)
         self._op = op
+
+    def getOperation(self):
+        return self._op
+
+class Extend(UnaryOperation):
+    def __init__(self, op, a, bw):
+        assert bw.isConstant(), "Invalid bitwidth to extend"
+        super(Extend, self).__init__(op, a)
+        self._bw = bw
+
+    def getBitWidth(self):
+        return self._bw
+
+
+class ZExt(Extend):
+    def __init__(self, a, bw):
+        super(ZExt, self).__init__(UnaryOperation.ZEXT, a, bw)
+
+    def __str__(self):
+        return "x{0} = zext {1} to {2}b".format(self.getID(),
+                                         self.getOperand(0).asValue(),
+                                         self.getBitWidth())
+
+class SExt(Extend):
+    def __init__(self, a, bw):
+        super(SExt, self).__init__(UnaryOperation.ZEXT, a, bw)
+
+    def __str__(self):
+        return "x{0} = sext {1} to {2}b".format(self.getID(),
+                                         self.getOperand(0).asValue(),
+                                         self.getBitWidth())
 
 
 class BinaryOperation(ValueInstruction):

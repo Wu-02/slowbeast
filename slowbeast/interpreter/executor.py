@@ -139,6 +139,9 @@ class Executor:
 
         return [state]
 
+    def execUnaryOp(self, state, instr):
+        raise NotImplementedError("Concrete executor does not implement unary op yet")
+
     def execBinaryOp(self, state, instr):
         assert isinstance(instr, BinaryOperation)
         op1c = state.eval(instr.getOperand(0))
@@ -268,6 +271,8 @@ class Executor:
             states = self.execAssert(state, instr)
         elif isinstance(instr, Assume):
             states = self.execAssume(state, instr)
+        elif isinstance(instr, UnaryOperation):
+            states = self.execUnaryOp(state, instr)
         elif isinstance(instr, BinaryOperation):
             states = self.execBinaryOp(state, instr)
         elif isinstance(instr, Call):

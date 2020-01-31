@@ -38,6 +38,18 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a)
         return Constant(not a.getValue(), BoolType())
 
+    def ZExt(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        assert a.getBitWidth() <= b.getValue(), "Invalid zext argument"
+        return Constant(a.getValue(), Type(b.getValue()))
+
+    def SExt(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        assert a.getBitWidth() <= b.getValue(), "Invalid sext argument"
+        sb = 1 << (b.getValue() - 1)
+        val = (a.getValue() & (sb - 1)) - (a.getValue() & sb)
+        return Constant(val, Type(b.getValue()))
+
     ##
     # Relational operators
     def Le(a, b, unsigned = False):

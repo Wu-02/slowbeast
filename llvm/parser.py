@@ -244,7 +244,6 @@ class Parser:
         #pdb.set_trace()
         operands = getLLVMOperands(inst)
         fun = operands[-1].name
-        print(fun)
         if not fun:
             raise NotImplementedError("Unsupported call: {0}".format(inst))
 
@@ -264,6 +263,14 @@ class Parser:
         self._addMapping(inst, A)
         return [A]
 
+    def _createZExt(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 1, "Invalid number of operands for load"
+        # just behave that there's no ZExt for now
+        zext = ZExt(self.getOperand(operands[0]), Constant(getTypeSizeInBits(inst.type), Type(32)))
+        self._addMapping(inst, zext)
+        return [zext]
+
     def _parse_instruction(self, inst):
         if inst.opcode == 'alloca':
             return self._createAlloca(inst)
@@ -281,6 +288,8 @@ class Parser:
             return self._createCall(inst)
         elif inst.opcode == 'unreachable':
             return self._createUnreachable(inst)
+        elif inst.opcode == 'zext':
+            return self._createZExt(inst)
         elif inst.opcode == 'add' or\
              inst.opcode == 'sub':
             return self._createArith(inst, inst.opcode)
@@ -300,7 +309,7 @@ class Parser:
             # may be several slowbeast instructions
             try:
                 instrs = self._parse_instruction(inst)
-                assert instrs, "No instruction was created"
+                assert inst.opcode in ['zext'] or instrs, "No instruction was created"
                 for I in instrs:
                     B.append(I)
             except Exception as e:

@@ -90,6 +90,18 @@ class ExprManager:
             return ConcreteDomain.Not(a)
         return SymbolicDomain.Not(self.lift(a))
 
+    def ZExt(self, a, b):
+        assert ConcreteDomain.belongto(b), "Invalid zext argument"
+        if ConcreteDomain.belongto(a):
+            return ConcreteDomain.ZExt(a, b)
+        return SymbolicDomain.ZExt(a, b)
+
+    def SExt(self, a, b):
+        assert ConcreteDomain.belongto(b), "Invalid sext argument"
+        if ConcreteDomain.belongto(a):
+            return ConcreteDomain.SExt(a, b)
+        return SymbolicDomain.SExt(a, b)
+
     ##
     # Relational operators
 
