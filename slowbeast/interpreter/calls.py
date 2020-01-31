@@ -1,12 +1,11 @@
-from copy import deepcopy
+from copy import copy, deepcopy
 from .. util.debugging import dbg
-
 
 class CallStack:
     class Frame:
         def __init__(self, fun, returnsite=None, v={}):
             self.function = fun
-            self.values = v
+            self.values = copy(v)
             self.returnsite = returnsite
 
         def __eq__(self, rhs):

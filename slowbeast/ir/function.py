@@ -10,6 +10,7 @@ class Function(ProgramElement):
         self._arguments = [Argument() for x in range(0, argNum)]
 
     def __eq__(self, other):
+        assert self._name != other._name or self.getID() == other.getID()
         return self._name == other._name
 
     def isUndefined(self):

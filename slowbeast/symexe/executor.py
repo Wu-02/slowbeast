@@ -157,8 +157,6 @@ class Executor(ConcreteExecutor):
     def execCall(self, state, instr):
         assert isinstance(instr, Call)
         fun = instr.getCalledFunction()
-        dbg("-- CALL {0} --".format(fun.getName()))
-
         if fun.isUndefined():
             return self.execUndefFun(state, instr, fun)
 

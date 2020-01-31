@@ -302,6 +302,12 @@ class Parser:
     def _parse_fun(self, f):
         F = self.getFun(f.name)
 
+        # add mapping to arguments of the function
+        n = 0
+        for a in f.arguments:
+            self._addMapping(a, F.getArgument(n))
+            n += 1
+
         # first create blocks as these can be operands to br instructions
         for b in f.blocks:
             self._bblocks[b] = BBlock(F)
@@ -315,7 +321,7 @@ class Parser:
         # create the function at first,
         # because they may be operands of calls
         for f in m.functions:
-            self.program.addFun(Function(f.name))
+            self.program.addFun(Function(f.name, len(list(f.arguments))))
 
         for f in m.functions:
             self._parse_fun(f)

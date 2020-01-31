@@ -4,20 +4,13 @@ from . bblock import BBlock  # due to assertions
 from . argument import Argument
 from . program import ProgramElement
 
-
 class Instruction(ProgramElement):
-    valuesCounter = 0
 
     def __init__(self, ops=[]):
         super(Instruction, self).__init__()
-        Instruction.valuesCounter += 1
-        self._id = Instruction.valuesCounter
         self._operands = ops
         self._bblock = None
         self._bblock_idx = None
-
-    def getID(self):
-        return self._id
 
     def getOperand(self, idx):
         assert idx < len(self._operands)
@@ -29,9 +22,18 @@ class Instruction(ProgramElement):
     def getOperandsNum(self):
         return len(self._operands)
 
-    def setBasicBlock(self, bb, idx):
+    def setBBlock(self, bb, idx):
+        assert bb, "None bblock is invalid"
+        assert idx >= 0, "Invalid bblock idx"
         self._bblock = bb
         self._bblock_idx = idx
+
+    def getBBlock(self):
+        return self._bblock
+
+    def getFunction(self):
+        assert self._bblock
+        return self._bblock.getFunction()
 
     def dump(self, ind=0):
         super(Instruction, self).dump(ind)
@@ -43,14 +45,15 @@ class Instruction(ProgramElement):
         assert isinstance(self._bblock, BBlock)
         return self._bblock.getNextInstruction(self._bblock_idx)
 
-    def __eq__(self, other):
-        return self.getID() == other.getID()
+   # Defined in super class
+   #def __eq__(self, other):
+   #    return self.getID() == other.getID()
 
-    def __ne__(self, other):
-        return not(self.__eq__(self, other))
+   #def __ne__(self, other):
+   #    return not(self.__eq__(self, other))
 
-    def __hash__(self):
-        return self.getID()
+   #def __hash__(self):
+   #    return self.getID()
 
 
 class ValueInstruction(Instruction):
@@ -127,8 +130,9 @@ class Alloc(ValueInstruction):
         return(self.getID() >= other.getID())
 
     # must override the hash since we defined the operators
-    def __hash__(self):
-        return self.getID()
+    # defined in super class
+    #def __hash__(self):
+    #    return self.getID()
 
 
 class Branch(Instruction):
@@ -182,7 +186,7 @@ class Return(Instruction):
     def __str__(self):
         if len(self.getOperands()) == 0:
             return "ret"
-        return "ret {0}".format(str(self.getOperand(0)))
+        return "ret {0}".format(str(self.getOperand(0).asValue()))
 
 
 class Print(Instruction):

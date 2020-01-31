@@ -217,19 +217,25 @@ class Executor:
         return [state]
 
     def execRet(self, state, instr):
-        dbg("-- RET --")
         assert isinstance(instr, Return)
-        rs = state.popCall()
-        if len(instr.getOperands()) != 0:  # returns nothing
+
+        # obtain the return value (if any)
+        ret = None
+        if len(instr.getOperands()) != 0:  # returns something
             ret = state.eval(instr.getOperand(0))
-            if rs is None:  # popped the last frame
-                if ret.isPointer():
-                    state.setError(
-                        ExecutionError("Returning a pointer from main function"))
-                    return [state]
-                assert ret.isConstant()
-                state.setExited(ret.getValue())
+
+        # pop the call frame and get the return site
+        rs = state.popCall()
+        if rs is None:  # popped the last frame
+            if ret.isPointer():
+                state.setError(
+                    ExecutionError("Returning a pointer from main function"))
                 return [state]
+            assert ret.isConstant()
+            state.setExited(ret.getValue())
+            return [state]
+
+        if ret:
             state.set(rs, ret)
 
         state.pc = rs.getNextInstruction()
@@ -242,7 +248,7 @@ class Executor:
         TODO: exceptional termination (like assert?)
         """
         # debug print
-        dbg(str(instr))
+        dbg("{0}: {1}".format(instr.getFunction().getName(), str(instr)))
 
         # TODO: add an opcode to instruction and check only the opcode
         states = None

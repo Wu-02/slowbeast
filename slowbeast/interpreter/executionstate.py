@@ -158,6 +158,8 @@ class ExecutionState:
     def dump(self):
         print("---- State ----")
         self.status.dump()
+        print(" -- program counter --")
+        self.pc.dump()
         print("-- Call stack:")
         self.cs.dump()
         print("-- Memory:")
