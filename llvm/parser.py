@@ -46,8 +46,6 @@ def getTypeSizeInBits(ty):
             return None
         elemType = getTypeSizeInBits(parts[2])
         num = _getInt(parts[0])
-        print(elemType)
-        print(num)
         if elemType and num:
             return elemType * num
         return None
@@ -285,6 +283,11 @@ class Parser:
         self._addMapping(inst, zext)
         return [zext]
 
+    def _createGep(self, inst):
+        operands = getLLVMOperands(inst)
+        print([self.getOperand(x) for x in operands])
+        return []
+
     def _parse_instruction(self, inst):
         if inst.opcode == 'alloca':
             return self._createAlloca(inst)
@@ -304,6 +307,8 @@ class Parser:
             return self._createUnreachable(inst)
         elif inst.opcode == 'zext':
             return self._createZExt(inst)
+        elif inst.opcode == 'getelementptr':
+            return self._createGep(inst)
         elif inst.opcode == 'add' or\
              inst.opcode == 'sub':
             return self._createArith(inst, inst.opcode)
