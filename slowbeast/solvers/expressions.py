@@ -144,15 +144,15 @@ class ExprManager:
 
     def Sub(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Sub(a)
+            return ConcreteDomain.Sub(a, b)
         return SymbolicDomain.Sub(self.lift(a), self.lift(b))
 
     def Mul(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Mul(a)
+            return ConcreteDomain.Mul(a, b)
         return SymbolicDomain.Mul(self.lift(a), self.lift(b))
 
     def Div(self, a, b):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Div(a)
+            return ConcreteDomain.Div(a, b)
         return SymbolicDomain.Div(self.lift(a), self.lift(b))
