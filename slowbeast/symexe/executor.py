@@ -94,20 +94,20 @@ class Executor(ConcreteExecutor):
 
         return states
 
-    def cmpValues(self, p, op1, op2):
+    def cmpValues(self, p, op1, op2, unsgn):
         E = self.solver.getExprManager()
         if p == Cmp.LE:
-            return E.Le(op1, op2)
+            return E.Le(op1, op2, unsgn)
         elif p == Cmp.LT:
-            return E.Lt(op1, op2)
+            return E.Lt(op1, op2, unsgn)
         elif p == Cmp.GE:
-            return E.Ge(op1, op2)
+            return E.Ge(op1, op2, unsgn)
         elif p == Cmp.GT:
-            return E.Gt(op1, op2)
+            return E.Gt(op1, op2, unsgn)
         elif p == Cmp.EQ:
-            return E.Eq(op1, op2)
+            return E.Eq(op1, op2, unsgn)
         elif p == Cmp.NE:
-            return E.Ne(op1, op2)
+            return E.Ne(op1, op2, unsgn)
         else:
             raise RuntimeError("Invalid comparison")
 
@@ -121,7 +121,7 @@ class Executor(ConcreteExecutor):
         E = self.solver.getExprManager()
         p = instr.getPredicate()
         if mo1.getID() == mo2.getID():
-            state.set(instr, self.cmpValues(p, p1.getOffset(), p2.getOffset()))
+            state.set(instr, self.cmpValues(p, p1.getOffset(), p2.getOffset(), instr.isUnsigned()))
             state.pc = state.pc.getNextInstruction()
             return [state]
         else:
@@ -148,7 +148,7 @@ class Executor(ConcreteExecutor):
                 raise NotImplementedError(
                     "Comparison of pointer to a constant not implemented")
 
-        x = self.cmpValues(instr.getPredicate(), op1, op2)
+        x = self.cmpValues(instr.getPredicate(), op1, op2, instr.isUnsigned())
         state.set(instr, x)
         state.pc = state.pc.getNextInstruction()
 

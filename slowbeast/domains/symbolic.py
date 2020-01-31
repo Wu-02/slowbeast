@@ -1,8 +1,13 @@
 from .. ir.value import Value, Constant
 from .. ir.types import Type, BoolType
+
 _use_z3 = True
 if _use_z3:
     from z3 import Or, And, Not, BoolVal, BitVec, BitVecVal
+    from z3 import ULT as BVULT
+    from z3 import ULE as BVULE
+    from z3 import UGT as BVUGT
+    from z3 import UGE as BVUGE
 
     def TRUE():
         return BoolVal(True)
@@ -15,8 +20,10 @@ if _use_z3:
 
     def bv_const(v, bw):
         return BitVecVal(v, bw)
+
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
+    from pysmt.shortcuts import BVULT, BVULE, BVUGT, BVUGE
     from pysmt.typing import BVType
 
     def bv(name, bw):
@@ -118,27 +125,35 @@ class BVSymbolicDomain:
     ##
     # Relational operators
 
-    def Le(a, b):
+    def Le(a, b, unsigned = False):
         assert BVSymbolicDomain.belongto(a, b)
+        if unsigned:
+            return Expr(BVULE(a._expr, b._expr), BoolType())
         return Expr(a._expr <= b._expr, BoolType())
 
-    def Lt(a, b):
+    def Lt(a, b, unsigned = False):
         assert BVSymbolicDomain.belongto(a, b)
+        if unsigned:
+            return Expr(BVULT(a._expr, b._expr), BoolType())
         return Expr(a._expr < b._expr, BoolType())
 
-    def Ge(a, b):
+    def Ge(a, b, unsigned = False):
         assert BVSymbolicDomain.belongto(a, b)
+        if unsigned:
+            return Expr(BVUGE(a._expr, b._expr), BoolType())
         return Expr(a._expr >= b._expr, BoolType())
 
-    def Gt(a, b):
+    def Gt(a, b, unsigned = False):
         assert BVSymbolicDomain.belongto(a, b)
+        if unsigned:
+            return Expr(BVUGT(a._expr, b._expr), BoolType())
         return Expr(a._expr > b._expr, BoolType())
 
-    def Eq(a, b):
+    def Eq(a, b, unsigned = False):
         assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr == b._expr, BoolType())
 
-    def Ne(a, b):
+    def Ne(a, b, unsigned = False):
         assert BVSymbolicDomain.belongto(a, b)
         return Expr(a._expr != b._expr, BoolType())
 

@@ -74,24 +74,33 @@ def getLLVMOperands(inst):
 def parseCmp(inst):
     parts = str(inst).split()
     if len(parts) != 7:
-        return None
+        return None, False
     if parts[2] != 'icmp':
-        return None
+        return None, False
 
     if parts[3] == 'eq':
-        return Cmp.EQ
+        return Cmp.EQ, False
     elif parts[3] == 'ne':
-        return Cmp.NE
+        return Cmp.NE, False
     elif parts[3] == 'le':
-        return Cmp.LE
+        return Cmp.LE, False
     elif parts[3] == 'ge':
-        return Cmp.GE
+        return Cmp.GE, False
     elif parts[3] == 'lt':
-        return Cmp.LT
+        return Cmp.LT, False
     elif parts[3] == 'gt':
-        return Cmp.GT
+        return Cmp.GT, False
+    elif parts[3] == 'ule':
+        return Cmp.LE, True
+    elif parts[3] == 'uge':
+        return Cmp.GE, True
+    elif parts[3] == 'ult':
+        return Cmp.LT, True
+    elif parts[3] == 'ugt':
+        return Cmp.GT, True
+ 
     else:
-        return None
+        return None, False
 
 class Parser:
     def __init__(self):
@@ -191,12 +200,13 @@ class Parser:
     def _createCmp(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
-        P = parseCmp(inst)
+        P, is_unsigned = parseCmp(inst)
         if not P:
             raise NotImplementedError("Unsupported cmp instruction: {0}".format(inst))
 
         C = Cmp(P, self.getOperand(operands[0]),
-                self.getOperand(operands[1]))
+                self.getOperand(operands[1]),
+                is_unsigned)
         self._addMapping(inst, C)
         return [C]
 

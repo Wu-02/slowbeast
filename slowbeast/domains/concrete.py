@@ -1,6 +1,11 @@
 from .. ir.types import Type, BoolType
 from .. ir.value import Value, Constant
 
+def getUnsigned(a):
+    """ Get unsigned value for signed in 2's complement """
+    if a >= 0:
+        return a
+    return a.getValue() + (1 << a.getBitWidth())
 
 class ConcreteDomain:
     """
@@ -35,28 +40,40 @@ class ConcreteDomain:
 
     ##
     # Relational operators
-    def Le(a, b):
+    def Le(a, b, unsigned = False):
         assert ConcreteDomain.belongto(a, b)
+        if unsigned:
+            return Constant(getUnsigned(a) <= getUnsigned(b), BoolType())
         return Constant(a.getValue() <= b.getValue(), BoolType())
 
-    def Lt(a, b):
+    def Lt(a, b, unsigned = False):
         assert ConcreteDomain.belongto(a, b)
+        if unsigned:
+            return Constant(getUnsigned(a) < getUnsigned(b), BoolType())
         return Constant(a.getValue() < b.getValue(), BoolType())
 
-    def Ge(a, b):
+    def Ge(a, b, unsigned = False):
         assert ConcreteDomain.belongto(a, b)
+        if unsigned:
+            return Constant(getUnsigned(a) >= getUnsigned(b), BoolType())
         return Constant(a.getValue() >= b.getValue(), BoolType())
 
-    def Gt(a, b):
+    def Gt(a, b, unsigned = False):
         assert ConcreteDomain.belongto(a, b)
+        if unsigned:
+            return Constant(getUnsigned(a) > getUnsigned(b), BoolType())
         return Constant(a.getValue() > b.getValue(), BoolType())
 
-    def Eq(a, b):
+    def Eq(a, b, unsigned = False):
         assert ConcreteDomain.belongto(a, b)
+        if unsigned:
+            return Constant(getUnsigned(a) == getUnsigned(b), BoolType())
         return Constant(a.getValue() == b.getValue(), BoolType())
 
-    def Ne(a, b):
+    def Ne(a, b, unsigned = False):
         assert ConcreteDomain.belongto(a, b)
+        if unsigned:
+            return Constant(getUnsigned(a) != getUnsigned(b), BoolType())
         return Constant(a.getValue() != b.getValue(), BoolType())
 
     ##

@@ -250,21 +250,36 @@ class Cmp(ValueInstruction):
 
     def predicateStr(p):
         if p == Cmp.LE:
-            return '<='
+            s = '<='
         elif p == Cmp.LT:
-            return '<'
+            s = '<'
         elif p == Cmp.GE:
-            return '>='
+            s = '>='
         elif p == Cmp.GT:
-            return '>'
+            s = '>'
         elif p == Cmp.EQ:
-            return '=='
+            s = '=='
         elif p == Cmp.NE:
-            return '!='
+            s = '!='
+        else:
+            raise NotImplementedError("Invalid comparison")
 
-    def __init__(self, p, val1, val2):
+        if u:
+            s += 'u'
+
+        return s
+
+    def __init__(self, p, val1, val2, unsgn = False):
         super(Cmp, self).__init__([val1, val2])
         self._predicate = p
+        self._unsigned = unsgn
+
+    def setUnsigned(self):
+        """ Set that this comparison is unsigned """
+        self._unsigned = True
+
+    def isUnsigned(self):
+        return self._unsigned
 
     def getPredicate(self):
         return self._predicate
@@ -272,7 +287,7 @@ class Cmp(ValueInstruction):
     def __str__(self):
         return "{0} = cmp {1} {2} {3}".format(
             self.asValue(), self.getOperand(0).asValue(), Cmp.predicateStr(
-                self.getPredicate()), self.getOperand(1).asValue())
+                self.getPredicate(), self.isUnsigned()), self.getOperand(1).asValue())
 
 
 class UnaryOperation(ValueInstruction):

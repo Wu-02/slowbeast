@@ -93,35 +93,35 @@ class ExprManager:
     ##
     # Relational operators
 
-    def Le(self, a, b):
+    def Le(self, a, b, unsigned = False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Le(a, b)
-        return SymbolicDomain.Le(self.lift(a), self.lift(b))
+            return ConcreteDomain.Le(a, b, unsigned)
+        return SymbolicDomain.Le(self.lift(a), self.lift(b), unsigned)
 
-    def Lt(self, a, b):
+    def Lt(self, a, b, unsigned = False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Lt(a, b)
-        return SymbolicDomain.Lt(self.lift(a), self.lift(b))
+            return ConcreteDomain.Lt(a, b, unsigned)
+        return SymbolicDomain.Lt(self.lift(a), self.lift(b), unsigned)
 
-    def Ge(self, a, b):
+    def Ge(self, a, b, unsigned = False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ge(a, b)
-        return SymbolicDomain.Ge(self.lift(a), self.lift(b))
+            return ConcreteDomain.Ge(a, b, unsigned)
+        return SymbolicDomain.Ge(self.lift(a), self.lift(b), unsigned)
 
-    def Gt(self, a, b):
+    def Gt(self, a, b, unsigned = False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Gt(a, b)
-        return SymbolicDomain.Gt(self.lift(a), self.lift(b))
+            return ConcreteDomain.Gt(a, b, unsigned)
+        return SymbolicDomain.Gt(self.lift(a), self.lift(b), unsigned)
 
-    def Eq(self, a, b):
+    def Eq(self, a, b, unsigned = False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Eq(a, b)
-        return SymbolicDomain.Eq(self.lift(a), self.lift(b))
+            return ConcreteDomain.Eq(a, b, unsigned)
+        return SymbolicDomain.Eq(self.lift(a), self.lift(b), unsigned)
 
-    def Ne(self, a, b):
+    def Ne(self, a, b, unsigned = False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ne(a, b)
-        return SymbolicDomain.Ne(self.lift(a), self.lift(b))
+            return ConcreteDomain.Ne(a, b, unsigned)
+        return SymbolicDomain.Ne(self.lift(a), self.lift(b), unsigned)
 
     ##
     # Artihmetic operations
