@@ -5,7 +5,7 @@ import argparse
 import sys
 
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor
-from slowbeast.util.debugging import set_debugging, print_stdout
+from slowbeast.util.debugging import set_debugging, print_stdout, print_stderr
 
 
 
@@ -64,7 +64,11 @@ if __name__ == "__main__":
     args = cmd.parse_args()
 
     parser = Parser()
-    P = parser.parse(args.prog[0])
+    try:
+        P = parser.parse(args.prog[0])
+    except FileNotFoundError as e:
+        print_stderr(str(e), color="RED")
+        sys.exit(1)
     if not P:
         sys.exit(1)
 
