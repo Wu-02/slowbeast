@@ -73,43 +73,4 @@ class SymbolicExecutor(Interpreter):
             state.dump()
             raise e
 
-        print_stdout(
-            "Executed instructions: {0}".format(
-                self.stats.instructions),
-            color='CYAN')
-        print_stdout(
-            "Executed paths: {0}".format(
-                self.stats.paths),
-            color='CYAN')
-        print_stdout(
-            "Paths that reached exit: {0}".format(
-                self.stats.exited_paths),
-            color='CYAN')
-        print_stdout(
-            "Executed branch instructions: {0}".format(
-                self._executor.stats.branchings),
-            color='CYAN')
-        print_stdout(
-            "Number of forks on branches: {0} (forked on {1}% of branches)".format(
-                self._executor.stats.branch_forks,
-                100 *
-                float(
-                    self._executor.stats.branch_forks) /
-                self._executor.stats.branchings),
-            color='CYAN')
-        # this includes e.g. forks on assertions/memory resolution/etc.
-        print_stdout(
-            "Number of all forks: {0} (from {1} calls ({2}%) to fork())".format(
-                self._executor.stats.forks,
-                self._executor.stats.fork_calls,
-                100 *
-                float(
-                    self._executor.stats.forks) /
-                self._executor.stats.fork_calls),
-            color='CYAN')
-        print_stdout(
-            "Found errors: {0}".format(
-                self.stats.errors),
-            color='CYAN')
-
         return 0

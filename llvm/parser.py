@@ -82,13 +82,13 @@ def parseCmp(inst):
         return Cmp.EQ, False
     elif parts[3] == 'ne':
         return Cmp.NE, False
-    elif parts[3] == 'le':
+    elif parts[3] == 'le' or parts[3] == 'sle':
         return Cmp.LE, False
-    elif parts[3] == 'ge':
+    elif parts[3] == 'ge' or parts[3] == 'sge':
         return Cmp.GE, False
-    elif parts[3] == 'lt':
+    elif parts[3] == 'lt' or parts[3] == 'slt':
         return Cmp.LT, False
-    elif parts[3] == 'gt':
+    elif parts[3] == 'gt' or parts[3] == 'sgt':
         return Cmp.GT, False
     elif parts[3] == 'ule':
         return Cmp.LE, True
@@ -98,7 +98,7 @@ def parseCmp(inst):
         return Cmp.LT, True
     elif parts[3] == 'ugt':
         return Cmp.GT, True
- 
+
     else:
         return None, False
 

@@ -177,8 +177,6 @@ class BVSymbolicDomain:
 
     def Ne(a, b, unsigned = False):
         assert BVSymbolicDomain.belongto(a, b)
-        print(a._expr, b._expr, unsigned)
-        print(a._expr.sort(), b._expr.sort())
         return Expr(a._expr != b._expr, BoolType())
 
     ##

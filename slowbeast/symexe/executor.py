@@ -170,6 +170,10 @@ class Executor(ConcreteExecutor):
     def execUndefFun(self, state, instr, fun):
         # FIXME: function must have a ret type to find out the
         # width of values...
+        if fun.getName() == 'abort':
+            state.setTerminated("Aborted via an abort() call")
+            return [state]
+
         val = self.solver.freshValue(fun.getName(), 32)
         state.set(instr, val)
         state.pc = state.pc.getNextInstruction()

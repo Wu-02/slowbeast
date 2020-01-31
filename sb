@@ -5,7 +5,7 @@ import argparse
 import sys
 
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor
-from slowbeast.util.debugging import set_debugging
+from slowbeast.util.debugging import set_debugging, print_stdout
 
 
 
@@ -16,6 +16,48 @@ def createArgParser():
     parser.add_argument('-entry', default='main', help='entry function')
 
     return parser
+
+def print_stats(engine):
+    print_stdout(
+        "Executed instructions: {0}".format(
+            engine.stats.instructions),
+        color='CYAN')
+    print_stdout(
+        "Executed paths: {0}".format(
+            engine.stats.paths),
+        color='CYAN')
+    print_stdout(
+        "Paths that reached exit: {0}".format(
+            engine.stats.exited_paths),
+        color='CYAN')
+    print_stdout(
+        "Executed branch instructions: {0}".format(
+            engine._executor.stats.branchings),
+        color='CYAN')
+    print_stdout(
+        "Number of forks on branches: {0} (forked on {1}% of branches)".format(
+            engine._executor.stats.branch_forks,
+            100 *
+            float(
+                engine._executor.stats.branch_forks) /
+            engine._executor.stats.branchings),
+        color='CYAN')
+    # this includes e.g. forks on assertions/memory resolution/etc.
+    print_stdout(
+        "Number of all forks: {0} (from {1} calls ({2}%) to fork())".format(
+            engine._executor.stats.forks,
+            engine._executor.stats.fork_calls,
+            100 *
+            float(
+                engine._executor.stats.forks) /
+            engine._executor.stats.fork_calls),
+        color='CYAN')
+    print_stdout(
+        "Found errors: {0}".format(
+            engine.stats.errors),
+        color='CYAN')
+
+
 
 if __name__ == "__main__":
     cmd = createArgParser()
@@ -37,7 +79,12 @@ if __name__ == "__main__":
 
     P.setEntry(entry)
     SE = SymbolicExecutor(P)
-    SE.run()
+    try:
+        SE.run()
+        print_stats(SE)
+    except KeyboardInterrupt:
+        print_stdout("Interrupted...")
+        print_stats(SE)
 
     sys.exit(0)
 
