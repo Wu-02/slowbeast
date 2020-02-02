@@ -286,6 +286,17 @@ class Parser:
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
         print([self.getOperand(x) for x in operands])
+        ty = operands[0].type.element_type
+        elemSize = getTypeSize(ty)
+        n = 0
+        for idx in operands[1:]:
+            print(ty)
+            print(elemSize)
+            c = getConstantInt(idx)
+            assert c, "Not supp"
+            n = c.getValue() * elemSize
+
+        mem = self.getOperand(operands[0])
         return []
 
     def _parse_instruction(self, inst):
