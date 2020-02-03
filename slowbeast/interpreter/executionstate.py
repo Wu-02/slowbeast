@@ -135,14 +135,16 @@ class ExecutionState:
             return v
         value = self.get(v)
         if value is None:
-            raise ExecutionError(
+            raise RuntimeError(
                 "Use of uninitialized/unknown variable {0}".format(v))
         return value
 
     def set(self, what, v):
+        """ Associate a value to a register (in the current stack frame) """
         self.cs.set(what, v)
 
     def get(self, v):
+        """ Get a value from a register (in the current stack frame) """
         ret = self.cs.get(v)
         # if ret is None:
         #    ret = self.globals.get(v)
