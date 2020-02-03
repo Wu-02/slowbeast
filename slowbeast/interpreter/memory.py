@@ -14,7 +14,7 @@ class MemoryObject:
         MemoryObject.ids += 1
         self._id = MemoryObject.ids
 
-        self.value = None  # until we support composite objects, use just 'value'
+        self.values = {}  # until we support composite objects, use just 'value'
         self.size = size
         self.name = nm  # for debugging
         self.allocation = None  # which allocation allocated this memory
@@ -37,37 +37,40 @@ class MemoryObject:
         self.allocation = a
 
     def write(self, x, off=Constant(0, OffsetType)):
-        assert off.getValue() == 0, "Writes to relative offset unimplemented"
+        assert off.isConstant(), "Write to non-constant offset"
         assert isinstance(x, Value)
-        if x.getByteWidth() > self.getSize():
+        offval = off.getValue()
+        if x.getByteWidth() > self.getSize() + offval:
             raise ExecutionError(
-                "Written value too big for the object. Writing {0} B to {1} B".format(
-                    x.getByteWidth(), self.getSize()))
-        self.value = x
+                "Written value too big for the object. Writing {0} B to offset {1} of {2}B object".format(
+                    x.getByteWidth(), off, self.getSize()))
+        self.values[offval] = x
 
     def read(self, bts, off=Constant(0, OffsetType)):
-        assert off.getValue() == 0, "Writes to relative offset unimplemented"
-        if self.value is None:
-            raise ExecutionError("Read from uninitialized variable")
+        assert off.isConstant(), "Read from non-constant offset"
+        offval = off.getValue()
 
-        if self.size < bts:
-            raise ExecutionError("Read {0} bytes from object of size {1}"
-                                 .format(bts, self.size))
-        return self.value
+        if self.getSize() < bts:
+            raise ExecutionError("Read {0}B from object of size {1}B"
+                                 .format(bts, self.getSize()))
+
+        val = self.values.get(offval)
+        if val is None:
+            raise ExecutionError("Read from uninitialized variable or unaligned read (not supp. yet).")
+
+        return val
 
     def __eq__(self, oth):
         return self._id == oth._id
 
     def __str__(self):
-        if hasattr(self.value, 'asValue'):
-            v = self.value.asValue()
-        else:
-            v = self.value
-        return "mo{0} ({1} alloc. by {2}), {3} -> {4}".format(self._id,
-                                                              self.name,
-                                                              self.allocation.asValue() if self.allocation else "unknown",
-                                                              self.size,
-                                                              v)
+        s = "mo{0} ({1}, alloc'd by {2}), size: {3}".format(self._id,
+                                                            self.name if self.name else "no name",
+                                                            self.allocation.asValue() if self.allocation else "unknown",
+                                                            self.getSize())
+        for k, v in self.values.items():
+            s += "\n  {0} -> {1}".format(k, v)
+        return s
 
     def asValue(self):
         return "mo{0}".format(self._id)
