@@ -148,10 +148,10 @@ class Executor(ConcreteExecutor):
             state.set(
                 instr,
                 self.cmpValues(E,
-                    p,
-                    p1.getOffset(),
-                    p2.getOffset(),
-                    instr.isUnsigned()))
+                               p,
+                               p1.getOffset(),
+                               p2.getOffset(),
+                               instr.isUnsigned()))
             state.pc = state.pc.getNextInstruction()
             return [state]
         else:
@@ -178,7 +178,12 @@ class Executor(ConcreteExecutor):
                 raise NotImplementedError(
                     "Comparison of pointer to a constant not implemented")
 
-        x = self.cmpValues(state.getExprManager(), instr.getPredicate(), op1, op2, instr.isUnsigned())
+        x = self.cmpValues(
+            state.getExprManager(),
+            instr.getPredicate(),
+            op1,
+            op2,
+            instr.isUnsigned())
         state.set(instr, x)
         state.pc = state.pc.getNextInstruction()
 
