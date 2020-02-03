@@ -65,7 +65,7 @@ class SymbolicExecutor(Interpreter):
         except ExecutionError as e:
             print_stderr(
                 "Execution error while executing '{0}': {1}".format(
-                    state, str(e)), color='RED')
+                    state.pc, str(e)), color='RED')
             state.dump()
             return -1
         except Exception as e:
