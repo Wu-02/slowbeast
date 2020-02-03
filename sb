@@ -85,6 +85,8 @@ def main():
         print("Entry function not found: {0}".format(args.entry))
         sys.exit(1)
 
+    with open('output/program.txt', 'w') as f:
+        P.dump(f)
     P.setEntry(entry)
     SE = SymbolicExecutor(P, args.se_concretize_nondet)
     try:

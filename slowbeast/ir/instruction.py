@@ -5,6 +5,7 @@ from . argument import Argument
 from . program import ProgramElement
 
 from .. util.debugging import print_highlight
+from sys import stdout
 
 
 class Instruction(ProgramElement):
@@ -38,8 +39,8 @@ class Instruction(ProgramElement):
         assert self._bblock
         return self._bblock.getFunction()
 
-    def dump(self, ind=0, color=True):
-        super(Instruction, self).dump(ind)
+    def dump(self, ind=0, stream=stdout, color=True):
+        super(Instruction, self).dump(ind,stream)
         if color:
             print_highlight(str(self), {"store": "WINE",
                                         "load": "WINE",
@@ -54,9 +55,9 @@ class Instruction(ProgramElement):
                                         "alloc": "WINE",
                                         "bblock": "GREEN",
                                         },
-                            " " * ind)
+                            " " * ind,stream=stream)
         else:
-            print(" " * ind, self)
+            stream.write("{0}{1}\n".format(" " * ind, self))
 
     def getNextInstruction(self):
         assert self._bblock is not None

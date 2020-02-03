@@ -1,5 +1,5 @@
 from . program import ProgramElement
-
+from sys import stdout
 
 class BBlock(ProgramElement):
 
@@ -35,9 +35,8 @@ class BBlock(ProgramElement):
     def asValue(self):
         return 'bblock {0}'.format(self.getID())
 
-    def dump(self, ind=0):
-        super(BBlock, self).dump(ind)
-        print(''.join([' ' for x in range(0, ind)]),
-              "; [bblock {0}]".format(self.getID()))
+    def dump(self, ind=0, stream=stdout):
+        super(BBlock, self).dump(ind,stream)
+        stream.write("{0}; [bblock {1}]".format(" "*ind, self.getID()))
         for i in self._instructions:
-            i.dump(ind)
+            i.dump(ind,stream)
