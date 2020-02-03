@@ -138,21 +138,44 @@ class ExprManager:
     ##
     # Artihmetic operations
     def Add(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Add(a, b)
+        if ConcreteDomain.belongto(a):
+            if a.getValue() == 0:
+                return b
+            if ConcreteDomain.belongto(b):
+                if b.getValue() == 0:
+                    return a
+                return ConcreteDomain.Add(a, b)
         return SymbolicDomain.Add(self.lift(a), self.lift(b))
 
     def Sub(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Sub(a, b)
+        if ConcreteDomain.belongto(b):
+            if b.getValue() == 0:
+                return a
+            if ConcreteDomain.belongto(a):
+                return ConcreteDomain.Sub(a, b)
         return SymbolicDomain.Sub(self.lift(a), self.lift(b))
 
     def Mul(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Mul(a, b)
+        if ConcreteDomain.belongto(a):
+            if a.getValue() == 0:
+                return a
+            elif a.getValue() == 1:
+                return b
+            if ConcreteDomain.belongto(b):
+                if b.getValue() == 0:
+                    return b
+                if b.getValue() == 1:
+                    return a
+                return ConcreteDomain.Mul(a, b)
+        elif ConcreteDomain.belongto(b):
+            if b.getValue() == 1:
+                return a
         return SymbolicDomain.Mul(self.lift(a), self.lift(b))
 
     def Div(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Div(a, b)
+        if ConcreteDomain.belongto(a):
+            if a.getValue() == 0:
+                return a
+            if ConcreteDomain.belongto(b):
+                return ConcreteDomain.Div(a, b)
         return SymbolicDomain.Div(self.lift(a), self.lift(b))
