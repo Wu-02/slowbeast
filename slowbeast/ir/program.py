@@ -1,5 +1,5 @@
-from .. util.debugging import print_stdout
-
+from .. util.debugging import print_stream
+from sys import stdout
 
 class Program:
     def __init__(self):
@@ -26,10 +26,10 @@ class Program:
     def getEntry(self):
         return self._entry
 
-    def dump(self):
+    def dump(self, stream=stdout):
         for f in self._functions:
-            f.dump()
-            print('')
+            f.dump(stream)
+            stream.write('\n')
 
 
 class ProgramElement:
@@ -69,8 +69,9 @@ class ProgramElement:
     def __hash__(self):
         return self._id
 
-    def dump(self, ind=0):
+    def dump(self, ind=0, stream=stdout):
         for k, v in self._metadata:
-            print_stdout("{0} ; {1} : {2}".format(
+            print_stream(stream,
+                         "{0} ; {1} : {2}".format(
                          ''.join([' ' for x in range(0, ind)]),
                          k, v), color="GRAY")
