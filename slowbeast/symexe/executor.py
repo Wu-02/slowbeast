@@ -26,16 +26,15 @@ def addPointerWithConstant(E, op1, op2):
 
 
 class Executor(ConcreteExecutor):
-    def __init__(self, solver, concretize_nondet=False):
+    def __init__(self, concretize_nondet=False):
         super(ConcreteExecutor, self).__init__()
-        self.solver = solver
         self.stats = SEStats()
         self._concretize_nondet = concretize_nondet
 
     def fork(self, state, cond):
         self.stats.fork_calls += 1
 
-        E = self.solver.getExprManager()
+        E = state.getExprManager()
         T, F = None, None
 
         # cond may be constant if the condition is concrete
@@ -50,14 +49,12 @@ class Executor(ConcreteExecutor):
                     "Invalid condition: {0}".format(
                         cond.getValue()))
         # XXX use implication as in the original King's paper?
-        constraints = state.getConstraints() + [cond]
-        if self.solver.is_sat(*constraints):
+        if state.is_sat(cond):
             T = state.copy()
             T.addConstraint(cond)
 
         ncond = E.Not(cond)
-        constraints = state.getConstraints() + [ncond]
-        if self.solver.is_sat(*constraints):
+        if state.is_sat(ncond):
             F = state.copy()
             F.addConstraint(ncond)
 
@@ -70,7 +67,7 @@ class Executor(ConcreteExecutor):
         """ Return a new states where we assume that condition is true.
             Return None if that situation cannot happen
         """
-        E = self.solver.getExprManager()
+        E = state.getExprManager()
 
         if cond.isConstant():
             assert cond.isBool(), "Invalid constant"
@@ -79,8 +76,7 @@ class Executor(ConcreteExecutor):
             else:
                 return None
 
-        constraints = state.getConstraints() + [cond]
-        if self.solver.is_sat(*constraints):
+        if state.is_sat(cond):
             T = state.copy()
             T.addConstraint(cond)
             return T
@@ -92,7 +88,7 @@ class Executor(ConcreteExecutor):
 
         cond = instr.getCondition()
         assert isinstance(cond, ValueInstruction) or cond.isConstant()
-        E = self.solver.getExprManager()
+        E = state.getExprManager()
         c = state.eval(cond)
         assert isinstance(c, Value)
         # solvers make difference between bitvectors and booleans, so we must
@@ -123,8 +119,7 @@ class Executor(ConcreteExecutor):
 
         return states
 
-    def cmpValues(self, p, op1, op2, unsgn):
-        E = self.solver.getExprManager()
+    def cmpValues(self, E, p, op1, op2, unsgn):
         if p == Cmp.LE:
             return E.Le(op1, op2, unsgn)
         elif p == Cmp.LT:
@@ -147,12 +142,12 @@ class Executor(ConcreteExecutor):
             raise NotImplementedError(
                 "Comparison of symbolic pointers unimplemented")
 
-        E = self.solver.getExprManager()
+        E = state.getExprManager()
         p = instr.getPredicate()
         if mo1.getID() == mo2.getID():
             state.set(
                 instr,
-                self.cmpValues(
+                self.cmpValues(E,
                     p,
                     p1.getOffset(),
                     p2.getOffset(),
@@ -183,7 +178,7 @@ class Executor(ConcreteExecutor):
                 raise NotImplementedError(
                     "Comparison of pointer to a constant not implemented")
 
-        x = self.cmpValues(instr.getPredicate(), op1, op2, instr.isUnsigned())
+        x = self.cmpValues(state.getExprManager(), instr.getPredicate(), op1, op2, instr.isUnsigned())
         state.set(instr, x)
         state.pc = state.pc.getNextInstruction()
 
@@ -211,7 +206,7 @@ class Executor(ConcreteExecutor):
         if self._concretize_nondet:
             val = Constant(getrandbits(32), Type(32))
         else:
-            val = self.solver.freshValue(fun.getName(), 32)
+            val = state.getSolver().freshValue(fun.getName(), 32)
         state.set(instr, val)
         state.pc = state.pc.getNextInstruction()
         return [state]
@@ -223,7 +218,7 @@ class Executor(ConcreteExecutor):
         # if one of the operands is a pointer,
         # lift the other to pointer too
         r = None
-        E = self.solver.getExprManager()
+        E = state.getExprManager()
         if op1.isPointer():
             if not op2.isPointer():
                 r = addPointerWithConstant(E, op1, op2)
@@ -257,7 +252,7 @@ class Executor(ConcreteExecutor):
     def execUnaryOp(self, state, instr):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.getOperand(0))
-        E = self.solver.getExprManager()
+        E = state.getExprManager()
         if instr.getOperation() == UnaryOperation.ZEXT:
             bw = instr.getBitWidth()
             r = E.ZExt(op1, bw)
@@ -319,13 +314,13 @@ class Executor(ConcreteExecutor):
         if val.isConstant():
             return val
 
-        return self.solver.toUnique(val, *state.getConstraints())
+        return state.getSolver().toUnique(val, *state.getConstraints())
 
     def concretize(self, state, val):
         if val.isConstant():
             return val
 
-        return self.solver.concretize(val, *state.getConstraints())
+        return state.getSolver().concretize(val, *state.getConstraints())
 
     def execLoad(self, state, instr):
         assert isinstance(instr, Load)
@@ -349,7 +344,7 @@ class Executor(ConcreteExecutor):
         else:
             offset = frm.getOffset()
             offs = list(obj.getOffsets())
-            E = self.solver.getExprManager()
+            E = state.getExprManager()
 
             # FIXME: rework
             states = []

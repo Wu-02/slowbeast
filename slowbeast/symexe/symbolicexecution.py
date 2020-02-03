@@ -24,13 +24,11 @@ class SymbolicExecutor(Interpreter):
             SymbolicExecutor,
             self).__init__(
             P,
-            SExecutor(
-                self.solver,
-                concretize_nondet))
+            SExecutor(concretize_nondet))
         self.stats = Stats()
 
     def getInitialStates(self, entry):
-        s = SEState(None, m=SymbolicMemory(self.solver))
+        s = SEState(None, SymbolicMemory(self.solver), self.solver)
         s.pushCall(None, entry)
         return [s]
 
