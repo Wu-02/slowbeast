@@ -290,9 +290,12 @@ class Parser:
             self._addMapping(inst, A)
             return [A]
         elif fun == '__VERIFIER_assume':
-            A = Assume(self.getOperand(getLLVMOperands()[0]))
+            operands=getLLVMOperands(inst)
+            cond = self.getOperand(operands[0])
+            C = Cmp(Cmp.NE, cond, Constant(0, Type(getTypeSizeInBits(operands[0].type))))
+            A = Assume(C)
             self._addMapping(inst, A)
-            return [A]
+            return [C, A]
         elif fun == '__slowbeast_print':
             P = Print(*[self.getOperand(x) for x in getLLVMOperands(inst)[:-1]])
             self._addMapping(inst, P)
