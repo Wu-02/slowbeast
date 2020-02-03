@@ -84,8 +84,9 @@ class MemoryObject:
     def asValue(self):
         return "mo{0}".format(self._id)
 
-    def dump(self):
-        print(str(self))
+    def dump(self, stream=sys.stdout):
+        stream.write(str(self))
+        stream.write('\n')
 
 
 class Memory:
@@ -115,6 +116,6 @@ class Memory:
     #     raise ExecutionError("Read from uninitialized variable")
     #     return None
 
-    def dump(self):
+    def dump(self, stream=sys.stdout):
         for o in self._objects:
-            o.dump()
+            o.dump(stream)

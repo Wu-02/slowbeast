@@ -3,6 +3,7 @@ from . memory import Memory
 from . calls import CallStack
 from . errors import ExecutionError
 from copy import deepcopy
+from sys import stdout
 
 
 class ExecutionStatus:
@@ -63,8 +64,8 @@ class ExecutionStatus:
             return 'TERMINATED'
         raise RuntimeError("Invalid state status")
 
-    def dump(self):
-        print('status: {0}'.format(str(self)))
+    def dump(self, stream=stdout):
+        stream.write('status: {0}\n'.format(str(self)))
 
 
 class ExecutionState:
@@ -127,6 +128,9 @@ class ExecutionState:
         assert self.exited()
         return self.status.getDetail()
 
+    def getStatus(self):
+        return self.status
+
     def isReady(self):
         return self.status.isReady()
 
@@ -157,12 +161,12 @@ class ExecutionState:
     def popCall(self):
         return self.cs.pop()
 
-    def dump(self):
-        print("---- State ----")
-        self.status.dump()
-        print(" -- program counter --")
-        self.pc.dump()
-        print("-- Call stack:")
-        self.cs.dump()
-        print("-- Memory:")
-        self.memory.dump()
+    def dump(self, stream=stdout):
+        stream.write("---- State ----\n")
+        self.status.dump(stream)
+        stream.write(" -- program counter --\n")
+        stream.write('{0}\n'.format(self.pc))
+        stream.write("-- Call stack:\n")
+        self.cs.dump(stream)
+        stream.write("-- Memory:\n")
+        self.memory.dump(stream)

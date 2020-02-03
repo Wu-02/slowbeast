@@ -2,7 +2,7 @@ from .. interpreter.executionstate import ExecutionState
 from .. util.debugging import dbg, warn, FIXME
 from . memory import SymbolicMemory
 from copy import deepcopy, copy
-
+from sys import stdout
 
 class ConstraintsSet:
     def __init__(self, C=[]):
@@ -83,7 +83,8 @@ class SEState(ExecutionState):
     def getWarning(self, msg):
         return self._warnings
 
-    def dump(self):
-        ExecutionState.dump(self)
-        print(" -- constraints --")
-        print(self.getConstraintsObj())
+    def dump(self,stream=stdout):
+        ExecutionState.dump(self, stream)
+        stream.write(" -- constraints --\n")
+        stream.write(str(self.getConstraintsObj()))
+        stream.write('\n')

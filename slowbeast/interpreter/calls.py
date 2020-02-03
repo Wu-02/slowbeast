@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from .. util.debugging import dbg, FIXME
-
+from sys import stdout
 
 class CallStack:
     class Frame:
@@ -33,9 +33,9 @@ class CallStack:
         def get(self, v):
             return self.values.get(v)
 
-        def dump(self):
+        def dump(self,stream=stdout):
             for x, v in self.values.items():
-                print(x.asValue(), ' -> ', v.asValue())
+                stream.write("{0} -> {1}\n".format(x.asValue(), v.asValue()))
 
     def __init__(self):
         self._cs = []
@@ -84,9 +84,9 @@ class CallStack:
         del self._cs[-1]
         return rs
 
-    def dump(self):
+    def dump(self,stream=stdout):
         n = 0
         for f in self._cs:
-            print(" -- {0}: {1} --".format(n, f.function.getName()))
-            f.dump()
+            stream.write(" -- {0}: {1} --\n".format(n, f.function.getName()))
+            f.dump(stream)
             n += 1
