@@ -6,6 +6,7 @@ from . program import ProgramElement
 
 from .. util.debugging import print_highlight
 
+
 class Instruction(ProgramElement):
 
     def __init__(self, ops=[]):
@@ -41,21 +42,21 @@ class Instruction(ProgramElement):
         super(Instruction, self).dump(ind)
         if color:
             print_highlight(str(self), {"store": "WINE",
-                                        "load":  "WINE",
-                                        "sext":  "WINE",
-                                        "zext":  "WINE",
-                                        "call":  "WINE",
-                                        "assert":"WINE",
-                                        "assume":"WINE",
-                                        "branch":"WINE",
-                                        "ret"   :"WINE",
-                                        "cmp"   :"WINE",
+                                        "load": "WINE",
+                                        "sext": "WINE",
+                                        "zext": "WINE",
+                                        "call": "WINE",
+                                        "assert": "WINE",
+                                        "assume": "WINE",
+                                        "branch": "WINE",
+                                        "ret": "WINE",
+                                        "cmp": "WINE",
                                         "alloc": "WINE",
-                                        "bblock":"GREEN",
+                                        "bblock": "GREEN",
                                         },
-                            " "*ind)
+                            " " * ind)
         else:
-            print(" "*ind, self)
+            print(" " * ind, self)
 
     def getNextInstruction(self):
         assert self._bblock is not None
@@ -107,6 +108,7 @@ class Store(Instruction):
         return "store {0} to {1}".format(self.getValueOperand().asValue(),
                                          self.getPointerOperand().asValue())
 
+
 class Load(ValueInstruction):
     """ Load 'bw' bytes from 'frm' """
 
@@ -134,7 +136,8 @@ class Alloc(ValueInstruction):
         return self._size
 
     def __str__(self):
-        return "x{0} = alloc {1} bytes".format(self.getID(), self.getSize().asValue())
+        return "x{0} = alloc {1} bytes".format(
+            self.getID(), self.getSize().asValue())
 
     # the allocations return pointers, we need to compare them
     def __lt__(self, other):

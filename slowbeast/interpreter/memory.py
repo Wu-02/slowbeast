@@ -53,11 +53,14 @@ class MemoryObject:
         offval = off.getValue()
 
         if self.getSize() < bts:
-            return None, ExecutionError("Read {0}B from object of size {1}B".format(bts, self.getSize()))
+            return None, ExecutionError(
+                "Read {0}B from object of size {1}B".format(
+                    bts, self.getSize()))
 
         val = self.values.get(offval)
         if val is None:
-            return None, ExecutionError("Read from uninitialized memory or unaligned read (not supp. yet).")
+            return None, ExecutionError(
+                "Read from uninitialized memory or unaligned read (not supp. yet).")
 
         return val, None
 
@@ -69,10 +72,11 @@ class MemoryObject:
         return self._id == oth._id
 
     def __str__(self):
-        s = "mo{0} ({1}, alloc'd by {2}), size: {3}".format(self._id,
-                                                            self.name if self.name else "no name",
-                                                            self.allocation.asValue() if self.allocation else "unknown",
-                                                            self.getSize())
+        s = "mo{0} ({1}, alloc'd by {2}), size: {3}".format(
+            self._id,
+            self.name if self.name else "no name",
+            self.allocation.asValue() if self.allocation else "unknown",
+            self.getSize())
         for k, v in self.values.items():
             s += "\n  {0} -> {1}".format(k, v)
         return s

@@ -41,7 +41,7 @@ class Constant(Value):
 
     def __init__(self, c, ty):
         assert isinstance(c, int) or\
-               isinstance(c, bool), "Invalid constant"
+            isinstance(c, bool), "Invalid constant"
         assert isinstance(ty, Type), "Invalid type"
         assert not isinstance(c, PointerType), "Invalid type"
         super(Constant, self).__init__(ty)

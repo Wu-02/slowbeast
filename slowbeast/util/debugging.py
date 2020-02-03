@@ -60,17 +60,19 @@ def print_stderr(msg, prefix=None, print_ws='\n', color=None):
 def print_stdout(msg, prefix=None, print_ws='\n', color=None):
     print_stream(msg, sys.stdout, prefix, print_ws, color)
 
+
 def print_highlight(s, words, prefix=None):
     """ Words: dictionary words -> colors """
     if prefix:
         print_stdout(prefix, print_ws=None)
     for w in s.split():
-        c=words.get(w)
+        c = words.get(w)
         if c:
             print_stdout(w, color=c, print_ws=' ')
         else:
             print_stdout(w, print_ws=' ')
     sys.stdout.write('\n')
+
 
 _is_debugging = False
 
@@ -86,8 +88,10 @@ def dbg(msg, print_ws='\n', color='GRAY'):
 
     print_stderr(msg, "[sb] ", print_ws, color)
 
+
 def warn(msg, print_ws='\n', color='BROWN'):
     print_stderr(msg, "[sb] WARNING: ", print_ws, color)
+
 
 def FIXME(msg, print_ws='\n', color='DARK_GRAY_THIN'):
     print_stderr(msg, "[sb] !FIXME! ", print_ws, color)

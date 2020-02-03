@@ -24,6 +24,7 @@ class SEStats:
 def addPointerWithConstant(E, op1, op2):
     return Pointer(op1.getObject(), E.Add(op1.getOffset(), op2))
 
+
 class Executor(ConcreteExecutor):
     def __init__(self, solver, concretize_nondet=False):
         super(ConcreteExecutor, self).__init__()
@@ -352,7 +353,10 @@ class Executor(ConcreteExecutor):
 
             # FIXME: rework
             states = []
-            lt, ge = self.fork(state, E.Lt(offset, Constant(offs[0], offset.getType())))
+            lt, ge = self.fork(
+                state, E.Lt(
+                    offset, Constant(
+                        offs[0], offset.getType())))
             if lt:
                 lt.setError("Read of uninitialized/unaligned value")
                 states.append(lt)
@@ -360,7 +364,8 @@ class Executor(ConcreteExecutor):
             if not ge:
                 return states
 
-            gt, le = self.fork(ge, E.Gt(offset, Constant(offs[-1], offset.getType())))
+            gt, le = self.fork(
+                ge, E.Gt(offset, Constant(offs[-1], offset.getType())))
             if gt:
                 gt.setError("Read of uninitialized/unaligned value")
                 states.append(gt)
@@ -379,4 +384,3 @@ class Executor(ConcreteExecutor):
                     s.pc = s.pc.getNextInstruction()
                     states.append(s)
             return states
-

@@ -20,7 +20,13 @@ class Stats:
 class SymbolicExecutor(Interpreter):
     def __init__(self, P, concretize_nondet=False):
         self.solver = Solver()
-        super(SymbolicExecutor, self).__init__(P, SExecutor(self.solver, concretize_nondet))
+        super(
+            SymbolicExecutor,
+            self).__init__(
+            P,
+            SExecutor(
+                self.solver,
+                concretize_nondet))
         self.stats = Stats()
 
     def getInitialStates(self, entry):
@@ -41,10 +47,15 @@ class SymbolicExecutor(Interpreter):
             if s.isReady():
                 self.states.append(s)
             elif s.hasError():
-                print_stderr("{0}: {1}, {2}".format(s.getID(), s.pc, s.getError()), color='RED')
+                print_stderr(
+                    "{0}: {1}, {2}".format(
+                        s.getID(),
+                        s.pc,
+                        s.getError()),
+                    color='RED')
                 self.stats.errors += 1
                 self.stats.paths += 1
-                #s.dump()
+                # s.dump()
             elif s.isTerminated():
                 print_stderr(s.getError(), color='BROWN')
                 self.stats.paths += 1
