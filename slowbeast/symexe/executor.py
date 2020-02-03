@@ -1,9 +1,12 @@
-from .. util.debugging import dbg
+from .. util.debugging import dbg, FIXME
 from .. ir.instruction import *
+from .. ir.types import Type
 from .. ir.value import Value, ConstantBool, Pointer, Constant
 from .. interpreter.executor import Executor as ConcreteExecutor
 from .. interpreter.memory import MemoryObject
 from .. solvers.expressions import is_symbolic
+
+from random import getrandbits
 
 
 class SEStats:
@@ -22,10 +25,11 @@ def addPointerWithConstant(E, op1, op2):
     return Pointer(op1.getObject(), E.Add(op1.getOffset(), op2))
 
 class Executor(ConcreteExecutor):
-    def __init__(self, solver):
+    def __init__(self, solver, concretize_nondet=False):
         super(ConcreteExecutor, self).__init__()
         self.solver = solver
         self.stats = SEStats()
+        self._concretize_nondet = concretize_nondet
 
     def fork(self, state, cond):
         self.stats.fork_calls += 1
@@ -198,13 +202,15 @@ class Executor(ConcreteExecutor):
         return [state]
 
     def execUndefFun(self, state, instr, fun):
-        # XXX function must have a ret type to find out the
-        # width of values...
         if fun.getName() == 'abort':
             state.setTerminated("Aborted via an abort() call")
             return [state]
 
-        val = self.solver.freshValue(fun.getName(), 32)
+        FIXME("Functions need return value type")
+        if self._concretize_nondet:
+            val = Constant(getrandbits(32), Type(32))
+        else:
+            val = self.solver.freshValue(fun.getName(), 32)
         state.set(instr, val)
         state.pc = state.pc.getNextInstruction()
         return [state]

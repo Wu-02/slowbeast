@@ -18,10 +18,9 @@ class Stats:
 
 
 class SymbolicExecutor(Interpreter):
-    def __init__(self, P):
+    def __init__(self, P, concretize_nondet=False):
         self.solver = Solver()
-        super(SymbolicExecutor, self).__init__(P, SExecutor(self.solver))
-
+        super(SymbolicExecutor, self).__init__(P, SExecutor(self.solver, concretize_nondet))
         self.stats = Stats()
 
     def getInitialStates(self, entry):
