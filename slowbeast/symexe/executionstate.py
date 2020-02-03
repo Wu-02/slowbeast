@@ -1,5 +1,6 @@
 from .. interpreter.executionstate import ExecutionState
 from .. util.debugging import dbg
+from . memory import SymbolicMemory
 from copy import deepcopy
 
 
@@ -28,8 +29,8 @@ class SEState(ExecutionState):
     """ Execution state of symbolic execution """
     statesCounter = 0
 
-    def __init__(self, pc=None):
-        ExecutionState.__init__(self, pc)
+    def __init__(self, pc, m):
+        ExecutionState.__init__(self, pc, m)
         self.constraints = ConstraintsSet()
 
         SEState.statesCounter += 1

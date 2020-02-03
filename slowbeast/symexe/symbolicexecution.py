@@ -2,6 +2,7 @@ from .. interpreter.interpreter import Interpreter
 from .. interpreter.errors import ExecutionError
 from . executor import Executor as SExecutor
 from . executionstate import SEState
+from . memory import SymbolicMemory
 from .. solvers.solver import Solver
 from .. util.debugging import print_stderr, print_stdout, dbg
 
@@ -24,7 +25,7 @@ class SymbolicExecutor(Interpreter):
         self.stats = Stats()
 
     def getInitialStates(self, entry):
-        s = SEState()
+        s = SEState(None, m=SymbolicMemory(self.solver))
         s.pushCall(None, entry)
         return [s]
 

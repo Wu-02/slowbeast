@@ -1,6 +1,6 @@
 from .. util.debugging import dbg
 from .. ir.instruction import *
-from .. ir.value import Value, ConstantBool
+from .. ir.value import Value, ConstantBool, Pointer
 from .. interpreter.executor import Executor as ConcreteExecutor
 from .. solvers.expressions import is_symbolic
 
@@ -16,6 +16,9 @@ class SEStats:
         # number of times when the call to fork() forked the execution
         self.forks = 0
 
+
+def addPointerWithConstant(E, op1, op2):
+    return Pointer(op1.getObject(), E.Add(op1.getOffset(), op2))
 
 class Executor(ConcreteExecutor):
     def __init__(self, solver):
@@ -191,40 +194,33 @@ class Executor(ConcreteExecutor):
         op2 = state.eval(instr.getOperand(1))
         # if one of the operands is a pointer,
         # lift the other to pointer too
-        if op1.isPointer() or op2.isPointer():
-            raise NotImplementedError(
-                "Arithmetic on pointer not implemented yet")
-       # if op1c.isPointer():
-       #    if not op2c.isPointer():
-       #        assert isinstance(op2c, Constant)
-       #        # adding a constant -- create a pointer
-       #        # to the object with the right offset
-       #        op2c = Pointer(op1c.object, op2c.getValue())
-       # elif op2c.isPointer():
-       #    if not op1c.isPointer():
-       #        assert isinstance(op1c, Constant)
-       #        # adding a constant -- create a pointer
-       #        # to the object with the right offset
-       #        op1c = Pointer(op2c.object, op1c.getValue())
-       # else:
-       #    op1 = op1c.getValue()
-       #    op2 = op2c.getValue()
-
-       # if op1c.isPointer() and op1c.object != op2c.object:
-       #    raise ExecutionError("Pointer arithmetic on unrelated pointers")
-
         r = None
         E = self.solver.getExprManager()
-        if instr.getOperation() == BinaryOperation.ADD:
-            r = E.Add(op1, op2)
-        elif instr.getOperation() == BinaryOperation.SUB:
-            r = E.Sub(op1, op2)
-        elif instr.getOperation() == BinaryOperation.MUL:
-            r = E.Mul(op1, op2)
-        elif instr.getOperation() == BinaryOperation.DIV:
-            r = E.Div(op1, op2)
+        if op1.isPointer():
+            if not op2.isPointer():
+                r = addPointerWithConstant(E, op1, op2)
+            else:
+                raise NotImplementedError(
+                    "Arithmetic on pointer not implemented yet")
+        elif op2.isPointer():
+            if not op1.isPointer():
+                r = addPointerWithConstant(E, op2, op1)
+            else:
+                raise NotImplementedError(
+                    "Arithmetic on pointer not implemented yet")
         else:
-            raise NotImplementedError("Binary operation: " + str(instr))
+            if instr.getOperation() == BinaryOperation.ADD:
+                r = E.Add(op1, op2)
+            elif instr.getOperation() == BinaryOperation.SUB:
+                r = E.Sub(op1, op2)
+            elif instr.getOperation() == BinaryOperation.MUL:
+                r = E.Mul(op1, op2)
+            elif instr.getOperation() == BinaryOperation.DIV:
+                r = E.Div(op1, op2)
+            else:
+                raise NotImplementedError("Binary operation: " + str(instr))
+
+        assert r, "Bug in creating a binary op expression"
 
         state.set(instr, r)
         state.pc = state.pc.getNextInstruction()
