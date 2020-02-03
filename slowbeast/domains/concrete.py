@@ -4,9 +4,10 @@ from .. ir.value import Value, Constant
 
 def getUnsigned(a):
     """ Get unsigned value for signed in 2's complement """
-    if a >= 0:
-        return a
-    return a.getValue() + (1 << a.getBitWidth())
+    x = a.getValue()
+    if x >= 0:
+        return x
+    return x + (1 << a.getBitWidth())
 
 
 class ConcreteDomain:

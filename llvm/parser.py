@@ -6,7 +6,7 @@ from slowbeast.ir.value import *
 from slowbeast.ir.types import *
 from slowbeast.ir.instruction import *
 
-from slowbeast.util.debugging import print_stderr
+from slowbeast.util.debugging import print_stderr, warn
 
 import llvmlite.binding as llvm
 
@@ -20,17 +20,31 @@ def _get_llvm_module(path):
 
 def _getInt(s):
     try:
-        return int(s)
+        if s.startswith('0x'):
+            return int(s, 16)
+        else:
+            if 'e' in s: # scientific notation
+                if float(s) > 0 or float(s) < 0:
+                    warn("Concretized float number: {0}".format(s))
+                    #return None
+                return int(float(s))
+            else:
+                return int(s)
     except ValueError:
         return None
 
 def _getBitWidth(ty):
     if len(ty) < 2:
         return None
-    if ty[0] != 'i':
+    if ty[0] == 'i':
+        return _getInt(ty[1:])
+    elif ty.startswith('double'):
+        # FIXME: get this from program
+        return 64
+    elif ty.startswith('float'):
+        return 32
+    else:
         return None
-
-    return _getInt(ty[1:])
 
 def isPointerTy(ty):
     if isinstance(ty, str):
@@ -66,6 +80,11 @@ def getTypeSizeInBits(ty):
         if elemType and num:
             return elemType * num
         return None
+    # FIXME: get it from target triple
+    elif sty == 'double':
+        return 64
+    elif sty == 'float':
+        return 32
     else:
         assert '*' not in sty
         return _getBitWidth(sty)
@@ -82,7 +101,8 @@ def getConstantInt(val):
     if val.type.is_pointer:
         return None
 
-    assert '*' not in str(val)
+    if '*' in str(val):
+        return None
     parts = str(val).split()
     if len(parts) != 2:
         return None
@@ -102,9 +122,7 @@ def getLLVMOperands(inst):
 
 def parseCmp(inst):
     parts = str(inst).split()
-    if len(parts) != 7:
-        return None, False
-    if parts[2] != 'icmp':
+    if parts[1] != '=' and parts[2] != 'icmp':
         return None, False
 
     if parts[3] == 'eq':
@@ -140,7 +158,8 @@ class Parser:
 
         # FIXME: get rid of this once we support
         # parsing the stuff inside __assert_fail
-        self._special_funs = ['__assert_fail',
+        self._special_funs = ['__assert_fail', '__VERIFIER_error',
+                              '__VERIFIER_assume',
                               '__slowbeast_print']
 
     def getOperand(self, op):
@@ -160,6 +179,7 @@ class Parser:
     def _addMapping(self, llinst, sbinst):
         if 'llvm' in self._metadata_opts:
             sbinst.addMetadata('llvm', str(llinst))
+        assert self._mapping.get(llinst) is None, "Duplicated mapping"
         self._mapping[llinst] = sbinst
 
     def _createAlloca(self, inst):
@@ -168,13 +188,17 @@ class Parser:
 
         tySize = getTypeSize(inst.type.element_type)
         assert tySize and tySize > 0, "Invalid type size"
-        num = getConstantInt(operands[0])
-        assert num and num.getValue() > 0, "Invalid number of elements of allocation"
+        num = self.getOperand(operands[0])
 
-        # XXX: shouldn't we use SizeType instead?
-        A = Alloc(Constant(tySize*num.getValue(), Type(num.getBitWidth())))
-        self._addMapping(inst, A)
-        return [A]
+        if isinstance(num, ValueInstruction): #VLA
+            M = Mul(Constant(tySize, SizeType), num)
+            A = Alloc(M)
+            self._addMapping(inst, A)
+            return [M, A]
+        else:
+            A = Alloc(Constant(tySize*num.getValue(), Type(num.getBitWidth())))
+            self._addMapping(inst, A)
+            return [A]
 
     def _createStore(self, inst):
         operands = getLLVMOperands(inst)
@@ -261,6 +285,14 @@ class Parser:
             A = Assert(ConstantFalse, "assertion failed!")
             self._addMapping(inst, A)
             return [A]
+        elif fun == '__VERIFIER_error':
+            A = Assert(ConstantFalse, "__VERIFIER_error called!")
+            self._addMapping(inst, A)
+            return [A]
+        elif fun == '__VERIFIER_assume':
+            A = Assume(self.getOperand(getLLVMOperands()[0]))
+            self._addMapping(inst, A)
+            return [A]
         elif fun == '__slowbeast_print':
             P = Print(*[self.getOperand(x) for x in getLLVMOperands(inst)[:-1]])
             self._addMapping(inst, P)
@@ -269,12 +301,27 @@ class Parser:
             raise NotImplementedError("Unknown special function: {0}".format(fun))
 
     def _createCall(self, inst):
-        #import pdb
-        #pdb.set_trace()
         operands = getLLVMOperands(inst)
+        assert len(operands) > 0
+
+        # uffff, llvmlite really sucks in parsing LLVM.
+        # We cannot even get constantexprs...
         fun = operands[-1].name
         if not fun:
+            sop = str(operands[-1])
+            if 'bitcast' in sop:
+                for x in sop.split():
+                    if x[0] == '@':
+                        fun = x[1:]
+                        if self.getFun(fun):
+                            break
+                        else:
+                            fun = None
+        if not fun:
             raise NotImplementedError("Unsupported call: {0}".format(inst))
+
+        if fun.startswith('llvm.dbg'):
+            return []
 
         if fun in self._special_funs:
             return self._createSpecialCall(inst, fun)
@@ -344,7 +391,7 @@ class Parser:
         else:
             if shift == 0:
                 self._addMapping(inst, mem)
-                return [mem]
+                return []
             else:
                 A = Add(mem, Constant(shift, SizeType))
                 self._addMapping(inst, A)
@@ -374,7 +421,9 @@ class Parser:
         elif inst.opcode == 'getelementptr':
             return self._createGep(inst)
         elif inst.opcode == 'add' or\
-             inst.opcode == 'sub':
+             inst.opcode == 'sub' or\
+             inst.opcode == 'div' or\
+             inst.opcode == 'mul':
             return self._createArith(inst, inst.opcode)
         else:
             raise NotImplementedError("Unsupported instruction: {0}".format(inst))
@@ -392,7 +441,8 @@ class Parser:
             # may be several slowbeast instructions
             try:
                 instrs = self._parse_instruction(inst)
-                assert inst.opcode in ['zext'] or instrs, "No instruction was created"
+                assert inst.opcode in ['zext', 'call', 'getelementptr'] or instrs,\
+                       "No instruction was created"
                 for I in instrs:
                     B.append(I)
             except Exception as e:

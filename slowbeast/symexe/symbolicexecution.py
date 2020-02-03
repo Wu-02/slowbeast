@@ -44,6 +44,7 @@ class SymbolicExecutor(Interpreter):
                 print_stderr("{0}: {1}, {2}".format(s.getID(), s.pc, s.getError()), color='RED')
                 self.stats.errors += 1
                 self.stats.paths += 1
+                #s.dump()
             elif s.isTerminated():
                 print_stderr(s.getError(), color='BROWN')
                 self.stats.paths += 1

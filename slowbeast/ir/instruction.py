@@ -82,6 +82,9 @@ class ValueInstruction(Instruction):
     def __init__(self, ops=[]):
         super(ValueInstruction, self).__init__(ops)
 
+    def isConstant(self):
+        return False
+
     def asValue(self):
         return 'x{0}'.format(self.getID())
 
@@ -131,7 +134,7 @@ class Alloc(ValueInstruction):
         return self._size
 
     def __str__(self):
-        return "x{0} = alloc {1}B".format(self.getID(), self.getSize())
+        return "x{0} = alloc {1} bytes".format(self.getID(), self.getSize().asValue())
 
     # the allocations return pointers, we need to compare them
     def __lt__(self, other):
