@@ -37,6 +37,7 @@ def print_stats(engine):
     print_stdout(
         "Number of forks on branches: {0} (forked on {1}% of branches)".format(
             engine._executor.stats.branch_forks,
+            0 if engine._executor.stats.branchings == 0 else
             100 *
             float(
                 engine._executor.stats.branch_forks) /
@@ -47,6 +48,7 @@ def print_stats(engine):
         "Number of all forks: {0} (from {1} calls ({2}%) to fork())".format(
             engine._executor.stats.forks,
             engine._executor.stats.fork_calls,
+            0 if engine._executor.stats.fork_calls == 0 else
             100 *
             float(
                 engine._executor.stats.forks) /
