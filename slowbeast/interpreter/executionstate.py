@@ -75,7 +75,7 @@ class ExecutionState:
         self.memory = m
         # callstack containing top-level values for the current
         # function (values of computation of instructions)
-        self.cs = CallStack(v)
+        self.cs = CallStack()
         # status of the execution: ready/exited/errored/etc.
         self.status = ExecutionStatus()
 
