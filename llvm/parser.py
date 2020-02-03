@@ -32,20 +32,37 @@ def _getBitWidth(ty):
 
     return _getInt(ty[1:])
 
+def isPointerTy(ty):
+    if isinstance(ty, str):
+        return ty[-1] == '*'
+
+    assert ty.is_pointer == isPointerTy(str(ty))
+    return ty.is_pointer
+
+def isArrayTy(ty):
+    sty=str(ty)
+    if len(sty) < 2:
+        return False
+    return sty[0] == '[' and sty[-1] == ']'
+
+def parseArrayTy(ty):
+    assert isArrayTy(ty)
+    sty = str(ty)
+    parts = sty[1:-1].split()
+    assert len(parts) == 3 and parts[1] == 'x', "Unhandled array type"
+
+    return parts[0], parts[2]
+
 def getTypeSizeInBits(ty):
     if not isinstance(ty, str) and ty.is_pointer:
         #FIXME: get it from target triple
         return 64
 
     sty = str(ty)
-    if sty.startswith('['):
-        print()
-        parts = sty[1:-1].split()
-        print(parts)
-        if len(parts) != 3 or parts[1] != 'x':
-            return None
-        elemType = getTypeSizeInBits(parts[2])
-        num = _getInt(parts[0])
+    if isArrayTy(ty):
+        num, elemType = parseArrayTy(ty)
+        elemType = getTypeSizeInBits(elemType)
+        num = _getInt(num)
         if elemType and num:
             return elemType * num
         return None
@@ -283,10 +300,60 @@ class Parser:
         self._addMapping(inst, zext)
         return [zext]
 
+    def _createSExt(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 1, "Invalid number of operands for load"
+        # just behave that there's no ZExt for now
+        sext = SExt(self.getOperand(operands[0]), Constant(getTypeSizeInBits(inst.type), Type(32)))
+        self._addMapping(inst, sext)
+        return [sext]
+
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
+        print(inst)
         print([self.getOperand(x) for x in operands])
-        return []
+
+        assert isPointerTy(operands[0].type), "First type of GEP is not a pointer"
+        ty = operands[0].type.element_type
+        elemSize = getTypeSize(ty)
+        shift = 0
+        varIdx = []
+        for idx in operands[1:]:
+            print(ty)
+            print(elemSize)
+            c = getConstantInt(idx)
+            if not c:
+                var = self.getOperand(idx)
+                assert var, "Unsupported GEP instruction"
+                assert idx is operands[-1], "Variable in the middle of GEP is unsupported now"
+                M = Mul(var, Constant(elemSize, SizeType))
+                varIdx.append(M)
+                if shift != 0:
+                    varIdx.append(Add(M, Constant(shift, SizeType)))
+            else:
+                shift += c.getValue() * elemSize
+
+            if isPointerTy(ty):
+                ty = ty.element_type
+            elif isArrayTy(ty):
+                _, ty = parseArrayTy(ty)
+            elemSize = getTypeSize(ty)
+
+        mem = self.getOperand(operands[0])
+
+        if varIdx:
+                A = Add(mem, varIdx[-1])
+                self._addMapping(inst, A)
+                varIdx.append(A)
+                return varIdx
+        else:
+            if shift == 0:
+                self._addMapping(inst, mem)
+                return [mem]
+            else:
+                A = Add(mem, Constant(shift, SizeType))
+                self._addMapping(inst, A)
+        return [A]
 
     def _parse_instruction(self, inst):
         if inst.opcode == 'alloca':
@@ -307,6 +374,8 @@ class Parser:
             return self._createUnreachable(inst)
         elif inst.opcode == 'zext':
             return self._createZExt(inst)
+        elif inst.opcode == 'sext':
+            return self._createSExt(inst)
         elif inst.opcode == 'getelementptr':
             return self._createGep(inst)
         elif inst.opcode == 'add' or\
@@ -373,15 +442,7 @@ class Parser:
         return self.program
 
     def parse(self, path):
-        try:
-            return self._parse(path)
-        except NotImplementedError as e:
-            print_stderr(str(e), color="RED")
-            return None
-        except AssertionError as e:
-            print_stderr(str(e), color="RED")
-            return None
-
+        return self._parse(path)
 if __name__ == "__main__":
     from sys import argv
     parser = Parser()
