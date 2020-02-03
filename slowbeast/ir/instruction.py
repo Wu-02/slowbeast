@@ -4,6 +4,7 @@ from . bblock import BBlock  # due to assertions
 from . argument import Argument
 from . program import ProgramElement
 
+from .. util.debugging import print_highlight
 
 class Instruction(ProgramElement):
 
@@ -36,9 +37,25 @@ class Instruction(ProgramElement):
         assert self._bblock
         return self._bblock.getFunction()
 
-    def dump(self, ind=0):
+    def dump(self, ind=0, color=True):
         super(Instruction, self).dump(ind)
-        print(''.join([' ' for x in range(0, ind)]), self)
+        if color:
+            print_highlight(str(self), {"store": "WINE",
+                                        "load":  "WINE",
+                                        "sext":  "WINE",
+                                        "zext":  "WINE",
+                                        "call":  "WINE",
+                                        "assert":"WINE",
+                                        "assume":"WINE",
+                                        "branch":"WINE",
+                                        "ret"   :"WINE",
+                                        "cmp"   :"WINE",
+                                        "alloc": "WINE",
+                                        "bblock":"GREEN",
+                                        },
+                            " "*ind)
+        else:
+            print(" "*ind, self)
 
     def getNextInstruction(self):
         assert self._bblock is not None
@@ -86,7 +103,6 @@ class Store(Instruction):
     def __str__(self):
         return "store {0} to {1}".format(self.getValueOperand().asValue(),
                                          self.getPointerOperand().asValue())
-
 
 class Load(ValueInstruction):
     """ Load 'bw' bytes from 'frm' """

@@ -6,6 +6,7 @@ COLORS = {
     'BLUE': '\033[1;34m',
     'PURPLE': '\033[0;35m',
     'RED': '\033[1;31m',
+    'WINE': '\033[0;31m',
     'GREEN': '\033[1;32m',
     'BROWN': '\033[0;33m',
     'YELLOW': '\033[1;33m',
@@ -16,7 +17,7 @@ COLORS = {
 }
 
 
-def print_stream(msg, stream, prefix=None, print_nl=True, color=None):
+def print_stream(msg, stream, prefix=None, print_ws='\n', color=None):
     """
     Print message to stderr/stdout
 
@@ -44,19 +45,30 @@ def print_stream(msg, stream, prefix=None, print_nl=True, color=None):
     if color is not None:
         stream.write(COLORS['RESET'])
 
-    if print_nl:
-        stream.write('\n')
+    if print_ws:
+        stream.write(print_ws)
 
     stream.flush()
 
 
-def print_stderr(msg, prefix=None, print_nl=True, color=None):
-    print_stream(msg, sys.stderr, prefix, print_nl, color)
+def print_stderr(msg, prefix=None, print_ws='\n', color=None):
+    print_stream(msg, sys.stderr, prefix, print_ws, color)
 
 
-def print_stdout(msg, prefix=None, print_nl=True, color=None):
-    print_stream(msg, sys.stdout, prefix, print_nl, color)
+def print_stdout(msg, prefix=None, print_ws='\n', color=None):
+    print_stream(msg, sys.stdout, prefix, print_ws, color)
 
+def print_highlight(s, words, prefix=None):
+    """ Words: dictionary words -> colors """
+    if prefix:
+        print_stdout(prefix, print_ws=None)
+    for w in s.split():
+        c=words.get(w)
+        if c:
+            print_stdout(w, color=c, print_ws=' ')
+        else:
+            print_stdout(w, print_ws=' ')
+    sys.stdout.write('\n')
 
 _is_debugging = False
 
@@ -66,8 +78,8 @@ def set_debugging():
     _is_debugging = True
 
 
-def dbg(msg, print_nl=True, color='GRAY'):
+def dbg(msg, print_ws='\n', color='GRAY'):
     if not _is_debugging:
         return
 
-    print_stderr(msg, "[sb] ", print_nl, color)
+    print_stderr(msg, "[sb] ", print_ws, color)

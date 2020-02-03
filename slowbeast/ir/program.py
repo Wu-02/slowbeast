@@ -1,4 +1,4 @@
-
+from .. util.debugging import print_stdout
 class Program:
     def __init__(self):
         self._functions = []
@@ -69,6 +69,6 @@ class ProgramElement:
 
     def dump(self, ind=0):
         for k, v in self._metadata:
-            print("{0} ; {1} : {2}".format(
-                  ''.join([' ' for x in range(0, ind)]),
-                  k, v))
+            print_stdout("{0} ; {1} : {2}".format(
+                         ''.join([' ' for x in range(0, ind)]),
+                         k, v), color="GRAY")
