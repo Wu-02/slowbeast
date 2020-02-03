@@ -17,7 +17,7 @@ class CallStack:
 
         def _cow_reown(self):
             if self._values_ro:
-                self.values = copy(self.value)
+                self.values = copy(self.values)
                 self._values_ro = False
 
         def copy(self):
