@@ -13,6 +13,8 @@ COLORS = {
     'WHITE': '\033[1;37m',
     'GRAY': '\033[0;37m',
     'DARK_GRAY': '\033[1;30m',
+    'DARK_GRAY_THIN': '\033[38;5;238m',
+    'ORANGE': '\033[38;5;214m',
     'RESET': '\033[0m'
 }
 
@@ -83,3 +85,9 @@ def dbg(msg, print_ws='\n', color='GRAY'):
         return
 
     print_stderr(msg, "[sb] ", print_ws, color)
+
+def warn(msg, print_ws='\n', color='BROWN'):
+    print_stderr(msg, "[sb] WARNING: ", print_ws, color)
+
+def FIXME(msg, print_ws='\n', color='DARK_GRAY_THIN'):
+    print_stderr(msg, "[sb] !FIXME! ", print_ws, color)

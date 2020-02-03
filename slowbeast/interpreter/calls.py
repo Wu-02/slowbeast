@@ -1,5 +1,5 @@
 from copy import copy, deepcopy
-from .. util.debugging import dbg
+from .. util.debugging import dbg, FIXME
 
 
 class CallStack:
@@ -28,8 +28,7 @@ class CallStack:
         self._cs = []
 
     def copy(self):
-        dbg('FIXME: add COW for CallStack')
-        # FIXME: add copy-on-write
+        FIXME('add COW for CallStack')
         return deepcopy(self)
 
     def __eq__(self, rhs):

@@ -1,6 +1,6 @@
 import sys
 from copy import deepcopy
-from .. util.debugging import dbg
+from .. util.debugging import dbg, FIXME
 
 from . errors import ExecutionError
 from .. ir.value import *
@@ -20,8 +20,7 @@ class MemoryObject:
         self.allocation = None  # which allocation allocated this memory
 
     def copy(self):
-        dbg('FIXME: add COW for memory objects')
-        # FIXME: add copy-on-write
+        FIXME('add COW for memory objects')
         return deepcopy(self)
 
     def __eq__(self, rhs):
@@ -40,6 +39,8 @@ class MemoryObject:
         assert off.isConstant(), "Write to non-constant offset"
         assert isinstance(x, Value)
         offval = off.getValue()
+        if offval != 0:
+            FIXME("check that writes to MO do not overlap")
         if x.getByteWidth() > self.getSize() + offval:
             raise ExecutionError(
                 "Written value too big for the object. Writing {0} B to offset {1} of {2}B object".format(
@@ -48,17 +49,21 @@ class MemoryObject:
 
     def read(self, bts, off=Constant(0, OffsetType)):
         assert off.isConstant(), "Read from non-constant offset"
+        assert isinstance(bts, int), "Read non-constant number of bytes"
         offval = off.getValue()
 
         if self.getSize() < bts:
-            raise ExecutionError("Read {0}B from object of size {1}B"
-                                 .format(bts, self.getSize()))
+            return None, ExecutionError("Read {0}B from object of size {1}B".format(bts, self.getSize()))
 
         val = self.values.get(offval)
         if val is None:
-            raise ExecutionError("Read from uninitialized variable or unaligned read (not supp. yet).")
+            return None, ExecutionError("Read from uninitialized memory or unaligned read (not supp. yet).")
 
-        return val
+        return val, None
+
+    def getOffsets(self):
+        """ Get offsets on which something is written """
+        return self.values.keys()
 
     def __eq__(self, oth):
         return self._id == oth._id
@@ -84,8 +89,7 @@ class Memory:
         self._objects = []
 
     def copy(self):
-        dbg('FIXME: add COW for memory objects')
-        # FIXME: add copy-on-write
+        FIXME('add COW for memory objects')
         return deepcopy(self)
 
     def __eq__(self, rhs):

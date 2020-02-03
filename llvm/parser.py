@@ -310,17 +310,12 @@ class Parser:
 
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
-        print(inst)
-        print([self.getOperand(x) for x in operands])
-
         assert isPointerTy(operands[0].type), "First type of GEP is not a pointer"
         ty = operands[0].type.element_type
         elemSize = getTypeSize(ty)
         shift = 0
         varIdx = []
         for idx in operands[1:]:
-            print(ty)
-            print(elemSize)
             c = getConstantInt(idx)
             if not c:
                 var = self.getOperand(idx)

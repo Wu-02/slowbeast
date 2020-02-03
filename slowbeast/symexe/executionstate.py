@@ -1,5 +1,5 @@
 from .. interpreter.executionstate import ExecutionState
-from .. util.debugging import dbg
+from .. util.debugging import dbg, warn, FIXME
 from . memory import SymbolicMemory
 from copy import deepcopy
 
@@ -35,6 +35,7 @@ class SEState(ExecutionState):
 
         SEState.statesCounter += 1
         self._id = SEState.statesCounter
+        self._warnings = []
 
     def getID(self):
         return self._id
@@ -45,12 +46,12 @@ class SEState(ExecutionState):
 
     def copyTo(self, rhs):
         assert isinstance(rhs, SEState)
-        dbg('FIXME: add copy on write to SE state')
+        FIXME('add copy on write to SE state')
         super(SEState, self).copyTo(rhs)
         rhs.constraints = self.constraints.copy()
 
     def copy(self):
-        new = SEState()
+        new = SEState(self.pc, self.memory)
         self.copyTo(new)
         return new
 
@@ -60,15 +61,16 @@ class SEState(ExecutionState):
     def getConstraintsObj(self):
         return self.constraints
 
-   # def setPathCondition(self, pc):
-   #    if isinstance(pc, list):
-   #        self.pathCondition = ConstraintsSet(pc)
-   #    else:
-   #        self.pathCondition = pc
-
     def addConstraint(self, *C):
         for c in C:
             self.constraints.addConstraint(c)
+
+    def addWarning(self, msg):
+        warn(msg)
+        self._warnings.append(msg)
+
+    def getWarning(self, msg):
+        return self._warnings
 
     def dump(self):
         ExecutionState.dump(self)

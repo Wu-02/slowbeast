@@ -1,7 +1,8 @@
 from .. util.debugging import dbg
 from .. ir.instruction import *
-from .. ir.value import Value, ConstantBool, Pointer
+from .. ir.value import Value, ConstantBool, Pointer, Constant
 from .. interpreter.executor import Executor as ConcreteExecutor
+from .. interpreter.memory import MemoryObject
 from .. solvers.expressions import is_symbolic
 
 
@@ -43,7 +44,7 @@ class Executor(ConcreteExecutor):
                 raise RuntimeError(
                     "Invalid condition: {0}".format(
                         cond.getValue()))
-        # FIXME: use implication as in the original King's paper?
+        # XXX use implication as in the original King's paper?
         constraints = state.getConstraints() + [cond]
         if self.solver.is_sat(*constraints):
             T = state.copy()
@@ -59,6 +60,26 @@ class Executor(ConcreteExecutor):
             self.stats.forks += 1
 
         return T, F
+
+    def assume(self, state, cond):
+        """ Return a new states where we assume that condition is true.
+            Return None if that situation cannot happen
+        """
+        E = self.solver.getExprManager()
+
+        if cond.isConstant():
+            assert cond.isBool(), "Invalid constant"
+            if cond.getValue():
+                return state
+            else:
+                return None
+
+        constraints = state.getConstraints() + [cond]
+        if self.solver.is_sat(*constraints):
+            T = state.copy()
+            T.addConstraint(cond)
+            return T
+        return None
 
     def execBranch(self, state, instr):
         assert isinstance(instr, Branch)
@@ -177,7 +198,7 @@ class Executor(ConcreteExecutor):
         return [state]
 
     def execUndefFun(self, state, instr, fun):
-        # FIXME: function must have a ret type to find out the
+        # XXX function must have a ret type to find out the
         # width of values...
         if fun.getName() == 'abort':
             state.setTerminated("Aborted via an abort() call")
@@ -286,3 +307,70 @@ class Executor(ConcreteExecutor):
 
         assert states, "Generated no states"
         return states
+
+    def toUnique(self, state, val):
+        if val.isConstant():
+            return val
+
+        return self.solver.toUnique(val, *state.getConstraints())
+
+    def concretize(self, state, val):
+        if val.isConstant():
+            return val
+
+        return self.solver.concretize(val, *state.getConstraints())
+
+    def execLoad(self, state, instr):
+        assert isinstance(instr, Load)
+        frm = state.eval(instr.getPointerOperand())
+        assert frm.isPointer()
+        #obj = self.toUnique(state, frm)
+        if not isinstance(frm.getObject(), MemoryObject):
+            obj = self.concretize(state, frm.getObject())
+        else:
+            obj = frm.getObject()
+
+        if frm.getOffset().isConstant():
+            val, err = frm.object.read(instr.getBytesNum(), frm.offset)
+            if err:
+                state.setError(str(err))
+                return [state]
+            assert val, "BUG: read no value without an error"
+            state.set(instr, val)
+            state.pc = state.pc.getNextInstruction()
+            return [state]
+        else:
+            offset = frm.getOffset()
+            offs = list(obj.getOffsets())
+            E = self.solver.getExprManager()
+
+            # FIXME: rework
+            states = []
+            lt, ge = self.fork(state, E.Lt(offset, Constant(offs[0], offset.getType())))
+            if lt:
+                lt.setError("Read of uninitialized/unaligned value")
+                states.append(lt)
+
+            if not ge:
+                return states
+
+            gt, le = self.fork(ge, E.Gt(offset, Constant(offs[-1], offset.getType())))
+            if gt:
+                gt.setError("Read of uninitialized/unaligned value")
+                states.append(gt)
+
+            if not le:
+                return states
+
+            for o in offs:
+                oc = Constant(o, offset.getType())
+                s = self.assume(le, E.Eq(offset, oc))
+                if s:
+                    s.addWarning("Assuming that I read only initialized data")
+                    val, err = frm.object.read(instr.getBytesNum(), oc)
+                    assert not err, "Memory read: got error when assuming no error"
+                    s.set(instr, val)
+                    s.pc = s.pc.getNextInstruction()
+                    states.append(s)
+            return states
+

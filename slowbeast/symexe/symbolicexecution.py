@@ -42,7 +42,7 @@ class SymbolicExecutor(Interpreter):
             if s.isReady():
                 self.states.append(s)
             elif s.hasError():
-                print_stderr(s.getError(), color='RED')
+                print_stderr("{0}: {1}, {2}".format(s.getID(), s.pc, s.getError()), color='RED')
                 self.stats.errors += 1
                 self.stats.paths += 1
             elif s.isTerminated():
@@ -64,7 +64,7 @@ class SymbolicExecutor(Interpreter):
                 self.handleNewStates(newstates)
         except ExecutionError as e:
             print_stderr(
-                "Execution error while executing '{0}': {1}".format(
+                "Fatal error while executing '{0}': {1}".format(
                     state.pc, str(e)), color='RED')
             state.dump()
             return -1
