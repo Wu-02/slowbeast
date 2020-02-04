@@ -158,15 +158,20 @@ class ExecutionState:
         if not self.memory.hasObject(ptr.getObject()):
             self.setError("Write via invalid pointer")
             return [self]
-        ptr.getObject().write(value, ptr.getOffset())
+        err = ptr.getObject().write(value, ptr.getOffset())
+        if err:
+            self.setError(err)
         return [self]
 
     def read(self, ptr, dest, bytesNum):
         if not self.memory.hasObject(ptr.getObject()):
             self.setError("Read via invalid pointer")
             return [self]
-        val = ptr.getObject().read(bytesNum, ptr.getOffset())
-        self.set(dest, val)
+        val, err = ptr.getObject().read(bytesNum, ptr.getOffset())
+        if err:
+            self.setError(err)
+        else:
+            self.set(dest, val)
         return [self]
 
     def pushCall(self, callsite, fun, argsMapping={}):
