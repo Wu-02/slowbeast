@@ -6,7 +6,6 @@ from . errors import ExecutionError
 from .. ir.value import Constant, Value
 from .. ir.types import OffsetType
 
-
 class MemoryObject:
     ids = 0
 
@@ -81,10 +80,6 @@ class MemoryObject:
             return None, "Read from uninitialized memory (or unaligned read (not supp. yet))."
 
         return val, None
-
-    def getOffsets(self):
-        """ Get offsets on which something is written """
-        return self.values.keys()
 
     def __eq__(self, oth):
         return self._id == oth._id

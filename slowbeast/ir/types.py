@@ -22,16 +22,23 @@ class Type:
     def isBool(self):
         return False
 
-    def __eq__(self, x):
+    def isArray(self):
+        return False
 
+    def __eq__(self, x):
         return self.isBool() == x.isBool() and\
             self.isPointer() == x.isPointer() and\
+            self.isArray() == x.isArray() and\
             self.getBitWidth() == x.getBitWidth()
 
     def __str__(self):
         if self.isBool():
             return 'bool'
-        s = '{0}b'.format(self._bitwidth)
+        if self.isArray():
+            s='array'
+        else:
+            s=''
+        s += '{0}b'.format(self._bitwidth)
         if self.isPointer():
             s += '*'
         return s
@@ -54,6 +61,15 @@ class BoolType(Type):
         Type.__init__(self, 1)
 
     def isBool(self):
+        return True
+
+class ArrayType(Type):
+    """ This corresponds to solver array type, e.g. mapping from int -> bitvec.
+        The bitwidth is a bitwidth of one element """
+    def __init__(self, bw):
+        Type.__init__(self, bw)
+
+    def isArray(self):
         return True
 
 

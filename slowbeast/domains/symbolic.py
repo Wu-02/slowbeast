@@ -1,9 +1,9 @@
 from .. ir.value import Value, Constant
-from .. ir.types import Type, BoolType
+from .. ir.types import Type, BoolType, ArrayType
 
 _use_z3 = True
 if _use_z3:
-    from z3 import If, Or, And, Not, BoolVal, BitVec, BitVecVal
+    from z3 import If, Or, And, Not, BoolVal, BitVec, BitVecVal, Array, IntSort, BitVecSort
     from z3 import ULT as BVULT
     from z3 import ULE as BVULE
     from z3 import UGT as BVUGT
@@ -12,6 +12,7 @@ if _use_z3:
     from z3 import SignExt as BVSExt
     from z3 import Extract as BVExtract
     from z3 import LShR as BVLShR
+    from z3 import Select, Store
 
     def TRUE():
         return BoolVal(True)
@@ -21,6 +22,9 @@ if _use_z3:
 
     def bv(name, bw):
         return BitVec(name, bw)
+
+    def arr(name, bw):
+        return Array(name, IntSort(), BitVecSort(bw))
 
     def bv_const(v, bw):
         return BitVecVal(v, bw)
@@ -97,6 +101,9 @@ class BVSymbolicDomain:
     def Var(name, bw=64):
         return Expr(bv(name, bw), Type(bw))
 
+    def Array(name, bw=8):
+        return Expr(arr(name, bw), ArrayType(bw))
+
     def Int1(name):
         return BVSymbolicDomain.Var(name, 1)
 
@@ -111,6 +118,14 @@ class BVSymbolicDomain:
 
     def Int64(name):
         return BVSymbolicDomain.Var(name, 64)
+
+   #def Select(array, x):
+   #    assert array.isArray()
+   #    return Expr(Select(array._expr, x._expr), array.getType())
+
+   #def Store(array, x, pos):
+   #    assert array.getType().isArray()
+   #    return Expr(Store(array._expr, pos._expr, x._expr), array.getType())
 
     ##
     # Logic operators

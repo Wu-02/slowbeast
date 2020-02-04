@@ -51,6 +51,20 @@ class ExprManager:
         self._names[name] = s
         return s
 
+    def freshArray(self, name, bw):
+        assert isinstance(name, str)
+        origname = name
+        cnt = 1
+        s = self._names.get(name)
+        while s:
+            cnt += 1
+            name = "{0}_{1}".format(origname, cnt)
+            s = self._names.get(name)
+
+        s = SymbolicDomain.Array(name, bw)
+        self._names[name] = s
+        return s
+
     def Int1(self, name):
         return self.Var(name, 1)
 
