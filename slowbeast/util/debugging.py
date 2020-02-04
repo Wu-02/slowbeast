@@ -61,16 +61,16 @@ def print_stdout(msg, prefix=None, print_ws='\n', color=None):
     print_stream(msg, sys.stdout, prefix, print_ws, color)
 
 
-def print_highlight(s, words, prefix=None,stream=sys.stdout):
+def print_highlight(s, words, prefix=None, stream=sys.stdout):
     """ Words: dictionary words -> colors """
     if prefix:
-        print_stream(prefix, print_ws=None,stream=stream)
+        print_stream(prefix, print_ws=None, stream=stream)
     for w in s.split():
         c = words.get(w)
         if c:
-            print_stream(w, color=c, print_ws=' ',stream=stream)
+            print_stream(w, color=c, print_ws=' ', stream=stream)
         else:
-            print_stream(w, print_ws=' ',stream=stream)
+            print_stream(w, print_ws=' ', stream=stream)
     stream.write('\n')
 
 

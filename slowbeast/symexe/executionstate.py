@@ -4,6 +4,7 @@ from . memory import SymbolicMemory
 from copy import deepcopy, copy
 from sys import stdout
 
+
 class ConstraintsSet:
     def __init__(self, C=[]):
         self.constraints = C
@@ -83,7 +84,7 @@ class SEState(ExecutionState):
     def getWarning(self, msg):
         return self._warnings
 
-    def dump(self,stream=stdout):
+    def dump(self, stream=stdout):
         ExecutionState.dump(self, stream)
         stream.write(" -- constraints --\n")
         stream.write(str(self.getConstraintsObj()))

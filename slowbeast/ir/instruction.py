@@ -40,7 +40,7 @@ class Instruction(ProgramElement):
         return self._bblock.getFunction()
 
     def dump(self, ind=0, stream=stdout, color=True):
-        super(Instruction, self).dump(ind,stream)
+        super(Instruction, self).dump(ind, stream)
         if color:
             print_highlight(str(self), {"store": "WINE",
                                         "load": "WINE",
@@ -55,7 +55,7 @@ class Instruction(ProgramElement):
                                         "alloc": "WINE",
                                         "bblock": "GREEN",
                                         },
-                            " " * ind,stream=stream)
+                            " " * ind, stream=stream)
         else:
             stream.write("{0}{1}\n".format(" " * ind, self))
 

@@ -1,6 +1,7 @@
 from .. util.debugging import print_stream
 from sys import stdout
 
+
 class Program:
     def __init__(self):
         self._functions = []

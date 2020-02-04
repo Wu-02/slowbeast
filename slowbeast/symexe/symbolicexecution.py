@@ -6,6 +6,7 @@ from . memory import SymbolicMemory
 from .. solvers.solver import Solver
 from .. util.debugging import print_stderr, print_stdout, dbg
 
+
 class Stats:
     def __init__(self):
         # all paths (including ones that hit an error or terminated early)

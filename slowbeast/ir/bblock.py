@@ -1,6 +1,7 @@
 from . program import ProgramElement
 from sys import stdout
 
+
 class BBlock(ProgramElement):
 
     def __init__(self, f=None):
@@ -36,7 +37,7 @@ class BBlock(ProgramElement):
         return 'bblock {0}'.format(self.getID())
 
     def dump(self, ind=0, stream=stdout):
-        super(BBlock, self).dump(ind,stream)
-        stream.write("{0}; [bblock {1}]".format(" "*ind, self.getID()))
+        super(BBlock, self).dump(ind, stream)
+        stream.write("{0}; [bblock {1}]".format(" " * ind, self.getID()))
         for i in self._instructions:
-            i.dump(ind,stream)
+            i.dump(ind, stream)

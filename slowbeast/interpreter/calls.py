@@ -2,6 +2,7 @@ from copy import copy, deepcopy
 from .. util.debugging import dbg, FIXME
 from sys import stdout
 
+
 class CallStack:
     class Frame:
         def __init__(self, fun, returnsite=None, v={}):
@@ -33,7 +34,7 @@ class CallStack:
         def get(self, v):
             return self.values.get(v)
 
-        def dump(self,stream=stdout):
+        def dump(self, stream=stdout):
             for x, v in self.values.items():
                 stream.write("{0} -> {1}\n".format(x.asValue(), v.asValue()))
 
@@ -84,7 +85,7 @@ class CallStack:
         del self._cs[-1]
         return rs
 
-    def dump(self,stream=stdout):
+    def dump(self, stream=stdout):
         n = 0
         for f in self._cs:
             stream.write(" -- {0}: {1} --\n".format(n, f.function.getName()))

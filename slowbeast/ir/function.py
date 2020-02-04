@@ -2,6 +2,7 @@ from . argument import Argument
 from . program import ProgramElement
 from sys import stdout
 
+
 class Function(ProgramElement):
     def __init__(self, name, argNum=0):
         super(Function, self).__init__()
@@ -37,12 +38,12 @@ class Function(ProgramElement):
     def dump(self, stream=stdout):
         super(Function, self).dump(stream)
         stream.write(
-              'fun {0}({1})\n'.format(self._name,
-                                ', '.join(map(lambda x: x.asValue(),
-                                              self._arguments))))
+            'fun {0}({1})\n'.format(self._name,
+                                    ', '.join(map(lambda x: x.asValue(),
+                                                  self._arguments))))
 
         for b in self._bblocks:
-            b.dump(2,stream=stream)
+            b.dump(2, stream=stream)
             stream.write('\n')
 
         if len(self._bblocks) > 0:
