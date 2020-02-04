@@ -53,6 +53,7 @@ class Memory:
         return self._objects.get(moid) is not None
 
     def write(self, ptr, x):
+        self._cow_reown()
         obj = self._objects.get(ptr.getObject().getValue())
         if obj is None:
             return "Write to invalid object"
