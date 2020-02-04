@@ -9,26 +9,32 @@ class CallStack:
             self.function = fun
             self.returnsite = returnsite
             self.values = copy(v)
-            self._values_ro = False
+            self._ro = False
 
         def __eq__(self, rhs):
             return self.function == rhs.function and\
                 self.values == rhs.values and\
                 self.returnsite == rhs.returnsite
 
+        def _setRO(self):
+            self._ro = True
+
+        def _isRO(self):
+            return self._ro
+
         def _cow_reown(self):
             if self._values_ro:
                 self.values = copy(self.values)
                 self._values_ro = False
 
-        def copy(self):
+        def writableCopy(self):
             new = copy(self)
-            self._values_ro = True
-            new._values_ro = True
+            new.values = copy(self.values)
+            new._ro = False
             return new
 
         def set(self, what, v):
-            self._cow_reown()
+            assert self._ro is False, "COW bug"
             self.values[what] = v
 
         def get(self, v):
@@ -43,21 +49,17 @@ class CallStack:
         self._cs_ro = False
 
     def copy(self):
-        new = CallStack()
-        new._cs = self._cs
+        new = copy(self)
         new._cs_ro = True
         self._cs_ro = True
+        for f in self._cs:
+            f._setRO()
         return new
 
     def _cow_reown(self):
-        # FIXME: We could keep a copy of only
-        # the last frame, because we cannot write to other frames
-        FIXME("Do better COW on callstack")
         if self._cs_ro:
-            tmp = []
-            for f in self._cs:
-                tmp.append(f.copy())
-            self._cs = tmp
+            assert all([x._isRO() for x in self._cs])
+            self._cs = copy(self._cs)
             self._cs_ro = False
 
     def __eq__(self, rhs):
@@ -69,6 +71,9 @@ class CallStack:
     def set(self, what, v):
         """ Set a value in the current frame """
         self._cow_reown()
+        if self.frame()._isRO():
+            self._cs[-1] = self.frame().writableCopy()
+            assert not self.frame()._isRO()
         self.frame().set(what, v)
 
     def get(self, v):
@@ -78,6 +83,7 @@ class CallStack:
     def push(self, callsite, fun, argsMap):
         self._cow_reown()
         self._cs.append(CallStack.Frame(fun, callsite, argsMap))
+        assert not self.frame()._isRO()
 
     def pop(self):
         assert len(self._cs) > 0

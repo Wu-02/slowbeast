@@ -24,6 +24,7 @@ class Memory:
 
     def _cow_reown(self):
         if self._objects_ro:
+            assert all([x._isRO() for x in self._objects.values()])
             self._objects = copy(self._objects)
             self._objects_ro = False
 
