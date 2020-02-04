@@ -322,9 +322,10 @@ class UnaryOperation(ValueInstruction):
     NEG = 1
     ZEXT = 2
     SEXT = 3
+    EXTRACT = 4
 
     def __check(op):
-        assert op >= UnaryOperation.NEG and op <= UnaryOperation.SEXT
+        assert op >= UnaryOperation.NEG and op <= UnaryOperation.EXTRACT
 
     def __init__(self, op, a):
         super(UnaryOperation, self).__init__([a])
@@ -357,12 +358,35 @@ class ZExt(Extend):
 
 class SExt(Extend):
     def __init__(self, a, bw):
-        super(SExt, self).__init__(UnaryOperation.ZEXT, a, bw)
+        super(SExt, self).__init__(UnaryOperation.SEXT, a, bw)
 
     def __str__(self):
         return "x{0} = sext {1} to {2}b".format(self.getID(),
                                                 self.getOperand(0).asValue(),
                                                 self.getBitWidth())
+
+
+class ExtractBits(UnaryOperation):
+    def __init__(self, val, start, end):
+        assert start.isConstant(), "Invalid bitwidth to extend"
+        assert end.isConstant(), "Invalid bitwidth to extend"
+        super(Extract, self).__init__(UnaryOperation.EXTRACT, val)
+        self._start = start
+        self._end = end
+
+    def getRange(self):
+        return (self._start, self._end)
+
+    def getStart(self):
+        return self._start
+
+    def getEnd(self):
+        return self._end
+
+    def __str__(self):
+        return "x{0} = extractbits {1}-{2} from {3}b".format(self.getID(),
+                                                             self.getStart(), self.getEnd(),
+                                                            self.getOperand(0).asValue())
 
 
 class BinaryOperation(ValueInstruction):

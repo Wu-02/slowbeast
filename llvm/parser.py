@@ -358,6 +358,15 @@ class Parser:
         self._addMapping(inst, sext)
         return [sext]
 
+    def _createTrunc(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 1, "Invalid number of operands for load"
+        # just behave that there's no ZExt for now
+        bits=getTypeSizeInBits(inst.type)
+        ext = Extract(self.getOperand(operands[0]), Constant(0, Type(32)), Constant(bits, Type(32)))
+        self._addMapping(inst, ext)
+        return [ext]
+
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
         assert isPointerTy(operands[0].type), "First type of GEP is not a pointer"
@@ -421,6 +430,8 @@ class Parser:
             return self._createZExt(inst)
         elif inst.opcode == 'sext':
             return self._createSExt(inst)
+        elif inst.opcode == 'trunc':
+            return self._createTrunc(inst)
         elif inst.opcode == 'getelementptr':
             return self._createGep(inst)
         elif inst.opcode == 'add' or\
