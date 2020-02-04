@@ -78,12 +78,16 @@ class TestCaseGenerator:
 
     def processState(self, state):
         assert not state.isReady()
-        if not state.hasError() and state.isTerminated():
-            return
+
         filename=str(state.getID())
         if state.hasError():
             filename+= ".err"
+        elif state.wasKilled():
+            filename+= ".killed"
+        elif state.isTerminated():
+            filename+= ".abort"
         filename+=".test"
+
         with self._openfile(filename) as fl:
             fl.write(str(state.getStatus()))
             fl.write('\n')
