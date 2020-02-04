@@ -8,14 +8,22 @@ from sys import stdout
 class ConstraintsSet:
     def __init__(self, C=[]):
         self.constraints = C
+        self._ro = False
 
     def copy(self):
-        return deepcopy(self)
+        new = copy(self)
+        new._ro = True
+        return new
 
     def __eq__(self, rhs):
         return self.constraints == rhs.constraints
 
     def addConstraint(self, *C):
+        if self._ro:
+            # shallow copy should be enough
+            self.constraints = copy(self.constraints)
+            self._ro = False
+
         for c in C:
             self.constraints.append(c)
 
@@ -38,6 +46,7 @@ class SEState(ExecutionState):
         SEState.statesCounter += 1
         self._id = SEState.statesCounter
         self._warnings = []
+        self._warnings_ro = False
 
     def getID(self):
         return self._id
@@ -55,16 +64,15 @@ class SEState(ExecutionState):
     def is_sat(self, *e):
         return self._solver.is_sat(*self.getConstraints(), *e)
 
-    def copyTo(self, rhs):
-        assert isinstance(rhs, SEState)
-        FIXME('add copy on write to SE state')
-        super(SEState, self).copyTo(rhs)
-        rhs.constraints = self.constraints.copy()
-        rhs._warnings = copy(self._warnings)
-
     def copy(self):
+        # do not use copy.copy() so that we bump the id counter
         new = SEState(self.pc, self.memory, self.getSolver())
-        self.copyTo(new)
+        super(SEState, self).copyTo(new) # cow copy of super class
+
+        new.constraints = self.constraints.copy()
+        new._warnings = self._warnings
+        new._warnings_ro = True
+
         return new
 
     def getConstraints(self):
@@ -79,9 +87,12 @@ class SEState(ExecutionState):
 
     def addWarning(self, msg):
         warn(msg)
+        if self._warnings_ro:
+            self._warnings = copy(self._warnings)
+            self._warnings_ro = False
         self._warnings.append(msg)
 
-    def getWarning(self, msg):
+    def getWarnings(self, msg):
         return self._warnings
 
     def dump(self, stream=stdout):

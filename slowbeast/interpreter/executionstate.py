@@ -76,6 +76,8 @@ class ExecutionState:
         self.memory = m
         # callstack containing top-level values for the current
         # function (values of computation of instructions)
+        # FIXME: move callstack to memory?
+        # ...We create it redundantly when copying child classes
         self.cs = CallStack()
         # status of the execution: ready/exited/errored/etc.
         self.status = ExecutionStatus()
