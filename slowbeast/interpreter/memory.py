@@ -48,7 +48,7 @@ class Memory:
         obj = self._objects.get(ptr.getObject().getValue())
         if obj is None:
             return "Write to invalid object"
-        if obj._isRO(): # copy on write
+        if obj._isRO():  # copy on write
             obj = obj.writableCopy()
             assert not obj._isRO()
             self._objects[obj.getID()] = obj

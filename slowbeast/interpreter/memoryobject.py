@@ -19,7 +19,7 @@ class MemoryObject:
         self.name = nm  # for debugging
         self.allocation = None  # which allocation allocated this memory
 
-        self._ro = False # COW support
+        self._ro = False  # COW support
 
     def _setRO(self):
         self._ro = True
@@ -58,8 +58,8 @@ class MemoryObject:
         if offval != 0:
             FIXME("check that writes to MO do not overlap")
         if x.getByteWidth() > self.getSize().getValue() + offval:
-                return "Written value too big for the object. Writing {0}B to offset {1} of {2}B object".format(
-                    x.getByteWidth(), off, self.getSize())
+            return "Written value too big for the object. Writing {0}B to offset {1} of {2}B object".format(
+                x.getByteWidth(), off, self.getSize())
         self.values[offval] = x
         return None
 
@@ -73,7 +73,8 @@ class MemoryObject:
         offval = off.getValue()
 
         if self.getSize().getValue() < bts:
-            return None, "Read {0}B from object of size {1}B".format(bts, self.getSize())
+            return None, "Read {0}B from object of size {1}B".format(
+                bts, self.getSize())
 
         val = self.values.get(offval)
         if val is None:
@@ -104,5 +105,3 @@ class MemoryObject:
     def dump(self, stream=stdout):
         stream.write(str(self))
         stream.write('\n')
-
-

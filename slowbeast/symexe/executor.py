@@ -326,4 +326,3 @@ class Executor(ConcreteExecutor):
             return val
 
         return state.getSolver().concretize(val, *state.getConstraints())
-
