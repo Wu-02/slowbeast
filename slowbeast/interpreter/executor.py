@@ -39,9 +39,8 @@ class Executor:
     def execAlloc(self, state, instr):
         assert isinstance(instr, Alloc)
         size = state.eval(instr.getSize())
-        o = state.memory.allocate(size)
-        o.object.setAllocation(instr)
-        state.set(instr, o)
+        ptr = state.memory.allocate(size, instr)
+        state.set(instr, ptr)
         state.pc = state.pc.getNextInstruction()
 
         return [state]

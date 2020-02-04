@@ -155,19 +155,13 @@ class ExecutionState:
         return ret
 
     def write(self, ptr, value):
-        if not self.memory.hasObject(ptr.getObject()):
-            self.setError("Write via invalid pointer")
-            return [self]
-        err = ptr.getObject().write(value, ptr.getOffset())
+        err = self.memory.write(ptr, value)
         if err:
             self.setError(err)
         return [self]
 
     def read(self, ptr, dest, bytesNum):
-        if not self.memory.hasObject(ptr.getObject()):
-            self.setError("Read via invalid pointer")
-            return [self]
-        val, err = ptr.getObject().read(bytesNum, ptr.getOffset())
+        val, err = self.memory.read(ptr, bytesNum)
         if err:
             self.setError(err)
         else:

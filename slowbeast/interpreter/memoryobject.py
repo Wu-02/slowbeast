@@ -1,5 +1,5 @@
 from sys import stdout
-from copy import deepcopy
+from copy import deepcopy, copy
 from .. util.debugging import FIXME
 
 from . errors import ExecutionError
@@ -19,9 +19,19 @@ class MemoryObject:
         self.name = nm  # for debugging
         self.allocation = None  # which allocation allocated this memory
 
-    def copy(self):
-        FIXME('add COW for memory objects')
-        return deepcopy(self)
+        self._ro = False # COW support
+
+    def _setRO(self):
+        self._ro = True
+
+    def _isRO(self):
+        return self._ro
+
+    def writableCopy(self):
+        new = copy(self)
+        new.values = copy(self.values)
+        new._ro = False
+        return new
 
     def __eq__(self, rhs):
         return self._id == rhs._id
@@ -42,6 +52,8 @@ class MemoryObject:
         """
         assert off.isConstant(), "Write to non-constant offset"
         assert isinstance(x, Value)
+        assert self._ro is False, "Writing read-only object (COW bug)"
+
         offval = off.getValue()
         if offval != 0:
             FIXME("check that writes to MO do not overlap")
@@ -77,11 +89,11 @@ class MemoryObject:
         return self._id == oth._id
 
     def __str__(self):
-        s = "mo{0} ({1}, alloc'd by {2}), size: {3}".format(
+        s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
             self._id,
             self.name if self.name else "no name",
             self.allocation.asValue() if self.allocation else "unknown",
-            self.getSize())
+            self._ro, self.getSize())
         for k, v in self.values.items():
             s += "\n  {0} -> {1}".format(k, v)
         return s

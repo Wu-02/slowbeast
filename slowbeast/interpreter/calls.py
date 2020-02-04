@@ -52,6 +52,7 @@ class CallStack:
     def _cow_reown(self):
         # FIXME: We could keep a copy of only
         # the last frame, because we cannot write to other frames
+        FIXME("Do better COW on callstack")
         if self._cs_ro:
             tmp = []
             for f in self._cs:

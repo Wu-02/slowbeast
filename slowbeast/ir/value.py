@@ -63,8 +63,12 @@ class Constant(Value):
     def __str__(self):
         return str(self._value)
 
+    def __hash__(self):
+        return self._value
+
     def __eq__(self, rhs):
-        return self._value == rhs._value and self.getType() == rhs.getType()
+        assert isinstance(rhs, Constant)
+        return self.getValue() == rhs.getValue() and self.getType() == rhs.getType()
 
 
 class Pointer(Value):
