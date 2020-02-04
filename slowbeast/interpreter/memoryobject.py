@@ -1,8 +1,9 @@
+from sys import stdout
 from copy import deepcopy
 from .. util.debugging import FIXME
 
 from . errors import ExecutionError
-from .. ir.value import Constant
+from .. ir.value import Constant, Value
 from .. ir.types import OffsetType
 
 
@@ -83,7 +84,7 @@ class MemoryObject:
     def asValue(self):
         return "mo{0}".format(self._id)
 
-    def dump(self, stream=sys.stdout):
+    def dump(self, stream=stdout):
         stream.write(str(self))
         stream.write('\n')
 

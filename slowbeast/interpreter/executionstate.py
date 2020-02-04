@@ -154,6 +154,15 @@ class ExecutionState:
         #    ret = self.globals.get(v)
         return ret
 
+    def write(self, ptr, value):
+        ptr.getObject().write(value, ptr.getOffset())
+        return [self]
+
+    def read(self, ptr, dest, bytesNum):
+        val = ptr.getObject().read(bytesNum, ptr.getOffset())
+        self.set(dest, val)
+        return [self]
+
     def pushCall(self, callsite, fun, argsMapping={}):
         self.cs.push(callsite, fun, argsMapping)
         self.pc = fun.getBBlock(0).getInstruction(0)

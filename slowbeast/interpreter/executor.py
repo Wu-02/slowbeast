@@ -17,20 +17,24 @@ class Executor:
         assert isinstance(instr, Store)
         value = state.eval(instr.getValueOperand())
         to = state.eval(instr.getPointerOperand())
+        assert isinstance(value, Value)
         assert to.isPointer()
-        to.object.write(value, to.offset)
-        state.pc = state.pc.getNextInstruction()
 
-        return [state]
+        states = state.write(to, value)
+        for s in states:
+            if s.isReady():
+                s.pc = s.pc.getNextInstruction()
+        return states
 
     def execLoad(self, state, instr):
         assert isinstance(instr, Load)
         frm = state.eval(instr.getPointerOperand())
         assert frm.isPointer()
-        state.set(instr, frm.object.read(instr.getBytesNum(), frm.offset))
-        state.pc = state.pc.getNextInstruction()
-
-        return [state]
+        states = state.read(frm, dest=instr, bytesNum=instr.getBytesNum())
+        for s in states:
+            if s.isReady():
+                s.pc = s.pc.getNextInstruction()
+        return states
 
     def execAlloc(self, state, instr):
         assert isinstance(instr, Alloc)
