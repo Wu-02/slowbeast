@@ -6,9 +6,6 @@ from . memory import SymbolicMemory
 from .. solvers.solver import Solver
 from .. util.debugging import print_stderr, print_stdout, dbg
 
-from os.path import join as pathjoin
-
-
 class Stats:
     def __init__(self):
         # all paths (including ones that hit an error or terminated early)
@@ -18,29 +15,9 @@ class Stats:
         self.errors = 0
         self.instructions = 0
 
-class TestCaseGenerator:
-    def __init__(self):
-        self._outputdir = 'output/'
-
-    def _openfile(self, path):
-        return open(pathjoin(self._outputdir, path), 'w')
- 
-    def processState(self, state):
-        assert not state.isReady()
-        if not state.hasError() and state.isTerminated():
-            return
-        with self._openfile("{0}.testcase".format(state.getID())) as fl:
-            fl.write(str(state.getStatus()))
-            fl.write('\n')
-            if state.hasError():
-                fl.write(state.getError())
-                fl.write('\n')
-            fl.write('\n')
-            state.dump(stream=fl)
-           
 
 class SymbolicExecutor(Interpreter):
-    def __init__(self, P, concretize_nondet=False):
+    def __init__(self, P, testgen=None, concretize_nondet=False):
         self.solver = Solver()
         super(
             SymbolicExecutor,
@@ -48,7 +25,7 @@ class SymbolicExecutor(Interpreter):
             P,
             SExecutor(concretize_nondet))
         self.stats = Stats()
-        self.testcases = TestCaseGenerator()
+        self.testgen = testgen
 
     def getInitialStates(self, entry):
         s = SEState(None, SymbolicMemory(self.solver), self.solver)
@@ -76,15 +53,18 @@ class SymbolicExecutor(Interpreter):
                     color='RED')
                 self.stats.errors += 1
                 self.stats.paths += 1
-                self.testcases.processState(s)
+                if self.testgen:
+                    self.testgen.processState(s)
             elif s.isTerminated():
                 print_stderr(s.getError(), color='BROWN')
-                self.testcases.processState(s)
+                if self.testgen:
+                    self.testgen.processState(s)
                 self.stats.paths += 1
             else:
                 assert s.exited()
                 dbg("state exited with exitcode {0}".format(s.getExitCode()))
-                self.testcases.processState(s)
+                if self.testgen:
+                    self.testgen.processState(s)
                 self.stats.paths += 1
                 self.stats.exited_paths += 1
 

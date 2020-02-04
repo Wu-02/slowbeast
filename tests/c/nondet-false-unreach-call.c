@@ -1,10 +1,15 @@
 #include <assert.h>
 
-void __slowbeast_print(int);
+// RUN: clang %s -emit-llvm -g -c -o %t.bc
+// RUN: rm -rf %t-out
+// RUN: sb -out-dir=%t-out  %t.bc &>%t.log
+// RUN: cat %t.log | FileCheck %s
+
 int main(void) {
 	int a = nondet_int();
 	int b = 4;
-	__slowbeast_print(a+b);
 	assert(a + b == 7);
+	// CHECK: assertion failed!
+	// CHECK: Found errors: 1
 	return 0;
 }

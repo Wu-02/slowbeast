@@ -5,11 +5,11 @@
 // RUN: sb -out-dir=%t-out  %t.bc &>%t.log
 // RUN: cat %t.log | FileCheck %s
 
-int main() {
-	int array[10];
-	int n = 7;
-	array[n] = 1;
-	assert(array[n] == 1);
+int main(void) {
+	int x = nondet_int();
+	int n = x;
+	x--;
+	assert(x == n - 1);
 	// CHECK-NOT: assertion failed!
 	// CHECK: Found errors: 0
 }
