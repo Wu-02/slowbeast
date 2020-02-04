@@ -11,4 +11,4 @@ check:
 check-v:
 	lit --path=$(shell pwd) -vv tests/
 
-.PHONY: all autopep pylint check
+.PHONY: all autopep pylint check check-v
