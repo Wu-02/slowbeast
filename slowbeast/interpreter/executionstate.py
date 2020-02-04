@@ -178,12 +178,19 @@ class ExecutionState:
         return ret
 
     def write(self, ptr, value):
+        if not ptr.getOffset().isConstant():
+            self.setKilled("Write with non-constant offset not supported yet")
+            return [self]
         err = self.memory.write(ptr, value)
         if err:
             self.setError(err)
         return [self]
 
     def read(self, ptr, dest, bytesNum):
+        assert isinstance(bytesNum, int), "Invalid number of bytes"
+        if not ptr.getOffset().isConstant():
+            self.setKilled("Read with non-constant offset not supported yet")
+            return [self]
         val, err = self.memory.read(ptr, bytesNum)
         if err:
             self.setError(err)

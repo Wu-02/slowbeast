@@ -50,7 +50,7 @@ class MemoryObject:
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
         """
-        assert off.isConstant(), "Write to non-constant offset"
+        assert off.isConstant(), "Write to non-constant offset not supported"
         assert isinstance(x, Value)
         assert self._ro is False, "Writing read-only object (COW bug)"
 
@@ -78,7 +78,7 @@ class MemoryObject:
 
         val = self.values.get(offval)
         if val is None:
-            return None, "Read from uninitialized memory or unaligned read (not supp. yet)."
+            return None, "Read from uninitialized memory (or unaligned read (not supp. yet))."
 
         return val, None
 
