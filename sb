@@ -35,6 +35,12 @@ def print_stats(engine):
             engine.stats.exited_paths),
         color='CYAN')
     print_stdout(
+        "Paths that abnormally terminated: {0}".format(
+            engine.stats.terminated_paths),
+        color='CYAN')
+    print_stdout(
+        "Killed paths: {0}".format( engine.stats.killed_paths), color='CYAN')
+    print_stdout(
         "Executed branch instructions: {0}".format(
             engine._executor.stats.branchings),
         color='CYAN')

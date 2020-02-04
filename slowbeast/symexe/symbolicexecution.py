@@ -13,9 +13,10 @@ class Stats:
         self.paths = 0
         # paths that exited (the state is exited)
         self.exited_paths = 0
+        self.killed_paths = 0
+        self.terminated_paths = 0
         self.errors = 0
         self.instructions = 0
-
 
 class SymbolicExecutor(Interpreter):
     def __init__(self, P, testgen=None, concretize_nondet=False):
@@ -58,16 +59,23 @@ class SymbolicExecutor(Interpreter):
                     self.testgen.processState(s)
             elif s.isTerminated():
                 print_stderr(s.getError(), color='BROWN')
+                self.stats.paths += 1
+                self.stats.terminated_paths += 1
                 if self.testgen:
                     self.testgen.processState(s)
+            elif s.wasKilled():
                 self.stats.paths += 1
+                self.stats.killed_paths += 1
+                print_stderr(s.getStatusDetail(), prefix='KILLED STATE: ', color='WINE')
+                if self.testgen:
+                    self.testgen.processState(s)
             else:
                 assert s.exited()
                 dbg("state exited with exitcode {0}".format(s.getExitCode()))
-                if self.testgen:
-                    self.testgen.processState(s)
                 self.stats.paths += 1
                 self.stats.exited_paths += 1
+                if self.testgen:
+                    self.testgen.processState(s)
 
     def run(self):
         self.states = self.getInitialStates(self.entry)

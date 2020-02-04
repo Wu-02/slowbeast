@@ -7,10 +7,11 @@ from sys import stdout
 
 
 class ExecutionStatus:
-    READY = 1
-    EXITED = 2
-    TERMINATED = 3
-    ERROR = 4
+    READY = 1      # ready for execution
+    EXITED = 2     # normally exited
+    TERMINATED = 3 # terminated by instruction (abort, etc.)
+    ERROR = 4      # hit an error (violated assertion, oob access, etc.)
+    KILLED = 5    # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
 
     def __init__(self, st=READY):
         self.value = st
@@ -32,6 +33,10 @@ class ExecutionStatus:
         self.detail = e
         self.value = ExecutionStatus.ERROR
 
+    def setKilled(self, e):
+        self.detail = e
+        self.value = ExecutionStatus.KILLED
+
     def setExited(self, ec):
         self.detail = ec
         self.value = ExecutionStatus.EXITED
@@ -43,6 +48,9 @@ class ExecutionStatus:
 
     def isError(self):
         return self.value == ExecutionStatus.ERROR
+
+    def isKilled(self):
+        return self.value == ExecutionStatus.KILLED
 
     def isExited(self):
         return self.value == ExecutionStatus.EXITED
@@ -62,6 +70,8 @@ class ExecutionStatus:
             return 'EXITED'
         elif self.value == ExecutionStatus.TERMINATED:
             return 'TERMINATED'
+        elif self.value == ExecutionStatus.KILLED:
+            return 'KILLED'
         raise RuntimeError("Invalid state status")
 
     def dump(self, stream=stdout):
@@ -104,14 +114,23 @@ class ExecutionState:
         self.copyTo(new)
         return new
 
+    def getStatusDetail(self):
+        return self.status.getDetail()
+
     def setError(self, e):
         self.status.setError(e)
 
     def hasError(self):
         return self.status.isError()
 
+    def wasKilled(self):
+        return self.status.isKilled()
+
+    def setKilled(self, e):
+        self.status.setKilled(e)
+
     def getError(self):
-        assert self.hasError() or self.isTerminated()
+        assert self.hasError() or self.isTerminated() or self.wasKilled()
         return self.status.getDetail()
 
     def setExited(self, ec):
