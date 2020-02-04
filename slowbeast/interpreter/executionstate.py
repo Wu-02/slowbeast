@@ -34,6 +34,7 @@ class ExecutionStatus:
         self.value = ExecutionStatus.ERROR
 
     def setKilled(self, e):
+        #raise RuntimeError(e) # for debugging
         self.detail = e
         self.value = ExecutionStatus.KILLED
 

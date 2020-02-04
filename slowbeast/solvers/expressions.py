@@ -102,6 +102,27 @@ class ExprManager:
             return ConcreteDomain.SExt(a, b)
         return SymbolicDomain.SExt(a, b)
 
+    def Extract(self, a, start, end):
+        assert ConcreteDomain.belongto(start, end), "Invalid sext argument"
+        if ConcreteDomain.belongto(a):
+            return ConcreteDomain.Extract(a, start, end)
+        return SymbolicDomain.Extract(a, start, end)
+
+    def Shl(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Shl(a, b)
+        return SymbolicDomain.Shl(self.lift(a), self.lift(b))
+
+    def AShr(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.AShr(a, b)
+        return SymbolicDomain.AShr(self.lift(a), self.lift(b))
+
+    def LShr(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.LShr(a, b)
+        return SymbolicDomain.LShr(self.lift(a), self.lift(b))
+
     ##
     # Relational operators
 

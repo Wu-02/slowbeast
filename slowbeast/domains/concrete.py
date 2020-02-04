@@ -53,6 +53,28 @@ class ConcreteDomain:
         val = (a.getValue() & (sb - 1)) - (a.getValue() & sb)
         return Constant(val, Type(b.getValue()))
 
+    def Shl(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        assert b.getValue() < a.getBitWidth(), "Invalid shift"
+        return Constant(a.getValue() << b.getValue(), a.getType())
+
+    def AShr(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        assert b.getValue() < a.getBitWidth(), "Invalid shift"
+        return Constant(a.getValue() >> b.getValue(), a.getType())
+
+    def LShr(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        assert b.getValue() < a.getBitWidth(), "Invalid shift"
+        val = a.getValue()
+        return Expr(a.getValue() >> b.getValue() if val >= 0 else (val+(1<<a.getBitWidth())) >> b.getValue(), a.getType())
+
+    def Extract(a, start, end):
+        assert ConcreteDomain.belongto(a)
+        assert start.isConstant()
+        assert end.isConstant()
+        return Constant((a.getValue() >> start) & ((1<<(end - start + 1))-1), a.getType())
+
     ##
     # Relational operators
     def Le(a, b, unsigned=False):

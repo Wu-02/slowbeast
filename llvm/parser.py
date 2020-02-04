@@ -408,7 +408,7 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no ZExt for now
         bits=getTypeSizeInBits(inst.type)
-        ext = ExtractBits(self.getOperand(operands[0]), Constant(0, Type(32)), Constant(bits, Type(32)))
+        ext = ExtractBits(self.getOperand(operands[0]), Constant(0, Type(32)), Constant(bits-1, Type(32)))
         self._addMapping(inst, ext)
         return [ext]
 

@@ -10,6 +10,8 @@ if _use_z3:
     from z3 import UGE as BVUGE
     from z3 import ZeroExt as BVZExt
     from z3 import SignExt as BVSExt
+    from z3 import Extract as BVExtract
+    from z3 import LShR as BVLShR
 
     def TRUE():
         return BoolVal(True)
@@ -148,6 +150,25 @@ class BVSymbolicDomain:
                 castToBV(a)),
             Type(
                 b.getValue()))
+
+    def Extract(a, start, end):
+        assert BVSymbolicDomain.belongto(a)
+        assert start.isConstant()
+        assert end.isConstant()
+        return Expr(BVExtract(end.getValue(), start.getValue(), a._expr),
+                    Type(end.getValue() - start.getValue() + 1))
+
+    def Shl(a, b):
+        assert BVSymbolicDomain.belongto(a, b)
+        return Expr(a._expr << b._expr, a.getType())
+
+    def AShr(a, b):
+        assert BVSymbolicDomain.belongto(a, b)
+        return Expr(a._expr >> b._expr, a.getType())
+
+    def LShr(a, b):
+        assert BVSymbolicDomain.belongto(a, b)
+        return Expr(BVLShR(a._expr, b._expr), a.getType())
 
     def getTrue():
         return Expr(TRUE(), BoolType())

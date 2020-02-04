@@ -247,6 +247,12 @@ class Executor(ConcreteExecutor):
                 r = E.Mul(op1, op2)
             elif instr.getOperation() == BinaryOperation.DIV:
                 r = E.Div(op1, op2)
+            elif instr.getOperation() == BinaryOperation.SHL:
+                r = E.Shl(op1, op2)
+            elif instr.getOperation() == BinaryOperation.LSHR:
+                r = E.LShr(op1, op2)
+            elif instr.getOperation() == BinaryOperation.ASHR:
+                r = E.AShr(op1, op2)
             else:
                 state.setKilled("Not implemented binary operation: {0}".format(instr))
                 return [state]
@@ -267,6 +273,9 @@ class Executor(ConcreteExecutor):
         elif instr.getOperation() == UnaryOperation.SEXT:
             bw = instr.getBitWidth()
             r = E.SExt(op1, bw)
+        elif instr.getOperation() == UnaryOperation.EXTRACT:
+            start, end = instr.getRange()
+            r = E.Extract(op1, start, end)
         else:
             state.setKilled("Unary instruction not implemented: {0}".format(instr))
             return [state]
