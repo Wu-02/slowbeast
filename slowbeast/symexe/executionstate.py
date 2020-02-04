@@ -68,7 +68,7 @@ class SEState(ExecutionState):
         # do not use copy.copy() so that we bump the id counter
         new = SEState(self.pc, self.memory, self.getSolver())
         FIXME("Move CallStack to memory, we create extra empty CS here in the ctor")
-        super(SEState, self).copyTo(new) # cow copy of super class
+        super(SEState, self).copyTo(new)  # cow copy of super class
 
         new.constraints = self.constraints.copy()
         new._warnings = self._warnings

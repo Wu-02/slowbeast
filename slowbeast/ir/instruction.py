@@ -370,7 +370,7 @@ class ExtractBits(UnaryOperation):
     def __init__(self, val, start, end):
         assert start.isConstant(), "Invalid bitwidth to extend"
         assert end.isConstant(), "Invalid bitwidth to extend"
-        super(Extract, self).__init__(UnaryOperation.EXTRACT, val)
+        super(ExtractBits, self).__init__(UnaryOperation.EXTRACT, val)
         self._start = start
         self._end = end
 
@@ -384,9 +384,8 @@ class ExtractBits(UnaryOperation):
         return self._end
 
     def __str__(self):
-        return "x{0} = extractbits {1}-{2} from {3}b".format(self.getID(),
-                                                             self.getStart(), self.getEnd(),
-                                                            self.getOperand(0).asValue())
+        return "x{0} = extractbits {1}-{2} from {3}b".format(
+            self.getID(), self.getStart(), self.getEnd(), self.getOperand(0).asValue())
 
 
 class BinaryOperation(ValueInstruction):
@@ -395,13 +394,19 @@ class BinaryOperation(ValueInstruction):
     SUB = 2
     MUL = 3
     DIV = 4
+    # bitwise
+    SHL = 5
+    LSHR = 6
+    ASHR = 7
     # logical
-    #AND = 5
-    #OR = 6
+    AND = 8
+    OR = 9
+    XOR = 10
     # more logicals to come ...
+    LAST = 11
 
     def __check(op):
-        assert op >= BinaryOperation.ADD and op <= BinaryOperation.DIV
+        assert op >= BinaryOperation.ADD and op <= BinaryOperation.LAST
 
     def __init__(self, op, a, b):
         super(BinaryOperation, self).__init__([a, b])
@@ -450,3 +455,63 @@ class Div(BinaryOperation):
         return "x{0} = {1} / {2}".format(self.getID(),
                                          self.getOperand(0).asValue(),
                                          self.getOperand(1).asValue())
+
+
+class Shl(BinaryOperation):
+    def __init__(self, a, b):
+        super(Shl, self).__init__(BinaryOperation.SHL, a, b)
+
+    def __str__(self):
+        return "x{0} = {1} << {2}".format(self.getID(),
+                                          self.getOperand(0).asValue(),
+                                          self.getOperand(1).asValue())
+
+
+class LShr(BinaryOperation):
+    def __init__(self, a, b):
+        super(LShr, self).__init__(BinaryOperation.LSHR, a, b)
+
+    def __str__(self):
+        return "x{0} = {1} l>> {2}".format(self.getID(),
+                                           self.getOperand(0).asValue(),
+                                           self.getOperand(1).asValue())
+
+
+class AShr(BinaryOperation):
+    def __init__(self, a, b):
+        super(AShr, self).__init__(BinaryOperation.ASHR, a, b)
+
+    def __str__(self):
+        return "x{0} = {1} >> {2}".format(self.getID(),
+                                          self.getOperand(0).asValue(),
+                                          self.getOperand(1).asValue())
+
+
+class And(BinaryOperation):
+    def __init__(self, a, b):
+        super(And, self).__init__(BinaryOperation.AND, a, b)
+
+    def __str__(self):
+        return "x{0} = {1} & {2}".format(self.getID(),
+                                         self.getOperand(0).asValue(),
+                                         self.getOperand(1).asValue())
+
+
+class Or(BinaryOperation):
+    def __init__(self, a, b):
+        super(Or, self).__init__(BinaryOperation.OR, a, b)
+
+    def __str__(self):
+        return "x{0} = {1} | {2}".format(self.getID(),
+                                         self.getOperand(0).asValue(),
+                                         self.getOperand(1).asValue())
+
+
+class Xor(BinaryOperation):
+    def __init__(self, a, b):
+        super(Xor, self).__init__(BinaryOperation.XOR, a, b)
+
+    def __str__(self):
+        return "x{0} = xor {1}, {2}".format(self.getID(),
+                                            self.getOperand(0).asValue(),
+                                            self.getOperand(1).asValue())

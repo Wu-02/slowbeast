@@ -155,6 +155,9 @@ class Parser:
         self._bblocks = {}
         self._mapping = {}
         self._metadata_opts = ['llvm']
+        # records about PHIs that we created. We must place
+        # the writes emulating PHIs only after all blocks were created.
+        self.phis = []
 
         # FIXME: get rid of this once we support
         # parsing the stuff inside __assert_fail
@@ -249,6 +252,49 @@ class Parser:
 
         self._addMapping(inst, I)
         return [I]
+
+    def _createShift(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 2, "Invalid number of operands for store"
+
+        op1 = self.getOperand(operands[0])
+        op2 = self.getOperand(operands[1])
+        opcode = inst.opcode
+
+        if opcode == 'shl':
+            I = Shl(op1, op2)
+        elif opcode == 'lshr':
+            I = LShr(op1, op2)
+        elif opcode == 'ashr':
+            I = AShr(op1, op2)
+        else:
+            raise NotImplementedError("Shift operation unsupported: {0}".format(inst))
+
+        self._addMapping(inst, I)
+        return [I]
+
+    def _createLogicOp(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 2, "Invalid number of operands for store"
+
+        op1 = self.getOperand(operands[0])
+        op2 = self.getOperand(operands[1])
+        opcode = inst.opcode
+
+        if opcode == 'and':
+            I = And(op1, op2)
+        elif opcode == 'or':
+            I = Or(op1, op2)
+        elif opcode == 'xor':
+            I = Xor(op1, op2)
+        else:
+            raise NotImplementedError("Logic operation unsupported: {0}".format(inst))
+
+        self._addMapping(inst, I)
+        return [I]
+
+
+
 
     def _createCmp(self, inst):
         operands = getLLVMOperands(inst)
@@ -345,7 +391,6 @@ class Parser:
     def _createZExt(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
-        # just behave that there's no ZExt for now
         zext = ZExt(self.getOperand(operands[0]), Constant(getTypeSizeInBits(inst.type), Type(32)))
         self._addMapping(inst, zext)
         return [zext]
@@ -363,7 +408,7 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no ZExt for now
         bits=getTypeSizeInBits(inst.type)
-        ext = Extract(self.getOperand(operands[0]), Constant(0, Type(32)), Constant(bits, Type(32)))
+        ext = ExtractBits(self.getOperand(operands[0]), Constant(0, Type(32)), Constant(bits, Type(32)))
         self._addMapping(inst, ext)
         return [ext]
 
@@ -409,6 +454,15 @@ class Parser:
                 self._addMapping(inst, A)
         return [A]
 
+    def _handlePhi(self, inst):
+        operands = getLLVMOperands(inst)
+        bnum = getTypeSize(inst.type)
+        phivar = Alloc(Constant(bnum, SizeType))
+        L = Load(phivar, bnum)
+        self._addMapping(inst, L)
+        self.phis.append((inst, phivar, L))
+        return [L]
+
     def _parse_instruction(self, inst):
         if inst.opcode == 'alloca':
             return self._createAlloca(inst)
@@ -434,11 +488,14 @@ class Parser:
             return self._createTrunc(inst)
         elif inst.opcode == 'getelementptr':
             return self._createGep(inst)
-        elif inst.opcode == 'add' or\
-             inst.opcode == 'sub' or\
-             inst.opcode == 'div' or\
-             inst.opcode == 'mul':
+        elif inst.opcode in ['add', 'sub', 'div', 'mul']:
             return self._createArith(inst, inst.opcode)
+        elif inst.opcode in ['shl', 'lshr', 'ashr']:
+            return self._createShift(inst)
+        elif inst.opcode in ['and', 'or']:
+            return self._createLogicOp(inst)
+        elif inst.opcode == 'phi':
+            return self._handlePhi(inst)
         else:
             raise NotImplementedError("Unsupported instruction: {0}".format(inst))
 
@@ -455,7 +512,7 @@ class Parser:
             # may be several slowbeast instructions
             try:
                 instrs = self._parse_instruction(inst)
-                assert inst.opcode in ['zext', 'call', 'getelementptr'] or instrs,\
+                assert inst.opcode in ['call', 'getelementptr'] or instrs,\
                        "No instruction was created"
                 for I in instrs:
                     B.append(I)
@@ -480,6 +537,13 @@ class Parser:
 
         for b in f.blocks:
             self._parse_block(F, b)
+
+        # finish PHI nodes
+        if self.phis:
+            print_stderr("PHI nodes yet not supported", color="RED")
+       #for inst, var, load in self.phis:
+       #    operands = getLLVMOperands(inst)
+
 
     def _parse_module(self, m):
         #XXX globals!
