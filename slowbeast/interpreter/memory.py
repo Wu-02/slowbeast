@@ -25,6 +25,13 @@ class Memory:
         self._objects.append(o)
         return Pointer(o)
 
+    def hasObject(self, mo):
+        FIXME("Make object lookup efficient")
+        for o in self._objects:
+            if o == mo:
+                return True
+        return False
+
     # def write(self, x, to):
     #     self._vars[to] = x
 
