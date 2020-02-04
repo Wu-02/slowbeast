@@ -1,15 +1,24 @@
 from copy import copy
 from .. util.debugging import dbg, FIXME
 from .. interpreter.memory import Memory
+from .. interpreter.memoryobject import MemoryObject
 
 #from .. errors import ExecutionError
 #from .. ir.value import *
 #from .. ir.types import OffsetType
 
+class SEMemoryObject(MemoryObject):
+    def __init__(self, size, nm=None):
+        super(SEMemoryObject, self).__init__(size, nm)
+
+class SEMemoryObjectsManager:
+    def allocate(self, size, nm=None):
+        """ Allocate memory object of the right type """
+        return SEMemoryObject(size, nm)
 
 class SymbolicMemory(Memory):
     def __init__(self, solver):
-        super(SymbolicMemory, self).__init__()
+        super(SymbolicMemory, self).__init__(SEMemoryObjectsManager())
         self._solver = solver
 
     def copy(self):
@@ -23,7 +32,3 @@ class SymbolicMemory(Memory):
         return super(SymbolicMemory, self).__eq__(rhs) and\
             self._solver is rhs._solver
 
-   # def allocate(self, size, nm=None):
-   #    o = MemoryObject(size, nm)
-   #    self._objects.append(o)
-   #    return Pointer(o)

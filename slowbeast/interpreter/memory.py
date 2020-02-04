@@ -8,13 +8,19 @@ from .. ir.types import OffsetType, SizeType
 from . memoryobject import MemoryObject
 from . errors import ExecutionError
 
+class MemoryObjectsManager:
+    def allocate(self, size, nm=None):
+        """ Allocate memory object of the right type """
+        return MemoryObject(size, nm)
 
 class Memory:
-    def __init__(self):
+    def __init__(self, momanager=MemoryObjectsManager()):
+        self.momanager = momanager
         self._objects = {}
         self._objects_ro = False
 
     def copyTo(self, new):
+        new.momanager = self.momanager
         new._objects = self._objects
         new._objects_ro = True
         self._objects_ro = True
@@ -42,7 +48,7 @@ class Memory:
     def allocate(self, size, instr=None, nm=None):
         """ Allocate a new memory object and return a pointer to it """
         self._cow_reown()
-        o = MemoryObject(size, nm)
+        o = self.momanager.allocate(size, nm)
         assert o._isRO() is False, "Created object is read-only (COW bug)"
         o.setAllocation(instr)
         assert self._objects.get(o.getID()) is None
