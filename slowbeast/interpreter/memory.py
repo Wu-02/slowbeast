@@ -14,6 +14,14 @@ class Memory:
         self._objects = {}
         self._objects_ro = False
 
+    def copyTo(self, new):
+        new._objects = self._objects
+        new._objects_ro = True
+        self._objects_ro = True
+        for o in self._objects.values():
+            o._setRO()
+        return new
+
     def copy(self):
         new = copy(self)
         new._objects_ro = True

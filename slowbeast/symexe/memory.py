@@ -1,4 +1,4 @@
-from copy import deepcopy
+from copy import copy
 from .. util.debugging import dbg, FIXME
 from .. interpreter.memory import Memory
 
@@ -13,11 +13,11 @@ class SymbolicMemory(Memory):
         self._solver = solver
 
     def copy(self):
-        FIXME('add COW for symbolic memory')
-        new = super(SymbolicMemory, self).copy()
+        new = copy(self)
         new._solver = self._solver
+        super(SymbolicMemory, self).copyTo(new)
         assert new == self, "BUG in copying object"
-        return deepcopy(self)
+        return new
 
     def __eq__(self, rhs):
         return super(SymbolicMemory, self).__eq__(rhs) and\
