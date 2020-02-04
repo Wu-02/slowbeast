@@ -18,6 +18,7 @@ class Stats:
         self.errors = 0
         self.instructions = 0
 
+
 class SymbolicExecutor(Interpreter):
     def __init__(self, P, testgen=None, concretize_nondet=False):
         self.solver = Solver()
@@ -66,7 +67,10 @@ class SymbolicExecutor(Interpreter):
             elif s.wasKilled():
                 self.stats.paths += 1
                 self.stats.killed_paths += 1
-                print_stderr(s.getStatusDetail(), prefix='KILLED STATE: ', color='WINE')
+                print_stderr(
+                    s.getStatusDetail(),
+                    prefix='KILLED STATE: ',
+                    color='WINE')
                 if self.testgen:
                     self.testgen.processState(s)
             else:

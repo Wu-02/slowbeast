@@ -67,13 +67,15 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert b.getValue() < a.getBitWidth(), "Invalid shift"
         val = a.getValue()
-        return Expr(a.getValue() >> b.getValue() if val >= 0 else (val+(1<<a.getBitWidth())) >> b.getValue(), a.getType())
+        return Expr(a.getValue() >> b.getValue() if val >= 0 else (
+            val + (1 << a.getBitWidth())) >> b.getValue(), a.getType())
 
     def Extract(a, start, end):
         assert ConcreteDomain.belongto(a)
         assert start.isConstant()
         assert end.isConstant()
-        return Constant((a.getValue() >> start) & ((1<<(end - start + 1))-1), a.getType())
+        return Constant((a.getValue() >> start) & (
+            (1 << (end - start + 1)) - 1), a.getType())
 
     ##
     # Relational operators

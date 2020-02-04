@@ -9,9 +9,10 @@ from sys import stdout
 class ExecutionStatus:
     READY = 1      # ready for execution
     EXITED = 2     # normally exited
-    TERMINATED = 3 # terminated by instruction (abort, etc.)
+    TERMINATED = 3  # terminated by instruction (abort, etc.)
     ERROR = 4      # hit an error (violated assertion, oob access, etc.)
-    KILLED = 5    # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
+    # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
+    KILLED = 5
 
     def __init__(self, st=READY):
         self.value = st
@@ -34,7 +35,7 @@ class ExecutionStatus:
         self.value = ExecutionStatus.ERROR
 
     def setKilled(self, e):
-        #raise RuntimeError(e) # for debugging
+        # raise RuntimeError(e) # for debugging
         self.detail = e
         self.value = ExecutionStatus.KILLED
 

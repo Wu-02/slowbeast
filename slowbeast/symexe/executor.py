@@ -139,7 +139,8 @@ class Executor(ConcreteExecutor):
         mo1 = p1.getObject()
         mo2 = p2.getObject()
         if is_symbolic(mo1) or is_symbolic(mo2):
-            state.setKilled("Comparison of symbolic pointers unimplemented: {0}".format(instr))
+            state.setKilled(
+                "Comparison of symbolic pointers unimplemented: {0}".format(instr))
             return [state]
 
         E = state.getExprManager()
@@ -230,13 +231,15 @@ class Executor(ConcreteExecutor):
             if not op2.isPointer():
                 r = addPointerWithConstant(E, op1, op2)
             else:
-                state.setKilled("Arithmetic on pointers not implemented yet: {0}".format(instr))
+                state.setKilled(
+                    "Arithmetic on pointers not implemented yet: {0}".format(instr))
                 return [state]
         elif op2.isPointer():
             if not op1.isPointer():
                 r = addPointerWithConstant(E, op2, op1)
             else:
-                state.setKilled("Arithmetic on pointers not implemented yet: {0}".format(instr))
+                state.setKilled(
+                    "Arithmetic on pointers not implemented yet: {0}".format(instr))
                 return [state]
         else:
             if instr.getOperation() == BinaryOperation.ADD:
@@ -254,7 +257,8 @@ class Executor(ConcreteExecutor):
             elif instr.getOperation() == BinaryOperation.ASHR:
                 r = E.AShr(op1, op2)
             else:
-                state.setKilled("Not implemented binary operation: {0}".format(instr))
+                state.setKilled(
+                    "Not implemented binary operation: {0}".format(instr))
                 return [state]
 
         assert r, "Bug in creating a binary op expression"
@@ -277,7 +281,8 @@ class Executor(ConcreteExecutor):
             start, end = instr.getRange()
             r = E.Extract(op1, start, end)
         else:
-            state.setKilled("Unary instruction not implemented: {0}".format(instr))
+            state.setKilled(
+                "Unary instruction not implemented: {0}".format(instr))
             return [state]
 
         state.set(instr, r)
