@@ -209,4 +209,4 @@ class ExprManager:
     def Rem(self, a, b, unsigned = False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Rem(a, b, unsigned)
-        return SymbolicDomain.Rem(a, b, unsigned)
+        return SymbolicDomain.Rem(self.lift(a), self.lift(b), unsigned)
