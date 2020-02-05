@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from llvm.parser import Parser
+from slowbeast.parsers.llvm import Parser as LLVMParser
 import argparse
 import sys
 from os import mkdir
@@ -103,7 +103,7 @@ def main():
     cmd = createArgParser()
     args = cmd.parse_args()
 
-    parser = Parser()
+    parser = LLVMParser()
     try:
         P = parser.parse(args.prog[0])
     except FileNotFoundError as e:
