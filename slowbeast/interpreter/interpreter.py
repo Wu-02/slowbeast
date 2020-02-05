@@ -80,6 +80,16 @@ class InteractiveHandler:
             self.handlePrint(query[1:], s, newstates)
         elif query[0] == 'b':
             self.handleBreak(query[1:], s, newstates)
+        elif query[0] in ['l', 'list']:
+            if len(query) == 1:
+                i = s.pc
+                n = 0
+                while i and n < 5:
+                    i.dump()
+                    i = i.getNextInstruction()
+                    n += 1
+            elif query[1] in ['b', 'bblock', 'block']:
+                s.pc.getBBlock().dump()
         else:
             print("Unknown query: {0}".format(q))
             print("FIXME: ... print help ...")

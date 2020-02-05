@@ -48,7 +48,7 @@ class ConcreteDomain:
     def Xor(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType()
-        return Constant(a.getValue() ^ b.getValue(), BoolType())
+        return Constant(a.getValue() ^ b.getValue(), a.getType())
 
     def Not(a):
         assert ConcreteDomain.belongto(a)
