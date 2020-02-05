@@ -113,6 +113,11 @@ def getConstantInt(val):
 
     c = _getInt(parts[1])
     if c is None:
+        if bw == 1:
+            if parts[1] == 'true':
+                return Constant(True, BoolType())
+            elif parts[1] == 'false':
+                return Constant(False, BoolType())
         return None
 
     return Constant(c, Type(bw))
