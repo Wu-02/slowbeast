@@ -21,35 +21,77 @@ else:
 
 # FIXME add support for incremental solving
 
-class Solver:
+class SolverIntf:
+    """ Interface of solvers """
+    def __init__(self, em=ExprManager()):
+        self._exprmanager = em
+
+    def getExprManager(self):
+        return self._exprmanager
+
+    def is_sat(self, *e):
+        raise NotImplementedError("Must be overriden")
+
+    def freshValue(self, name, bw=64):
+        """ bw = bitwidth """
+        return self.getExprManager().freshValue(name, bw)
+
+class ConcreteSolver(SolverIntf):
+    """
+    Just check for True/False values of concrete computation
+    wrapped to the interface solver.
+    """
+
+    def __init__(self, em=ExprManager()):
+        super(ConcreteSolver, self).__init__(em)
+
+    def is_sat(self, *e):
+        for x in e:
+            assert x.isBool()
+            assert isinstance(x.getValue(), bool)
+            if x.getValue() is False:
+                return False
+        return True
+
+
+class SymbolicSolver(SolverIntf):
     """
     Wrapper for SMT solver(s) used throughout this project
     """
 
-    def __init__(self):
-        self.exprmanager = ExprManager()
-
-    def getExprManager(self):
-        return self.exprmanager
+    def __init__(self, em=ExprManager()):
+        super(SymbolicSolver, self).__init__(em)
 
     def is_sat(self, *e):
         return is_sat([x._expr for x in e])
 
-    def concretize(self, val, *e):
-        m = model(val, *e)
-        print(m)
-        v = m.get(val)
-        if not v:
-            return Constant(0, val.getType())
+  # def concretize(self, val, *e):
+  #     m = model(val, *e)
+  #     print(m)
+  #     v = m.get(val)
+  #     if not v:
+  #         return Constant(0, val.getType())
 
-        return Constant(v, val.getType())
+  #     return Constant(v, val.getType())
 
-    def getUnique(self, val, *e):
-        v = self.concretize(val, *e)
-        if self.is_sat(self.exprmanager.Ne(val, v)):
-            return None
-        return v
+  # def getUnique(self, val, *e):
+  #     v = self.concretize(val, *e)
+  #     if self.is_sat(self.exprmanager.Ne(val, v)):
+  #         return None
+  #     return v
 
-    def freshValue(self, name, bw=64):
-        """ bw = bitwidth """
-        return self.exprmanager.freshValue(name, bw)
+class Solver(SolverIntf):
+    """ Basic solver that calls either concrete or (some) symbolic
+        solver based on the given values
+    """
+
+    def __init__(self, em=ExprManager()):
+        super(Solver, self).__init__(em)
+        self.symbolic = SymbolicSolver(em)
+        self.concrete = ConcreteSolver(em)
+
+    def is_sat(self, *e):
+        if e[0].isConstant():
+            return self.concrete.is_sat(*e)
+        return self.symbolic.is_sat(*e)
+
