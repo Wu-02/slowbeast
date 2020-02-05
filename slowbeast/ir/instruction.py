@@ -59,6 +59,15 @@ class Instruction(ProgramElement):
         else:
             stream.write("{0}{1}\n".format(" " * ind, self))
 
+    ###
+    # Helper methods
+    def insertBefore(self, i):
+        assert self._bblock is None
+        assert self._bblock_idx is None
+        assert i._bblock is not None
+        assert i._bblock_idx is not None
+        return i._bblock.insert(self, i._bblock_idx)
+
     def getNextInstruction(self):
         assert self._bblock is not None
         assert self._bblock_idx is not None

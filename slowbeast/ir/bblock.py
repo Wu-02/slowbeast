@@ -15,6 +15,29 @@ class BBlock(ProgramElement):
         i.setBBlock(self, len(self._instructions))
         self._instructions.append(i)
 
+    def insert(self, i, idx):
+        assert len(self._instructions) > idx
+        oldi = self._instructions[idx]
+        # shift indices of the suffix of the bblock
+        for i in self._instructions[idx:]:
+            i._bblock_idx += 1
+        self._instructions.insert(idx, i)
+        i.setBBlock(self, idx)
+
+        if __debug__:
+            n = 0
+            for i in self._instructions:
+                assert i._bblock_idx == n, "Invalid insertion of instruction"
+                n += 1
+
+    def first(self):
+        assert len(self._instructions) > 0
+        return self._instructions[0]
+
+    def last(self):
+        assert len(self._instructions) > 0
+        return self._instructions[-1]
+
     def empty(self):
         return len(self._instructions) == 0
 

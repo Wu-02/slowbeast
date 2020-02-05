@@ -90,8 +90,8 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a)
         assert start.isConstant()
         assert end.isConstant()
-        return Constant((a.getValue() >> start) & (
-            (1 << (end - start + 1)) - 1), a.getType())
+        bitsnum = end.getValue() - start.getValue() + 1
+        return Constant((a.getValue() >> start.getValue()) & ((1 << (bitsnum)) - 1), Type(bitsnum))
 
     def Rem(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
@@ -101,7 +101,6 @@ class ConcreteDomain:
         if unsigned:
             return Constant(abs(a.getValue()) % abs(b.getValue()), a.getType())
         return Constant(a.getValue() % b.getValue(), a.getType())
-
 
     ##
     # Relational operators

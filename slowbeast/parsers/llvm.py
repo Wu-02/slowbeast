@@ -509,6 +509,29 @@ class Parser:
         self.phis.append((inst, phivar, L))
         return [L]
 
+    def getPhiValues(self, inst):
+        ops = getLLVMOperands(inst)
+        # we cannot get bblocks from the value anyhow...
+        c = None
+        ret = {}
+        for op in ops:
+            o = self.getOperand(op)
+            if o is None:
+                return None, None
+            if o.isConstant():
+                if c and c != o:
+                    # cannot determine from where this value is comming
+                    return None, None
+                else:
+                    c = o
+            else:
+                assert o.getBBlock() is not None
+                ret[o.getBBlock()] = o
+        print(ret, c)
+        assert len(ret) > 0 or c
+        assert len(ret) <= len(ops)
+        return ret, c
+
     def _parse_instruction(self, inst):
         if inst.opcode == 'alloca':
             return self._createAlloca(inst)
@@ -590,10 +613,14 @@ class Parser:
 
         # finish PHI nodes
         if self.phis:
-            print_stderr("PHI nodes yet not supported", color="RED")
+            print_stderr("Cannot parse PHI nodes")
             exit(1)
-       #for inst, var, load in self.phis:
-       #    operands = getLLVMOperands(inst)
+
+           #for inst, var, load in self.phis:
+           #    vals, c = self.getPhiValues(inst)
+           #    if vals is None:
+           #        print_stderr("Cannot parse this type of PHI nodes")
+           #        exit(1)
 
 
     def _parse_module(self, m):
