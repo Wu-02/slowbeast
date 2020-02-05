@@ -25,6 +25,7 @@ class ConstraintsSet:
             self._ro = False
 
         for c in C:
+            assert not c.isConstant(), "Adding True or False, catch these cases atm"
             self.constraints.append(c)
 
     def get(self):
@@ -62,6 +63,19 @@ class SEState(ExecutionState):
         return self._solver.getExprManager()
 
     def is_sat(self, *e):
+        # XXX: check whether this kind of preprocessing is not too costly
+        symb = []
+        for x in e:
+            if x.isConstant():
+                assert isinstance(x.getValue(), bool)
+                if x.getValue() == False:
+                    return False
+                else:
+                    continue
+            else:
+                symb.append(x)
+        if not symb:
+            return True
         return self._solver.is_sat(*self.getConstraints(), *e)
 
     def copy(self):

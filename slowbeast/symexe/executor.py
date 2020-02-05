@@ -34,10 +34,9 @@ class Executor(ConcreteExecutor):
     def fork(self, state, cond):
         self.stats.fork_calls += 1
 
-        E = state.getExprManager()
         T, F = None, None
 
-        # cond may be constant if the condition is concrete
+        # fast path + do not add True/False to constraints
         if cond.isConstant():
             assert cond.isBool(), "Invalid constant"
             if cond.getValue():
@@ -53,7 +52,7 @@ class Executor(ConcreteExecutor):
             T = state.copy()
             T.addConstraint(cond)
 
-        ncond = E.Not(cond)
+        ncond = state.getExprManager().Not(cond)
         if state.is_sat(ncond):
             F = state.copy()
             F.addConstraint(ncond)
@@ -67,8 +66,6 @@ class Executor(ConcreteExecutor):
         """ Return a new states where we assume that condition is true.
             Return None if that situation cannot happen
         """
-        E = state.getExprManager()
-
         if cond.isConstant():
             assert cond.isBool(), "Invalid constant"
             if cond.getValue():

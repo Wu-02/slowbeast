@@ -46,6 +46,7 @@ class ConcreteSolver(SolverIntf):
         super(ConcreteSolver, self).__init__(em)
 
     def is_sat(self, *e):
+        print('Concrete: ', e)
         for x in e:
             assert x.isBool()
             assert isinstance(x.getValue(), bool)
@@ -80,18 +81,30 @@ class SymbolicSolver(SolverIntf):
   #         return None
   #     return v
 
-class Solver(SolverIntf):
-    """ Basic solver that calls either concrete or (some) symbolic
-        solver based on the given values
-    """
+# For efficiency, we solve the True/False case incrementally
+# in the state.is_sat(). Keep this code if needed for the future
+#class Solver(SolverIntf):
+#   """ Basic solver that calls either concrete or (some) symbolic
+#       solver based on the given values
+#   """
+#
+#   def __init__(self, em=ExprManager()):
+#       super(Solver, self).__init__(em)
+#       self.symbolic = SymbolicSolver(em)
+#       self.concrete = ConcreteSolver(em)
+#
+#   def is_sat(self, *e):
+#      # FIXME: check whether this part consumes a lot of time...
+#      # Since concrete are True or False, we can solve them
+#      # independently without any effect on the result
+#      concrete = []
+#      symbolic = []
+#      for x in e:
+#          if x.isConstant():
+#              concrete.append(x)
+#          else:
+#              symbolic.append(x)
+#              
+#      return self.concrete.is_sat(*concrete) and self.symbolic.is_sat(*symbolic)
 
-    def __init__(self, em=ExprManager()):
-        super(Solver, self).__init__(em)
-        self.symbolic = SymbolicSolver(em)
-        self.concrete = ConcreteSolver(em)
-
-    def is_sat(self, *e):
-        if e[0].isConstant():
-            return self.concrete.is_sat(*e)
-        return self.symbolic.is_sat(*e)
-
+Solver = SymbolicSolver
