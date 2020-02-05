@@ -8,10 +8,12 @@ from .. ir.types import OffsetType, SizeType
 from . memoryobject import MemoryObject
 from . errors import ExecutionError
 
+
 class MemoryObjectsManager:
     def allocate(self, size, nm=None):
         """ Allocate memory object of the right type """
         return MemoryObject(size, nm)
+
 
 class Memory:
     def __init__(self, momanager=MemoryObjectsManager()):

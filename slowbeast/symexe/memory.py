@@ -7,14 +7,17 @@ from .. interpreter.memoryobject import MemoryObject
 #from .. ir.value import *
 #from .. ir.types import OffsetType
 
+
 class SEMemoryObject(MemoryObject):
     def __init__(self, size, nm=None):
         super(SEMemoryObject, self).__init__(size, nm)
+
 
 class SEMemoryObjectsManager:
     def allocate(self, size, nm=None):
         """ Allocate memory object of the right type """
         return SEMemoryObject(size, nm)
+
 
 class SymbolicMemory(Memory):
     def __init__(self, solver):
@@ -31,4 +34,3 @@ class SymbolicMemory(Memory):
     def __eq__(self, rhs):
         return super(SymbolicMemory, self).__eq__(rhs) and\
             self._solver is rhs._solver
-

@@ -23,6 +23,7 @@ else:
 
 class SolverIntf:
     """ Interface of solvers """
+
     def __init__(self, em=ExprManager()):
         self._exprmanager = em
 
@@ -35,6 +36,7 @@ class SolverIntf:
     def freshValue(self, name, bw=64):
         """ bw = bitwidth """
         return self.getExprManager().freshValue(name, bw)
+
 
 class ConcreteSolver(SolverIntf):
     """
@@ -83,7 +85,7 @@ class SymbolicSolver(SolverIntf):
 
 # For efficiency, we solve the True/False case incrementally
 # in the state.is_sat(). Keep this code if needed for the future
-#class Solver(SolverIntf):
+# class Solver(SolverIntf):
 #   """ Basic solver that calls either concrete or (some) symbolic
 #       solver based on the given values
 #   """
@@ -104,7 +106,9 @@ class SymbolicSolver(SolverIntf):
 #              concrete.append(x)
 #          else:
 #              symbolic.append(x)
-#              
-#      return self.concrete.is_sat(*concrete) and self.symbolic.is_sat(*symbolic)
+#
+# return self.concrete.is_sat(*concrete) and
+# self.symbolic.is_sat(*symbolic)
+
 
 Solver = SymbolicSolver
