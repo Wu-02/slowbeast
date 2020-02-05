@@ -198,13 +198,13 @@ class ExprManager:
                 return a
         return SymbolicDomain.Mul(self.lift(a), self.lift(b))
 
-    def Div(self, a, b):
+    def Div(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a):
             if a.getValue() == 0:
                 return a
             if ConcreteDomain.belongto(b):
-                return ConcreteDomain.Div(a, b)
-        return SymbolicDomain.Div(self.lift(a), self.lift(b))
+                return ConcreteDomain.Div(a, b, unsigned)
+        return SymbolicDomain.Div(self.lift(a), self.lift(b), unsigned)
 
     def Rem(self, a, b, unsigned = False):
         if ConcreteDomain.belongto(a, b):

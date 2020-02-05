@@ -161,8 +161,9 @@ class ConcreteDomain:
                                  b.getType().getBitWidth()))
         return Constant(a.getValue() * b.getValue(), result_ty)
 
-    def Div(a, b):
+    def Div(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
-        result_ty = Type(max(a.getType().getBitWidth(),
-                             b.getType().getBitWidth()))
+        result_ty = a.getType()
+        if unsigned:
+            return Constant(getUnsigned(a.getValue()) / getUnsigned(b.getValue()), result_ty)
         return Constant(a.getValue() / b.getValue(), result_ty)

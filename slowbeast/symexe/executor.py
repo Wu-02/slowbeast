@@ -247,7 +247,7 @@ class Executor(ConcreteExecutor):
             elif instr.getOperation() == BinaryOperation.MUL:
                 r = E.Mul(op1, op2)
             elif instr.getOperation() == BinaryOperation.DIV:
-                r = E.Div(op1, op2)
+                r = E.Div(op1, op2, instr.isUnsigned())
             elif instr.getOperation() == BinaryOperation.SHL:
                 r = E.Shl(op1, op2)
             elif instr.getOperation() == BinaryOperation.LSHR:

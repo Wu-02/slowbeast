@@ -449,13 +449,18 @@ class Mul(BinaryOperation):
 
 
 class Div(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b, unsigned=False):
         super(Div, self).__init__(BinaryOperation.DIV, a, b)
+        self._unsigned = unsigned
+
+    def isUnsigned(self):
+        return self._unsigned
 
     def __str__(self):
-        return "x{0} = {1} / {2}".format(self.getID(),
+        return "x{0} = {1} /{3} {2}".format(self.getID(),
                                          self.getOperand(0).asValue(),
-                                         self.getOperand(1).asValue())
+                                         self.getOperand(1).asValue(),
+                                         "u" if self.isUnsigned() else "")
 
 class Rem(BinaryOperation):
     def __init__(self, a, b, unsigned=False):

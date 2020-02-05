@@ -259,6 +259,8 @@ class Parser:
             I = Mul(op1, op2)
         elif opcode == 'div':
             I = Div(op1, op2)
+        elif opcode == 'udiv':
+            I = Div(op1, op2, unsigned=True)
         else:
             raise NotImplementedError("Artihmetic operation unsupported: {0}".format(inst))
 
@@ -515,7 +517,7 @@ class Parser:
             return self._createTrunc(inst)
         elif inst.opcode == 'getelementptr':
             return self._createGep(inst)
-        elif inst.opcode in ['add', 'sub', 'div', 'mul']:
+        elif inst.opcode in ['add', 'sub', 'div', 'mul', 'udiv']:
             return self._createArith(inst, inst.opcode)
         elif inst.opcode in ['shl', 'lshr', 'ashr']:
             return self._createShift(inst)
