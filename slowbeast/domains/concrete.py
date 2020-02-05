@@ -145,21 +145,18 @@ class ConcreteDomain:
     # Arithmetic operations
     def Add(a, b):
         assert ConcreteDomain.belongto(a, b)
-        result_ty = Type(max(a.getType().getBitWidth(),
-                             b.getType().getBitWidth()))
-        return Constant(a.getValue() + b.getValue(), result_ty)
+        assert a.getType() == b.getType()
+        return Constant(a.getValue() + b.getValue(), a.getType())
 
     def Sub(a, b):
         assert ConcreteDomain.belongto(a, b)
-        result_ty = Type(max(a.getType().getBitWidth(),
-                             b.getType().getBitWidth()))
-        return Constant(a.getValue() - b.getValue(), result_ty)
+        assert a.getType() == b.getType()
+        return Constant(a.getValue() - b.getValue(), a.getType())
 
     def Mul(a, b):
         assert ConcreteDomain.belongto(a, b)
-        result_ty = Type(2 * max(a.getType().getBitWidth(),
-                                 b.getType().getBitWidth()))
-        return Constant(a.getValue() * b.getValue(), result_ty)
+        assert a.getType() == b.getType()
+        return Constant(a.getValue() * b.getValue(), a.getType())
 
     def Div(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
