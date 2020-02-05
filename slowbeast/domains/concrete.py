@@ -99,8 +99,8 @@ class ConcreteDomain:
         if (b.getValue() > a.getValue()):
             return a
         if unsigned:
-            return Constant(abs(a.getValue()) % abs(b.getValue()), Type(b.getValue()))
-        return Constant(a.getValue() % b.getValue(), Type(b.getValue()))
+            return Constant(abs(a.getValue()) % abs(b.getValue()), a.getType())
+        return Constant(a.getValue() % b.getValue(), a.getType())
 
 
     ##

@@ -168,8 +168,8 @@ class ExecutionState:
 
     def set(self, what, v):
         """ Associate a value to a register (in the current stack frame) """
-      #from .. util.debugging import dbg
-      #dbg("[{0}] -> {1} ({2})".format(what, v, v.getType()), color="GREEN")
+       #from .. util.debugging import dbg
+       #dbg("[{0}] -> {1} ({2})".format(what, v, v.getType()), color="GREEN")
         self.cs.set(what, v)
 
     def get(self, v):
