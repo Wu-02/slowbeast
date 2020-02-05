@@ -63,7 +63,7 @@ class SymbolicSolver(SolverIntf):
         super(SymbolicSolver, self).__init__(em)
 
     def is_sat(self, *e):
-        return is_sat([x._expr for x in e])
+        return is_sat([x.unwrap() for x in e])
 
   # def concretize(self, val, *e):
   #     m = model(val, *e)
