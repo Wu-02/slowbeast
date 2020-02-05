@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+rm -f sb.tmp*.bc sb.bc
+clang -emit-llvm -S -o sb.tmp.bc $@
+opt -reg2mem sb.tmp.bc -o sb.tmp1.bc
+$(dirname $0)/sb -dbg sb.tmp1.bc
+
