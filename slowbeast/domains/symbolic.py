@@ -119,15 +119,28 @@ class BVSymbolicDomain:
     # Logic operators
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(And(a.unwrap(), b.unwrap()), BoolType())
+        assert a.getType() == b.getType()
+        if a.isBool():
+            return Expr(And(a.unwrap(), b.unwrap()), BoolType())
+        else:
+            # bitwise and
+            return Expr(a.unwrap() & b.unwrap(), a.getType())
 
     def Or(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
+        assert a.getType() == b.getType()
+        if a.isBool():
+            return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
+        else:
+            # bitwise and
+            return Expr(a.unwrap() | b.unwrap(), a.getType())
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)
-        return Expr(Not(a.unwrap()), BoolType())
+        if a.isBool():
+            return Expr(Not(a.unwrap()), BoolType())
+        else:
+            return Expr(~a.unwrap(), a.getType())
 
     def ZExt(a, b):
         assert BVSymbolicDomain.belongto(a)

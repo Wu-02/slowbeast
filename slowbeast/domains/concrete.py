@@ -31,15 +31,26 @@ class ConcreteDomain:
 
     def And(a, b):
         assert ConcreteDomain.belongto(a, b)
-        return Constant(a.getValue() and b.getValue(), BoolType())
+        assert a.getType() == b.getType()
+        if a.isBool():
+            return Constant(a.getValue() and b.getValue(), BoolType())
+        else:
+            return Constant(a.getValue() & b.getValue(), a.getType())
 
     def Or(a, b):
         assert ConcreteDomain.belongto(a, b)
-        return Constant(a.getValue() or b.getValue(), BoolType())
+        assert a.getType() == b.getType()
+        if a.isBool():
+            return Constant(a.getValue() or b.getValue(), BoolType())
+        else:
+            return Constant(a.getValue() | b.getValue(), a.getType())
 
     def Not(a):
         assert ConcreteDomain.belongto(a)
-        return Constant(not a.getValue(), BoolType())
+        if a.isBool():
+            return Constant(not a.getValue(), BoolType())
+        else:
+            return Constant(~a.getValue(), a.getType())
 
     def ZExt(a, b):
         assert ConcreteDomain.belongto(a, b)

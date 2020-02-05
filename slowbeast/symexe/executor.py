@@ -256,6 +256,10 @@ class Executor(ConcreteExecutor):
                 r = E.AShr(op1, op2)
             elif instr.getOperation() == BinaryOperation.REM:
                 r = E.Rem(op1, op2, instr.isUnsigned())
+            elif instr.getOperation() == BinaryOperation.AND:
+                r = E.And(op1, op2)
+            elif instr.getOperation() == BinaryOperation.OR:
+                r = E.Or(op1, op2)
             else:
                 state.setKilled(
                     "Not implemented binary operation: {0}".format(instr))
@@ -280,6 +284,8 @@ class Executor(ConcreteExecutor):
         elif instr.getOperation() == UnaryOperation.EXTRACT:
             start, end = instr.getRange()
             r = E.Extract(op1, start, end)
+        elif instr.getOperation() == UnaryOperation.NOT:
+            r = E.Not(op1)
         else:
             state.setKilled(
                 "Unary instruction not implemented: {0}".format(instr))
