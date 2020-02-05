@@ -59,8 +59,8 @@ class ConcreteDomain:
 
     def ZExt(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.getBitWidth() <= b.getValue(), "Invalid zext argument"
-        return Constant(a.getValue(), Type(b.getValue()))
+        assert a.getBitWidth() < b.getValue(), "Invalid zext argument"
+        return Constant(getUnsigned(a), Type(b.getValue()))
 
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
