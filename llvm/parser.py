@@ -255,7 +255,7 @@ class Parser:
 
     def _createShift(self, inst):
         operands = getLLVMOperands(inst)
-        assert len(operands) == 2, "Invalid number of operands for store"
+        assert len(operands) == 2, "Invalid number of operands for shift"
 
         op1 = self.getOperand(operands[0])
         op2 = self.getOperand(operands[1])
@@ -275,7 +275,7 @@ class Parser:
 
     def _createLogicOp(self, inst):
         operands = getLLVMOperands(inst)
-        assert len(operands) == 2, "Invalid number of operands for store"
+        assert len(operands) == 2, "Invalid number of operands for logic op"
 
         op1 = self.getOperand(operands[0])
         op2 = self.getOperand(operands[1])
@@ -293,8 +293,23 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
+    def _createRem(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 2, "Invalid number of operands for rem"
 
+        op1 = self.getOperand(operands[0])
+        op2 = self.getOperand(operands[1])
+        opcode = inst.opcode
 
+        if opcode == 'srem':
+            I = Rem(op1, op2)
+        elif opcode == 'urem':
+            I = Rem(op1, op2, unsigned=True)
+        else:
+            raise NotImplementedError("Remainder operation unsupported: {0}".format(inst))
+
+        self._addMapping(inst, I)
+        return [I]
 
     def _createCmp(self, inst):
         operands = getLLVMOperands(inst)
@@ -494,6 +509,8 @@ class Parser:
             return self._createShift(inst)
         elif inst.opcode in ['and', 'or']:
             return self._createLogicOp(inst)
+        elif inst.opcode in ['srem', 'urem']:
+            return self._createRem(inst)
         elif inst.opcode == 'phi':
             return self._handlePhi(inst)
         else:

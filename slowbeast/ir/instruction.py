@@ -394,6 +394,7 @@ class BinaryOperation(ValueInstruction):
     SUB = 2
     MUL = 3
     DIV = 4
+    REM = 11
     # bitwise
     SHL = 5
     LSHR = 6
@@ -403,7 +404,7 @@ class BinaryOperation(ValueInstruction):
     OR = 9
     XOR = 10
     # more logicals to come ...
-    LAST = 11
+    LAST = 12
 
     def __check(op):
         assert op >= BinaryOperation.ADD and op <= BinaryOperation.LAST
@@ -456,6 +457,19 @@ class Div(BinaryOperation):
                                          self.getOperand(0).asValue(),
                                          self.getOperand(1).asValue())
 
+class Rem(BinaryOperation):
+    def __init__(self, a, b, unsigned=False):
+        super(Rem, self).__init__(BinaryOperation.REM, a, b)
+        self._unsigned = unsigned
+
+    def isUnsigned(self):
+        return self._unsigned
+
+    def __str__(self):
+        return "x{0} = {1} %{3} {2}".format(self.getID(),
+                                            self.getOperand(0).asValue(),
+                                            self.getOperand(1).asValue(),
+                                            self.isUnsigned())
 
 class Shl(BinaryOperation):
     def __init__(self, a, b):
