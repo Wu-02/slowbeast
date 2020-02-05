@@ -260,6 +260,8 @@ class Executor(ConcreteExecutor):
                 r = E.And(op1, op2)
             elif instr.getOperation() == BinaryOperation.OR:
                 r = E.Or(op1, op2)
+            elif instr.getOperation() == BinaryOperation.XOR:
+                r = E.Xor(op1, op2)
             else:
                 state.setKilled(
                     "Not implemented binary operation: {0}".format(instr))

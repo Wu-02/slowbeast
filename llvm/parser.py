@@ -519,7 +519,7 @@ class Parser:
             return self._createArith(inst, inst.opcode)
         elif inst.opcode in ['shl', 'lshr', 'ashr']:
             return self._createShift(inst)
-        elif inst.opcode in ['and', 'or']:
+        elif inst.opcode in ['and', 'or', 'xor']:
             return self._createLogicOp(inst)
         elif inst.opcode in ['srem', 'urem']:
             return self._createRem(inst)

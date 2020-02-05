@@ -3,7 +3,7 @@ from .. ir.types import Type, BoolType
 
 _use_z3 = True
 if _use_z3:
-    from z3 import If, Or, And, Not, BoolVal, BitVec, BitVecVal, URem, SRem
+    from z3 import If, Or, And, Xor, Not, BoolVal, BitVec, BitVecVal, URem, SRem
     from z3 import ULT as BVULT
     from z3 import ULE as BVULE
     from z3 import UGT as BVUGT
@@ -134,6 +134,15 @@ class BVSymbolicDomain:
         else:
             # bitwise and
             return Expr(a.unwrap() | b.unwrap(), a.getType())
+
+    def Xor(a, b):
+        assert BVSymbolicDomain.belongto(a, b)
+        assert a.getType() == b.getType()
+        if a.isBool():
+            return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
+        else:
+            # bitwise and
+            return Expr(a.unwrap() ^ b.unwrap(), a.getType())
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)

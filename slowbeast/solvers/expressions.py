@@ -85,6 +85,11 @@ class ExprManager:
             return ConcreteDomain.Or(a, b)
         return SymbolicDomain.Or(self.lift(a), self.lift(b))
 
+    def Xor(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Or(a, b)
+        return SymbolicDomain.Or(self.lift(a), self.lift(b))
+
     def Not(self, a):
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.Not(a)
