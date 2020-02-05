@@ -83,7 +83,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert b.getValue() < a.getBitWidth(), "Invalid shift"
         val = a.getValue()
-        return Expr(a.getValue() >> b.getValue() if val >= 0 else (
+        return Constant(a.getValue() >> b.getValue() if val >= 0 else (
             val + (1 << a.getBitWidth())) >> b.getValue(), a.getType())
 
     def Extract(a, start, end):
