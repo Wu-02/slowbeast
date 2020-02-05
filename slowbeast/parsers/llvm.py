@@ -441,6 +441,18 @@ class Parser:
         self._addMapping(inst, ext)
         return [ext]
 
+    def _createCast(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 1, "Invalid number of operands for load"
+        # just behave that there's no ZExt for now
+        bits=getTypeSizeInBits(inst.type)
+        op = self.getOperand(operands[0])
+        if op.isConstant():
+            self._mapping[inst] = op
+            return []
+        else:
+            raise NotImplementedError("Unhandled cast: {0}".format(inst))
+
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
         assert isPointerTy(operands[0].type), "First type of GEP is not a pointer"
@@ -517,6 +529,8 @@ class Parser:
             return self._createTrunc(inst)
         elif inst.opcode == 'getelementptr':
             return self._createGep(inst)
+        elif inst.opcode == 'bitcast':
+            return self._createCast(inst)
         elif inst.opcode in ['add', 'sub', 'div', 'mul', 'udiv']:
             return self._createArith(inst, inst.opcode)
         elif inst.opcode in ['shl', 'lshr', 'ashr']:
@@ -543,7 +557,7 @@ class Parser:
             # may be several slowbeast instructions
             try:
                 instrs = self._parse_instruction(inst)
-                assert inst.opcode in ['call', 'getelementptr'] or instrs,\
+                assert inst.opcode in ['bitcast', 'call', 'getelementptr'] or instrs,\
                        "No instruction was created"
                 for I in instrs:
                     B.append(I)
