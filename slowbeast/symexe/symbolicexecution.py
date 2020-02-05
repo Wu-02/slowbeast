@@ -20,13 +20,14 @@ class Stats:
 
 
 class SymbolicExecutor(Interpreter):
-    def __init__(self, P, testgen=None, concretize_nondet=False):
+    def __init__(self, P, testgen=None, concretize_nondet=False, interactive=False):
         self.solver = Solver()
         super(
             SymbolicExecutor,
             self).__init__(
             P,
-            SExecutor(concretize_nondet))
+            SExecutor(concretize_nondet),
+            interactive)
         self.stats = Stats()
         self.testgen = testgen
 

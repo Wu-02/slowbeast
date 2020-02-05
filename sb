@@ -15,6 +15,7 @@ def createArgParser():
     parser.add_argument('-dbg', action='store_true', help='write debugging messages')
     parser.add_argument('-entry', default='main', help='entry function')
     parser.add_argument('-out-dir', default='slowbeast-out', help='Directory for output files')
+    parser.add_argument('-interactive', action='store_true', default=False, help='Introspect the run of the algorithm')
     parser.add_argument('-se-no-tests', action='store_true', help='Genereate no test files')
     parser.add_argument('-se-concretize-nondet', action='store_true', default=False,
                         help='Use random value for nondet values, thus follow one random path during symbolic execution (for debugging).')
@@ -132,7 +133,7 @@ def main():
         testgen = TestCaseGenerator(args.out_dir)
 
     P.setEntry(entry)
-    SE = SymbolicExecutor(P, testgen, args.se_concretize_nondet)
+    SE = SymbolicExecutor(P, testgen, args.se_concretize_nondet, args.interactive)
     try:
         SE.run()
         print_stats(SE)
