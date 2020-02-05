@@ -572,6 +572,7 @@ class Parser:
         # finish PHI nodes
         if self.phis:
             print_stderr("PHI nodes yet not supported", color="RED")
+            exit(1)
        #for inst, var, load in self.phis:
        #    operands = getLLVMOperands(inst)
 
