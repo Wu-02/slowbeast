@@ -3,7 +3,7 @@ from .. ir.types import Type, BoolType
 
 _use_z3 = True
 if _use_z3:
-    from z3 import If, Or, And, Not, BoolVal, BitVec, BitVecVal
+    from z3 import If, Or, And, Not, BoolVal, BitVec, BitVecVal, URem, SRem
     from z3 import ULT as BVULT
     from z3 import ULE as BVULE
     from z3 import UGT as BVUGT
@@ -248,6 +248,15 @@ class BVSymbolicDomain:
         result_ty = a.getType()
         return Expr(a.unwrap() / b.unwrap(), result_ty)
 
+    def Rem(a, b, unsigned=False):
+        assert BVSymbolicDomain.belongto(a, b)
+        assert a.getType() == b.getType(),\
+            "Operation on invalid types: {0} != {1}".format(
+            a.getType(), b.getType())
+        result_ty = a.getType()
+        if unsigned:
+            return Expr(URem(a.unwrap(), b.unwrap()), result_ty)
+        return Expr(SRem(a.unwrap(), b.unwrap()), result_ty)
 
 # The default symbolic domain are bitvectors
 SymbolicDomain = BVSymbolicDomain

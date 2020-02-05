@@ -77,6 +77,16 @@ class ConcreteDomain:
         return Constant((a.getValue() >> start) & (
             (1 << (end - start + 1)) - 1), a.getType())
 
+    def Rem(a, b, unsigned=False):
+        assert ConcreteDomain.belongto(a, b)
+        assert b.getValue() != 0, "Invalid remainder"
+        if (b.getValue() > a.getValue()):
+            return a
+        if unsigned:
+            return Constant(abs(a.getValue()) % abs(b.getValue()), Type(b.getValue()))
+        return Constant(a.getValue() % b.getValue(), Type(b.getValue()))
+
+
     ##
     # Relational operators
     def Le(a, b, unsigned=False):

@@ -255,6 +255,8 @@ class Executor(ConcreteExecutor):
                 r = E.LShr(op1, op2)
             elif instr.getOperation() == BinaryOperation.ASHR:
                 r = E.AShr(op1, op2)
+            elif instr.getOperation() == BinaryOperation.REM:
+                r = E.Rem(op1, op2, instr.isUnsigned())
             else:
                 state.setKilled(
                     "Not implemented binary operation: {0}".format(instr))
