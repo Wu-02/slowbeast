@@ -207,7 +207,6 @@ class Executor(ConcreteExecutor):
             state.setTerminated("Aborted via an abort() call")
             return [state]
 
-        FIXME("Functions need return value type")
         retTy = fun.getReturnType()
         if retTy:
             if self._concretize_nondet:
