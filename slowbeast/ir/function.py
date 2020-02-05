@@ -4,11 +4,12 @@ from sys import stdout
 
 
 class Function(ProgramElement):
-    def __init__(self, name, argNum=0):
+    def __init__(self, name, argNum=0, retty=None):
         super(Function, self).__init__()
         self._name = name
         self._bblocks = []
         self._arguments = [Argument() for x in range(0, argNum)]
+        self._retty = retty
 
     def __eq__(self, other):
         assert self._name != other._name or self.getID() == other.getID()
@@ -26,6 +27,9 @@ class Function(ProgramElement):
 
     def getArguments(self):
         return self._arguments
+
+    def getReturnType(self):
+        return self._retty
 
     def addBBlock(self, bb):
         self._bblocks.append(bb)

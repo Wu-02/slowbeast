@@ -208,11 +208,13 @@ class Executor(ConcreteExecutor):
             return [state]
 
         FIXME("Functions need return value type")
-        if self._concretize_nondet:
-            val = Constant(getrandbits(32), Type(32))
-        else:
-            val = state.getSolver().freshValue(fun.getName(), 32)
-        state.set(instr, val)
+        retTy = fun.getReturnType()
+        if retTy:
+            if self._concretize_nondet:
+                val = Constant(getrandbits(32), retTy)
+            else:
+                val = state.getSolver().freshValue(fun.getName(), retTy.getBitWidth())
+            state.set(instr, val)
         state.pc = state.pc.getNextInstruction()
         return [state]
 

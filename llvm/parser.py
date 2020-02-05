@@ -149,6 +149,18 @@ def parseCmp(inst):
     else:
         return None, False
 
+def parseFunctionRetTy(ty):
+    parts = str(ty).split()
+    if len(parts) < 2:
+        return False, None
+    if parts[0] == 'void':
+        return True, None
+    else:
+        sz = getTypeSizeInBits(parts[0])
+        if sz:
+            return True, Type(sz)
+    return False, None
+
 class Parser:
     def __init__(self):
         self.program = Program()
@@ -568,7 +580,11 @@ class Parser:
         # create the function at first,
         # because they may be operands of calls
         for f in m.functions:
-            self.program.addFun(Function(f.name, len(list(f.arguments))))
+            assert f.type.is_pointer, "Function pointer type is not a pointer"
+            succ, retty = parseFunctionRetTy(f.type.element_type)
+            if not succ:
+                raise NotImplementedError("Cannot parse function return type: {0}".format(f.type.element_type))
+            self.program.addFun(Function(f.name, len(list(f.arguments)), retty))
 
         for f in m.functions:
             self._parse_fun(f)
