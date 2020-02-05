@@ -81,24 +81,3 @@ class SymbolicExecutor(Interpreter):
                 if self.testgen:
                     self.testgen.processState(s)
 
-    def run(self):
-        self.states = self.getInitialStates(self.entry)
-
-        try:
-            while self.states:
-                state = self.getNextState()
-                newstates = self._executor.execute(state, state.pc)
-                self.handleNewStates(newstates)
-        except ExecutionError as e:
-            print_stderr(
-                "Fatal error while executing '{0}': {1}".format(
-                    state.pc, str(e)), color='RED')
-            state.dump()
-            return -1
-        except Exception as e:
-            print_stderr("Fatal error while executing '{0}'".format(state.pc),
-                         color='RED')
-            state.dump()
-            raise e
-
-        return 0
