@@ -469,7 +469,7 @@ class Rem(BinaryOperation):
         return "x{0} = {1} %{3} {2}".format(self.getID(),
                                             self.getOperand(0).asValue(),
                                             self.getOperand(1).asValue(),
-                                            self.isUnsigned())
+                                            "u" if self.isUnsigned() else "")
 
 class Shl(BinaryOperation):
     def __init__(self, a, b):
