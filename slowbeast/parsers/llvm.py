@@ -509,29 +509,6 @@ class Parser:
         self.phis.append((inst, phivar, L))
         return [L]
 
-    def getPhiValues(self, inst):
-        ops = getLLVMOperands(inst)
-        # we cannot get bblocks from the value anyhow...
-        c = None
-        ret = {}
-        for op in ops:
-            o = self.getOperand(op)
-            if o is None:
-                return None, None
-            if o.isConstant():
-                if c and c != o:
-                    # cannot determine from where this value is comming
-                    return None, None
-                else:
-                    c = o
-            else:
-                assert o.getBBlock() is not None
-                ret[o.getBBlock()] = o
-        print(ret, c)
-        assert len(ret) > 0 or c
-        assert len(ret) <= len(ops)
-        return ret, c
-
     def _parse_instruction(self, inst):
         if inst.opcode == 'alloca':
             return self._createAlloca(inst)
@@ -608,19 +585,22 @@ class Parser:
         for b in f.blocks:
             self._bblocks[b] = BBlock(F)
 
+        # now create the contents of the blocks
         for b in f.blocks:
             self._parse_block(F, b)
 
-        # finish PHI nodes
+        # place the rest of instructions simulating PHI nodes
         if self.phis:
-            print_stderr("Cannot parse PHI nodes")
-            exit(1)
-
-           #for inst, var, load in self.phis:
-           #    vals, c = self.getPhiValues(inst)
-           #    if vals is None:
-           #        print_stderr("Cannot parse this type of PHI nodes")
-           #        exit(1)
+            for inst, var, load in self.phis:
+                # place the allocation to the entry node
+                var.insertBefore(F.getBBlock(0).last())
+                # place the writes to memory
+                for i in range(0, inst.phi_incoming_count):
+                    v, b = inst.phi_incoming(i)
+                    B = self._bblocks[b]
+                    S = Store(self.getOperand(v), var)
+                    S.insertBefore(B.last())
+            self.phis = []  # we handled these PHI nodes
 
 
     def _parse_module(self, m):
