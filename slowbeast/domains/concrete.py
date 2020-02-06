@@ -91,7 +91,10 @@ class ConcreteDomain:
         assert start.isConstant()
         assert end.isConstant()
         bitsnum = end.getValue() - start.getValue() + 1
-        return Constant((a.getValue() >> start.getValue()) & ((1 << (bitsnum)) - 1), Type(bitsnum))
+        return Constant(
+            (a.getValue() >> start.getValue()) & (
+                (1 << (bitsnum)) - 1),
+            Type(bitsnum))
 
     def Rem(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
@@ -161,5 +164,10 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         result_ty = a.getType()
         if unsigned:
-            return Constant(getUnsigned(a.getValue()) / getUnsigned(b.getValue()), result_ty)
+            return Constant(
+                getUnsigned(
+                    a.getValue()) /
+                getUnsigned(
+                    b.getValue()),
+                result_ty)
         return Constant(a.getValue() / b.getValue(), result_ty)

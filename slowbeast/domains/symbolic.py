@@ -282,5 +282,6 @@ class BVSymbolicDomain:
             return Expr(URem(a.unwrap(), b.unwrap()), result_ty)
         return Expr(SRem(a.unwrap(), b.unwrap()), result_ty)
 
+
 # The default symbolic domain are bitvectors
 SymbolicDomain = BVSymbolicDomain

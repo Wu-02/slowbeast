@@ -19,8 +19,8 @@ class BBlock(ProgramElement):
         assert len(self._instructions) > idx
         oldi = self._instructions[idx]
         # shift indices of the suffix of the bblock
-        for i in self._instructions[idx:]:
-            i._bblock_idx += 1
+        for sufi in self._instructions[idx:]:
+            sufi._bblock_idx += 1
         self._instructions.insert(idx, i)
         i.setBBlock(self, idx)
 

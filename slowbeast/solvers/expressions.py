@@ -206,7 +206,7 @@ class ExprManager:
                 return ConcreteDomain.Div(a, b, unsigned)
         return SymbolicDomain.Div(self.lift(a), self.lift(b), unsigned)
 
-    def Rem(self, a, b, unsigned = False):
+    def Rem(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Rem(a, b, unsigned)
         return SymbolicDomain.Rem(self.lift(a), self.lift(b), unsigned)

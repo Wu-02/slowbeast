@@ -8,6 +8,48 @@ from .. util.debugging import print_highlight
 from sys import stdout
 
 
+class GlobalVariable(ProgramElement):
+    def __init__(self, size, name, const=False):
+        super(GlobalVariable, self).__init__()
+        self._size = size
+        self._name = name
+        # is the pointed memory constant?
+        self._isconst = const
+        # sequence of instructions used to initialize this global
+        self._init = []
+
+    def isGlobal(self):
+        return True
+
+    def getSize(self):
+        return self._size
+
+    def getName(self):
+        return self._name
+
+    def hasInit(self):
+        return self._init is not None
+
+    def getInit(self):
+        return self._init
+
+    def setInit(self, I):
+        for i in I:
+            self.addMetadata('init', str(i))
+        self._init = I
+
+    def asValue(self):
+        return 'g{0}'.format(self.getID())
+
+    def __str__(self):
+        return "{0} = global {1} of size {2}".format(
+            self.asValue(), self.getName(), self.getSize())
+
+    def dump(self, ind=0, stream=stdout, color=True):
+        super(GlobalVariable, self).dump(ind, stream)
+        stream.write("{0}{1}\n".format(" " * ind, self))
+
+
 class Instruction(ProgramElement):
 
     def __init__(self, ops=[]):
@@ -467,9 +509,10 @@ class Div(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} /{3} {2}".format(self.getID(),
-                                         self.getOperand(0).asValue(),
-                                         self.getOperand(1).asValue(),
-                                         "u" if self.isUnsigned() else "")
+                                            self.getOperand(0).asValue(),
+                                            self.getOperand(1).asValue(),
+                                            "u" if self.isUnsigned() else "")
+
 
 class Rem(BinaryOperation):
     def __init__(self, a, b, unsigned=False):
@@ -484,6 +527,7 @@ class Rem(BinaryOperation):
                                             self.getOperand(0).asValue(),
                                             self.getOperand(1).asValue(),
                                             "u" if self.isUnsigned() else "")
+
 
 class Shl(BinaryOperation):
     def __init__(self, a, b):

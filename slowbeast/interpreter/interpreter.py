@@ -3,6 +3,7 @@ from . executionstate import ExecutionState
 from . executor import Executor
 from . errors import ExecutionError
 
+
 class InteractiveHandler:
     def __init__(self, interpreter):
         self.interpreter = interpreter
@@ -36,14 +37,17 @@ class InteractiveHandler:
             from sys import exit
             print("Exiting...")
             exit(0)
-            
+
     def _prompt(self, s, newstates):
         if self._shouldSkip(s, newstates):
             return
 
-        self._stop_next_time=False
+        self._stop_next_time = False
 
-        print("Stopped before executing: ({0}) {1}".format(s.getID(), str(s.pc)))
+        print(
+            "Stopped before executing: ({0}) {1}".format(
+                s.getID(), str(
+                    s.pc)))
         q = input("> ")
         if q == '':
             q = self._last_query
@@ -67,14 +71,14 @@ class InteractiveHandler:
 
     def _handle(self, q, s, newstates):
         dbg('query: {0}'.format(q))
-        query=q.split()
+        query = q.split()
         if len(query) < 1:
             return False
 
         if query[0] in ['c', 'continue']:
-            return True # True = continute
+            return True  # True = continute
         if query[0] in ['n', 's', 'step', 'next']:
-            self._stop_next_time=True
+            self._stop_next_time = True
             return True
         elif query[0] == 'p':
             self.handlePrint(query[1:], s, newstates)
@@ -111,8 +115,8 @@ class InteractiveHandler:
         elif query[0] in ['i', 'inst', 'instruction']:
             self._break_inst.append(int(query[1]))
             print("Break on instructions: ", self._break_inst)
-        #elif query[0] in ['s', 'state']: # XXX: states do not have any unique id (yet?)...
-     
+        # elif query[0] in ['s', 'state']: # XXX: states do not have any unique
+        # id (yet?)...
 
     def handlePrint(self, query, state, newstates):
         if not query:
@@ -131,15 +135,23 @@ class InteractiveHandler:
                 s.dump()
             else:
                 print('No such a state')
-        #elif query[0].startswith('x'):
+        # elif query[0].startswith('x'):
            # FIXME need to get the Instruction first
-           #if val is None:
+           # if val is None:
            #    print("No such a value")
-           #else:
+           # else:
            #    print("{0} -> {1}".format(query[0], val))
         else:
             raise NotImplementedError("Invalid print command")
-        
+
+# dummy class used as a program counter during initialization
+# of global variables
+
+
+class GlobalInit:
+    def getNextInstruction(self):
+        return self
+
 
 class Interpreter:
     def __init__(self, program, executor=Executor(), interactive=None):
@@ -153,14 +165,12 @@ class Interpreter:
     def getStates(self):
         return self.states
 
-    def getInitialStates(self, entry):
+    def getInitialStates(self):
         """
         Get state(s) from which to start execution.
         May be overriden by child classes
         """
-        s = ExecutionState(None)
-        s.pushCall(None, entry)
-        return [s]
+        return [ExecutionState(None)]
 
     def getNextState(self):
         if not self.states:
@@ -174,7 +184,7 @@ class Interpreter:
 
     def handleNewStates(self, newstates):
         assert len(newstates) == 1,\
-               "Concrete execution returned more than one state"
+            "Concrete execution returned more than one state"
 
         state = newstates[0]
         if state.isReady():
@@ -204,9 +214,37 @@ class Interpreter:
 
         self._interactive.prompt(s, newstates)
 
-    def run(self):
-        self.states = self.getInitialStates(self.entry)
+    def run_static(self):
+        """ Run static ctors (e.g. initialize globals) """
+        # fake the program counter for the executor
+        ginit = GlobalInit()
+        for s in self.states:
+            s.pc = ginit
 
+        for G in self._program.getGlobals():
+            # bind the global to the state
+            for s in self.states:
+                s.bindGlobal(G, s.memory.allocateGlobal(G))
+                s.dump()
+
+            if not G.hasInit():
+                continue
+            for i in G.getInit():
+                for s in self.states:
+                    ret = self._executor.execute(s, i)
+                    assert len(ret) == 1, "Unhandled initialization"
+                    assert ret[0] is s, "Unhandled initialization instruction"
+
+    def run(self):
+        self.states = self.getInitialStates()
+
+        self.run_static()
+
+        # push call to main to call stack
+        for s in self.states:
+            s.pushCall(None, self.entry)
+
+        # we're ready to go!
         newstates = []
         try:
             while self.states:
@@ -227,4 +265,3 @@ class Interpreter:
             raise e
 
         return 0
-

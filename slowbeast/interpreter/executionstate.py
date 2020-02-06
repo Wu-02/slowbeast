@@ -81,11 +81,13 @@ class ExecutionStatus:
 
 
 class ExecutionState:
-    def __init__(self, pc=None, m=Memory(), v={}):
+    def __init__(self, pc=None, m=Memory(), glob={}):
         # program counter
         self.pc = pc
         # memory objects
         self.memory = m
+        self.globals = glob
+        # globals FIXME: move to memory (with call stack)
         # callstack containing top-level values for the current
         # function (values of computation of instructions)
         # FIXME: move callstack to memory?
@@ -166,6 +168,9 @@ class ExecutionState:
                 "Use of uninitialized/unknown variable {0}".format(v))
         return value
 
+    def bindGlobal(self, glob, ptr):
+        self.globals[glob] = ptr
+
     def set(self, what, v):
         """ Associate a value to a register (in the current stack frame) """
        #from .. util.debugging import dbg
@@ -174,9 +179,9 @@ class ExecutionState:
 
     def get(self, v):
         """ Get a value from a register (in the current stack frame) """
-        ret = self.cs.get(v)
-        # if ret is None:
-        #    ret = self.globals.get(v)
+        ret = self.globals.get(v)
+        if ret is None:
+            ret = self.cs.get(v)
         return ret
 
     def write(self, ptr, value):
@@ -212,6 +217,9 @@ class ExecutionState:
         self.status.dump(stream)
         stream.write(" -- program counter --\n")
         stream.write('{0}\n'.format(self.pc))
+        stream.write("-- Globals:\n")
+        for g, v in self.globals.items():
+            stream.write("{0} -> {1}\n".format(g.asValue(), v.asValue()))
         stream.write("-- Call stack:\n")
         self.cs.dump(stream)
         stream.write("-- Memory:\n")

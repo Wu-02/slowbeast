@@ -20,7 +20,12 @@ class Stats:
 
 
 class SymbolicExecutor(Interpreter):
-    def __init__(self, P, testgen=None, concretize_nondet=False, interactive=False):
+    def __init__(
+            self,
+            P,
+            testgen=None,
+            concretize_nondet=False,
+            interactive=False):
         self.solver = Solver()
         super(
             SymbolicExecutor,
@@ -31,10 +36,8 @@ class SymbolicExecutor(Interpreter):
         self.stats = Stats()
         self.testgen = testgen
 
-    def getInitialStates(self, entry):
-        s = SEState(None, SymbolicMemory(self.solver), self.solver)
-        s.pushCall(None, entry)
-        return [s]
+    def getInitialStates(self):
+        return [SEState(None, SymbolicMemory(self.solver), self.solver)]
 
     def getNextState(self):
         if not self.states:
@@ -81,4 +84,3 @@ class SymbolicExecutor(Interpreter):
                 self.stats.exited_paths += 1
                 if self.testgen:
                     self.testgen.processState(s)
-

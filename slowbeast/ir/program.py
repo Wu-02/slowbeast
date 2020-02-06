@@ -7,12 +7,10 @@ class Program:
         self._functions = []
         self._entry = None
         self._metadata = {}
+        self._globals = []
 
     def addFun(self, f):
         self._functions.append(f)
-
-    def addGlobal(self, g):
-        self._globals.append(g)
 
     def getFunction(self, name):
         for f in self._functions:
@@ -27,7 +25,16 @@ class Program:
     def getEntry(self):
         return self._entry
 
+    def addGlobal(self, g):
+        self._globals.append(g)
+
+    def getGlobals(self):
+        return self._globals
+
     def dump(self, stream=stdout):
+        for g in self._globals:
+            g.dump(stream=stream)
+            stream.write('\n')
         for f in self._functions:
             f.dump(stream)
             stream.write('\n')
@@ -57,6 +64,10 @@ class ProgramElement:
     def addMetadata(self, key, value):
         assert isinstance(key, str)
         self._metadata.append((key, value))
+
+    def isGlobal(self):
+        """ Is visible everywhere in the program? """
+        return False
 
     def getID(self):
         return self._id
