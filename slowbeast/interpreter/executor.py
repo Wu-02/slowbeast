@@ -290,3 +290,29 @@ class Executor:
             raise NotImplementedError(str(instr))
 
         return states
+
+    def executeTillBranch(self, state):
+        """
+        Start executing from 'state' and stop execution after executing a
+        branch instruction.  This usually will execute exactly one basic block
+        of the code.
+        """
+        states = []
+        readystates=[state]
+
+        while readystates:
+            newst = []
+            for s in readystates:
+                nxt = self.execute(s, s.pc)
+                if isinstance(s.pc, Branch):
+                    # we stop here
+                    states += nxt
+                else:
+                    for n in nxt:
+                        if n.isReady():
+                            newst.append(n)
+                        else:
+                            states.append(n)
+
+            readystates = newst
+        return states

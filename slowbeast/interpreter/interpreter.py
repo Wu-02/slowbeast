@@ -14,10 +14,11 @@ class GlobalInit:
 
 
 class Interpreter:
-    def __init__(self, program, executor=Executor(), interactive=None):
+    def __init__(self, program, executor=Executor(), by_blocks=False, interactive=None):
         self._program = program
         self._executor = executor
         self._interactive = InteractiveHandler(self) if interactive else None
+        self._execute_by_blocks = by_blocks
 
         self.entry = program.getEntry()
         self.states = []
@@ -110,7 +111,10 @@ class Interpreter:
             while self.states:
                 state = self.getNextState()
                 self.interact_if_needed(state, newstates)
-                newstates = self._executor.execute(state, state.pc)
+                if self._execute_by_blocks:
+                    newstates = self._executor.executeTillBranch(state)
+                else:
+                    newstates = self._executor.execute(state, state.pc)
                 self.handleNewStates(newstates)
         except ExecutionError as e:
             print_stderr(

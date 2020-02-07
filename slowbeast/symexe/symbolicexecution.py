@@ -25,6 +25,7 @@ class SymbolicExecutor(Interpreter):
             P,
             testgen=None,
             concretize_nondet=False,
+            by_blocks=False,
             interactive=False):
         self.solver = Solver()
         super(
@@ -32,6 +33,7 @@ class SymbolicExecutor(Interpreter):
             self).__init__(
             P,
             SExecutor(concretize_nondet),
+            by_blocks,
             interactive)
         self.stats = Stats()
         self.testgen = testgen
