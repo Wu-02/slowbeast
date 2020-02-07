@@ -533,7 +533,9 @@ class Parser:
             if isPointerTy(ty):
                 ty = ty.element_type
             elif isArrayTy(ty):
-                _, ty = parseArrayTy(ty)
+                sty = str(ty)
+                # get the type of the element of array
+                ty = sty[sty.find('x ')+2:-1]
             elemSize = getTypeSize(ty)
 
         mem = self.getOperand(operands[0])
