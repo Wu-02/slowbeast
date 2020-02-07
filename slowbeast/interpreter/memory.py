@@ -8,23 +8,14 @@ from .. ir.types import OffsetType, SizeType
 from . memoryobject import MemoryObject
 from . errors import ExecutionError
 
-
-class MemoryObjectsManager:
-    def allocate(self, size, nm=None):
-        """ Allocate memory object of the right type """
-        return MemoryObject(size, nm)
-
-
 class Memory:
-    def __init__(self, momanager=MemoryObjectsManager()):
-        self.momanager = momanager
+    def __init__(self):
         self._objects = {}
         self._objects_ro = False
         self._glob_objects = {}
         self._glob_objects_ro = False
 
     def copyTo(self, new):
-        new.momanager = self.momanager
         new._objects = self._objects
         new._objects_ro = True
         self._objects_ro = True
@@ -49,6 +40,14 @@ class Memory:
             o._setRO()
         return new
 
+    def createMO(self, size, nm=None):
+        """
+        Create a new memory object -- may be overriden
+        by child classes to create a different type of
+        memory objects.
+        """
+        return MemoryObject(size, nm)
+
     def _objs_reown(self):
         if self._objects_ro:
             assert all([x._isRO() for x in self._objects.values()])
@@ -67,7 +66,7 @@ class Memory:
     def allocate(self, size, instr=None, nm=None):
         """ Allocate a new memory object and return a pointer to it """
         self._objs_reown()
-        o = self.momanager.allocate(size, nm)
+        o = self.createMO(size, nm)
         assert o._isRO() is False, "Created object is read-only (COW bug)"
         o.setAllocation(instr)
         assert self._objects.get(o.getID()) is None
@@ -77,7 +76,7 @@ class Memory:
     def allocateGlobal(self, G):
         """ Allocate a new memory object and return a pointer to it """
         self._globs_reown()
-        o = self.momanager.allocate(G.getSize(), G.getName())
+        o = self.createMO(G.getSize(), G.getName())
         assert o._isRO() is False, "Created object is read-only (COW bug)"
         o.setAllocation(G)
         assert self._glob_objects.get(o.getID()) is None

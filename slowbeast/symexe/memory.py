@@ -12,17 +12,14 @@ class SEMemoryObject(MemoryObject):
     def __init__(self, size, nm=None):
         super(SEMemoryObject, self).__init__(size, nm)
 
-
-class SEMemoryObjectsManager:
-    def allocate(self, size, nm=None):
-        """ Allocate memory object of the right type """
-        return SEMemoryObject(size, nm)
-
-
 class SymbolicMemory(Memory):
     def __init__(self, solver):
-        super(SymbolicMemory, self).__init__(SEMemoryObjectsManager())
+        super(SymbolicMemory, self).__init__()
         self._solver = solver
+
+    # override this method to create the right objects
+    def createMO(self, size, nm=None):
+        return SEMemoryObject(size, nm)
 
     def copy(self):
         new = copy(self)
