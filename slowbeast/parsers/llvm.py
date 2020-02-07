@@ -504,6 +504,9 @@ class Parser:
         if op.isConstant():
             self._mapping[inst] = op
             return []
+        elif isPointerTy(operands[0].type):
+            self._addMapping(inst, self.getOperand(operands[0]))
+            return []
         else:
             raise NotImplementedError("Unhandled cast: {0}".format(inst))
 
