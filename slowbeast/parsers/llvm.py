@@ -64,15 +64,18 @@ def isArrayTy(ty):
         return False
     return sty[0] == '[' and sty[-1] == ']'
 
+def parseArrayTyByParts(ty):
+    print(parts)
 
-def parseArrayTy(ty):
+
+def getArrayTySize(ty):
     assert isArrayTy(ty)
     sty = str(ty)
-    parts = sty[1:-1].split()
-    assert len(parts) == 3 and parts[1] == 'x', "Unhandled array type: {0}".format(sty)
-
-    return parts[0], parts[2]
-
+    parts = sty.split()
+    assert parts[1] == 'x', "Invalid array type"
+    assert parts[0].startswith('[')
+    assert parts[-1].endswith(']')
+    return int(parts[0][1:]) * getTypeSizeInBits(" ".join(parts[2:])[:-1])
 
 def getTypeSizeInBits(ty):
     if not isinstance(ty, str) and ty.is_pointer:
@@ -81,12 +84,8 @@ def getTypeSizeInBits(ty):
 
     sty = str(ty)
     if isArrayTy(ty):
-        num, elemType = parseArrayTy(ty)
-        elemType = getTypeSizeInBits(elemType)
-        num = _getInt(num)
-        if elemType and num:
-            return elemType * num
-        return None
+        s = getArrayTySize(ty)
+        return s
     # FIXME: get it from target triple
     elif sty == 'double':
         return 64
