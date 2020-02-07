@@ -78,15 +78,16 @@ def getArrayTySize(ty):
     return int(parts[0][1:]) * getTypeSizeInBits(" ".join(parts[2:])[:-1])
 
 def getTypeSizeInBits(ty):
+    # FIXME: get rid of the magic constants and use the layout from the program
     if not isinstance(ty, str) and ty.is_pointer:
-        # FIXME: get it from target triple
         return 64
 
     sty = str(ty)
     if isArrayTy(ty):
         s = getArrayTySize(ty)
         return s
-    # FIXME: get it from target triple
+    elif isPointerTy(ty):
+        return 64
     elif sty == 'double':
         return 64
     elif sty == 'float':
