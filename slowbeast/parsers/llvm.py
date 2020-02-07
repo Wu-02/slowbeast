@@ -69,7 +69,7 @@ def parseArrayTy(ty):
     assert isArrayTy(ty)
     sty = str(ty)
     parts = sty[1:-1].split()
-    assert len(parts) == 3 and parts[1] == 'x', "Unhandled array type"
+    assert len(parts) == 3 and parts[1] == 'x', "Unhandled array type: {0}".format(sty)
 
     return parts[0], parts[2]
 
@@ -93,7 +93,7 @@ def getTypeSizeInBits(ty):
     elif sty == 'float':
         return 32
     else:
-        assert '*' not in sty
+        assert '*' not in sty, "Unsupported type: {0}".format(sty)
         return _getBitWidth(sty)
 
 
