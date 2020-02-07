@@ -297,8 +297,11 @@ class Executor:
         branch instruction.  This usually will execute exactly one basic block
         of the code.
         """
-        states = []
-        readystates=[state]
+        finalstates = []
+        if isinstance(state, list):
+            readystates=state
+        else:
+            readystates=[state]
 
         while readystates:
             newst = []
@@ -306,13 +309,13 @@ class Executor:
                 nxt = self.execute(s, s.pc)
                 if isinstance(s.pc, Branch):
                     # we stop here
-                    states += nxt
+                    finalstates += nxt
                 else:
                     for n in nxt:
                         if n.isReady():
                             newst.append(n)
                         else:
-                            states.append(n)
+                            finalstates.append(n)
 
             readystates = newst
-        return states
+        return finalstates
