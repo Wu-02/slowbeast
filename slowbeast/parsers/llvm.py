@@ -674,6 +674,12 @@ class Parser:
             if c:
                 # FIXME: add composed instruction
                 G.setInit([Store(c, G)])
+           #elif isArrayTy(g.initializer.type):
+           #    parts=str(g.initializer.type).split()
+           #    assert parts[1] == 'x'
+           #    if parts[2].startswith('i'):
+           #        print(parts)
+           #    # FIXME: add String type to represent strings
             else:
                 print_stderr(
                     'Unsupported initializer: {0}'.format(
