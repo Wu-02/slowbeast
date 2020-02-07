@@ -30,6 +30,11 @@ if _use_z3:
             return b.unwrap()
         return If(b.unwrap(), bv_const(1, 1), bv_const(0, 1))
 
+    def castToBool(b):
+        if b.isBool():
+            return b.unwrap()
+        return If(b.unwrap() != bv_const(0, b.getBitWidth()), TRUE(), FALSE())
+
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
     from pysmt.shortcuts import BVULT, BVULE, BVUGT, BVUGE
