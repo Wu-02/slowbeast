@@ -225,7 +225,6 @@ class Interpreter:
             # bind the global to the state
             for s in self.states:
                 s.bindGlobal(G, s.memory.allocateGlobal(G))
-                s.dump()
 
             if not G.hasInit():
                 continue
