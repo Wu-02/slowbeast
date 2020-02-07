@@ -233,6 +233,7 @@ class Interpreter:
                     ret = self._executor.execute(s, i)
                     assert len(ret) == 1, "Unhandled initialization"
                     assert ret[0] is s, "Unhandled initialization instruction"
+                    assert ret[0].isReady(), "Generated errorneous state during initialization of globals"
 
     def run(self):
         self.states = self.getInitialStates()

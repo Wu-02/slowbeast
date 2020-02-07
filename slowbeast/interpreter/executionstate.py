@@ -188,7 +188,11 @@ class ExecutionState:
         if not ptr.getOffset().isConstant():
             self.setKilled("Write with non-constant offset not supported yet")
             return [self]
-        err = self.memory.write(ptr, value)
+        try:
+            err = self.memory.write(ptr, value)
+        except NotImplementedError as e:
+            self.setKilled(str(e))
+            return [self]
         if err:
             self.setError(err)
         return [self]
@@ -198,7 +202,11 @@ class ExecutionState:
         if not ptr.getOffset().isConstant():
             self.setKilled("Read with non-constant offset not supported yet")
             return [self]
-        val, err = self.memory.read(ptr, bytesNum)
+        try:
+            val, err = self.memory.read(ptr, bytesNum)
+        except NotImplementedError as e:
+            self.setKilled(str(e))
+            return [self]
         if err:
             self.setError(err)
         else:

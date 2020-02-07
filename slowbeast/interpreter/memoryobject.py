@@ -50,9 +50,14 @@ class MemoryObject:
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
         """
-        assert off.isConstant(), "Write to non-constant offset not supported"
         assert isinstance(x, Value)
         assert self._ro is False, "Writing read-only object (COW bug)"
+
+        if not off.isConstant():
+            raise NotImplementedError("Write to non-constant offset not supported")
+
+        if not self.getSize().isConstant():
+            raise NotImplementedError("Write to symbolic-sized objects not implemented yet")
 
         offval = off.getValue()
         if offval != 0:
@@ -68,8 +73,14 @@ class MemoryObject:
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)
         """
-        assert off.isConstant(), "Read from non-constant offset"
         assert isinstance(bts, int), "Read non-constant number of bytes"
+
+        if not off.isConstant():
+            raise NotImplementedError("Read from non-constant offset not supported")
+
+        if not self.getSize().isConstant():
+            raise NotImplementedError("Read from symbolic-sized objects not implemented yet")
+
         offval = off.getValue()
 
         if self.getSize().getValue() < bts:
