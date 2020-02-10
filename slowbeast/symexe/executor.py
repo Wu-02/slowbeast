@@ -27,7 +27,7 @@ def addPointerWithConstant(E, op1, op2):
 
 class Executor(ConcreteExecutor):
     def __init__(self, concretize_nondet=False):
-        super(ConcreteExecutor, self).__init__()
+        super(Executor, self).__init__()
         self.stats = SEStats()
         self._concretize_nondet = concretize_nondet
 
@@ -208,6 +208,11 @@ class Executor(ConcreteExecutor):
         fun = instr.getCalledFunction()
         if fun.isUndefined():
             return self.execUndefFun(state, instr, fun)
+
+        if self.callsForbidden():
+            # FIXME: make this more fine-grained, which calls are forbidden?
+            state.setKilled("Calls are forbidden")
+            return [state]
 
         # map values to arguments
         assert len(instr.getOperands()) == len(fun.getArguments())

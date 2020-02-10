@@ -51,14 +51,12 @@ class ConcreteSolver(SolverIntf):
         super(ConcreteSolver, self).__init__(em)
 
     def is_sat(self, *e):
-        print('Concrete: ', e)
         for x in e:
             assert x.isBool()
             assert isinstance(x.getValue(), bool)
             if x.getValue() is False:
                 return False
         return True
-
 
 class SymbolicSolver(SolverIntf):
     """

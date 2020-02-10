@@ -11,7 +11,13 @@ class Executor:
     """
 
     def __init__(self):
-        pass
+        self._no_calls = False
+
+    def forbidCalls(self):
+        self._no_calls = True
+
+    def callsForbidden(self):
+        return self._no_calls
 
     def execStore(self, state, instr):
         assert isinstance(instr, Store)
@@ -209,6 +215,11 @@ class Executor:
 
     def execCall(self, state, instr):
         assert isinstance(instr, Call)
+
+        if self.callsForbidden():
+            state.setKilled("Calls are forbidden")
+            return [state]
+
         fun = instr.getCalledFunction()
         dbg("-- CALL {0} --".format(fun.getName()))
         if fun.isUndefined():

@@ -101,14 +101,23 @@ class Interpreter:
                     assert ret[0] is s, "Unhandled initialization instruction"
                     assert ret[0].isReady(), "Generated errorneous state during initialization of globals"
 
-    def run(self):
+    def prepare(self):
+        """
+        Prepare the interpreter for execution.
+        I.e. initialize static memory and push the call to
+        the main function to call stack.
+        Result is a set of states before starting executing
+        the entry function.
+        """
         self.states = self.getInitialStates()
-
         self.run_static()
 
         # push call to main to call stack
         for s in self.states:
             s.pushCall(None, self.getProgram().getEntry())
+
+    def run(self):
+        self.prepare()
 
         # we're ready to go!
         newstates = []

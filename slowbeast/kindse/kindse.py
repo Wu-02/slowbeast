@@ -19,7 +19,9 @@ class KindSymbolicExecutor(SymbolicExecutor):
             concretize_nondet=concretize_nondet,
             by_blocks=by_blocks,
             interactive=interactive)
-        print("Using k-induction")
+
+        print("Forbidding calls for now with k-induction")
+        self.getExecutor().forbidCalls()
 
    #def getNextState(self):
    #    if not self.states:
