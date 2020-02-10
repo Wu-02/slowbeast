@@ -17,12 +17,26 @@ def createArgParser():
     parser.add_argument('-out-dir', default='slowbeast-out', help='Directory for output files')
     parser.add_argument('-interactive', action='store_true', default=False, help='Introspect the run of the algorithm')
     parser.add_argument('-se-no-tests', action='store_true', help='Genereate no test files')
-    parser.add_argument('-se-execute-blocks', action='store_true', help='Execute the whole blocks instead of single instructions.')
+    parser.add_argument('-step', default='instr',
+                        help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
     parser.add_argument('-se-concretize-nondet', action='store_true', default=False,
                         help='Use random value for nondet values, thus follow one random path during symbolic execution (for debugging).')
     parser.add_argument('-parse-only', action='store_true', help='only parse program and dump it (for debugging)')
 
     return parser
+
+def parseArgs():
+    parser = createArgParser()
+    args = parser.parse_args()
+
+    valid_step = ['block', 'instr']
+
+    if not args.step in valid_step:
+        print_stderr("Invalid -step argument, must be one of: {0}, got '{1}'".format(valid_step, args.step),
+                     color="RED")
+        sys.exit(1)
+
+    return args
 
 def print_stats(engine):
     print_stdout(
@@ -102,8 +116,7 @@ class TestCaseGenerator:
 
 
 def main():
-    cmd = createArgParser()
-    args = cmd.parse_args()
+    args = parseArgs()
 
     parser = LLVMParser()
     try:
@@ -139,7 +152,7 @@ def main():
         testgen = TestCaseGenerator(args.out_dir)
 
     P.setEntry(entry)
-    SE = SymbolicExecutor(P, testgen, args.se_concretize_nondet, args.se_execute_blocks, args.interactive)
+    SE = SymbolicExecutor(P, testgen, args.se_concretize_nondet, args.step == 'block', args.interactive)
     try:
         SE.run()
         print_stats(SE)
