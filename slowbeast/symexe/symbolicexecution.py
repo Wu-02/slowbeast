@@ -38,6 +38,9 @@ class SymbolicExecutor(Interpreter):
         self.stats = Stats()
         self.testgen = testgen
 
+    def getSolver(self):
+        return self.solver
+
     def getInitialStates(self):
         return [SEState(None, SymbolicMemory(self.solver), self.solver)]
 

@@ -90,6 +90,12 @@ class SEState(ExecutionState):
 
         return new
 
+    def havoc(self):
+        self.constraints = ConstraintsSet()
+        self.memory.havoc()
+        self._warnings = []
+        self._warnings_ro = False
+
     def getConstraints(self):
         return self.constraints.get()
 

@@ -1,5 +1,5 @@
 import sys
-from .. util.debugging import dbg
+from .. util.debugging import dbg, FIXME
 from .. ir.instruction import *
 from .. ir.value import *
 from . errors import ExecutionError
@@ -12,6 +12,7 @@ class Executor:
 
     def __init__(self):
         self._no_calls = False
+        self._lazy_mem_access = False
 
     def forbidCalls(self):
         self._no_calls = True
@@ -19,10 +20,28 @@ class Executor:
     def callsForbidden(self):
         return self._no_calls
 
+    def setLazyMemAccess(self, b=True):
+        self._lazy_mem_access = b
+
+    def lazyMemAccess(self):
+        return self._lazy_mem_access
+
     def execStore(self, state, instr):
         assert isinstance(instr, Store)
         value = state.eval(instr.getValueOperand())
-        to = state.eval(instr.getPointerOperand())
+        to = state.get(instr.getPointerOperand())
+        if to is None:
+            if self.lazyMemAccess():
+                assert isinstance(instr.getPointerOperand(), Alloc)
+                to = self.performAllocation(state, instr.getPointerOperand())
+                dbg("Lazily allocated {0}".format(instr.getPointerOperand()))
+                assert to
+            else:
+                state.setKilled(
+                    "Use of unknown variable: {0}".format(
+                        instr.getPointerOperand()))
+                return [state]
+
         assert isinstance(value, Value)
         assert to.isPointer()
 
@@ -34,7 +53,19 @@ class Executor:
 
     def execLoad(self, state, instr):
         assert isinstance(instr, Load)
-        frm = state.eval(instr.getPointerOperand())
+        frm = state.get(instr.getPointerOperand())
+        if frm is None:
+            if self.lazyMemAccess():
+                assert isinstance(instr.getPointerOperand(), Alloc)
+                frm = self.performAllocation(state, instr.getPointerOperand())
+                dbg("Lazily allocated {0}".format(instr.getPointerOperand()))
+                assert frm
+            else:
+                state.setKilled(
+                    "Use of unknown variable: {0}".format(
+                        instr.getPointerOperand()))
+                return [state]
+
         assert frm.isPointer()
         states = state.read(frm, dest=instr, bytesNum=instr.getBytesNum())
         for s in states:
@@ -42,13 +73,16 @@ class Executor:
                 s.pc = s.pc.getNextInstruction()
         return states
 
-    def execAlloc(self, state, instr):
+    def performAllocation(self, state, instr):
         assert isinstance(instr, Alloc)
         size = state.eval(instr.getSize())
         ptr = state.memory.allocate(size, instr)
         state.set(instr, ptr)
-        state.pc = state.pc.getNextInstruction()
+        return ptr
 
+    def execAlloc(self, state, instr):
+        self.performAllocation(state, instr)
+        state.pc = state.pc.getNextInstruction()
         return [state]
 
     def execCmp(self, state, instr):
@@ -247,10 +281,14 @@ class Executor:
         rs = state.popCall()
         if rs is None:  # popped the last frame
             if ret.isPointer():
-                state.setError(
-                    ExecutionError("Returning a pointer from main function"))
+                state.setError("Returning a pointer from main function")
                 return [state]
-            assert ret.isConstant()
+            elif not ret.isConstant():
+                FIXME("return nondet: try getting the single unique value")
+                state.setKilled(
+                    "Returning a non-constant value from the main function")
+                return [state]
+
             state.setExited(ret.getValue())
             return [state]
 
@@ -311,15 +349,18 @@ class Executor:
         """
         finalstates = []
         if isinstance(state, list):
-            readystates=state
+            readystates = state
         else:
-            readystates=[state]
+            readystates = [state]
 
         while readystates:
             newst = []
             for s in readystates:
+                # remember that it is a branch now,
+                # because execute() will change pc
+                isbranch = isinstance(s.pc, Branch)
                 nxt = self.execute(s, s.pc)
-                if isinstance(s.pc, Branch):
+                if isbranch:
                     # we stop here
                     finalstates += nxt
                 else:
@@ -330,4 +371,6 @@ class Executor:
                             finalstates.append(n)
 
             readystates = newst
+
+        assert not readystates
         return finalstates
