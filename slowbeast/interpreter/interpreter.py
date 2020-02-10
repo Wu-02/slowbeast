@@ -20,8 +20,13 @@ class Interpreter:
         self._interactive = InteractiveHandler(self) if interactive else None
         self._execute_by_blocks = by_blocks
 
-        self.entry = program.getEntry()
         self.states = []
+
+    def getProgram(self):
+        return self._program
+
+    def getExecutor(self):
+        return self._executor
 
     def getStates(self):
         return self.states
@@ -103,7 +108,7 @@ class Interpreter:
 
         # push call to main to call stack
         for s in self.states:
-            s.pushCall(None, self.entry)
+            s.pushCall(None, self.getProgram().getEntry())
 
         # we're ready to go!
         newstates = []
