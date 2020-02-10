@@ -6,7 +6,6 @@ import sys
 from os import mkdir
 from os.path import join as pathjoin
 
-from slowbeast.symexe.symbolicexecution import SymbolicExecutor
 from slowbeast.util.debugging import set_debugging, print_stdout, print_stderr
 
 def createArgParser():
@@ -22,6 +21,9 @@ def createArgParser():
     parser.add_argument('-se-concretize-nondet', action='store_true', default=False,
                         help='Use random value for nondet values, thus follow one random path during symbolic execution (for debugging).')
     parser.add_argument('-parse-only', action='store_true', help='only parse program and dump it (for debugging)')
+    parser.add_argument('-kind', action='store_true', help='Use k-induction')
+    parser.add_argument('-se', action='store_true', default=True,  help='Perform symbolic execution.')
+    #parser.add_argument('-bmc', action='store_true', help='Perform bounded model checking.')
 
     return parser
 
@@ -152,7 +154,17 @@ def main():
         testgen = TestCaseGenerator(args.out_dir)
 
     P.setEntry(entry)
-    SE = SymbolicExecutor(P, testgen, args.se_concretize_nondet, args.step == 'block', args.interactive)
+
+    assert args.se, "We only support symbolic execution now"
+
+    if args.kind:
+        from slowbeast.kindse.kindse import KindSymbolicExecutor
+        SE = KindSymbolicExecutor(P, testgen, args.se_concretize_nondet,
+                                  args.step == 'block', args.interactive)
+    else:
+        from slowbeast.symexe.symbolicexecution import SymbolicExecutor
+        SE = SymbolicExecutor(P, testgen, args.se_concretize_nondet,
+                              args.step == 'block', args.interactive)
     try:
         SE.run()
         print_stats(SE)
