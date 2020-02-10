@@ -13,8 +13,11 @@ if _use_z3:
     def is_sat(*args):
         s = Z3Solver()
         r = s.check(*args)
-        assert r == sat or r == unsat, "Unhandled solver failure!"
-        return r == sat
+        if r == sat:
+            return True
+        elif r == unsat:
+            return False
+        return None
 else:
     from pysmt.shortcuts import is_sat
 

@@ -287,7 +287,8 @@ class Executor:
         elif isinstance(instr, Return):
             states = self.execRet(state, instr)
         else:
-            raise NotImplementedError(str(instr))
+            state.setKilled("Not implemented instruction: {0}".format(instr))
+            return [state]
 
         return states
 

@@ -48,12 +48,20 @@ class Executor(ConcreteExecutor):
                     "Invalid condition: {0}".format(
                         cond.getValue()))
         # XXX use implication as in the original King's paper?
-        if state.is_sat(cond):
+        r = state.is_sat(cond)
+        if r is None:
+            T = state.copy()
+            T.setKilled("Solver failure")
+        elif r:
             T = state.copy()
             T.addConstraint(cond)
 
         ncond = state.getExprManager().Not(cond)
-        if state.is_sat(ncond):
+        r = state.is_sat(ncond)
+        if r is None:
+            F = state.copy()
+            F.setKilled("Solver failure")
+        elif r:
             F = state.copy()
             F.addConstraint(ncond)
 
@@ -73,7 +81,11 @@ class Executor(ConcreteExecutor):
             else:
                 return None
 
-        if state.is_sat(cond):
+        r = state.is_sat(cond)
+        if r is None:
+            return None
+            
+        if r:
             T = state.copy()
             T.addConstraint(cond)
             return T
