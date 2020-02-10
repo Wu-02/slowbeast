@@ -6,11 +6,13 @@ autopep:
 	autopep8 --in-place --aggressive --aggressive --recursive slowbeast
 
 check:
-	lit --path=$(shell pwd) -D STEP=instr tests/
-	lit --path=$(shell pwd) -D STEP=block tests/
+	lit --path=$(shell pwd) -D OPTS="-step=instr" tests/
+	lit --path=$(shell pwd) -D OPTS="-step=block" tests/
+	lit --path=$(shell pwd) -D OPTS="-se -kind" tests/
 
 check-v:
-	lit --path=$(shell pwd) -D STEP=instr -vv tests/
-	lit --path=$(shell pwd) -D STEP=block -vv tests/
+	lit --path=$(shell pwd) -vv -D OPTS="-step=instr" tests/
+	lit --path=$(shell pwd) -vv -D OPTS="-step=block" tests/
+	lit --path=$(shell pwd) -vv -D OPTS="-se -kind" tests/
 
 .PHONY: all autopep pylint check check-v
