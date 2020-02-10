@@ -39,6 +39,9 @@ class Function(ProgramElement):
         assert idx < len(self._bblocks)
         return self._bblocks[idx]
 
+    def getBBlocks(self):
+        return self._bblocks
+
     def dump(self, stream=stdout):
         super(Function, self).dump(stream)
         stream.write(

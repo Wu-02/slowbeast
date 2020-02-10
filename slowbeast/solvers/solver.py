@@ -58,6 +58,7 @@ class ConcreteSolver(SolverIntf):
                 return False
         return True
 
+
 class SymbolicSolver(SolverIntf):
     """
     Wrapper for SMT solver(s) used throughout this project

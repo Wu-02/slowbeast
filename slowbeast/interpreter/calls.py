@@ -33,6 +33,9 @@ class CallStack:
             new._ro = False
             return new
 
+        def clear(self):
+            self.values = {}
+
         def set(self, what, v):
             assert self._ro is False, "COW bug"
             self.values[what] = v
@@ -75,6 +78,14 @@ class CallStack:
             self._cs[-1] = self.frame().writableCopy()
             assert not self.frame()._isRO()
         self.frame().set(what, v)
+
+    def havoc(self):
+        """ Set a value in the current frame """
+        self._cow_reown()
+        if self.frame()._isRO():
+            self._cs[-1] = self.frame().writableCopy()
+            assert not self.frame()._isRO()
+        self.frame().clear()
 
     def get(self, v):
         """ Set a value from the current frame """

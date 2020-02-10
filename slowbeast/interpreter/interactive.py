@@ -1,5 +1,6 @@
 from .. util.debugging import dbg
 
+
 class InteractiveHandler:
     def __init__(self, interpreter):
         self.interpreter = interpreter
@@ -139,5 +140,3 @@ class InteractiveHandler:
            #    print("{0} -> {1}".format(query[0], val))
         else:
             raise NotImplementedError("Invalid print command")
-
-

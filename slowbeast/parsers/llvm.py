@@ -64,6 +64,7 @@ def isArrayTy(ty):
         return False
     return sty[0] == '[' and sty[-1] == ']'
 
+
 def parseArrayTyByParts(ty):
     print(parts)
 
@@ -76,6 +77,7 @@ def getArrayTySize(ty):
     assert parts[0].startswith('[')
     assert parts[-1].endswith(']')
     return int(parts[0][1:]) * getTypeSizeInBits(" ".join(parts[2:])[:-1])
+
 
 def getTypeSizeInBits(ty):
     # FIXME: get rid of the magic constants and use the layout from the program
@@ -536,7 +538,7 @@ class Parser:
             elif isArrayTy(ty):
                 sty = str(ty)
                 # get the type of the element of array
-                ty = sty[sty.find('x ')+2:-1]
+                ty = sty[sty.find('x ') + 2:-1]
             elemSize = getTypeSize(ty)
 
         mem = self.getOperand(operands[0])
@@ -674,7 +676,7 @@ class Parser:
             if c:
                 # FIXME: add composed instruction
                 G.setInit([Store(c, G)])
-           #elif isArrayTy(g.initializer.type):
+           # elif isArrayTy(g.initializer.type):
            #    parts=str(g.initializer.type).split()
            #    assert parts[1] == 'x'
            #    if parts[2].startswith('i'):

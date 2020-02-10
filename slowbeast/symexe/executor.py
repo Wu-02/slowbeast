@@ -1,4 +1,4 @@
-from .. util.debugging import dbg, FIXME
+#from .. util.debugging import FIXME
 from .. ir.instruction import *
 from .. ir.types import Type
 from .. ir.value import Value, ConstantBool, Pointer, Constant
@@ -84,7 +84,7 @@ class Executor(ConcreteExecutor):
         r = state.is_sat(cond)
         if r is None:
             return None
-            
+
         if r:
             T = state.copy()
             T.addConstraint(cond)
@@ -111,7 +111,7 @@ class Executor(ConcreteExecutor):
                 assert c.getType().getBitWidth() == 1, "Invalid condition in branching"
                 cval = E.Ne(c, E.Constant(0, 1))
             else:
-                cval = c # It already is a boolean expression
+                cval = c  # It already is a boolean expression
 
         trueBranch, falseBranch = self.fork(state, cval)
 

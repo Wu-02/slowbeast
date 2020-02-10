@@ -14,7 +14,12 @@ class GlobalInit:
 
 
 class Interpreter:
-    def __init__(self, program, executor=Executor(), by_blocks=False, interactive=None):
+    def __init__(
+            self,
+            program,
+            executor=Executor(),
+            by_blocks=False,
+            interactive=None):
         self._program = program
         self._executor = executor
         self._interactive = InteractiveHandler(self) if interactive else None
@@ -99,7 +104,8 @@ class Interpreter:
                     ret = self._executor.execute(s, i)
                     assert len(ret) == 1, "Unhandled initialization"
                     assert ret[0] is s, "Unhandled initialization instruction"
-                    assert ret[0].isReady(), "Generated errorneous state during initialization of globals"
+                    assert ret[0].isReady(
+                    ), "Generated errorneous state during initialization of globals"
 
     def prepare(self):
         """

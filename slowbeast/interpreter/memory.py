@@ -8,8 +8,15 @@ from .. ir.types import OffsetType, SizeType
 from . memoryobject import MemoryObject
 from . errors import ExecutionError
 
+
 class Memory:
     def __init__(self):
+        self._objects = {}
+        self._objects_ro = False
+        self._glob_objects = {}
+        self._glob_objects_ro = False
+
+    def havoc(self):
         self._objects = {}
         self._objects_ro = False
         self._glob_objects = {}

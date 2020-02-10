@@ -96,6 +96,10 @@ class ExecutionState:
         # status of the execution: ready/exited/errored/etc.
         self.status = ExecutionStatus()
 
+    def havoc(self):
+        self.memory.havoc()
+        self.cs.havoc()
+
     def __eq__(self, rhs):
         if self is rhs:
             return True
@@ -173,8 +177,8 @@ class ExecutionState:
 
     def set(self, what, v):
         """ Associate a value to a register (in the current stack frame) """
-       #from .. util.debugging import dbg
-       #dbg("[{0}] -> {1} ({2})".format(what, v, v.getType()), color="GREEN")
+        from .. util.debugging import dbg
+        dbg("[{0}] -> {1} ({2})".format(what, v, v.getType()), color="GREEN")
         self.cs.set(what, v)
 
     def get(self, v):
