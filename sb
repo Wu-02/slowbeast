@@ -6,6 +6,7 @@ import sys
 from os import mkdir
 from os.path import join as pathjoin
 
+from slowbeast.symexe.symbolicexecution import SEOptions
 from slowbeast.util.debugging import set_debugging, print_stdout, print_stderr
 
 def createArgParser():
@@ -157,14 +158,18 @@ def main():
 
     assert args.se, "We only support symbolic execution now"
 
+    opts = SEOptions()
+    opts.concretize_nondets = args.se_concretize_nondet
+    if args.step == 'block':
+        opts.setBlockStep()
+    opts.interactive = args.interactive
+
     if args.kind:
         from slowbeast.kindse.kindse import KindSymbolicExecutor
-        SE = KindSymbolicExecutor(P, testgen, args.se_concretize_nondet,
-                                  args.step == 'block', args.interactive)
+        SE = KindSymbolicExecutor(P, testgen, opts)
     else:
         from slowbeast.symexe.symbolicexecution import SymbolicExecutor
-        SE = SymbolicExecutor(P, testgen, args.se_concretize_nondet,
-                              args.step == 'block', args.interactive)
+        SE = SymbolicExecutor(P, testgen, opts)
     try:
         SE.run()
         print_stats(SE)

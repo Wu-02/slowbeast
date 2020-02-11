@@ -1,4 +1,4 @@
-from .. interpreter.interpreter import Interpreter
+from .. interpreter.interpreter import Interpreter, ExecutionOptions
 from .. interpreter.errors import ExecutionError
 from . executor import Executor as SExecutor
 from . executionstate import SEState
@@ -6,6 +6,13 @@ from . memory import SymbolicMemory
 from .. solvers.solver import Solver
 from .. util.debugging import print_stderr, print_stdout, dbg
 
+class SEOptions(ExecutionOptions):
+    def __init__(self, opts=None):
+        super(SEOptions, self).__init__(opts)
+        if opts:
+            self.concretize_nondets = opts.concretize_nondets
+        else:
+            self.concretize_nondets = False
 
 class Stats:
     def __init__(self):
@@ -24,17 +31,14 @@ class SymbolicExecutor(Interpreter):
             self,
             P,
             testgen=None,
-            concretize_nondet=False,
-            by_blocks=False,
-            interactive=False):
+            opts=SEOptions()):
         self.solver = Solver()
         super(
             SymbolicExecutor,
             self).__init__(
             P,
-            SExecutor(concretize_nondet),
-            by_blocks,
-            interactive)
+            opts,
+            SExecutor(opts))
         self.stats = Stats()
         self.testgen = testgen
 
