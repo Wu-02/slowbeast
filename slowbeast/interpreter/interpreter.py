@@ -27,6 +27,8 @@ class ExecutionOptions:
 
 # dummy class used as a program counter during initialization
 # of global variables
+
+
 class GlobalInit:
     def getNextInstruction(self):
         return self
@@ -36,18 +38,18 @@ class Interpreter:
     def __init__(
             self,
             program,
-            opts = ExecutionOptions(),
+            opts=ExecutionOptions(),
             executor=None):
         self._program = program
         self._options = opts
         self._executor = Executor(opts) if executor is None else executor
-        self._interactive = InteractiveHandler(self) if opts.interactive else None
+        self._interactive = InteractiveHandler(
+            self) if opts.interactive else None
 
         self.states = []
 
     def getProgram(self):
         return self._program
-
 
     def getOptions(self):
         return self._options
@@ -158,7 +160,9 @@ class Interpreter:
                 elif self._options.step == ExecutionOptions.BLOCK_STEP:
                     newstates = self._executor.executeTillBranch(state)
                 else:
-                    raise NotImplementedError("Invalid step: {0}".format(self._options.step))
+                    raise NotImplementedError(
+                        "Invalid step: {0}".format(
+                            self._options.step))
 
                 self.handleNewStates(newstates)
         except ExecutionError as e:

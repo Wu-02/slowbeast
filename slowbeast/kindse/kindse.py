@@ -12,7 +12,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             self,
             prog,
             testgen=None,
-            opts = SEOptions()):
+            opts=SEOptions()):
         super(
             KindSymbolicExecutor, self).__init__(prog, opts)
 
@@ -55,8 +55,8 @@ class KindSymbolicExecutor(SymbolicExecutor):
         for ns in states:
             if ns.hasError():
                 found_err = True
-                dbg("Hit error state while building IS assumptions: {0}: {1}, {2}".format(ns.getID(),
-                                           ns.pc, ns.getError()))
+                dbg("Hit error state while building IS assumptions: {0}: {1}, {2}".format(
+                    ns.getID(), ns.pc, ns.getError()))
             elif ns.isReady():
                 self.ind.append(ns)
             elif ns.isTerminated():
@@ -81,12 +81,12 @@ class KindSymbolicExecutor(SymbolicExecutor):
         for ns in states:
             if ns.hasError():
                 has_error = True
-                dbg("Induction check hit error state: {0}: {1}, {2}".format(ns.getID(),
-                                           ns.pc, ns.getError()))
+                dbg("Induction check hit error state: {0}: {1}, {2}".format(
+                    ns.getID(), ns.pc, ns.getError()))
                 break
-           #elif ns.isTerminated():
+           # elif ns.isTerminated():
            #    print_stderr(ns.getError(), color='BROWN')
-           #elif ns.wasKilled():
+           # elif ns.wasKilled():
            #    print_stderr(
            #        ns.getStatusDetail(),
            #        prefix='KILLED STATE: ',

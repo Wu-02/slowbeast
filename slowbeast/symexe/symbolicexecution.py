@@ -6,6 +6,7 @@ from . memory import SymbolicMemory
 from .. solvers.solver import Solver
 from .. util.debugging import print_stderr, print_stdout, dbg
 
+
 class SEOptions(ExecutionOptions):
     def __init__(self, opts=None):
         super(SEOptions, self).__init__(opts)
@@ -15,6 +16,7 @@ class SEOptions(ExecutionOptions):
         else:
             self.concretize_nondets = False
             self.uninit_is_nondet = False
+
 
 class Stats:
     def __init__(self):
@@ -48,7 +50,13 @@ class SymbolicExecutor(Interpreter):
         return self.solver
 
     def getInitialStates(self):
-        return [SEState(None, SymbolicMemory(self.solver, self.getOptions().uninit_is_nondet), self.solver)]
+        return [
+            SEState(
+                None,
+                SymbolicMemory(
+                    self.solver,
+                    self.getOptions().uninit_is_nondet),
+                self.solver)]
 
     def getNextState(self):
         if not self.states:
