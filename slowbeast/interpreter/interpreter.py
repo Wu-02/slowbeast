@@ -4,10 +4,29 @@ from . executor import Executor
 from . errors import ExecutionError
 from . interactive import InteractiveHandler
 
+
+class ExecutionOptions:
+    INSTR_STEP = 1
+    BLOCK_STEP = 2
+
+    def __init__(self, opts=None):
+        if opts:
+            self.step = opts.step
+            self.interactive = opts.interactive
+            self.no_calls = opts.no_calls
+            self.lazy_mem_access = opts.lazy_mem_access
+        else:
+            self.step = ExecutionOptions.INSTR_STEP
+            self.interactive = False
+            self.no_calls = False
+            self.lazy_mem_access = False
+
+    def setBlockStep(self):
+        self.step = ExecutionOptions.BLOCK_STEP
+        return self
+
 # dummy class used as a program counter during initialization
 # of global variables
-
-
 class GlobalInit:
     def getNextInstruction(self):
         return self
@@ -17,18 +36,21 @@ class Interpreter:
     def __init__(
             self,
             program,
-            executor=Executor(),
-            by_blocks=False,
-            interactive=None):
+            opts = ExecutionOptions(),
+            executor=None):
         self._program = program
-        self._executor = executor
-        self._interactive = InteractiveHandler(self) if interactive else None
-        self._execute_by_blocks = by_blocks
+        self._options = opts
+        self._executor = Executor(opts) if executor is None else executor
+        self._interactive = InteractiveHandler(self) if opts.interactive else None
 
         self.states = []
 
     def getProgram(self):
         return self._program
+
+
+    def getOptions(self):
+        return self._options
 
     def getExecutor(self):
         return self._executor
@@ -131,10 +153,13 @@ class Interpreter:
             while self.states:
                 state = self.getNextState()
                 self.interact_if_needed(state, newstates)
-                if self._execute_by_blocks:
+                if self._options.step == ExecutionOptions.INSTR_STEP:
+                    newstates = self._executor.execute(state, state.pc)
+                elif self._options.step == ExecutionOptions.BLOCK_STEP:
                     newstates = self._executor.executeTillBranch(state)
                 else:
-                    newstates = self._executor.execute(state, state.pc)
+                    raise NotImplementedError("Invalid step: {0}".format(self._options.step))
+
                 self.handleNewStates(newstates)
         except ExecutionError as e:
             print_stderr(

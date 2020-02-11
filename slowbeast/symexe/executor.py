@@ -26,10 +26,9 @@ def addPointerWithConstant(E, op1, op2):
 
 
 class Executor(ConcreteExecutor):
-    def __init__(self, concretize_nondet=False):
-        super(Executor, self).__init__()
+    def __init__(self, opts):
+        super(Executor, self).__init__(opts)
         self.stats = SEStats()
-        self._concretize_nondet = concretize_nondet
 
     def fork(self, state, cond):
         self.stats.fork_calls += 1
@@ -228,7 +227,7 @@ class Executor(ConcreteExecutor):
 
         retTy = fun.getReturnType()
         if retTy:
-            if self._concretize_nondet:
+            if self.getOptions().concretize_nondets:
                 val = Constant(getrandbits(32), retTy)
             else:
                 val = state.getSolver().freshValue(fun.getName(), retTy.getBitWidth())

@@ -4,27 +4,28 @@ from .. ir.instruction import *
 from .. ir.value import *
 from . errors import ExecutionError
 
-
 class Executor:
     """
     Class that takes care of executing single instructions
     """
 
-    def __init__(self):
-        self._no_calls = False
-        self._lazy_mem_access = False
+    def __init__(self, opts):
+        self._opts = opts
+
+    def getOptions(self):
+        return self._opts
 
     def forbidCalls(self):
-        self._no_calls = True
+        self._opts.no_calls = True
 
     def callsForbidden(self):
-        return self._no_calls
+        return self._opts.no_calls
 
     def setLazyMemAccess(self, b=True):
-        self._lazy_mem_access = b
+        self._opts.lazy_mem_access = b
 
     def lazyMemAccess(self):
-        return self._lazy_mem_access
+        return self._opts.lazy_mem_access
 
     def execStore(self, state, instr):
         assert isinstance(instr, Store)

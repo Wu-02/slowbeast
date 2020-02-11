@@ -1,4 +1,4 @@
-from .. symexe.symbolicexecution import SymbolicExecutor
+from .. symexe.symbolicexecution import SymbolicExecutor, SEOptions
 #from . executor import Executor as SExecutor
 #from . memory import SymbolicMemory
 #from .. solvers.solver import Solver
@@ -12,15 +12,10 @@ class KindSymbolicExecutor(SymbolicExecutor):
             self,
             prog,
             testgen=None,
-            concretize_nondet=False,
-            by_blocks=False,
-            interactive=False):
+            opts = SEOptions()):
         super(
             KindSymbolicExecutor, self).__init__(
-            prog,
-            concretize_nondet=concretize_nondet,
-            by_blocks=by_blocks,
-            interactive=interactive)
+            prog, opts)
 
         dbg("Forbidding calls for now with k-induction")
         self.getExecutor().forbidCalls()
