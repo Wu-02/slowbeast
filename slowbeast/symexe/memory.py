@@ -21,10 +21,10 @@ class SEMemoryObject(MemoryObject):
 
 
 class SymbolicMemory(Memory):
-    def __init__(self, solver):
+    def __init__(self, solver, uninit_nondet=False):
         super(SymbolicMemory, self).__init__()
         self._solver = solver
-        self._uninit_is_nondet = True
+        self._uninit_is_nondet = uninit_nondet
 
     def setUninitializedIsNondet(self, b):
         self._uninit_is_nondet = b
@@ -39,6 +39,7 @@ class SymbolicMemory(Memory):
     def copy(self):
         new = copy(self)
         new._solver = self._solver
+        new._uninit_is_nondet = self._uninit_is_nondet
         super(SymbolicMemory, self).copyTo(new)
         assert new == self, "BUG in copying object"
         return new

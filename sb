@@ -19,8 +19,10 @@ def createArgParser():
     parser.add_argument('-se-no-tests', action='store_true', help='Genereate no test files')
     parser.add_argument('-step', default='instr',
                         help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
-    parser.add_argument('-se-concretize-nondet', action='store_true', default=False,
-                        help='Use random value for nondet values, thus follow one random path during symbolic execution (for debugging).')
+    parser.add_argument('-concretize-nondet', action='store_true', default=False,
+                        help='Use random value for nondet values, thus follow one random path during execution.')
+    parser.add_argument('-uninitialized-nondet', action='store_true', default=False,
+                        help='Use nondet value for reads from uninitialized memory (instead of issuing an error).')
     parser.add_argument('-parse-only', action='store_true', help='only parse program and dump it (for debugging)')
     parser.add_argument('-kind', action='store_true', help='Use k-induction')
     parser.add_argument('-se', action='store_true', default=True,  help='Perform symbolic execution.')
@@ -159,7 +161,8 @@ def main():
     assert args.se, "We only support symbolic execution now"
 
     opts = SEOptions()
-    opts.concretize_nondets = args.se_concretize_nondet
+    opts.concretize_nondets = args.concretize_nondet
+    opts.uninit_is_nondet = args.uninitialized_nondet
     if args.step == 'block':
         opts.setBlockStep()
     opts.interactive = args.interactive

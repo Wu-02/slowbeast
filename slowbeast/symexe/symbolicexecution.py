@@ -11,8 +11,10 @@ class SEOptions(ExecutionOptions):
         super(SEOptions, self).__init__(opts)
         if opts:
             self.concretize_nondets = opts.concretize_nondets
+            self.uninit_is_nondet = opts.uninit_is_nondet
         else:
             self.concretize_nondets = False
+            self.uninit_is_nondet = False
 
 class Stats:
     def __init__(self):
@@ -46,7 +48,7 @@ class SymbolicExecutor(Interpreter):
         return self.solver
 
     def getInitialStates(self):
-        return [SEState(None, SymbolicMemory(self.solver), self.solver)]
+        return [SEState(None, SymbolicMemory(self.solver, self.getOptions().uninit_is_nondet), self.solver)]
 
     def getNextState(self):
         if not self.states:

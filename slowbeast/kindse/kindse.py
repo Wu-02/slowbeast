@@ -14,8 +14,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             testgen=None,
             opts = SEOptions()):
         super(
-            KindSymbolicExecutor, self).__init__(
-            prog, opts)
+            KindSymbolicExecutor, self).__init__(prog, opts)
 
         dbg("Forbidding calls for now with k-induction")
         self.getExecutor().forbidCalls()
@@ -107,7 +106,8 @@ class KindSymbolicExecutor(SymbolicExecutor):
             s = SEState(
                 None,
                 SymbolicMemory(
-                    self.getSolver()),
+                    self.getSolver(),
+                    uninit_nondet=True),
                 self.getSolver())
             s.pushCall(None, self.getProgram().getEntry())
             s.pc = b.first()
