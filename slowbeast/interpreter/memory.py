@@ -105,7 +105,7 @@ class Memory:
             isglob = True
 
         if obj is None:
-            return "Write to invalid object"
+            return None, "Write to invalid object"
 
         if isglob:
             self._globs_reown()
@@ -128,7 +128,7 @@ class Memory:
             obj = self._glob_objects.get(ptr.getObject().getValue())
 
         if obj is None:
-            return "Read from invalid object"
+            return None, "Read from invalid object"
 
         return obj.read(bytesNum, ptr.getOffset())
 
