@@ -31,18 +31,25 @@ class KindSymbolicExecutor(SymbolicExecutor):
                         ns.getError()),
                     color='RED')
                 self.stats.errors += 1
+                self.stats.paths += 1
                 return True
             elif ns.isReady():
                 self.base.append(ns)
             elif ns.isTerminated():
                 print_stderr(ns.getError(), color='BROWN')
+                self.stats.paths += 1
+                self.stats.terminated_paths += 1
             elif ns.wasKilled():
+                self.stats.paths += 1
+                self.stats.killed_paths += 1
                 print_stderr(
                     ns.getStatusDetail(),
                     prefix='KILLED STATE: ',
                     color='WINE')
             else:
                 assert ns.exited()
+                self.stats.paths += 1
+                self.stats.exited_paths += 1
 
         return False
 
