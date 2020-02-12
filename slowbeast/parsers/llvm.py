@@ -290,7 +290,7 @@ class Parser:
             I = Sub(op1, op2)
         elif opcode == 'mul':
             I = Mul(op1, op2)
-        elif opcode == 'div':
+        elif opcode == 'sdiv':
             I = Div(op1, op2)
         elif opcode == 'udiv':
             I = Div(op1, op2, unsigned=True)
@@ -593,7 +593,7 @@ class Parser:
             return self._createGep(inst)
         elif inst.opcode == 'bitcast':
             return self._createCast(inst)
-        elif inst.opcode in ['add', 'sub', 'div', 'mul', 'udiv']:
+        elif inst.opcode in ['add', 'sub', 'sdiv', 'mul', 'udiv']:
             return self._createArith(inst, inst.opcode)
         elif inst.opcode in ['shl', 'lshr', 'ashr']:
             return self._createShift(inst)
