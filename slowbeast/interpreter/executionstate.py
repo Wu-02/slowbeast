@@ -1,6 +1,6 @@
 from .. ir.value import Constant
 from . memory import Memory
-from . calls import CallStack
+from .. core.callstack import CallStack
 from . errors import ExecutionError
 from copy import deepcopy
 from sys import stdout
