@@ -170,4 +170,4 @@ class ConcreteDomain:
                 getUnsigned(
                     b.getValue()),
                 result_ty)
-        return Constant(a.getValue() / b.getValue(), result_ty)
+        return Constant(int(a.getValue() / b.getValue()), result_ty)
