@@ -283,12 +283,10 @@ class Executor:
                 state.setError("Returning a pointer from main function")
                 return [state]
             elif not ret.isConstant():
-                FIXME("return nondet: try getting the single unique value")
-                state.setKilled(
+                state.addWarning(
                     "Returning a non-constant value from the main function")
-                return [state]
 
-            state.setExited(ret.getValue())
+            state.setExited(ret)
             return [state]
 
         if ret:
