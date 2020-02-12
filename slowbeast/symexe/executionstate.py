@@ -1,6 +1,5 @@
 from .. core.executionstate import ExecutionState
-from .. util.debugging import dbg, warn, FIXME
-from . memory import SymbolicMemory
+from .. util.debugging import warn
 from copy import copy
 from sys import stdout
 
@@ -81,7 +80,6 @@ class SEState(ExecutionState):
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
         new = SEState(self.pc, self.memory, self.getSolver())
-        FIXME("Move CallStack to memory, we create extra empty CS here in the ctor")
         super(SEState, self).copyTo(new)  # cow copy of super class
 
         new.constraints = self.constraints.copy()

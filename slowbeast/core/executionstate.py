@@ -1,6 +1,5 @@
 from .. ir.value import Constant
 from . memory import Memory
-from .. core.callstack import CallStack
 from .. core.executionstatus import ExecutionStatus
 from . errors import ExecutionError
 from sys import stdout
@@ -12,18 +11,11 @@ class ExecutionState:
         # memory objects
         self.memory = m
         self.globals = glob
-        # globals FIXME: move to memory (with call stack)
-        # callstack containing top-level values for the current
-        # function (values of computation of instructions)
-        # FIXME: move callstack to memory?
-        # ...We create it redundantly when copying child classes
-        self.cs = CallStack()
         # status of the execution: ready/exited/errored/etc.
         self.status = ExecutionStatus()
 
     def havoc(self):
         self.memory.havoc()
-        self.cs.havoc()
 
     def __eq__(self, rhs):
         if self is rhs:
@@ -32,14 +24,12 @@ class ExecutionState:
             rhs.pc is not None
         return self.pc == rhs.pc and\
             self.status == rhs.status and\
-            self.cs == rhs.cs and\
             self.memory == rhs.memory
 
     def copyTo(self, rhs):
         assert isinstance(rhs, ExecutionState)
         rhs.pc = self.pc
         rhs.memory = self.memory.copy()
-        rhs.cs = self.cs.copy()
         rhs.status = self.status.copy()
 
     def copy(self):
@@ -104,13 +94,14 @@ class ExecutionState:
         """ Associate a value to a register (in the current stack frame) """
        #from .. util.debugging import dbg
        #dbg("[{0}] -> {1} ({2})".format(what, v, v.getType()), color="GREEN")
-        self.cs.set(what, v)
+        # XXX: rename to bind?
+        self.memory.set(what, v)
 
     def get(self, v):
         """ Get a value from a register (in the current stack frame) """
         ret = self.globals.get(v)
         if ret is None:
-            ret = self.cs.get(v)
+            ret = self.memory.get(v)
         return ret
 
     def write(self, ptr, value):
@@ -143,11 +134,11 @@ class ExecutionState:
         return [self]
 
     def pushCall(self, callsite, fun, argsMapping={}):
-        self.cs.push(callsite, fun, argsMapping)
+        self.memory.pushCall(callsite, fun, argsMapping)
         self.pc = fun.getBBlock(0).getInstruction(0)
 
     def popCall(self):
-        return self.cs.pop()
+        return self.memory.popCall()
 
     def dump(self, stream=stdout):
         stream.write("---- State ----\n")
@@ -157,7 +148,5 @@ class ExecutionState:
         stream.write("-- Globals:\n")
         for g, v in self.globals.items():
             stream.write("{0} -> {1}\n".format(g.asValue(), v.asValue()))
-        stream.write("-- Call stack:\n")
-        self.cs.dump(stream)
         stream.write("-- Memory:\n")
         self.memory.dump(stream)

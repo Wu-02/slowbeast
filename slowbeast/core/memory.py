@@ -1,9 +1,9 @@
 import sys
 from copy import copy
 
-from .. util.debugging import dbg, FIXME
-from .. ir.value import *
-from .. ir.types import OffsetType, SizeType
+from .. core.callstack import CallStack
+from .. ir.value import Pointer, Constant
+from .. ir.types import SizeType
 
 from . memoryobject import MemoryObject
 from . errors import ExecutionError
@@ -15,12 +15,18 @@ class Memory:
         self._objects_ro = False
         self._glob_objects = {}
         self._glob_objects_ro = False
+        # callstack containing top-level values for the current
+        # function (values of computation of instructions).
+        # In the future, move there also the objects bound
+        # to particular frames
+        self._cs = CallStack()
 
     def havoc(self):
         self._objects = {}
         self._objects_ro = False
         self._glob_objects = {}
         self._glob_objects_ro = False
+        self._cs.havoc()
 
     def copyTo(self, new):
         new._objects = self._objects
@@ -33,6 +39,9 @@ class Memory:
             o._setRO()
         for o in self._glob_objects.values():
             o._setRO()
+        # do not take a reference, but do directly a copy,
+        # we'll very probably modify it soon (it's cow internally)
+        new._cs = self._cs.copy()
         return new
 
     def copy(self):
@@ -45,6 +54,7 @@ class Memory:
             o._setRO()
         for o in self._glob_objects.values():
             o._setRO()
+        new._cs = self._cs.copy()
         return new
 
     def createMO(self, size, nm=None):
@@ -68,7 +78,7 @@ class Memory:
             self._glob_objects_ro = False
 
     def __eq__(self, rhs):
-        return self._objects == rhs._objects
+        return self._objects == rhs._objects and self._cs == self._cs
 
     def allocate(self, size, instr=None, nm=None):
         """ Allocate a new memory object and return a pointer to it """
@@ -132,8 +142,22 @@ class Memory:
 
         return obj.read(bytesNum, ptr.getOffset())
 
+    def set(self, what, v):
+        self._cs.set(what, v)
+
+    def get(self, v):
+        return self._cs.get(v)
+
+    def pushCall(self, callsite, fun, argsMapping={}):
+        self._cs.pushCall(callsite, fun, argsMapping)
+
+    def popCall(self):
+        return self._cs.popCall()
+
     def dump(self, stream=sys.stdout):
         for o in self._glob_objects.values():
             o.dump(stream)
         for o in self._objects.values():
             o.dump(stream)
+        stream.write("-- Call stack:\n")
+        self._cs.dump(stream)

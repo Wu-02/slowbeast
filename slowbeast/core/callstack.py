@@ -1,7 +1,5 @@
-from copy import copy, deepcopy
-from .. util.debugging import dbg, FIXME
+from copy import copy
 from sys import stdout
-
 
 class CallStack:
     class Frame:
@@ -91,12 +89,12 @@ class CallStack:
         """ Set a value from the current frame """
         return self.frame().get(v)
 
-    def push(self, callsite, fun, argsMap):
+    def pushCall(self, callsite, fun, argsMap):
         self._cow_reown()
         self._cs.append(CallStack.Frame(fun, callsite, argsMap))
         assert not self.frame()._isRO()
 
-    def pop(self):
+    def popCall(self):
         assert len(self._cs) > 0
         self._cow_reown()
         rs = self.frame().returnsite

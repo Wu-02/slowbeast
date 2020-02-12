@@ -28,7 +28,6 @@ class Executor(ConcreteExecutor):
     def __init__(self, opts):
         super(Executor, self).__init__(opts)
         self.stats = SEStats()
-        print("SEXEC")
 
     def fork(self, state, cond):
         self.stats.fork_calls += 1
