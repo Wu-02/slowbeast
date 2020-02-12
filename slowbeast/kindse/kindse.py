@@ -121,7 +121,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             self.ind.append(s)
 
         while True:
-            dbg("-- starting iteration {0} --".format(k))
+            print_stdout("-- starting iteration {0} --".format(k))
 
             dbg("Extending base".format(k))
             if self.extendBase():
