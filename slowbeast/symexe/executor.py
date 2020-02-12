@@ -1,9 +1,8 @@
-#from .. util.debugging import FIXME
 from .. ir.instruction import *
 from .. ir.types import Type
 from .. ir.value import Value, ConstantBool, Pointer, Constant
-from .. interpreter.executor import Executor as ConcreteExecutor
-from .. interpreter.memory import MemoryObject
+from .. core.executor import Executor as ConcreteExecutor
+from .. core.memory import MemoryObject
 from .. solvers.expressions import is_symbolic
 
 from random import getrandbits
@@ -29,6 +28,7 @@ class Executor(ConcreteExecutor):
     def __init__(self, opts):
         super(Executor, self).__init__(opts)
         self.stats = SEStats()
+        print("SEXEC")
 
     def fork(self, state, cond):
         self.stats.fork_calls += 1

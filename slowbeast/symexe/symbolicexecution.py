@@ -1,5 +1,5 @@
 from .. interpreter.interpreter import Interpreter, ExecutionOptions
-from .. interpreter.errors import ExecutionError
+from .. core.errors import ExecutionError
 from . executor import Executor as SExecutor
 from . executionstate import SEState
 from . memory import SymbolicMemory

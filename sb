@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
-from slowbeast.parsers.llvm import Parser as LLVMParser
+from sys import exit
 import argparse
-import sys
 from os import mkdir
 from os.path import join as pathjoin
 
+from slowbeast.parsers.llvm import Parser as LLVMParser
 from slowbeast.symexe.symbolicexecution import SEOptions
 from slowbeast.util.debugging import set_debugging, print_stdout, print_stderr
 
@@ -39,7 +39,7 @@ def parseArgs():
     if not args.step in valid_step:
         print_stderr("Invalid -step argument, must be one of: {0}, got '{1}'".format(valid_step, args.step),
                      color="RED")
-        sys.exit(1)
+        exit(1)
 
     return args
 
@@ -128,13 +128,13 @@ def main():
         P = parser.parse(args.prog[0])
     except FileNotFoundError as e:
         print_stderr(str(e), color="RED")
-        sys.exit(1)
+        exit(1)
     if not P:
-        sys.exit(1)
+        exit(1)
 
     if args.parse_only:
         P.dump()
-        sys.exit(0)
+        exit(0)
 
     if args.dbg:
         set_debugging()
@@ -143,7 +143,7 @@ def main():
     entry = P.getFunction(args.entry)
     if not entry:
         print("Entry function not found: {0}".format(args.entry))
-        sys.exit(1)
+        exit(1)
 
     if args.se_no_tests:
         testgen=None
@@ -180,7 +180,7 @@ def main():
         print_stdout("Interrupted...")
         print_stats(SE)
 
-    sys.exit(0)
+    exit(0)
 
 if __name__ == "__main__":
     main()

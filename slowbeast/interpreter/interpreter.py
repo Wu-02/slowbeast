@@ -1,7 +1,8 @@
+from .. core.executionstate import ExecutionState
+from .. core.executor import Executor
+from .. core.errors import ExecutionError
+
 from .. util.debugging import print_stderr, dbg
-from . executionstate import ExecutionState
-from . executor import Executor
-from . errors import ExecutionError
 from . interactive import InteractiveHandler
 
 

@@ -259,10 +259,7 @@ class Executor:
         fun = instr.getCalledFunction()
         dbg("-- CALL {0} --".format(fun.getName()))
         if fun.isUndefined():
-            state.setError(
-                ExecutionError(
-                    "Called undefined function: {0}".format(
-                        fun.getName())))
+            state.setError("Called undefined function: {0}".format(fun.getName()))
             return [state]
         # map values to arguments
         assert len(instr.getOperands()) == len(fun.getArguments())

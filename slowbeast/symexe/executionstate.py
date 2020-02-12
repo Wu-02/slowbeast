@@ -1,7 +1,7 @@
-from .. interpreter.executionstate import ExecutionState
+from .. core.executionstate import ExecutionState
 from .. util.debugging import dbg, warn, FIXME
 from . memory import SymbolicMemory
-from copy import deepcopy, copy
+from copy import copy
 from sys import stdout
 
 

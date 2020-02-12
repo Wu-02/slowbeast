@@ -1,10 +1,7 @@
 from copy import copy
 from .. util.debugging import dbg, FIXME
-from .. interpreter.memory import Memory
-from .. interpreter.memoryobject import MemoryObject
-
-#from .. errors import ExecutionError
-#from .. ir.value import *
+from .. core.memory import Memory
+from .. core.memoryobject import MemoryObject
 from .. ir.types import OffsetType
 from .. ir.value import Constant
 
