@@ -47,6 +47,7 @@ class Interpreter:
             self) if opts.interactive else None
 
         self.states = []
+        #self.states_num = 0
 
     def getProgram(self):
         return self._program
@@ -146,6 +147,8 @@ class Interpreter:
         for s in self.states:
             s.pushCall(None, self.getProgram().getEntry())
 
+        #self.states_num += len(self.states)
+
     def run(self):
         self.prepare()
 
@@ -164,6 +167,9 @@ class Interpreter:
                         "Invalid step: {0}".format(
                             self._options.step))
 
+               #self.states_num += len(newstates)
+               #if self.states_num % 100 == 0:
+               #    print("Searched states: {0}".format(self.states_num))
                 self.handleNewStates(newstates)
         except ExecutionError as e:
             print_stderr(
