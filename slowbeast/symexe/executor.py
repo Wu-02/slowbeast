@@ -230,6 +230,7 @@ class Executor(ConcreteExecutor):
                 val = Constant(getrandbits(32), retTy)
             else:
                 val = state.getSolver().freshValue(fun.getName(), retTy.getBitWidth())
+            state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.getNextInstruction()
         return [state]

@@ -1,5 +1,5 @@
 from .. core.executionstate import ExecutionState
-from .. util.debugging import warn
+from .. util.debugging import warn, FIXME
 from copy import copy
 from sys import stdout
 
@@ -47,6 +47,9 @@ class SEState(ExecutionState):
         self._id = SEState.statesCounter
         self._warnings = []
         self._warnings_ro = False
+        # a sequence of nondets as met on this path
+        self._nondets = []
+        self._nondets_ro = False
 
     def getID(self):
         return self._id
@@ -77,6 +80,9 @@ class SEState(ExecutionState):
             return True
         return self._solver.is_sat(*self.getConstraints(), *e)
 
+    def concretize(self, *e):
+        return self._solver.concretize(self.getConstraints(), *e)
+
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
         new = SEState(self.pc, self.memory, self.getSolver())
@@ -85,14 +91,22 @@ class SEState(ExecutionState):
         new.constraints = self.constraints.copy()
         new._warnings = self._warnings
         new._warnings_ro = True
+        self._warnings_ro = True
+
+        new._nondets = self._nondets
+        new._nondets_ro = True
+        self._nondets_ro = True
 
         return new
 
     def havoc(self):
+        FIXME("Do we use this method?")
         self.constraints = ConstraintsSet()
         self.memory.havoc()
         self._warnings = []
         self._warnings_ro = False
+        self._nondets = []
+        self._nondets_ro = False
 
     def getConstraints(self):
         return self.constraints.get()
@@ -114,8 +128,21 @@ class SEState(ExecutionState):
     def getWarnings(self, msg):
         return self._warnings
 
+    def addNondet(self, n):
+        if self._nondets_ro:
+            self._nondets = copy(self._nondets)
+            self._nondets_ro = False
+        self._nondets.append(n)
+
+    def getNondets(self):
+        return self._nondets
+
     def dump(self, stream=stdout):
         ExecutionState.dump(self, stream)
+        stream.write(" -- nondets --\n")
+        for n in self._nondets:
+            stream.write(str(n))
+            stream.write('\n')
         stream.write(" -- constraints --\n")
         stream.write(str(self.getConstraintsObj()))
         stream.write('\n')

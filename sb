@@ -99,6 +99,19 @@ class TestCaseGenerator:
     def _openfile(self, path):
         return open(pathjoin(self._outputdir, path), 'w')
 
+    def processErrorState(self, fl, state):
+        fl.write(state.getError())
+        fl.write('\n')
+        fl.write('\n')
+        fl.write("Nondeterministic values:\n")
+        inpvec = state.concretize(*state.getNondets())
+        for var, val in zip(state.getNondets(), inpvec):
+            # dump as unsigned and signed
+            fl.write("  {0} -> {1} ({2})\n".format(var, val,
+                                                   (val.getValue() - (1 << val.getBitWidth()))))
+        fl.write('\n')
+        state.dump(stream=fl)
+
     def processState(self, state):
         assert not state.isReady()
 
@@ -115,10 +128,10 @@ class TestCaseGenerator:
             fl.write(str(state.getStatus()))
             fl.write('\n')
             if state.hasError():
-                fl.write(state.getError())
+                self.processErrorState(fl, state)
+            else:
                 fl.write('\n')
-            fl.write('\n')
-            state.dump(stream=fl)
+                state.dump(stream=fl)
 
 
 def main():

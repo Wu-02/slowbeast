@@ -1,14 +1,76 @@
 from . expressions import ExprManager
 from .. domains.symbolic import _use_z3
+from .. ir.value import Constant
+
 if _use_z3:
     from z3 import Solver as Z3Solver
     from z3 import sat, unsat
 
-    def model(*args):
+    def models(assumpt, *args):
         s = Z3Solver()
-        r = s.check(*args)
-        assert r == sat or r == unsat, "Unhandled solver failure!"
-        return s.model()
+        for a in assumpt:
+            s.add(a.unwrap())
+        r = s.check()
+        if r != sat:
+            return None
+
+        m = s.model()
+        vals = []
+        for a in args:
+            vals.append(m[a.unwrap()])
+
+        return vals 
+
+    def smallmodels(assumpt, *args):
+        s = Z3Solver()
+        for a in assumpt:
+            s.add(a.unwrap())
+        r = s.check()
+        if r != sat:
+            return None
+
+        # minimize the model
+        vals = []
+        for a in args:
+            s.push()
+            s.add(a.unwrap() == 0)
+            if s.check() == sat:
+                continue
+            else:
+                s.pop()
+
+            # try to obtain a small cex
+            s.push()
+            s.add(a.unwrap() > 0)
+            if s.check() == sat:
+                mx = 1000
+            else:
+                mx = -1000
+                s.pop()
+                s.add(a.unwrap() <= 0)
+
+            while True:
+                s.push()
+                if mx > 0:
+                    s.add(a.unwrap() < mx)
+                else:
+                    s.add(a.unwrap() > mx)
+
+                if s.check() == sat:
+                    mx = int(mx / 2)
+                else:
+                    s.pop()
+                    break
+
+        s.check()
+        m = s.model()
+        vals = []
+        for a in args:
+            vals.append(m[a.unwrap()])
+
+        return vals 
+
+
 
     def is_sat(*args):
         s = Z3Solver()
@@ -69,6 +131,21 @@ class SymbolicSolver(SolverIntf):
 
     def is_sat(self, *e):
         return is_sat([x.unwrap() for x in e])
+
+    def concretize(self, assumpt, *e):
+        m = smallmodels(assumpt, *e)
+        print(m)
+        if m is None: # unsat
+            return None
+        ret = []
+        n = 0
+        for v in e:
+            if m[n] is None:
+                ret.append(None)
+            else:
+                ret.append(Constant(m[n].as_long(), v.getType()))
+            n += 1
+        return ret
 
   # def concretize(self, val, *e):
   #     m = model(val, *e)
