@@ -3,6 +3,7 @@
 from sys import exit
 import argparse
 from os import mkdir
+from shutil import rmtree
 from os.path import join as pathjoin
 
 from slowbeast.parsers.llvm import Parser as LLVMParser
@@ -151,7 +152,10 @@ def main():
         try:
             mkdir(args.out_dir)
         except OSError:
-            print("The output dir exists, overwriting files in there")
+            print("The output dir exists, overwriting it")
+            rmtree(args.out_dir)
+            mkdir(args.out_dir)
+
             with open('{0}/program.txt'.format(args.out_dir), 'w') as f:
                 P.dump(f)
         testgen = TestCaseGenerator(args.out_dir)
