@@ -18,7 +18,7 @@ class SEOptions(ExecutionOptions):
             self.uninit_is_nondet = False
 
 
-class Stats:
+class SEStats:
     def __init__(self):
         # all paths (including ones that hit an error or terminated early)
         self.paths = 0
@@ -27,7 +27,6 @@ class Stats:
         self.killed_paths = 0
         self.terminated_paths = 0
         self.errors = 0
-        self.instructions = 0
 
 
 class SymbolicExecutor(Interpreter):
@@ -43,7 +42,7 @@ class SymbolicExecutor(Interpreter):
             P,
             opts,
             SExecutor(opts))
-        self.stats = Stats()
+        self.stats = SEStats()
         self.testgen = testgen
 
     def getSolver(self):
@@ -66,7 +65,6 @@ class SymbolicExecutor(Interpreter):
         return self.states.pop()
 
     def handleNewStates(self, newstates):
-        self.stats.instructions += 1
         for s in newstates:
             if s.isReady():
                 self.states.append(s)

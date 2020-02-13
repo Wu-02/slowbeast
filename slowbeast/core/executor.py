@@ -12,6 +12,14 @@ class Executor:
 
     def __init__(self, opts):
         self._opts = opts
+        self._executed_instrs = 0
+        self._executed_blks = 0
+
+    def getExecInstrNum(self):
+        return self._executed_instrs
+
+    def getExecStepNum(self):
+        return self._executed_blks
 
     def getOptions(self):
         return self._opts
@@ -306,6 +314,8 @@ class Executor:
             '--' if not instr.getBBlock() else instr.getFunction().getName(),
             str(instr), state.getID()))
 
+        self._executed_instrs += 1
+
         # TODO: add an opcode to instruction and check only the opcode
         states = None
         if isinstance(instr, Store):
@@ -344,6 +354,8 @@ class Executor:
         branch instruction.  This usually will execute exactly one basic block
         of the code.
         """
+        self._executed_blks += 1
+
         finalstates = []
         if isinstance(state, list):
             readystates = state

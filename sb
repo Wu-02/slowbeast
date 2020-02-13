@@ -46,8 +46,12 @@ def parseArgs():
 
 def print_stats(engine):
     print_stdout(
+        "Executed steps till branch: {0}".format(
+            engine.getExecutor().getExecStepNum()),
+        color='CYAN')
+    print_stdout(
         "Executed instructions: {0}".format(
-            engine.stats.instructions),
+            engine.getExecutor().getExecInstrNum()),
         color='CYAN')
     print_stdout(
         "Executed paths: {0}".format(
@@ -65,27 +69,27 @@ def print_stats(engine):
         "Killed paths: {0}".format( engine.stats.killed_paths), color='CYAN')
     print_stdout(
         "Executed branch instructions: {0}".format(
-            engine._executor.stats.branchings),
+            engine.getExecutor().stats.branchings),
         color='CYAN')
     print_stdout(
         "Number of forks on branches: {0} (forked on {1}% of branches)".format(
-            engine._executor.stats.branch_forks,
-            0 if engine._executor.stats.branchings == 0 else
+            engine.getExecutor().stats.branch_forks,
+            0 if engine.getExecutor().stats.branchings == 0 else
             100 *
             float(
-                engine._executor.stats.branch_forks) /
-            engine._executor.stats.branchings),
+                engine.getExecutor().stats.branch_forks) /
+            engine.getExecutor().stats.branchings),
         color='CYAN')
     # this includes e.g. forks on assertions/memory resolution/etc.
     print_stdout(
         "Number of all forks: {0} (from {1} calls ({2}%) to fork())".format(
-            engine._executor.stats.forks,
-            engine._executor.stats.fork_calls,
-            0 if engine._executor.stats.fork_calls == 0 else
+            engine.getExecutor().stats.forks,
+            engine.getExecutor().stats.fork_calls,
+            0 if engine.getExecutor().stats.fork_calls == 0 else
             100 *
             float(
-                engine._executor.stats.forks) /
-            engine._executor.stats.fork_calls),
+                engine.getExecutor().stats.forks) /
+            engine.getExecutor().stats.fork_calls),
         color='CYAN')
     print_stdout(
         "Found errors: {0}".format(
