@@ -32,7 +32,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
                     color='RED')
                 self.stats.errors += 1
                 self.stats.paths += 1
-                return True
+                return False
             elif ns.isReady():
                 self.base.append(ns)
             elif ns.isTerminated():
@@ -51,7 +51,11 @@ class KindSymbolicExecutor(SymbolicExecutor):
                 self.stats.paths += 1
                 self.stats.exited_paths += 1
 
-        return False
+        if not self.base:
+            # no ready states -> we searched all the paths
+            return True
+
+        return None
 
     def extendInd(self):
         self.getExecutor().setLazyMemAccess(True)
@@ -124,8 +128,13 @@ class KindSymbolicExecutor(SymbolicExecutor):
             print_stdout("-- starting iteration {0} --".format(k))
 
             dbg("Extending base".format(k))
-            if self.extendBase():
+            r = self.extendBase()
+            if r is False:
+                dbg("Error found.", color='RED')
                 return 1
+            elif r is True:
+                dbg("We searched the whole program!", color='GREEN')
+                return 0
 
             dbg("Extending induction step".format(k))
             if self.extendInd():
