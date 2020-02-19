@@ -23,6 +23,26 @@ class SEStats:
 def addPointerWithConstant(E, op1, op2):
     return Pointer(op1.getObject(), E.Add(op1.getOffset(), op2))
 
+def evalCond(state, cond):
+    assert isinstance(cond, ValueInstruction) or cond.isConstant()
+    E = state.getExprManager()
+    c = state.eval(cond)
+    assert isinstance(c, Value)
+    # solvers make difference between bitvectors and booleans, so we must
+    # take care of it here: if it is a bitvector, compare it to 0 (C
+    # semantics)
+    if c.isConstant():
+        cval = E.Ne(c, E.Constant(0, c.getType().getBitWidth()))
+    else:
+        assert is_symbolic(c)
+        if not c.getType().isBool():
+            assert c.getType().getBitWidth() == 1, "Invalid condition in branching"
+            cval = E.Ne(c, E.Constant(0, 1))
+        else:
+            cval = c  # It already is a boolean expression
+
+    return cval
+
 
 class Executor(ConcreteExecutor):
     def __init__(self, opts):
@@ -89,27 +109,42 @@ class Executor(ConcreteExecutor):
             return T
         return None
 
+    def execBranchTo(self, state, instr, to):
+        """
+        Execute a branch instruction and follow the given successor
+        (True or False successor).
+        """
+        assert isinstance(instr, Branch)
+        assert isinstance(to, bool)
+        self.stats.branchings += 1
+
+        cond = instr.getCondition()
+        cval = evalCond(state, cond)
+
+        succ = None
+        if to is True:
+            s = self.assume(state, cval)
+            succ = instr.getTrueSuccessor()
+        elif to is False:
+            s = self.assume(state, state.getExprManager().Not(cval))
+            succ = instr.getFalseSuccessor()
+        else:
+            raise RuntimeError("Invalid branch successor: {0}".format(to))
+
+        if s is None:
+            return []
+        else:
+            assert succ
+            s.pc = succ.getInstruction(0)
+
+        return [s]
+
     def execBranch(self, state, instr):
         assert isinstance(instr, Branch)
         self.stats.branchings += 1
 
         cond = instr.getCondition()
-        assert isinstance(cond, ValueInstruction) or cond.isConstant()
-        E = state.getExprManager()
-        c = state.eval(cond)
-        assert isinstance(c, Value)
-        # solvers make difference between bitvectors and booleans, so we must
-        # take care of it here: if it is a bitvector, compare it to 0 (C
-        # semantics)
-        if c.isConstant():
-            cval = E.Ne(c, E.Constant(0, c.getType().getBitWidth()))
-        else:
-            assert is_symbolic(c)
-            if not c.getType().isBool():
-                assert c.getType().getBitWidth() == 1, "Invalid condition in branching"
-                cval = E.Ne(c, E.Constant(0, 1))
-            else:
-                cval = c  # It already is a boolean expression
+        cval = evalCond(state, cond)
 
         trueBranch, falseBranch = self.fork(state, cval)
 

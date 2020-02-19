@@ -41,6 +41,9 @@ class BBlock(ProgramElement):
     def empty(self):
         return len(self._instructions) == 0
 
+    def getInstructions(self):
+        return self._instructions
+
     def getInstruction(self, idx):
         assert idx < len(self._instructions)
         return self._instructions[idx]

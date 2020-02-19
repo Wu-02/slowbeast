@@ -348,11 +348,13 @@ class Executor:
 
         return states
 
-    def executeTillBranch(self, state):
+    def executeTillBranch(self, state, stopBefore = False):
         """
         Start executing from 'state' and stop execution after executing a
         branch instruction.  This usually will execute exactly one basic block
         of the code.
+        If 'stopBefore' is True, stop the execution before executing the
+        branch instruction.
         """
         self._executed_blks += 1
 
@@ -368,6 +370,10 @@ class Executor:
                 # remember that it is a branch now,
                 # because execute() will change pc
                 isbranch = isinstance(s.pc, Branch)
+                if stopBefore and isbranch:
+                    finalstates.append(s)
+                    continue
+
                 nxt = self.execute(s, s.pc)
                 if isbranch:
                     # we stop here
@@ -383,3 +389,48 @@ class Executor:
 
         assert not readystates
         return finalstates
+
+    def executePath(self, path):
+        """
+        Execute the given path through CFG. Return two lists of states.
+        The first list contains the resulting states that reaches the
+        end of the path, the other list contains all other states, i.e.,
+        the error, killed or exited states reached during the execution of the CFG.
+        """
+
+        states = [path.getState()]
+        earlytermstates = []
+        idx = 0
+        assert states[0].pc.getBBlock() == path.getPath().getLocations()[0].getBBlock()
+
+        locs = path.getPath().getLocations()
+        for idx in range(0, len(locs)):
+            # execute the block till branch
+            newstates = self.executeTillBranch(states, stopBefore=True)
+
+            # get the ready states
+            states = []
+            for n in newstates:
+                if n.isReady():
+                    states.append(n)
+                else:
+                    earlytermstates.append(n)
+
+            # now execute the branch following the edge on the path
+            if idx + 1 < len(locs):
+                curbb = locs[idx].getBBlock()
+                succbb = locs[idx + 1].getBBlock()
+                followsucc = curbb.last().getTrueSuccessor() == succbb
+                newstates = []
+                assert followsucc or curbb.last().getFalseSuccessor() == succbb
+                for s in states:
+                    newstates += self.execBranchTo(s, s.pc, followsucc)
+            else: # this is the last location on path,
+                  # so just normally execute the branch instructions
+                newstates = self.executeTillBranch(states)
+            states = newstates
+
+        assert all(map(lambda x: x.isReady(), states))
+        assert all(map(lambda x: not x.isReady(), earlytermstates))
+
+        return states, earlytermstates

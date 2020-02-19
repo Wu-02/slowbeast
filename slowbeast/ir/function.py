@@ -15,6 +15,9 @@ class Function(ProgramElement):
         assert self._name != other._name or self.getID() == other.getID()
         return self._name == other._name
 
+    def __hash__(self):
+        return super(Function, self).__hash__()
+
     def isUndefined(self):
         return self._bblocks == []
 

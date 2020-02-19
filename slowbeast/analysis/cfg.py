@@ -1,6 +1,8 @@
 from .. ir.function import Function
 from .. ir.instruction import Branch
+
 from sys import stdout
+from copy import copy
 
 class CFG:
     class Node:
@@ -33,9 +35,19 @@ class CFG:
 
         self._build()
 
+    def createNode(self, *args):
+        """ Override this method in child classes
+        to get nodes with more data
+        """
+        assert len(args) == 1
+        return CFG.Node(*args)
+
+    def getNode(self, B):
+        return self._nodes.get(B)
+
     def _build(self):
         for B in self.fun.getBBlocks():
-            self._nodes[B] = CFG.Node(B)
+            self._nodes[B] = self.createNode(B)
 
         for block, node in self._nodes.items():
             br = block.last()
@@ -50,4 +62,32 @@ class CFG:
             for succ in node.getSuccessors():
                 stream.write("{0} -> {1}\n".format(node.getBBlock().getID(),
                                                    succ.getBBlock().getID()))
+
+class CFGPath:
+    def __init__(self, locs=[]):
+        self.locations = locs
+
+    def copy(self):
+        return copy(self)
+
+    def append(self, l):
+        self.locations.append(l)
+
+    def first(self):
+        if len(self.locations) == 0:
+            return None
+        return self.locations[0]
+
+    def last(self):
+        if len(self.locations) == 0:
+            return None
+        return self.locations[-1]
+
+    def getLocations(self):
+        return self.locations
+
+    def dump(self, stream=stdout):
+        stream.write(" -> ".join(map(lambda x: str(x.getBBlock().getID()),
+                                     self.locations)))
+        stream.write('\n')
 
