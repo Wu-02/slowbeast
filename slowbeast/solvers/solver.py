@@ -1,6 +1,7 @@
 from . expressions import ExprManager
 from .. domains.symbolic import _use_z3
 from .. ir.value import Constant
+from .. util.debugging import FIXME
 
 if _use_z3:
     from z3 import Solver as Z3Solver
@@ -19,7 +20,7 @@ if _use_z3:
         for a in args:
             vals.append(m[a.unwrap()])
 
-        return vals 
+        return vals
 
     def smallmodels(assumpt, *args):
         s = Z3Solver()
@@ -30,6 +31,7 @@ if _use_z3:
             return None
 
         # minimize the model
+        FIXME("Add timeout to solver when minimizing model")
         vals = []
         for a in args:
             s.push()
@@ -134,7 +136,6 @@ class SymbolicSolver(SolverIntf):
 
     def concretize(self, assumpt, *e):
         m = smallmodels(assumpt, *e)
-        print(m)
         if m is None: # unsat
             return None
         ret = []
