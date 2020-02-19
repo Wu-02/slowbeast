@@ -67,7 +67,8 @@ class KindSymbolicExecutor(SymbolicExecutor):
             if ns.hasError():
                 found_err = True
                 dbg("Hit error state while building IS assumptions: {0}: {1}, {2}".format(
-                    ns.getID(), ns.pc, ns.getError()))
+                    ns.getID(), ns.pc, ns.getError()),
+                    color="PURPLE")
             elif ns.isReady():
                 self.ind.append(ns)
             elif ns.isTerminated():
@@ -93,7 +94,8 @@ class KindSymbolicExecutor(SymbolicExecutor):
             if ns.hasError():
                 has_error = True
                 dbg("Induction check hit error state: {0}: {1}, {2}".format(
-                    ns.getID(), ns.pc, ns.getError()))
+                    ns.getID(), ns.pc, ns.getError()),
+                    color="PURPLE")
                 break
            # elif ns.isTerminated():
            #    print_stderr(ns.getError(), color='BROWN')
@@ -127,22 +129,24 @@ class KindSymbolicExecutor(SymbolicExecutor):
         while True:
             print_stdout("-- starting iteration {0} --".format(k))
 
-            dbg("Extending base".format(k))
+            dbg("Extending base".format(k), color="BLUE")
             r = self.extendBase()
             if r is False:
                 dbg("Error found.", color='RED')
                 return 1
             elif r is True:
-                dbg("We searched the whole program!", color='GREEN')
+                print_stdout("We searched the whole program!", color='GREEN')
                 return 0
 
-            dbg("Extending induction step".format(k))
+            dbg("Extending induction step".format(k), color="BLUE")
             if self.extendInd():
+                print_stdout("Did not hit any possible error while building induction step!".format(k),
+                    color="GREEN")
                 return 0
 
-            dbg("Checking induction step".format(k))
+            dbg("Checking induction step".format(k), color="BLUE")
             if self.checkInd():
-                dbg("Induction step succeeded!", color='GREEN')
+                print_stdout("Induction step succeeded!", color='GREEN')
                 return 0
 
             k += 1
