@@ -47,21 +47,21 @@ class Executor(ConcreteExecutor):
                         cond.getValue()))
         # XXX use implication as in the original King's paper?
         r = state.is_sat(cond)
-        if r is None:
-            T = state.copy()
-            T.setKilled("Solver failure")
-        elif r:
+        if r is True:
             T = state.copy()
             T.addConstraint(cond)
+        elif r is not False:
+            T = state.copy()
+            T.setKilled("Solver failure: {0}".format(r))
 
         ncond = state.getExprManager().Not(cond)
         r = state.is_sat(ncond)
-        if r is None:
-            F = state.copy()
-            F.setKilled("Solver failure")
-        elif r:
+        if r is True:
             F = state.copy()
             F.addConstraint(ncond)
+        elif r is not False:
+            F = state.copy()
+            F.setKilled("Solver failure: {0}".format(r))
 
         if T and F:
             self.stats.forks += 1

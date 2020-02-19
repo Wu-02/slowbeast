@@ -5,7 +5,7 @@ from .. util.debugging import FIXME
 
 if _use_z3:
     from z3 import Solver as Z3Solver
-    from z3 import sat, unsat
+    from z3 import sat, unsat, unknown
 
     def models(assumpt, *args):
         s = Z3Solver()
@@ -72,8 +72,6 @@ if _use_z3:
 
         return vals 
 
-
-
     def is_sat(*args):
         s = Z3Solver()
         r = s.check(*args)
@@ -81,6 +79,16 @@ if _use_z3:
             return True
         elif r == unsat:
             return False
+        elif r == unknown:
+            reason = s.reason_unknown()
+            if reason == 'canceled':
+                # If the user interrupted the computation,
+                # re-raise the interrupt if it was consumed
+                # in the solver so that the rest of the code
+                # can react on it
+                raise KeyboardInterrupt
+            return reason
+
         return None
 else:
     from pysmt.shortcuts import is_sat
