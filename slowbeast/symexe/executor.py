@@ -4,6 +4,7 @@ from .. ir.value import Value, ConstantBool, Pointer, Constant
 from .. core.executor import Executor as ConcreteExecutor
 from .. core.memory import MemoryObject
 from .. solvers.expressions import is_symbolic
+from .. util.debugging import dbg
 
 from random import getrandbits
 
@@ -116,6 +117,7 @@ class Executor(ConcreteExecutor):
         """
         assert isinstance(instr, Branch)
         assert isinstance(to, bool)
+        dbg("branching to {0} succ of {1}".format(to, instr))
         self.stats.branchings += 1
 
         cond = instr.getCondition()

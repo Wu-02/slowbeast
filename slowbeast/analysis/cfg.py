@@ -64,8 +64,11 @@ class CFG:
                                                    succ.getBBlock().getID()))
 
 class CFGPath:
-    def __init__(self, locs=[]):
-        self.locations = locs
+    def __init__(self, locs=None):
+        if locs:
+            self.locations = locs
+        else:
+            self.locations = []
 
     def copy(self):
         return copy(self)
@@ -87,7 +90,9 @@ class CFGPath:
         return self.locations
 
     def dump(self, stream=stdout):
-        stream.write(" -> ".join(map(lambda x: str(x.getBBlock().getID()),
-                                     self.locations)))
+        stream.write(self)
         stream.write('\n')
+
+    def __repr__(self):
+        return  " -> ".join(map(lambda x: str(x.getBBlock().getID()), self.locations))
 
