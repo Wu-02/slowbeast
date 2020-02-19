@@ -134,6 +134,7 @@ class Executor(ConcreteExecutor):
             raise RuntimeError("Invalid branch successor: {0}".format(to))
 
         if s is None:
+            dbg("branching is not feasible!")
             return []
         else:
             assert succ
