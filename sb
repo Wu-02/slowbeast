@@ -47,9 +47,7 @@ def parseArgs():
     valid_step = ['block', 'instr']
 
     if not args.step in valid_step:
-        print_stderr("Invalid -step argument, must be one of: {0}, got '{1}'".format(valid_step, args.step),
-                     color="RED")
-        exit(1)
+        err("Invalid -step argument, must be one of: {0}, got '{1}'".format(valid_step, args.step))
 
     return args
 
@@ -222,10 +220,10 @@ def main():
     try:
         P = llvmparser.parse(bitcode)
     except FileNotFoundError as e:
-        print_stderr(str(e), color="RED")
-        exit(1)
+        err(str(e))
+
     if not P:
-        exit(1)
+        err("Failed parsing the bitcode")
 
     if args.parse_only:
         P.dump()
