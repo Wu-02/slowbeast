@@ -5,14 +5,20 @@ import argparse
 from os import mkdir
 from shutil import rmtree
 from os.path import join as pathjoin
+from os.path import basename
+from subprocess import run
 
 from slowbeast.parsers.llvm import Parser as LLVMParser
 from slowbeast.symexe.symbolicexecution import SEOptions
-from slowbeast.util.debugging import set_debugging, print_stdout, print_stderr
+from slowbeast.util.debugging import set_debugging, dbg, print_stdout, print_stderr
+
+def err(msg):
+    print_stderr(msg, color="RED")
+    exit(1)
 
 def createArgParser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('prog', nargs=1, help='program to be analyzed')
+    parser.add_argument('prog', nargs='+', help='program to be analyzed')
     parser.add_argument('-dbg', action='store_true', help='write debugging messages')
     parser.add_argument('-entry', default='main', help='entry function')
     parser.add_argument('-out-dir', default='sb-out', help='Directory for output files')
@@ -26,6 +32,7 @@ def createArgParser():
                         help='Use random value for nondet values, thus follow one random path during execution.')
     parser.add_argument('-uninitialized-nondet', action='store_true', default=False,
                         help='Use nondet value for reads from uninitialized memory (instead of issuing an error).')
+    parser.add_argument('-dump', action='store_true', default=False, help='dump the program after parsing')
     parser.add_argument('-parse-only', action='store_true', help='only parse program and dump it (for debugging)')
     parser.add_argument('-kind', action='store_true', help='Use k-induction')
     parser.add_argument('-se', action='store_true', default=True,  help='Perform symbolic execution.')
@@ -144,12 +151,76 @@ class TestCaseGenerator:
                 state.dump(stream=fl)
 
 
+def sort_input_files(files):
+    c_files = []
+    llvm_files = []
+
+    for f in files:
+        if f.endswith('.c'):
+            c_files.append(f)
+        elif f.endswith('.bc') or f.endswith('.ll'):
+            llvm_files.append(f)
+        else:
+            err("Unknown file: {0}".format(f))
+
+    return c_files, llvm_files
+
+def _run(cmd):
+    dbg("RUN: {0}".format(" ".join(cmd)))
+
+    cp = run(cmd)
+    if cp.returncode != 0:
+        err("Failed running: {0}".format(" ".join(cmd)))
+
+def compile_c(path, outp=None):
+    dbg("Compiling {0}".format(path))
+
+    if outp is None:
+        outp = pathjoin('/tmp/', basename(path) + '.bc')
+
+    cmd = ['clang', '-emit-llvm', '-c', '-o', outp, path]
+    _run(cmd)
+    dbg("Compiled to {0}".format(outp))
+
+    return outp
+
+def link_llvm(paths, outp=None, outd='/tmp/'):
+    dbg("Linking {0}".format(paths))
+
+    if outp is None:
+        outp = pathjoin(outd, 'code.bc')
+
+    cmd = ['llvm-link', '-o', outp] + paths
+    _run(cmd)
+
+    dbg("Linked files to {0}".format(outp))
+
+    return outp
+
+def compile_and_link(files, outd):
+    c_files, llvm_files = sort_input_files(files)
+    if c_files:
+        for f in c_files:
+            llvm_files.append(compile_c(f))
+
+    assert len(llvm_files) > 0, "No input files"
+    if len(llvm_files) > 1:
+        bitcode = link_llvm(llvm_files, outd=outd)
+    else:
+        bitcode = llvm_files[0]
+
+    return bitcode
+
 def main():
     args = parseArgs()
 
-    parser = LLVMParser()
+    if args.dbg:
+        set_debugging()
+
+    llvmparser = LLVMParser()
+    bitcode = compile_and_link(args.prog, args.out_dir)
     try:
-        P = parser.parse(args.prog[0])
+        P = llvmparser.parse(bitcode)
     except FileNotFoundError as e:
         print_stderr(str(e), color="RED")
         exit(1)
@@ -160,8 +231,7 @@ def main():
         P.dump()
         exit(0)
 
-    if args.dbg:
-        set_debugging()
+    if args.dump:
         P.dump()
 
     entry = P.getFunction(args.entry)
