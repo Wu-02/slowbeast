@@ -21,13 +21,6 @@ class Memory:
         # to particular frames
         self._cs = CallStack()
 
-    def havoc(self):
-        self._objects = {}
-        self._objects_ro = False
-        self._glob_objects = {}
-        self._glob_objects_ro = False
-        self._cs.havoc()
-
     def copyTo(self, new):
         new._objects = self._objects
         new._objects_ro = True

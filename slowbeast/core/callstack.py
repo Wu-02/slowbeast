@@ -77,14 +77,6 @@ class CallStack:
             assert not self.frame()._isRO()
         self.frame().set(what, v)
 
-    def havoc(self):
-        """ Set a value in the current frame """
-        self._cow_reown()
-        if self.frame()._isRO():
-            self._cs[-1] = self.frame().writableCopy()
-            assert not self.frame()._isRO()
-        self.frame().clear()
-
     def get(self, v):
         """ Set a value from the current frame """
         return self.frame().get(v)

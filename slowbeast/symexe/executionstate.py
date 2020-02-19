@@ -99,15 +99,6 @@ class SEState(ExecutionState):
 
         return new
 
-    def havoc(self):
-        FIXME("Do we use this method?")
-        self.constraints = ConstraintsSet()
-        self.memory.havoc()
-        self._warnings = []
-        self._warnings_ro = False
-        self._nondets = []
-        self._nondets_ro = False
-
     def getConstraints(self):
         return self.constraints.get()
 

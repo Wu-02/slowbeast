@@ -14,9 +14,6 @@ class ExecutionState:
         # status of the execution: ready/exited/errored/etc.
         self.status = ExecutionStatus()
 
-    def havoc(self):
-        self.memory.havoc()
-
     def __eq__(self, rhs):
         if self is rhs:
             return True
