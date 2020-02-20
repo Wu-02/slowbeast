@@ -19,6 +19,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             KindSymbolicExecutor, self).__init__(prog, opts)
 
         self.cfgs = {}
+        self.extended_paths = []
 
     def getCFG(self, F):
         return self.cfgs.setdefault(F, CFG(F))
@@ -51,46 +52,27 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             for ns in notready:
                 if ns.hasError():
                     found_err = True
-                    dbg("Hit error state while building IS assumptions: {0}: {1}, {2}".format(
+                    dbg("Hit error state in induction check: {0}: {1}, {2}".format(
                         ns.getID(), ns.pc, ns.getError()),
                         color="PURPLE")
-           #    elif ns.isTerminated():
-           #        print_stderr(ns.getError(), color='BROWN')
-           #    elif ns.wasKilled():
-           #        print_stderr(
-           #            ns.getStatusDetail(),
-           #            prefix='KILLED STATE: ',
-           #            color='WINE')
-           #    else:
-           #        assert ns.exited()
-
         return newpaths, found_err
 
-    def extendInd(self):
+    def extendPaths(self, ind):
         found_err = False
         newpaths = []
-        for path in self.ind:
+        for path in ind:
             tmp, f_err = self.extendIndPath(path)
             newpaths += tmp
             found_err |= f_err
 
-        self.ind = newpaths
+        return newpaths, not found_err
 
-        return not found_err
+    def extendInd(self):
+        pass # we do all the work in checkInd
 
     def checkInd(self):
-        for path in self.ind:
-            for succ in path.successorsWithAssert():
-                dbg("Can reach assert in one step: {0}".format(path))
-                ready, notready = self.executePath(path.copy().appendLoc(succ))
-
-                for ns in notready:
-                    if ns.hasError():
-                        dbg("Induction check hit error state: {0}: {1}, {2}".format(
-                            ns.getID(), ns.pc, ns.getError()),
-                            color="PURPLE")
-                        return False
-        return True
+        self.ind, safe = self.extendPaths(self.ind)
+        return safe
 
     def initializeInduction(self):
         ind = []
@@ -106,5 +88,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             s.pc = b.first()
 
             ind.append(InductionPath(cfg, s))
-        return ind
+
+        # we do the first extension here, so that we can do the rest of the
+        # work in checkInd and do not execute the paths repeatedly
+        return self.extendPaths(ind)
 

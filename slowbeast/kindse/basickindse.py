@@ -120,7 +120,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             s.pushCall(None, self.getProgram().getEntry())
             s.pc = b.first()
             ind.append(s)
-        return ind
+        return ind, False
 
     def run(self):
         self.prepare()
@@ -130,7 +130,11 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         k = 1
         self.base = self.states  # start from the initial states
-        self.ind = self.initializeInduction()
+        self.ind, safe = self.initializeInduction()
+
+        if safe:
+            print_stdout("Found no error state!", color='GREEN')
+            return 0
 
         while True:
             print_stdout("-- starting iteration {0} --".format(k))
