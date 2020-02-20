@@ -70,6 +70,9 @@ class CFGPath:
         else:
             self.locations = []
 
+    def __len__(self):
+        return len(self.locations)
+
     def copy(self):
         return copy(self)
 
@@ -85,6 +88,20 @@ class CFGPath:
         if len(self.locations) == 0:
             return None
         return self.locations[-1]
+
+    def endswith(self, path):
+        if len(self) < len(path):
+            return False
+
+        if len(path) == 0:
+            return True
+
+        pl = len(path) - 1
+        sl = len(self) - 1
+        for idx in range(0, len(path)):
+            if path.locations[pl - idx] != self.locations[sl - idx]:
+                return False
+        return True
 
     def getLocations(self):
         return self.locations
