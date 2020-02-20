@@ -13,9 +13,11 @@ class SEOptions(ExecutionOptions):
         if opts:
             self.concretize_nondets = opts.concretize_nondets
             self.uninit_is_nondet = opts.uninit_is_nondet
+            self.exit_on_error = opts.exit_on_error
         else:
             self.concretize_nondets = False
             self.uninit_is_nondet = False
+            self.exit_on_error = False
 
 
 class SEStats:
@@ -79,6 +81,10 @@ class SymbolicExecutor(Interpreter):
                 self.stats.paths += 1
                 if self.testgen:
                     self.testgen.processState(s)
+                if self.getOptions().exit_on_error:
+                    dbg("Found an error, terminating the search.")
+                    self.states = []
+                    return
             elif s.isTerminated():
                 print_stderr(s.getError(), color='BROWN')
                 self.stats.paths += 1

@@ -37,6 +37,7 @@ def createArgParser():
     parser.add_argument('-kind', action='store_true', help='Use k-induction')
     parser.add_argument('-kind-basic', action='store_true', help='Use basic k-induction without any improvements')
     parser.add_argument('-se', action='store_true', default=True,  help='Perform symbolic execution.')
+    parser.add_argument('-se-exit-on-error', action='store_true', help='Terminate symbolic execution after hitting the first error.')
     #parser.add_argument('-bmc', action='store_true', help='Perform bounded model checking.')
 
     return parser
@@ -260,6 +261,7 @@ def main():
     opts = SEOptions()
     opts.concretize_nondets = args.concretize_nondet
     opts.uninit_is_nondet = args.uninitialized_nondet
+    opts.exit_on_error = args.se_exit_on_error
     if args.step == 'block':
         opts.setBlockStep()
     opts.interactive = args.interactive
