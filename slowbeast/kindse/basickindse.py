@@ -108,13 +108,8 @@ class KindSymbolicExecutor(SymbolicExecutor):
         self.getExecutor().setLazyMemAccess(False)
         return not has_error
 
-    def run(self):
-        self.prepare()
-
-        k = 1
-        self.base = self.states  # start from the initial states
-        dbg("Performing the algorithm only for the main function")
-        self.ind = []
+    def initializeInduction(self):
+        ind = []
         for b in self.getProgram().getEntry().getBBlocks():
             s = SEState(
                 None,
@@ -124,7 +119,18 @@ class KindSymbolicExecutor(SymbolicExecutor):
                 self.getSolver())
             s.pushCall(None, self.getProgram().getEntry())
             s.pc = b.first()
-            self.ind.append(s)
+            ind.append(s)
+        return ind
+
+    def run(self):
+        self.prepare()
+
+        dbg("Performing the k-ind algorithm only for the main function",
+            color="ORANGE")
+
+        k = 1
+        self.base = self.states  # start from the initial states
+        self.ind = self.initializeInduction()
 
         while True:
             print_stdout("-- starting iteration {0} --".format(k))
@@ -140,7 +146,8 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
             dbg("Extending induction step".format(k), color="BLUE")
             if self.extendInd():
-                print_stdout("Did not hit any possible error while building induction step!".format(k),
+                print_stdout("Did not hit any possible error while building "\
+                             "induction step!".format(k),
                     color="GREEN")
                 return 0
 
