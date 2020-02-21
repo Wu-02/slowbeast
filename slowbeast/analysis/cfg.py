@@ -45,6 +45,9 @@ class CFG:
     def getNode(self, B):
         return self._nodes.get(B)
 
+    def getNodes(self):
+        return self._nodes.values()
+
     def _build(self):
         for B in self.fun.getBBlocks():
             self._nodes[B] = self.createNode(B)
@@ -107,7 +110,7 @@ class CFGPath:
         return self.locations
 
     def dump(self, stream=stdout):
-        stream.write(self)
+        stream.write(str(self))
         stream.write('\n')
 
     def __repr__(self):

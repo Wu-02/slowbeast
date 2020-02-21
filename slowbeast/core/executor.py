@@ -390,7 +390,7 @@ class Executor:
         assert not readystates
         return finalstates
 
-    def executePath(self, path):
+    def executePath(self, state, path):
         """
         Execute the given path through CFG. Return two lists of states.
         The first list contains the resulting states that reaches the
@@ -398,12 +398,11 @@ class Executor:
         the error, killed or exited states reached during the execution of the CFG.
         """
 
-        states = [path.getState()]
+        states = [state]
         earlytermstates = []
         idx = 0
-        assert states[0].pc.getBBlock() == path.getPath().getLocations()[0].getBBlock()
 
-        locs = path.getPath().getLocations()
+        locs = path.getLocations()
         for idx in range(0, len(locs)):
             # execute the block till branch
             newstates = self.executeTillBranch(states, stopBefore=True)

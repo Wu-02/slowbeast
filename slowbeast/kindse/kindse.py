@@ -33,7 +33,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def executePath(self, path):
         print_stdout("Executing path: {0}".format(path), color="ORANGE")
         self.getExecutor().setLazyMemAccess(True)
-        ready, notready = self.getExecutor().executePath(path)
+        ready, notready = self.getExecutor().executePath(path.getState(), path.getPath())
         self.getExecutor().setLazyMemAccess(False)
 
         return ready, notready
