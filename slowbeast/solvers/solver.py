@@ -81,7 +81,8 @@ if _use_z3:
             return False
         elif r == unknown:
             reason = s.reason_unknown()
-            if reason == 'canceled':
+            if reason == 'canceled' or\
+               reason == 'interrupted from keyboard':
                 # If the user interrupted the computation,
                 # re-raise the interrupt if it was consumed
                 # in the solver so that the rest of the code
