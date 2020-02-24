@@ -10,9 +10,12 @@ from .. ir.types import OffsetType
 class MemoryObject:
     ids = 0
 
-    def __init__(self, size, nm="unnamed"):
-        MemoryObject.ids += 1
-        self._id = MemoryObject.ids
+    def __init__(self, size, nm="unnamed", objid = None):
+        if objid:
+            self._id = objid
+        else:
+            MemoryObject.ids += 1 # shift the objects counter for the next object
+            self._id = MemoryObject.ids
 
         self.values = {}  # until we support composite objects, use just 'value'
         self.size = size

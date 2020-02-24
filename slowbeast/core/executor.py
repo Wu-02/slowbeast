@@ -42,6 +42,7 @@ class Executor:
         to = state.get(instr.getPointerOperand())
         if to is None:
             if self.lazyMemAccess():
+                FIXME("Move lazy mem access for registers to state.get() method (and then to memory)")
                 assert isinstance(instr.getPointerOperand(), Alloc)
                 to = self.performAllocation(state, instr.getPointerOperand())
                 dbg("Lazily allocated {0}".format(instr.getPointerOperand()))
@@ -66,6 +67,7 @@ class Executor:
         frm = state.get(instr.getPointerOperand())
         if frm is None:
             if self.lazyMemAccess():
+                FIXME("Move lazy mem access for registers to state.get() method (and then to memory)")
                 assert isinstance(instr.getPointerOperand(), Alloc)
                 frm = self.performAllocation(state, instr.getPointerOperand())
                 dbg("Lazily allocated {0}".format(instr.getPointerOperand()))

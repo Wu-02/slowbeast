@@ -50,13 +50,13 @@ class Memory:
         new._cs = self._cs.copy()
         return new
 
-    def createMO(self, size, nm=None):
+    def createMO(self, size, nm=None, objid=None):
         """
         Create a new memory object -- may be overriden
         by child classes to create a different type of
         memory objects.
         """
-        return MemoryObject(size, nm)
+        return MemoryObject(size, nm, objid)
 
     def _objs_reown(self):
         if self._objects_ro:
@@ -73,24 +73,40 @@ class Memory:
     def __eq__(self, rhs):
         return self._objects == rhs._objects and self._cs == self._cs
 
-    def allocate(self, size, instr=None, nm=None):
-        """ Allocate a new memory object and return a pointer to it """
-        self._objs_reown()
-        o = self.createMO(size, nm)
+    def _allocate(self, size, instr=None, nm=None, objid=None):
+        """ Allocate a new memory object and return it """
+        o = self.createMO(size, nm, objid)
         assert o._isRO() is False, "Created object is read-only (COW bug)"
-        o.setAllocation(instr)
+
+        if instr:
+            o.setAllocation(instr)
+
+        return o
+
+    def allocate(self, size, instr=None, nm=None, objid=None):
+        """ Allocate a new memory object and return a pointer to it """
+        assert objid is None or self._objects.get(objid) is None,\
+                "Already has an object with id {0}".format(objid)
+
+        o = self._allocate(size, instr, nm, objid)
+
+        self._objs_reown()
         assert self._objects.get(o.getID()) is None
         self._objects[o.getID()] = o
+
         return Pointer(Constant(o.getID(), SizeType))
 
-    def allocateGlobal(self, G):
+    def allocateGlobal(self, G, objid=None):
         """ Allocate a new memory object and return a pointer to it """
+        assert objid is None or self._glob_objects.get(objid) is None,\
+                "Already has a global object with id {0}".format(objid)
+
+        o = self._allocate(G.getSize(), G, G.getName(), objid)
+
         self._globs_reown()
-        o = self.createMO(G.getSize(), G.getName())
-        assert o._isRO() is False, "Created object is read-only (COW bug)"
-        o.setAllocation(G)
         assert self._glob_objects.get(o.getID()) is None
         self._glob_objects[o.getID()] = o
+
         return Pointer(Constant(o.getID(), SizeType))
 
     def hasGlobalObject(self, moid):
