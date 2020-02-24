@@ -4,30 +4,14 @@ from .. ir.instruction import *
 from .. ir.value import *
 from . errors import GenericError
 
-class Executor:
+class MemoryModel:
     """
-    Class that takes care of executing single instructions
+    Class that takes care of performing memory operations
+    (without knowing what is the real memory implementation)
     """
 
     def __init__(self, opts):
         self._opts = opts
-        self._executed_instrs = 0
-        self._executed_blks = 0
-
-    def getExecInstrNum(self):
-        return self._executed_instrs
-
-    def getExecStepNum(self):
-        return self._executed_blks
-
-    def getOptions(self):
-        return self._opts
-
-    def forbidCalls(self):
-        self._opts.no_calls = True
-
-    def callsForbidden(self):
-        return self._opts.no_calls
 
     def setLazyMemAccess(self, b=True):
         self._opts.lazy_mem_access = b
@@ -35,16 +19,32 @@ class Executor:
     def lazyMemAccess(self):
         return self._opts.lazy_mem_access
 
-    def execStore(self, state, instr):
-        assert isinstance(instr, Store)
-        value = state.eval(instr.getValueOperand())
-        to = state.get(instr.getPointerOperand())
+    def allocate(self, state, instr):
+        """
+        Perform the allocation by the instruction
+        "inst" and return the new states (there may be
+        several new states, e.g., one where the allocation succeeds,
+        one where it fails, etc.).
+        """
+        assert isinstance(instr, Alloc)
+        size = state.eval(instr.getSize())
+        ptr = state.memory.allocate(size, instr)
+        state.set(instr, ptr)
+        return [state]
+
+    def write(self, state, valueOp, toOp):
+        value = state.eval(valueOp)
+        to = state.get(toOp)
         if to is None:
             if self.lazyMemAccess():
                 FIXME("Move lazy mem access for registers to state.get() method (and then to memory)")
-                assert isinstance(instr.getPointerOperand(), Alloc)
-                to = self.performAllocation(state, instr.getPointerOperand())
-                dbg("Lazily allocated {0}".format(instr.getPointerOperand()))
+                assert isinstance(toOp, Alloc)
+                s = self.allocate(state, toOp) 
+                assert len(s) == 1 and s[0] is state
+                dbg("Lazily allocated {0}".format(toOp))
+
+                FIXME("We're calling get() method but we could return the value...")
+                to = state.get(toOp)
                 assert to
             else:
                 state.setKilled(
@@ -55,21 +55,18 @@ class Executor:
         assert isinstance(value, Value)
         assert to.isPointer()
 
-        states = state.write(to, value)
-        for s in states:
-            if s.isReady():
-                s.pc = s.pc.getNextInstruction()
-        return states
+        return state.write(to, value)
 
-    def execLoad(self, state, instr):
-        assert isinstance(instr, Load)
-        frm = state.get(instr.getPointerOperand())
+    def read(self, state, toOp, fromOp, bytesNum):
+        frm = state.get(fromOp)
         if frm is None:
             if self.lazyMemAccess():
                 FIXME("Move lazy mem access for registers to state.get() method (and then to memory)")
-                assert isinstance(instr.getPointerOperand(), Alloc)
-                frm = self.performAllocation(state, instr.getPointerOperand())
-                dbg("Lazily allocated {0}".format(instr.getPointerOperand()))
+                assert isinstance(fromOp, Alloc)
+                s = self.allocate(state, fromOp)
+                dbg("Lazily allocated {0}".format(fromOp))
+                assert len(s) == 1 and s[0] is state
+                frm = state.get(fromOp)
                 assert frm
             else:
                 state.setKilled(
@@ -78,23 +75,64 @@ class Executor:
                 return [state]
 
         assert frm.isPointer()
-        states = state.read(frm, dest=instr, bytesNum=instr.getBytesNum())
+        return state.read(frm, dest=toOp, bytesNum=bytesNum)
+
+class Executor:
+    """
+    Class that takes care of executing single instructions
+    """
+
+    def __init__(self, opts):
+        self.memorymodel = MemoryModel(opts)
+
+        self._opts = opts
+        self._executed_instrs = 0
+        self._executed_blks = 0
+
+    def getExecInstrNum(self):
+        return self._executed_instrs
+
+    def getExecStepNum(self):
+        return self._executed_blks
+
+    def setLazyMemAccess(self, b=True):
+        self.memorymodel.setLazyMemAccess(b)
+
+    def getOptions(self):
+        return self._opts
+
+    def forbidCalls(self):
+        self._opts.no_calls = True
+
+    def callsForbidden(self):
+        return self._opts.no_calls
+
+    def execStore(self, state, instr):
+        assert isinstance(instr, Store)
+
+        states = self.memorymodel.write(state, instr.getValueOperand(), instr.getPointerOperand())
+
         for s in states:
             if s.isReady():
                 s.pc = s.pc.getNextInstruction()
         return states
 
-    def performAllocation(self, state, instr):
-        assert isinstance(instr, Alloc)
-        size = state.eval(instr.getSize())
-        ptr = state.memory.allocate(size, instr)
-        state.set(instr, ptr)
-        return ptr
+    def execLoad(self, state, instr):
+        assert isinstance(instr, Load)
+
+        states = self.memorymodel.read(state, instr, instr.getPointerOperand(), instr.getBytesNum())
+
+        for s in states:
+            if s.isReady():
+                s.pc = s.pc.getNextInstruction()
+        return states
 
     def execAlloc(self, state, instr):
-        self.performAllocation(state, instr)
-        state.pc = state.pc.getNextInstruction()
-        return [state]
+        states = self.memorymodel.allocate(state, instr)
+        for s in states:
+            if s.isReady():
+                s.pc = s.pc.getNextInstruction()
+        return states
 
     def execCmp(self, state, instr):
         assert isinstance(instr, Cmp)
