@@ -4,6 +4,7 @@ from .. util.debugging import FIXME
 
 from .. ir.value import Constant, Value
 from .. ir.types import OffsetType
+from .. core.errors import MemError
 
 
 class MemoryObject:
@@ -67,8 +68,10 @@ class MemoryObject:
         if offval != 0:
             FIXME("check that writes to MO do not overlap")
         if x.getByteWidth() > self.getSize().getValue() + offval:
-            return "Written value too big for the object. Writing {0}B to offset {1} of {2}B object".format(
-                x.getByteWidth(), off, self.getSize())
+            return MemError(MemError.OOB_ACCESS,
+                            "Written value too big for the object. "\
+                            "Writing {0}B to offset {1} of {2}B object".format(
+                             x.getByteWidth(), off, self.getSize()))
         self.values[offval] = x
         return None
 
@@ -90,12 +93,14 @@ class MemoryObject:
         offval = off.getValue()
 
         if self.getSize().getValue() < bts:
-            return None, "Read {0}B from object of size {1}B".format(
-                bts, self.getSize())
+            return None, MemError(MemError.OOB_ACCESS,
+                                  "Read {0}B from object of size {1}B".format(
+                                   bts, self.getSize()))
 
         val = self.values.get(offval)
         if val is None:
-            return None, "Read from uninitialized memory (or unaligned read (not supp. yet))."
+            return None, MemError(MemError.UNINIT_READ,
+                                  "Read from uninitialized memory (or unaligned read (not supp. yet)).")
 
         return val, None
 

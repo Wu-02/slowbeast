@@ -2,6 +2,7 @@ import sys
 from copy import copy
 
 from .. core.callstack import CallStack
+from .. core.errors import MemError
 from .. ir.value import Pointer, Constant
 from .. ir.types import SizeType
 
@@ -123,7 +124,7 @@ class Memory:
             isglob = True
 
         if obj is None:
-            return None, "Write to invalid object"
+            return None, MemError(MemError.INVALID_OBJ, str(ptr.getObject()))
 
         if isglob:
             self._globs_reown()
@@ -146,7 +147,7 @@ class Memory:
             obj = self._glob_objects.get(ptr.getObject().getValue())
 
         if obj is None:
-            return None, "Read from invalid object"
+            return None, MemError(MemError.INVALID_OBJ, str(ptr.getObject()))
 
         return obj.read(bytesNum, ptr.getOffset())
 
