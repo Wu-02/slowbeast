@@ -6,7 +6,6 @@ from .. ir.value import Pointer, Constant
 from .. ir.types import SizeType
 
 from . memoryobject import MemoryObject
-from . errors import ExecutionError
 
 
 class Memory:

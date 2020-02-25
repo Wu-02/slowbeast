@@ -1,7 +1,6 @@
 from .. ir.value import Constant
 from . memory import Memory
 from .. core.executionstatus import ExecutionStatus
-from . errors import ExecutionError
 from sys import stdout
 
 class ExecutionState:

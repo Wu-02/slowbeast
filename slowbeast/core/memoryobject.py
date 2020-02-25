@@ -2,7 +2,6 @@ from sys import stdout
 from copy import deepcopy, copy
 from .. util.debugging import FIXME
 
-from . errors import ExecutionError
 from .. ir.value import Constant, Value
 from .. ir.types import OffsetType
 

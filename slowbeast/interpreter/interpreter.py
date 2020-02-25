@@ -1,6 +1,5 @@
 from .. core.executionstate import ExecutionState
 from .. core.executor import Executor
-from .. core.errors import ExecutionError
 
 from .. util.debugging import print_stderr, dbg
 from . interactive import InteractiveHandler
@@ -172,12 +171,6 @@ class Interpreter:
                #if self.states_num % 100 == 0:
                #    print("Searched states: {0}".format(self.states_num))
                 self.handleNewStates(newstates)
-        except ExecutionError as e:
-            print_stderr(
-                "Fatal error while executing '{0}': {1}".format(
-                    state.pc, str(e)), color='RED')
-            state.dump()
-            return -1
         except Exception as e:
             print_stderr("Fatal error while executing '{0}'".format(state.pc),
                          color='RED')

@@ -2,8 +2,6 @@ import sys
 from .. util.debugging import dbg, FIXME
 from .. ir.instruction import *
 from .. ir.value import *
-from . errors import ExecutionError
-
 
 class Executor:
     """
@@ -103,9 +101,9 @@ class Executor:
         op2 = state.eval(instr.getOperand(1))
         if op1.isPointer():
             if not op2.isPointer():
-                raise ExecutionError("Comparison of pointer to a constant")
+                raise RuntimeError("Comparison of pointer to a constant")
             if op1.object.getID() != op2.object.getID():
-                raise ExecutionError("Comparison of unrelated pointers")
+                raise RuntimeError("Comparison of unrelated pointers")
             op1 = op1.offset
             op2 = op2.offset
         else:
@@ -156,7 +154,7 @@ class Executor:
         elif cv == False:
             succ = instr.getFalseSuccessor()
         else:
-            raise ExecutionError("Indeterminite condition")
+            raise RuntimeError("Indeterminite condition")
 
         assert succ
         if not succ.empty():
@@ -173,7 +171,7 @@ class Executor:
             assert isinstance(v, Constant)
             if v.getValue() != True:
                 state.setError(
-                    ExecutionError(
+                    RuntimeError(
                         "Assertion failed: {0} is {1} (!= True)".format(
                             o, v)))
                 return [state]
@@ -225,7 +223,7 @@ class Executor:
             op2 = op2c.getValue()
 
         if op1c.isPointer() and op1c.object != op2c.object:
-            raise ExecutionError("Pointer arithmetic on unrelated pointers")
+            raise RuntimeError("Pointer arithmetic on unrelated pointers")
 
         r = None
         if instr.getOperation() == BinaryOperation.ADD:
