@@ -115,7 +115,7 @@ class TestCaseGenerator:
         return open(pathjoin(self._outputdir, path), 'w')
 
     def processErrorState(self, fl, state):
-        fl.write(state.getError())
+        fl.write(state.getError().getDescr())
         fl.write('\n')
         fl.write('\n')
         fl.write("Nondeterministic values:\n")

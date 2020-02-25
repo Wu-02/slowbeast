@@ -5,6 +5,7 @@ from .. core.executor import Executor as ConcreteExecutor
 from .. core.memory import MemoryObject
 from .. solvers.expressions import is_symbolic
 from .. util.debugging import dbg
+from .. core.errors import AssertFailError
 
 from random import getrandbits
 
@@ -382,7 +383,7 @@ class Executor(ConcreteExecutor):
         assert v.isBool()
         if v.isConstant():
             if v.getValue() != True:
-                state.setError("Assertion failed: {0}".format(msg))
+                state.setError(AssertFailError(msg))
                 states.append(state)
         else:
             okBranch, errBranch = self.fork(state, v)
@@ -390,7 +391,7 @@ class Executor(ConcreteExecutor):
                 okBranch.pc = okBranch.pc.getNextInstruction()
                 states.append(okBranch)
             if errBranch:
-                errBranch.setError("Assertion failed: {0}".format(msg))
+                errBranch.setError(AssertFailError(msg))
                 states.append(errBranch)
 
         assert states, "Generated no states"

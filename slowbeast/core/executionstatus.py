@@ -9,6 +9,8 @@ class ExecutionStatus:
     # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
     KILLED = 5
 
+    __slots__ = 'value', 'detail'
+
     def __init__(self, st=READY):
         self.value = st
         self.detail = None

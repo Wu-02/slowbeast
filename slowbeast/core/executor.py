@@ -2,6 +2,7 @@ import sys
 from .. util.debugging import dbg, FIXME
 from .. ir.instruction import *
 from .. ir.value import *
+from . errors import GenericError
 
 class Executor:
     """
@@ -171,7 +172,7 @@ class Executor:
             assert isinstance(v, Constant)
             if v.getValue() != True:
                 state.setError(
-                    RuntimeError(
+                    AssertFailError(
                         "Assertion failed: {0} is {1} (!= True)".format(
                             o, v)))
                 return [state]
@@ -267,7 +268,7 @@ class Executor:
         fun = instr.getCalledFunction()
         dbg("-- CALL {0} --".format(fun.getName()))
         if fun.isUndefined():
-            state.setError("Called undefined function: {0}".format(fun.getName()))
+            state.setError(GenericError("Called undefined function: {0}".format(fun.getName())))
             return [state]
         # map values to arguments
         assert len(instr.getOperands()) == len(fun.getArguments())
@@ -288,7 +289,7 @@ class Executor:
         rs = state.popCall()
         if rs is None:  # popped the last frame
             if ret.isPointer():
-                state.setError("Returning a pointer from main function")
+                state.setError(GenericError("Returning a pointer from main function"))
                 return [state]
             elif not ret.isConstant():
                 state.addWarning(
