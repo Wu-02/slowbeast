@@ -26,9 +26,12 @@ class MemoryModel:
         several new states, e.g., one where the allocation succeeds,
         one where it fails, etc.).
         """
-        assert isinstance(instr, Alloc)
+        assert isinstance(instr, Alloc) or isinstance(instr, GlobalVariable)
         size = state.eval(instr.getSize())
-        ptr = state.memory.allocate(size, instr)
+        if instr.isGlobal():
+            ptr = state.memory.allocateGlobal(instr)
+        else:
+            ptr = state.memory.allocate(size, instr)
         state.set(instr, ptr)
         return [state]
 
@@ -62,7 +65,7 @@ class MemoryModel:
         if frm is None:
             if self.lazyMemAccess():
                 FIXME("Move lazy mem access for registers to state.get() method (and then to memory)")
-                assert isinstance(fromOp, Alloc)
+                assert isinstance(fromOp, Alloc) or isinstance(fromOp, GlobalVariable)
                 s = self.allocate(state, fromOp)
                 dbg("Lazily allocated {0}".format(fromOp))
                 assert len(s) == 1 and s[0] is state

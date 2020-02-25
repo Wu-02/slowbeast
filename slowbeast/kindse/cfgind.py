@@ -42,7 +42,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return ready, notready
 
-    def extendPath(self, path):
+    def extendPath(self, path, atmost=False):
         front = path.first()
         newpaths = []
 
@@ -51,6 +51,10 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         # rather do append and then execute in reverse order (do a reverse iterator)
         for p in preds:
             newpaths.append(CFGPath([p] + path.getLocations()))
+
+        if atmost and len(preds) == 0:
+            assert len(newpaths) == 0
+            newpaths.append(path)
 
         return newpaths
 
@@ -89,17 +93,21 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return None
 
-    def initializePaths(self):
+    def initializePaths(self, k = 1):
         paths = []
         cfg = self.getCFG(self.getProgram().getEntry())
         for n in cfg.getNodes():
             if n.hasAssert():
                 paths.append(CFGPath([n]))
+        while k > 0:
+            extended = []
+            for p in paths:
+                extended += self.extendPath(p, atmost=True)
+            paths = extended
+            k -= 1
         return paths
 
     def run(self):
-        self.prepare()
-
         dbg("Performing the k-ind algorithm only for the main function",
             color="ORANGE")
 
