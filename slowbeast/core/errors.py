@@ -68,6 +68,15 @@ class MemError(Error):
     def __init__(self, t, descr = None):
         super(MemError, self).__init__(Error.MEM_ERROR, descr)
         self.memerr = t
+
+    def isUninitRead(self):
+        return self.memerr == MemError.UNINIT_READ
+
+    def isOobAccess(self):
+        return self.memerr == MemError.OOB_ACCESS
+
+    def isInvalidObj(self):
+        return self.memerr == MemError.INVALID_OBJ
     
     def __repr__(self):
         assert self.isMemError()

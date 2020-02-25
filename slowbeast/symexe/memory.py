@@ -58,10 +58,9 @@ class SymbolicMemory(Memory):
     def read(self, ptr, bytesNum):
         val, err = super(SymbolicMemory, self).read(ptr, bytesNum)
         if err:
+            assert err.isMemError()
             if self.uninitializedIsNondet():
-                serr = str(err)
-                FIXME("Do not use strings for errors, use some enum...")
-                if serr.startswith('Read from uninitialized'):
+                if err.isUninitRead():
                     return self.uninitializedRead(ptr, bytesNum)
 
         return val, err
