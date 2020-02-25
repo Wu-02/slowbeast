@@ -10,6 +10,8 @@ from .. core.errors import MemError
 class MemoryObject:
     ids = 0
 
+    __slots__ = '_id', 'values', 'size', 'name', 'allocation', '_ro'
+
     def __init__(self, size, nm="unnamed", objid = None):
         if objid:
             self._id = objid
