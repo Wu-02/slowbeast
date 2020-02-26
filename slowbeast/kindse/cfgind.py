@@ -25,20 +25,33 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def getCFG(self, F):
         return self.cfgs.setdefault(F, CFG(F))
 
-    def executePath(self, path):
-        s = SEState(
-            None,
-            SymbolicMemory(
-                self.getSolver(),
-                uninit_nondet=True),
-            self.getSolver())
-        s.pushCall(None, self.getProgram().getEntry())
-        s.pc = path.first().getBBlock().first()
+    def executePath(self, path, fromInit=False):
+        if fromInit:
+            states=self.states
+            if not states:
+                self.prepare()
+            assert states
+            print_stdout("Executing path from init: {0}".format(path), color="ORANGE")
+        else:
+            s = SEState(
+                None,
+                SymbolicMemory(
+                    self.getSolver(),
+                    uninit_nondet=True),
+                self.getSolver())
+            s.pushCall(None, self.getProgram().getEntry())
+            s.pc = path.first().getBBlock().first()
+            states=[s]
 
-        print_stdout("Executing path: {0}".format(path), color="ORANGE")
+            print_stdout("Executing path: {0}".format(path), color="ORANGE")
+
+        assert states
+
         self.getExecutor().setLazyMemAccess(True)
-        ready, notready = self.getExecutor().executePath(s, path)
+        ready, notready = self.getExecutor().executePath(states, path)
         self.getExecutor().setLazyMemAccess(False)
+
+        self.stats.paths += 1
 
         return ready, notready
 
@@ -58,6 +71,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return newpaths
 
+    def _is_init(self, loc):
+        return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)
+
     def checkPaths(self):
         newpaths = []
         has_err = False
@@ -65,23 +81,35 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         for path in self.paths:
             # FIXME: use also the ready paths to constraint the state space
             # in the future
+
+            first_loc = path.first()
+            if self._is_init(first_loc):
+                # try executing the path from initial states
+                _, notready = self.executePath(path, fromInit=True)
+                if not notready:
+                    if len(first_loc.getPredecessors()) == 0:
+                        # this path is safe and we do not need to prolong it
+                        continue
+                    # else just fall-through to execution from clear state
+                    # as we can still prolong this path
+                else:
+                    for n in notready:
+                        # we found a real error
+                        if n.hasError():
+                            print_stderr(
+                                "{0}: {1}, {2}".format(
+                                    n.getID(),
+                                    n.pc,
+                                    n.getError()),
+                                color='RED')
+                            self.stats.errors += 1
+                            return False
+
             _, notready = self.executePath(path)
-            self.stats.paths += 1
 
             for n in notready:
                 if n.hasError():
                     has_err = True
-
-                    if path.first().getBBlock() is\
-                        self.getProgram().getEntry().getBBlock(0):
-                        print_stderr(
-                            "{0}: {1}, {2}".format(
-                                n.getID(),
-                                n.pc,
-                                n.getError()),
-                            color='RED')
-                        self.stats.errors += 1
-                        return False
 
                     newpaths += self.extendPath(path)
                     break

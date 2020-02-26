@@ -440,7 +440,11 @@ class Executor:
         the error, killed or exited states reached during the execution of the CFG.
         """
 
-        states = [state]
+        if isinstance(state, list):
+            states = state
+        else:
+            states = [state]
+
         earlytermstates = []
         idx = 0
 
