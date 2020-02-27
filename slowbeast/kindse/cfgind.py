@@ -27,9 +27,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
     def executePath(self, path, fromInit=False):
         if fromInit:
-            states=self.states
-            if not states:
+            if not self.states:
                 self.prepare()
+            states = self.states
             assert states
             print_stdout("Executing path from init: {0}".format(path), color="ORANGE")
         else:
