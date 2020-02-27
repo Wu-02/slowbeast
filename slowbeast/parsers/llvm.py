@@ -203,6 +203,7 @@ class Parser:
         # parsing the stuff inside __assert_fail
         self._special_funs = ['__assert_fail', '__VERIFIER_error',
                               '__VERIFIER_assume',
+                              '__VERIFIER_assert',
                               '__slowbeast_print']
 
     def getOperand(self, op):
@@ -411,6 +412,17 @@ class Parser:
                         getTypeSizeInBits(
                             operands[0].type))))
             A = Assume(C)
+            self._addMapping(inst, A)
+            return [C, A]
+        elif fun == '__VERIFIER_assert':
+            operands = getLLVMOperands(inst)
+            cond = self.getOperand(operands[0])
+            C = Cmp(
+                Cmp.NE, cond, Constant(
+                    0, Type(
+                        getTypeSizeInBits(
+                            operands[0].type))))
+            A = Assert(C)
             self._addMapping(inst, A)
             return [C, A]
         elif fun == '__slowbeast_print':

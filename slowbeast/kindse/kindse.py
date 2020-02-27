@@ -5,6 +5,7 @@ from .. util.debugging import print_stderr, print_stdout, dbg
 
 from . annotatedcfg import CFG
 from . basickindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
+from . basickindse import Result
 from . inductionpath import InductionPath
 
 from copy import copy
@@ -57,8 +58,10 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             # states that do no violate the assert
             ready, notready = self.executePath(p)
 
-            for r in ready:
-                newpaths.append(InductionPath(r))
+            newpaths += [InductionPath(r) for r in ready]
+
+            if len(notready) == 0 and len(ready) == 0:
+                self._infeasibleSuffixes.append(p.getPath())
 
             for ns in notready:
                 if ns.hasError():
@@ -66,21 +69,27 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     dbg("Hit error state in induction check: {0}: {1}, {2}".format(
                          ns.getID(), ns.pc, ns.getError()),
                          color="PURPLE")
+                if ns.wasKilled():
+                    print_stderr(
+                        ns.getStatusDetail(),
+                        prefix='KILLED STATE: ',
+                        color='WINE')
+                    return [], Result.UNKNOWN
 
-            if len(notready) == 0 and len(ready) == 0:
-                self._infeasibleSuffixes.append(p.getPath())
 
-        return newpaths, found_err
+        return newpaths, Result.UNSAFE if found_err else Result.SAFE
 
     def extendPaths(self, ind):
         found_err = False
         newpaths = []
         for path in ind:
             tmp, f_err = self.extendIndPath(path)
+            if f_err == Result.UNKNOWN:
+                return [], Result.UNKNOWN
             newpaths += tmp
-            found_err |= f_err
+            found_err |= f_err == Result.UNSAFE
 
-        return newpaths, not found_err
+        return newpaths, Result.UNSAFE if found_err else Result.SAFE
 
     def extendInd(self):
         pass # we do all the work in checkInd

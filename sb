@@ -157,7 +157,7 @@ def sort_input_files(files):
     llvm_files = []
 
     for f in files:
-        if f.endswith('.c'):
+        if f.endswith('.c') or f.endswith('.i'):
             c_files.append(f)
         elif f.endswith('.bc') or f.endswith('.ll'):
             llvm_files.append(f)

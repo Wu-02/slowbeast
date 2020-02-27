@@ -6,6 +6,10 @@ from .. symexe.executionstate import SEState
 from .. symexe.memory import SymbolicMemory
 from .. util.debugging import print_stderr, print_stdout, dbg
 
+class Result:
+    UNKNOWN = 0
+    SAFE = 1
+    UNSAFE = 2
 
 class KindSymbolicExecutor(SymbolicExecutor):
     def __init__(
@@ -32,7 +36,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
                     color='RED')
                 self.stats.errors += 1
                 self.stats.paths += 1
-                return False
+                return Result.UNSAFE
             elif ns.isReady():
                 self.base.append(ns)
             elif ns.isTerminated():
@@ -46,6 +50,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
                     ns.getStatusDetail(),
                     prefix='KILLED STATE: ',
                     color='WINE')
+                return Result.UNKNOWN
             else:
                 assert ns.exited()
                 self.stats.paths += 1
@@ -53,14 +58,15 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         if not self.base:
             # no ready states -> we searched all the paths
-            return True
+            return Result.SAFE
 
         return None
 
     def extendInd(self):
         self.getExecutor().setLazyMemAccess(True)
-
         states = self.getExecutor().executeTillBranch(self.ind)
+        self.getExecutor().setLazyMemAccess(False)
+
         self.ind = []
         found_err = False
         for ns in states:
@@ -78,17 +84,18 @@ class KindSymbolicExecutor(SymbolicExecutor):
                     ns.getStatusDetail(),
                     prefix='KILLED STATE: ',
                     color='WINE')
+                return Result.UNKNOWN
             else:
                 assert ns.exited()
 
-        self.getExecutor().setLazyMemAccess(False)
-        return not found_err
+        return Result.UNSAFE if found_err else Result.SAFE
 
     def checkInd(self):
         self.getExecutor().setLazyMemAccess(True)
-
         frontier = [s.copy() for s in self.ind]
         states = self.getExecutor().executeTillBranch(frontier)
+        self.getExecutor().setLazyMemAccess(False)
+
         has_error = False
         for ns in states:
             if ns.hasError():
@@ -97,16 +104,17 @@ class KindSymbolicExecutor(SymbolicExecutor):
                     ns.getID(), ns.pc, ns.getError()),
                     color="PURPLE")
                 break
+            elif ns.wasKilled():
+               print_stderr(
+                   ns.getStatusDetail(),
+                   prefix='KILLED STATE: ',
+                   color='WINE')
+               return Result.UNKNOWN
+
            # elif ns.isTerminated():
            #    print_stderr(ns.getError(), color='BROWN')
-           # elif ns.wasKilled():
-           #    print_stderr(
-           #        ns.getStatusDetail(),
-           #        prefix='KILLED STATE: ',
-           #        color='WINE')
 
-        self.getExecutor().setLazyMemAccess(False)
-        return not has_error
+        return Result.UNSAFE if has_error else Result.SAFE
 
     def initializeInduction(self):
         ind = []
@@ -141,24 +149,35 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
             dbg("Extending base".format(k), color="BLUE")
             r = self.extendBase()
-            if r is False:
+            if r == Result.UNSAFE:
                 dbg("Error found.", color='RED')
                 return 1
-            elif r is True:
+            elif r is Result.SAFE:
                 print_stdout("We searched the whole program!", color='GREEN')
                 return 0
+            elif r is Result.UNKNOWN:
+                print_stdout("Hit a problem, giving up.", color='ORANGE')
+                return 1
 
             dbg("Extending induction step".format(k), color="BLUE")
-            if self.extendInd():
+            r = self.extendInd()
+            if r == Result.SAFE:
                 print_stdout("Did not hit any possible error while building "\
                              "induction step!".format(k),
                     color="GREEN")
                 return 0
+            elif r is Result.UNKNOWN:
+                print_stdout("Hit a problem, giving up.", color='ORANGE')
+                return 1
 
             dbg("Checking induction step".format(k), color="BLUE")
-            if self.checkInd():
+            r = self.checkInd()
+            if r == Result.SAFE:
                 print_stdout("Induction step succeeded!", color='GREEN')
                 return 0
+            elif r is Result.UNKNOWN:
+                print_stdout("Hit a problem, giving up.", color='ORANGE')
+                return 1
 
             k += 1
 

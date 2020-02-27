@@ -5,6 +5,7 @@ from .. util.debugging import print_stderr, print_stdout, dbg
 
 from . annotatedcfg import CFG, CFGPath
 from . basickindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
+from . basickindse import Result
 from . inductionpath import InductionPath
 
 from copy import copy
@@ -74,6 +75,22 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def _is_init(self, loc):
         return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)
 
+    def report(self, n):
+        if n.hasError():
+            print_stderr(
+                "{0}: {1}, {2}".format(
+                    n.getID(),
+                    n.pc,
+                    n.getError()),
+                color='RED')
+            self.stats.errors += 1
+        elif n.wasKilled():
+            print_stderr(
+                n.getStatusDetail(),
+                prefix='KILLED STATE: ',
+                color='WINE')
+            self.stats.killed_paths += 1
+
     def checkPaths(self):
         newpaths = []
         has_err = False
@@ -96,28 +113,27 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     for n in notready:
                         # we found a real error
                         if n.hasError():
-                            print_stderr(
-                                "{0}: {1}, {2}".format(
-                                    n.getID(),
-                                    n.pc,
-                                    n.getError()),
-                                color='RED')
-                            self.stats.errors += 1
-                            return False
+                            self.report(n)
+                            return Result.UNSAFE
+                        if n.wasKilled():
+                            self.report(n)
+                            return Result.UNKNOWN
 
             _, notready = self.executePath(path)
 
             for n in notready:
                 if n.hasError():
                     has_err = True
-
                     newpaths += self.extendPath(path)
                     break
+                if n.wasKilled():
+                    self.report(n)
+                    return Result.UNKNOWN
 
         self.paths = newpaths
 
         if not has_err:
-            return True
+            return Result.SAFE
 
         return None
 
@@ -152,11 +168,15 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             dbg("Got {0} paths in queue".format(len(self.paths)))
 
             r = self.checkPaths()
-            if r is True:
+            if r is Result.SAFE:
                 print_stdout("All possible error paths ruled out!", color="GREEN")
                 print_stdout("Induction step succeeded!", color="GREEN")
                 return 0
-            elif r is False:
+            elif r is Result.UNSAFE:
+                dbg("Error found.", color='RED')
+                return 1
+            elif r is Result.UNKNOWN:
+                print_stdout("Hit a problem, giving up.", color='ORANGE')
                 return 1
             else:
                 assert r is None
