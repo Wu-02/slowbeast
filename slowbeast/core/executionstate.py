@@ -9,7 +9,6 @@ class ExecutionState:
         self.pc = pc
         # memory objects
         self.memory = m
-        self.globals = glob
         # status of the execution: ready/exited/errored/etc.
         self.status = ExecutionStatus()
 
@@ -83,9 +82,6 @@ class ExecutionState:
                 "Use of uninitialized/unknown variable {0}".format(v))
         return value
 
-    def bindGlobal(self, glob, ptr):
-        self.globals[glob] = ptr
-
     def set(self, what, v):
         """ Associate a value to a register (in the current stack frame) """
        #from .. util.debugging import dbg
@@ -94,11 +90,10 @@ class ExecutionState:
         self.memory.set(what, v)
 
     def get(self, v):
-        """ Get a value from a register (in the current stack frame) """
-        ret = self.globals.get(v)
-        if ret is None:
-            ret = self.memory.get(v)
-        return ret
+        """
+        Get a value from a register (in the current stack frame or globals)
+        """
+        return self.memory.get(v)
 
     def write(self, ptr, value):
         if not ptr.getOffset().isConstant():
@@ -141,8 +136,5 @@ class ExecutionState:
         self.status.dump(stream)
         stream.write(" -- program counter --\n")
         stream.write('{0}\n'.format(self.pc))
-        stream.write("-- Globals:\n")
-        for g, v in self.globals.items():
-            stream.write("{0} -> {1}\n".format(g.asValue(), v.asValue()))
         stream.write("-- Memory:\n")
         self.memory.dump(stream)

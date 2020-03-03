@@ -114,18 +114,21 @@ class Interpreter:
         """ Run static ctors (e.g. initialize globals) """
         # fake the program counter for the executor
         ginit = GlobalInit()
-        for s in self.states:
+        states = self.states
+
+        for s in states:
             s.pc = ginit
 
-        for G in self._program.getGlobals():
+        globs = self._program.getGlobals()
+        for G in globs:
             # bind the global to the state
-            for s in self.states:
-                s.bindGlobal(G, s.memory.allocateGlobal(G))
+            for s in states:
+                s.memory.allocateGlobal(G)
 
             if not G.hasInit():
                 continue
             for i in G.getInit():
-                for s in self.states:
+                for s in states:
                     ret = self._executor.execute(s, i)
                     assert len(ret) == 1, "Unhandled initialization"
                     assert ret[0] is s, "Unhandled initialization instruction"

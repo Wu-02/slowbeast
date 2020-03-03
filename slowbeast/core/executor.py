@@ -52,7 +52,7 @@ class MemoryModel:
             else:
                 state.setKilled(
                     "Use of unknown variable: {0}".format(
-                        instr.getPointerOperand()))
+                        toOp))
                 return [state]
 
         assert isinstance(value, Value)

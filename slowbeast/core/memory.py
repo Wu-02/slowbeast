@@ -10,11 +10,19 @@ from . memoryobject import MemoryObject
 
 
 class Memory:
+    """
+    This is the object that keeps track of the state of memory
+    in an execution state. It is created by MemoryModel object
+    which also handles its updates and queries.
+    """
+
     def __init__(self):
         self._objects = {}
         self._objects_ro = False
         self._glob_objects = {}
         self._glob_objects_ro = False
+        self._glob_bindings = {}
+        self._glob_bindings_ro = False
         # callstack containing top-level values for the current
         # function (values of computation of instructions).
         # In the future, move there also the objects bound
@@ -28,6 +36,9 @@ class Memory:
         new._glob_objects = self._glob_objects
         new._glob_objects_ro = True
         self._glob_objects_ro = True
+        new._glob_bindings = self._glob_bindings
+        new._glob_bindings_ro = True
+        self._glob_bindings_ro = True
         for o in self._objects.values():
             o._setRO()
         for o in self._glob_objects.values():
@@ -43,6 +54,8 @@ class Memory:
         self._objects_ro = True
         new._glob_objects_ro = True
         self._glob_objects_ro = True
+        new._glob_bindings_ro = True
+        self._glob_bindings_ro = True
         for o in self._objects.values():
             o._setRO()
         for o in self._glob_objects.values():
@@ -69,6 +82,11 @@ class Memory:
             assert all([x._isRO() for x in self._glob_objects.values()])
             self._glob_objects = copy(self._glob_objects)
             self._glob_objects_ro = False
+
+    def _globs_bindings_reown(self):
+        if self._glob_bindings_ro:
+            self._glob_bindings = copy(self._glob_bindings)
+            self._glob_bindings_ro = False
 
     def __eq__(self, rhs):
         return self._objects == rhs._objects and self._cs == self._cs
@@ -107,7 +125,13 @@ class Memory:
         assert self._glob_objects.get(o.getID()) is None
         self._glob_objects[o.getID()] = o
 
-        return Pointer(Constant(o.getID(), SizeType))
+        self._globs_bindings_reown()
+        assert self._glob_bindings_ro is False
+        assert self._glob_bindings.get(G) is None
+        ptr = Pointer(Constant(o.getID(), SizeType))
+        self._glob_bindings[G] = ptr
+
+        return ptr
 
     def hasGlobalObject(self, moid):
         return self._glob_objects.get(moid) is not None
@@ -155,7 +179,10 @@ class Memory:
         self._cs.set(what, v)
 
     def get(self, v):
-        return self._cs.get(v)
+        ret = self._glob_bindings.get(v)
+        if ret is None:
+            ret = self._cs.get(v)
+        return ret
 
     def pushCall(self, callsite, fun, argsMapping={}):
         self._cs.pushCall(callsite, fun, argsMapping)
@@ -164,8 +191,13 @@ class Memory:
         return self._cs.popCall()
 
     def dump(self, stream=sys.stdout):
+        stream.write("-- Global objects:\n")
         for o in self._glob_objects.values():
             o.dump(stream)
+        stream.write("-- Global bindings:\n")
+        for g, v in self._glob_bindings.items():
+            stream.write("{0} -> {1}\n".format(g.asValue(), v.asValue()))
+        stream.write("-- Objects:\n")
         for o in self._objects.values():
             o.dump(stream)
         stream.write("-- Call stack:\n")
