@@ -113,7 +113,9 @@ class Executor:
     def execStore(self, state, instr):
         assert isinstance(instr, Store)
 
-        states = self.memorymodel.write(state, instr.getValueOperand(), instr.getPointerOperand())
+        states = self.memorymodel.write(state,
+                                        instr.getValueOperand(),
+                                        instr.getPointerOperand())
 
         for s in states:
             if s.isReady():
@@ -123,7 +125,9 @@ class Executor:
     def execLoad(self, state, instr):
         assert isinstance(instr, Load)
 
-        states = self.memorymodel.read(state, instr, instr.getPointerOperand(), instr.getBytesNum())
+        states = self.memorymodel.read(state, instr,
+                                       instr.getPointerOperand(),
+                                       instr.getBytesNum())
 
         for s in states:
             if s.isReady():
