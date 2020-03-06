@@ -58,13 +58,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
     def extendPath(self, path, atmost=False):
         front = path.first()
-        newpaths = []
 
         preds = front.getPredecessors()
         # FIXME: do not do this prepend, we always construct a new list....
         # rather do append and then execute in reverse order (do a reverse iterator)
-        for p in preds:
-            newpaths.append(CFGPath([p] + path.getLocations()))
+        newpaths = [CFGPath([p] + path.getLocations()) for p in preds]
 
         if atmost and len(preds) == 0:
             assert len(newpaths) == 0
