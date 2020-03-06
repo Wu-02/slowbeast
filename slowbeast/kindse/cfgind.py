@@ -142,10 +142,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             if n.hasAssert():
                 paths.append(CFGPath([n]))
         while k > 0:
-            extended = []
-            for p in paths:
-                extended += self.extendPath(p, atmost=True)
-            paths = extended
+            paths = [np for p in paths for np in self.extendPath(p, atmost=True)]
             k -= 1
         return paths
 
@@ -180,7 +177,4 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 assert r is None
 
             k += 1
-
-
-
 
