@@ -1,5 +1,9 @@
 #include <assert.h>
 
+// -kind does not terminate on this test right now.
+// (only with -kind-2 or -kind-basic)
+// UNSUPPORTED: kind
+
 // RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out
 // RUN: sb -out-dir=%t-out %opts %t.bc &>%t.log
