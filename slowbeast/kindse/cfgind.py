@@ -1,6 +1,4 @@
 from .. symexe.symbolicexecution import SEOptions
-from .. symexe.executionstate import SEState
-from .. symexe.memory import SymbolicMemory
 from .. util.debugging import print_stderr, print_stdout, dbg
 
 from . annotatedcfg import CFG, CFGPath
@@ -9,7 +7,6 @@ from . basickindse import Result
 from . inductionpath import InductionPath
 
 from copy import copy
-
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def __init__(
@@ -34,12 +31,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             assert states
             print_stdout("Executing path from init: {0}".format(path), color="ORANGE")
         else:
-            s = SEState(
-                None,
-                SymbolicMemory(
-                    self.getSolver(),
-                    uninit_nondet=True),
-                self.getSolver())
+            s = self.getIndExecutor().createState()
             s.pushCall(None, self.getProgram().getEntry())
             s.pc = path.first().getBBlock().first()
             states=[s]
@@ -48,12 +40,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         assert states
 
-        self.getExecutor().setLazyMemAccess(True)
-        ready, notready = self.getExecutor().executePath(states, path)
-        self.getExecutor().setLazyMemAccess(False)
-
+        ready, notready = self.getIndExecutor().executePath(states, path)
         self.stats.paths += 1
-
         return ready, notready
 
     def extendPath(self, path, atmost=False):

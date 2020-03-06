@@ -2,69 +2,96 @@ from copy import copy
 from .. util.debugging import dbg, FIXME
 from .. core.memory import Memory
 from .. core.memoryobject import MemoryObject
+from .. core.memorymodel import MemoryModel
 from .. ir.types import OffsetType
-from .. ir.value import Constant
+from .. ir.value import Constant, Value
+from .. ir.instruction import Alloc, GlobalVariable
+
+class SymbolicMemoryModel(MemoryModel):
+
+    __slots__ = ['solver']
+
+    def __init__(self, opts, solver):
+        super(SymbolicMemoryModel, self).__init__(opts)
+        assert solver is not None
+        self.solver = solver
+
+    def getSolver(self):
+        return self.solver
+
+   #def createMemory(self):
+   #    return SymbolicMemory(self.solver)
 
 
-class SEMemoryObject(MemoryObject):
-    def __init__(self, size, nm=None, objid=None):
-        super(SEMemoryObject, self).__init__(size, nm, objid)
+class LazySymbolicMemoryModel(SymbolicMemoryModel):
 
-   # def write(self, x, off=Constant(0, OffsetType)):
-   #    return super(SEMemoryObject, self).write(x, off)
+    def __init__(self, opts, solver):
+        super(LazySymbolicMemoryModel, self).__init__(opts, solver)
 
-   # def read(self, bts, off=Constant(0, OffsetType)):
-   #    return super(SEMemoryObject, self).read(bts, off)
+    def lazyAllocate(self, state, op):
+        assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
+        s = self.allocate(state, op) 
+        assert len(s) == 1 and s[0] is state
+        dbg("Lazily allocated {0}".format(op))
+        assert state.get(op), "Did not bind an allocated value"
 
+    def write(self, state, valueOp, toOp):
+        value = state.eval(valueOp)
+        to = state.get(toOp)
+        if to is None:
+            self.lazyAllocate(state, toOp)
+            # FIXME("We're calling get() method but we could return the value...")
+            to = state.get(toOp)
 
-class SymbolicMemory(Memory):
-    def __init__(self, solver, uninit_nondet=False):
-        super(SymbolicMemory, self).__init__()
-        self._solver = solver
-        self._uninit_is_nondet = uninit_nondet
+        assert isinstance(value, Value)
+        assert to.isPointer()
+        if not to.getOffset().isConstant():
+            # FIXME: move this check to memory.write() object
+            state.setKilled("Write with non-constant offset not supported yet")
+            return [state]
+        try:
+            err = state.memory.write(to, value)
+        except NotImplementedError as e:
+            state.setKilled(str(e))
+            return [state]
+        if err:
+            state.setError(err)
+        return [state]
 
-    def setUninitializedIsNondet(self, b):
-        self._uninit_is_nondet = b
-
-    def uninitializedIsNondet(self):
-        return self._uninit_is_nondet
-
-    # override this method to create the right objects
-    def createMO(self, size, nm=None, objid=None):
-        return SEMemoryObject(size, nm, objid=None)
-
-    def copy(self):
-        new = copy(self)
-        new._solver = self._solver
-        new._uninit_is_nondet = self._uninit_is_nondet
-        super(SymbolicMemory, self).copyTo(new)
-        assert new == self, "BUG in copying object"
-        return new
-
-   #def write(self, ptr, x):
-   #    return super(SymbolicMemory, self).write(ptr, x)
-
-
-    def uninitializedRead(self, ptr, bytesNum):
+    def uninitializedRead(self, state, ptr, bytesNum):
         dbg("Reading nondet for uninitialized value: {0}".format(ptr))
-        val = self._solver.freshValue("uninit", 8 * bytesNum)
+        val = self.getSolver().freshValue("uninit", 8 * bytesNum)
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
-        err = self.write(ptr, val)
+        err = state.memory.write(ptr, val)
 
         return val, err
 
-    def read(self, ptr, bytesNum):
-        val, err = super(SymbolicMemory, self).read(ptr, bytesNum)
-        if err:
-            assert err.isMemError()
-            if self.uninitializedIsNondet():
+    def read(self, state, toOp, fromOp, bytesNum):
+        assert isinstance(bytesNum, int), "Invalid number of bytes"
+        frm = state.get(fromOp)
+        if frm is None:
+            self.lazyAllocate(state, fromOp)
+            frm = state.get(fromOp)
+
+        assert frm.isPointer()
+        if not frm.getOffset().isConstant():
+            state.setKilled("Read with non-constant offset not supported yet")
+            return [state]
+        try:
+            val, err = state.memory.read(frm, bytesNum)
+            if err:
+                assert err.isMemError()
                 if err.isUninitRead():
-                    return self.uninitializedRead(ptr, bytesNum)
+                    val, err = self.uninitializedRead(state, frm, bytesNum)
 
-        return val, err
+        except NotImplementedError as e:
+            state.setKilled(str(e))
+            return [state]
+        if err:
+            state.setError(err)
+        else:
+            state.set(toOp, val)
+        return [state]
 
-    def __eq__(self, rhs):
-        return super(SymbolicMemory, self).__eq__(rhs) and\
-            self._solver is rhs._solver

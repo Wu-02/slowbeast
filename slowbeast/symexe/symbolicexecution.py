@@ -1,7 +1,6 @@
 from .. interpreter.interpreter import Interpreter, ExecutionOptions
 from . executor import Executor as SExecutor
-from . executionstate import SEState
-from . memory import SymbolicMemory
+from . memory import SymbolicMemoryModel
 from .. solvers.solver import Solver
 from .. util.debugging import print_stderr, print_stdout, dbg
 
@@ -31,32 +30,16 @@ class SEStats:
 
 
 class SymbolicExecutor(Interpreter):
-    def __init__(
-            self,
-            P,
-            testgen=None,
-            opts=SEOptions()):
+    def __init__(self, P, testgen=None, opts=SEOptions()):
         self.solver = Solver()
         super(
             SymbolicExecutor,
-            self).__init__(
-            P,
-            opts,
-            SExecutor(opts))
+            self).__init__(P, opts, SExecutor(self.solver, opts))
         self.stats = SEStats()
         self.testgen = testgen
 
     def getSolver(self):
         return self.solver
-
-    def getInitialStates(self):
-        return [
-            SEState(
-                None,
-                SymbolicMemory(
-                    self.solver,
-                    self.getOptions().uninit_is_nondet),
-                self.solver)]
 
     def getNextState(self):
         if not self.states:

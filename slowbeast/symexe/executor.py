@@ -7,6 +7,9 @@ from .. solvers.expressions import is_symbolic
 from .. util.debugging import dbg
 from .. core.errors import AssertFailError
 
+from . memory import SymbolicMemoryModel
+from . executionstate import SEState
+
 from random import getrandbits
 
 
@@ -47,9 +50,17 @@ def evalCond(state, cond):
 
 
 class Executor(ConcreteExecutor):
-    def __init__(self, opts):
-        super(Executor, self).__init__(opts)
+    def __init__(self, solver, opts, memorymodel = None):
+        if memorymodel is None:
+            memorymodel = SymbolicMemoryModel(opts, solver)
+        super(Executor, self).__init__(opts, memorymodel)
+        self.solver = solver
         self.stats = SEStats()
+
+    def createState(self, pc = None, m = None):
+        if m is None:
+            m = self.getMemoryModel().createMemory()
+        return SEState(pc, m, self.solver)
 
     def fork(self, state, cond):
         self.stats.fork_calls += 1

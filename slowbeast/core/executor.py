@@ -3,103 +3,40 @@ from .. util.debugging import dbg, FIXME
 from .. ir.instruction import *
 from .. ir.value import *
 from . errors import GenericError
-
-class MemoryModel:
-    """
-    Class that takes care of performing memory operations
-    (without knowing what is the real memory implementation)
-    """
-
-    def __init__(self, opts):
-        self._opts = opts
-
-    def setLazyMemAccess(self, b=True):
-        self._opts.lazy_mem_access = b
-
-    def lazyMemAccess(self):
-        return self._opts.lazy_mem_access
-
-    def allocate(self, state, instr):
-        """
-        Perform the allocation by the instruction
-        "inst" and return the new states (there may be
-        several new states, e.g., one where the allocation succeeds,
-        one where it fails, etc.).
-        """
-        assert isinstance(instr, Alloc) or isinstance(instr, GlobalVariable)
-        size = state.eval(instr.getSize())
-        if instr.isGlobal():
-            ptr = state.memory.allocateGlobal(instr)
-        else:
-            ptr = state.memory.allocate(size, instr)
-        state.set(instr, ptr)
-        return [state]
-
-    def write(self, state, valueOp, toOp):
-        value = state.eval(valueOp)
-        to = state.get(toOp)
-        if to is None:
-            if self.lazyMemAccess():
-                FIXME("Move lazy mem access for registers to state.get() method (and then to memory)")
-                assert isinstance(toOp, Alloc)
-                s = self.allocate(state, toOp) 
-                assert len(s) == 1 and s[0] is state
-                dbg("Lazily allocated {0}".format(toOp))
-
-                FIXME("We're calling get() method but we could return the value...")
-                to = state.get(toOp)
-                assert to
-            else:
-                state.setKilled(
-                    "Use of unknown variable: {0}".format(
-                        toOp))
-                return [state]
-
-        assert isinstance(value, Value)
-        assert to.isPointer()
-
-        return state.write(to, value)
-
-    def read(self, state, toOp, fromOp, bytesNum):
-        frm = state.get(fromOp)
-        if frm is None:
-            if self.lazyMemAccess():
-                FIXME("Move lazy mem access for registers to state.get() method (and then to memory)")
-                assert isinstance(fromOp, Alloc) or isinstance(fromOp, GlobalVariable)
-                s = self.allocate(state, fromOp)
-                dbg("Lazily allocated {0}".format(fromOp))
-                assert len(s) == 1 and s[0] is state
-                frm = state.get(fromOp)
-                assert frm
-            else:
-                state.setKilled(
-                    "Use of unknown variable: {0}".format(
-                        instr.getPointerOperand()))
-                return [state]
-
-        assert frm.isPointer()
-        return state.read(frm, dest=toOp, bytesNum=bytesNum)
+from . memorymodel import MemoryModel
+from . executionstate import ExecutionState
 
 class Executor:
     """
-    Class that takes care of executing single instructions
+    Class that takes care of executing single instructions.
+    That is, the executor takes a state, executes one instruction
+    and generates new states.
     """
 
-    def __init__(self, opts):
-        self.memorymodel = MemoryModel(opts)
+    def __init__(self, opts, memorymodel = None):
+        self.memorymodel = MemoryModel(opts) if memorymodel is None else memorymodel
 
         self._opts = opts
         self._executed_instrs = 0
         self._executed_blks = 0
+
+    def getMemoryModel(self):
+        assert self.memorymodel is not None
+        return self.memorymodel
+
+    def createState(pc = None, m = None):
+        """
+        Create a state that can be processed by this executor.
+        """
+        if m is None:
+            m = self.memorymodel.createMemory()
+        return ExecutionState(pc, m)
 
     def getExecInstrNum(self):
         return self._executed_instrs
 
     def getExecStepNum(self):
         return self._executed_blks
-
-    def setLazyMemAccess(self, b=True):
-        self.memorymodel.setLazyMemAccess(b)
 
     def getOptions(self):
         return self._opts

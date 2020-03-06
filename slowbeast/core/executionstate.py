@@ -1,10 +1,9 @@
 from .. ir.value import Constant
-from . memory import Memory
 from .. core.executionstatus import ExecutionStatus
 from sys import stdout
 
 class ExecutionState:
-    def __init__(self, pc=None, m=Memory(), glob={}):
+    def __init__(self, pc, m):
         # program counter
         self.pc = pc
         # memory objects
@@ -28,7 +27,7 @@ class ExecutionState:
         rhs.status = self.status.copy()
 
     def copy(self):
-        new = ExecutionState()
+        new = ExecutionState(None, None)
         self.copyTo(new)
         return new
 
@@ -94,35 +93,6 @@ class ExecutionState:
         Get a value from a register (in the current stack frame or globals)
         """
         return self.memory.get(v)
-
-    def write(self, ptr, value):
-        if not ptr.getOffset().isConstant():
-            self.setKilled("Write with non-constant offset not supported yet")
-            return [self]
-        try:
-            err = self.memory.write(ptr, value)
-        except NotImplementedError as e:
-            self.setKilled(str(e))
-            return [self]
-        if err:
-            self.setError(err)
-        return [self]
-
-    def read(self, ptr, dest, bytesNum):
-        assert isinstance(bytesNum, int), "Invalid number of bytes"
-        if not ptr.getOffset().isConstant():
-            self.setKilled("Read with non-constant offset not supported yet")
-            return [self]
-        try:
-            val, err = self.memory.read(ptr, bytesNum)
-        except NotImplementedError as e:
-            self.setKilled(str(e))
-            return [self]
-        if err:
-            self.setError(err)
-        else:
-            self.set(dest, val)
-        return [self]
 
     def pushCall(self, callsite, fun, argsMapping={}):
         self.memory.pushCall(callsite, fun, argsMapping)

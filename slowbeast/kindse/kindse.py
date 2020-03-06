@@ -1,6 +1,5 @@
 from .. symexe.symbolicexecution import SEOptions
 from .. symexe.executionstate import SEState
-from .. symexe.memory import SymbolicMemory
 from .. util.debugging import print_stderr, print_stdout, dbg
 
 from . annotatedcfg import CFG
@@ -33,10 +32,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
     def executePath(self, path):
         print_stdout("Executing path: {0}".format(path), color="ORANGE")
-        self.getExecutor().setLazyMemAccess(True)
-        ready, notready = self.getExecutor().executePath(path.getState(), path.getPath())
-        self.getExecutor().setLazyMemAccess(False)
-
+        ready, notready = self.getIndExecutor().executePath(path.getState(),
+                                                            path.getPath())
         return ready, notready
 
     def extendIndPath(self, path):
@@ -99,21 +96,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return safe
 
     def initializeInduction(self):
-        ind = []
         cfg = self.getCFG(self.getProgram().getEntry())
-        for b in self.getProgram().getEntry().getBBlocks():
-            s = SEState(
-                None,
-                SymbolicMemory(
-                    self.getSolver(),
-                    uninit_nondet=True),
-                self.getSolver())
-            s.pushCall(None, self.getProgram().getEntry())
-            s.pc = b.first()
-
-            ind.append(InductionPath(cfg, s))
-
+        ind, done = super(KindSymbolicExecutor, self).initializeInduction()
+        if done:
+            return [], True
         # we do the first extension here, so that we can do the rest of the
         # work in checkInd and do not execute the paths repeatedly
-        return self.extendPaths(ind)
+        return self.extendPaths([InductionPath(cfg, s) for s in ind])
 

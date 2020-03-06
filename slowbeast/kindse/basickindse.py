@@ -1,9 +1,6 @@
 from .. symexe.symbolicexecution import SymbolicExecutor, SEOptions
-#from . executor import Executor as SExecutor
-#from . memory import SymbolicMemory
-#from .. solvers.solver import Solver
-from .. symexe.executionstate import SEState
-from .. symexe.memory import SymbolicMemory
+from .. symexe.executor import Executor as SExecutor
+from .. symexe.memory import LazySymbolicMemoryModel
 from .. util.debugging import print_stderr, print_stdout, dbg
 
 class Result:
@@ -20,8 +17,14 @@ class KindSymbolicExecutor(SymbolicExecutor):
         super(
             KindSymbolicExecutor, self).__init__(prog, opts)
 
-        dbg("Forbidding calls for now with k-induction")
-        self.getExecutor().forbidCalls()
+        # the executor for induction checks -- we need lazy memory access
+        memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
+        self.indexecutor = SExecutor(self.getSolver(), opts, memorymodel)
+        dbg("Forbidding calls in induction step for now with k-induction")
+        self.indexecutor.forbidCalls()
+
+    def getIndExecutor(self):
+        return self.indexecutor
 
     def extendBase(self):
         states = self.getExecutor().executeTillBranch(self.base)
@@ -63,9 +66,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         return None
 
     def extendInd(self):
-        self.getExecutor().setLazyMemAccess(True)
-        states = self.getExecutor().executeTillBranch(self.ind)
-        self.getExecutor().setLazyMemAccess(False)
+        states = self.indexecutor.executeTillBranch(self.ind)
 
         self.ind = []
         found_err = False
@@ -91,10 +92,8 @@ class KindSymbolicExecutor(SymbolicExecutor):
         return Result.UNSAFE if found_err else Result.SAFE
 
     def checkInd(self):
-        self.getExecutor().setLazyMemAccess(True)
         frontier = [s.copy() for s in self.ind]
-        states = self.getExecutor().executeTillBranch(frontier)
-        self.getExecutor().setLazyMemAccess(False)
+        states = self.indexecutor.executeTillBranch(frontier)
 
         has_error = False
         for ns in states:
@@ -111,23 +110,19 @@ class KindSymbolicExecutor(SymbolicExecutor):
                    color='WINE')
                return Result.UNKNOWN
 
-           # elif ns.isTerminated():
-           #    print_stderr(ns.getError(), color='BROWN')
-
         return Result.UNSAFE if has_error else Result.SAFE
 
     def initializeInduction(self):
         ind = []
-        for b in self.getProgram().getEntry().getBBlocks():
-            s = SEState(
-                None,
-                SymbolicMemory(
-                    self.getSolver(),
-                    uninit_nondet=True),
-                self.getSolver())
-            s.pushCall(None, self.getProgram().getEntry())
+        bblocks = self.getProgram().getEntry().getBBlocks()
+        executor = self.indexecutor
+        entry = self.getProgram().getEntry()
+        append = ind.append
+        for b in bblocks:
+            s = executor.createState()
+            s.pushCall(None, entry)
             s.pc = b.first()
-            ind.append(s)
+            append(s)
         return ind, False
 
     def run(self):

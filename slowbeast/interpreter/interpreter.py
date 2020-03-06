@@ -1,4 +1,3 @@
-from .. core.executionstate import ExecutionState
 from .. core.executor import Executor
 
 from .. util.debugging import print_stderr, dbg
@@ -66,7 +65,7 @@ class Interpreter:
         Get state(s) from which to start execution.
         May be overriden by child classes
         """
-        return [ExecutionState(None)]
+        return [self._executor.createState()]
 
     def getNextState(self):
         if not self.states:
