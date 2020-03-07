@@ -2,6 +2,7 @@ from .. ir.value import Constant
 from .. core.executionstatus import ExecutionStatus
 from sys import stdout
 
+
 class ExecutionState:
     def __init__(self, pc, m):
         # program counter

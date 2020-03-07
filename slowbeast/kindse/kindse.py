@@ -9,6 +9,7 @@ from . inductionpath import InductionPath
 
 from copy import copy
 
+
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def __init__(
             self,
@@ -46,7 +47,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 continue
 
             if self.hasInfeasibleSuffix(p):
-                # FIXME: this works only for "assert False" as it is in its own block...
+                # FIXME: this works only for "assert False" as it is in its own
+                # block...
                 dbg("Skipping path with infeasible suffix: {0}".format(p))
                 continue
 
@@ -64,15 +66,13 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 if ns.hasError():
                     found_err = True
                     dbg("Hit error state in induction check: {0}: {1}, {2}".format(
-                         ns.getID(), ns.pc, ns.getError()),
-                         color="PURPLE")
+                        ns.getID(), ns.pc, ns.getError()), color="PURPLE")
                 if ns.wasKilled():
                     print_stderr(
                         ns.getStatusDetail(),
                         prefix='KILLED STATE: ',
                         color='WINE')
                     return [], Result.UNKNOWN
-
 
         return newpaths, Result.UNSAFE if found_err else Result.SAFE
 
@@ -89,7 +89,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return newpaths, Result.UNSAFE if found_err else Result.SAFE
 
     def extendInd(self):
-        pass # we do all the work in checkInd
+        pass  # we do all the work in checkInd
 
     def checkInd(self):
         self.ind, safe = self.extendPaths(self.ind)
@@ -103,4 +103,3 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         # we do the first extension here, so that we can do the rest of the
         # work in checkInd and do not execute the paths repeatedly
         return self.extendPaths([InductionPath(cfg, s) for s in ind])
-

@@ -1,6 +1,7 @@
 from copy import copy
 from sys import stdout
 
+
 class CallStack:
     class Frame:
         def __init__(self, fun, returnsite=None, v={}):

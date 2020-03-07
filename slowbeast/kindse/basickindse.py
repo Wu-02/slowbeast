@@ -3,10 +3,12 @@ from .. symexe.executor import Executor as SExecutor
 from .. symexe.memory import LazySymbolicMemoryModel
 from .. util.debugging import print_stderr, print_stdout, dbg
 
+
 class Result:
     UNKNOWN = 0
     SAFE = 1
     UNSAFE = 2
+
 
 class KindSymbolicExecutor(SymbolicExecutor):
     def __init__(
@@ -74,8 +76,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             if ns.hasError():
                 found_err = True
                 dbg("Hit error state while building IS assumptions: {0}: {1}, {2}".format(
-                    ns.getID(), ns.pc, ns.getError()),
-                    color="PURPLE")
+                    ns.getID(), ns.pc, ns.getError()), color="PURPLE")
             elif ns.isReady():
                 self.ind.append(ns)
             elif ns.isTerminated():
@@ -104,11 +105,11 @@ class KindSymbolicExecutor(SymbolicExecutor):
                     color="PURPLE")
                 break
             elif ns.wasKilled():
-               print_stderr(
-                   ns.getStatusDetail(),
-                   prefix='KILLED STATE: ',
-                   color='WINE')
-               return Result.UNKNOWN
+                print_stderr(
+                    ns.getStatusDetail(),
+                    prefix='KILLED STATE: ',
+                    color='WINE')
+                return Result.UNKNOWN
 
         return Result.UNSAFE if has_error else Result.SAFE
 
@@ -157,9 +158,9 @@ class KindSymbolicExecutor(SymbolicExecutor):
             dbg("Extending induction step".format(k), color="BLUE")
             r = self.extendInd()
             if r == Result.SAFE:
-                print_stdout("Did not hit any possible error while building "\
+                print_stdout("Did not hit any possible error while building "
                              "induction step!".format(k),
-                    color="GREEN")
+                             color="GREEN")
                 return 0
             elif r is Result.UNKNOWN:
                 print_stdout("Hit a problem, giving up.", color='ORANGE')
@@ -175,4 +176,3 @@ class KindSymbolicExecutor(SymbolicExecutor):
                 return 1
 
             k += 1
-

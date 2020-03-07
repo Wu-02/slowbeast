@@ -12,11 +12,11 @@ class MemoryObject:
 
     __slots__ = '_id', 'values', 'size', 'name', 'allocation', '_ro'
 
-    def __init__(self, size, nm="unnamed", objid = None):
+    def __init__(self, size, nm="unnamed", objid=None):
         if objid:
             self._id = objid
         else:
-            MemoryObject.ids += 1 # shift the objects counter for the next object
+            MemoryObject.ids += 1  # shift the objects counter for the next object
             self._id = MemoryObject.ids
 
         self.values = {}  # until we support composite objects, use just 'value'
@@ -71,9 +71,9 @@ class MemoryObject:
             FIXME("check that writes to MO do not overlap")
         if x.getByteWidth() > self.getSize().getValue() + offval:
             return MemError(MemError.OOB_ACCESS,
-                            "Written value too big for the object. "\
+                            "Written value too big for the object. "
                             "Writing {0}B to offset {1} of {2}B object".format(
-                             x.getByteWidth(), off, self.getSize()))
+                                x.getByteWidth(), off, self.getSize()))
         self.values[offval] = x
         return None
 
@@ -97,12 +97,12 @@ class MemoryObject:
         if self.getSize().getValue() < bts:
             return None, MemError(MemError.OOB_ACCESS,
                                   "Read {0}B from object of size {1}B".format(
-                                   bts, self.getSize()))
+                                      bts, self.getSize()))
 
         val = self.values.get(offval)
         if val is None:
-            return None, MemError(MemError.UNINIT_READ,
-                                  "Read from uninitialized memory (or unaligned read (not supp. yet)).")
+            return None, MemError(
+                MemError.UNINIT_READ, "Read from uninitialized memory (or unaligned read (not supp. yet)).")
 
         return val, None
 

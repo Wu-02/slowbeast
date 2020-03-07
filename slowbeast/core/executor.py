@@ -6,6 +6,7 @@ from . errors import GenericError
 from . memorymodel import MemoryModel
 from . executionstate import ExecutionState
 
+
 class Executor:
     """
     Class that takes care of executing single instructions.
@@ -13,8 +14,9 @@ class Executor:
     and generates new states.
     """
 
-    def __init__(self, opts, memorymodel = None):
-        self.memorymodel = MemoryModel(opts) if memorymodel is None else memorymodel
+    def __init__(self, opts, memorymodel=None):
+        self.memorymodel = MemoryModel(
+            opts) if memorymodel is None else memorymodel
 
         self._opts = opts
         self._executed_instrs = 0
@@ -24,7 +26,7 @@ class Executor:
         assert self.memorymodel is not None
         return self.memorymodel
 
-    def createState(pc = None, m = None):
+    def createState(pc=None, m=None):
         """
         Create a state that can be processed by this executor.
         """
@@ -250,7 +252,10 @@ class Executor:
         fun = instr.getCalledFunction()
         dbg("-- CALL {0} --".format(fun.getName()))
         if fun.isUndefined():
-            state.setError(GenericError("Called undefined function: {0}".format(fun.getName())))
+            state.setError(
+                GenericError(
+                    "Called undefined function: {0}".format(
+                        fun.getName())))
             return [state]
         # map values to arguments
         assert len(instr.getOperands()) == len(fun.getArguments())
@@ -271,7 +276,8 @@ class Executor:
         rs = state.popCall()
         if rs is None:  # popped the last frame
             if ret.isPointer():
-                state.setError(GenericError("Returning a pointer from main function"))
+                state.setError(
+                    GenericError("Returning a pointer from main function"))
                 return [state]
             elif not ret.isConstant():
                 state.addWarning(
@@ -331,7 +337,7 @@ class Executor:
 
         return states
 
-    def executeTillBranch(self, state, stopBefore = False):
+    def executeTillBranch(self, state, stopBefore=False):
         """
         Start executing from 'state' and stop execution after executing a
         branch instruction.  This usually will execute exactly one basic block
@@ -411,8 +417,8 @@ class Executor:
                 assert followsucc or curbb.last().getFalseSuccessor() == succbb
                 for s in states:
                     newstates += self.execBranchTo(s, s.pc, followsucc)
-            else: # this is the last location on path,
-                  # so just normally execute the branch instructions
+            else:  # this is the last location on path,
+                # so just normally execute the branch instructions
                 newstates = self.executeTillBranch(states)
             states = newstates
 

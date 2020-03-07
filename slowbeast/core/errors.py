@@ -12,7 +12,7 @@ class Error:
     MEM_ERROR = 2
     GENERIC = 3
 
-    def __init__(self, t, d = None):
+    def __init__(self, t, d=None):
         self.type = t
         self.descr = d
 
@@ -30,13 +30,13 @@ class Error:
 
     def __repr__(self):
         if self.type == Error.UNKNOWN:
-            detail='unknown error'
+            detail = 'unknown error'
         elif self.type == Error.ASSERTION_FAIL:
-            detail='assertion failure'
+            detail = 'assertion failure'
         elif self.type == Error.MEM_ERROR:
-            detail='memory error'
+            detail = 'memory error'
         elif self.type == Error.GENERIC:
-            detail='error'
+            detail = 'error'
         else:
             raise RuntimeError("Invalid error type")
 
@@ -45,13 +45,16 @@ class Error:
             return "{0}: {1}".format(self.__repr__(), self.descr)
         return self.__repr__()
 
+
 class AssertFailError(Error):
-    def __init__(self, descr = None):
+    def __init__(self, descr=None):
         super(AssertFailError, self).__init__(Error.ASSERTION_FAIL, descr)
 
+
 class GenericError(Error):
-    def __init__(self, descr = None):
+    def __init__(self, descr=None):
         super(GenericError, self).__init__(Error.GENERIC, descr)
+
 
 class MemError(Error):
     """
@@ -64,8 +67,8 @@ class MemError(Error):
     OOB_ACCESS = 1
     UNINIT_READ = 2
     INVALID_OBJ = 3
-    
-    def __init__(self, t, descr = None):
+
+    def __init__(self, t, descr=None):
         super(MemError, self).__init__(Error.MEM_ERROR, descr)
         self.memerr = t
 
@@ -77,7 +80,7 @@ class MemError(Error):
 
     def isInvalidObj(self):
         return self.memerr == MemError.INVALID_OBJ
-    
+
     def __repr__(self):
         assert self.isMemError()
         if self.memerr == MemError.OOB_ACCESS:
@@ -89,8 +92,8 @@ class MemError(Error):
         else:
             raise RuntimeError("Invalid memory error type")
 
-        return "memory error - {1}".format(super(MemError, self).__repr__(), detail)
+        return "memory error - {1}".format(super(MemError,
+                                                 self).__repr__(), detail)
 
     def __str__(self):
         return "{0} ({1})".format(self.__repr__(), self.getDescr())
-

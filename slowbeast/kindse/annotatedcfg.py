@@ -2,6 +2,7 @@ from .. analysis.cfg import CFG as PureCFG
 from .. analysis.cfg import CFGPath as PureCFGPath
 from .. ir.instruction import Assert
 
+
 class CFG(PureCFG):
     """
     CFG with nodes annotated with information
@@ -27,6 +28,7 @@ class CFG(PureCFG):
     def createNode(self, *args):
         assert len(args) == 1
         return CFG.AnnotatedNode(*args)
+
 
 class CFGPath(PureCFGPath):
     def __init__(self, locs=[]):

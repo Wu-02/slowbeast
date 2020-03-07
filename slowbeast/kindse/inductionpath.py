@@ -2,6 +2,7 @@ from . annotatedcfg import CFGPath
 from sys import stdout
 from copy import copy
 
+
 class InductionPath:
     """
     An object that consists of a state and a CFG path.
@@ -9,7 +10,7 @@ class InductionPath:
     for reachable errors
     """
 
-    def __init__(self, cfg, state, blocks = []):
+    def __init__(self, cfg, state, blocks=[]):
         self.cfg = cfg
         self.state = state
         self.path = CFGPath(blocks)
@@ -60,4 +61,3 @@ class InductionPath:
 
     def __repr__(self):
         return "({0}):: {1}".format(self.state.getID(), self.path)
-

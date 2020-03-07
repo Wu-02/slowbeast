@@ -1,6 +1,7 @@
 from copy import deepcopy
 from sys import stdout
 
+
 class ExecutionStatus:
     READY = 1      # ready for execution
     EXITED = 2     # normally exited
@@ -75,5 +76,3 @@ class ExecutionStatus:
 
     def dump(self, stream=stdout):
         stream.write('status: {0}\n'.format(str(self)))
-
-

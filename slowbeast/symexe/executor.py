@@ -28,6 +28,7 @@ class SEStats:
 def addPointerWithConstant(E, op1, op2):
     return Pointer(op1.getObject(), E.Add(op1.getOffset(), op2))
 
+
 def evalCond(state, cond):
     assert isinstance(cond, ValueInstruction) or cond.isConstant()
     E = state.getExprManager()
@@ -50,14 +51,14 @@ def evalCond(state, cond):
 
 
 class Executor(ConcreteExecutor):
-    def __init__(self, solver, opts, memorymodel = None):
+    def __init__(self, solver, opts, memorymodel=None):
         if memorymodel is None:
             memorymodel = SymbolicMemoryModel(opts, solver)
         super(Executor, self).__init__(opts, memorymodel)
         self.solver = solver
         self.stats = SEStats()
 
-    def createState(self, pc = None, m = None):
+    def createState(self, pc=None, m=None):
         if m is None:
             m = self.getMemoryModel().createMemory()
         return SEState(pc, m, self.solver)
@@ -259,7 +260,9 @@ class Executor(ConcreteExecutor):
 
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.setKilled("calling '{0}', but calls are forbidden".format(fun.getName()))
+            state.setKilled(
+                "calling '{0}', but calls are forbidden".format(
+                    fun.getName()))
             return [state]
 
         # map values to arguments

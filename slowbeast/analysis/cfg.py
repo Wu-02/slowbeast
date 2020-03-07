@@ -4,6 +4,7 @@ from .. ir.instruction import Branch
 from sys import stdout
 from copy import copy
 
+
 class CFG:
     class Node:
         def __init__(self, B):
@@ -27,7 +28,6 @@ class CFG:
 
             self.successors.append(succ)
             succ.predecessors.append(self)
-
 
     def __init__(self, F):
         self.fun = F
@@ -65,6 +65,7 @@ class CFG:
             for succ in node.getSuccessors():
                 stream.write("{0} -> {1}\n".format(node.getBBlock().getID(),
                                                    succ.getBBlock().getID()))
+
 
 class CFGPath:
     def __init__(self, locs=None):
@@ -114,5 +115,5 @@ class CFGPath:
         stream.write('\n')
 
     def __repr__(self):
-        return  " -> ".join(map(lambda x: str(x.getBBlock().getID()), self.locations))
-
+        return " -> ".join(map(lambda x: str(x.getBBlock().getID()),
+                               self.locations))

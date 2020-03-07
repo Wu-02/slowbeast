@@ -7,6 +7,7 @@ from .. ir.types import OffsetType
 from .. ir.value import Constant, Value
 from .. ir.instruction import Alloc, GlobalVariable
 
+
 class SymbolicMemoryModel(MemoryModel):
 
     __slots__ = ['solver']
@@ -19,7 +20,7 @@ class SymbolicMemoryModel(MemoryModel):
     def getSolver(self):
         return self.solver
 
-   #def createMemory(self):
+   # def createMemory(self):
    #    return SymbolicMemory(self.solver)
 
 
@@ -30,7 +31,7 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
 
     def lazyAllocate(self, state, op):
         assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
-        s = self.allocate(state, op) 
+        s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
         dbg("Lazily allocated {0}".format(op))
         assert state.get(op), "Did not bind an allocated value"
@@ -94,4 +95,3 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         else:
             state.set(toOp, val)
         return [state]
-

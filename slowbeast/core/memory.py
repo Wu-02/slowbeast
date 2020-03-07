@@ -104,7 +104,7 @@ class Memory:
     def allocate(self, size, instr=None, nm=None, objid=None):
         """ Allocate a new memory object and return a pointer to it """
         assert objid is None or self._objects.get(objid) is None,\
-                "Already has an object with id {0}".format(objid)
+            "Already has an object with id {0}".format(objid)
 
         o = self._allocate(size, instr, nm, objid)
 
@@ -117,7 +117,7 @@ class Memory:
     def allocateGlobal(self, G, objid=None):
         """ Allocate a new memory object and return a pointer to it """
         assert objid is None or self._glob_objects.get(objid) is None,\
-                "Already has a global object with id {0}".format(objid)
+            "Already has a global object with id {0}".format(objid)
 
         o = self._allocate(G.getSize(), G, G.getName(), objid)
 

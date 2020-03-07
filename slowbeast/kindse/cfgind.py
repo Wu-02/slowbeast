@@ -8,6 +8,7 @@ from . inductionpath import InductionPath
 
 from copy import copy
 
+
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def __init__(
             self,
@@ -29,14 +30,16 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 self.prepare()
             states = self.states
             assert states
-            print_stdout("Executing path from init: {0}".format(path), color="ORANGE")
+            print_stdout(
+                "Executing path from init: {0}".format(path),
+                color="ORANGE")
             # we must execute without lazy memory
             executor = self.getExecutor()
         else:
             s = self.getIndExecutor().createState()
             s.pushCall(None, self.getProgram().getEntry())
             s.pc = path.first().getBBlock().first()
-            states=[s]
+            states = [s]
             executor = self.getIndExecutor()
 
             print_stdout("Executing path: {0}".format(path), color="ORANGE")
@@ -52,7 +55,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         preds = front.getPredecessors()
         # FIXME: do not do this prepend, we always construct a new list....
-        # rather do append and then execute in reverse order (do a reverse iterator)
+        # rather do append and then execute in reverse order (do a reverse
+        # iterator)
         newpaths = [CFGPath([p] + path.getLocations()) for p in preds]
 
         if atmost and len(preds) == 0:
@@ -73,18 +77,23 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     n.getError()),
                 color='RED')
             self.stats.errors += 1
+            return Result.UNSAFE
         elif n.wasKilled():
             print_stderr(
                 n.getStatusDetail(),
                 prefix='KILLED STATE: ',
                 color='WINE')
             self.stats.killed_paths += 1
+            return Result.UNKNOWN
+
+        return None
 
     def checkPaths(self):
         newpaths = []
         has_err = False
 
-        for path in self.paths:
+        paths = self.paths
+        for path in paths:
             # FIXME: use also the ready paths to constraint the state space
             # in the future
 
@@ -94,7 +103,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 _, notready = self.executePath(path, fromInit=True)
                 if not notready:
                     if len(first_loc.getPredecessors()) == 0:
-                        # this path is safe and we do not need to prolong it
+                        # this path is safe and we do not need to extend it
                         continue
                     # else just fall-through to execution from clear state
                     # as we can still prolong this path
@@ -102,11 +111,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     for n in notready:
                         # we found a real error
                         if n.hasError():
-                            self.report(n)
-                            return Result.UNSAFE
+                            return self.report(n)
                         if n.wasKilled():
-                            self.report(n)
-                            return Result.UNKNOWN
+                            return self.report(n)
 
             _, notready = self.executePath(path)
 
@@ -116,8 +123,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     newpaths += self.extendPath(path)
                     break
                 if n.wasKilled():
-                    self.report(n)
-                    return Result.UNKNOWN
+                    return self.report(n)
 
         self.paths = newpaths
 
@@ -126,14 +132,16 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return None
 
-    def initializePaths(self, k = 1):
+    def initializePaths(self, k=1):
         paths = []
         cfg = self.getCFG(self.getProgram().getEntry())
         for n in cfg.getNodes():
             if n.hasAssert():
                 paths.append(CFGPath([n]))
         while k > 0:
-            paths = [np for p in paths for np in self.extendPath(p, atmost=True)]
+            paths = [
+                np for p in paths for np in self.extendPath(
+                    p, atmost=True)]
             k -= 1
         return paths
 
@@ -155,7 +163,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
             r = self.checkPaths()
             if r is Result.SAFE:
-                print_stdout("All possible error paths ruled out!", color="GREEN")
+                print_stdout(
+                    "All possible error paths ruled out!",
+                    color="GREEN")
                 print_stdout("Induction step succeeded!", color="GREEN")
                 return 0
             elif r is Result.UNSAFE:
@@ -168,4 +178,3 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 assert r is None
 
             k += 1
-

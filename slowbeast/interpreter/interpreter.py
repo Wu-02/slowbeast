@@ -170,7 +170,7 @@ class Interpreter:
                             self._options.step))
 
                #self.states_num += len(newstates)
-               #if self.states_num % 100 == 0:
+               # if self.states_num % 100 == 0:
                #    print("Searched states: {0}".format(self.states_num))
                 self.handleNewStates(newstates)
         except Exception as e:

@@ -70,7 +70,7 @@ if _use_z3:
         for a in args:
             vals.append(m[a.unwrap()])
 
-        return vals 
+        return vals
 
     def is_sat(*args):
         s = Z3Solver()
@@ -145,7 +145,7 @@ class SymbolicSolver(SolverIntf):
 
     def concretize(self, assumpt, *e):
         m = smallmodels(assumpt, *e)
-        if m is None: # unsat
+        if m is None:  # unsat
             return None
         ret = []
         n = 0
