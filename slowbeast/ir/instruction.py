@@ -306,12 +306,10 @@ class Assume(Instruction):
 
     def __str__(self):
         r = 'assume '
-        n = 0
-        for o in self._operands:
+        for n, o in enumerate(self._operands):
             if n > 0:
                 r += ' && '
             r += o.asValue()
-            n += 1
         return r
 
 

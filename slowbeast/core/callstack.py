@@ -95,8 +95,6 @@ class CallStack:
         return rs
 
     def dump(self, stream=stdout):
-        n = 0
-        for f in self._cs:
+        for n, f in enumerate(self._cs):
             stream.write(" -- {0}: {1} --\n".format(n, f.function.getName()))
             f.dump(stream)
-            n += 1

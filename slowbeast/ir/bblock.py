@@ -27,8 +27,7 @@ class BBlock(ProgramElement):
         i.setBBlock(self, idx)
 
         if __debug__:
-            n = 0
-            for i in self._instructions:
+            for n, i in enumerate(self._instructions):
                 assert i._bblock_idx == n, "Invalid insertion of instruction"
                 n += 1
 

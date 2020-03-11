@@ -148,13 +148,11 @@ class SymbolicSolver(SolverIntf):
         if m is None:  # unsat
             return None
         ret = []
-        n = 0
-        for v in e:
+        for n, v in enumerate(e):
             if m[n] is None:
                 ret.append(None)
             else:
                 ret.append(Constant(m[n].as_long(), v.getType()))
-            n += 1
         return ret
 
   # def concretize(self, val, *e):

@@ -648,10 +648,8 @@ class Parser:
         F = self.getFun(f.name)
 
         # add mapping to arguments of the function
-        n = 0
-        for a in f.arguments:
+        for n, a in enumerate(f.arguments):
             self._addMapping(a, F.getArgument(n))
-            n += 1
 
         # first create blocks as these can be operands to br instructions
         for b in f.blocks:
