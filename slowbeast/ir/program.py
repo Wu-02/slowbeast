@@ -3,6 +3,9 @@ from sys import stdout
 
 
 class Program:
+
+    __slots__ = ['_functions', '_entry', '_metadata', '_globals']
+
     def __init__(self):
         self._functions = []
         self._entry = None
@@ -47,6 +50,8 @@ class ProgramElement:
     """
 
     elemsCounter = 0
+
+    __slots__ = ['_metadata', '_id']
 
     def __init__(self):
         """

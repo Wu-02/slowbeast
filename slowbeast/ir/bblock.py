@@ -4,6 +4,8 @@ from sys import stdout
 
 class BBlock(ProgramElement):
 
+    __slots__ = ['_instructions', '_function']
+
     def __init__(self, f=None):
         super(BBlock, self).__init__()
         self._instructions = []

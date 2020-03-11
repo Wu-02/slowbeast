@@ -4,6 +4,8 @@ from . types import Type, PointerType, BoolType, POINTER_BIT_WIDTH
 
 
 class Value:
+    __slots__ = ['_type']
+
     def __init__(self, ty):
         assert isinstance(ty, Type)
         self._type = ty
@@ -39,6 +41,8 @@ class Constant(Value):
     Integer constant or boolean
     """
 
+    __slots__ = ['_value']
+
     def __init__(self, c, ty):
         assert isinstance(c, int) or\
             isinstance(c, bool), "Invalid constant"
@@ -72,6 +76,9 @@ class Constant(Value):
 
 
 class Pointer(Value):
+
+    __slots__ = ['object', 'offset']
+
     def __init__(self, obj, off=Constant(0, Type(POINTER_BIT_WIDTH))):
         assert isinstance(off, Value)
         super(Pointer, self).__init__(PointerType())

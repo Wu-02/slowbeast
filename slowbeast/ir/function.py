@@ -4,6 +4,9 @@ from sys import stdout
 
 
 class Function(ProgramElement):
+
+    __slots__ = ['_name', '_bblocks', '_arguments', '_retty']
+
     def __init__(self, name, argNum=0, retty=None):
         super(Function, self).__init__()
         self._name = name
