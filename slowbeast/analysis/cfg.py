@@ -7,6 +7,8 @@ from copy import copy
 
 class CFG:
     class Node:
+        __slots__ = ['block', 'successors', 'predecessors']
+
         def __init__(self, B):
             self.block = B
             self.successors = []

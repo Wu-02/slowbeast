@@ -15,6 +15,9 @@ class Program:
     def addFun(self, f):
         self._functions.append(f)
 
+    def getFunctions(self):
+        return self._functions
+
     def getFunction(self, name):
         for f in self._functions:
             if f.getName() == name:
