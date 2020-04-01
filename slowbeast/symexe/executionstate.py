@@ -5,6 +5,8 @@ from sys import stdout
 
 
 class ConstraintsSet:
+    __slots__ = ['constraints', '_ro']
+
     def __init__(self, C=[]):
         self.constraints = C
         self._ro = False
@@ -130,10 +132,11 @@ class SEState(ExecutionState):
 
     def dump(self, stream=stdout):
         ExecutionState.dump(self, stream)
-        stream.write(" -- nondets --\n")
+        write = stream.write
+        write(" -- nondets --\n")
         for n in self._nondets:
-            stream.write(str(n))
-            stream.write('\n')
-        stream.write(" -- constraints --\n")
-        stream.write(str(self.getConstraintsObj()))
-        stream.write('\n')
+            write(str(n))
+            write('\n')
+        write(" -- constraints --\n")
+        write(str(self.getConstraintsObj()))
+        write('\n')

@@ -100,6 +100,8 @@ else:
 class SolverIntf:
     """ Interface of solvers """
 
+    __slots__ = ['_exprmanager']
+
     def __init__(self, em=ExprManager()):
         self._exprmanager = em
 
@@ -111,7 +113,7 @@ class SolverIntf:
 
     def freshValue(self, name, bw=64):
         """ bw = bitwidth """
-        return self.getExprManager().freshValue(name, bw)
+        return self._exprmanager.freshValue(name, bw)
 
 
 class ConcreteSolver(SolverIntf):

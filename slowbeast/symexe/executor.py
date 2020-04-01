@@ -273,7 +273,8 @@ class Executor(ConcreteExecutor):
         return [state]
 
     def execUndefFun(self, state, instr, fun):
-        if fun.getName() == 'abort':
+        name = fun.getName()
+        if name == 'abort':
             state.setTerminated("Aborted via an abort() call")
             return [state]
 
@@ -282,7 +283,7 @@ class Executor(ConcreteExecutor):
             if self.getOptions().concretize_nondets:
                 val = Constant(getrandbits(32), retTy)
             else:
-                val = state.getSolver().freshValue(fun.getName(), retTy.getBitWidth())
+                val = state.getSolver().freshValue(name, retTy.getBitWidth())
             state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.getNextInstruction()

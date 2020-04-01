@@ -20,6 +20,8 @@ class ExprManager:
     SMT formulas, but we'll be ready for the future :)
     """
 
+    __slots__ = ['_names']
+
     def __init__(self):
         self._names = {}
 
@@ -28,28 +30,37 @@ class ExprManager:
 
     def Var(self, name, bw=64):
         assert isinstance(name, str)
-        s = self._names.get(name)
+        names = self._names
+        s = names.get(name)
         if s:
             assert s.getType() == Type(bw), "Creating the same value with different type"
         else:
             s = SymbolicDomain.Var(name, bw)
-            self._names[name] = s
+            names[name] = s
         assert s, "No var was created"
         return s
 
     def freshValue(self, name, bw=64):
         assert isinstance(name, str)
+        names = self._names
         origname = name
         cnt = 1
-        s = self._names.get(name)
+        s = names.get(name)
         while s:
             cnt += 1
+            # FIXME: this is too inefficient
+            # (profiling shows that this is one of the
+            # bottle necks if we do not take care of
+            # the uniquenes of the name on the top-level)
             name = "{0}_{1}".format(origname, cnt)
-            s = self._names.get(name)
+            s = names.get(name)
 
         s = SymbolicDomain.Var(name, bw)
-        self._names[name] = s
+        names[name] = s
         return s
+
+    def dropValue(self, name):
+        self._names.pop(name)
 
     def Int1(self, name):
         return self.Var(name, 1)
