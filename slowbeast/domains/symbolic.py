@@ -12,6 +12,7 @@ if _use_z3:
     from z3 import SignExt as BVSExt
     from z3 import Extract as BVExtract
     from z3 import LShR as BVLShR
+    from z3 import is_bv, is_bv_value
 
     def TRUE():
         return BoolVal(True)
@@ -35,6 +36,28 @@ if _use_z3:
             return b.unwrap()
         return If(b.unwrap() != bv_const(0, b.getBitWidth()), TRUE(), FALSE())
 
+    def bv_size(bw):
+        return bw.sort().size()
+
+    def exprsymbols(expr):
+        toproc = expr.children()
+        newchilds = []
+        symbols = []
+        while toproc:
+            for x in toproc:
+                ch = x.children()
+                if ch: # not a leaf
+                    newchilds += ch
+                elif not is_bv_value(x):
+                    # this is a leaf and it is not a constant
+                    assert is_bv(x)
+                    symbols.append(x)
+
+            toproc = newchilds
+            newchilds = []
+
+        return symbols
+
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
     from pysmt.shortcuts import BVULT, BVULE, BVUGT, BVUGE
@@ -54,6 +77,8 @@ class Expr(Value):
     metadata like a type (and hash in the future, etc.)
     """
 
+    __slots__ = ['_expr']
+
     def __init__(self, e, t):
         assert not isinstance(e, int)
         assert isinstance(t, Type)
@@ -65,6 +90,13 @@ class Expr(Value):
 
     def asValue(self):
         return str(self)
+
+    def symbols(self):
+        """
+        Traverse the expression and return symbols
+        from this expression (constants are not symbols)
+        """
+        return [Expr(e, Type(bv_size(e))) for e in exprsymbols(self._expr)]
 
     def __repr__(self):
         return "<{0}:{1}>".format(self._expr, self.getType())
