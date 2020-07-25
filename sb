@@ -35,10 +35,16 @@ def createArgParser():
     parser.add_argument('-dump', action='store_true', default=False, help='dump the program after parsing')
     parser.add_argument('-parse-only', action='store_true', help='only parse program and dump it (for debugging)')
     parser.add_argument('-kind', action='store_true', help='Use k-induction')
-    parser.add_argument('-kind-basic', action='store_true', help='Use basic k-induction without any improvements')
-    parser.add_argument('-kind-2', action='store_true', help='Use improved basic k-induction')
-    parser.add_argument('-se', action='store_true', default=True,  help='Perform symbolic execution.')
-    parser.add_argument('-se-exit-on-error', action='store_true', help='Terminate symbolic execution after hitting the first error.')
+    parser.add_argument('-kind-noinv', action='store_true',
+                        help='Use k-induction without (internal) invariant generation')
+    parser.add_argument('-kind-naive', action='store_true',
+                        help='Use naive k-induction on CFG without any improvements')
+    parser.add_argument('-kind-naive-impr', action='store_true',
+                        help='Use improved naive k-induction')
+    parser.add_argument('-se', action='store_true', default=True,
+                        help='Perform symbolic execution.')
+    parser.add_argument('-se-exit-on-error', action='store_true',
+                        help='Terminate symbolic execution after hitting the first error.')
     #parser.add_argument('-bmc', action='store_true', help='Perform bounded model checking.')
 
     return parser
@@ -268,10 +274,12 @@ def main():
     opts.interactive = args.interactive
 
     if args.kind:
-        if args.kind_basic:
+        if args.kind_naive:
             from slowbeast.kindse.basickindse import KindSymbolicExecutor
-        elif args.kind_2:
+        elif args.kind_naive_impr:
             from slowbeast.kindse.kindse import KindSymbolicExecutor
+        elif args.kind_noinv:
+            from slowbeast.kindse.backwardcfgind import KindSymbolicExecutor
         else:
             from slowbeast.kindse.cfgind import KindSymbolicExecutor
         SE = KindSymbolicExecutor(P, testgen, opts)
