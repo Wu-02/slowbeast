@@ -33,7 +33,7 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
-        dbg("Lazily allocated {0}".format(op))
+        dbg("Lazily allocated {0}".format(op), color='WHITE')
         assert state.get(op), "Did not bind an allocated value"
 
     def write(self, state, valueOp, toOp):
@@ -60,7 +60,8 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         return [state]
 
     def uninitializedRead(self, state, ptr, bytesNum):
-        dbg("Reading nondet for uninitialized value: {0}".format(ptr))
+        dbg("Reading nondet for uninitialized value: {0}".format(ptr),
+            color='WHITE')
         val = self.getSolver().freshValue("uninit", 8 * bytesNum)
         # write the fresh value into memory, so that
         # later reads see the same value.

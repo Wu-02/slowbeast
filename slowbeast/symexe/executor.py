@@ -130,7 +130,8 @@ class Executor(ConcreteExecutor):
         """
         assert isinstance(instr, Branch)
         assert isinstance(to, bool)
-        dbg("branching to {0} succ of {1}".format(to, instr))
+        dbg("branching to {0} succ of {1}".format(to, instr),
+            color='WHITE')
         self.stats.branchings += 1
 
         cond = instr.getCondition()
