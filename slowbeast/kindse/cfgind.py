@@ -38,7 +38,6 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         else:
             s = self.getIndExecutor().createState()
             s.pushCall(None, self.getProgram().getEntry())
-            s.pc = path.first().getBBlock().first()
             states = [s]
             executor = self.getIndExecutor()
 

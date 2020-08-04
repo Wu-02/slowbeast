@@ -396,6 +396,10 @@ class Executor:
         idx = 0
 
         locs = path.getLocations()
+        # set the pc of the states to be the first instruction of the path
+        for s in states:
+            s.pc = locs[0].getBBlock().first()
+
         for idx in range(0, len(locs)):
             # execute the block till branch
             newstates = self.executeTillBranch(states, stopBefore=True)
@@ -418,7 +422,7 @@ class Executor:
                 for s in states:
                     newstates += self.execBranchTo(s, s.pc, followsucc)
             else:  # this is the last location on path,
-                # so just normally execute the branch instructions
+                # so just normally execute the block instructions
                 newstates = self.executeTillBranch(states)
             states = newstates
 
