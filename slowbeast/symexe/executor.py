@@ -164,6 +164,8 @@ class Executor(ConcreteExecutor):
         cval = evalCond(state, cond)
 
         trueBranch, falseBranch = self.fork(state, cval)
+        # at least one must be feasable...
+        assert trueBranch or falseBranch, "Fatal Error: failed forking condition"
 
         states = []
         if trueBranch:
@@ -172,8 +174,6 @@ class Executor(ConcreteExecutor):
         if falseBranch:
             falseBranch.pc = instr.getFalseSuccessor().getInstruction(0)
             states.append(falseBranch)
-        # at least one must be feasable...
-        assert trueBranch or falseBranch, "Fatal Error: failed forking condition"
 
         if trueBranch and falseBranch:
             self.stats.branch_forks += 1
@@ -375,15 +375,17 @@ class Executor(ConcreteExecutor):
         for o in instr.getOperands():
             v = state.eval(o)
             assert v.isBool()
+            isunsat = True
             if v.isConstant():
-                if v.getValue() != True:
-                    state.setTerminated(
-                        "Assumption failed: {0} == {1} (!= True)".format(
-                            o, v))
-                    return [state]
-                break
+                isunsat = v.getValue() != True
             else:
-                state.addConstraint(v)
+                isunsat = self.assume(state, v) is None
+
+            if isunsat:
+                state.setTerminated(
+                    "Assumption unsat: {0} == {1} (!= True)".format(
+                        o, v))
+                return [state]
 
         state.pc = state.pc.getNextInstruction()
         return [state]
