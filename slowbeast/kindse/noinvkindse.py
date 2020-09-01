@@ -1,9 +1,8 @@
-from .. symexe.symbolicexecution import SEOptions
 from .. util.debugging import print_stderr, print_stdout, dbg
 
 from . annotatedcfg import CFG, CFGPath
 from . naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
-from . naivekindse import Result
+from . naivekindse import Result, KindSeOptions
 from . inductionpath import InductionPath
 
 from copy import copy
@@ -14,7 +13,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             self,
             prog,
             testgen=None,
-            opts=SEOptions()):
+            opts=KindSeOptions()):
         super(
             KindSymbolicExecutor, self).__init__(prog, opts)
 
@@ -167,10 +166,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
             _, notready = self.executePath(path)
 
+            step = self.getOptions().step
             for n in notready:
                 if n.hasError():
                     has_err = True
-                    newpaths += self.extendPath(path)
+                    newpaths += self.extendPath(path, steps=step)
                     break
                 if n.wasKilled():
                     return self.report(n)
@@ -187,10 +187,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         cfg = self.getCFG(self.getProgram().getEntry())
         nodes = cfg.getNodes()
         paths = [CFGPath([n]) for n in nodes if n.hasAssert()]
+        step = self.getOptions().step
         while k > 0:
             paths = [
                 np for p in paths for np in self.extendPath(
-                    p, atmost=True)]
+                    p, steps=step, atmost=True)]
             k -= 1
         return paths
 

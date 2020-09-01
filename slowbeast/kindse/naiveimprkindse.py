@@ -4,7 +4,7 @@ from .. util.debugging import print_stderr, print_stdout, dbg
 
 from . annotatedcfg import CFG
 from . naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
-from . naivekindse import Result
+from . naivekindse import Result, KindSeOptions
 from . inductionpath import InductionPath
 
 from copy import copy
@@ -15,7 +15,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             self,
             prog,
             testgen=None,
-            opts=SEOptions()):
+            opts=KindSeOptions()):
         super(
             KindSymbolicExecutor, self).__init__(prog, opts)
 

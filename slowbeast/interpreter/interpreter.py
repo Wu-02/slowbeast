@@ -24,10 +24,9 @@ class ExecutionOptions:
         self.step = ExecutionOptions.BLOCK_STEP
         return self
 
+
 # dummy class used as a program counter during initialization
 # of global variables
-
-
 class GlobalInit:
     def getNextInstruction(self):
         return self

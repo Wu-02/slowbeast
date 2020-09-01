@@ -26,8 +26,6 @@ def createArgParser():
     parser.add_argument('-no-output', action='store_true', default=False, help='Genereate no output (other than stdout/stderr)')
     parser.add_argument('-no-tests', action='store_true', help='Genereate no test files')
     parser.add_argument('-all-tests', action='store_true', default=False, help='Genereate tests for all paths (not only the erroneous)')
-    parser.add_argument('-se-step', default='instr',
-                        help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
     parser.add_argument('-concretize-nondet', action='store_true', default=False,
                         help='Use random value for nondet values, thus follow one random path during execution.')
     parser.add_argument('-uninitialized-nondet', action='store_true', default=False,
@@ -41,8 +39,12 @@ def createArgParser():
                         help='Use naive k-induction on CFG without any improvements')
     parser.add_argument('-kind-naive-impr', action='store_true',
                         help='Use improved naive k-induction')
+    parser.add_argument('-kind-step', type=int,
+                        help='Set the step for k-induction, positive number is a number of basic blocks by which to extend in each iteration, 0 is extend the paths until a join, -1 is extend the paths until a branch (default)', default=-1)
     parser.add_argument('-se', action='store_true', default=True,
                         help='Perform symbolic execution.')
+    parser.add_argument('-se-step', default='instr',
+                        help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
     parser.add_argument('-se-exit-on-error', action='store_true',
                         help='Terminate symbolic execution after hitting the first error.')
     #parser.add_argument('-bmc', action='store_true', help='Perform bounded model checking.')
@@ -265,15 +267,12 @@ def main():
 
     assert args.se, "We only support symbolic execution now"
 
-    opts = SEOptions()
-    opts.concretize_nondets = args.concretize_nondet
-    opts.uninit_is_nondet = args.uninitialized_nondet
-    opts.exit_on_error = args.se_exit_on_error
-    if args.se_step == 'block':
-        opts.setBlockStep()
-    opts.interactive = args.interactive
-
     if args.kind:
+        from slowbeast.kindse.naivekindse import KindSeOptions
+        opts = KindSeOptions()
+
+        opts.step = args.kind_step
+
         if args.kind_naive:
             from slowbeast.kindse.naivekindse import KindSymbolicExecutor
         elif args.kind_naive_impr:
@@ -284,8 +283,20 @@ def main():
             from slowbeast.kindse.kindse import KindSymbolicExecutor
         SE = KindSymbolicExecutor(P, testgen, opts)
     else:
+        opts = SEOptions()
+
+        opts.exit_on_error = args.se_exit_on_error
+        opts.interactive = args.interactive
+
+        if args.se_step == 'block':
+            opts.setBlockStep()
+
         from slowbeast.symexe.symbolicexecution import SymbolicExecutor
         SE = SymbolicExecutor(P, testgen, opts)
+
+    opts.concretize_nondets = args.concretize_nondet
+    opts.uninit_is_nondet = args.uninitialized_nondet
+
     try:
         SE.run()
         print_stats(SE)

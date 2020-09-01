@@ -9,15 +9,22 @@ class Result:
     SAFE = 1
     UNSAFE = 2
 
+class KindSeOptions(SEOptions):
+    __slots__ = ['step']
+
+    def __init__(self, opts=None, step=-1):
+        super(KindSeOptions, self).__init__(opts)
+        self.step = step
+
 
 class KindSymbolicExecutor(SymbolicExecutor):
     def __init__(
             self,
             prog,
             testgen=None,
-            opts=SEOptions()):
+            opts=KindSeOptions()):
         super(
-            KindSymbolicExecutor, self).__init__(prog, opts)
+            KindSymbolicExecutor, self).__init__(P=prog, testgen=testgen, opts=opts)
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
