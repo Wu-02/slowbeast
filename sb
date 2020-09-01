@@ -26,7 +26,7 @@ def createArgParser():
     parser.add_argument('-no-output', action='store_true', default=False, help='Genereate no output (other than stdout/stderr)')
     parser.add_argument('-no-tests', action='store_true', help='Genereate no test files')
     parser.add_argument('-all-tests', action='store_true', default=False, help='Genereate tests for all paths (not only the erroneous)')
-    parser.add_argument('-step', default='instr',
+    parser.add_argument('-se-step', default='instr',
                         help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
     parser.add_argument('-concretize-nondet', action='store_true', default=False,
                         help='Use random value for nondet values, thus follow one random path during execution.')
@@ -55,7 +55,7 @@ def parseArgs():
 
     valid_step = ['block', 'instr']
 
-    if not args.step in valid_step:
+    if not args.se_step in valid_step:
         err("Invalid -step argument, must be one of: {0}, got '{1}'".format(valid_step, args.step))
 
     return args
@@ -269,7 +269,7 @@ def main():
     opts.concretize_nondets = args.concretize_nondet
     opts.uninit_is_nondet = args.uninitialized_nondet
     opts.exit_on_error = args.se_exit_on_error
-    if args.step == 'block':
+    if args.se_step == 'block':
         opts.setBlockStep()
     opts.interactive = args.interactive
 
