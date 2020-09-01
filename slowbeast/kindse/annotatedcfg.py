@@ -6,21 +6,23 @@ from .. ir.instruction import Assert
 class CFG(PureCFG):
     """
     CFG with nodes annotated with information
-    about possible error sites
+    about possible error sites and other
+    useful information.
     """
 
     class AnnotatedNode(PureCFG.Node):
+        __slots__ = ['_has_assert']
         def __init__(self, B):
             super(CFG.AnnotatedNode, self).__init__(B)
             # find out whether this node has an assert
-            self.has_assert = False
+            self._has_assert = False
             for i in B.getInstructions():
                 if isinstance(i, Assert):
-                    self.has_assert = True
+                    self._has_assert = True
                     break
 
         def hasAssert(self):
-            return self.has_assert
+            return self._has_assert
 
     def __init__(self, F):
         super(CFG, self).__init__(F)

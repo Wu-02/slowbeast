@@ -31,6 +31,14 @@ class CFG:
             self.successors.append(succ)
             succ.predecessors.append(self)
 
+        def isJoin(self):
+            "This bblock Has several predecessors"
+            return len(self.predecessors) > 1
+
+        def isBranch(self):
+            "This bblock Has several successors"
+            return len(self.successors) > 1
+
     def __init__(self, F):
         self.fun = F
         self._nodes = {}

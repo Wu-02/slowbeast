@@ -2,8 +2,8 @@ from .. symexe.symbolicexecution import SEOptions
 from .. util.debugging import print_stderr, print_stdout, dbg
 
 from . annotatedcfg import CFG, CFGPath
-from . basickindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
-from . basickindse import Result
+from . naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
+from . naivekindse import Result
 from . inductionpath import InductionPath
 
 from copy import copy
@@ -49,18 +49,69 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         self.stats.paths += 1
         return ready, notready
 
-    def extendPath(self, path, atmost=False):
-        front = path.first()
+   #def extendPath(self, path, atmost=False):
+   #    front = path.first()
 
-        preds = front.getPredecessors()
-        # FIXME: do not do this prepend, we always construct a new list....
-        # rather do append and then execute in reverse order (do a reverse
-        # iterator)
-        newpaths = [CFGPath([p] + path.getLocations()) for p in preds]
+   #    preds = front.getPredecessors()
+   #    # FIXME: do not do this prepend, we always construct a new list....
+   #    # rather do append and then execute in reverse order (do a reverse
+   #    # iterator)
+   #    newpaths = [CFGPath([p] + path.getLocations()) for p in preds]
 
-        if atmost and len(preds) == 0:
-            assert len(newpaths) == 0
-            newpaths.append(path)
+   #    if atmost and len(preds) == 0:
+   #        assert len(newpaths) == 0
+   #        newpaths.append(path)
+
+   #    return newpaths
+
+    def extendPath(self, path, steps=0, atmost=False):
+        """
+        Take a path and extend it by prepending one or more
+        predecessors.
+
+        \param steps     Number of predecessors to prepend.
+                         Values less or equal to 0 have a special
+                         meaning:
+                           0 -> prepend until a join is find
+        \param atmost    if set to True, we allow to extend
+                         less than the specified number of steps
+                         if there are no predecessors.
+                         If set to False, the path is dropped
+                         if it cannot be extended (there are
+                         not enough predecessors)
+        """
+
+        num = 0
+        newpaths = []
+        worklist = [path]
+        while worklist:
+            num += 1
+            newworklist = []
+
+            for p in worklist:
+                front = p.first()
+                preds = front.getPredecessors()
+                predsnum = len(preds)
+
+                # no predecessors, we're done with this path
+                if atmost and predsnum == 0:
+                    newpaths.append(path)
+                    continue
+
+                for pred in preds:
+                    # FIXME: do not do this prepend, we always construct a new list....
+                    # rather do append and then execute in reverse order (do a reverse
+                    # iterator?)
+                    newpath = CFGPath([pred] + p.getLocations())
+
+                    if steps > 0 and num != steps:
+                        newworklist.append(newpath)
+                    elif steps == 0 and predsnum <= 1:
+                        newworklist.append(newpath)
+                    else: # we're done with this path
+                        newpaths.append(newpath)
+
+            worklist = newworklist
 
         return newpaths
 

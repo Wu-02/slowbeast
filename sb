@@ -275,13 +275,13 @@ def main():
 
     if args.kind:
         if args.kind_naive:
-            from slowbeast.kindse.basickindse import KindSymbolicExecutor
+            from slowbeast.kindse.naivekindse import KindSymbolicExecutor
         elif args.kind_naive_impr:
-            from slowbeast.kindse.kindse import KindSymbolicExecutor
+            from slowbeast.kindse.naiveimprkindse import KindSymbolicExecutor
         elif args.kind_noinv:
-            from slowbeast.kindse.backwardcfgind import KindSymbolicExecutor
+            from slowbeast.kindse.noinvkindse import KindSymbolicExecutor
         else:
-            from slowbeast.kindse.cfgind import KindSymbolicExecutor
+            from slowbeast.kindse.kindse import KindSymbolicExecutor
         SE = KindSymbolicExecutor(P, testgen, opts)
     else:
         from slowbeast.symexe.symbolicexecution import SymbolicExecutor
