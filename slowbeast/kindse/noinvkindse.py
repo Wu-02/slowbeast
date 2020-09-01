@@ -94,7 +94,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
                 # no predecessors, we're done with this path
                 if atmost and predsnum == 0:
-                    newpaths.append(path)
+                    newpaths.append(p)
                     continue
 
                 for pred in preds:
