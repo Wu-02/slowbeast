@@ -49,6 +49,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         self.stats.paths += 1
         return ready, notready
 
+    def _is_init(self, loc):
+        return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)
+
     def extendPath(self, path, steps=-1, atmost=False):
         """
         Take a path and extend it by prepending one or more
@@ -90,6 +93,15 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     # iterator?)
                     newpath = CFGPath([pred] + p.getLocations())
 
+                    # if this is the initial path and we are not stepping by 1,
+                    # we must add it too, otherwise we could miss such paths
+                    # (note that this is not covered by 'predsnum == 0',
+                    # because init may have predecessors)
+                    added = False
+                    if atmost and steps != 1 and self._is_init(pred):
+                        added = True
+                        newpaths.append(newpath)
+
                     if steps > 0 and num != steps:
                         newworklist.append(newpath)
                     elif steps == 0 and predsnum <= 1:
@@ -97,14 +109,12 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     elif steps == -1 and pred.isBranch():
                         newworklist.append(newpath)
                     else: # we're done with this path
-                        newpaths.append(newpath)
+                        if not added:
+                            newpaths.append(newpath)
 
             worklist = newworklist
 
         return newpaths
-
-    def _is_init(self, loc):
-        return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)
 
     def report(self, n):
         if n.hasError():
@@ -159,7 +169,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             for n in notready:
                 if n.hasError():
                     has_err = True
-                    newpaths += self.extendPath(path, steps=step)
+                    newpaths += self.extendPath(path,
+                                                steps=step,
+                                                atmost=step!=1)
                     break
                 if n.wasKilled():
                     return self.report(n)
