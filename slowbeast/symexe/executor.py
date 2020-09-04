@@ -113,8 +113,9 @@ class Executor(ConcreteExecutor):
         return T, F
 
     def assume(self, state, cond):
-        """ Return a new states where we assume that condition is true.
-            Return None if that situation cannot happen
+        """ Put an assumption _into_ the given state.
+            Return the statte or None if that situation cannot happen
+            (the assumption is inconsistent with the state).
         """
         if cond.isConstant():
             assert cond.isBool(), "Invalid constant"
@@ -126,11 +127,9 @@ class Executor(ConcreteExecutor):
         r = state.is_sat(cond)
         if r is None:
             return None
-
-        if r:
-            T = state.copy()
-            T.addConstraint(cond)
-            return T
+        elif r:
+            state.addConstraint(cond)
+            return state
         return None
 
     def execBranchTo(self, state, instr, to):
@@ -385,11 +384,12 @@ class Executor(ConcreteExecutor):
         for o in instr.getOperands():
             v = state.eval(o)
             assert v.isBool()
-            isunsat = True
             if v.isConstant():
-                isunsat = v.getValue() != True
+                assert isinstance(bool, v.getValue())
+                isunsat = not v.getValue()
             else:
-                isunsat = self.assume(state, v) is None
+                tmp = self.assume(state, v)
+                isunsat = tmp is None
 
             if isunsat:
                 state.setTerminated(
