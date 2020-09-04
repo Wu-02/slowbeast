@@ -13,6 +13,7 @@ if _use_z3:
     from z3 import Extract as BVExtract
     from z3 import LShR as BVLShR
     from z3 import is_bv, is_bv_value
+    from z3 import simplify
 
     def TRUE():
         return BoolVal(True)
@@ -128,6 +129,9 @@ class BVSymbolicDomain:
                 v.getType())
 
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
+
+    def simplify(expr, *assumptions):
+        return Expr(simplify(expr.unwrap()), expr.getType()) 
 
     def Constant(c, bw):
         return bv_const(c, bw)

@@ -3,6 +3,7 @@ from .. ir.value import Value
 from .. domains.concrete import ConcreteDomain
 from .. domains.symbolic import *
 
+optimize_exprs = True
 
 def is_symbolic(v):
     return SymbolicDomain.belongto(v)
@@ -12,6 +13,23 @@ def is_concrete(v):
     assert not ConcreteDomain.belongto(v) or not is_symbolic(v)
     return ConcreteDomain.belongto(v)
 
+
+class ExprOptIntf:
+    """
+    Expressions optimizer interface
+    """
+    def optimize(expr, *assumptions):
+        """ Optimize the expression given the assumptions """
+        return expr
+
+class SymbolicExprOpt(ExprOptIntf):
+    def optimize(expr, *assumptions):
+        return SymbolicDomain.simplify(expr, *assumptions)
+
+if optimize_exprs:
+    opt = SymbolicExprOpt.optimize
+else:
+    opt = lambda x: x
 
 class ExprManager:
     """
@@ -89,55 +107,55 @@ class ExprManager:
     def And(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.And(a, b)
-        return SymbolicDomain.And(self.lift(a), self.lift(b))
+        return opt(SymbolicDomain.And(self.lift(a), self.lift(b)))
 
     def Or(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Or(a, b)
-        return SymbolicDomain.Or(self.lift(a), self.lift(b))
+        return opt(SymbolicDomain.Or(self.lift(a), self.lift(b)))
 
     def Xor(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Xor(a, b)
-        return SymbolicDomain.Xor(self.lift(a), self.lift(b))
+        return opt(SymbolicDomain.Xor(self.lift(a), self.lift(b)))
 
     def Not(self, a):
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.Not(a)
-        return SymbolicDomain.Not(self.lift(a))
+        return opt(SymbolicDomain.Not(self.lift(a)))
 
     def ZExt(self, a, b):
         assert ConcreteDomain.belongto(b), "Invalid zext argument"
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.ZExt(a, b)
-        return SymbolicDomain.ZExt(a, b)
+        return opt(SymbolicDomain.ZExt(a, b))
 
     def SExt(self, a, b):
         assert ConcreteDomain.belongto(b), "Invalid sext argument"
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.SExt(a, b)
-        return SymbolicDomain.SExt(a, b)
+        return opt(SymbolicDomain.SExt(a, b))
 
     def Extract(self, a, start, end):
         assert ConcreteDomain.belongto(start, end), "Invalid sext argument"
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.Extract(a, start, end)
-        return SymbolicDomain.Extract(a, start, end)
+        return opt(SymbolicDomain.Extract(a, start, end))
 
     def Shl(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Shl(a, b)
-        return SymbolicDomain.Shl(self.lift(a), self.lift(b))
+        return opt(SymbolicDomain.Shl(self.lift(a), self.lift(b)))
 
     def AShr(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.AShr(a, b)
-        return SymbolicDomain.AShr(self.lift(a), self.lift(b))
+        return opt(SymbolicDomain.AShr(self.lift(a), self.lift(b)))
 
     def LShr(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.LShr(a, b)
-        return SymbolicDomain.LShr(self.lift(a), self.lift(b))
+        return opt(SymbolicDomain.LShr(self.lift(a), self.lift(b)))
 
     ##
     # Relational operators
@@ -145,32 +163,32 @@ class ExprManager:
     def Le(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Le(a, b, unsigned)
-        return SymbolicDomain.Le(self.lift(a), self.lift(b), unsigned)
+        return opt(SymbolicDomain.Le(self.lift(a), self.lift(b), unsigned))
 
     def Lt(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Lt(a, b, unsigned)
-        return SymbolicDomain.Lt(self.lift(a), self.lift(b), unsigned)
+        return opt(SymbolicDomain.Lt(self.lift(a), self.lift(b), unsigned))
 
     def Ge(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Ge(a, b, unsigned)
-        return SymbolicDomain.Ge(self.lift(a), self.lift(b), unsigned)
+        return opt(SymbolicDomain.Ge(self.lift(a), self.lift(b), unsigned))
 
     def Gt(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Gt(a, b, unsigned)
-        return SymbolicDomain.Gt(self.lift(a), self.lift(b), unsigned)
+        return opt(SymbolicDomain.Gt(self.lift(a), self.lift(b), unsigned))
 
     def Eq(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Eq(a, b, unsigned)
-        return SymbolicDomain.Eq(self.lift(a), self.lift(b), unsigned)
+        return opt(SymbolicDomain.Eq(self.lift(a), self.lift(b), unsigned))
 
     def Ne(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Ne(a, b, unsigned)
-        return SymbolicDomain.Ne(self.lift(a), self.lift(b), unsigned)
+        return opt(SymbolicDomain.Ne(self.lift(a), self.lift(b), unsigned))
 
     ##
     # Artihmetic operations
@@ -182,7 +200,7 @@ class ExprManager:
                 if b.getValue() == 0:
                     return a
                 return ConcreteDomain.Add(a, b)
-        return SymbolicDomain.Add(self.lift(a), self.lift(b))
+        return opt(SymbolicDomain.Add(self.lift(a), self.lift(b)))
 
     def Sub(self, a, b):
         if ConcreteDomain.belongto(b):
@@ -190,7 +208,7 @@ class ExprManager:
                 return a
             if ConcreteDomain.belongto(a):
                 return ConcreteDomain.Sub(a, b)
-        return SymbolicDomain.Sub(self.lift(a), self.lift(b))
+        return opt(SymbolicDomain.Sub(self.lift(a), self.lift(b)))
 
     def Mul(self, a, b):
         if ConcreteDomain.belongto(a):
@@ -207,7 +225,7 @@ class ExprManager:
         elif ConcreteDomain.belongto(b):
             if b.getValue() == 1:
                 return a
-        return SymbolicDomain.Mul(self.lift(a), self.lift(b))
+        return opt(SymbolicDomain.Mul(self.lift(a), self.lift(b)))
 
     def Div(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a):
@@ -215,9 +233,9 @@ class ExprManager:
                 return a
             if ConcreteDomain.belongto(b):
                 return ConcreteDomain.Div(a, b, unsigned)
-        return SymbolicDomain.Div(self.lift(a), self.lift(b), unsigned)
+        return opt(SymbolicDomain.Div(self.lift(a), self.lift(b), unsigned))
 
     def Rem(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Rem(a, b, unsigned)
-        return SymbolicDomain.Rem(self.lift(a), self.lift(b), unsigned)
+        return opt(SymbolicDomain.Rem(self.lift(a), self.lift(b), unsigned))
