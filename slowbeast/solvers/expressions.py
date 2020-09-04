@@ -22,9 +22,16 @@ class ExprOptIntf:
         """ Optimize the expression given the assumptions """
         return expr
 
+
 class SymbolicExprOpt(ExprOptIntf):
     def optimize(expr, *assumptions):
-        return SymbolicDomain.simplify(expr, *assumptions)
+        optexpr = SymbolicDomain.simplify(expr, *assumptions)
+        # lower the symbolic expression into a concrete value
+        # if possible
+        const = SymbolicDomain.pythonConstant(optexpr)
+        if const is not None:
+            return Constant(const, optexpr.getType())
+        return optexpr
 
 if optimize_exprs:
     opt = SymbolicExprOpt.optimize

@@ -13,6 +13,7 @@ if _use_z3:
     from z3 import Extract as BVExtract
     from z3 import LShR as BVLShR
     from z3 import is_bv, is_bv_value
+    from z3 import is_true, is_false
     from z3 import simplify
 
     def TRUE():
@@ -40,24 +41,25 @@ if _use_z3:
     def bv_size(bw):
         return bw.sort().size()
 
-    def exprsymbols(expr):
-        toproc = expr.children()
-        newchilds = []
-        symbols = []
-        while toproc:
-            for x in toproc:
-                ch = x.children()
-                if ch: # not a leaf
-                    newchilds += ch
-                elif not is_bv_value(x):
-                    # this is a leaf and it is not a constant
-                    assert is_bv(x)
-                    symbols.append(x)
+   #def exprsymbols(expr):
+# use is_const
+   #    toproc = expr.children()
+   #    newchilds = []
+   #    symbols = []
+   #    while toproc:
+   #        for x in toproc:
+   #            ch = x.children()
+   #            if ch: # not a leaf
+   #                newchilds += ch
+   #            elif not is_bv_value(x):
+   #                # this is a leaf and it is not a constant
+   #                assert is_bv(x)
+   #                symbols.append(x)
 
-            toproc = newchilds
-            newchilds = []
+   #        toproc = newchilds
+   #        newchilds = []
 
-        return symbols
+   #    return symbols
 
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
@@ -132,6 +134,21 @@ class BVSymbolicDomain:
 
     def simplify(expr, *assumptions):
         return Expr(simplify(expr.unwrap()), expr.getType()) 
+
+    def pythonConstant(expr):
+        """ Take a symbolic constant and get a python constant for it.
+            Return None if the given expression is not a constant number
+            or boolean
+        """
+        val = expr.unwrap()
+        if is_bv_value(val):
+            return val.as_long()
+        elif is_true(val):
+            return True
+        elif is_false(val):
+            return False
+
+        return None
 
     def Constant(c, bw):
         return bv_const(c, bw)
