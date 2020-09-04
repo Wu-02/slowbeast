@@ -79,26 +79,36 @@ class Executor(ConcreteExecutor):
                 raise RuntimeError(
                     "Invalid condition: {0}".format(
                         cond.getValue()))
-        # XXX use implication as in the original King's paper?
-        r = state.is_sat(cond)
-        if r is True:
-            T = state.copy()
-            T.addConstraint(cond)
-        elif r is not False:
+
+        # check SAT of cond and its negation
+        csat = state.is_sat(cond)
+        if csat is None:
             T = state.copy()
             T.setKilled("Solver failure: {0}".format(r))
 
         ncond = state.getExprManager().Not(cond)
-        r = state.is_sat(ncond)
-        if r is True:
-            F = state.copy()
-            F.addConstraint(ncond)
-        elif r is not False:
+        ncsat = state.is_sat(ncond)
+        if ncsat is None:
             F = state.copy()
             F.setKilled("Solver failure: {0}".format(r))
 
-        if T and F:
-            self.stats.forks += 1
+        # is one of the conditions implied?
+        # in that case we do not need to add any constraint
+        if csat is True and ncsat is False:
+            return state, None
+        elif ncsat is True and csat is False:
+            return None, state
+        else:
+            if csat is True:
+                T = state.copy()
+                T.addConstraint(cond)
+
+            if ncsat is True:
+                F = state.copy()
+                F.addConstraint(ncond)
+
+            if T and F:
+                self.stats.forks += 1
 
         return T, F
 
