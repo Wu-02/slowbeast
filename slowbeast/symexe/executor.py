@@ -385,7 +385,7 @@ class Executor(ConcreteExecutor):
             v = state.eval(o)
             assert v.isBool()
             if v.isConstant():
-                assert isinstance(bool, v.getValue())
+                assert isinstance(v.getValue(), bool)
                 isunsat = not v.getValue()
             else:
                 tmp = self.assume(state, v)
