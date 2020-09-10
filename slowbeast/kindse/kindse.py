@@ -158,9 +158,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 else:
                     for n in notready:
                         # we found a real error
-                        if n.hasError():
-                            return self.report(n)
-                        if n.wasKilled():
+                        if n.hasError() or n.wasKilled():
                             return self.report(n)
 
             _, notready = self.executePath(path)
