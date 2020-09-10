@@ -142,29 +142,26 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         paths = self.paths
         for path in paths:
-            # FIXME: use also the ready paths to constraint the state space
-            # in the future
-
             first_loc = path.first()
             if self._is_init(first_loc):
                 # try executing the path from initial states
-                _, notready = self.executePath(path, fromInit=True)
-                if not notready:
+                _, unsafe = self.executePath(path, fromInit=True)
+                if not unsafe:
                     if len(first_loc.getPredecessors()) == 0:
                         # this path is safe and we do not need to extend it
                         continue
                     # else just fall-through to execution from clear state
                     # as we can still prolong this path
                 else:
-                    for n in notready:
+                    for n in unsafe:
                         # we found a real error
                         if n.hasError() or n.wasKilled():
                             return self.report(n)
 
-            _, notready = self.executePath(path)
+            safe, unsafe = self.executePath(path)
 
             step = self.getOptions().step
-            for n in notready:
+            for n in unsafe:
                 if n.hasError():
                     has_err = True
                     newpaths += self.extendPath(path,
