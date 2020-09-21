@@ -6,7 +6,20 @@ from . naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from . naivekindse import Result, KindSeOptions
 from . inductionpath import InductionPath
 
+from .. ir.instruction import Cmp
+
 from copy import copy
+
+
+class Relation:
+    def __init__(self, pred, a, b):
+        self._pred = pred
+        self.a = a
+        self.b = b
+
+    def __str__(self):
+        return "({0}) {1} ({2})".format(self.a, Cmp.predicateStr(self._pred),
+                                        self.b)
 
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
@@ -162,12 +175,63 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return None
 
+    def getRelations(self, state):
+        rels = []
+        EM = state.getExprManager()
+
+        # FIXME not efficient, just for testing now
+        values = list(state.getValuesList())
+        for i in range(0, len(values)):
+            for j in range(i + 1, len(values)):
+                val1 = state.get(values[i])
+                val2 = state.get(values[j])
+
+                if val1.getType() != val2.getType() or\
+                   val1.isPointer() or val1.isBool():
+                    continue
+
+                # FIXME: do not compare exprs that has the same nondets...
+                # FIXME: do some quick syntectic checks
+                lt = EM.Lt(val1, val2)
+                islt = state.is_sat(lt)
+                expr = None
+                pred = None
+                if islt is False:  # val1 >= val2
+                    gt = EM.Gt(val1, val2)
+                    isgt = state.is_sat(gt)
+                    if isgt is False:  # val1 <= val2
+                        #print(val1, '=', val2)
+                        expr = EM.Eq(val1, val2)
+                        pred = Cmp.EQ
+                    elif isgt is True:
+                        #print(val1, '>=', val2)
+                        expr = EM.Ge(val1, val2)
+                        pred = Cmp.GE
+                elif islt is True:
+                    gt = EM.Gt(val1, val2)
+                    isgt = state.is_sat(gt)
+                    if isgt is False:
+                        #print(val1, '<=', val2)
+                        expr = EM.Le(val1, val2)
+                        pred = Cmp.LE
+
+                if expr and not expr.isConstant():
+                    # rels.append(expr)
+                    assert pred
+                    rels.append(Relation(pred, values[i], values[j]))
+
+        return rels
+
     def annotateCFG(self, path, safe, unsafe):
         """
         Take the executed path and states that are safe and unsafe
         and derive annotations of CFG
         """
-        pass
+        for s in safe:
+            s.dump()
+            print("--Relations--")
+            for r in self.getRelations(s):
+                print(r)
 
     def checkPaths(self):
         newpaths = []
