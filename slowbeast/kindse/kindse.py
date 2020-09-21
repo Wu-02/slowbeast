@@ -16,7 +16,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             testgen=None,
             opts=KindSeOptions()):
         super(
-            KindSymbolicExecutor, self).__init__(prog=prog, testgen=testgen, opts=opts)
+            KindSymbolicExecutor,
+            self).__init__(
+            prog=prog,
+            testgen=testgen,
+            opts=opts)
 
         self.cfgs = {}
         self.paths = []
@@ -129,7 +133,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         newworklist.append(newpath)
                     elif steps == -1 and pred.isBranch():
                         newworklist.append(newpath)
-                    else: # we're done with this path
+                    else:  # we're done with this path
                         if not added:
                             newpaths.append(newpath)
 
@@ -199,7 +203,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     has_err = True
                     newpaths += self.extendPath(path,
                                                 steps=step,
-                                                atmost=step!=1)
+                                                atmost=step != 1)
                     break
                 elif n.wasKilled():
                     return self.report(n)
@@ -217,8 +221,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         cfg = self.getCFG(self.getProgram().getEntry())
         nodes = cfg.getNodes()
         paths = [CFGPath([p]) for n in nodes
-                              for p in n.getPredecessors()
-                              if n.hasAssert()]
+                 for p in n.getPredecessors()
+                 if n.hasAssert()]
         step = self.getOptions().step
         while k > 0:
             paths = [

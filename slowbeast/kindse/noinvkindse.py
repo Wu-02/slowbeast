@@ -48,7 +48,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         self.stats.paths += 1
         return ready, notready
 
-   #def extendPath(self, path, atmost=False):
+   # def extendPath(self, path, atmost=False):
    #    front = path.first()
 
    #    preds = front.getPredecessors()
@@ -107,7 +107,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         newworklist.append(newpath)
                     elif steps == 0 and predsnum <= 1:
                         newworklist.append(newpath)
-                    else: # we're done with this path
+                    else:  # we're done with this path
                         newpaths.append(newpath)
 
             worklist = newworklist

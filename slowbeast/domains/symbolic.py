@@ -41,7 +41,7 @@ if _use_z3:
     def bv_size(bw):
         return bw.sort().size()
 
-   #def exprsymbols(expr):
+   # def exprsymbols(expr):
 # use is_const
    #    toproc = expr.children()
    #    newchilds = []
@@ -133,7 +133,7 @@ class BVSymbolicDomain:
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
     def simplify(expr, *assumptions):
-        return Expr(simplify(expr.unwrap()), expr.getType()) 
+        return Expr(simplify(expr.unwrap()), expr.getType())
 
     def pythonConstant(expr):
         """ Take a symbolic constant and get a python constant for it.

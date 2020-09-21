@@ -1,5 +1,6 @@
 from copy import copy
 
+
 class ConstraintsSet:
     __slots__ = ['constraints', '_ro']
 
@@ -30,5 +31,3 @@ class ConstraintsSet:
 
     def __repr__(self):
         return self.constraints.__repr__()
-
-

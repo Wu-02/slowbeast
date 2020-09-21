@@ -12,6 +12,7 @@ class CFG(PureCFG):
 
     class AnnotatedNode(PureCFG.Node):
         __slots__ = ['_has_assert']
+
         def __init__(self, B):
             super(CFG.AnnotatedNode, self).__init__(B)
             # find out whether this node has an assert

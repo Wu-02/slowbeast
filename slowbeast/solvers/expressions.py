@@ -5,6 +5,7 @@ from .. domains.symbolic import *
 
 optimize_exprs = True
 
+
 def is_symbolic(v):
     return SymbolicDomain.belongto(v)
 
@@ -33,10 +34,12 @@ class SymbolicExprOpt(ExprOptIntf):
             return Constant(const, optexpr.getType())
         return optexpr
 
+
 if optimize_exprs:
     opt = SymbolicExprOpt.optimize
 else:
-    opt = lambda x: x
+    def opt(x): return x
+
 
 class ExprManager:
     """

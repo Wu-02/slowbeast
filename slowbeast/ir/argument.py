@@ -1,5 +1,6 @@
 from . program import ProgramElement
 
+
 class Argument(ProgramElement):
     def __init__(self):
         super(Argument, self).__init__()

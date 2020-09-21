@@ -4,6 +4,7 @@ from .. ir.instruction import Call
 from sys import stdout
 from copy import copy
 
+
 class CallGraph:
     class Node:
         def __init__(self, F):
@@ -60,7 +61,7 @@ class CallGraph:
                 if not isinstance(I, Call):
                     continue
 
-                #FIXME: no function pointers yet
+                # FIXME: no function pointers yet
                 node.addCallSite(I, [self._nodes[I.getCalledFunction()]])
 
     def dump(self, stream=stdout):
@@ -72,6 +73,5 @@ class CallGraph:
                         stream.write("  {0} -> {1}\n".format(cs.getID(),
                                                              cf.getFun().getName()))
                     else:
-                        stream.write("     -> {0}\n".format(cf.getFun().getName()))
-
-
+                        stream.write(
+                            "     -> {0}\n".format(cf.getFun().getName()))
