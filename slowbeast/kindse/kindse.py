@@ -25,14 +25,19 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return self.cfgs.setdefault(F, CFG(F))
 
     def executePath(self, path, fromInit=False):
+        """ Execute the given path. The path is such that
+            it ends one step before possible error.
+            That is, after executing the path we must
+            perform one more step to check whether the
+            error is reachable
+        """
         if fromInit:
             if not self.states:
                 self.prepare()
             states = self.states
             assert states
             print_stdout(
-                "Executing path from init: {0}".format(path),
-                color="ORANGE")
+                f"Executing init prefix: {path}", color="ORANGE")
             # we must execute without lazy memory
             executor = self.getExecutor()
         else:
@@ -41,13 +46,20 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             states = [s]
             executor = self.getIndExecutor()
 
-            print_stdout("Executing path: {0}".format(path), color="ORANGE")
+            print_stdout(f"Executing prefix: {path}", color="ORANGE")
 
         assert states
 
-        ready, notready = executor.executePath(states, path)
+        # execute the prefix of the path
+        safe, unsafe = executor.executePath(states, path)
         self.stats.paths += 1
-        return ready, notready
+
+        # do one more step, i.e., execute one more block
+        tmpstates = executor.executeTillBranch(safe)
+
+        #FIXME do this more efficiently
+        return [s for s in tmpstates if s.isReady() or s.isTerminated()],\
+               [s for s in tmpstates if not (s.isReady() or s.isTerminated())]
 
     def _is_init(self, loc):
         return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)
@@ -145,7 +157,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             first_loc = path.first()
             if self._is_init(first_loc):
                 # try executing the path from initial states
-                _, unsafe = self.executePath(path, fromInit=True)
+                safe, unsafe = self.executePath(path, fromInit=True)
                 if not unsafe:
                     if len(first_loc.getPredecessors()) == 0:
                         # this path is safe and we do not need to extend it
@@ -168,8 +180,10 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                                                 steps=step,
                                                 atmost=step!=1)
                     break
-                if n.wasKilled():
+                elif n.wasKilled():
                     return self.report(n)
+                else:
+                    assert False, "Unhandled Unsafe state"
 
         self.paths = newpaths
 
@@ -179,10 +193,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return None
 
     def initializePaths(self, k=1):
-        paths = []
         cfg = self.getCFG(self.getProgram().getEntry())
         nodes = cfg.getNodes()
-        paths = [CFGPath([n]) for n in nodes if n.hasAssert()]
+        paths = [CFGPath([p]) for n in nodes
+                              for p in n.getPredecessors()
+                              if n.hasAssert()]
         step = self.getOptions().step
         while k > 0:
             paths = [
