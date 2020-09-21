@@ -95,6 +95,13 @@ class ExecutionState:
         """
         return self.memory.get(v)
 
+    def getGlobalsList(self):
+        """ Return the list of globals in this state """
+        return self.memory.getGlobalsList()
+
+    def getValuesList(self):
+        return self.memory.getValuesList()
+
     def pushCall(self, callsite, fun, argsMapping={}):
         self.memory.pushCall(callsite, fun, argsMapping)
         self.pc = fun.getBBlock(0).getInstruction(0)

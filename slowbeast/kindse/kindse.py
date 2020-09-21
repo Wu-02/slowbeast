@@ -148,6 +148,13 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return None
 
+    def annotateCFG(self, path, safe, unsafe):
+        """
+        Take the executed path and states that are safe and unsafe
+        and derive annotations of CFG
+        """
+        pass
+
     def checkPaths(self):
         newpaths = []
         has_err = False
@@ -159,6 +166,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 # try executing the path from initial states
                 safe, unsafe = self.executePath(path, fromInit=True)
                 if not unsafe:
+                    self.annotateCFG(path, safe, unsafe)
                     if len(first_loc.getPredecessors()) == 0:
                         # this path is safe and we do not need to extend it
                         continue
@@ -166,11 +174,15 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     # as we can still prolong this path
                 else:
                     for n in unsafe:
-                        # we found a real error
+                        # we found a real error or hit another problem
                         if n.hasError() or n.wasKilled():
                             return self.report(n)
+                        else:
+                            assert False, "Unhandled unsafe state"
 
             safe, unsafe = self.executePath(path)
+
+            self.annotateCFG(path, safe, unsafe)
 
             step = self.getOptions().step
             for n in unsafe:

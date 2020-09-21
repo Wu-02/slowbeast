@@ -184,6 +184,14 @@ class Memory:
             ret = self._cs.get(v)
         return ret
 
+    def getGlobalsList(self):
+        """ Return the list of globals in this state """
+        # return only list, so that we must get them through "get"
+        return self._glob_bindings.keys()
+
+    def getValuesList(self):
+        return self._cs.getValuesList()
+
     def pushCall(self, callsite, fun, argsMapping={}):
         self._cs.pushCall(callsite, fun, argsMapping)
 

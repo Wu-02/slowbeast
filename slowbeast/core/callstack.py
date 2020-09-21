@@ -42,6 +42,9 @@ class CallStack:
         def get(self, v):
             return self.values.get(v)
 
+        def getValuesList(self):
+            return self.values.keys()
+
         def dump(self, stream=stdout):
             for x, v in self.values.items():
                 stream.write("{0} -> {1}\n".format(x.asValue(), v.asValue()))
@@ -81,6 +84,10 @@ class CallStack:
     def get(self, v):
         """ Set a value from the current frame """
         return self.frame().get(v)
+
+    def getValuesList(self, frameidx=-1):
+        """ Set a value from the current frame """
+        return self.frame(frameidx).getValuesList()
 
     def pushCall(self, callsite, fun, argsMap):
         self._cow_reown()
