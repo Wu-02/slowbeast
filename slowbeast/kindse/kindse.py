@@ -57,9 +57,18 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         # do one more step, i.e., execute one more block
         tmpstates = executor.executeTillBranch(safe)
 
-        #FIXME do this more efficiently
-        return [s for s in tmpstates if s.isReady() or s.isTerminated()],\
-               [s for s in tmpstates if not (s.isReady() or s.isTerminated())]
+        if fromInit:
+            # include all unsafe states (even those that we gather
+            # during the execution of the path, not only those that
+            # reach the last point of the path)
+            finalsafe, finalunsafe = [], unsafe
+        else:
+            finalsafe, finalunsafe = [], []
+
+        for s in tmpstates:
+            (finalunsafe, finalsafe)[s.isReady() or s.isTerminated()].append(s)
+
+        return finalsafe, finalunsafe
 
     def _is_init(self, loc):
         return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)
