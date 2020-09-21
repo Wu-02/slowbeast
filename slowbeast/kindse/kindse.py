@@ -29,11 +29,12 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return self.cfgs.setdefault(F, CFG(F))
 
     def executePath(self, path, fromInit=False):
-        """ Execute the given path. The path is such that
-            it ends one step before possible error.
-            That is, after executing the path we must
-            perform one more step to check whether the
-            error is reachable
+        """
+        Execute the given path. The path is such that
+        it ends one step before possible error.
+        That is, after executing the path we must
+        perform one more step to check whether the
+        error is reachable
         """
         if fromInit:
             if not self.states:
