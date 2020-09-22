@@ -1,12 +1,9 @@
-from slowbeast.symexe.symbolicexecution import SEOptions
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg
+from slowbeast.util.debugging import print_stdout, dbg
 
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
-from slowbeast.kindse.annotatedcfg import CFG, CFGPath
+from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
 from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
-
-from slowbeast.ir.instruction import Cmp
 
 from . kindcfgpath import KindCFGPath
 from . annotations import Relation, get_relations
@@ -53,7 +50,12 @@ class KindSymbolicExecutor(BaseKindSE):
                         r.expr) for u in unsafe))
 
             for r in saferels:
-                print(r)
+                kindse = BaseKindSE(self.getProgram())
+                apath = AnnotatedCFGPath([path.cfgpath.first()])
+                apath.addAnnotation(r.toAnnotation())
+                paths=[KindCFGPath(apath)]
+                res = kindse.run(paths, maxk=5)
+                print(r, res)
 
     def checkInitialPath(self, path):
         """
@@ -138,7 +140,7 @@ class KindSymbolicExecutor(BaseKindSE):
         self.invpoints = self.findInvPoints(cfg)
 
         nodes = cfg.getNodes()
-        paths = [KindCFGPath(CFGPath([p])) for n in nodes
+        paths = [KindCFGPath(AnnotatedCFGPath([p])) for n in nodes
                  for p in n.getPredecessors()
                  if n.hasAssert()]
         step = self.getOptions().step

@@ -139,6 +139,9 @@ class CFGPath:
     def getLocations(self):
         return self.locations
 
+    def length(self):
+        return len(self.locations)
+
     def dump(self, stream=stdout):
         stream.write(str(self))
         stream.write('\n')

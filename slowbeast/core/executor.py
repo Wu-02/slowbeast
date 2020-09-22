@@ -430,3 +430,69 @@ class Executor:
         assert all(map(lambda x: not x.isReady(), earlytermstates))
 
         return states, earlytermstates
+
+    def executeAnnotatedPath(self, state, path):
+        """
+        Execute the given path through CFG with annotations. Return two lists
+        of states.  The first list contains the resulting states that reaches
+        the end of the path, the other list contains all other states, i.e.,
+        the error, killed or exited states reached during the execution of the
+        CFG.
+        """
+
+        if isinstance(state, list):
+            states = state
+        else:
+            states = [state]
+
+        earlytermstates = []
+        idx = 0
+
+        locs = path.getLocations()
+        # set the pc of the states to be the first instruction of the path
+        for s in states:
+            s.pc = locs[0].getBBlock().first()
+
+        last_idx = len(locs)
+        idx = 0
+        while True:
+            for annot in path.getAnnotations(idx):
+                dbg("Annotation: executing annotation")
+                print(annot)
+            for assrt in path.getAssertions(idx):
+                dbg("Annotation: executing assertion")
+                print(assrt)
+
+            if idx >= last_idx:
+                break
+
+            # execute the block till branch
+            newstates = self.executeTillBranch(states, stopBefore=True)
+
+            # get the ready states
+            states = []
+            for n in newstates:
+                if n.isReady():
+                    states.append(n)
+                else:
+                    earlytermstates.append(n)
+
+            # now execute the branch following the edge on the path
+            if idx + 1 < len(locs):
+                curbb = locs[idx].getBBlock()
+                succbb = locs[idx + 1].getBBlock()
+                followsucc = curbb.last().getTrueSuccessor() == succbb
+                newstates = []
+                assert followsucc or curbb.last().getFalseSuccessor() == succbb
+                for s in states:
+                    newstates += self.execBranchTo(s, s.pc, followsucc)
+            else:  # this is the last location on path,
+                # so just normally execute the block instructions
+                newstates = self.executeTillBranch(states)
+            states = newstates
+            idx += 1
+
+        assert all(map(lambda x: x.isReady(), states))
+        assert all(map(lambda x: not x.isReady(), earlytermstates))
+
+        return states, earlytermstates

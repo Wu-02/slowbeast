@@ -2,7 +2,7 @@ from slowbeast.symexe.symbolicexecution import SEOptions
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
-from slowbeast.kindse.annotatedcfg import CFG, CFGPath
+from slowbeast.kindse.annotatedcfg import CFG, AnnotatedCFGPath
 from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
@@ -58,7 +58,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         assert states
 
         # execute the prefix of the path
-        safe, unsafe = executor.executePath(states, path)
+        safe, unsafe = executor.executeAnnotatedPath(states, path)
         self.stats.paths += 1
 
         # do one more step, i.e., execute one more block
@@ -120,7 +120,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     # FIXME: do not do this prepend, we always construct a new list....
                     # rather do append and then execute in reverse order (do a reverse
                     # iterator?)
-                    newpath = CFGPath([pred] + p.getLocations())
+                    newpath = p.copyandprepend(pred)
 
                     # if this is the initial path and we are not stepping by 1,
                     # we must add it too, otherwise we could miss such paths
