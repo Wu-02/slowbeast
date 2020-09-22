@@ -363,36 +363,44 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return paths
 
-    def run(self):
+    def run(self, paths=None, maxk=None, report=print_stdout):
         dbg("Performing the k-ind algorithm only for the main function",
             color="ORANGE")
 
         k = 1
 
-        self.paths = self.initializePaths()
+        if paths:
+            self.paths = paths
+        else:
+            self.paths = self.initializePaths()
 
         if len(self.paths) == 0:
-            print_stdout("Found no error state!", color='GREEN')
+            report("Found no error state!", color='GREEN')
             return 0
 
         while True:
-            print_stdout("-- starting iteration {0} --".format(k))
+            report("-- starting iteration {0} --".format(k))
             dbg("Got {0} paths in queue".format(len(self.paths)))
 
             r = self.checkPaths()
             if r is Result.SAFE:
-                print_stdout(
+                report(
                     "All possible error paths ruled out!",
                     color="GREEN")
-                print_stdout("Induction step succeeded!", color="GREEN")
+                report("Induction step succeeded!", color="GREEN")
                 return 0
             elif r is Result.UNSAFE:
                 dbg("Error found.", color='RED')
                 return 1
             elif r is Result.UNKNOWN:
-                print_stdout("Hit a problem, giving up.", color='ORANGE')
+                report("Hit a problem, giving up.", color='ORANGE')
                 return 1
             else:
                 assert r is None
 
             k += 1
+            if maxk and maxk <= k:
+                report(
+                    "Hit the maximal number of iterations, giving up.",
+                    color='ORANGE')
+                return 1
