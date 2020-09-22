@@ -9,7 +9,7 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.ir.instruction import Cmp
 
 from . kindcfgpath import KindCFGPath
-from . annotations import Relation
+from . annotations import Relation, get_relations
 
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 
@@ -30,52 +30,6 @@ class KindSymbolicExecutor(BaseKindSE):
         self.genannot = genannot
         self.invpoints = []
 
-    def getRelations(self, state):
-        rels = []
-        EM = state.getExprManager()
-
-        # FIXME not efficient, just for testing now
-        values = list(state.getValuesList())
-        for i in range(0, len(values)):
-            for j in range(i + 1, len(values)):
-                val1 = state.get(values[i])
-                val2 = state.get(values[j])
-
-                if val1.getType() != val2.getType() or\
-                   val1.isPointer() or val1.isBool():
-                    continue
-
-                # FIXME: do not compare exprs that has the same nondets...
-                # FIXME: do some quick syntectic checks
-                lt = EM.Lt(val1, val2)
-                islt = state.is_sat(lt)
-                expr = None
-                pred = None
-                if islt is False:  # val1 >= val2
-                    gt = EM.Gt(val1, val2)
-                    isgt = state.is_sat(gt)
-                    if isgt is False:  # val1 <= val2
-                        #print(val1, '=', val2)
-                        expr = EM.Eq(val1, val2)
-                        pred = Cmp.EQ
-                    elif isgt is True:
-                        #print(val1, '>=', val2)
-                        expr = EM.Ge(val1, val2)
-                        pred = Cmp.GE
-                elif islt is True:
-                    gt = EM.Gt(val1, val2)
-                    isgt = state.is_sat(gt)
-                    if isgt is False:
-                        #print(val1, '<=', val2)
-                        expr = EM.Le(val1, val2)
-                        pred = Cmp.LE
-
-                if expr and not expr.isConstant():
-                    assert pred
-                    rels.append(Relation(pred, values[i], values[j], expr))
-
-        return rels
-
     def annotateCFG(self, path, safe, unsafe):
         """
         Take the executed path and states that are safe and unsafe
@@ -94,7 +48,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
             # filter out those relations that make the state safe
             saferels = (
-                r for r in self.getRelations(s) if not all(
+                r for r in get_relations(s) if not all(
                     u.is_sat(
                         r.expr) for u in unsafe))
 
