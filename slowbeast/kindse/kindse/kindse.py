@@ -35,7 +35,8 @@ class KindSymbolicExecutor(BaseKindSE):
         if not self.genannot:  # we should not generate invariants
             return
 
-        if not path.cfgpath.first() in self.invpoints:
+        assert isinstance(path.cfgpath.first(), AnnotatedCFGPath.AnnotatedLoc)
+        if not path.cfgpath.first().loc in self.invpoints:
             return
 
         for s in safe:
@@ -52,7 +53,8 @@ class KindSymbolicExecutor(BaseKindSE):
             for r in saferels:
                 kindse = BaseKindSE(self.getProgram())
                 apath = AnnotatedCFGPath([path.cfgpath.first()])
-                apath.addAnnotation(r.toAnnotation())
+                apath.addAnnotationBefore(r.toAnnotation())
+                apath.addAssertionAfter(r.toAssertion())
                 paths=[KindCFGPath(apath)]
                 res = kindse.run(paths, maxk=5)
                 print(r, res)

@@ -1,4 +1,4 @@
-from slowbeast.ir.instruction import Cmp
+from slowbeast.ir.instruction import Cmp, Assume, Assert
 
 class Relation:
     def __init__(self, pred, a, b, expr):
@@ -14,7 +14,12 @@ class Relation:
         return Cmp(self._pred, self.a, self.b)
 
     def toAnnotation(self):
-        return [self.a, self.b, self.toCmpInst()]
+        cmpi = self.toCmpInst()
+        return [self.a, self.b, cmpi, Assume(cmpi)]
+
+    def toAssertion(self):
+        cmpi = self.toCmpInst()
+        return [self.a, self.b, cmpi, Assert(cmpi)]
 
     def __str__(self):
         return "({0}) {1} ({2})".format(self.a, Cmp.predicateStr(self._pred),

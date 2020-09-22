@@ -431,6 +431,28 @@ class Executor:
 
         return states, earlytermstates
 
+    def executeAnnotations(self, states, annots):
+        newstates = []
+        for s in states:
+            oldpc = s.pc
+
+            tmpstates = [s]
+            for annot in annots:
+                dbg("Annotation: executing annotation")
+                for instr in annot:
+                    newtmpstates = []
+                    for ts in tmpstates:
+                        ts.pc = oldpc
+                        newtmpstates += self.execute(ts, instr)
+                    tmpstates = newtmpstates
+
+                dbg("Done executing annot")
+            for ns in tmpstates:
+                ns.pc = oldpc
+            newstates += tmpstates
+
+        return newstates
+
     def executeAnnotatedPath(self, state, path):
         """
         Execute the given path through CFG with annotations. Return two lists
@@ -453,18 +475,12 @@ class Executor:
         for s in states:
             s.pc = locs[0].getBBlock().first()
 
-        last_idx = len(locs)
-        idx = 0
-        while True:
-            for annot in path.getAnnotations(idx):
-                dbg("Annotation: executing annotation")
-                print(annot)
-            for assrt in path.getAssertions(idx):
-                dbg("Annotation: executing assertion")
-                print(assrt)
+        for idx in range(0, len(locs)):
+            loc = locs[idx]
 
-            if idx >= last_idx:
-                break
+            # FIXME: what if we generate some bad states?
+            states = self.executeAnnotations(states, loc.annotationsBefore)
+            states = self.executeAnnotations(states, loc.assertionsBefore)
 
             # execute the block till branch
             newstates = self.executeTillBranch(states, stopBefore=True)
@@ -479,7 +495,7 @@ class Executor:
 
             # now execute the branch following the edge on the path
             if idx + 1 < len(locs):
-                curbb = locs[idx].getBBlock()
+                curbb = loc.getBBlock()
                 succbb = locs[idx + 1].getBBlock()
                 followsucc = curbb.last().getTrueSuccessor() == succbb
                 newstates = []
@@ -490,7 +506,10 @@ class Executor:
                 # so just normally execute the block instructions
                 newstates = self.executeTillBranch(states)
             states = newstates
-            idx += 1
+
+            # FIXME: what if we generate some bad states?
+            states = self.executeAnnotations(states, loc.annotationsAfter)
+            states = self.executeAnnotations(states, loc.assertionsAfter)
 
         assert all(map(lambda x: x.isReady(), states))
         assert all(map(lambda x: not x.isReady(), earlytermstates))
