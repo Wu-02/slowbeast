@@ -269,6 +269,30 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             for r in saferels:
                 print(r)
 
+    def checkInitialPath(self, path):
+        """
+        Execute a path from initial states
+        \requires an initial path
+        """
+
+        cfgpath = path.cfgpath
+        safe, unsafe = self.executePath(cfgpath, fromInit=True)
+        if not unsafe:
+            self.annotateCFG(path, safe, unsafe)
+            if len(cfgpath.first().getPredecessors()) == 0:
+                # this path is safe and we do not need to extend it
+                return Result.SAFE
+            # else just fall-through to execution from clear state
+            # as we can still prolong this path
+        else:
+            for n in unsafe:
+                # we found a real error or hit another problem
+                if n.hasError() or n.wasKilled():
+                    return self.report(n)
+                else:
+                    assert False, "Unhandled unsafe state"
+        return None
+
     def checkPaths(self):
         newpaths = []
         has_err = False
@@ -276,24 +300,15 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         paths = self.paths
         for path in paths:
             cfgpath = path.cfgpath
+
             first_loc = cfgpath.first()
             if self._is_init(first_loc):
-                # try executing the CFG path from initial states
-                safe, unsafe = self.executePath(cfgpath, fromInit=True)
-                if not unsafe:
-                    self.annotateCFG(path, safe, unsafe)
-                    if len(first_loc.getPredecessors()) == 0:
-                        # this path is safe and we do not need to extend it
-                        continue
-                    # else just fall-through to execution from clear state
-                    # as we can still prolong this path
-                else:
-                    for n in unsafe:
-                        # we found a real error or hit another problem
-                        if n.hasError() or n.wasKilled():
-                            return self.report(n)
-                        else:
-                            assert False, "Unhandled unsafe state"
+                r = self.checkInitialPath(path)
+                if r is Result.UNSAFE:
+                    return r  # found a real error
+                elif r is Result.SAFE:
+                    continue  # this path is safe
+                assert r is None
 
             safe, unsafe = self.executePath(cfgpath)
 
