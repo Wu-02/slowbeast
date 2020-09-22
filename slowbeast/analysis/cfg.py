@@ -41,6 +41,7 @@ class CFG:
 
     def __init__(self, F):
         self.fun = F
+        self.entry = None
         self._nodes = {}
 
         self._build()
@@ -58,8 +59,21 @@ class CFG:
     def getNodes(self):
         return self._nodes.values()
 
+    def getEntry(self):
+        assert self.entry, "Entry has not been set"
+        return self.entry
+
+    def setEntry(self, n):
+        if not isinstance(n, CFG.Node):
+            n = self.getNode(n)
+
+        assert hasattr(n, 'getSuccessors')
+        self.entry = n
+
     def _build(self):
-        for B in self.fun.getBBlocks():
+        fun = self.fun
+
+        for B in fun.getBBlocks():
             self._nodes[B] = self.createNode(B)
 
         for block, node in self._nodes.items():
@@ -69,6 +83,11 @@ class CFG:
 
             node.addSuccessor(self._nodes[br.getTrueSuccessor()])
             node.addSuccessor(self._nodes[br.getFalseSuccessor()])
+
+        # the entry should be the first bblock in the function
+        entrybb = fun.getBBlock(0)
+        assert self.getNode(entrybb)
+        self.setEntry(entrybb)
 
     def dump(self, stream=stdout):
         for node in self._nodes.values():

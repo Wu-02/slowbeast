@@ -1,0 +1,121 @@
+from . cfg import CFG
+
+class DFSEdgeType:
+    TREE = 1
+    FORWARD = 2
+    BACK = 3
+    CROSS = 4
+
+    def tostr(val):
+        if val == DFSEdgeType.TREE:
+            return "tree"
+        elif val == DFSEdgeType.FORWARD:
+            return "forward"
+        elif val == DFSEdgeType.BACK:
+            return "back"
+        elif val == DFSEdgeType.CROSS:
+            return "cross"
+
+class DFSData:
+    def __init__(self):
+        self.visited = False
+        self.innum = None
+        self.outnum = None
+
+class DFSCounter:
+    def __init__(self):
+        self.counter = 0
+
+class DFSVisitor:
+    """
+    Visit nodes/edges in the DFS order and
+    run a user-specified function on them.
+    """
+
+    def __init__(self):
+        self._data = {}
+        self._dfscounter = 0
+
+    def _getdata(self, node):
+        return self._data.setdefault(node, DFSData())
+
+    def foreach(self, fun, startnode = None):
+        raise NotImplementedError("foreach not implemented")
+
+    def foreachedge(self, fun, startnode):
+        counter = DFSCounter()
+        self._foreachedge(fun, startnode, counter)
+
+    def _foreachedge(self, fun, node, counter):
+        getdata = self._getdata
+        counter.counter += 1
+
+        nddata = getdata(node)
+        nddata.visited = True
+        nddata.innum = counter.counter
+
+        for succ in node.getSuccessors():
+            succdata = getdata(succ)
+            if succdata.visited:
+                sin = succdata.innum
+                din = nddata.innum
+                assert sin is not None
+
+                if sin < din:
+                    sout = succdata.outnum
+                    if sout is None:
+                        fun(node, succ, DFSEdgeType.BACK)
+                    elif sout < din:
+                        fun(node, succ, DFSEdgeType.CROSS)
+                else:
+                    fun(node, succ, DFSEdgeType.FORWARD)
+            else:
+                fun(node, succ, DFSEdgeType.TREE)
+                self._foreachedge(fun, succ, counter)
+
+        counter.counter += 1
+        nddata.outnum = counter.counter
+
+    def dump(self, cfg, out=None):
+        if out is None:
+            from sys import stdout
+            out = stdout
+        else:
+            if isinstance(out, str):
+                out = open(out, 'w')
+
+        def edgecol(val):
+            if val == DFSEdgeType.TREE:
+                return "green"
+            elif val == DFSEdgeType.BACK:
+                return "red"
+            elif val == DFSEdgeType.FORWARD:
+                return "blue"
+            elif val == DFSEdgeType.CROSS:
+                return "orange"
+            return "black"
+
+        def dumpdot(start, end, edgetype):
+            print('  {0} -> {1} [label="{2}", color="{3}"]'.format(
+                  start.getBBlock().getID(),
+                  end.getBBlock().getID(),
+                  DFSEdgeType.tostr(edgetype),
+                  edgecol(edgetype)),
+                  file=out)
+
+        print("digraph {", file=out)
+
+        # dump nodes
+        for n in cfg.getNodes():
+            print('  {0}'.format(n.getBBlock().getID()), file=out)
+
+        # dump edges
+        print("", file=out)
+        self.foreachedge(dumpdot, cfg.getEntry())
+
+        # dump the in/out counters
+        for n in cfg.getNodes():
+            print('  {0} [label="{0}\\nin,out = {1}, {2}"]'.format(n.getBBlock().getID(),
+            self._getdata(n).innum, self._getdata(n).outnum), file=out)
+
+        print("}", file=out)
