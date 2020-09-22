@@ -1,11 +1,11 @@
-from .. symexe.symbolicexecution import SEOptions
-from .. symexe.executionstate import SEState
-from .. util.debugging import print_stderr, print_stdout, dbg
+from slowbeast.symexe.symbolicexecution import SEOptions
+from slowbeast.symexe.executionstate import SEState
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
-from . annotatedcfg import CFG
-from . naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
-from . naivekindse import Result, KindSeOptions
-from . inductionpath import InductionPath
+from slowbeast.kindse.annotatedcfg import CFG
+from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
+from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
+from slowbeast.kindse.naive.inductionpath import InductionPath
 
 from copy import copy
 

@@ -1,7 +1,7 @@
-from .. symexe.symbolicexecution import SymbolicExecutor, SEOptions
-from .. symexe.executor import Executor as SExecutor
-from .. symexe.memory import LazySymbolicMemoryModel
-from .. util.debugging import print_stderr, print_stdout, dbg
+from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions
+from slowbeast.symexe.executor import Executor as SExecutor
+from slowbeast.symexe.memory import LazySymbolicMemoryModel
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 
 class Result:

@@ -268,19 +268,19 @@ def main():
     assert args.se, "We only support symbolic execution now"
 
     if args.kind:
-        from slowbeast.kindse.naivekindse import KindSeOptions
+        from slowbeast.kindse.naive.naivekindse import KindSeOptions
         opts = KindSeOptions()
 
         opts.step = args.kind_step
 
         if args.kind_naive:
-            from slowbeast.kindse.naivekindse import KindSymbolicExecutor
+            from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor
         elif args.kind_naive_impr:
-            from slowbeast.kindse.naiveimprkindse import KindSymbolicExecutor
+            from slowbeast.kindse.naive.naiveimprkindse import KindSymbolicExecutor
         elif args.kind_noinv:
-            from slowbeast.kindse.noinvkindse import KindSymbolicExecutor
+            from slowbeast.kindse.legacy.noinvkindse import KindSymbolicExecutor
         else:
-            from slowbeast.kindse.kindse import KindSymbolicExecutor
+            from slowbeast.kindse.kindse.kindse import KindSymbolicExecutor
         SE = KindSymbolicExecutor(P, testgen, opts)
     else:
         opts = SEOptions()
