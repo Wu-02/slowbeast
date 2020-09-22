@@ -31,7 +31,7 @@ class KindCFGPath:
     def __init__(self, cfgpath):
         self.cfgpath = cfgpath
 
-    def newcfgpath(self, newpath):
+    def newwithcfgpath(self, newpath):
         pathcopy = copy(self)
         pathcopy.cfgpath = newpath
         return pathcopy
@@ -143,7 +143,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
                 # no predecessors, we're done with this path
                 if atmost and predsnum == 0:
-                    newpaths.append(path.newcfgpath(p))
+                    newpaths.append(path.newwithcfgpath(p))
                     continue
 
                 for pred in preds:
@@ -159,11 +159,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     added = False
                     if atmost and steps != 1 and self._is_init(pred):
                         added = True
-                        newpaths.append(path.newcfgpath(newpath))
+                        newpaths.append(path.newwithcfgpath(newpath))
 
                     if pred in invpoints:
                         # a point for generating invariant, stop extending here
-                        newpaths.append(path.newcfgpath(newpath))
+                        newpaths.append(path.newwithcfgpath(newpath))
                     elif steps > 0 and num != steps:
                         newworklist.append(newpath)
                     elif steps == 0 and predsnum <= 1:
@@ -172,7 +172,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         newworklist.append(newpath)
                     else:  # we're done with this path
                         if not added:
-                            newpaths.append(path.newcfgpath(newpath))
+                            newpaths.append(path.newwithcfgpath(newpath))
 
             worklist = newworklist
 
