@@ -26,6 +26,7 @@ class Relation:
         return "({0}) {1} ({2})".format(self.a, Cmp.predicateStr(self._pred),
                                         self.b)
 
+
 class KindCFGPath:
     def __init__(self, cfgpath):
         self.cfgpath = cfgpath
@@ -34,6 +35,7 @@ class KindCFGPath:
         pathcopy = copy(self)
         pathcopy.cfgpath = newpath
         return pathcopy
+
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def __init__(
@@ -247,7 +249,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         Take the executed path and states that are safe and unsafe
         and derive annotations of CFG
         """
-        if not self.genannot: # we should not generate invariants
+        if not self.genannot:  # we should not generate invariants
             return
 
         if not path.cfgpath.first() in self.invpoints:
@@ -259,11 +261,13 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             print("--Relations--")
 
             # filter out those relations that make the state safe
-            saferels = (r for r in self.getRelations(s) if not all(u.is_sat(r.expr) for u in unsafe))
+            saferels = (
+                r for r in self.getRelations(s) if not all(
+                    u.is_sat(
+                        r.expr) for u in unsafe))
 
             for r in saferels:
                 print(r)
-
 
     def checkPaths(self):
         newpaths = []

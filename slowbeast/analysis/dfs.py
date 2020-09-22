@@ -1,5 +1,6 @@
 from . cfg import CFG
 
+
 class DFSEdgeType:
     TREE = 1
     FORWARD = 2
@@ -16,15 +17,18 @@ class DFSEdgeType:
         elif val == DFSEdgeType.CROSS:
             return "cross"
 
+
 class DFSData:
     def __init__(self):
         self.visited = False
         self.innum = None
         self.outnum = None
 
+
 class DFSCounter:
     def __init__(self):
         self.counter = 0
+
 
 class DFSVisitor:
     """
@@ -39,7 +43,7 @@ class DFSVisitor:
     def _getdata(self, node):
         return self._data.setdefault(node, DFSData())
 
-    def foreach(self, fun, startnode = None):
+    def foreach(self, fun, startnode=None):
         raise NotImplementedError("foreach not implemented")
 
     def foreachedge(self, fun, startnode):
@@ -115,7 +119,11 @@ class DFSVisitor:
 
         # dump the in/out counters
         for n in cfg.getNodes():
-            print('  {0} [label="{0}\\nin,out = {1}, {2}"]'.format(n.getBBlock().getID(),
-            self._getdata(n).innum, self._getdata(n).outnum), file=out)
+            print(
+                '  {0} [label="{0}\\nin,out = {1}, {2}"]'.format(
+                    n.getBBlock().getID(),
+                    self._getdata(n).innum,
+                    self._getdata(n).outnum),
+                file=out)
 
         print("}", file=out)
