@@ -13,22 +13,35 @@ from copy import copy
 
 
 class Relation:
-    def __init__(self, pred, a, b):
+    def __init__(self, pred, a, b, expr):
         self._pred = pred
         self.a = a
         self.b = b
+        self.expr = expr
+
+    def __eq__(self, rhs):
+        return self._pred == rhs._pred and self.a == rhs.a and self.b == rhs.b
 
     def __str__(self):
         return "({0}) {1} ({2})".format(self.a, Cmp.predicateStr(self._pred),
                                         self.b)
 
+class KindCFGPath:
+    def __init__(self, cfgpath):
+        self.cfgpath = cfgpath
+
+    def newcfgpath(self, newpath):
+        pathcopy = copy(self)
+        pathcopy.cfgpath = newpath
+        return pathcopy
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def __init__(
             self,
             prog,
             testgen=None,
-            opts=KindSeOptions()):
+            opts=KindSeOptions(),
+            genannot=True):
         super(
             KindSymbolicExecutor,
             self).__init__(
@@ -36,6 +49,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             testgen=testgen,
             opts=opts)
 
+        self.genannot = genannot
         self.cfgs = {}
         self.invpoints = []
         self.paths = []
@@ -114,7 +128,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         num = 0
         invpoints = self.invpoints
         newpaths = []
-        worklist = [path]
+        cfgpath = path.cfgpath
+        worklist = [cfgpath]
         while worklist:
             num += 1
             newworklist = []
@@ -126,7 +141,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
                 # no predecessors, we're done with this path
                 if atmost and predsnum == 0:
-                    newpaths.append(p)
+                    newpaths.append(path.newcfgpath(p))
                     continue
 
                 for pred in preds:
@@ -142,11 +157,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     added = False
                     if atmost and steps != 1 and self._is_init(pred):
                         added = True
-                        newpaths.append(newpath)
+                        newpaths.append(path.newcfgpath(newpath))
 
                     if pred in invpoints:
                         # a point for generating invariant, stop extending here
-                        newpaths.append(newpath)
+                        newpaths.append(path.newcfgpath(newpath))
                     elif steps > 0 and num != steps:
                         newworklist.append(newpath)
                     elif steps == 0 and predsnum <= 1:
@@ -155,7 +170,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         newworklist.append(newpath)
                     else:  # we're done with this path
                         if not added:
-                            newpaths.append(newpath)
+                            newpaths.append(path.newcfgpath(newpath))
 
             worklist = newworklist
 
@@ -222,9 +237,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         pred = Cmp.LE
 
                 if expr and not expr.isConstant():
-                    # rels.append(expr)
                     assert pred
-                    rels.append(Relation(pred, values[i], values[j]))
+                    rels.append(Relation(pred, values[i], values[j], expr))
 
         return rels
 
@@ -233,13 +247,23 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         Take the executed path and states that are safe and unsafe
         and derive annotations of CFG
         """
-        if not path.first() in self.invpoints:
+        if not self.genannot: # we should not generate invariants
             return
+
+        if not path.cfgpath.first() in self.invpoints:
+            return
+
         for s in safe:
-            s.dump()
+            print("--Constraints--")
+            print(s.getConstraints())
             print("--Relations--")
-            for r in self.getRelations(s):
+
+            # filter out those relations that make the state safe
+            saferels = (r for r in self.getRelations(s) if not all(u.is_sat(r.expr) for u in unsafe))
+
+            for r in saferels:
                 print(r)
+
 
     def checkPaths(self):
         newpaths = []
@@ -247,10 +271,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         paths = self.paths
         for path in paths:
-            first_loc = path.first()
+            cfgpath = path.cfgpath
+            first_loc = cfgpath.first()
             if self._is_init(first_loc):
-                # try executing the path from initial states
-                safe, unsafe = self.executePath(path, fromInit=True)
+                # try executing the CFG path from initial states
+                safe, unsafe = self.executePath(cfgpath, fromInit=True)
                 if not unsafe:
                     self.annotateCFG(path, safe, unsafe)
                     if len(first_loc.getPredecessors()) == 0:
@@ -266,7 +291,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         else:
                             assert False, "Unhandled unsafe state"
 
-            safe, unsafe = self.executePath(path)
+            safe, unsafe = self.executePath(cfgpath)
 
             self.annotateCFG(path, safe, unsafe)
 
@@ -307,7 +332,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         self.invpoints = self.findInvPoints(cfg)
 
         nodes = cfg.getNodes()
-        paths = [CFGPath([p]) for n in nodes
+        paths = [KindCFGPath(CFGPath([p])) for n in nodes
                  for p in n.getPredecessors()
                  if n.hasAssert()]
         step = self.getOptions().step
