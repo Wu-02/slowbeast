@@ -2,6 +2,7 @@ from .. symexe.symbolicexecution import SEOptions
 from .. util.debugging import print_stderr, print_stdout, dbg
 
 from . annotatedcfg import CFG, CFGPath
+from .. analysis.dfs import DFSVisitor, DFSEdgeType
 from . naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from . naivekindse import Result, KindSeOptions
 from . inductionpath import InductionPath
@@ -36,6 +37,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             opts=opts)
 
         self.cfgs = {}
+        self.invpoints = []
         self.paths = []
 
     def getCFG(self, F):
@@ -110,6 +112,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         """
 
         num = 0
+        invpoints = self.invpoints
         newpaths = []
         worklist = [path]
         while worklist:
@@ -141,7 +144,10 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         added = True
                         newpaths.append(newpath)
 
-                    if steps > 0 and num != steps:
+                    if pred in invpoints:
+                        # a point for generating invariant, stop extending here
+                        newpaths.append(newpath)
+                    elif steps > 0 and num != steps:
                         newworklist.append(newpath)
                     elif steps == 0 and predsnum <= 1:
                         newworklist.append(newpath)
@@ -227,6 +233,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         Take the executed path and states that are safe and unsafe
         and derive annotations of CFG
         """
+        if not path.first() in self.invpoints:
+            return
         for s in safe:
             s.dump()
             print("--Relations--")
@@ -282,8 +290,22 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return None
 
+    def findInvPoints(self, cfg):
+        points = []
+
+        def processedge(start, end, dfstype):
+            if dfstype == DFSEdgeType.BACK:
+                points.append(end)
+
+        DFSVisitor().foreachedge(processedge, cfg.getEntry())
+
+        return points
+
     def initializePaths(self, k=1):
         cfg = self.getCFG(self.getProgram().getEntry())
+
+        self.invpoints = self.findInvPoints(cfg)
+
         nodes = cfg.getNodes()
         paths = [CFGPath([p]) for n in nodes
                  for p in n.getPredecessors()
@@ -294,6 +316,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 np for p in paths for np in self.extendPath(
                     p, steps=step, atmost=True)]
             k -= 1
+
         return paths
 
     def run(self):
