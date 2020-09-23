@@ -1,4 +1,5 @@
-from slowbeast.ir.instruction import Cmp, Assume, Assert
+from slowbeast.util.debugging import FIXME
+from slowbeast.ir.instruction import Cmp, Load, Assume, Assert
 
 class Relation:
     def __init__(self, pred, a, b, expr):
@@ -30,11 +31,18 @@ class Relation:
 def get_relations(state):
     rels = []
     EM = state.getExprManager()
+    FIXME("Support also non-load annotations")
 
     # FIXME not efficient, just for testing now
     values = list(state.getValuesList())
     for i in range(0, len(values)):
         for j in range(i + 1, len(values)):
+            # for now, we support only Load instructions
+            # as other instructions require to put into the annotation
+            # also their operands
+            if not isinstance(values[i], Load) or\
+               not isinstance(values[j], Load):
+                continue
             val1 = state.get(values[i])
             val2 = state.get(values[j])
 
