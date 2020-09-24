@@ -412,7 +412,9 @@ class Executor(ConcreteExecutor):
         if v.isConstant():
             if v.getValue() != True:
                 state.setError(AssertFailError(msg))
-                states.append(state)
+            else:
+                state.pc = state.pc.getNextInstruction()
+            states.append(state)
         else:
             okBranch, errBranch = self.fork(state, v)
             if okBranch:
