@@ -431,27 +431,50 @@ class Executor:
 
         return states, earlytermstates
 
+
+    def _executeAnnotations(self, s, annots):
+        assert s.isReady(), "Cannot execute non-ready state"
+        oldpc = s.pc
+
+        def executeInstr(states, instr):
+            newstates = []
+            for state in states:
+                assert s.isReady()
+                # FIXME: get rid of this -- make execute() not to mess with pc
+                state.pc = oldpc
+                newstates += self.execute(state, instr)
+
+            safe, unsafe = [], []
+            for x in newstates:
+                x.pc = oldpc
+                (safe, unsafe)[0 if x.isReady() else 1].append(x)
+            return safe, unsafe
+
+        safe, unsafe = [s], []
+        for annot in annots:
+            dbg(f"Annotation: executing annotation for {s.getID()}")
+            for instr in annot:
+                safe, u = executeInstr(safe, instr)
+                unsafe += u
+            dbg("Done executing annot")
+        return safe, unsafe
+
     def executeAnnotations(self, states, annots):
-        newstates = []
+        # if there are no annotations, return the original states
+        if not annots:
+            return states, []
+
+        safe = []
+        unsafe = []
+        execAnnot = self._executeAnnotations
+
         for s in states:
-            oldpc = s.pc
-
-            tmpstates = [s]
-            for annot in annots:
-                dbg("Annotation: executing annotation")
-                for instr in annot:
-                    newtmpstates = []
-                    for ts in tmpstates:
-                        ts.pc = oldpc
-                        newtmpstates += self.execute(ts, instr)
-                    tmpstates = newtmpstates
-
-                dbg("Done executing annot")
-            for ns in tmpstates:
-                ns.pc = oldpc
-            newstates += tmpstates
-
-        return newstates
+            ts, tu = execAnnot(s, annots)
+            safe += ts
+            unsafe += tu
+        print(safe, [s.getID() for s in safe])
+        print(unsafe, [s.getID() for s in unsafe])
+        return safe, unsafe
 
     def executeAnnotatedPath(self, state, path):
         """
@@ -478,12 +501,15 @@ class Executor:
         for idx in range(0, len(locs)):
             loc = locs[idx]
 
-            # FIXME: what if we generate some bad states?
-            states = self.executeAnnotations(states, loc.annotationsBefore)
-            states = self.executeAnnotations(states, loc.assertionsBefore)
+            safe, unsafe = self.executeAnnotations(states, loc.annotationsBefore)
+            earlytermstates += unsafe
+            locannot = path.getLocAnnotationsBefore(loc)
+            if locannot:
+                safe, unsafe = self.executeAnnotations(safe, locannot)
+                earlytermstates += unsafe
 
             # execute the block till branch
-            newstates = self.executeTillBranch(states, stopBefore=True)
+            newstates = self.executeTillBranch(safe, stopBefore=True)
 
             # get the ready states
             states = []
@@ -505,11 +531,23 @@ class Executor:
             else:  # this is the last location on path,
                 # so just normally execute the block instructions
                 newstates = self.executeTillBranch(states)
-            states = newstates
 
-            # FIXME: what if we generate some bad states?
-            states = self.executeAnnotations(states, loc.annotationsAfter)
-            states = self.executeAnnotations(states, loc.assertionsAfter)
+            # get the ready states
+            states = []
+            for n in newstates:
+                if n.isReady():
+                    states.append(n)
+                else:
+                    earlytermstates.append(n)
+
+            safe, unsafe = self.executeAnnotations(states, loc.annotationsAfter)
+            earlytermstates += unsafe
+
+            locannot = path.getLocAnnotationsAfter(loc)
+            if locannot:
+                safe, unsafe = self.executeAnnotations(safe, locannot)
+                earlytermstates += unsafe
+            states = safe
 
         assert all(map(lambda x: x.isReady(), states))
         assert all(map(lambda x: not x.isReady(), earlytermstates))

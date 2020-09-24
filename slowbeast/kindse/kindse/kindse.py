@@ -51,13 +51,19 @@ class KindSymbolicExecutor(BaseKindSE):
                         r.expr) for u in unsafe))
 
             for r in saferels:
+                dbg("Starting nested KindSE")
                 kindse = BaseKindSE(self.getProgram())
-                apath = AnnotatedCFGPath([path.cfgpath.first()])
-                apath.addAnnotationBefore(r.toAnnotation())
-                apath.addAssertionAfter(r.toAssertion())
+                print(path)
+                print(path.cfgpath)
+                loc = path.cfgpath.first().loc
+                print(loc)
+                apath = AnnotatedCFGPath([loc])
+                print('adding annot to', loc)
+                apath.addLocAnnotationAfter(r.toAssertion(), loc)
                 paths=[KindCFGPath(apath)]
                 res = kindse.run(paths, maxk=5)
                 print(r, res)
+                dbg("DONE nested KindSE")
 
     def checkInitialPath(self, path):
         """

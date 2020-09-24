@@ -14,7 +14,7 @@ class Relation:
     def toCmpInst(self):
         return Cmp(self._pred, self.a, self.b)
 
-    def toAnnotation(self):
+    def toAssumption(self):
         cmpi = self.toCmpInst()
         return [self.a, self.b, cmpi, Assume(cmpi)]
 

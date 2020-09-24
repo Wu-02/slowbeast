@@ -56,6 +56,7 @@ class AnnotatedCFGPath(CFGPath):
 
     class AnnotatedLoc:
         def __init__(self, loc):
+            assert isinstance(loc, CFG.AnnotatedNode), loc
             self.loc = loc
             # after loc execution
             self.annotationsAfter = [] 
@@ -72,6 +73,33 @@ class AnnotatedCFGPath(CFGPath):
 
     def __init__(self, locs=[]):
         super(AnnotatedCFGPath, self).__init__([AnnotatedCFGPath.AnnotatedLoc(l) for l in locs])
+        self.locannotations = {}
+        self.locannotationsafter = {}
+
+    def addLocAnnotationAfter(self, annot, loc):
+        if isinstance(loc, AnnotatedCFGPath.AnnotatedLoc):
+            loc = loc.loc
+        assert isinstance(loc, CFG.AnnotatedNode), loc
+        self.locannotationsafter.setdefault(loc, []).append(annot)
+
+    def getLocAnnotationsAfter(self, loc):
+        if isinstance(loc, AnnotatedCFGPath.AnnotatedLoc):
+            loc = loc.loc
+        assert isinstance(loc, CFG.AnnotatedNode), loc
+        return self.locannotationsafter.get(loc)
+
+    def addLocAnnotationBefore(self, annot, loc):
+        if isinstance(loc, AnnotatedCFGPath.AnnotatedLoc):
+            loc = loc.loc
+        assert isinstance(loc, CFG.AnnotatedNode), loc
+        self.locannotations.setdefault(loc, []).append(annot)
+
+    def getLocAnnotationsBefore(self, loc):
+        if isinstance(loc, AnnotatedCFGPath.AnnotatedLoc):
+            loc = loc.loc
+        assert isinstance(loc, CFG.AnnotatedNode), loc
+        return self.locannotations.get(loc)
+
 
     def addAnnotationAfter(self, annot, idx=0):
         """
@@ -90,29 +118,6 @@ class AnnotatedCFGPath(CFGPath):
         """
         assert idx < self.length()
         self.locations[idx].annotationsBefore.append(annot)
-
-    def addAssertionAfter(self, assrt, idx=0):
-        """
-        Add assertion to the given location on the path.
-        The assertion should be evaluated "after"
-        executing the location but after evaluating
-        the (after) annotations.
-        """
-        assert idx < self.length()
-        self.locations[idx].assertionsAfter.append(assrt)
-
-    def addAssertionBefore(self, assrt, idx=0):
-        """
-        Add assertion to the given location on the path.
-        The assertion should be evaluated "before"
-        executing the location but after evaluating
-        the (before) annotations.
-        """
-        assert idx < self.length()
-        self.locations[idx].assertionsBefore.append(assrt)
-
-    def getAssertions(self, idx):
-        return self.assertions.get(idx) or []
 
     def copyandprepend(self, loc):
         n = deepcopy(self)
