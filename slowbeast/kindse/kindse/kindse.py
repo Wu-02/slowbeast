@@ -26,7 +26,7 @@ class KindSymbolicExecutor(BaseKindSE):
             opts=opts)
 
         self.genannot = genannot
-        self.invpoints = []
+        self.invpoints = {}
 
     def annotateCFG(self, path, safe, unsafe):
         """
@@ -37,7 +37,8 @@ class KindSymbolicExecutor(BaseKindSE):
             return
 
         assert isinstance(path.cfgpath.first(), CFG.AnnotatedNode)
-        if not path.cfgpath.first() in self.invpoints:
+        cfgpath = path.cfgpath
+        if not path.cfgpath.first() in self.invpoints[cfgpath[0].getCFG()]:
             return
 
         for s in safe:
@@ -61,7 +62,7 @@ class KindSymbolicExecutor(BaseKindSE):
                     invpaths.append(KindCFGPath(apath))
 
                 dbg_sec("Running nested KindSE")
-                res = kindse.run(invpaths, maxk=5)
+                res = kindse.run(invpaths, maxk=15)
                 dbg_sec()
                 if res == 0:
                     print_stdout(
@@ -157,20 +158,27 @@ class KindSymbolicExecutor(BaseKindSE):
         return points
 
     def initializePaths(self, k=1):
-        cfg = self.getCFG(self.getProgram().getEntry())
+        paths = []
+        for F in self.getProgram().getFunctions():
+            if F.isUndefined():
+                continue
 
-        self.invpoints = self.findInvPoints(cfg)
+            cfg = self.getCFG(F)
+            invpoints = self.findInvPoints(cfg)
+            self.invpoints[cfg] = invpoints
 
-        nodes = cfg.getNodes()
-        paths = [KindCFGPath(AnnotatedCFGPath([p])) for n in nodes
-                 for p in n.getPredecessors()
-                 if n.hasAssert()]
-        step = self.getOptions().step
-        while k > 0:
-            paths = [
-                np for p in paths for np in self.extendPath(
-                    p, steps=step, atmost=True, stoppoints=self.invpoints)]
-            k -= 1
+            nodes = cfg.getNodes()
+            npaths = [KindCFGPath(AnnotatedCFGPath([p])) for n in nodes
+                      for p in n.getPredecessors()
+                      if n.hasAssert()]
+            step = self.getOptions().step
+            while k > 0:
+                npaths = [
+                    np for p in npaths for np in self.extendPath(
+                        p, steps=step, atmost=True,
+                        stoppoints=invpoints)]
+                k -= 1
+            paths += npaths
 
         return paths
 

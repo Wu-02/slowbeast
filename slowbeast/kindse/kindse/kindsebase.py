@@ -25,11 +25,12 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             testgen=testgen,
             opts=opts)
 
-        self.cfgs = {}
+        self.cfgs = {F : CFG(F) for F in prog.getFunctions() if not F.isUndefined()}
         self.paths = []
 
     def getCFG(self, F):
-        return self.cfgs.setdefault(F, CFG(F))
+        assert self.cfgs.get(F), f"Have no CFG for function {F.getName()}"
+        return self.cfgs.get(F)
 
     def executePath(self, path, fromInit=False):
         """
