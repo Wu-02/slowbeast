@@ -62,7 +62,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 res = kindse.run(invpaths, maxk=5)
                 dbg_sec()
                 if res == 0:
-                    dbg(f"{r} is invariant of loc {loc.getBBlock().getID()}!")
+                    print_stdout(f"{r} is invariant of loc {loc.getBBlock().getID()}!", color="BLUE")
                     dbg(f"Adding {r} as assumption to the CFG")
                     loc.annotationsBefore.append(r.toAssumption())
                 dbg_sec()
