@@ -9,4 +9,6 @@ class KindCFGPath:
         pathcopy.cfgpath = newpath
         return pathcopy
 
+    def __getitem__(self, idx):
+        return self.cfgpath[idx]
 

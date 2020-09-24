@@ -7,9 +7,10 @@ from copy import copy
 
 class CFG:
     class Node:
-        __slots__ = ['block', 'successors', 'predecessors']
+        __slots__ = ['cfg', 'block', 'successors', 'predecessors']
 
-        def __init__(self, B):
+        def __init__(self, cfg, B):
+            self.cfg = cfg
             self.block = B
             self.successors = []
             self.predecessors = []
@@ -31,6 +32,9 @@ class CFG:
             self.successors.append(succ)
             succ.predecessors.append(self)
 
+        def getCFG(self):
+            return self.cfg
+
         def isJoin(self):
             "This bblock Has several predecessors"
             return len(self.predecessors) > 1
@@ -51,7 +55,7 @@ class CFG:
         to get nodes with more data
         """
         assert len(args) == 1
-        return CFG.Node(*args)
+        return CFG.Node(self, *args)
 
     def getNode(self, B):
         return self._nodes.get(B)
@@ -106,8 +110,16 @@ class CFGPath:
     def __len__(self):
         return len(self.locations)
 
+    def __getitem__(self, idx):
+        assert idx < len(self.locations)
+        return self.locations[idx]
+
     def copy(self):
         return copy(self)
+
+    def subpath(start, end):
+        n = copy(self)
+        n.locations = self.locations[start:end]
 
     def append(self, l):
         self.locations.append(l)

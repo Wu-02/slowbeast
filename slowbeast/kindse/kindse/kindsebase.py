@@ -57,25 +57,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         assert states
 
-        # execute the prefix of the path
-        safe, unsafe = executor.executeAnnotatedPath(states, path)
+        # execute the prefix of the path and do one more step
+        safe, unsafe, _ = executor.executeAnnotatedStepWithPrefix(states, path)
         self.stats.paths += 1
 
-        # do one more step, i.e., execute one more block
-        tmpstates = executor.executeTillBranch(safe)
-
-        if fromInit:
-            # include all unsafe states (even those that we gather
-            # during the execution of the path, not only those that
-            # reach the last point of the path)
-            finalsafe, finalunsafe = [], unsafe
-        else:
-            finalsafe, finalunsafe = [], []
-
-        for s in tmpstates:
-            (finalunsafe, finalsafe)[s.isReady() or s.isTerminated()].append(s)
-
-        return finalsafe, finalunsafe
+        return safe, unsafe
 
     def _is_init(self, loc):
         return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)

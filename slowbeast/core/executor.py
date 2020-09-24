@@ -1,11 +1,16 @@
 import sys
-from .. util.debugging import dbg, FIXME
+from .. util.debugging import dbg, dbg_sec, FIXME
 from .. ir.instruction import *
 from .. ir.value import *
 from . errors import GenericError
 from . memorymodel import MemoryModel
 from . executionstate import ExecutionState
 
+def split_ready_states(states):
+    ready, notready = [], []
+    for x in states:
+        (ready, notready)[0 if x.isReady() else 1].append(x)
+    return ready, notready
 
 class Executor:
     """
@@ -407,10 +412,7 @@ class Executor:
             # get the ready states
             states = []
             for n in newstates:
-                if n.isReady():
-                    states.append(n)
-                else:
-                    earlytermstates.append(n)
+                (states, earlytermstates)[0 if n.isReady else 1].append(n)
 
             # now execute the branch following the edge on the path
             if idx + 1 < len(locs):
@@ -452,11 +454,11 @@ class Executor:
 
         safe, unsafe = [s], []
         for annot in annots:
-            dbg(f"Annotation: executing annotation for {s.getID()}")
+            dbg_sec(f"executing annotation on state {s.getID()}")
             for instr in annot:
                 safe, u = executeInstr(safe, instr)
                 unsafe += u
-            dbg("Done executing annot")
+            dbg_sec()
         return safe, unsafe
 
     def executeAnnotations(self, states, annots):
@@ -472,17 +474,51 @@ class Executor:
             ts, tu = execAnnot(s, annots)
             safe += ts
             unsafe += tu
-        print(safe, [s.getID() for s in safe])
-        print(unsafe, [s.getID() for s in unsafe])
         return safe, unsafe
+
+    def executeAnnotatedLoc(self, states, loc, path=None):
+
+            # execute annotations before bblock
+            safe, unsafe = self.executeAnnotations(states, loc.annotationsBefore)
+            locannot = path.getLocAnnotationsBefore(loc) if path else None
+            if locannot:
+                safe, tu = self.executeAnnotations(safe, locannot)
+                unsafe += tu
+
+            # execute the block till branch
+            states = self.executeTillBranch(safe, stopBefore=True)
+
+            # get the ready states
+            safe = []
+            for n in states:
+                (safe, unsafe)[0 if n.isReady() else 1].append(n)
+
+            # execute annotations after
+            safe, tmpunsafe = self.executeAnnotations(safe, loc.annotationsAfter)
+            unsafe += tmpunsafe
+
+            locannot = path.getLocAnnotationsAfter(loc) if path else None
+            if locannot:
+                safe, tu = self.executeAnnotations(safe, locannot)
+                unsafe += tu
+
+            return safe, unsafe
+
 
     def executeAnnotatedPath(self, state, path):
         """
-        Execute the given path through CFG with annotations. Return two lists
-        of states.  The first list contains the resulting states that reaches
-        the end of the path, the other list contains all other states, i.e.,
-        the error, killed or exited states reached during the execution of the
-        CFG.
+        Execute the given path through CFG with annotations from the given
+        state. NOTE: the passed states may be modified.
+
+        Return three lists of states.  The first list contains the states
+        that reach the end of the path (i.e., the states after the execution of
+        the last instruction on the path), the other list contains all other
+        states, i.e., the error, killed or exited states reached during the
+        execution of the CFG. Note that if the path is infeasible, this set
+        contains no states.
+        The last list contains states that terminate (e.g., are killed or are error
+        states) during the execution of the path, but that does not reach the last
+        step.
         """
 
         if isinstance(state, list):
@@ -491,33 +527,20 @@ class Executor:
             states = [state]
 
         earlytermstates = []
+        unsafe = []
         idx = 0
 
         locs = path.getLocations()
         # set the pc of the states to be the first instruction of the path
+        newpc = locs[0].getBBlock().first()
         for s in states:
-            s.pc = locs[0].getBBlock().first()
+            s.pc = newpc
 
         for idx in range(0, len(locs)):
             loc = locs[idx]
-
-            safe, unsafe = self.executeAnnotations(states, loc.annotationsBefore)
-            earlytermstates += unsafe
-            locannot = path.getLocAnnotationsBefore(loc)
-            if locannot:
-                safe, unsafe = self.executeAnnotations(safe, locannot)
-                earlytermstates += unsafe
-
-            # execute the block till branch
-            newstates = self.executeTillBranch(safe, stopBefore=True)
-
-            # get the ready states
-            states = []
-            for n in newstates:
-                if n.isReady():
-                    states.append(n)
-                else:
-                    earlytermstates.append(n)
+            safe, tmpunsafe = self.executeAnnotatedLoc(states, loc, path)
+            assert all(map(lambda x: x.isReady(), safe))
+            assert all(map(lambda x: isinstance(x.pc, Branch), safe)), [s.pc for s in safe]
 
             # now execute the branch following the edge on the path
             if idx + 1 < len(locs):
@@ -526,30 +549,52 @@ class Executor:
                 followsucc = curbb.last().getTrueSuccessor() == succbb
                 newstates = []
                 assert followsucc or curbb.last().getFalseSuccessor() == succbb
-                for s in states:
+                for s in safe:
                     newstates += self.execBranchTo(s, s.pc, followsucc)
+                earlytermstates += tmpunsafe
             else:  # this is the last location on path,
-                # so just normally execute the block instructions
-                newstates = self.executeTillBranch(states)
-
-            # get the ready states
-            states = []
-            for n in newstates:
-                if n.isReady():
-                    states.append(n)
-                else:
-                    earlytermstates.append(n)
-
-            safe, unsafe = self.executeAnnotations(states, loc.annotationsAfter)
-            earlytermstates += unsafe
-
-            locannot = path.getLocAnnotationsAfter(loc)
-            if locannot:
-                safe, unsafe = self.executeAnnotations(safe, locannot)
-                earlytermstates += unsafe
-            states = safe
+                # so just normally execute the branch instruction in the block
+                newstates = self.executeTillBranch(safe)
+                assert all(map(lambda x: x.isReady(), newstates))
+                unsafe += tmpunsafe
+            states = newstates
 
         assert all(map(lambda x: x.isReady(), states))
         assert all(map(lambda x: not x.isReady(), earlytermstates))
+        assert all(map(lambda x: not x.isReady(), unsafe))
 
-        return states, earlytermstates
+        return states, unsafe, earlytermstates
+
+    def executeAnnotatedStepWithPrefix(self, state, prefix):
+        """
+        Execute the given path through CFG with annotations from the given
+        state and then do one more step in CFG.
+
+        Returns three lists of states.
+        The first list contains safe states reachable after executing the 'path'
+        and doing one more step in CFG.
+        The second list contains unsafe states reachable after executing the 'path'
+        and doing one more step in CFG.
+        The last list contains states that terminate (e.g., are killed or are error
+        states) during the execution of the path, but that does not reach the last
+        step.
+        """
+
+        safe, unsafe, earlyterm = self.executeAnnotatedPath(state, prefix)
+        earlyterm += unsafe
+        unsafe = []
+
+        dbg("Prefix executed, executing one more step")
+
+        # execute the last step -- all unsafe states are now really unsafe
+        cfg = prefix[0].getCFG()
+        tmpsafe = []
+        for s in safe:
+            # get the CFG node that is going to be executed,
+            loc = cfg.getNode(s.pc.getBBlock())
+            ts, tu = self.executeAnnotatedLoc([s], loc, prefix)
+            tmpsafe += ts
+            unsafe += tu
+
+        dbg("Step executed, done.")
+        return tmpsafe, unsafe, earlyterm

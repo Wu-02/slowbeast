@@ -1,7 +1,7 @@
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
-from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
+from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath, CFG
 from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
@@ -35,15 +35,11 @@ class KindSymbolicExecutor(BaseKindSE):
         if not self.genannot:  # we should not generate invariants
             return
 
-        assert isinstance(path.cfgpath.first(), AnnotatedCFGPath.AnnotatedLoc)
-        if not path.cfgpath.first().loc in self.invpoints:
+        assert isinstance(path.cfgpath.first(), CFG.AnnotatedNode)
+        if not path.cfgpath.first() in self.invpoints:
             return
 
         for s in safe:
-            print("--Constraints--")
-            print(s.getConstraints())
-            print("--Relations--")
-
             # filter out those relations that make the state safe
             saferels = (
                 r for r in get_relations(s) if not all(
@@ -51,21 +47,26 @@ class KindSymbolicExecutor(BaseKindSE):
                         r.expr) for u in unsafe))
 
             for r in saferels:
-                dbg("Starting nested KindSE")
+                loc = path.cfgpath.first()
+
+                dbg_sec(f"Checking if {r} is invariant of loc {loc.getBBlock().getID()}")
+
                 kindse = BaseKindSE(self.getProgram())
-                print(path)
-                print(path.cfgpath)
-                loc = path.cfgpath.first().loc
-                print(loc)
-                apath = AnnotatedCFGPath([loc])
-                print('adding annot to', loc)
-                apath.addLocAnnotationAfter(r.toAssertion(), loc)
-                paths=[KindCFGPath(apath)]
+                invpaths = []
+                for p in loc.getPredecessors():
+                    apath = AnnotatedCFGPath([p])
+                    apath.addLocAnnotationBefore(r.toAssertion(), loc)
+                    invpaths.append(KindCFGPath(apath))
+
                 dbg_sec("Running nested KindSE")
-                res = kindse.run(paths, maxk=5)
+                res = kindse.run(invpaths, maxk=5)
                 dbg_sec()
-                print(r, res)
-                dbg("DONE nested KindSE")
+                if res == 0:
+                    dbg(f"{r} is invariant of loc {loc.getBBlock().getID()}!")
+                    dbg(f"Adding {r} as assumption to the CFG")
+                    loc.annotationsBefore.append(r.toAssumption())
+                dbg_sec()
+
 
     def checkInitialPath(self, path):
         """
