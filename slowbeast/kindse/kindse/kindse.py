@@ -107,7 +107,15 @@ class KindSymbolicExecutor(BaseKindSE):
                     return r  # found a real error
                 elif r is Result.SAFE:
                     continue  # this path is safe
-                assert r is None
+                elif r is Result.UNKNOWN:
+                    # there is a problem with this path,
+                    # but we can still find an error
+                    # on some different path
+                    # FIXME: keep it in queue so that
+                    # we can rule out this path by
+                    # annotations from other paths?
+                    continue
+                assert r is None, r
 
             safe, unsafe = self.executePath(cfgpath)
 

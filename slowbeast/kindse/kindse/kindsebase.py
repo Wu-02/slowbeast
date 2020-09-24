@@ -58,8 +58,12 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         assert states
 
         # execute the prefix of the path and do one more step
-        safe, unsafe, _ = executor.executeAnnotatedStepWithPrefix(states, path)
+        safe, unsafe, earlyterm = executor.executeAnnotatedStepWithPrefix(states, path)
         self.stats.paths += 1
+
+        if fromInit:
+            # this is an initial path, so every error is taken as real
+            unsafe += earlyterm
 
         return safe, unsafe
 
