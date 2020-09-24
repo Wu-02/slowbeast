@@ -6,11 +6,13 @@ from . errors import GenericError
 from . memorymodel import MemoryModel
 from . executionstate import ExecutionState
 
+
 def split_ready_states(states):
     ready, notready = [], []
     for x in states:
         (ready, notready)[0 if x.isReady() else 1].append(x)
     return ready, notready
+
 
 class Executor:
     """
@@ -433,7 +435,6 @@ class Executor:
 
         return states, earlytermstates
 
-
     def _executeAnnotations(self, s, annots):
         assert s.isReady(), "Cannot execute non-ready state"
         oldpc = s.pc
@@ -478,32 +479,31 @@ class Executor:
 
     def executeAnnotatedLoc(self, states, loc, path=None):
 
-            # execute annotations before bblock
-            safe, unsafe = self.executeAnnotations(states, loc.annotationsBefore)
-            locannot = path.getLocAnnotationsBefore(loc) if path else None
-            if locannot:
-                safe, tu = self.executeAnnotations(safe, locannot)
-                unsafe += tu
+        # execute annotations before bblock
+        safe, unsafe = self.executeAnnotations(states, loc.annotationsBefore)
+        locannot = path.getLocAnnotationsBefore(loc) if path else None
+        if locannot:
+            safe, tu = self.executeAnnotations(safe, locannot)
+            unsafe += tu
 
-            # execute the block till branch
-            states = self.executeTillBranch(safe, stopBefore=True)
+        # execute the block till branch
+        states = self.executeTillBranch(safe, stopBefore=True)
 
-            # get the ready states
-            safe = []
-            for n in states:
-                (safe, unsafe)[0 if n.isReady() else 1].append(n)
+        # get the ready states
+        safe = []
+        for n in states:
+            (safe, unsafe)[0 if n.isReady() else 1].append(n)
 
-            # execute annotations after
-            safe, tmpunsafe = self.executeAnnotations(safe, loc.annotationsAfter)
-            unsafe += tmpunsafe
+        # execute annotations after
+        safe, tmpunsafe = self.executeAnnotations(safe, loc.annotationsAfter)
+        unsafe += tmpunsafe
 
-            locannot = path.getLocAnnotationsAfter(loc) if path else None
-            if locannot:
-                safe, tu = self.executeAnnotations(safe, locannot)
-                unsafe += tu
+        locannot = path.getLocAnnotationsAfter(loc) if path else None
+        if locannot:
+            safe, tu = self.executeAnnotations(safe, locannot)
+            unsafe += tu
 
-            return safe, unsafe
-
+        return safe, unsafe
 
     def executeAnnotatedPath(self, state, path):
         """
@@ -540,7 +540,8 @@ class Executor:
             loc = locs[idx]
             safe, tmpunsafe = self.executeAnnotatedLoc(states, loc, path)
             assert all(map(lambda x: x.isReady(), safe))
-            assert all(map(lambda x: isinstance(x.pc, Branch), safe)), [s.pc for s in safe]
+            assert all(map(lambda x: isinstance(x.pc, Branch), safe)), [
+                s.pc for s in safe]
 
             # now execute the branch following the edge on the path
             if idx + 1 < len(locs):

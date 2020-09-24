@@ -1,5 +1,6 @@
 from copy import copy
 
+
 class KindCFGPath:
     def __init__(self, cfgpath):
         self.cfgpath = cfgpath
@@ -11,4 +12,3 @@ class KindCFGPath:
 
     def __getitem__(self, idx):
         return self.cfgpath[idx]
-

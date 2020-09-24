@@ -1,6 +1,7 @@
 from slowbeast.util.debugging import FIXME
 from slowbeast.ir.instruction import Cmp, Load, Assume, Assert
 
+
 class Relation:
     def __init__(self, pred, a, b, expr):
         self._pred = pred
@@ -80,4 +81,3 @@ def get_relations(state):
                 rels.append(Relation(pred, values[i], values[j], expr))
 
     return rels
-

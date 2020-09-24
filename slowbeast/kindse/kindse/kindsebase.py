@@ -11,6 +11,7 @@ from slowbeast.ir.instruction import Cmp
 from . kindcfgpath import KindCFGPath
 from . annotations import Relation
 
+
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def __init__(
             self,
@@ -58,7 +59,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         assert states
 
         # execute the prefix of the path and do one more step
-        safe, unsafe, earlyterm = executor.executeAnnotatedStepWithPrefix(states, path)
+        safe, unsafe, earlyterm = executor.executeAnnotatedStepWithPrefix(
+            states, path)
         self.stats.paths += 1
 
         if fromInit:
@@ -220,7 +222,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return None
 
     def run(self, paths, maxk=None):
-        dbg(f"Performing the k-ind algorithm for specified paths with maxk={maxk}",
+        dbg(
+            f"Performing the k-ind algorithm for specified paths with maxk={maxk}",
             color="ORANGE")
 
         k = 1

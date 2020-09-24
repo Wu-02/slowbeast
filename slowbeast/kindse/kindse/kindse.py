@@ -10,6 +10,7 @@ from . annotations import Relation, get_relations
 
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 
+
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
             self,
@@ -49,7 +50,8 @@ class KindSymbolicExecutor(BaseKindSE):
             for r in saferels:
                 loc = path.cfgpath.first()
 
-                dbg_sec(f"Checking if {r} is invariant of loc {loc.getBBlock().getID()}")
+                dbg_sec(
+                    f"Checking if {r} is invariant of loc {loc.getBBlock().getID()}")
 
                 kindse = BaseKindSE(self.getProgram())
                 invpaths = []
@@ -62,11 +64,12 @@ class KindSymbolicExecutor(BaseKindSE):
                 res = kindse.run(invpaths, maxk=5)
                 dbg_sec()
                 if res == 0:
-                    print_stdout(f"{r} is invariant of loc {loc.getBBlock().getID()}!", color="BLUE")
+                    print_stdout(
+                        f"{r} is invariant of loc {loc.getBBlock().getID()}!",
+                        color="BLUE")
                     dbg(f"Adding {r} as assumption to the CFG")
                     loc.annotationsBefore.append(r.toAssumption())
                 dbg_sec()
-
 
     def checkInitialPath(self, path):
         """

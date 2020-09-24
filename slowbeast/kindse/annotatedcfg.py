@@ -26,7 +26,7 @@ class CFG(PureCFG):
                     break
 
             # after loc execution
-            self.annotationsAfter = [] 
+            self.annotationsAfter = []
             # before loc execution
             self.annotationsBefore = []
 
@@ -65,13 +65,14 @@ class CFGPath(PureCFGPath):
 
         return self.locations[-1].hasAssert()
 
+
 def _get_loc_key(loc):
-   if isinstance(loc, CFG.AnnotatedNode):
-       return loc.getBBlock().getID()
-   elif isinstance(loc, BBlock):
-       return loc.getID()
-   else:
-       raise NotImplementedError(f"Unhandled key value: {loc}")
+    if isinstance(loc, CFG.AnnotatedNode):
+        return loc.getBBlock().getID()
+    elif isinstance(loc, BBlock):
+        return loc.getID()
+    else:
+        raise NotImplementedError(f"Unhandled key value: {loc}")
 
 
 class AnnotatedCFGPath(CFGPath):
@@ -89,7 +90,8 @@ class AnnotatedCFGPath(CFGPath):
         self.locannotationsafter = {}
 
     def addLocAnnotationAfter(self, annot, loc):
-        self.locannotationsafter.setdefault(_get_loc_key(loc), []).append(annot)
+        self.locannotationsafter.setdefault(
+            _get_loc_key(loc), []).append(annot)
 
     def getLocAnnotationsAfter(self, loc):
         return self.locannotationsafter.get(_get_loc_key(loc))
@@ -100,23 +102,23 @@ class AnnotatedCFGPath(CFGPath):
     def getLocAnnotationsBefore(self, loc):
         return self.locannotations.get(_get_loc_key(loc))
 
-   #def addAnnotationAfter(self, annot, idx=0):
-   #    """
-   #    Add annotation to the given location on the path.
-   #    The annotation should be evaluated "after"
-   #    executing the location.
-   #    """
-   #    assert idx < self.length()
-   #    self.locations[idx].annotationsAfter.append(annot)
+    # def addAnnotationAfter(self, annot, idx=0):
+    #    """
+    #    Add annotation to the given location on the path.
+    #    The annotation should be evaluated "after"
+    #    executing the location.
+    #    """
+    #    assert idx < self.length()
+    #    self.locations[idx].annotationsAfter.append(annot)
 
-   #def addAnnotationBefore(self, annot, idx=0):
-   #    """
-   #    Add annotation to the given location on the path.
-   #    The annotation should be evaluated "before"
-   #    executing the location.
-   #    """
-   #    assert idx < self.length()
-   #    self.locations[idx].annotationsBefore.append(annot)
+    # def addAnnotationBefore(self, annot, idx=0):
+    #    """
+    #    Add annotation to the given location on the path.
+    #    The annotation should be evaluated "before"
+    #    executing the location.
+    #    """
+    #    assert idx < self.length()
+    #    self.locations[idx].annotationsBefore.append(annot)
 
     def copyandprepend(self, loc):
         # do deep copy to copy also the annotations
@@ -125,5 +127,3 @@ class AnnotatedCFGPath(CFGPath):
         n.locations = [loc] + n.locations
 
         return n
-
-
