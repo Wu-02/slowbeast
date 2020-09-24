@@ -75,18 +75,42 @@ def print_highlight(s, words, prefix=None, stream=sys.stdout):
 
 
 _is_debugging = False
+_debugging_prefix = ''
 
 
 def set_debugging():
     global _is_debugging
     _is_debugging = True
 
+def set_debugging_prefix(prefix = ''):
+    global _debugging_prefix
+    _debugging_prefix = prefix
+
+def get_debugging_prefix():
+    global _debugging_prefix
+    return _debugging_prefix
+
+def inc_debugging_lvl():
+    global _debugging_prefix
+    _debugging_prefix = '  ' + _debugging_prefix
+
+def dec_debugging_lvl():
+    global _debugging_prefix
+    if _debugging_prefix.startswith('  '):
+        _debugging_prefix = _debugging_prefix[2:]
+
+def dbg_sec(msg = None, color='WHITE'):
+    if msg is None:
+        dec_debugging_lvl()
+    else:
+        dbg(msg, color=color)
+        inc_debugging_lvl()
 
 def dbg(msg, print_ws='\n', color='GRAY'):
     if not _is_debugging:
         return
 
-    print_stderr(msg, "[sb] ", print_ws, color)
+    print_stderr(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
 
 def warn(msg, print_ws='\n', color='BROWN'):

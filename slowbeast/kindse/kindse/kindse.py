@@ -1,4 +1,4 @@
-from slowbeast.util.debugging import print_stdout, dbg
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
@@ -61,7 +61,9 @@ class KindSymbolicExecutor(BaseKindSE):
                 print('adding annot to', loc)
                 apath.addLocAnnotationAfter(r.toAssertion(), loc)
                 paths=[KindCFGPath(apath)]
+                dbg_sec("Running nested KindSE")
                 res = kindse.run(paths, maxk=5)
+                dbg_sec()
                 print(r, res)
                 dbg("DONE nested KindSE")
 
