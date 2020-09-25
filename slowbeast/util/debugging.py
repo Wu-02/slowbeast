@@ -74,13 +74,13 @@ def print_highlight(s, words, prefix=None, stream=sys.stdout):
     stream.write('\n')
 
 
-_is_debugging = False
+_is_debugging = 0
 _debugging_prefix = ''
 
 
-def set_debugging():
+def set_debugging(verbose=False):
     global _is_debugging
-    _is_debugging = True
+    _is_debugging = 2 if verbose else 1
 
 
 def set_debugging_prefix(prefix=''):
@@ -113,11 +113,16 @@ def dbg_sec(msg=None, color='WHITE'):
 
 
 def dbg(msg, print_ws='\n', color='GRAY'):
-    if not _is_debugging:
+    if _is_debugging < 1:
         return
 
     print_stderr(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
+def dbgv(msg, print_ws='\n', color='GRAY'):
+    if _is_debugging < 2:
+        return
+
+    print_stderr(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
 def warn(msg, print_ws='\n', color='BROWN'):
     print_stderr(msg, "[sb] WARNING: ", print_ws, color)
