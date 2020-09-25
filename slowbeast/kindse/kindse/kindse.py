@@ -30,7 +30,11 @@ def check_inv(prog, loc, r):
     dbg_sec(
         f"Checking if {r} is invariant of loc {loc.getBBlock().getID()}")
 
+    def reportfn(msg, *args, **kwargs):
+        print_stdout(f"  > {msg}", *args, **kwargs)
+
     kindse = BaseKindSE(prog)
+    kindse.reportfn = reportfn
     invpaths = []
     for p in loc.getPredecessors():
         apath = AnnotatedCFGPath([p])

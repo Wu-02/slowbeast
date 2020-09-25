@@ -45,7 +45,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             assert states
             self.reportfn(
                 "Executing init prefix+step: {0} -> {{1}}".format(path,
-                ", ".join(path[-1].getSuccessors())), color="ORANGE")
+                ", ".join(map(str, path[-1].getSuccessors()))), color="ORANGE")
             # we must execute without lazy memory
             executor = self.getExecutor()
         else:
