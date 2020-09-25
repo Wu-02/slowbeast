@@ -121,9 +121,10 @@ class AnnotatedCFGPath(CFGPath):
     #    self.locations[idx].annotationsBefore.append(annot)
 
     def copyandprepend(self, loc):
-        # do deep copy to copy also the annotations
-        n = deepcopy(self)
         # FIXME: this is not efficient...
-        n.locations = [loc] + n.locations
+        n = AnnotatedCFGPath([loc] + self.locations)
+        # FIXME: do cow?
+        n.annotations = self.locannotations.copy()
+        n.annotations = self.locannotationsafter.copy()
 
         return n
