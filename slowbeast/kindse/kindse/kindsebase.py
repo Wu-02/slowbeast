@@ -22,6 +22,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         self.cfgs = {F : CFG(F) for F in prog.getFunctions() if not F.isUndefined()}
         self.paths = []
+        # as we run the executor in nested manners,
+        # we want to give different outputs
+        self.reportfn = print_stdout
 
     def getCFG(self, F):
         assert self.cfgs.get(F), f"Have no CFG for function {F.getName()}"
@@ -40,8 +43,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 self.prepare()
             states = self.states
             assert states
-            print_stdout(
-                f"Executing init prefix+step: {path}", color="ORANGE")
+            self.reportfn(
+                "Executing init prefix+step: {0} -> {{1}}".format(path,
+                ", ".join(path[-1].getSuccessors())), color="ORANGE")
             # we must execute without lazy memory
             executor = self.getExecutor()
         else:
@@ -50,7 +54,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             states = [s]
             executor = self.getIndExecutor()
 
-            print_stdout(f"Executing prefix+step: {path}", color="ORANGE")
+            self.reportfn(
+                "Executing prefix+step: {0} -> {{1}}".format(path,
+                ", ".join(map(str, path[-1].getSuccessors()))), color="ORANGE")
 
         assert states
 

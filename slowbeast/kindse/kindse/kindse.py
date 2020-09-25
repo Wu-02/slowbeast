@@ -63,12 +63,14 @@ class KindSymbolicExecutor(BaseKindSE):
     def getInv(self, loc, safe, unsafe):
         prog = self.getProgram()
         for r in get_safe_inv_candidates(safe, unsafe):
+            print_stdout(f'Checking if {r} is invariant for {loc.getBBlock().getID()}')
             if check_inv(prog, loc, r):
                 print_stdout(
                     f"{r} is invariant of loc {loc.getBBlock().getID()}!",
                     color="BLUE")
                 yield r
         for r in get_unsafe_inv_candidates(safe, unsafe):
+            print_stdout(f'Checking if {r} is invariant for {loc.getBBlock().getID()}')
             if check_inv(prog, loc, r):
                 print_stdout(
                     f"{r} is invariant of loc {loc.getBBlock().getID()}!",
