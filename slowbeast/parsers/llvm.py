@@ -202,6 +202,7 @@ class Parser:
         # FIXME: get rid of this once we support
         # parsing the stuff inside __assert_fail
         self._special_funs = ['__assert_fail', '__VERIFIER_error',
+                              '__VERIFIER_assert',
                               '__VERIFIER_assume',
                               '__VERIFIER_assert',
                               '__slowbeast_print']
@@ -718,6 +719,11 @@ class Parser:
                             f.arguments)), retty))
 
         for f in m.functions:
+            if f.name in self._special_funs:
+                # do not build these as we will replace their
+                # calls with our stubs anyway
+                continue
+
             self._parse_fun(f)
 
     def _parse(self, path):
