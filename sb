@@ -208,6 +208,19 @@ def link_llvm(paths, outp=None, outd='/tmp/'):
 
     return outp
 
+def opt(path, opts=[], outp=None, outd='/tmp/'):
+    dbg("Optimizing {0}".format(path))
+
+    if outp is None:
+        outp = pathjoin(outd, 'optcode.bc')
+
+    cmd = ['opt', '-o', outp, path] + opts
+    _run(cmd)
+
+    dbg("Optimized files to {0}".format(outp))
+
+    return outp
+
 def compile_and_link(files, outd):
     c_files, llvm_files = sort_input_files(files)
     if c_files:
@@ -220,7 +233,7 @@ def compile_and_link(files, outd):
     else:
         bitcode = llvm_files[0]
 
-    return bitcode
+    return opt(bitcode, ['-inline'])
 
 def main():
     args = parseArgs()
