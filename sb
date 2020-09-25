@@ -233,7 +233,7 @@ def compile_and_link(files, outd):
     else:
         bitcode = llvm_files[0]
 
-    return opt(bitcode, ['-inline'])
+    return bitcode
 
 def main():
     args = parseArgs()
