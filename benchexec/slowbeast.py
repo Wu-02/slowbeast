@@ -32,12 +32,15 @@ class Tool(benchexec.tools.template.BaseTool):
         noerrsline = False # the last line
         noerrs = False
         nokilledpaths = False
+        hitassert = False
         for line in output:
             line = line.strip()
             if line.startswith("Found errors:"):
                 noerrsline = True
                 if line == "Found errors: 0":
                     noerrs = True
+            elif 'assert False:bool' in line:
+                hitassert = True
             elif line == "Killed paths: 0":
                 nokilledpaths = True
 
@@ -45,7 +48,7 @@ class Tool(benchexec.tools.template.BaseTool):
             res = result.RESULT_ERROR
         elif noerrs and nokilledpaths:
             res = result.RESULT_TRUE_PROP
-        elif not noerrs:
+        elif not noerrs and hitassert:
             res = result.RESULT_FALSE_REACH
         else:
             res = result.RESULT_UNKNOWN
