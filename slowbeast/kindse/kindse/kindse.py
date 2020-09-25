@@ -136,9 +136,11 @@ class KindSymbolicExecutor(BaseKindSE):
 
             r = self.executePath(path)
 
-            oth = r.other
-            if oth and any(map(lambda s: s.isKilled(), oth)):
-                return Result.UNKNOWN
+            killed = (s for s in r.other if s.wasKilled()) if r.other else None
+            if killed:
+                for s in killed:
+                    self.report(s)
+                    return Result.UNKNOWN
 
             self.annotateCFG(path, r)
 
@@ -180,9 +182,7 @@ class KindSymbolicExecutor(BaseKindSE):
             self.invpoints[cfg] = invpoints
 
             nodes = cfg.getNodes()
-            npaths = [AnnotatedCFGPath([p]) for n in nodes
-                      for p in n.getPredecessors()
-                      if n.hasAssert()]
+            npaths = [AnnotatedCFGPath([n]) for n in nodes if n.hasAssert()]
             step = self.getOptions().step
             while k > 0:
                 npaths = [

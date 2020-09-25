@@ -65,8 +65,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         assert states
 
         # execute the prefix of the path and do one more step
-        r = executor.executeAnnotatedStepWithPrefix(
-            states, path)
+        r = executor.executeAnnotatedPath(states, path)
         self.stats.paths += 1
 
         earl = r.early
@@ -187,11 +186,17 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         r = self.executePath(path, fromInit=True)
         if not r.errors:
-            if r.early and any(map(lambda s: s.isKilled(), r.early)):
-                return Result.UNKNOWN
-            elif r.other and any(map(lambda s: s.isKilled(), r.other)):
-                return Result.UNKNOWN
-            elif len(path.first().getPredecessors()) == 0:
+            killed = (s for s in r.early if s.wasKilled()) if r.early else None
+            if killed:
+                for s in killed:
+                    self.report(s)
+                    return Result.UNKNOWN
+            killed = (s for s in r.other if s.wasKilled()) if r.other else None
+            if killed:
+                for s in killed:
+                    self.report(s)
+                    return Result.UNKNOWN
+            if len(path.first().getPredecessors()) == 0:
                 # this path is safe and we do not need to extend it
                 return Result.SAFE
             # else just fall-through to execution from clear state
