@@ -44,8 +44,10 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             states = self.states
             assert states
             self.reportfn(
-                "Executing init prefix+step: {0} -> {{1}}".format(path,
-                ", ".join(map(str, path[-1].getSuccessors()))), color="ORANGE")
+                "Executing (init) prefix+step: {0} -> {{{1}}}".format(path,
+                ", ".join(map(lambda x: str(x.getBBlock().getID()),
+                path[-1].getSuccessors()))),
+                color="ORANGE")
             # we must execute without lazy memory
             executor = self.getExecutor()
         else:
@@ -55,8 +57,10 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             executor = self.getIndExecutor()
 
             self.reportfn(
-                "Executing prefix+step: {0} -> {{1}}".format(path,
-                ", ".join(map(str, path[-1].getSuccessors()))), color="ORANGE")
+                "Executing prefix+step: {0} -> {{{1}}}".format(path,
+                ", ".join(map(lambda x: str(x.getBBlock().getID()),
+                path[-1].getSuccessors()))),
+                color="ORANGE")
 
         assert states
 
