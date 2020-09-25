@@ -141,8 +141,8 @@ class AnnotatedCFGPath(CFGPath):
         def loc_str(x):
             blk = x.getBBlock()
             return "{0}{1}{2}".format(
-            'a' if self.locannotations.get(blk) else '',
+            'a' if self.getLocAnnotationsBefore(blk) else '',
             blk.getID(),
-            'a' if self.locannotationsafter.get(blk) else '')
+            'a' if self.getLocAnnotationsAfter(blk) else '')
 
         return " -> ".join(map(loc_str, self.getLocations()))
