@@ -43,11 +43,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 self.prepare()
             states = self.states
             assert states
-            self.reportfn(
-                "Executing (init) prefix+step: {0} -> {{{1}}}".format(path,
-                ", ".join(map(lambda x: str(x.getBBlock().getID()),
-                path[-1].getSuccessors()))),
-                color="ORANGE")
+            dbg(f"Executing (init) path: {path}", color="WHITE", fn=self.reportfn)
             # we must execute without lazy memory
             executor = self.getExecutor()
         else:
@@ -56,11 +52,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             states = [s]
             executor = self.getIndExecutor()
 
-            self.reportfn(
-                "Executing prefix+step: {0} -> {{{1}}}".format(path,
-                ", ".join(map(lambda x: str(x.getBBlock().getID()),
-                path[-1].getSuccessors()))),
-                color="ORANGE")
+            dbg(f"Executing path: {path}", color="WHITE", fn=self.reportfn)
 
         assert states
 
@@ -98,7 +90,6 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                          not enough predecessors)
         """
 
-        dbg(f"Extending {path}")
         num = 0
         newpaths = []
         locs = path.getLocations()[:]

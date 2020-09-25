@@ -2,6 +2,7 @@ import sys
 
 COLORS = {
     'DARK_BLUE': '\033[0;34m',
+    'DARK_GREEN': '\033[0;32m',
     'CYAN': '\033[0;36m',
     'BLUE': '\033[1;34m',
     'PURPLE': '\033[0;35m',
@@ -112,17 +113,17 @@ def dbg_sec(msg=None, color='WHITE'):
         inc_debugging_lvl()
 
 
-def dbg(msg, print_ws='\n', color='GRAY'):
+def dbg(msg, print_ws='\n', color='GRAY', fn=print_stderr):
     if _is_debugging < 1:
         return
 
-    print_stderr(msg, f"[sb] {_debugging_prefix}", print_ws, color)
+    fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
-def dbgv(msg, print_ws='\n', color='GRAY'):
+def dbgv(msg, print_ws='\n', color='GRAY', fn=print_stderr):
     if _is_debugging < 2:
         return
 
-    print_stderr(msg, f"[sb] {_debugging_prefix}", print_ws, color)
+    fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
 def warn(msg, print_ws='\n', color='BROWN'):
     print_stderr(msg, "[sb] WARNING: ", print_ws, color)

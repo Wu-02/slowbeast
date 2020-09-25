@@ -77,6 +77,7 @@ class KindSymbolicExecutor(BaseKindSE):
         self.genannot = genannot
         self.invpoints = {}
         self.tested_invs = {}
+        self.have_problematic_path = False
 
     def getInv(self, loc, states):
         locid = loc.getBBlock().getID()
@@ -121,10 +122,13 @@ class KindSymbolicExecutor(BaseKindSE):
             if self._is_init(first_loc):
                 r = self.checkInitialPath(path)
                 if r is Result.UNSAFE:
+                    self.reportfn(f"Error path: {path}", color="RED")
                     return r  # found a real error
                 elif r is Result.SAFE:
+                    self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
                     continue  # this path is safe
                 elif r is Result.UNKNOWN:
+                    self.have_problematic_path = True
                     # there is a problem with this path,
                     # but we can still find an error
                     # on some different path
@@ -138,20 +142,22 @@ class KindSymbolicExecutor(BaseKindSE):
 
             killed = (s for s in r.other if s.wasKilled()) if r.other else None
             if killed:
+                self.have_problematic_path = True
                 for s in killed:
                     self.report(s)
-                    return Result.UNKNOWN
 
             self.annotateCFG(path, r)
 
             step = self.getOptions().step
             if r.errors:
+                self.reportfn(f"Possibly error path: {path}", color="ORANGE")
                 has_err = True
                 newpaths += self.extendPath(path,
                                             steps=step,
                                             atmost=step != 1,
                                             stoppoints=self.invpoints[path[0].getCFG()])
-                break
+            else:
+                self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
 
         self.paths = newpaths
 
@@ -215,6 +221,10 @@ class KindSymbolicExecutor(BaseKindSE):
 
             r = self.checkPaths()
             if r is Result.SAFE:
+                if self.have_problematic_path:
+                    print_stdout("Enumerating paths finished, but a problem was met.", color='ORANGE')
+                    return 1
+
                 print_stdout(
                     "All possible error paths ruled out!",
                     color="GREEN")

@@ -57,7 +57,7 @@ class PathExecutionResult:
 
     def check(self):
         assert not self.ready or all(map(lambda x: x.isReady(), self.ready))
-        assert not self.errors or all(map(lambda x: x.isError(), self.errors))
+        assert not self.errors or all(map(lambda x: x.hasError(), self.errors))
         assert not self.early or all(map(lambda x: not x.isReady(), self.early))
         assert not self.other or all(map(lambda x: x.isTerminated() or x.wasKilled(), self.other))
         return True
