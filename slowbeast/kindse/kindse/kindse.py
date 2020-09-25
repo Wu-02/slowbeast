@@ -29,14 +29,14 @@ def get_unsafe_inv_candidates(safe, unsafe):
 def check_inv(prog, loc, r):
     dbg_sec(
         f"Checking if {r} is invariant of loc {loc.getBBlock().getID()}")
-    
+
     kindse = BaseKindSE(prog)
     invpaths = []
     for p in loc.getPredecessors():
         apath = AnnotatedCFGPath([p])
         apath.addLocAnnotationBefore(r.toAssertion(), loc)
         invpaths.append(apath)
-    
+
     dbg_sec("Running nested KindSE")
     res = kindse.run(invpaths, maxk=15)
     dbg_sec()
@@ -59,7 +59,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
         self.genannot = genannot
         self.invpoints = {}
- 
+
     def getInv(self, loc, safe, unsafe):
         prog = self.getProgram()
         for r in get_safe_inv_candidates(safe, unsafe):
@@ -74,7 +74,6 @@ class KindSymbolicExecutor(BaseKindSE):
                     f"{r} is invariant of loc {loc.getBBlock().getID()}!",
                     color="BLUE")
                 yield r
-
 
     def annotateCFG(self, path, safe, unsafe):
         """
