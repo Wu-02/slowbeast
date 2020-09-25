@@ -27,6 +27,10 @@ class Relation:
         cmpi = self.toCmpInst()
         return [self.a, self.b, cmpi, Assert(cmpi)]
 
+    def __hash__(self):
+        return "{0}{1}{2}".format(self.a.asValue(),
+        Cmp.predicateStr(self._pred), self.b.asValue()).__hash__()
+
     def __str__(self):
         return "({0}) {1} ({2})".format(self.a, Cmp.predicateStr(self._pred),
                                         self.b)

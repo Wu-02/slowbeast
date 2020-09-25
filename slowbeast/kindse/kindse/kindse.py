@@ -42,7 +42,7 @@ def check_inv(prog, loc, r):
         invpaths.append(apath)
 
     dbg_sec("Running nested KindSE")
-    res = kindse.run(invpaths, maxk=15)
+    res = kindse.run(invpaths, maxk=8)
     dbg_sec()
     dbg_sec()
     return res == 0
@@ -63,23 +63,35 @@ class KindSymbolicExecutor(BaseKindSE):
 
         self.genannot = genannot
         self.invpoints = {}
+        self.tested_invs = {}
 
     def getInv(self, loc, safe, unsafe):
+        locid = loc.getBBlock().getID()
         prog = self.getProgram()
         for r in get_safe_inv_candidates(safe, unsafe):
-            print_stdout(f'Checking if {r} is invariant for {loc.getBBlock().getID()}')
+            if r in self.tested_invs.setdefault(locid, set()):
+                continue
+            self.tested_invs[locid].add(r)
+
+            print_stdout(f'Checking if {r} is invariant for {locid}')
             if check_inv(prog, loc, r):
                 print_stdout(
-                    f"{r} is invariant of loc {loc.getBBlock().getID()}!",
+                    f"{r} is invariant of loc {locid}!",
                     color="BLUE")
                 yield r
+
         for r in get_unsafe_inv_candidates(safe, unsafe):
-            print_stdout(f'Checking if {r} is invariant for {loc.getBBlock().getID()}')
+            if r in self.tested_invs.setdefault(locid, set()):
+                continue
+            self.tested_invs[locid].add(r)
+
+            print_stdout(f'Checking if {r} is invariant for {locid}')
             if check_inv(prog, loc, r):
                 print_stdout(
-                    f"{r} is invariant of loc {loc.getBBlock().getID()}!",
+                    f"{r} is invariant of loc {locid}!",
                     color="BLUE")
                 yield r
+
 
     def annotateCFG(self, path, safe, unsafe):
         """
