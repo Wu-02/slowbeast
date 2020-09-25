@@ -4,7 +4,7 @@ from .. ir.value import Value, ConstantBool, Pointer, Constant
 from .. core.executor import Executor as ConcreteExecutor
 from .. core.memory import MemoryObject
 from .. solvers.expressions import is_symbolic
-from .. util.debugging import dbg
+from .. util.debugging import dbgv
 from .. core.errors import AssertFailError
 
 from . memory import SymbolicMemoryModel
@@ -139,8 +139,7 @@ class Executor(ConcreteExecutor):
         """
         assert isinstance(instr, Branch)
         assert isinstance(to, bool)
-        dbg("branching to {0} succ of {1}".format(to, instr),
-            color='WHITE')
+        dbgv("branching to {0} succ of {1}".format(to, instr))
         self.stats.branchings += 1
 
         cond = instr.getCondition()
@@ -157,7 +156,7 @@ class Executor(ConcreteExecutor):
             raise RuntimeError("Invalid branch successor: {0}".format(to))
 
         if s is None:
-            dbg("branching is not feasible!")
+            dbgv("branching is not feasible!")
             return []
         else:
             assert succ
