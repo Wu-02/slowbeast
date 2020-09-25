@@ -28,29 +28,15 @@ class KindSymbolicExecutor(BaseKindSE):
         self.genannot = genannot
         self.invpoints = {}
 
-    def annotateCFG(self, path, safe, unsafe):
-        """
-        Take the executed path and states that are safe and unsafe
-        and derive annotations of CFG
-        """
-        if not self.genannot:  # we should not generate invariants
-            return
-
-        assert isinstance(path.cfgpath.first(), CFG.AnnotatedNode)
-        cfgpath = path.cfgpath
-        if not path.cfgpath.first() in self.invpoints[cfgpath[0].getCFG()]:
-            return
-
+    def getInv(self, loc, safe, unsafe):
         for s in safe:
-            # filter out those relations that make the state safe
+            # get and filter out those relations that make the state safe
             saferels = (
                 r for r in get_relations(s) if not all(
                     u.is_sat(
                         r.expr) for u in unsafe))
 
             for r in saferels:
-                loc = path.cfgpath.first()
-
                 dbg_sec(
                     f"Checking if {r} is invariant of loc {loc.getBBlock().getID()}")
 
@@ -68,9 +54,27 @@ class KindSymbolicExecutor(BaseKindSE):
                     print_stdout(
                         f"{r} is invariant of loc {loc.getBBlock().getID()}!",
                         color="BLUE")
-                    dbg(f"Adding {r} as assumption to the CFG")
-                    loc.annotationsBefore.append(r.toAssumption())
+                    yield r
                 dbg_sec()
+
+    def annotateCFG(self, path, safe, unsafe):
+        """
+        Take the executed path and states that are safe and unsafe
+        and derive annotations of CFG
+        """
+        if not self.genannot:  # we should not generate invariants
+            return
+
+        assert isinstance(path.cfgpath.first(), CFG.AnnotatedNode)
+        cfgpath = path.cfgpath
+        if not path.cfgpath.first() in self.invpoints[cfgpath[0].getCFG()]:
+            return
+
+        loc = path.cfgpath.first()
+        for inv in self.getInv(loc, safe, unsafe):
+            dbg(f"Adding {inv} as assumption to the CFG")
+            loc.annotationsBefore.append(inv.toAssumption())
+
 
     def checkInitialPath(self, path):
         """
