@@ -15,6 +15,9 @@ void foo(void) {
                 ++x;
         }
         assert (x == i);
+
+	// CHECK-NOT: assertion failed!
+	// CHECK: Found errors: 0
 }
 
 int main(void) {
