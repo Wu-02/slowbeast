@@ -197,6 +197,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             # else just fall-through to execution from clear state
             # as we can still prolong this path
         else:
+            for s in r.errors:
+                self.report(s)
             return Result.UNSAFE
 
         return None

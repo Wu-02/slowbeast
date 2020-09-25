@@ -221,7 +221,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 print_stdout("Induction step succeeded!", color="GREEN")
                 return 0
             elif r is Result.UNSAFE:
-                dbg("Error found.", color='RED')
+                print_stdout("Error found.", color='RED')
                 return 1
             elif r is Result.UNKNOWN:
                 print_stdout("Hit a problem, giving up.", color='ORANGE')
