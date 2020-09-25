@@ -478,6 +478,7 @@ class Executor:
         return safe, unsafe
 
     def executeAnnotatedLoc(self, states, loc, path=None):
+        dbg(f"vv ----- Loc {loc.getBBlock().getID()} ----- vv")
 
         # execute annotations before bblock
         safe, unsafe = self.executeAnnotations(states, loc.annotationsBefore)
@@ -503,6 +504,7 @@ class Executor:
             safe, tu = self.executeAnnotations(safe, locannot)
             unsafe += tu
 
+        dbg(f"^^ ----- Loc {loc.getBBlock().getID()} ----- ^^")
         return safe, unsafe
 
     def executeAnnotatedPath(self, state, path):
@@ -591,7 +593,8 @@ class Executor:
         cfg = prefix[0].getCFG()
         tmpsafe = []
         for s in safe:
-            # get the CFG node that is going to be executed,
+            # get the CFG node that is going to be executed
+            # (executeAnnotatedPath transferd the control to the right bblocks)
             loc = cfg.getNode(s.pc.getBBlock())
             ts, tu = self.executeAnnotatedLoc([s], loc, prefix)
             tmpsafe += ts

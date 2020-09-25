@@ -1,15 +1,10 @@
-from slowbeast.symexe.symbolicexecution import SEOptions
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
-from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
-from slowbeast.kindse.annotatedcfg import CFG, AnnotatedCFGPath
+from slowbeast.kindse.annotatedcfg import CFG
 from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.ir.instruction import Cmp
-
-from . kindcfgpath import KindCFGPath
-from . annotations import Relation
 
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
@@ -91,29 +86,33 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                          not enough predecessors)
         """
 
+        dbg(f"Extending {path}")
         num = 0
         newpaths = []
-        cfgpath = path.cfgpath
-        worklist = [cfgpath]
+        locs = path.getLocations()[:]
+        locs.reverse() # reverse the list so that we can do append
+        worklist = [locs]
         while worklist:
             num += 1
             newworklist = []
 
             for p in worklist:
-                front = p.first()
+                front = p[-1]
                 preds = front.getPredecessors()
                 predsnum = len(preds)
 
                 # no predecessors, we're done with this path
                 if atmost and predsnum == 0:
-                    newpaths.append(path.newwithcfgpath(p))
+                    # FIXME: do not do this reverse, rather execute in reverse
+                    # order (do a reverse iterator?)
+                    p.reverse()
+                    n = path.copyandsetpath(p)
+                    newpaths.append(path.copyandsetpath(p))
                     continue
 
                 for pred in preds:
-                    # FIXME: do not do this prepend, we always construct a new list....
-                    # rather do append and then execute in reverse order (do a reverse
-                    # iterator?)
-                    newpath = p.copyandprepend(pred)
+                    newpath = p[:]
+                    newpath.append(pred)
 
                     # if this is the initial path and we are not stepping by 1,
                     # we must add it too, otherwise we could miss such paths
@@ -122,12 +121,16 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     added = False
                     if atmost and steps != 1 and self._is_init(pred):
                         added = True
-                        newpaths.append(path.newwithcfgpath(newpath))
+                        tmp = newpath[:]
+                        tmp.reverse()
+                        newpaths.append(path.copyandsetpath(tmp))
+                        # fall-through to further extending this path
 
                     assert all(map(lambda x: isinstance(x, CFG.AnnotatedNode),
                     stoppoints))
                     if pred in stoppoints:
-                        newpaths.append(path.newwithcfgpath(newpath))
+                        newpath.reverse()
+                        newpaths.append(path.copyandsetpath(newpath))
                     elif steps > 0 and num != steps:
                         newworklist.append(newpath)
                     elif steps == 0 and predsnum <= 1:
@@ -136,7 +139,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         newworklist.append(newpath)
                     else:  # we're done with this path
                         if not added:
-                            newpaths.append(path.newwithcfgpath(newpath))
+                            newpath.reverse()
+                            newpaths.append(path.copyandsetpath(newpath))
 
             worklist = newworklist
 
@@ -168,10 +172,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         \requires an initial path
         """
 
-        cfgpath = path.cfgpath
-        safe, unsafe = self.executePath(cfgpath, fromInit=True)
+        safe, unsafe = self.executePath(path, fromInit=True)
         if not unsafe:
-            if len(cfgpath.first().getPredecessors()) == 0:
+            if len(path.first().getPredecessors()) == 0:
                 # this path is safe and we do not need to extend it
                 return Result.SAFE
             # else just fall-through to execution from clear state
@@ -191,9 +194,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         paths = self.paths
         for path in paths:
-            cfgpath = path.cfgpath
-
-            first_loc = cfgpath.first()
+            first_loc = path.first()
             if self._is_init(first_loc):
                 r = self.checkInitialPath(path)
                 if r is Result.UNSAFE:
@@ -202,7 +203,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     continue  # this path is safe
                 assert r is None
 
-            safe, unsafe = self.executePath(cfgpath)
+            safe, unsafe = self.executePath(path)
 
             step = self.getOptions().step
             for n in unsafe:
@@ -214,6 +215,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     break
                 elif n.wasKilled():
                     return Result.UNKNOWN
+                elif n.isTerminated():
+                    continue
                 else:
                     assert False, "Unhandled Unsafe state"
 

@@ -3,8 +3,6 @@ from .. analysis.cfg import CFGPath as PureCFGPath
 from .. ir.instruction import Assert
 from .. ir.bblock import BBlock
 
-from copy import deepcopy
-
 
 class CFG(PureCFG):
     """
@@ -84,6 +82,8 @@ class AnnotatedCFGPath(CFGPath):
     are executed on given places.
     """
 
+    __slots__ = ['locannotations', 'locannotationsafter']
+
     def __init__(self, locs=[]):
         super(AnnotatedCFGPath, self).__init__(locs)
         self.locannotations = {}
@@ -128,3 +128,21 @@ class AnnotatedCFGPath(CFGPath):
         n.annotations = self.locannotationsafter.copy()
 
         return n
+
+    def copyandsetpath(self, locs):
+        n = AnnotatedCFGPath(locs)
+        # FIXME: do cow?
+        n.locannotations = self.locannotations.copy()
+        n.locannotationsafter = self.locannotationsafter.copy()
+
+        return n
+
+    def __repr__(self):
+        def loc_str(x):
+            blk = x.getBBlock()
+            return "{0}{1}{2}".format(
+            'a' if self.locannotations.get(blk) else '',
+            blk.getID(),
+            'a' if self.locannotationsafter.get(blk) else '')
+
+        return " -> ".join(map(loc_str, self.getLocations()))

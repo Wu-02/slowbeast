@@ -5,7 +5,6 @@ from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath, CFG
 from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
-from . kindcfgpath import KindCFGPath
 from . annotations import Relation, get_relations
 
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
@@ -36,7 +35,7 @@ def check_inv(prog, loc, r):
     for p in loc.getPredecessors():
         apath = AnnotatedCFGPath([p])
         apath.addLocAnnotationBefore(r.toAssertion(), loc)
-        invpaths.append(KindCFGPath(apath))
+        invpaths.append(apath)
     
     dbg_sec("Running nested KindSE")
     res = kindse.run(invpaths, maxk=15)
@@ -85,12 +84,11 @@ class KindSymbolicExecutor(BaseKindSE):
         if not self.genannot:  # we should not generate invariants
             return
 
-        assert isinstance(path.cfgpath.first(), CFG.AnnotatedNode)
-        cfgpath = path.cfgpath
-        if not path.cfgpath.first() in self.invpoints[cfgpath[0].getCFG()]:
+        assert isinstance(path.first(), CFG.AnnotatedNode)
+        if not path[0] in self.invpoints[path[0].getCFG()]:
             return
 
-        loc = path.cfgpath.first()
+        loc = path.first()
         for inv in self.getInv(loc, safe, unsafe):
             dbg(f"Adding {inv} as assumption to the CFG")
             loc.annotationsBefore.append(inv.toAssumption())
@@ -101,11 +99,10 @@ class KindSymbolicExecutor(BaseKindSE):
         \requires an initial path
         """
 
-        cfgpath = path.cfgpath
-        safe, unsafe = self.executePath(cfgpath, fromInit=True)
+        safe, unsafe = self.executePath(path, fromInit=True)
         if not unsafe:
             self.annotateCFG(path, safe, unsafe)
-            if len(cfgpath.first().getPredecessors()) == 0:
+            if len(path.first().getPredecessors()) == 0:
                 # this path is safe and we do not need to extend it
                 return Result.SAFE
             # else just fall-through to execution from clear state
@@ -125,9 +122,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
         paths = self.paths
         for path in paths:
-            cfgpath = path.cfgpath
-
-            first_loc = cfgpath.first()
+            first_loc = path.first()
             if self._is_init(first_loc):
                 r = self.checkInitialPath(path)
                 if r is Result.UNSAFE:
@@ -144,7 +139,7 @@ class KindSymbolicExecutor(BaseKindSE):
                     continue
                 assert r is None, r
 
-            safe, unsafe = self.executePath(cfgpath)
+            safe, unsafe = self.executePath(path)
 
             self.annotateCFG(path, safe, unsafe)
 
@@ -191,7 +186,7 @@ class KindSymbolicExecutor(BaseKindSE):
             self.invpoints[cfg] = invpoints
 
             nodes = cfg.getNodes()
-            npaths = [KindCFGPath(AnnotatedCFGPath([p])) for n in nodes
+            npaths = [AnnotatedCFGPath([p]) for n in nodes
                       for p in n.getPredecessors()
                       if n.hasAssert()]
             step = self.getOptions().step
