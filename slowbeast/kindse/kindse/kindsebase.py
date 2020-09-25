@@ -65,15 +65,18 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         assert states
 
         # execute the prefix of the path and do one more step
-        safe, unsafe, earlyterm = executor.executeAnnotatedStepWithPrefix(
+        r = executor.executeAnnotatedStepWithPrefix(
             states, path)
         self.stats.paths += 1
 
-        if fromInit:
+        earl = r.early
+        if fromInit and earl:
             # this is an initial path, so every error is taken as real
-            unsafe += earlyterm
+            errs = r.errors
+            for e in (e for e in earl if e.isError()):
+                errs.append(e)
 
-        return safe, unsafe
+        return r
 
     def _is_init(self, loc):
         return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)
@@ -182,20 +185,20 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         \requires an initial path
         """
 
-        safe, unsafe = self.executePath(path, fromInit=True)
-        if not unsafe:
-            if len(path.first().getPredecessors()) == 0:
+        r = self.executePath(path, fromInit=True)
+        if not r.errors:
+            if r.early and any(map(lambda s: s.isKilled(), r.early)):
+                return Result.UNKNOWN
+            elif r.other and any(map(lambda s: s.isKilled(), r.other)):
+                return Result.UNKNOWN
+            elif len(path.first().getPredecessors()) == 0:
                 # this path is safe and we do not need to extend it
                 return Result.SAFE
             # else just fall-through to execution from clear state
             # as we can still prolong this path
         else:
-            for n in unsafe:
-                # we found a real error or hit another problem
-                if n.hasError() or n.wasKilled():
-                    return Result.UNSAFE
-                else:
-                    assert False, "Unhandled unsafe state"
+            return Result.UNSAFE
+
         return None
 
     def checkPaths(self):
@@ -213,22 +216,18 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     continue  # this path is safe
                 assert r is None
 
-            safe, unsafe = self.executePath(path)
+            r = self.executePath(path)
+
+            oth = r.other
+            if oth and any(map(lambda s: s.isKilled(), oth)):
+                return Result.UNKNOWN
 
             step = self.getOptions().step
-            for n in unsafe:
-                if n.hasError():
-                    has_err = True
-                    newpaths += self.extendPath(path,
-                                                steps=step,
-                                                atmost=step != 1)
-                    break
-                elif n.wasKilled():
-                    return Result.UNKNOWN
-                elif n.isTerminated():
-                    continue
-                else:
-                    assert False, "Unhandled Unsafe state"
+            if r.errors:
+                has_err = True
+                newpaths += self.extendPath(path,
+                                            steps=step,
+                                            atmost=step != 1)
 
         self.paths = newpaths
 
