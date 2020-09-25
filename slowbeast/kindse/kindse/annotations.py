@@ -15,6 +15,10 @@ class Relation:
     def toCmpInst(self):
         return Cmp(self._pred, self.a, self.b)
 
+    def neg(self, EM):
+        return Relation(Cmp.predicateNeg(self._pred), self.a, self.b,
+        EM.Not(self.expr))
+
     def toAssumption(self):
         cmpi = self.toCmpInst()
         return [self.a, self.b, cmpi, Assume(cmpi)]

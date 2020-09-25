@@ -342,6 +342,22 @@ class Cmp(ValueInstruction):
 
         return s
 
+    def predicateNeg(p):
+        if p == Cmp.LE:
+            return Cmp.GT
+        elif p == Cmp.LT:
+            return Cmp.GE
+        elif p == Cmp.GE:
+            return Cmp.LT
+        elif p == Cmp.GT:
+            return Cmp.LE
+        elif p == Cmp.EQ:
+            return Cmp.NE
+        elif p == Cmp.NE:
+            return Cmp.EQ
+        else:
+            raise NotImplementedError("Invalid comparison")
+
     def __init__(self, p, val1, val2, unsgn=False):
         super(Cmp, self).__init__([val1, val2])
         self._predicate = p

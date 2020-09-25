@@ -10,6 +10,39 @@ from . annotations import Relation, get_relations
 
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 
+def get_safe_inv_candidates(safe, unsafe):
+    for s in safe:
+        # get and filter out those relations that make the state safe
+        saferels = (
+            r for r in get_relations(s) if not all(
+                u.is_sat(
+                    r.expr) for u in unsafe))
+        for x in saferels:
+            yield x
+
+def get_unsafe_inv_candidates(safe, unsafe):
+    for s in unsafe:
+        # get and filter out those relations that make the state safe
+        # FIXME: isn't this superfluous in this case?
+        for r in get_relations(s):
+            yield r.neg(s.getExprManager()) 
+
+def check_inv(prog, loc, r):
+    dbg_sec(
+        f"Checking if {r} is invariant of loc {loc.getBBlock().getID()}")
+    
+    kindse = BaseKindSE(prog)
+    invpaths = []
+    for p in loc.getPredecessors():
+        apath = AnnotatedCFGPath([p])
+        apath.addLocAnnotationBefore(r.toAssertion(), loc)
+        invpaths.append(KindCFGPath(apath))
+    
+    dbg_sec("Running nested KindSE")
+    res = kindse.run(invpaths, maxk=15)
+    dbg_sec()
+    dbg_sec()
+    return res == 0
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
@@ -27,35 +60,22 @@ class KindSymbolicExecutor(BaseKindSE):
 
         self.genannot = genannot
         self.invpoints = {}
-
+ 
     def getInv(self, loc, safe, unsafe):
-        for s in safe:
-            # get and filter out those relations that make the state safe
-            saferels = (
-                r for r in get_relations(s) if not all(
-                    u.is_sat(
-                        r.expr) for u in unsafe))
+        prog = self.getProgram()
+        for r in get_safe_inv_candidates(safe, unsafe):
+            if check_inv(prog, loc, r):
+                print_stdout(
+                    f"{r} is invariant of loc {loc.getBBlock().getID()}!",
+                    color="BLUE")
+                yield r
+        for r in get_unsafe_inv_candidates(safe, unsafe):
+            if check_inv(prog, loc, r):
+                print_stdout(
+                    f"{r} is invariant of loc {loc.getBBlock().getID()}!",
+                    color="BLUE")
+                yield r
 
-            for r in saferels:
-                dbg_sec(
-                    f"Checking if {r} is invariant of loc {loc.getBBlock().getID()}")
-
-                kindse = BaseKindSE(self.getProgram())
-                invpaths = []
-                for p in loc.getPredecessors():
-                    apath = AnnotatedCFGPath([p])
-                    apath.addLocAnnotationBefore(r.toAssertion(), loc)
-                    invpaths.append(KindCFGPath(apath))
-
-                dbg_sec("Running nested KindSE")
-                res = kindse.run(invpaths, maxk=15)
-                dbg_sec()
-                if res == 0:
-                    print_stdout(
-                        f"{r} is invariant of loc {loc.getBBlock().getID()}!",
-                        color="BLUE")
-                    yield r
-                dbg_sec()
 
     def annotateCFG(self, path, safe, unsafe):
         """

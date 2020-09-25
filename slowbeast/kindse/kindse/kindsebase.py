@@ -46,7 +46,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             states = self.states
             assert states
             print_stdout(
-                f"Executing init prefix: {path}", color="ORANGE")
+                f"Executing init prefix+step: {path}", color="ORANGE")
             # we must execute without lazy memory
             executor = self.getExecutor()
         else:
@@ -55,7 +55,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             states = [s]
             executor = self.getIndExecutor()
 
-            print_stdout(f"Executing prefix: {path}", color="ORANGE")
+            print_stdout(f"Executing prefix+step: {path}", color="ORANGE")
 
         assert states
 
