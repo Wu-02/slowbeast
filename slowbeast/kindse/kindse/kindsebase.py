@@ -64,7 +64,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         if fromInit and earl:
             # this is an initial path, so every error is taken as real
             errs = r.errors
-            for e in (e for e in earl if e.isError()):
+            for e in (e for e in earl if e.hasError()):
                 errs.append(e)
 
         return r

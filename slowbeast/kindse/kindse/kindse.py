@@ -19,7 +19,7 @@ def get_safe_inv_candidates(safe, unsafe):
         for x in saferels:
             yield x
 
-def get_unsafe_inv_candidates(safe, unsafe):
+def get_unsafe_inv_candidates(unsafe):
     for s in unsafe:
         # get and filter out those relations that make the state safe
         # FIXME: isn't this superfluous in this case?
@@ -33,7 +33,8 @@ def get_inv_candidates(states):
     if ready:
         for r in get_safe_inv_candidates(ready, errs):
             yield r
-        for r in get_unsafe_inv_candidates(ready, errs):
+    if errs:
+        for r in get_unsafe_inv_candidates(errs):
             yield r
     if states.other:
         for r in get_safe_inv_candidates((s for s in states.other if s.isTerminated()), errs):
@@ -48,14 +49,12 @@ def check_inv(prog, loc, r):
 
     kindse = BaseKindSE(prog)
     kindse.reportfn = reportfn
-    invpaths = []
-    for p in loc.getPredecessors():
-        apath = AnnotatedCFGPath([p])
-        apath.addLocAnnotationBefore(r.toAssertion(), loc)
-        invpaths.append(apath)
+
+    apath = AnnotatedCFGPath([loc])
+    apath.addLocAnnotationBefore(r.toAssertion(), loc)
 
     dbg_sec("Running nested KindSE")
-    res = kindse.run(invpaths, maxk=8)
+    res = kindse.run([apath], maxk=8)
     dbg_sec()
     dbg_sec()
     return res == 0
@@ -103,14 +102,17 @@ class KindSymbolicExecutor(BaseKindSE):
         if not self.genannot:  # we should not generate invariants
             return
 
+        # FIXME: make CFG an attribute of path
         assert isinstance(path.first(), CFG.AnnotatedNode)
         if not path[0] in self.invpoints[path[0].getCFG()]:
             return
 
         loc = path.first()
+        dbg_sec(f"Trying to generate annotations for {loc.getBBlock().getID()}")
         for inv in self.getInv(loc, states):
             dbg(f"Adding {inv} as assumption to the CFG")
             loc.annotationsBefore.append(inv.toAssumption())
+        dbg_sec()
 
     def checkPaths(self):
         newpaths = []
