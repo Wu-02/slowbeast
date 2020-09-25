@@ -102,7 +102,10 @@ class MemoryObject:
         val = self.values.get(offval)
         if val is None:
             return None, MemError(
-                MemError.UNINIT_READ, "Read from uninitialized memory (or unaligned read (not supp. yet)).")
+                MemError.UNINIT_READ,
+                f"Read from uninitialized memory (or unaligned read (not supp.  yet)).\n"
+                f"Reading bytes {offval}-{offval+bts-1} from obj {self._id} with contents:\n"
+                f"{self.values}")
 
         return val, None
 
