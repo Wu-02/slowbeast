@@ -124,6 +124,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         added = True
                         newpaths.append(path.newwithcfgpath(newpath))
 
+                    assert all(map(lambda x: isinstance(x, CFG.AnnotatedNode),
+                    stoppoints))
                     if pred in stoppoints:
                         newpaths.append(path.newwithcfgpath(newpath))
                     elif steps > 0 and num != steps:

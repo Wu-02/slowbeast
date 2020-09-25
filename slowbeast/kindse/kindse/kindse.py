@@ -75,7 +75,6 @@ class KindSymbolicExecutor(BaseKindSE):
             dbg(f"Adding {inv} as assumption to the CFG")
             loc.annotationsBefore.append(inv.toAssumption())
 
-
     def checkInitialPath(self, path):
         """
         Execute a path from initial states
@@ -136,7 +135,7 @@ class KindSymbolicExecutor(BaseKindSE):
                     newpaths += self.extendPath(path,
                                                 steps=step,
                                                 atmost=step != 1,
-                                                stoppoints=self.invpoints)
+                                                stoppoints=self.invpoints[path[0].getCFG()])
                     break
                 elif n.wasKilled():
                     return self.report(n)
