@@ -56,8 +56,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         assert states
 
-        # execute the prefix of the path and do one more step
-        r = executor.executeAnnotatedPath(states, path)
+        # execute the annotated error path and generate also
+        # the states that can avoid the error at the end of the path
+        r = executor.executeAnnotatedPath(states, path, branch_on_last=True)
         self.stats.paths += 1
 
         earl = r.early

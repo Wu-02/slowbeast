@@ -555,7 +555,7 @@ class Executor:
         dbg(f"^^ ----- Loc {loc.getBBlock().getID()} ----- ^^")
         return ready, nonready
 
-    def executeAnnotatedPath(self, state, path):
+    def executeAnnotatedPath(self, state, path, branch_on_last=False):
         """
         Execute the given path through CFG with annotations from the given
         state. NOTE: the passed states may be modified.
@@ -569,6 +569,12 @@ class Executor:
         The last list contains states that terminate (e.g., are killed or are error
         states) during the execution of the path, but that does not reach the last
         step.
+
+        If branch_on_last is set to True, instead of transfering control
+        to the specified last point after executing all the previous points,
+        normal fork is done (if there are multiple successors).
+        That is, generate also states that avoid the last point
+        at the path in one step.
         """
 
         if isinstance(state, list):
@@ -587,7 +593,8 @@ class Executor:
         for s in states:
             s.pc = newpc
 
-        for idx in range(0, len(locs)):
+        locsnum = len(locs)
+        for idx in range(0, locsnum):
             loc = locs[idx]
             ready, nonready = self.executeAnnotatedLoc(states, loc, path)
             assert all(map(lambda x: x.isReady(), ready))
@@ -595,19 +602,25 @@ class Executor:
                 s.pc for s in ready]
 
             # now execute the branch following the edge on the path
-            if idx + 1 < len(locs):
-                curbb = loc.getBBlock()
-                succbb = locs[idx + 1].getBBlock()
-                followsucc = curbb.last().getTrueSuccessor() == succbb
-                newstates = []
-                assert followsucc or curbb.last().getFalseSuccessor() == succbb
-                for s in ready:
-                    newstates += self.execBranchTo(s, s.pc, followsucc)
+            if idx < locsnum - 1:
                 earlytermstates += nonready
+
+                # if this is the last edge and we should branch, do it
+                if branch_on_last and idx == locsnum - 2:
+                    newstates = self.executeTillBranch(ready)
+                    assert all(map(lambda x: x.isReady(), newstates))
+                else:
+                    curbb = loc.getBBlock()
+                    succbb = locs[idx + 1].getBBlock()
+                    followsucc = curbb.last().getTrueSuccessor() == succbb
+                    newstates = []
+                    assert followsucc or curbb.last().getFalseSuccessor() == succbb
+                    for s in ready:
+                        newstates += self.execBranchTo(s, s.pc, followsucc)
             else:  # this is the last location on path,
                 # so just normally execute the branch instruction in the block
                 newstates = self.executeTillBranch(ready)
-                # we executed only the branch inst, we the states still must be ready
+                # we executed only the branch inst, so the states still must be ready
                 assert all(map(lambda x: x.isReady(), newstates))
                 assert not result.errors, "Have unsafe states before the last location"
                 result.errors, result.other = split_nonready_states(nonready)
