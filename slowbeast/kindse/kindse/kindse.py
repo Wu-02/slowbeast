@@ -29,8 +29,7 @@ def get_unsafe_inv_candidates(unsafe):
 def get_inv_candidates(states):
     errs = states.errors
     ready = states.ready
-    assert errs
-    if ready:
+    if ready and errs:
         for r in get_safe_inv_candidates(ready, errs):
             yield r
     if errs:
