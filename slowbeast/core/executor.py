@@ -55,12 +55,29 @@ class PathExecutionResult:
             self.early = oth
         self.other = None
 
+    def add(self, states):
+        ready = self.ready or []
+        errs = self.errors or []
+        oth = self.other or []
+        for s in states:
+            if s.isReady():
+                ready.append(s)
+            elif s.hasError():
+                errs.append(s)
+            else:
+                oth.append(s)
+        self.ready = ready
+        self.errors = errs
+        self.other = oth
+
     def check(self):
         assert not self.ready or all(map(lambda x: x.isReady(), self.ready))
         assert not self.errors or all(map(lambda x: x.hasError(), self.errors))
         assert not self.early or all(map(lambda x: not x.isReady(), self.early))
         assert not self.other or all(map(lambda x: x.isTerminated() or x.wasKilled(), self.other))
         return True
+
+
 
 class Executor:
     """
