@@ -10,6 +10,9 @@ check:
 	lit --path=$(shell pwd) -D OPTS="-se-step=block" tests/
 	lit --path=$(shell pwd) -D OPTS="-se -kind" tests/
 
+check-kind:
+	lit --path=$(shell pwd) -vv -D OPTS="-se -kind" tests/
+
 check-all:
 	lit --path=$(shell pwd) -D OPTS="-se-step=instr" tests/
 	lit --path=$(shell pwd) -D OPTS="-se-step=block" tests/
