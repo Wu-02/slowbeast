@@ -1,13 +1,14 @@
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 from slowbeast.kindse.annotatedcfg import CFG
-from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
+from slowbeast.symexe.symbolicexecution import SymbolicExecutor as SymbolicInterpreter, SEOptions
+from slowbeast.symexe.pathexecutor import Executor as PathExecutor
+from slowbeast.symexe.memory import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.ir.instruction import Cmp
 
-
-class KindSymbolicExecutor(BasicKindSymbolicExecutor):
+class KindSymbolicExecutor(SymbolicInterpreter):
     def __init__(
             self,
             prog,
@@ -16,15 +17,24 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         super(
             KindSymbolicExecutor,
             self).__init__(
-            prog=prog,
+            P=prog,
             testgen=testgen,
             opts=opts)
+
+        # the executor for induction checks -- we need lazy memory access
+        memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
+        self.indexecutor = PathExecutor(self.getSolver(), opts, memorymodel)
+        dbg("Forbidding calls in induction step for now with k-induction")
+        self.indexecutor.forbidCalls()
 
         self.cfgs = {F : CFG(F) for F in prog.getFunctions() if not F.isUndefined()}
         self.paths = []
         # as we run the executor in nested manners,
         # we want to give different outputs
         self.reportfn = print_stdout
+
+    def getIndExecutor(self):
+        return self.indexecutor
 
     def getCFG(self, F):
         assert self.cfgs.get(F), f"Have no CFG for function {F.getName()}"
@@ -151,21 +161,21 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return newpaths
 
-    def report(self, n):
+    def report(self, n, fn=print_stderr):
         if n.hasError():
-            print_stderr(
-                "{0}: {1}, {2}".format(
-                    n.getID(),
-                    n.pc,
-                    n.getError()),
-                color='RED')
+            if fn:
+                fn("state {0}: {1}, {2}".format(
+                        n.getID(),
+                        n.pc,
+                        n.getError()),
+                    color='RED')
             self.stats.errors += 1
             return Result.UNSAFE
         elif n.wasKilled():
-            print_stderr(
-                n.getStatusDetail(),
-                prefix='KILLED STATE: ',
-                color='WINE')
+            if fn:
+                fn(n.getStatusDetail(),
+                    prefix='KILLED STATE: ',
+                    color='WINE')
             self.stats.killed_paths += 1
             return Result.UNKNOWN
 
@@ -181,23 +191,17 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         if not r.errors:
             killed = (s for s in r.early if s.wasKilled()) if r.early else None
             if killed:
-                for s in killed:
-                    self.report(s)
-                    return Result.UNKNOWN
+                return Result.UNKNOWN, killed
             killed = (s for s in r.other if s.wasKilled()) if r.other else None
             if killed:
-                for s in killed:
-                    self.report(s)
-                    return Result.UNKNOWN
+                return Result.UNKNOWN, killed
             if len(path.first().getPredecessors()) == 0:
                 # this path is safe and we do not need to extend it
-                return Result.SAFE
+                return Result.SAFE, None
             # else just fall-through to execution from clear state
             # as we can still prolong this path
         else:
-            for s in r.errors:
-                self.report(s)
-            return Result.UNSAFE
+            return Result.UNSAFE, r.errors
 
         return None
 
@@ -209,9 +213,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         for path in paths:
             first_loc = path.first()
             if self._is_init(first_loc):
-                r = self.checkInitialPath(path)
+                r, states = self.checkInitialPath(path)
                 if r is Result.UNSAFE:
-                    return r  # found a real error
+                    return r, states  # found a real error
                 elif r is Result.SAFE:
                     continue  # this path is safe
                 assert r is None
@@ -220,7 +224,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
             oth = r.other
             if oth and any(map(lambda s: s.isKilled(), oth)):
-                return Result.UNKNOWN
+                return Result.UNKNOWN, oth
 
             step = self.getOptions().step
             if r.errors:
@@ -232,9 +236,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         self.paths = newpaths
 
         if not has_err:
-            return Result.SAFE
+            return Result.SAFE, None
 
-        return None
+        return None, None
 
     def run(self, paths, maxk=None):
         dbg(
@@ -253,10 +257,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             dbg("-- starting iteration {0} --".format(k))
             dbg("Got {0} paths in queue".format(len(self.paths)))
 
-            r = self.checkPaths()
+            r, states = self.checkPaths()
             if r is Result.SAFE:
-                dbg(
-                    "All possible error paths ruled out!",
+                dbg("All possible error paths ruled out!",
                     color="GREEN")
                 dbg("Induction step succeeded!", color="GREEN")
                 return 0

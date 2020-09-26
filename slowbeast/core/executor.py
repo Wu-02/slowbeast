@@ -62,7 +62,6 @@ class PathExecutionResult:
         assert not self.other or all(map(lambda x: x.isTerminated() or x.wasKilled(), self.other))
         return True
 
-
 class Executor:
     """
     Class that takes care of executing single instructions.

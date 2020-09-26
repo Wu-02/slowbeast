@@ -121,10 +121,10 @@ class KindSymbolicExecutor(BaseKindSE):
         for path in paths:
             first_loc = path.first()
             if self._is_init(first_loc):
-                r = self.checkInitialPath(path)
+                r, states = self.checkInitialPath(path)
                 if r is Result.UNSAFE:
                     self.reportfn(f"Error path: {path}", color="RED")
-                    return r  # found a real error
+                    return r, states  # found a real error
                 elif r is Result.SAFE:
                     self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
                     continue  # this path is safe
@@ -163,9 +163,9 @@ class KindSymbolicExecutor(BaseKindSE):
         self.paths = newpaths
 
         if not has_err:
-            return Result.SAFE
+            return Result.SAFE, None
 
-        return None
+        return None, None
 
     def findInvPoints(self, cfg):
         points = []
@@ -217,10 +217,10 @@ class KindSymbolicExecutor(BaseKindSE):
             return 0
 
         while True:
-            print_stdout("-- starting iteration {0} --".format(k))
+            print_stdout(f"Starting iteration {k}")
             dbg("Got {0} paths in queue".format(len(self.paths)))
 
-            r = self.checkPaths()
+            r, states = self.checkPaths()
             if r is Result.SAFE:
                 if self.have_problematic_path:
                     print_stdout("Enumerating paths finished, but a problem was met.", color='ORANGE')
@@ -232,9 +232,13 @@ class KindSymbolicExecutor(BaseKindSE):
                 print_stdout("Induction step succeeded!", color="GREEN")
                 return 0
             elif r is Result.UNSAFE:
+                for s in states:
+                    self.report(s)
                 print_stdout("Error found.", color='RED')
                 return 1
             elif r is Result.UNKNOWN:
+                for s in states:
+                    self.report(s)
                 print_stdout("Hit a problem, giving up.", color='ORANGE')
                 return 1
             else:
