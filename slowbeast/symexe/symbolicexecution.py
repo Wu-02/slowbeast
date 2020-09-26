@@ -30,11 +30,12 @@ class SEStats:
 
 
 class SymbolicExecutor(Interpreter):
-    def __init__(self, P, testgen=None, opts=SEOptions()):
+    def __init__(self, P, testgen=None, opts=SEOptions(),
+                 executor=None, ExecutorClass=SExecutor):
         self.solver = Solver()
         super(
             SymbolicExecutor,
-            self).__init__(P, opts, SExecutor(self.solver, opts))
+            self).__init__(P, opts, executor or ExecutorClass(self.solver, opts))
         self.stats = SEStats()
         self.testgen = testgen
 

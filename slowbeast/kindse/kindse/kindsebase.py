@@ -19,7 +19,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             self).__init__(
             P=prog,
             testgen=testgen,
-            opts=opts)
+            opts=opts,
+            ExecutorClass=PathExecutor)
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
