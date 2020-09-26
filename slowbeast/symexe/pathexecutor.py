@@ -16,10 +16,9 @@ class Annotation:
     ASSERT = 2
     INSTRS = 3
 
-    def __init__(self, ty, elems=[]):
+    def __init__(self, ty):
         assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
         self.type = ty
-        self.elems = elems
 
     def isInstrs(self):
         return self.type == Annotation.INSTRS
@@ -36,13 +35,14 @@ class InstrsAnnotation(Annotation):
     that should be executed
     """
     def __init__(self, instrs):
-        super(InstrsAnnotation, self).__init__(Annotation.INSTRS, instrs)
+        super(InstrsAnnotation, self).__init__(Annotation.INSTRS)
+        self.instrs = instrs
 
     def getInstructions(self):
-        return self.elems
+        return self.instrs
 
     def __iter__(self):
-        return self.elems.__iter__()
+        return self.instrs.__iter__()
  
 
 class ExprAnnotation(Annotation):
@@ -50,18 +50,25 @@ class ExprAnnotation(Annotation):
     Annotation that asserts (assumes) that an expression
     over the state holds
     """
-    def __init__(self, ty):
+    def __init__(self, ty, expr, subs):
         super(ExprAnnotation, self).__init__(ty)
+        # the expression to evaluate
+        self.expr = expr
+        # substitution for the expression -
+        # a mapping expr -> instruction meaning that
+        # state.eval(instruction) should be put on the
+        # place of the key expression
+        assert isinstance(subs, dict)
+        self.subs = subs
     
 
 class AssumeAnnotation(ExprAnnotation):
-    def __init__(self):
-        super(AssumeAnnotation, self).__init__(Annotation.ASSUME)
+    def __init__(self, expr, subs):
+        super(AssumeAnnotation, self).__init__(Annotation.ASSUME, expr, subs)
 
 class AssertAnnotation(ExprAnnotation):
-    def __init__(self):
-        super(AssertAnnotation, self).__init__(Annotation.ASSERT)
-
+    def __init__(self, expr, subs):
+        super(AssertAnnotation, self).__init__(Annotation.ASSERT, expr, subs)
 
 
 class Executor(SExecutor):
@@ -72,14 +79,13 @@ class Executor(SExecutor):
     def __init__(self, solver, opts, memorymodel=None):
         super(Executor, self).__init__(solver, opts, memorymodel)
 
-    def _executeAnnotations(self, s, annots):
-        assert s.isReady(), "Cannot execute non-ready state"
-        oldpc = s.pc
+    def _executeAnnotation(self, states, annot, oldpc):
+        dbg_sec(f"executing annotation")
 
-        def executeInstr(states, instr):
+        def executeInstr(stts, instr):
             newstates = []
-            for state in states:
-                assert s.isReady()
+            for state in stts:
+                assert state.isReady()
                 # FIXME: get rid of this -- make execute() not to mess with pc
                 state.pc = oldpc
                 newstates += self.execute(state, instr)
@@ -90,17 +96,34 @@ class Executor(SExecutor):
                 (ready, nonready)[0 if x.isReady() else 1].append(x)
             return ready, nonready
 
+        assert all(map(lambda s: s.isReady(), states))
+
+        ready, nonready = states, []
+        if annot.isInstrs():
+            for instr in annot:
+                ready, u = executeInstr(ready, instr)
+                nonready += u
+        else:
+            assert annot.isAssume() or annot.isAssert()
+            raise NotImplementedError("Not implemented yet")
+
+        dbg_sec()
+        return ready, nonready
+
+    def _executeAnnotations(self, s, annots):
+        assert s.isReady(), "Cannot execute non-ready state"
+        oldpc = s.pc
+
+        dbg_sec(f"executing annotation on state {s.getID()}")
+
         ready, nonready = [s], []
+        execAn = self._executeAnnotation
         for annot in annots:
             assert isinstance(annot, Annotation), annot
-            dbg_sec(f"executing annotation on state {s.getID()}")
-            if annot.isInstrs():
-                for instr in annot:
-                    ready, u = executeInstr(ready, instr)
-                    nonready += u
-            else:
-                raise NotImplementedError("Not implemented yet")
-            dbg_sec()
+            ready, nr = execAn(ready, annot, oldpc)
+            nonready += nr
+
+        dbg_sec()
         return ready, nonready
 
     def executeAnnotations(self, states, annots):
