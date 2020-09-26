@@ -5,6 +5,65 @@ from slowbeast.core.executor import PathExecutionResult, split_ready_states, spl
 from slowbeast.ir.instruction import Branch
 
 
+class Load:
+    __slots__ = ['load']
+
+    def __init__(self, l):
+        self.load = l
+
+class Annotation:
+    ASSUME = 1
+    ASSERT = 2
+    INSTRS = 3
+
+    def __init__(self, ty, elems=[]):
+        assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
+        self.type = ty
+        self.elems = elems
+
+    def isInstrs(self):
+        return self.type == Annotation.INSTRS
+
+    def isAssume(self):
+        return self.type == Annotation.ASSUME
+
+    def isAssert(self):
+        return self.type == Annotation.ASSERT
+        
+class InstrsAnnotation(Annotation):
+    """
+    Annotation that is barely a sequence of instructions
+    that should be executed
+    """
+    def __init__(self, instrs):
+        super(InstrsAnnotation, self).__init__(Annotation.INSTRS, instrs)
+
+    def getInstructions(self):
+        return self.elems
+
+    def __iter__(self):
+        return self.elems.__iter__()
+ 
+
+class ExprAnnotation(Annotation):
+    """
+    Annotation that asserts (assumes) that an expression
+    over the state holds
+    """
+    def __init__(self, ty):
+        super(ExprAnnotation, self).__init__(ty)
+    
+
+class AssumeAnnotation(ExprAnnotation):
+    def __init__(self):
+        super(AssumeAnnotation, self).__init__(Annotation.ASSUME)
+
+class AssertAnnotation(ExprAnnotation):
+    def __init__(self):
+        super(AssertAnnotation, self).__init__(Annotation.ASSERT)
+
+
+
 class Executor(SExecutor):
     """
     Symbolic Executor instance adjusted to executing
@@ -33,10 +92,14 @@ class Executor(SExecutor):
 
         ready, nonready = [s], []
         for annot in annots:
+            assert isinstance(annot, Annotation), annot
             dbg_sec(f"executing annotation on state {s.getID()}")
-            for instr in annot:
-                ready, u = executeInstr(ready, instr)
-                nonready += u
+            if annot.isInstrs():
+                for instr in annot:
+                    ready, u = executeInstr(ready, instr)
+                    nonready += u
+            else:
+                raise NotImplementedError("Not implemented yet")
             dbg_sec()
         return ready, nonready
 

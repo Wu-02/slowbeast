@@ -5,6 +5,8 @@ from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath, CFG
 from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
+from slowbeast.symexe.pathexecutor import InstrsAnnotation, AssumeAnnotation, AssertAnnotation
+
 from . annotations import Relation, get_relations
 
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
@@ -50,7 +52,7 @@ def check_inv(prog, loc, r):
     kindse.reportfn = reportfn
 
     apath = AnnotatedCFGPath([loc])
-    apath.addLocAnnotationBefore(r.toAssertion(), loc)
+    apath.addLocAnnotationBefore(InstrsAnnotation(r.toAssertion()), loc)
 
     dbg_sec("Running nested KindSE")
     res = kindse.run([apath], maxk=8)
@@ -110,7 +112,7 @@ class KindSymbolicExecutor(BaseKindSE):
         dbg_sec(f"Trying to generate annotations for {loc.getBBlock().getID()}")
         for inv in self.getInv(loc, states):
             dbg(f"Adding {inv} as assumption to the CFG")
-            loc.annotationsBefore.append(inv.toAssumption())
+            loc.annotationsBefore.append(InstrsAnnotation(inv.toAssumption()))
         dbg_sec()
 
     def checkPaths(self):
