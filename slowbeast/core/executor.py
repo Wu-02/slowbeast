@@ -470,6 +470,7 @@ class Executor:
         locs = path.getLocations()
         # set the pc of the states to be the first instruction of the path
         for s in states:
+            assert s.isReady()
             s.pc = locs[0].getBBlock().first()
 
         for idx in range(0, len(locs)):
@@ -479,7 +480,7 @@ class Executor:
             # get the ready states
             states = []
             for n in newstates:
-                (states, earlytermstates)[0 if n.isReady else 1].append(n)
+                (states, earlytermstates)[0 if n.isReady() else 1].append(n)
 
             # now execute the branch following the edge on the path
             if idx + 1 < len(locs):
@@ -489,13 +490,13 @@ class Executor:
                 newstates = []
                 assert followsucc or curbb.last().getFalseSuccessor() == succbb
                 for s in states:
+                    assert s.isReady()
                     newstates += self.execBranchTo(s, s.pc, followsucc)
             else:  # this is the last location on path,
                 # so just normally execute the block instructions
                 newstates = self.executeTillBranch(states)
             states = newstates
 
-        assert all(map(lambda x: x.isReady(), states))
         assert all(map(lambda x: not x.isReady(), earlytermstates))
 
         return states, earlytermstates
