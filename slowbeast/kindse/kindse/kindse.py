@@ -94,7 +94,6 @@ class KindSymbolicExecutor(BaseKindSE):
                     color="BLUE")
                 yield r
 
-
     def annotateCFG(self, path, states):
         """
         Take the executed path and states that are safe and unsafe

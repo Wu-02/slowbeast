@@ -5,7 +5,9 @@ from .. core.memoryobject import MemoryObject
 from .. core.memorymodel import MemoryModel
 from .. ir.types import OffsetType
 from .. ir.value import Constant, Value
-from .. ir.instruction import Alloc, GlobalVariable
+from .. ir.instruction import Alloc, GlobalVariable, Load
+
+from slowbeast.domains.symbolic import NondetLoad
 
 
 class SymbolicMemoryModel(MemoryModel):
@@ -87,6 +89,8 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
                 assert err.isMemError()
                 if err.isUninitRead():
                     val, err = self.uninitializedRead(state, frm, bytesNum)
+                    assert isinstance(toOp, Load)
+                    state.addNondet(NondetLoad.fromExpr(val, toOp))
 
         except NotImplementedError as e:
             state.setKilled(str(e))

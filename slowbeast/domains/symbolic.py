@@ -91,6 +91,9 @@ class Expr(Value):
     def unwrap(self):
         return self._expr
 
+    def isNondetLoad(self):
+        return False
+
     def asValue(self):
         return str(self)
 
@@ -103,6 +106,22 @@ class Expr(Value):
 
     def __repr__(self):
         return "<{0}:{1}>".format(self._expr, self.getType())
+
+class NondetLoad(Expr):
+    __slots__ = ['load']
+
+    def __init__(self, e, t, load):
+        super(NondetLoad, self).__init__(e,  t)
+        self.load = load
+
+    def isNondetLoad(self):
+        return True
+
+    def fromExpr(expr, load):
+        return NondetLoad(expr, expr.getType(), load)
+
+    def __repr__(self):
+        return f"L({self.load.asValue()})={self._expr}".format(self._expr, self.getType())
 
 
 class BVSymbolicDomain:

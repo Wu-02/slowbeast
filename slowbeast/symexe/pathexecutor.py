@@ -2,7 +2,7 @@ from slowbeast.util.debugging import dbg, dbgv, dbg_sec
 from . executor import Executor as SExecutor
 from slowbeast.core.executor import PathExecutionResult, split_ready_states, split_nonready_states
 
-from slowbeast.ir.instruction import Branch
+from slowbeast.ir.instruction import Branch, Instruction
 
 
 class Load:
