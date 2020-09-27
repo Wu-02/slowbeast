@@ -16,8 +16,7 @@ def get_safe_inv_candidates(safe, unsafe):
         # get and filter out those relations that make the state safe
         saferels = (
             r for r in get_relations(s) if not all(
-                u.is_sat(
-                    r.expr) for u in unsafe))
+                u.is_sat(r[0]) for u in unsafe))
         for x in saferels:
             yield x
 
@@ -25,8 +24,9 @@ def get_unsafe_inv_candidates(unsafe):
     for s in unsafe:
         # get and filter out those relations that make the state safe
         # FIXME: isn't this superfluous in this case?
+        EM = s.getExprManager()
         for r in get_relations(s):
-            yield r.neg(s.getExprManager())
+            yield EM.Not(r[0]), r[1]
 
 def get_inv_candidates(states):
     errs = states.errors
@@ -41,9 +41,10 @@ def get_inv_candidates(states):
         for r in get_safe_inv_candidates((s for s in states.other if s.isTerminated()), errs):
             yield r
 
-def check_inv(prog, loc, r):
+def check_inv(prog, loc, inv):
+    expr, subs = inv
     dbg_sec(
-        f"Checking if {r} is invariant of loc {loc.getBBlock().getID()}")
+        f"Checking if {expr} is invariant of loc {loc.getBBlock().getID()}")
 
     def reportfn(msg, *args, **kwargs):
         print_stdout(f"  > {msg}", *args, **kwargs)
@@ -51,8 +52,10 @@ def check_inv(prog, loc, r):
     kindse = BaseKindSE(prog)
     kindse.reportfn = reportfn
 
+    annot = AssertAnnotation(expr, subs)
+
     apath = AnnotatedCFGPath([loc])
-    apath.addLocAnnotationBefore(InstrsAnnotation(r.toAssertion()), loc)
+    apath.addLocAnnotationBefore(annot, loc)
 
     dbg_sec("Running nested KindSE")
     res = kindse.run([apath], maxk=8)
@@ -82,17 +85,17 @@ class KindSymbolicExecutor(BaseKindSE):
     def getInv(self, loc, states):
         locid = loc.getBBlock().getID()
         prog = self.getProgram()
-        for r in get_inv_candidates(states):
-            if r in self.tested_invs.setdefault(locid, set()):
-                continue
-            self.tested_invs[locid].add(r)
+        for inv in get_inv_candidates(states):
+           #if r in self.tested_invs.setdefault(locid, set()):
+           #    continue
+           #self.tested_invs[locid].add(r)
 
-            print_stdout(f'Checking if {r} is invariant for {locid}')
-            if check_inv(prog, loc, r):
+            print_stdout(f'Checking if {inv[0]} is invariant for {locid}')
+            if check_inv(prog, loc, inv):
                 print_stdout(
-                    f"{r} is invariant of loc {locid}!",
+                    f"{inv[0]} is invariant of loc {locid}!",
                     color="BLUE")
-                yield r
+                yield inv
 
     def annotateCFG(self, path, states):
         """
@@ -110,8 +113,8 @@ class KindSymbolicExecutor(BaseKindSE):
         loc = path.first()
         dbg_sec(f"Trying to generate annotations for {loc.getBBlock().getID()}")
         for inv in self.getInv(loc, states):
-            dbg(f"Adding {inv} as assumption to the CFG")
-            loc.annotationsBefore.append(InstrsAnnotation(inv.toAssumption()))
+            dbg(f"Adding {inv[0]} as assumption to the CFG")
+            loc.annotationsBefore.append(AssumeAnnotation(inv[0], inv[1]))
         dbg_sec()
 
     def checkPaths(self):

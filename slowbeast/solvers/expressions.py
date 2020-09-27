@@ -87,6 +87,12 @@ class ExprManager:
         names[name] = s
         return s
 
+    def substitute(self, expr, *vals):
+        if ConcreteDomain.belongto(expr):
+            return expr
+        lift = self.lift
+        return SymbolicDomain.substitute(expr, *((lift(a), lift(b)) for (a, b) in vals))
+
     def dropValue(self, name):
         self._names.pop(name)
 

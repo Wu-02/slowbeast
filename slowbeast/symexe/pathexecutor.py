@@ -59,7 +59,14 @@ class ExprAnnotation(Annotation):
         # state.eval(instruction) should be put on the
         # place of the key expression
         assert isinstance(subs, dict)
+        assert all(map(lambda k: isinstance(k, Instruction), subs.keys()))
         self.subs = subs
+
+    def getExpr(self):
+        return self.expr
+
+    def getSubstitutions(self):
+        return self.subs
     
 
 class AssumeAnnotation(ExprAnnotation):
@@ -105,10 +112,32 @@ class Executor(SExecutor):
                 nonready += u
         else:
             assert annot.isAssume() or annot.isAssert()
-            raise NotImplementedError("Not implemented yet")
+            subs = annot.getSubstitutions()
+            for k in subs.keys():
+                ready, nr = executeInstr(ready, k)
+                nonready += nr
+
+            isassume = annot.isAssume()
+            expr = annot.getExpr()
+            states = []
+            for s in ready:
+                EM = s.getExprManager()
+                for (x, val) in subs.items():
+                    curval = s.get(x)
+                    expr = EM.substitute(expr, (val, curval))
+                if isassume:
+                    dbg(f"assume {expr}")
+                    states += self.execAssumeExpr(s, expr)
+                else:
+                    assert annot.isAssert()
+                    dbg(f"assert {expr}")
+                    tr, tu = split_ready_states(self.execAssertExpr(s, expr))
+                    states += tr
+                    nonready += tu
+
 
         dbg_sec()
-        return ready, nonready
+        return states, nonready
 
     def _executeAnnotations(self, s, annots):
         assert s.isReady(), "Cannot execute non-ready state"

@@ -18,7 +18,7 @@ class ConcreteDomain:
     def belongto(*args):
         assert len(args) > 0
         for a in args:
-            assert isinstance(a, Value)
+            assert isinstance(a, Value), a
             if not a.isConstant():
                 return False
         return True

@@ -35,6 +35,9 @@ class Relation:
         return "({0}) {1} ({2})".format(self.a, Cmp.predicateStr(self._pred),
                                         self.b)
 
+def get_subs(state):
+    return {l.load : l for l in (n for n in state.getNondets() if n.isNondetLoad())}
+
 
 # FIXME: do it as iterator via yield?
 def get_relations(state):
@@ -49,9 +52,7 @@ def get_relations(state):
             # for now, we support only Load instructions
             # as other instructions require to put into the annotation
             # also their operands
-            if not isinstance(values[i], Load) or\
-               not isinstance(values[j], Load):
-                continue
+
             val1 = state.get(values[i])
             val2 = state.get(values[j])
 
@@ -86,6 +87,7 @@ def get_relations(state):
 
             if expr and not expr.isConstant():
                 assert pred
-                rels.append(Relation(pred, values[i], values[j], expr))
+                #rels.append(Relation(pred, values[i], values[j], expr))
+                rels.append((expr, get_subs(state)))
 
     return rels

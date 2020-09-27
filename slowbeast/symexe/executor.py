@@ -378,6 +378,22 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.getNextInstruction()
         return [state]
 
+    def execAssumeExpr(self, state, v):
+        assert v.isBool()
+        if v.isConstant():
+            assert isinstance(v.getValue(), bool)
+            isunsat = not v.getValue()
+        else:
+            tmp = self.assume(state, v)
+            isunsat = tmp is None
+
+        if isunsat:
+            state.setTerminated(
+                "Assumption unsat: {0} == {1} (!= True)".format(
+                    o, v))
+
+        return [state]
+
     def execAssume(self, state, instr):
         assert isinstance(instr, Assume)
         for o in instr.getOperands():
@@ -399,14 +415,9 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.getNextInstruction()
         return [state]
 
-    def execAssert(self, state, instr):
-        assert isinstance(instr, Assert)
+
+    def execAssertExpr(self, state, v, msg=''):
         states = []
-        o = instr.getCondition()
-        msg = instr.getMessage()
-        if not msg:
-            msg = str(o)
-        v = state.eval(o)
         assert v.isBool()
         if v.isConstant():
             if v.getValue() != True:
@@ -425,6 +436,15 @@ class Executor(ConcreteExecutor):
 
         assert states, "Generated no states"
         return states
+
+    def execAssert(self, state, instr):
+        assert isinstance(instr, Assert)
+        o = instr.getCondition()
+        msg = instr.getMessage()
+        if not msg:
+            msg = str(o)
+        v = state.eval(o)
+        return self.execAssertExpr(state, v, msg)
 
     def toUnique(self, state, val):
         if val.isConstant():

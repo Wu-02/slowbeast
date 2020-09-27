@@ -14,7 +14,7 @@ if _use_z3:
     from z3 import LShR as BVLShR
     from z3 import is_bv, is_bv_value
     from z3 import is_true, is_false
-    from z3 import simplify
+    from z3 import simplify, substitute
 
     def TRUE():
         return BoolVal(True)
@@ -118,10 +118,11 @@ class NondetLoad(Expr):
         return True
 
     def fromExpr(expr, load):
-        return NondetLoad(expr, expr.getType(), load)
+        assert isinstance(expr, Expr)
+        return NondetLoad(expr.unwrap(), expr.getType(), load)
 
     def __repr__(self):
-        return f"L({self.load.asValue()})={self._expr}".format(self._expr, self.getType())
+        return f"L({self.load.asValue()})={Expr.__repr__(self)}"
 
 
 class BVSymbolicDomain:
@@ -153,6 +154,10 @@ class BVSymbolicDomain:
 
     def simplify(expr, *assumptions):
         return Expr(simplify(expr.unwrap()), expr.getType())
+
+    def substitute(expr, *what):
+        return Expr(substitute(expr.unwrap(),
+                    *((a.unwrap(), b.unwrap()) for (a, b) in what)), expr.getType())
 
     def pythonConstant(expr):
         """ Take a symbolic constant and get a python constant for it.
