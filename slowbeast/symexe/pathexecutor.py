@@ -3,6 +3,7 @@ from . executor import Executor as SExecutor
 from slowbeast.core.executor import PathExecutionResult, split_ready_states, split_nonready_states
 
 from slowbeast.ir.instruction import Branch, Instruction
+from copy import copy
 
 
 class Load:
@@ -15,6 +16,8 @@ class Annotation:
     ASSUME = 1
     ASSERT = 2
     INSTRS = 3
+
+    __slots__ = ['type']
 
     def __init__(self, ty):
         assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
@@ -34,6 +37,8 @@ class InstrsAnnotation(Annotation):
     Annotation that is barely a sequence of instructions
     that should be executed
     """
+    __slots__ = ['instrs']
+
     def __init__(self, instrs):
         super(InstrsAnnotation, self).__init__(Annotation.INSTRS)
         self.instrs = instrs
@@ -43,6 +48,9 @@ class InstrsAnnotation(Annotation):
 
     def __iter__(self):
         return self.instrs.__iter__()
+
+    def __repr__(self):
+        return "[{0}]".format(", ".join(map(lambda i: i.asValue(), self.instrs)))
  
 
 class ExprAnnotation(Annotation):
@@ -50,6 +58,9 @@ class ExprAnnotation(Annotation):
     Annotation that asserts (assumes) that an expression
     over the state holds
     """
+
+    __slots__ = ['expr', 'subs']
+
     def __init__(self, ty, expr, subs):
         super(ExprAnnotation, self).__init__(ty)
         # the expression to evaluate
@@ -67,7 +78,27 @@ class ExprAnnotation(Annotation):
 
     def getSubstitutions(self):
         return self.subs
-    
+
+    def Not(self, EM):
+        n = copy(self)
+        n.expr = EM.Not(self.expr)
+        return n
+
+    def doSubs(self, state):
+        """
+        Return the expression after substitutions
+        in the given state
+        """
+        EM = state.getExprManager()
+        get = state.get
+        expr = self.expr
+        for (x, val) in self.subs.items():
+            curval = get(x)
+            expr = EM.substitute(expr, (val, curval))
+        return expr
+
+    def __repr__(self):
+        return "{0}[{1}]".format(self.expr, ", ".join(f"{x.asValue()}/{val.unwrap()}" for (x, val) in self.subs.items()))
 
 class AssumeAnnotation(ExprAnnotation):
     def __init__(self, expr, subs):
@@ -77,6 +108,12 @@ class AssertAnnotation(ExprAnnotation):
     def __init__(self, expr, subs):
         super(AssertAnnotation, self).__init__(Annotation.ASSERT, expr, subs)
 
+    def changeToAssume(self):
+        self.type = Annotation.ASSUME
+        return self
+
+    def toAssume(self):
+        return AssumeAnnotation(self.expr, self.subs)
 
 class Executor(SExecutor):
     """
@@ -87,7 +124,7 @@ class Executor(SExecutor):
         super(Executor, self).__init__(solver, opts, memorymodel)
 
     def _executeAnnotation(self, states, annot, oldpc):
-        dbg_sec(f"executing annotation")
+        dbg_sec(f"executing annotation: {annot}")
 
         def executeInstr(stts, instr):
             newstates = []
@@ -121,10 +158,11 @@ class Executor(SExecutor):
             expr = annot.getExpr()
             states = []
             for s in ready:
-                EM = s.getExprManager()
-                for (x, val) in subs.items():
-                    curval = s.get(x)
-                    expr = EM.substitute(expr, (val, curval))
+               #EM = s.getExprManager()
+               #for (x, val) in subs.items():
+               #    curval = s.get(x)
+               #    expr = EM.substitute(expr, (val, curval))
+                expr = annot.doSubs(s)
                 if isassume:
                     dbg(f"assume {expr}")
                     states += self.execAssumeExpr(s, expr)
