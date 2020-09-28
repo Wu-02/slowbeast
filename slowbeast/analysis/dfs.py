@@ -43,8 +43,18 @@ class DFSVisitor:
     def _getdata(self, node):
         return self._data.setdefault(node, DFSData())
 
-    def foreach(self, fun, startnode=None):
-        raise NotImplementedError("foreach not implemented")
+
+    def foreach(self, fun, node=None):
+        getdata = self._getdata
+
+        nddata = getdata(node)
+        nddata.visited = True
+
+        fun(succ)
+
+        for succ in node.getSuccessors():
+            if not getdata(succ).visited:
+                self.foreach(fun, succ)
 
     def foreachedge(self, fun, startnode):
         counter = DFSCounter()

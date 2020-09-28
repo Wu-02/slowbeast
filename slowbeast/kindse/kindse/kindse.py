@@ -7,58 +7,9 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.pathexecutor import InstrsAnnotation, AssumeAnnotation, AssertAnnotation
 
-from . annotations import get_relations
-
+from . annotations import InvariantGenerator
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
-
-def get_safe_inv_candidates(safe, unsafe):
-    for s in safe:
-        # get and filter out those relations that make the state safe
-        saferels = (
-            r for r in get_relations(s) if not all(
-                u.is_sat(r.getExpr()) for u in unsafe))
-        for x in saferels:
-            yield x
-
-def get_unsafe_inv_candidates(unsafe):
-    for s in unsafe:
-        # get and filter out those relations that make the state safe
-        # FIXME: isn't this superfluous in this case?
-        EM = s.getExprManager()
-        for r in get_relations(s):
-            yield r.Not(EM)
-
-def get_inv_candidates(states):
-    errs = states.errors
-    ready = states.ready
-    if ready and errs:
-        for r in get_safe_inv_candidates(ready, errs):
-            yield r
-    # if errs:
-    #     for r in get_unsafe_inv_candidates(errs):
-    #         yield r
-    if states.other:
-        for r in get_safe_inv_candidates((s for s in states.other if s.isTerminated()), errs):
-            yield r
-
-def check_inv(prog, loc, inv):
-    dbg_sec(
-        f"Checking if {inv} is invariant of loc {loc.getBBlock().getID()}")
-
-    def reportfn(msg, *args, **kwargs):
-        print_stdout(f"  > {msg}", *args, **kwargs)
-
-    kindse = BaseKindSE(prog)
-    kindse.reportfn = reportfn
-
-    apath = AnnotatedCFGPath([loc])
-    apath.addLocAnnotationBefore(inv, loc)
-
-    dbg_sec("Running nested KindSE")
-    res = kindse.run([apath], maxk=8)
-    dbg_sec()
-    dbg_sec()
-    return res == 0
+from . paths import SimpleLoop
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
@@ -76,24 +27,14 @@ class KindSymbolicExecutor(BaseKindSE):
 
         self.genannot = genannot
         self.invpoints = {}
-        self.tested_invs = {}
+        self.invgenerators = {}
         self.have_problematic_path = False
 
     def getInv(self, loc, states):
-        locid = loc.getBBlock().getID()
-        prog = self.getProgram()
-        for inv in get_inv_candidates(states):
-            print(inv)
-            if inv in self.tested_invs.setdefault(locid, set()):
-                continue
-            self.tested_invs[locid].add(inv)
+        IG = self.invgenerators.setdefault(loc, InvariantGenerator(self.getProgram(), loc))
 
-            print_stdout(f'Checking if {inv} is invariant for {locid}')
-            if check_inv(prog, loc, inv):
-                print_stdout(
-                    f"{inv} is invariant of loc {locid}!",
-                    color="BLUE")
-                yield inv
+        for inv in IG.generate(states):
+            yield inv
 
     def annotateCFG(self, path, states):
         """

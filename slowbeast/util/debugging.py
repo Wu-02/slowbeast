@@ -83,6 +83,9 @@ def set_debugging(verbose=False):
     global _is_debugging
     _is_debugging = 2 if verbose else 1
 
+def unset_debugging():
+    global _is_debugging
+    _is_debugging = 0
 
 def set_debugging_prefix(prefix=''):
     global _debugging_prefix
