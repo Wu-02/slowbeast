@@ -34,9 +34,9 @@ def get_inv_candidates(states):
     if ready and errs:
         for r in get_safe_inv_candidates(ready, errs):
             yield r
-    if errs:
-        for r in get_unsafe_inv_candidates(errs):
-            yield r
+    # if errs:
+    #     for r in get_unsafe_inv_candidates(errs):
+    #         yield r
     if states.other:
         for r in get_safe_inv_candidates((s for s in states.other if s.isTerminated()), errs):
             yield r
@@ -83,9 +83,10 @@ class KindSymbolicExecutor(BaseKindSE):
         locid = loc.getBBlock().getID()
         prog = self.getProgram()
         for inv in get_inv_candidates(states):
-           #if r in self.tested_invs.setdefault(locid, set()):
-           #    continue
-           #self.tested_invs[locid].add(r)
+            print(inv)
+            if inv in self.tested_invs.setdefault(locid, set()):
+                continue
+            self.tested_invs[locid].add(inv)
 
             print_stdout(f'Checking if {inv} is invariant for {locid}')
             if check_inv(prog, loc, inv):
@@ -111,7 +112,7 @@ class KindSymbolicExecutor(BaseKindSE):
         dbg_sec(f"Trying to generate annotations for {loc.getBBlock().getID()}")
         for inv in self.getInv(loc, states):
             dbg(f"Adding {inv} as assumption to the CFG")
-            loc.annotationsBefore.append(inv.changeToAssume())
+            loc.annotationsBefore.append(inv)
         dbg_sec()
 
     def checkPaths(self):
@@ -127,7 +128,7 @@ class KindSymbolicExecutor(BaseKindSE):
                     self.reportfn(f"Error path: {path}", color="RED")
                     return r, states  # found a real error
                 elif r is Result.SAFE:
-                    self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
+                    self.reportfn(f"Safe (init) path: {path}", color="DARK_GREEN")
                     continue  # this path is safe
                 elif r is Result.UNKNOWN:
                     self.have_problematic_path = True

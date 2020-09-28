@@ -115,6 +115,10 @@ class SolverIntf:
         """ bw = bitwidth """
         return self._exprmanager.freshValue(name, bw)
 
+    def Var(self, name, bw=64):
+        """ bw = bitwidth """
+        return self._exprmanager.Var(name, bw)
+
 
 class ConcreteSolver(SolverIntf):
     """

@@ -104,6 +104,12 @@ class Expr(Value):
         """
         return [Expr(e, Type(bv_size(e))) for e in exprsymbols(self._expr)]
 
+    def __hash__(self):
+        return self._expr.__hash__()
+
+    def __eq__(self, rhs):
+        return self._expr == rhs._expr
+
     def __repr__(self):
         return "<{0}:{1}>".format(self._expr, self.getType())
 

@@ -86,5 +86,5 @@ def get_relations(state):
             if expr and not expr.isConstant():
                 assert pred
                 #rels.append(Relation(pred, values[i], values[j], expr))
-                yield AssertAnnotation(expr, get_subs(state))
+                yield AssertAnnotation(expr, get_subs(state), EM)
 

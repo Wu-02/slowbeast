@@ -53,18 +53,24 @@ class InstrsAnnotation(Annotation):
         return "[{0}]".format(", ".join(map(lambda i: i.asValue(), self.instrs)))
  
 
+def _createCannonical(expr, subs, EM):
+    for (x, val) in subs.items():
+        expr = EM.substitute(expr, (val, EM.Var(x.asValue(), val.getBitWidth())))
+    return expr
+
 class ExprAnnotation(Annotation):
     """
     Annotation that asserts (assumes) that an expression
     over the state holds
     """
 
-    __slots__ = ['expr', 'subs']
+    __slots__ = ['expr', 'subs', 'cannonical']
 
-    def __init__(self, ty, expr, subs):
+    def __init__(self, ty, expr, subs, EM):
         super(ExprAnnotation, self).__init__(ty)
         # the expression to evaluate
         self.expr = expr
+
         # substitution for the expression -
         # a mapping expr -> instruction meaning that
         # state.eval(instruction) should be put on the
@@ -73,11 +79,18 @@ class ExprAnnotation(Annotation):
         assert all(map(lambda k: isinstance(k, Instruction), subs.keys()))
         self.subs = subs
 
+        # cannonical form of the annotation (so that we can compare
+        # annotations)
+        self.cannonical = _createCannonical(expr, subs, EM)
+
     def getExpr(self):
         return self.expr
 
     def getSubstitutions(self):
         return self.subs
+
+    def getCannonical(self):
+        return self.cannonical
 
     def Not(self, EM):
         n = copy(self)
@@ -97,23 +110,34 @@ class ExprAnnotation(Annotation):
             expr = EM.substitute(expr, (val, curval))
         return expr
 
+    def __eq__(self, rhs):
+        return self.cannonical == rhs.cannonical
+
+    def __hash__(self):
+        assert self.cannonical
+        return self.cannonical.__hash__()
+
     def __repr__(self):
-        return "{0}[{1}]".format(self.expr, ", ".join(f"{x.asValue()}/{val.unwrap()}" for (x, val) in self.subs.items()))
+        assert self.cannonical
+        return f"{self.cannonical}"
+        #return "{0}[{1}]".format(self.expr, ", ".join(f"{x.asValue()}/{val.unwrap()}" for (x, val) in self.subs.items()))
 
 class AssumeAnnotation(ExprAnnotation):
-    def __init__(self, expr, subs):
-        super(AssumeAnnotation, self).__init__(Annotation.ASSUME, expr, subs)
+    def __init__(self, expr, subs, EM):
+        super(AssumeAnnotation, self).__init__(Annotation.ASSUME, expr, subs, EM)
+
+    def __repr__(self):
+        return f"assume {ExprAnnotation.__repr__(self)}"
 
 class AssertAnnotation(ExprAnnotation):
-    def __init__(self, expr, subs):
-        super(AssertAnnotation, self).__init__(Annotation.ASSERT, expr, subs)
+    def __init__(self, expr, subs, EM):
+        super(AssertAnnotation, self).__init__(Annotation.ASSERT, expr, subs, EM)
 
-    def changeToAssume(self):
-        self.type = Annotation.ASSUME
-        return self
+    def toAssume(self, EM):
+        return AssumeAnnotation(self.expr, self.subs, EM)
 
-    def toAssume(self):
-        return AssumeAnnotation(self.expr, self.subs)
+    def __repr__(self):
+        return f"assert {ExprAnnotation.__repr__(self)}"
 
 class Executor(SExecutor):
     """
