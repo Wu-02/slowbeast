@@ -2,40 +2,6 @@ from slowbeast.util.debugging import FIXME
 from slowbeast.ir.instruction import Cmp, Load, Assume, Assert
 from slowbeast.symexe.pathexecutor import AssertAnnotation
 
-# class Relation:
-#     def __init__(self, pred, a, b, expr):
-#         self._pred = pred
-#         self.a = a
-#         self.b = b
-#         self.expr = expr
-
-#     def __eq__(self, rhs):
-#         return self._pred == rhs._pred and self.a == rhs.a and self.b == rhs.b
-
-#     def toCmpInst(self):
-#         return Cmp(self._pred, self.a, self.b)
-
-#     def neg(self, EM):
-#         return Relation(Cmp.predicateNeg(self._pred), self.a, self.b,
-#         EM.Not(self.expr))
-
-#     def toAssumption(self):
-#         cmpi = self.toCmpInst()
-#         return [self.a, self.b, cmpi, Assume(cmpi)]
-
-#     def toAssertion(self):
-#         cmpi = self.toCmpInst()
-#         return [self.a, self.b, cmpi, Assert(cmpi)]
-
-#     def __hash__(self):
-#         return "{0}{1}{2}".format(self.a.asValue(),
-#         Cmp.predicateStr(self._pred), self.b.asValue()).__hash__()
-
-#     def __str__(self):
-#         return "({0}) {1} ({2})".format(self.a, Cmp.predicateStr(self._pred),
-#                                         self.b)
-
-
 def get_subs(state):
     return {l.load : l for l in (n for n in state.getNondets() if n.isNondetLoad())}
 
