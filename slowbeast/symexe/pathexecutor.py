@@ -95,6 +95,7 @@ class ExprAnnotation(Annotation):
     def Not(self, EM):
         n = copy(self)
         n.expr = EM.Not(self.expr)
+        n.cannonical = EM.Not(self.cannonical)
         return n
 
     def doSubs(self, state):
@@ -107,7 +108,8 @@ class ExprAnnotation(Annotation):
         expr = self.expr
         for (x, val) in self.subs.items():
             curval = get(x)
-            expr = EM.substitute(expr, (val, curval))
+            if curval: # do we have the value in this state?
+                expr = EM.substitute(expr, (val, curval))
         return expr
 
     def __eq__(self, rhs):
@@ -147,7 +149,7 @@ class Executor(SExecutor):
     def __init__(self, solver, opts, memorymodel=None):
         super(Executor, self).__init__(solver, opts, memorymodel)
 
-    def _executeAnnotation(self, states, annot, oldpc):
+    def executeAnnotation(self, states, annot, oldpc):
         dbg_sec(f"executing annotation: {annot}")
 
         def executeInstr(stts, instr):
@@ -207,7 +209,7 @@ class Executor(SExecutor):
         dbg_sec(f"executing annotation on state {s.getID()}")
 
         ready, nonready = [s], []
-        execAn = self._executeAnnotation
+        execAn = self.executeAnnotation
         for annot in annots:
             assert isinstance(annot, Annotation), annot
             ready, nr = execAn(ready, annot, oldpc)
