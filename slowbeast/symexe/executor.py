@@ -422,13 +422,10 @@ class Executor(ConcreteExecutor):
         if v.isConstant():
             if v.getValue() != True:
                 state.setError(AssertFailError(msg))
-            else:
-                state.pc = state.pc.getNextInstruction()
             states.append(state)
         else:
             okBranch, errBranch = self.fork(state, v)
             if okBranch:
-                okBranch.pc = okBranch.pc.getNextInstruction()
                 states.append(okBranch)
             if errBranch:
                 errBranch.setError(AssertFailError(msg))
@@ -444,7 +441,25 @@ class Executor(ConcreteExecutor):
         if not msg:
             msg = str(o)
         v = state.eval(o)
-        return self.execAssertExpr(state, v, msg)
+        states = []
+        assert v.isBool()
+        if v.isConstant():
+            if v.getValue() != True:
+                state.setError(AssertFailError(msg))
+            else:
+                state.pc = state.pc.getNextInstruction()
+            states.append(state)
+        else:
+            okBranch, errBranch = self.fork(state, v)
+            if okBranch:
+                okBranch.pc = okBranch.pc.getNextInstruction()
+                states.append(okBranch)
+            if errBranch:
+                errBranch.setError(AssertFailError(msg))
+                states.append(errBranch)
+
+        assert states, "Generated no states"
+        return states
 
     def toUnique(self, state, val):
         if val.isConstant():

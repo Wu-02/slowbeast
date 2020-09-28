@@ -196,9 +196,8 @@ class Executor(SExecutor):
                     tr, tu = split_ready_states(self.execAssertExpr(s, expr))
                     states += tr
                     nonready += tu
-
-
         dbg_sec()
+        assert all(map(lambda s: s.pc is oldpc, states))
         return states, nonready
 
     def _executeAnnotations(self, s, annots):
