@@ -3,7 +3,9 @@ from slowbeast.symexe.pathexecutor import AssertAnnotation
 
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
+
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
+from . paths import SimpleLoop
 
 def get_subs(state):
     return {l.load : l for l in (n for n in state.getNondets() if n.isNondetLoad())}
@@ -70,25 +72,25 @@ def get_unsafe_inv_candidates(unsafe):
         for r in get_relations(s):
             yield r.Not(EM)
 
-def get_inv_candidates(states):
+def get_safe_relations(states):
     errs = states.errors
     ready = states.ready
     if ready and errs:
         for r in get_safe_inv_candidates(ready, errs):
             yield r
-    # if errs:
-    #     for r in get_unsafe_inv_candidates(errs):
-    #         yield r
+   #if errs:
+   #    for r in get_unsafe_inv_candidates(errs):
+   #        yield r
     if states.other:
         for r in get_safe_inv_candidates((s for s in states.other if s.isTerminated()), errs):
             yield r
 
-def check_inv(prog, loc, inv):
+def check_inv(prog, loc, inv, maxk=8):
     dbg_sec(
         f"Checking if {inv} is invariant of loc {loc.getBBlock().getID()}")
 
     def reportfn(msg, *args, **kwargs):
-        print_stdout(f"  > {msg}", *args, **kwargs)
+        print_stdout(f"> {msg}", *args, **kwargs)
 
     kindse = BaseKindSE(prog)
     kindse.reportfn = reportfn
@@ -97,12 +99,12 @@ def check_inv(prog, loc, inv):
     apath.addLocAnnotationBefore(inv, loc)
 
     dbg_sec("Running nested KindSE")
-    res = kindse.run([apath], maxk=8)
+    res = kindse.run([apath], maxk=maxk)
     dbg_sec()
     dbg_sec()
     return res == 0
 
-class InvariantGenerator:
+class SimpleInvariantGenerator:
     """
     Generator of invariants for one location in program
     """
@@ -118,7 +120,7 @@ class InvariantGenerator:
         locid = self.locid
         program = self.program
 
-        for inv in get_inv_candidates(states):
+        for inv in get_safe_relations(states):
             if inv in self.tested_invs.setdefault(locid, set()):
                 continue
             self.tested_invs[locid].add(inv)
@@ -130,17 +132,115 @@ class InvariantGenerator:
                     color="BLUE")
                 yield inv
 
+def check_loop_inv(state, inv):
+    EM = state.getExprManager()
+    expr = inv.getExpr()
+    subs = inv.getSubstitutions()
+    for x in (l for l in state.getNondets() if l.isNondetLoad()):
+        sval = subs.get(x.load)
+        if sval:
+            expr = EM.substitute(expr, (sval, x))
 
-           #L = SimpleLoop.construct(loc)
-           #print(L.getPaths())
-           #print(L.getExits())
-           #print(inv)
-           #S = []
-           #for p in L.getPaths():
-           #    r = self.executePath(p)
-           #    S += r.ready or []
-           #for s in S:
-           #    s.dump()
-           #continue
+    print(inv)
+    state.dump()
+    print('assume', expr)
+    print('assert not', inv.doSubs(state))
+    print(state.getConstraints())
 
+    r = state.is_sat(EM.Not(inv.doSubs(state)), expr)
+    print(r)
+    if r is False:
+        # invariant
+        return True
+
+    return False
+
+class InvariantGenerator:
+    """
+    Generator of invariants for one location in program
+    """
+
+    def __init__(self, prog, loc):
+        self.program = prog
+        self.loc = loc
+        self.locid = loc.getBBlock().getID()
+        self.tested_invs = {}
+        self.states = []
+        self.relations = []
+        # a pair (loop, states after executing the loop body)
+        self.loops = {}
+
+        def reportfn(msg, *args, **kwargs):
+            print_stdout(f"> {msg}", *args, **kwargs)
+
+        kindse = BaseKindSE(prog)
+        kindse.reportfn = reportfn
+
+        self.executor = kindse
+
+    def getLoop(self, loc):
+        x = self.loops.get(loc)
+        if x:
+            return x
+
+        dbg_sec(f"Gathering paths for loc {loc.getBBlock().getID()}")
+        L = SimpleLoop.construct(loc)
+        if L is None:
+            return None
+       #S = []
+        S = None
+
+       #executor = self.executor
+       #for p in L.getPaths():
+       #    dbg(f"Got {p}, generating states")
+       #    r = executor.executePath(p)
+       #    S += r.ready or []
+
+        self.loops[loc] = (L, S)
+        dbg_sec()
+        return self.loops.get(loc)
+
+    def candidates(self, inv, states):
+        print_stdout(f"Generating invariant from {inv}", color="BROWN")
+        loc = self.loc
+        L, S = self.getLoop(loc)
+
+        executor = self.executor
+        ready, unsafe = [], []
+        for p in L.getPaths():
+            path = p.copy()
+            path.addLocAnnotationBefore(inv, loc)
+            r = executor.executePath(path)
+            if r.ready and not r.errors:
+                print_stdout(f"{inv} safe along {p}", color="RED")
+            elif r.errors:
+                print_stdout(f"{inv} unsafe along {p}", color="RED")
+                for e in r.errors:
+                    print(e.getConstraints())
+
+            ready += r.ready or []
+            unsafe += r.errors or []
+
+        if not unsafe:
+            yield inv
+
+    def generate(self, states):
+        loc = self.loc
+        locid = self.locid
+        program = self.program
+
+        #self.states.append(states)
+
+        for rel in get_safe_relations(states):
+            if rel in self.tested_invs.setdefault(locid, set()):
+                continue
+            self.tested_invs[locid].add(rel)
+
+            for inv in self.candidates(rel, states):
+                print_stdout(f'Checking if {inv} is invariant for {locid}')
+                if check_inv(program, loc, inv):
+                    print_stdout(
+                        f"{inv} is invariant of loc {locid}!",
+                        color="BLUE")
+                    yield inv
 

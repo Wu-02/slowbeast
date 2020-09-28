@@ -120,6 +120,12 @@ class AnnotatedCFGPath(CFGPath):
     #    assert idx < self.length()
     #    self.locations[idx].annotationsBefore.append(annot)
 
+    def copy(self):
+        n = AnnotatedCFGPath(self.getLocations())
+        n.locannotations = self.locannotations.copy()
+        n.locannotationsafter = self.locannotationsafter.copy()
+        return n
+
     def copyandprepend(self, loc):
         # FIXME: this is not efficient...
         n = AnnotatedCFGPath([loc] + self.locations)

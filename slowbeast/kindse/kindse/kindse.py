@@ -7,9 +7,8 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.pathexecutor import InstrsAnnotation, AssumeAnnotation, AssertAnnotation
 
-from . annotations import InvariantGenerator
+from . annotations import InvariantGenerator, SimpleInvariantGenerator
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
-from . paths import SimpleLoop
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
@@ -25,13 +24,14 @@ class KindSymbolicExecutor(BaseKindSE):
             testgen=testgen,
             opts=opts)
 
+        self.InvGen = InvariantGenerator
         self.genannot = genannot
         self.invpoints = {}
         self.invgenerators = {}
         self.have_problematic_path = False
 
     def getInv(self, loc, states):
-        IG = self.invgenerators.setdefault(loc, InvariantGenerator(self.getProgram(), loc))
+        IG = self.invgenerators.setdefault(loc, self.InvGen(self.getProgram(), loc))
 
         for inv in IG.generate(states):
             yield inv
