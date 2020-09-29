@@ -77,6 +77,28 @@ class PathExecutionResult:
         assert not self.other or all(map(lambda x: x.isTerminated() or x.wasKilled(), self.other))
         return True
 
+    def __repr__(self):
+        haveany = False
+        msg = 'PathExecutionResult: {'
+        if self.ready:
+            haveany = True
+            msg += f"\n  ready: {[x.getID() for x in self.ready]}"
+        if self.errors:
+            haveany = True
+            msg += f"\n  errors: {[x.getID() for x in self.errors]}"
+        if self.early:
+            haveany = True
+            msg += f"\n  early: {[x.getID() for x in self.early]}"
+        if self.other:
+            haveany = True
+            msg += f"\n  other: {[x.getID() for x in self.other]}"
+        if haveany:
+            msg += '\n}'
+        else:
+            msg += '}'
+
+        return msg
+
 
 
 class Executor:
