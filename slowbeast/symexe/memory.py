@@ -64,7 +64,11 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
     def uninitializedRead(self, state, frm, ptr, bytesNum):
         dbg("Reading nondet for uninitialized value: {0}".format(ptr),
             color='WHITE')
-        val = self.getSolver().freshValue(f"uninit_{frm.asValue()}", 8 * bytesNum)
+        # NOTE: this name identifier is reserved for value representing
+        # uninitialized read from this allocation, so it is unique and
+        # we can recycle its name
+        #val = self.getSolver().freshValue(f"uninit_{frm.asValue()}", 8 * bytesNum)
+        val = self.getSolver().Var(f"uninit_{frm.asValue()}", 8 * bytesNum)
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
