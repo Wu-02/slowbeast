@@ -114,9 +114,9 @@ def get_inv_candidates(states):
         for r in get_safe_relations((s for s in states.other if s.isTerminated()), errs):
             yield r
 
-def check_inv(prog, loc, inv, maxk=8):
+def check_inv(prog, loc, invs, maxk=8):
     dbg_sec(
-        f"Checking if {inv} is invariant of loc {loc.getBBlock().getID()}")
+        f"Checking if {invs} is invariant of loc {loc.getBBlock().getID()}")
 
     def reportfn(msg, *args, **kwargs):
         print_stdout(f"> {msg}", *args, **kwargs)
@@ -125,64 +125,14 @@ def check_inv(prog, loc, inv, maxk=8):
     kindse.reportfn = reportfn
 
     apath = AnnotatedCFGPath([loc])
-    apath.addLocAnnotationBefore(inv, loc)
+    for inv in invs:
+        apath.addLocAnnotationBefore(inv, loc)
 
     dbg_sec("Running nested KindSE")
     res = kindse.run([apath], maxk=maxk)
     dbg_sec()
     dbg_sec()
     return res == 0
-
-class SimpleInvariantGenerator:
-    """
-    Generator of invariants for one location in program
-    """
-
-    def __init__(self, prog, loc):
-        self.program = prog
-        self.loc = loc
-        self.locid = loc.getBBlock().getID()
-        self.tested_invs = {}
-
-    def generate(self, states):
-        loc = self.loc
-        locid = self.locid
-        program = self.program
-
-        for inv in get_inv_candidates(states):
-            if inv in self.tested_invs.setdefault(locid, set()):
-                continue
-            self.tested_invs[locid].add(inv)
-
-            print_stdout(f'Checking if {inv} is invariant for {locid}')
-            if check_inv(program, loc, inv):
-                print_stdout(
-                    f"{inv} is invariant of loc {locid}!",
-                    color="BLUE")
-                yield inv
-
-# def check_loop_inv(state, inv):
-#     EM = state.getExprManager()
-#     expr = inv.getExpr()
-#     subs = inv.getSubstitutions()
-#     for x in (l for l in state.getNondets() if l.isNondetLoad()):
-#         sval = subs.get(x.load)
-#         if sval:
-#             expr = EM.substitute(expr, (sval, x))
-
-#     print(inv)
-#     state.dump()
-#     print('assume', expr)
-#     print('assert not', inv.doSubs(state))
-#     print(state.getConstraints())
-
-#     r = state.is_sat(EM.Not(inv.doSubs(state)), expr)
-#     print(r)
-#     if r is False:
-#         # invariant
-#         return True
-
-#     return False
 
 class InvariantGenerator:
     """
@@ -252,17 +202,9 @@ class InvariantGenerator:
             unsafe += r.errors or []
         return ready, unsafe
 
-    def candidates(self, inv, states):
-        print_stdout(f"Generating invariant from {inv}", color="BROWN")
-        L = self.getLoop(self.loc)
-        if not L:
-            return
-
-        ready, unsafe = self.checkOnLoop(L, [inv])
-        if not unsafe:
-            yield inv # safe along all paths, this is partial invariant
-
-        # L.computeMonotonicVars(executor)
+    def strengthen(self, L, invs, ready, unsafe):
+        #L.computeMonotonicVars(self.executor)
+        return invs
 
     def generate(self, states):
         loc = self.loc
@@ -276,11 +218,81 @@ class InvariantGenerator:
                 continue
             self.tested_invs[locid].add(rel)
 
-            for inv in self.candidates(rel, states):
-                print_stdout(f'Checking if {inv} is invariant for {locid}')
-                if check_inv(program, loc, inv):
-                    print_stdout(
-                        f"{inv} is invariant of loc {locid}!",
-                        color="BLUE")
-                    yield inv
+            dbg_sec(f"Generating invariant from {rel}", color="BROWN")
+            L = self.getLoop(self.loc)
+            if not L:
+                continue
+
+            k = 0
+            invs = [rel]
+            while k < 10:
+                ready, unsafe = self.checkOnLoop(L, invs)
+                if not unsafe:
+                    dbg(f'Checking if {invs} is invariant for {locid}')
+                    # FIXME: check only incomming paths to loop (as it is
+                    # partial invariant now)
+                    if check_inv(program, loc, invs):
+                        print_stdout(
+                            f"{invs} is invariant of loc {locid}!",
+                            color="BLUE")
+                        yield invs
+                        break
+
+                invs = self.strengthen(L, invs, ready, unsafe)
+                k += 1
+            dbg_sec()
+
+
+            # now it is partial invariant
+# class SimpleInvariantGenerator:
+#     """
+#     Generator of invariants for one location in program
+#     """
+
+#     def __init__(self, prog, loc):
+#         self.program = prog
+#         self.loc = loc
+#         self.locid = loc.getBBlock().getID()
+#         self.tested_invs = {}
+
+#     def generate(self, states):
+#         loc = self.loc
+#         locid = self.locid
+#         program = self.program
+
+#         for inv in get_inv_candidates(states):
+#             if inv in self.tested_invs.setdefault(locid, set()):
+#                 continue
+#             self.tested_invs[locid].add(inv)
+
+#             print_stdout(f'Checking if {inv} is invariant for {locid}')
+#             if check_inv(program, loc, inv):
+#                 print_stdout(
+#                     f"{inv} is invariant of loc {locid}!",
+#                     color="BLUE")
+#                 yield inv
+
+# def check_loop_inv(state, inv):
+#     EM = state.getExprManager()
+#     expr = inv.getExpr()
+#     subs = inv.getSubstitutions()
+#     for x in (l for l in state.getNondets() if l.isNondetLoad()):
+#         sval = subs.get(x.load)
+#         if sval:
+#             expr = EM.substitute(expr, (sval, x))
+
+#     print(inv)
+#     state.dump()
+#     print('assume', expr)
+#     print('assert not', inv.doSubs(state))
+#     print(state.getConstraints())
+
+#     r = state.is_sat(EM.Not(inv.doSubs(state)), expr)
+#     print(r)
+#     if r is False:
+#         # invariant
+#         return True
+
+#     return False
+
 

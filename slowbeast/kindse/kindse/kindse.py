@@ -7,7 +7,7 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.pathexecutor import InstrsAnnotation, AssumeAnnotation, AssertAnnotation
 
-from . annotations import InvariantGenerator, SimpleInvariantGenerator
+from . annotations import InvariantGenerator
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 
 class KindSymbolicExecutor(BaseKindSE):
@@ -53,7 +53,8 @@ class KindSymbolicExecutor(BaseKindSE):
         dbg_sec(f"Trying to generate annotations for {loc.getBBlock().getID()}")
         for inv in self.getInv(loc, states):
             dbg(f"Adding {inv} as assumption to the CFG")
-            loc.annotationsBefore.append(inv)
+            for annot in inv:
+                loc.annotationsBefore.append(annot)
         dbg_sec()
 
     def checkPaths(self):
