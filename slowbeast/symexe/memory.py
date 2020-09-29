@@ -61,10 +61,10 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
             state.setError(err)
         return [state]
 
-    def uninitializedRead(self, state, toOp, ptr, bytesNum):
+    def uninitializedRead(self, state, frm, ptr, bytesNum):
         dbg("Reading nondet for uninitialized value: {0}".format(ptr),
             color='WHITE')
-        val = self.getSolver().freshValue(f"uninit_{toOp.asValue()}", 8 * bytesNum)
+        val = self.getSolver().freshValue(f"uninit_{frm.asValue()}", 8 * bytesNum)
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
@@ -88,9 +88,9 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
             if err:
                 assert err.isMemError()
                 if err.isUninitRead():
-                    val, err = self.uninitializedRead(state, toOp, frm, bytesNum)
+                    val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
                     assert isinstance(toOp, Load)
-                    state.addNondet(NondetLoad.fromExpr(val, toOp))
+                    state.addNondet(NondetLoad.fromExpr(val, toOp, fromOp))
 
         except NotImplementedError as e:
             state.setKilled(str(e))

@@ -178,6 +178,6 @@ class SimpleLoop:
 
         V = self.vars
         for (x, r) in results.items():
-            print(x, r)
+            #print(x, r)
             V[x] = r
 

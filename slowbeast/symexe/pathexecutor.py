@@ -51,7 +51,7 @@ class InstrsAnnotation(Annotation):
 
     def __repr__(self):
         return "[{0}]".format(", ".join(map(lambda i: i.asValue(), self.instrs)))
- 
+
 
 def _createCannonical(expr, subs, EM):
     for (x, val) in subs.items():

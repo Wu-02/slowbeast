@@ -203,8 +203,18 @@ class InvariantGenerator:
         return ready, unsafe
 
     def strengthen(self, L, invs, ready, unsafe):
-        #L.computeMonotonicVars(self.executor)
-        return invs
+        assert ready
+        assert unsafe
+
+        L.computeMonotonicVars(self.executor)
+        V = L.vars
+        for (v, m) in V.items():
+            if m == '<' or m == '<=':
+                EM = ready[0].getExprManager()
+                ready[0].dump()
+                #ready[0].is_sat(EM.Lt(EM.Constant(0), 
+                print(v)
+        return False, invs
 
     def generate(self, states):
         loc = self.loc
@@ -236,9 +246,12 @@ class InvariantGenerator:
                             f"{invs} is invariant of loc {locid}!",
                             color="BLUE")
                         yield invs
+                    # FIXME: we can annotate CFG now
+                    break
+                else:
+                    progress, invs = self.strengthen(L, invs, ready, unsafe)
+                    if not progress:
                         break
-
-                invs = self.strengthen(L, invs, ready, unsafe)
                 k += 1
             dbg_sec()
 

@@ -114,22 +114,22 @@ class Expr(Value):
         return "<{0}:{1}>".format(self._expr, self.getType())
 
 class NondetLoad(Expr):
-    __slots__ = ['load']
+    __slots__ = ['load', 'alloc']
 
-    def __init__(self, e, t, load):
+    def __init__(self, e, t, load, alloc):
         super(NondetLoad, self).__init__(e,  t)
         self.load = load
+        self.alloc = alloc
 
     def isNondetLoad(self):
         return True
 
-    def fromExpr(expr, load):
+    def fromExpr(expr, load, alloc):
         assert isinstance(expr, Expr)
-        return NondetLoad(expr.unwrap(), expr.getType(), load)
+        return NondetLoad(expr.unwrap(), expr.getType(), load, alloc)
 
     def __repr__(self):
-        return f"L({self.load.asValue()})={Expr.__repr__(self)}"
-
+        return f"L({self.alloc.asValue()})={Expr.__repr__(self)}"
 
 class BVSymbolicDomain:
     """
