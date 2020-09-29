@@ -4,15 +4,18 @@ from . constraints import ConstraintsSet
 from copy import copy
 from sys import stdout
 
-
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
     statesCounter = 0
 
     def __init__(self, pc, m, solver, constraints=ConstraintsSet()):
+        C = ConstraintsSet()
+        assert not C.get(), C.get()
         ExecutionState.__init__(self, pc, m)
+
         self._solver = solver
-        self.constraints = constraints
+        self._constraints = ConstraintsSet()
+        self._constraints_ro = False
 
         SEState.statesCounter += 1
         self._id = SEState.statesCounter
@@ -27,7 +30,7 @@ class SEState(ExecutionState):
 
     def __eq__(self, rhs):
         return super(SEState, self).__eq__(rhs) and\
-            self.constraints == rhs.constraints
+            self._constraints == rhs._constraints
 
     def getSolver(self):
         return self._solver
@@ -56,8 +59,12 @@ class SEState(ExecutionState):
 
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
-        new = SEState(self.pc, self.memory, self.getSolver(), self.constraints.copy())
+        new = SEState(self.pc, self.memory, self.getSolver())
         super(SEState, self).copyTo(new)  # cow copy of super class
+
+        new._constraints = self._constraints
+        new._constraints_ro = True
+        self._constraints_ro = True
 
         new._warnings = self._warnings
         new._warnings_ro = True
@@ -70,14 +77,18 @@ class SEState(ExecutionState):
         return new
 
     def getConstraints(self):
-        return self.constraints.get()
+        return self._constraints.get()
 
     def getConstraintsObj(self):
-        return self.constraints
+        return self._constraints
 
     def addConstraint(self, *C):
+        if self._constraints_ro:
+            self._constraints = self._constraints.copy()
+            self._constraints_ro = False
+
         for c in C:
-            self.constraints.addConstraint(c)
+            self._constraints.addConstraint(c)
 
     def addWarning(self, msg):
         warn(msg)

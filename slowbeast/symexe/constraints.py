@@ -3,25 +3,16 @@ from copy import copy
 class ConstraintsSet:
     __slots__ = ['constraints', '_ro']
 
-    def __init__(self, C=[]):
-        self.constraints = C
-        self._ro = False
+    def __init__(self, C=None):
+        self.constraints = C or []
 
     def copy(self):
-        new = ConstraintsSet(self.constraints)
-        new._ro = True
-        self._ro = True
-        return new
+        return ConstraintsSet(self.constraints[:])
 
     def __eq__(self, rhs):
         return self.constraints == rhs.constraints
 
     def addConstraint(self, *C):
-        if self._ro:
-            # shallow copy should be enough
-            self.constraints = copy(self.constraints)
-            self._ro = False
-
         for c in C:
             assert not c.isConstant(), "Adding True or False, catch these cases atm"
             self.constraints.append(c)
