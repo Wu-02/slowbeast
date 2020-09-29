@@ -59,6 +59,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             executor = self.getExecutor()
         else:
             s = self.getIndExecutor().createState()
+            assert not s.getConstraints(), "The state is not clean"
             s.pushCall(None, self.getProgram().getEntry())
             states = [s]
             executor = self.getIndExecutor()
@@ -66,6 +67,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             dbg(f"Executing path: {path}", color="WHITE", fn=self.reportfn)
 
         assert states
+        assert all(map(lambda s: not s.getConstraints(), states)), "The states are not clean"
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path

@@ -61,7 +61,9 @@ class Executor(ConcreteExecutor):
     def createState(self, pc=None, m=None):
         if m is None:
             m = self.getMemoryModel().createMemory()
-        return SEState(pc, m, self.solver)
+        s = SEState(pc, m, self.solver)
+        assert not s.getConstraints(), "the state is not clean"
+        return s
 
     def fork(self, state, cond):
         self.stats.fork_calls += 1
