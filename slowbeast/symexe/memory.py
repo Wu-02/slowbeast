@@ -73,7 +73,7 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         return val, err
 
     def read(self, state, toOp, fromOp, bytesNum):
-        assert isinstance(bytesNum, int), "Invalid number of bytes"
+        assert isinstance(bytesNum, int), f"Invalid number of bytes: {bytesNum}"
         frm = state.get(fromOp)
         if frm is None:
             self.lazyAllocate(state, fromOp)

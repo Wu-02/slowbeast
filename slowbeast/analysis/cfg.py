@@ -114,6 +114,9 @@ class CFGPath:
         assert idx < len(self.locations)
         return self.locations[idx]
 
+    def __iter__(self):
+        return self.locations.__iter__()
+
     def copy(self):
         return copy(self)
 

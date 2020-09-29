@@ -10,8 +10,9 @@ from . paths import SimpleLoop
 def get_subs(state):
     return {l.load : l for l in (n for n in state.getNondets() if n.isNondetLoad())}
 
-def get_relations(state):
+def get_all_relations(state):
     rels = []
+    subs = get_subs(state)
     EM = state.getExprManager()
 
     # FIXME not efficient, just for testing now
@@ -42,47 +43,75 @@ def get_relations(state):
                     pred = Cmp.EQ
                 elif isgt is True:
                     #print(val1, '>=', val2)
-                    expr = EM.Ge(val1, val2)
+                    #expr = EM.Ge(val1, val2)
                     pred = Cmp.GE
             elif islt is True:
                 gt = EM.Gt(val1, val2)
                 isgt = state.is_sat(gt)
                 if isgt is False:
                     #print(val1, '<=', val2)
-                    expr = EM.Le(val1, val2)
+                    #expr = EM.Le(val1, val2)
                     pred = Cmp.LE
 
             if expr and not expr.isConstant():
                 assert pred
-                yield AssertAnnotation(expr, get_subs(state), EM)
+                yield AssertAnnotation(expr, subs, EM)
 
-def get_safe_inv_candidates(safe, unsafe):
+# def get_var_range(state, x):
+#     EM = state.getExprManager()
+#     Lt = EM.Lt
+#     if state.is_sat(Lt(x, EM.Constant(10, x.getBitWidth()))) is False:
+#         if state.is_sat(Lt(x, EM.Constant(100, x.getBitWidth()))) is False:
+#             if state.is_sat(Lt(x, EM.Constant(1000, x.getBitWidth()))) is False:
+#                 lower = 1 << (x.getBitWidth() - 1) - 1 # go to max
+#                 upper = None
+#             else:
+#                 lower = 999
+#                 upper = 999
+#         else:
+#             lower = 99
+#             upper = 99
+#     else:
+#         lower = 9
+#         upper = 9
+
+#     trials = 0
+#     while trials < 50:
+#         rg = state.is_sat(Lt(x, EM.Constant(lower, x.getBitWidth())))
+#         if rg is False:
+#             break
+#         elif rg is None:
+#             break
+
+#         upper = lower
+#         lower -= int(lower / 2)
+#         trials += 1
+
+#     print(f'{lower} <= x <{upper}')
+#     return EM.Ge(x, EM.Constant(lower, x.getBitWidth())), Lt(x, EM.Constant(upper, x.getBitWidth()))
+
+def get_safe_relations(safe, unsafe):
     for s in safe:
         # get and filter out those relations that make the state safe
         saferels = (
-            r for r in get_relations(s) if not all(
-                u.is_sat(r.getExpr()) for u in unsafe))
+            r for r in get_all_relations(s))
         for x in saferels:
             yield x
 
-def get_unsafe_inv_candidates(unsafe):
-    for s in unsafe:
-        # get and filter out those relations that make the state safe
-        EM = s.getExprManager()
-        for r in get_relations(s):
-            yield r.Not(EM)
+   #for s in unsafe:
+   #    # get and filter out those relations that make the state safe
+   #    EM = s.getExprManager()
+   #    for r in get_all_relations(s):
+   #        yield r.Not(EM)
 
-def get_safe_relations(states):
+def get_inv_candidates(states):
     errs = states.errors
     ready = states.ready
     if ready and errs:
-        for r in get_safe_inv_candidates(ready, errs):
+        for r in get_safe_relations(ready, errs):
             yield r
-   #if errs:
-   #    for r in get_unsafe_inv_candidates(errs):
-   #        yield r
     if states.other:
-        for r in get_safe_inv_candidates((s for s in states.other if s.isTerminated()), errs):
+        for r in get_safe_relations((s for s in states.other if s.isTerminated()), errs):
             yield r
 
 def check_inv(prog, loc, inv, maxk=8):
@@ -120,7 +149,7 @@ class SimpleInvariantGenerator:
         locid = self.locid
         program = self.program
 
-        for inv in get_safe_relations(states):
+        for inv in get_inv_candidates(states):
             if inv in self.tested_invs.setdefault(locid, set()):
                 continue
             self.tested_invs[locid].add(inv)
@@ -132,28 +161,28 @@ class SimpleInvariantGenerator:
                     color="BLUE")
                 yield inv
 
-def check_loop_inv(state, inv):
-    EM = state.getExprManager()
-    expr = inv.getExpr()
-    subs = inv.getSubstitutions()
-    for x in (l for l in state.getNondets() if l.isNondetLoad()):
-        sval = subs.get(x.load)
-        if sval:
-            expr = EM.substitute(expr, (sval, x))
+# def check_loop_inv(state, inv):
+#     EM = state.getExprManager()
+#     expr = inv.getExpr()
+#     subs = inv.getSubstitutions()
+#     for x in (l for l in state.getNondets() if l.isNondetLoad()):
+#         sval = subs.get(x.load)
+#         if sval:
+#             expr = EM.substitute(expr, (sval, x))
 
-    print(inv)
-    state.dump()
-    print('assume', expr)
-    print('assert not', inv.doSubs(state))
-    print(state.getConstraints())
+#     print(inv)
+#     state.dump()
+#     print('assume', expr)
+#     print('assert not', inv.doSubs(state))
+#     print(state.getConstraints())
 
-    r = state.is_sat(EM.Not(inv.doSubs(state)), expr)
-    print(r)
-    if r is False:
-        # invariant
-        return True
+#     r = state.is_sat(EM.Not(inv.doSubs(state)), expr)
+#     print(r)
+#     if r is False:
+#         # invariant
+#         return True
 
-    return False
+#     return False
 
 class InvariantGenerator:
     """
@@ -187,42 +216,53 @@ class InvariantGenerator:
         L = SimpleLoop.construct(loc)
         if L is None:
             return None
-       #S = []
-        S = None
 
-       #executor = self.executor
+        executor = self.executor
+       #S = []
        #for p in L.getPaths():
        #    dbg(f"Got {p}, generating states")
        #    r = executor.executePath(p)
        #    S += r.ready or []
 
-        self.loops[loc] = (L, S)
+        # FIXME: we may want to do this after adding annotations
+        # (we then may get more results)
+
+        self.loops[loc] = L
         dbg_sec()
         return self.loops.get(loc)
 
-    def candidates(self, inv, states):
-        print_stdout(f"Generating invariant from {inv}", color="BROWN")
-        loc = self.loc
-        L, S = self.getLoop(loc)
-
+    def checkOnLoop(self, L, invs):
+        loc = L.loc
         executor = self.executor
         ready, unsafe = [], []
         for p in L.getPaths():
             path = p.copy()
-            path.addLocAnnotationBefore(inv, loc)
+            for inv in invs:
+                path.addLocAnnotationBefore(inv, loc)
+
             r = executor.executePath(path)
             if r.ready and not r.errors:
-                print_stdout(f"{inv} safe along {p}", color="RED")
+                print_stdout(f"{' & '.join(map(str, invs))} safe along {p}", color="GREEN")
             elif r.errors:
-                print_stdout(f"{inv} unsafe along {p}", color="RED")
-                for e in r.errors:
-                    print(e.getConstraints())
+                print_stdout(f"{' & '.join(map(str, invs))} unsafe along {p}", color="RED")
+            else:
+                print_stdout(f"{' & '.join(map(str, invs))} infeasible along {p}", color="BLUE")
 
             ready += r.ready or []
             unsafe += r.errors or []
+        return ready, unsafe
 
+    def candidates(self, inv, states):
+        print_stdout(f"Generating invariant from {inv}", color="BROWN")
+        L = self.getLoop(self.loc)
+        if not L:
+            return
+
+        ready, unsafe = self.checkOnLoop(L, [inv])
         if not unsafe:
-            yield inv
+            yield inv # safe along all paths, this is partial invariant
+
+        # L.computeMonotonicVars(executor)
 
     def generate(self, states):
         loc = self.loc
@@ -231,7 +271,7 @@ class InvariantGenerator:
 
         #self.states.append(states)
 
-        for rel in get_safe_relations(states):
+        for rel in get_inv_candidates(states):
             if rel in self.tested_invs.setdefault(locid, set()):
                 continue
             self.tested_invs[locid].add(rel)
