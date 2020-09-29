@@ -104,10 +104,19 @@ class SEState(ExecutionState):
         if self._nondets_ro:
             self._nondets = copy(self._nondets)
             self._nondets_ro = False
+        # we can have only one nonded for a given allocation
+        assert not n.isNondetLoad() or\
+            all(map(lambda x: x.alloc != n.alloc, (l for l in self._nondets if l.isNondetLoad())))
         self._nondets.append(n)
 
     def getNondets(self):
         return self._nondets
+
+    def getNondetLoadOf(self, alloc):
+        for n in self._nondets:
+            if n.isNondetLoad() and n.alloc == alloc:
+                return n
+        return None
 
     def dump(self, stream=stdout):
         ExecutionState.dump(self, stream)

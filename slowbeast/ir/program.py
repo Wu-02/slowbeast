@@ -84,7 +84,7 @@ class ProgramElement:
         return self._id == rhs._id
 
     def __ne__(self, other):
-        return not(self.__eq__(self, other))
+        return not(self.__eq__(other))
 
     def __hash__(self):
         return self._id
