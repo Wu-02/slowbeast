@@ -56,6 +56,8 @@ class SimpleLoop:
         self.loc = loc
         self.paths = paths
         self.exits = exits
+        # the state after executing the given path
+        self.states = None
 
         self.vars = None
 
@@ -170,8 +172,7 @@ class SimpleLoop:
                # NOTE: we do not need to handle the cases when x is not
                 # present in the state, because in that case
                 # it is invariant for the path
-                for x in (l for l in s.getNondets() if l.isNondetLoad()):
-                    assert x.load in loads, "BUG: have also other loads than our artificial"
+                for x in (l for l in s.getNondets() if l.isNondetLoad() and l.load in loads):
                     curval = s.get(x.load)
                     assert curval, "BUG: must have the load as it is nondet"
                     addRel(x, get_rel(s, x, curval))

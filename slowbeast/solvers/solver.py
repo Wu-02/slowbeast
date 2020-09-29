@@ -150,7 +150,8 @@ class SymbolicSolver(SolverIntf):
         return is_sat([x.unwrap() for x in e])
 
     def concretize(self, assumpt, *e):
-        m = smallmodels(assumpt, *e)
+        #m = smallmodels(assumpt, *e)
+        m = models(assumpt, *e)
         if m is None:  # unsat
             return None
         ret = []
@@ -160,15 +161,6 @@ class SymbolicSolver(SolverIntf):
             else:
                 ret.append(Constant(m[n].as_long(), v.getType()))
         return ret
-
-  # def concretize(self, val, *e):
-  #     m = model(val, *e)
-  #     print(m)
-  #     v = m.get(val)
-  #     if not v:
-  #         return Constant(0, val.getType())
-
-  #     return Constant(v, val.getType())
 
   # def getUnique(self, val, *e):
   #     v = self.concretize(val, *e)

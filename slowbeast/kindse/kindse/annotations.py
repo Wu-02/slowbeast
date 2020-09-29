@@ -167,15 +167,15 @@ class InvariantGenerator:
         if L is None:
             return None
 
-        executor = self.executor
-       #S = []
+       #executor = self.executor
+       #L.states = {}
        #for p in L.getPaths():
        #    dbg(f"Got {p}, generating states")
        #    r = executor.executePath(p)
-       #    S += r.ready or []
-
-        # FIXME: we may want to do this after adding annotations
-        # (we then may get more results)
+       #    assert len(r.ready) == 1
+       #    assert not r.errors
+       #    L.states[p] = r.ready[0]
+       #    r.ready[0].dump()
 
         self.loops[loc] = L
         dbg_sec()
@@ -196,25 +196,30 @@ class InvariantGenerator:
             elif r.errors:
                 print_stdout(f"{' & '.join(map(str, invs))} unsafe along {p}", color="RED")
             else:
-                print_stdout(f"{' & '.join(map(str, invs))} infeasible along {p}", color="BLUE")
+                print_stdout(f"{' & '.join(map(str, invs))} infeasible along {p}", color="DARK_GREEN")
 
             ready += r.ready or []
             unsafe += r.errors or []
         return ready, unsafe
 
     def strengthen(self, L, invs, ready, unsafe):
-        assert ready
+        if not ready:
+            return
         assert unsafe
 
         L.computeMonotonicVars(self.executor)
         V = L.vars
         for (v, m) in V.items():
-            if m == '<' or m == '<=':
-                EM = ready[0].getExprManager()
-                ready[0].dump()
-                #ready[0].is_sat(EM.Lt(EM.Constant(0), 
-                print(v)
-        return False, invs
+            if m == '<' or m == '<=': # monotonic variable
+                for s in unsafe:
+                    EM = s.getExprManager()
+                    s.dump()
+                    x = s.getNondetLoadOf(v)
+                    assert x
+
+                    c = s.concretize(x)[0]
+                    lt = EM.Lt(c, x)
+                    yield invs + [AssertAnnotation(lt, invs[0].getSubstitutions(), EM)]
 
     def generate(self, states):
         loc = self.loc
@@ -234,25 +239,30 @@ class InvariantGenerator:
                 continue
 
             k = 0
-            invs = [rel]
-            while k < 10:
-                ready, unsafe = self.checkOnLoop(L, invs)
-                if not unsafe:
-                    dbg(f'Checking if {invs} is invariant for {locid}')
-                    # FIXME: check only incomming paths to loop (as it is
-                    # partial invariant now)
-                    if check_inv(program, loc, invs):
-                        print_stdout(
-                            f"{invs} is invariant of loc {locid}!",
-                            color="BLUE")
-                        yield invs
-                    # FIXME: we can annotate CFG now
-                    break
-                else:
-                    progress, invs = self.strengthen(L, invs, ready, unsafe)
-                    if not progress:
-                        break
-                k += 1
+            workbag = [[rel]]
+            newworkbag = []
+            while workbag:
+                for invs in workbag:
+                    ready, unsafe = self.checkOnLoop(L, invs)
+                    if not unsafe and ready:
+                        # we have some states (not all paths were killed by invs)
+                        # but none erroneoues -- then this is partial invariant!
+                        print_stdout(f'{invs} is partial invariant for {locid}',
+                                     color='DARK_BLUE')
+                        dbg(f'Checking if {invs} is invariant for {locid}')
+                        # FIXME: check only incomming paths to loop (as it is
+                        # partial invariant now)
+                        if check_inv(program, loc, invs):
+                            print_stdout(
+                                f"{invs} is invariant of loc {locid}!",
+                                color="BLUE")
+                            yield invs
+                        # FIXME: we can annotate CFG now for forward SE
+                            break
+                    else:
+                        for newinv in self.strengthen(L, invs, ready, unsafe):
+                            newworkbag.append(newinv)
+                workbag = newworkbag
             dbg_sec()
 
 
