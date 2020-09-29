@@ -1,6 +1,5 @@
 from copy import copy
 
-
 class ConstraintsSet:
     __slots__ = ['constraints', '_ro']
 
@@ -9,8 +8,9 @@ class ConstraintsSet:
         self._ro = False
 
     def copy(self):
-        new = copy(self)
+        new = ConstraintsSet(self.constraints)
         new._ro = True
+        self._ro = True
         return new
 
     def __eq__(self, rhs):

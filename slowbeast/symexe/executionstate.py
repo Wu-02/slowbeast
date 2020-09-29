@@ -9,10 +9,10 @@ class SEState(ExecutionState):
     """ Execution state of symbolic execution """
     statesCounter = 0
 
-    def __init__(self, pc, m, solver):
+    def __init__(self, pc, m, solver, constraints=ConstraintsSet()):
         ExecutionState.__init__(self, pc, m)
         self._solver = solver
-        self.constraints = ConstraintsSet()
+        self.constraints = constraints
 
         SEState.statesCounter += 1
         self._id = SEState.statesCounter
@@ -56,10 +56,9 @@ class SEState(ExecutionState):
 
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
-        new = SEState(self.pc, self.memory, self.getSolver())
+        new = SEState(self.pc, self.memory, self.getSolver(), self.constraints.copy())
         super(SEState, self).copyTo(new)  # cow copy of super class
 
-        new.constraints = self.constraints.copy()
         new._warnings = self._warnings
         new._warnings_ro = True
         self._warnings_ro = True
