@@ -114,6 +114,7 @@ class Executor(ConcreteExecutor):
 
         return T, F
 
+    # FIXME: make this a method of State?
     def assume(self, state, cond):
         """ Put an assumption _into_ the given state.
             Return the statte or None if that situation cannot happen

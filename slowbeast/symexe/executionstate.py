@@ -54,6 +54,13 @@ class SEState(ExecutionState):
             return True
         return self._solver.is_sat(*self.getConstraints(), *e)
 
+    def isfeasible(self):
+        """
+        Solve the PC and return True if it is sat. Handy in the cases
+        when the state is constructed manually.
+        """
+        return self._solver.is_sat(*self.getConstraints())
+
     def concretize(self, *e):
         return self._solver.concretize(self.getConstraints(), *e)
 
@@ -89,6 +96,10 @@ class SEState(ExecutionState):
 
         for c in C:
             self._constraints.addConstraint(c)
+
+    def setConstraints(self, C):
+        self._constraints = C
+        self._constraints_ro = False
 
     def addWarning(self, msg):
         warn(msg)

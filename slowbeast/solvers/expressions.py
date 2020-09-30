@@ -93,6 +93,15 @@ class ExprManager:
         lift = self.lift
         return SymbolicDomain.substitute(expr, *((lift(a), lift(b)) for (a, b) in vals))
 
+    def equals(self, e1, e2):
+        """
+        Values are syntactically equal
+        """
+        if ConcreteDomain.belongto(e1, e2):
+            return e1 == e2
+        lift = self.lift
+        return SymbolicDomain.equals(lift(e1), lift(e2))
+
     def dropValue(self, name):
         self._names.pop(name)
 

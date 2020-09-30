@@ -144,6 +144,15 @@ class BVSymbolicDomain:
                 return False
         return True
 
+
+    def equals(e1, e2):
+        """
+        Expressions are syntactically equal
+        """
+        assert isinstance(e1, Expr)
+        assert isinstance(e2, Expr)
+        return e1.unwrap() == e2.unwrap()
+
     def lift(v):
         assert isinstance(v, Value), "Invalid value for lifting: {0}".format(v)
         if isinstance(v, Expr):

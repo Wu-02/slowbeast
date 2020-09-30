@@ -50,19 +50,22 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         error is reachable
         """
         if fromInit:
+            # we must execute without lazy memory
+            executor = self.getExecutor()
+
             if not self.states:
                 self.prepare()
             states = self.states
             assert states
+
             dbg(f"Executing (init) path: {path}", color="WHITE", fn=self.reportfn)
-            # we must execute without lazy memory
-            executor = self.getExecutor()
         else:
-            s = self.getIndExecutor().createState()
+            executor = self.getIndExecutor()
+
+            s = executor.createState()
             assert not s.getConstraints(), "The state is not clean"
             s.pushCall(None, self.getProgram().getEntry())
             states = [s]
-            executor = self.getIndExecutor()
 
             dbg(f"Executing path: {path}", color="WHITE", fn=self.reportfn)
 
