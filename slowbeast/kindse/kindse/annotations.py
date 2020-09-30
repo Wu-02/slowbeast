@@ -258,7 +258,7 @@ class InvariantGenerator:
                                 color="BLUE")
                             yield invs
                         # FIXME: we can annotate CFG now for forward SE
-                            break
+                        break
                     else:
                         for newinv in self.strengthen(L, invs, ready, unsafe):
                             newworkbag.append(newinv)

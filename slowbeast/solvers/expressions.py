@@ -100,7 +100,7 @@ class ExprManager:
         if ConcreteDomain.belongto(e1, e2):
             return e1 == e2
         lift = self.lift
-        return SymbolicDomain.equals(lift(e1), lift(e2))
+        return lift(e1) == lift(e2)
 
     def dropValue(self, name):
         self._names.pop(name)
