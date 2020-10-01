@@ -314,11 +314,12 @@ class Executor(SExecutor):
         for s in states:
             s.pc = newpc
 
-        # execute the annotation of the path (if any)
-       #pathannot = path.getAnnotationBefore()
-       #if pathannot:
-       #    states, tu = self.executeAnnotations(states, pathannot)
-       #    earlytermstates += tu
+
+        # execute the precondition of the path
+        pre = path.getPrecondition()
+        if pre:
+            states, tu = self.executeAnnotations(states, pre)
+            earlytermstates += tu
 
         locsnum = len(locs)
         for idx in range(0, locsnum):
@@ -353,11 +354,11 @@ class Executor(SExecutor):
                 result.errors, result.other = split_nonready_states(nonready)
             states = newstates
 
-        # execute the annotation of the path (if any)
-       #pathannot = path.getAnnotationAfter()
-       #if pathannot:
-       #    states, tu = self.executeAnnotations(states, pathannot)
-       #    result.errors += tu
+        # execute the postcondition of the path
+        post = path.getPostcondition()
+        if post:
+            states, tu = self.executeAnnotations(states, post)
+            result.errors, result.other = split_nonready_states(tu)
 
         result.ready = states or None
         result.early = earlytermstates or None

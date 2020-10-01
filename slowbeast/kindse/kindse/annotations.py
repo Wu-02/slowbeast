@@ -1,5 +1,6 @@
 from slowbeast.ir.instruction import Cmp, Load, Assume, Assert
 from slowbeast.symexe.pathexecutor import AssertAnnotation
+from slowbeast.core.executor import PathExecutionResult
 
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
@@ -7,8 +8,22 @@ from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 from . paths import SimpleLoop
 
+# we want our annotations to talk about memory
+# and if they talk about the same memory, to look the same
+# So for every load X, we create a unique load X that we use
+# instead. In other words, we map all the x1 = load X,
+# x2 = load X, x3 = load X, ... to one x = load X
+cannonic_loads = {}
+
 def get_subs(state):
-    return {l.load : l for l in (n for n in state.getNondets() if n.isNondetLoad())}
+    global cannonic_loads
+    subs = {}
+    for l in (n for n in state.getNondets() if n.isNondetLoad()):
+        alloc = l.load.getPointerOperand()
+        load = cannonic_loads.setdefault(alloc, Load(alloc, alloc.getSize().getValue()))
+        subs[load] = l
+
+    return subs
 
 def get_all_relations(state):
     rels = []
@@ -33,28 +48,30 @@ def get_all_relations(state):
             lt = EM.Lt(val1, val2)
             islt = state.is_sat(lt)
             expr = None
-            pred = None
             if islt is False:  # val1 >= val2
                 gt = EM.Gt(val1, val2)
                 isgt = state.is_sat(gt)
                 if isgt is False:  # val1 <= val2
                     #print(val1, '=', val2)
-                    expr = EM.Eq(val1, val2)
-                    pred = Cmp.EQ
+                    # to avoid generating x = y and y = x as different
+                    # expressions
+                    if str(val1) < str(val2):
+                        expr = EM.Eq(val1, val2)
+                    else:
+                        expr = EM.Eq(val2, val1)
                 elif isgt is True:
+                    pass
                     #print(val1, '>=', val2)
                     #expr = EM.Ge(val1, val2)
-                    pred = Cmp.GE
             elif islt is True:
                 gt = EM.Gt(val1, val2)
                 isgt = state.is_sat(gt)
                 if isgt is False:
+                    pass
                     #print(val1, '<=', val2)
                     #expr = EM.Le(val1, val2)
-                    pred = Cmp.LE
 
             if expr and not expr.isConstant():
-                assert pred
                 yield AssertAnnotation(expr, subs, EM)
 
 # def get_var_range(state, x):
@@ -107,12 +124,17 @@ def get_safe_relations(safe, unsafe):
 def get_inv_candidates(states):
     errs = states.errors
     ready = states.ready
+    yielded = set()
     if ready and errs:
         for r in get_safe_relations(ready, errs):
-            yield r
+            if r not in yielded:
+                yielded.add(r)
+                yield r
     if states.other:
         for r in get_safe_relations((s for s in states.other if s.isTerminated()), errs):
-            yield r
+            if r not in yielded:
+                yielded.add(r)
+                yield r
 
 def check_inv(prog, loc, invs, maxk=8):
     dbg_sec(
@@ -134,6 +156,18 @@ def check_inv(prog, loc, invs, maxk=8):
     dbg_sec()
     return res == 0
 
+def annotated_loop_paths(L, pre, post, invs):
+    for p in L.getPaths():
+        path = p.copy()
+        for a in pre:
+            path.addPrecondition(a)
+        for a in post:
+            path.addPostcondition(post)
+        for inv in invs:
+            path.addLocAnnotationBefore(inv, loc)
+
+        yield path
+
 class InvariantGenerator:
     """
     Generator of invariants for one location in program
@@ -146,6 +180,7 @@ class InvariantGenerator:
         self.tested_invs = {}
         self.states = []
         self.relations = []
+        self.abstract_path = []
         # a pair (loop, states after executing the loop body)
         self.loops = {}
 
@@ -181,26 +216,25 @@ class InvariantGenerator:
         dbg_sec()
         return self.loops.get(loc)
 
-    def checkOnLoop(self, L, invs):
+    def runOnLoop(self, L, pre=[], post=[], invs=[]):
         loc = L.loc
         executor = self.executor
-        ready, unsafe = [], []
-        for p in L.getPaths():
-            path = p.copy()
-            for inv in invs:
-                path.addLocAnnotationBefore(inv, loc)
 
+        def ann(x): return ' & '.join(map(str, x))
+
+        result = PathExecutionResult()
+        for path in annotated_loop_paths(L, pre, post, invs):
             r = executor.executePath(path)
-            if r.ready and not r.errors:
-                print_stdout(f"{' & '.join(map(str, invs))} safe along {p}", color="GREEN")
-            elif r.errors:
-                print_stdout(f"{' & '.join(map(str, invs))} unsafe along {p}", color="RED")
-            else:
-                print_stdout(f"{' & '.join(map(str, invs))} infeasible along {p}", color="DARK_GREEN")
+            result.merge(r)
 
-            ready += r.ready or []
-            unsafe += r.errors or []
-        return ready, unsafe
+            if r.ready:
+                print_stdout(f"{ann(invs)} safe along {ann(pre)}{path}{ann(post)}", color="GREEN")
+            if r.errors:
+                print_stdout(f"{ann(invs)} unsafe along {ann(pre)}{path}{ann(post)}", color="RED")
+            if not r.ready and not r.errors and not r.other:
+                print_stdout(f"{ann(invs)} infeasible along {ann(pre)}{path}{ann(post)}", color="DARK_GREEN")
+
+        return result
 
     def strengthen(self, L, invs, ready, unsafe):
         if not ready:
@@ -221,49 +255,86 @@ class InvariantGenerator:
                     lt = EM.Lt(c, x)
                     yield invs + [AssertAnnotation(lt, invs[0].getSubstitutions(), EM)]
 
+    def update_abstract_path(self):
+        relations = self.relations
+        assert relations
+        print('RELS', relations[-1])
+
+        if len(relations) < 2:
+            self.abstract_path.append(relations[-1])
+            return
+
+        R = relations[-1].intersection(relations[-2])
+        if R:
+            self.abstract_path[-1] = R
+        else:
+            self.abstract_path.append(relations[-1])
+
+        print(self.abstract_path)
+
     def generate(self, states):
         loc = self.loc
         locid = self.locid
         program = self.program
 
-        #self.states.append(states)
+        self.states.append(states)
+        self.relations.append(set(get_inv_candidates(states)))
 
-        for rel in get_inv_candidates(states):
-            if rel in self.tested_invs.setdefault(locid, set()):
-                continue
-            self.tested_invs[locid].add(rel)
+        self.update_abstract_path()
 
-            dbg_sec(f"Generating invariant from {rel}", color="BROWN")
-            L = self.getLoop(self.loc)
-            if not L:
-                continue
+        L = self.getLoop(loc)
+        if not L:
+            return
 
-            k = 0
-            workbag = [[rel]]
-            newworkbag = []
-            while workbag:
-                for invs in workbag:
-                    ready, unsafe = self.checkOnLoop(L, invs)
-                    if not unsafe and ready:
-                        # we have some states (not all paths were killed by invs)
-                        # but none erroneoues -- then this is partial invariant!
-                        print_stdout(f'{invs} is partial invariant for {locid}',
-                                     color='DARK_BLUE')
-                        dbg(f'Checking if {invs} is invariant for {locid}')
-                        # FIXME: check only incomming paths to loop (as it is
-                        # partial invariant now)
-                        if check_inv(program, loc, invs):
-                            print_stdout(
-                                f"{invs} is invariant of loc {locid}!",
-                                color="BLUE")
-                            yield invs
-                        # FIXME: we can annotate CFG now for forward SE
-                        break
-                    else:
-                        for newinv in self.strengthen(L, invs, ready, unsafe):
-                            newworkbag.append(newinv)
-                workbag = newworkbag
-            dbg_sec()
+        for rel in self.relations[-1]:
+            r = self.runOnLoop(L, post=[rel])
+            for x in get_inv_candidates(r):
+                print(x)
+                r2 = self.runOnLoop(L, post=[x])
+                print(set(get_inv_candidates(r)))
+
+        assert False
+
+
+        if False:
+            yield []
+
+       #for rel in get_inv_candidates(states):
+       #    if rel in self.tested_invs.setdefault(locid, set()):
+       #        continue
+       #    self.tested_invs[locid].add(rel)
+
+       #    dbg_sec(f"Generating invariant from {rel}", color="BROWN")
+       #    L = self.getLoop(self.loc)
+       #    if not L:
+       #        continue
+
+       #    k = 0
+       #    workbag = [[rel]]
+       #    newworkbag = []
+       #    while workbag:
+       #        for invs in workbag:
+       #            ready, unsafe = self.checkOnLoop(L, invs)
+       #            if not unsafe and ready:
+       #                # we have some states (not all paths were killed by invs)
+       #                # but none erroneoues -- then this is partial invariant!
+       #                print_stdout(f'{invs} is partial invariant for {locid}',
+       #                             color='DARK_BLUE')
+       #                dbg(f'Checking if {invs} is invariant for {locid}')
+       #                # FIXME: check only incomming paths to loop (as it is
+       #                # partial invariant now)
+       #                if check_inv(program, loc, invs):
+       #                    print_stdout(
+       #                        f"{invs} is invariant of loc {locid}!",
+       #                        color="BLUE")
+       #                    yield invs
+       #                # FIXME: we can annotate CFG now for forward SE
+       #                    break
+       #            else:
+       #                for newinv in self.strengthen(L, invs, ready, unsafe):
+       #                    newworkbag.append(newinv)
+       #        workbag = newworkbag
+       #    dbg_sec()
 
 
             # now it is partial invariant

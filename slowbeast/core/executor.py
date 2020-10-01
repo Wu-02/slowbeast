@@ -70,6 +70,24 @@ class PathExecutionResult:
         self.errors = errs
         self.other = oth
 
+    def merge(self, r):
+        if r.ready:
+            ready = self.ready or []
+            ready += r.ready
+            self.ready = ready
+        if r.errors:
+            errs = self.errors or []
+            errs += r.errors
+            self.errors = errs
+        if r.early:
+            erl = self.early or []
+            erl += r.early
+            self.early = erl
+        if r.other:
+            oth = self.other or []
+            oth += r.other
+            self.other = oth
+
     def check(self):
         assert not self.ready or all(map(lambda x: x.isReady(), self.ready))
         assert not self.errors or all(map(lambda x: x.hasError(), self.errors))
