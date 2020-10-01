@@ -168,6 +168,69 @@ def annotated_loop_paths(L, pre, post, invs):
 
         yield path
 
+def exec_on_loop(loc, executor, L, pre=[], post=[], invs=[]):
+
+    def ann(x): return ' & '.join(map(str, x))
+
+    result = PathExecutionResult()
+    for path in annotated_loop_paths(L, pre, post, invs):
+        r = executor.executePath(path)
+        result.merge(r)
+        if r.ready:
+            print_stdout(f"{ann(invs)} safe along {ann(pre)}{path}{ann(post)}", color="GREEN")
+        if r.errors:
+            print_stdout(f"{ann(invs)} unsafe along {ann(pre)}{path}{ann(post)}", color="RED")
+        if not r.ready and not r.errors and not r.other:
+            print_stdout(f"{ann(invs)} infeasible along {ann(pre)}{path}{ann(post)}", color="DARK_GREEN")
+
+    return result
+
+def strengthen(X, A, frames):
+    print(X)
+    print(A)
+    print(frames)
+
+    assert False
+
+abstract = get_inv_candidates
+def execute_loop(executor, loc, states):
+    dbg_sec(f"Gathering paths for loc {loc.getBBlock().getID()}")
+    L = SimpleLoop.construct(loc)
+    if L is None:
+        return None
+
+    frames = []
+    # FIXME: should not be get_inv_candidates, but the pure states
+    frames.append(set(abstract(states)))
+    print(frames[-1])
+
+    k = 0
+    while k < 3:
+        r = exec_on_loop(loc, executor, L, post=frames[-1])
+        A = set(abstract(r))
+        # FIXME: only ready or also safe early and so?
+        F = strengthen(r.ready, A, frames)
+        if not F:
+            F = r.ready
+
+        frames.append(F)
+
+        k += 1
+
+   #executor = self.executor
+   #L.states = {}
+   #for p in L.getPaths():
+   #    dbg(f"Got {p}, generating states")
+   #    r = executor.executePath(p)
+   #    assert len(r.ready) == 1
+   #    assert not r.errors
+   #    L.states[p] = r.ready[0]
+   #    r.ready[0].dump()
+
+   #self.loops[loc] = L
+    dbg_sec()
+    assert False, "FINISHED exec loop"
+
 class InvariantGenerator:
     """
     Generator of invariants for one location in program
@@ -226,7 +289,6 @@ class InvariantGenerator:
         for path in annotated_loop_paths(L, pre, post, invs):
             r = executor.executePath(path)
             result.merge(r)
-
             if r.ready:
                 print_stdout(f"{ann(invs)} safe along {ann(pre)}{path}{ann(post)}", color="GREEN")
             if r.errors:
@@ -247,7 +309,6 @@ class InvariantGenerator:
             if m == '<' or m == '<=': # monotonic variable
                 for s in unsafe:
                     EM = s.getExprManager()
-                    s.dump()
                     x = s.getNondetLoadOf(v)
                     assert x
 
@@ -281,7 +342,6 @@ class InvariantGenerator:
         self.relations.append(set(get_inv_candidates(states)))
 
         self.update_abstract_path()
-
         L = self.getLoop(loc)
         if not L:
             return

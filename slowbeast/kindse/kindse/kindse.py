@@ -7,7 +7,7 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.pathexecutor import InstrsAnnotation, AssumeAnnotation, AssertAnnotation
 
-from . annotations import InvariantGenerator
+from . annotations import InvariantGenerator, execute_loop
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 
 class KindSymbolicExecutor(BaseKindSE):
@@ -36,6 +36,10 @@ class KindSymbolicExecutor(BaseKindSE):
         for inv in IG.generate(states):
             yield inv
 
+    def executeLoop(self, loc, states):
+        # assert states are inductive on loc
+        return execute_loop(self, loc, states)
+
     def annotateCFG(self, path, states):
         """
         Take the executed path and states that are safe and unsafe
@@ -45,17 +49,21 @@ class KindSymbolicExecutor(BaseKindSE):
             return
 
         # FIXME: make CFG an attribute of path
-        assert isinstance(path.first(), CFG.AnnotatedNode)
-        if not path[0] in self.invpoints[path[0].getCFG()]:
+        loc = path.first()
+        assert isinstance(loc, CFG.AnnotatedNode)
+        if not loc in self.invpoints[loc.getCFG()]:
             return
 
-        loc = path.first()
-        dbg_sec(f"Trying to generate annotations for {loc.getBBlock().getID()}")
-        for inv in self.getInv(loc, states):
-            dbg(f"Adding {inv} as assumption to the CFG")
-            for annot in inv:
-                loc.annotationsBefore.append(annot)
+        dbg_sec(f"Executing loop from {loc.getBBlock().getID()}")
+        self.executeLoop(loc, states)
         dbg_sec()
+       #loc = path.first()
+       #dbg_sec(f"Trying to generate annotations for {loc.getBBlock().getID()}")
+       #for inv in self.getInv(loc, states):
+       #    dbg(f"Adding {inv} as assumption to the CFG")
+       #    for annot in inv:
+       #        loc.annotationsBefore.append(annot)
+       #dbg_sec()
 
     def checkPaths(self):
         newpaths = []
