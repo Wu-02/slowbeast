@@ -194,19 +194,19 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         if not r.errors:
             killed = (s for s in r.early if s.wasKilled()) if r.early else None
             if killed:
-                return Result.UNKNOWN, killed
+                return Result.UNKNOWN, r
             killed = (s for s in r.other if s.wasKilled()) if r.other else None
             if killed:
-                return Result.UNKNOWN, killed
+                return Result.UNKNOWN, r
             if len(path.first().getPredecessors()) == 0:
                 # this path is safe and we do not need to extend it
-                return Result.SAFE, None
+                return Result.SAFE, r
             # else just fall-through to execution from clear state
             # as we can still prolong this path
         else:
-            return Result.UNSAFE, r.errors
+            return Result.UNSAFE, r
 
-        return None
+        return None, r
 
     def checkPaths(self):
         newpaths = []
@@ -218,7 +218,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             if self._is_init(first_loc):
                 r, states = self.checkInitialPath(path)
                 if r is Result.UNSAFE:
-                    return r, states  # found a real error
+                    return r, states.errors  # found a real error
                 elif r is Result.SAFE:
                     continue  # this path is safe
                 assert r is None

@@ -68,6 +68,11 @@ class ExprManager:
         assert s, "No var was created"
         return s
 
+    def simplify(self, expr):
+        if expr.isConstant():
+            return expr
+        return SymbolicExprOpt.optimize(expr)
+
     def freshValue(self, name, bw=64):
         assert isinstance(name, str)
         names = self._names

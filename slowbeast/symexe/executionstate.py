@@ -123,6 +123,9 @@ class SEState(ExecutionState):
     def getNondets(self):
         return self._nondets
 
+    def getNondetLoads(self):
+        return (l for l in self._nondets if l.isNondetLoad())
+
     def getNondetLoadOf(self, alloc):
         for n in self._nondets:
             if n.isNondetLoad() and n.alloc == alloc:

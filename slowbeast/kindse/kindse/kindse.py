@@ -7,8 +7,15 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.pathexecutor import InstrsAnnotation, AssumeAnnotation, AssertAnnotation
 
-from . annotations import InvariantGenerator, execute_loop
+from . paths import SimpleLoop
+from . annotations import InvariantGenerator, execute_loop, exec_on_loop
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
+
+def state_to_annotation(state):
+    EM = state.getExprManager()
+    return AssumeAnnotation(state.getConstraintsObj().asFormula(EM),
+                            {l : l.load for l in state.getNondetLoads()},
+                            EM)
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
@@ -30,10 +37,70 @@ class KindSymbolicExecutor(BaseKindSE):
         self.genannot = genannot
         self.invpoints = {}
         self.have_problematic_path = False
+        self.loops = {}
 
-    def executeLoop(self, loc, states):
-        # assert states are inductive on loc
-        return execute_loop(self, loc, states)
+    def handle_loop(self, loc, states):
+        self.loops.setdefault(loc.getBBlockID(), []).append(states)
+
+        if any(map(lambda p: self.is_inv_loc(p.first()), self.stalepaths)) or\
+           any(map(lambda p: self.is_inv_loc(p.first()), self.readypaths)):
+           return
+
+        assert self.loops.get(loc.getBBlockID())
+        self.execute_loop(loc, self.loops.get(loc.getBBlockID()))
+
+    def execute_loop(self, loc, states):
+        unsafe = []
+        for r in states:
+            unsafe += r.errors
+
+        assert unsafe, "No unsafe states, we should not get here at all"
+
+        L = SimpleLoop.construct(loc)
+        if L is None:
+            raise NotImplementedError("We must execute the loop normally")
+            return None
+
+        # NOTE: Safe states are the complement of error states,
+        # but are not inductive on the loop header -- what we need is to
+        # have safe states that already left the loop (i.e., complement of
+        # error states intersected with the negation of loop condition).
+        # Ready and terminated states on the paths from header to the error
+        # could be used, but are not all the safe states (there may be safe
+        # states that miss the assertion)
+
+        S = None # safe states
+        H = None # negation of loop condition
+        subs = {}
+        for u in unsafe:
+            EM = u.getExprManager()
+            S = EM.Or(S or EM.getFalse(), (u.getConstraintsObj().asFormula(EM)))
+            # Gather the loop exit condition which are the first
+            # constraints on any path
+            H = EM.Or(H or EM.getFalse(), u.getConstraints()[0])
+            # build the substitutions for annotations
+            for l in u.getNondetLoads():
+                if subs.get(l):
+                    assert subs.get(l) == l.load, "We must create fresh values..."
+                subs[l] = l.load
+        # FIXME: EM is out of scope
+        S = EM.simplify(EM.And(EM.Not(S), H))
+
+        print(S)
+
+        # FIXME: EM is out of scope
+        r = exec_on_loop(loc, self, L, post=[AssertAnnotation(S, subs, EM)])
+        print(r)
+        for s in r.ready:
+            print(state_to_annotation(s))
+
+        r = exec_on_loop(loc, self, L, post=[state_to_annotation(r.ready[0])])
+        print(r)
+        for s in r.ready:
+            print(state_to_annotation(s))
+
+
+
 
     def check_path(self, path):
         first_loc = path.first()
@@ -44,7 +111,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 return r, states  # found a real error
             elif r is Result.SAFE:
                 self.reportfn(f"Safe (init) path: {path}", color="DARK_GREEN")
-                return None, None  # this path is safe
+                return None, states  # this path is safe
             elif r is Result.UNKNOWN:
                 self.have_problematic_path = True
                 # there is a problem with this path,
@@ -53,7 +120,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 # FIXME: keep it in queue so that
                 # we can rule out this path by
                 # annotations from other paths?
-                return None, None
+                return None, states
             assert r is None, r
 
         r = self.executePath(path)
@@ -66,11 +133,10 @@ class KindSymbolicExecutor(BaseKindSE):
 
         if r.errors:
             self.reportfn(f"Possibly error path: {path}", color="ORANGE")
-            return None, r.errors
         else:
             self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
 
-        return None, None
+        return None, r
 
     def findInvPoints(self, cfg):
         points = []
@@ -153,16 +219,18 @@ class KindSymbolicExecutor(BaseKindSE):
                 print_stdout("Enumerating paths done!", color="GREEN")
                 return 0
 
-            #if self.is_inv_loc(path.first()):
             r, states = self.check_path(path)
             if r is Result.UNSAFE:
-                for s in states:
+                for s in states.errors:
                     self.report(s)
                 print_stdout("Error found.", color='RED')
                 return 1
-            elif states: # got error states that may not be real
-                self.extend_and_queue_paths(path)
+            elif states.errors: # got error states that may not be real
                 assert r is None
+                if self.is_inv_loc(path.first()):
+                    self.handle_loop(path.first(), states)
+                else:
+                    self.extend_and_queue_paths(path)
 
             k += 1
             if maxk and maxk <= k:

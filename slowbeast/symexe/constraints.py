@@ -17,6 +17,12 @@ class ConstraintsSet:
             assert not c.isConstant(), "Adding True or False, catch these cases atm"
             self.constraints.append(c)
 
+    def asFormula(self, EM):
+        F = EM.getTrue()
+        for c in self.constraints:
+            F = EM.And(F, c)
+        return F
+
     def get(self):
         return self.constraints
 

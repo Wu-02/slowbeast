@@ -45,6 +45,9 @@ class CFG(PureCFG):
             """
             self.annotationsBefore(annot)
 
+        def getBBlockID(self):
+            return self.getBBlock().getID()
+
     def __init__(self, F):
         super(CFG, self).__init__(F)
 

@@ -3,6 +3,7 @@ from . executor import Executor as SExecutor
 from . constraints import ConstraintsSet
 from slowbeast.core.executor import PathExecutionResult, split_ready_states, split_nonready_states
 
+from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Branch, Instruction
 from copy import copy
 
@@ -55,7 +56,7 @@ class InstrsAnnotation(Annotation):
 
 
 def _createCannonical(expr, subs, EM):
-    for (x, val) in subs.items():
+    for (val, x) in subs.items():
         expr = EM.substitute(expr, (val, EM.Var(x.asValue(), val.getBitWidth())))
     return expr
 
@@ -77,7 +78,8 @@ class ExprAnnotation(Annotation):
         # state.eval(instruction) should be put on the
         # place of the key expression
         assert isinstance(subs, dict)
-        assert all(map(lambda k: isinstance(k, Instruction), subs.keys()))
+        assert all(map(lambda k: isinstance(k, Expr), subs.keys()))
+        assert all(map(lambda k: isinstance(k, Instruction), subs.values()))
         self.subs = subs
 
         # cannonical form of the annotation (so that we can compare
@@ -102,12 +104,13 @@ class ExprAnnotation(Annotation):
     def doSubs(self, state):
         """
         Return the expression after substitutions
-        in the given state
+        in the given state.
         """
         EM = state.getExprManager()
         get = state.get
         expr = self.expr
-        for (x, val) in self.subs.items():
+        # for (x, val) in self.subs.items():
+        for (val, x) in self.subs.items():
             curval = get(x)
             if curval: # do we have the value in this state?
                 expr = EM.substitute(expr, (val, curval))
@@ -190,8 +193,12 @@ class Executor(SExecutor):
         else:
             assert annot.isAssume() or annot.isAssert()
             subs = annot.getSubstitutions()
-            for k in subs.keys():
-                ready, nr = executeInstr(ready, k)
+           #for k in subs.keys():
+           #    ready, nr = executeInstr(ready, k)
+           #    nonready += nr
+
+            for i in set(subs.values()):
+                ready, nr = executeInstr(ready, i)
                 nonready += nr
 
             isassume = annot.isAssume()
@@ -205,7 +212,9 @@ class Executor(SExecutor):
                 expr = annot.doSubs(s)
                 if isassume:
                     dbg(f"assume {expr}")
-                    states += self.execAssumeExpr(s, expr)
+                    s = self.assume(s, expr)
+                    if s:
+                        states.append(s)
                 else:
                     assert annot.isAssert()
                     dbg(f"assert {expr}")
