@@ -162,7 +162,7 @@ def annotated_loop_paths(L, pre, post, invs):
         for a in pre:
             path.addPrecondition(a)
         for a in post:
-            path.addPostcondition(post)
+            path.addPostcondition(a)
         for inv in invs:
             path.addLocAnnotationBefore(inv, loc)
 

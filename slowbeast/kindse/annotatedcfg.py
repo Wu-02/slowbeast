@@ -91,8 +91,8 @@ class AnnotatedCFGPath(CFGPath):
         super(AnnotatedCFGPath, self).__init__(locs)
         self.locannotations = {}
         self.locannotationsafter = {}
-        self.precondition = None
-        self.postcondition = None
+        self.precondition = []
+        self.postcondition = []
 
     def addLocAnnotationAfter(self, annot, loc):
         self.locannotationsafter.setdefault(
@@ -109,10 +109,10 @@ class AnnotatedCFGPath(CFGPath):
 
     # FIXME: this can be also assert, do we want to call it post-condition?
     def addPostcondition(self, p):
-        self.postcondition = p
+        self.postcondition.append(p)
 
     def addPrecondition(self, p):
-        self.precondition = p
+        self.precondition.append(p)
 
     def getPostcondition(self):
         return self.postcondition
@@ -143,8 +143,8 @@ class AnnotatedCFGPath(CFGPath):
         n = AnnotatedCFGPath(self.getLocations())
         n.locannotations = self.locannotations.copy()
         n.locannotationsafter = self.locannotationsafter.copy()
-        n.postcondition = self.postcondition
-        n.precondition = self.precondition
+        n.postcondition = self.postcondition.copy()
+        n.precondition = self.precondition.copy()
         return n
 
     def copyandprepend(self, loc):
@@ -153,8 +153,8 @@ class AnnotatedCFGPath(CFGPath):
         # FIXME: do cow?
         n.annotations = self.locannotations.copy()
         n.annotations = self.locannotationsafter.copy()
-        n.postcondition = self.postcondition
-        n.precondition = self.precondition
+        n.postcondition = self.postcondition.copy()
+        n.precondition = self.precondition.copy()
 
         return n
 
@@ -163,8 +163,8 @@ class AnnotatedCFGPath(CFGPath):
         # FIXME: do cow?
         n.locannotations = self.locannotations.copy()
         n.locannotationsafter = self.locannotationsafter.copy()
-        n.postcondition = self.postcondition
-        n.precondition = self.precondition
+        n.postcondition = self.postcondition.copy()
+        n.precondition = self.precondition.copy()
 
         return n
 
