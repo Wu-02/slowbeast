@@ -56,6 +56,10 @@ class SimpleLoop:
         self.loc = loc
         self.paths = paths
         self.exits = exits
+        self.entries = set(b for b in loc.getPredecessors())
+        for p in self.paths:
+            self.entries.discard(p[-2])
+
         # the state after executing the given path
         self.states = None
 
@@ -66,6 +70,9 @@ class SimpleLoop:
 
     def getExits(self):
         return self.exits
+
+    def getEntries(self):
+        return self.entries
 
     def construct(loc):
         """

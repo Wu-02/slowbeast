@@ -12,7 +12,7 @@ if _use_z3:
     from z3 import SignExt as BVSExt
     from z3 import Extract as BVExtract
     from z3 import LShR as BVLShR
-    from z3 import is_bv, is_bv_value
+    from z3 import is_bv, is_bv_value, is_bool
     from z3 import is_true, is_false
     from z3 import simplify, substitute
 
@@ -41,25 +41,11 @@ if _use_z3:
     def bv_size(bw):
         return bw.sort().size()
 
-   # def exprsymbols(expr):
-# use is_const
-   #    toproc = expr.children()
-   #    newchilds = []
-   #    symbols = []
-   #    while toproc:
-   #        for x in toproc:
-   #            ch = x.children()
-   #            if ch: # not a leaf
-   #                newchilds += ch
-   #            elif not is_bv_value(x):
-   #                # this is a leaf and it is not a constant
-   #                assert is_bv(x)
-   #                symbols.append(x)
-
-   #        toproc = newchilds
-   #        newchilds = []
-
-   #    return symbols
+    def subexpressions(expr):
+        children = expr.children()
+        for c in children:
+            yield from subexpressions(c)
+        yield expr
 
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
@@ -94,6 +80,9 @@ class Expr(Value):
     def isNondetLoad(self):
         return False
 
+    def name(self):
+        return str(self._expr)
+
     def asValue(self):
         return str(self)
 
@@ -103,6 +92,17 @@ class Expr(Value):
         from this expression (constants are not symbols)
         """
         return [Expr(e, Type(bv_size(e))) for e in exprsymbols(self._expr)]
+
+    def subexpressions(self):
+        """ Traverse the expression and return it all subexpressions """
+        def get_type(s):
+            if is_bv(s):
+                return Type(s.sort().size())
+            assert is_bool(s), "Unhandled expression"
+            return BoolType()
+
+        return (Expr(s, get_type(s))
+                for s in subexpressions(self.unwrap()))
 
     def __hash__(self):
         return self._expr.__hash__()
@@ -159,7 +159,7 @@ class BVSymbolicDomain:
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
     def simplify(expr, *assumptions):
-        return Expr(simplify(expr.unwrap()), expr.getType())
+        return Expr(simplify(expr.unwrap(), arith_ineq_lhs=True, sort_sums=True), expr.getType())
 
     def substitute(expr, *what):
         return Expr(substitute(expr.unwrap(),

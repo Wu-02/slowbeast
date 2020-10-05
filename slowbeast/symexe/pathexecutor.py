@@ -54,6 +54,12 @@ class InstrsAnnotation(Annotation):
     def __repr__(self):
         return "[{0}]".format(", ".join(map(lambda i: i.asValue(), self.instrs)))
 
+    def dump(self):
+        print("InstrsAnnotation[")
+        for i in self.instrs:
+            print(f"  {i}")
+        print("]")
+
 
 def _createCannonical(expr, subs, EM):
     for (val, x) in subs.items():
@@ -98,7 +104,7 @@ class ExprAnnotation(Annotation):
     def Not(self, EM):
         n = copy(self)
         n.expr = EM.Not(self.expr)
-        n.cannonical = EM.Not(self.cannonical)
+        n.cannonical = EM.simplify(EM.Not(self.cannonical))
         return n
 
     def doSubs(self, state):
@@ -128,12 +134,11 @@ class ExprAnnotation(Annotation):
         return f"{self.cannonical}"
         #return "{0}[{1}]".format(self.expr, ", ".join(f"{x.asValue()}/{val.unwrap()}" for (x, val) in self.subs.items()))
 
-class AssumeAnnotation(ExprAnnotation):
-    def __init__(self, expr, subs, EM):
-        super(AssumeAnnotation, self).__init__(Annotation.ASSUME, expr, subs, EM)
-
-    def __repr__(self):
-        return f"assume {ExprAnnotation.__repr__(self)}"
+    def dump(self):
+        print("ExprAnnotation[{0}]:".format('assert' if self.type == Annotation.ASSERT else 'assume'))
+        print(f" expr: {self.expr}")
+        print(f" cannonical expr: {self.cannonical}")
+        print(" substitutions: {0}".format(", ".join(f"{x.asValue()}/{val.unwrap()}" for (val, x) in self.subs.items())))
 
 class AssertAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
@@ -144,6 +149,14 @@ class AssertAnnotation(ExprAnnotation):
 
     def __repr__(self):
         return f"assert {ExprAnnotation.__repr__(self)}"
+
+class AssumeAnnotation(ExprAnnotation):
+    def __init__(self, expr, subs, EM):
+        super(AssumeAnnotation, self).__init__(Annotation.ASSUME, expr, subs, EM)
+
+    def __repr__(self):
+        return f"assume {ExprAnnotation.__repr__(self)}"
+
 
 def substitute_constraints(constr, EM, prex, x):
     newC = []

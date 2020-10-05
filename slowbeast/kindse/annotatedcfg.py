@@ -43,7 +43,7 @@ class CFG(PureCFG):
             The annotation should be evaluated "before"
             executing the location.
             """
-            self.annotationsBefore(annot)
+            self.annotationsBefore.append(annot)
 
         def getBBlockID(self):
             return self.getBBlock().getID()

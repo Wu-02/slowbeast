@@ -97,12 +97,19 @@ else:
 
 # FIXME add support for incremental solving
 
+global_expr_manager = ExprManager()
+
+def getGlobalExprManager():
+    global global_expr_manager
+    return global_expr_manager
+
 class SolverIntf:
     """ Interface of solvers """
 
     __slots__ = ['_exprmanager']
 
-    def __init__(self, em=ExprManager()):
+    def __init__(self, em=global_expr_manager):
+        # for now we use a global expr manager
         self._exprmanager = em
 
     def getExprManager(self):
@@ -143,11 +150,13 @@ class SymbolicSolver(SolverIntf):
     Wrapper for SMT solver(s) used throughout this project
     """
 
-    def __init__(self, em=ExprManager()):
+    def __init__(self, em=global_expr_manager):
         super(SymbolicSolver, self).__init__(em)
 
     def is_sat(self, *e):
-        return is_sat([x.unwrap() for x in e])
+        if any(map(lambda x: x.isConstant() and x.getValue() is False, e)):
+            return False
+        return is_sat(*(x.unwrap() for x in e if not x.isConstant()))
 
     def concretize(self, assumpt, *e):
         #m = smallmodels(assumpt, *e)

@@ -68,6 +68,11 @@ class ExprManager:
         assert s, "No var was created"
         return s
 
+    def subexpressions(self, expr):
+        if expr.isConstant():
+            yield expr
+        return SymbolicDomain.subexpressions(expr)
+
     def simplify(self, expr):
         if expr.isConstant():
             return expr

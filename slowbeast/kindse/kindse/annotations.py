@@ -176,12 +176,18 @@ def exec_on_loop(loc, executor, L, pre=[], post=[], invs=[]):
     for path in annotated_loop_paths(L, pre, post, invs):
         r = executor.executePath(path)
         result.merge(r)
+       #if r.ready:
+       #    print_stdout(f"{ann(invs)} safe along {ann(pre)}{path}{ann(post)}", color="GREEN")
+       #if r.errors:
+       #    print_stdout(f"{ann(invs)} unsafe along {ann(pre)}{path}{ann(post)}", color="RED")
+       #if not r.ready and not r.errors and not r.other:
+       #    print_stdout(f"{ann(invs)} infeasible along {ann(pre)}{path}{ann(post)}", color="DARK_GREEN")
         if r.ready:
-            print_stdout(f"{ann(invs)} safe along {ann(pre)}{path}{ann(post)}", color="GREEN")
+            print_stdout(f"safe along {path}", color="GREEN")
         if r.errors:
-            print_stdout(f"{ann(invs)} unsafe along {ann(pre)}{path}{ann(post)}", color="RED")
+            print_stdout(f"unsafe along {path}", color="RED")
         if not r.ready and not r.errors and not r.other:
-            print_stdout(f"{ann(invs)} infeasible along {ann(pre)}{path}{ann(post)}", color="DARK_GREEN")
+            print_stdout(f"infeasible along {path}", color="DARK_GREEN")
 
     return result
 

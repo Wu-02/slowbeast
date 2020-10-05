@@ -6,9 +6,11 @@ from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKind
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.pathexecutor import InstrsAnnotation, AssumeAnnotation, AssertAnnotation
+from slowbeast.domains.symbolic import NondetLoad
+from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from . paths import SimpleLoop
-from . annotations import InvariantGenerator, execute_loop, exec_on_loop
+from . annotations import InvariantGenerator, execute_loop, exec_on_loop, get_inv_candidates
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 
 def state_to_annotation(state):
@@ -16,6 +18,66 @@ def state_to_annotation(state):
     return AssumeAnnotation(state.getConstraintsObj().asFormula(EM),
                             {l : l.load for l in state.getNondetLoads()},
                             EM)
+
+def unify_annotations(annot1, annot2, EM):
+    """ Take two annotations, unify their variables and "or" them together """
+
+    subs1 = annot1.getSubstitutions()
+    subs2 = annot2.getSubstitutions()
+    expr1 = annot1.getExpr()
+    expr2 = annot2.getExpr()
+    if 0 < len(subs2) < len(subs1) or len(subs1) == 0:
+        subs1, subs2 = subs2, subs1
+        expr1, expr2 = expr2, expr1
+
+    if len(subs1) == 0:
+        assert len(subs2) == 0
+        return AssumeAnnotation(EM.simplify(EM.Or(expr1, expr2)), {}, EM)
+
+    subs = {}
+    col = False
+    for (val, instr) in subs1.items():
+        instr2 = subs2.get(val)
+        if instr2 and instr2 != instr:
+            # collision
+            freshval = EM.freshValue(val.name(), bw=val.getType().getBitWidth())
+            ndload = NondetLoad.fromExpr(freshval, val.load, val.alloc)
+            expr2 = EM.substitute(expr2, (val, ndload))
+            subs[ndload] = instr2
+
+        # always add this one
+        subs[val] = instr
+
+    # add the rest of subs2
+    for (val, instr) in subs2.items():
+        if not subs.get(val):
+            subs[val] = instr
+
+    return AssumeAnnotation(EM.simplify(EM.Or(expr1, expr2)), subs, EM)
+
+def states_to_annotation(states):
+    a = None
+    for s in states:
+        EM = s.getExprManager()
+        a = unify_annotations(a or AssumeAnnotation(EM.getFalse(), {}, EM),
+                              state_to_annotation(s), EM)
+    return a
+ 
+def abstract(r, post):
+    for inv in get_inv_candidates(r):
+        return inv
+    return None
+    
+def strengthen(executor, prestates, A, Sind, loc, L):
+    T = unify_annotations(A, Sind, getGlobalExprManager())
+    r = exec_on_loop(loc, executor, L, pre=[A], post=[T])
+    while r.errors:
+        break
+
+    if not r.errors:
+        return A
+    # we failed...
+    return None
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
@@ -42,9 +104,9 @@ class KindSymbolicExecutor(BaseKindSE):
     def handle_loop(self, loc, states):
         self.loops.setdefault(loc.getBBlockID(), []).append(states)
 
-        if any(map(lambda p: self.is_inv_loc(p.first()), self.stalepaths)) or\
-           any(map(lambda p: self.is_inv_loc(p.first()), self.readypaths)):
-           return
+       #if any(map(lambda p: self.is_inv_loc(p.first()), self.stalepaths)) or\
+       #   any(map(lambda p: self.is_inv_loc(p.first()), self.readypaths)):
+       #   return
 
         assert self.loops.get(loc.getBBlockID())
         self.execute_loop(loc, self.loops.get(loc.getBBlockID()))
@@ -71,35 +133,59 @@ class KindSymbolicExecutor(BaseKindSE):
 
         S = None # safe states
         H = None # negation of loop condition
-        subs = {}
         for u in unsafe:
             EM = u.getExprManager()
-            S = EM.Or(S or EM.getFalse(), (u.getConstraintsObj().asFormula(EM)))
-            # Gather the loop exit condition which are the first
-            # constraints on any path
+            S = unify_annotations(S or AssumeAnnotation(EM.getFalse(), {}, EM),
+                                  state_to_annotation(u), EM)
             H = EM.Or(H or EM.getFalse(), u.getConstraints()[0])
-            # build the substitutions for annotations
-            for l in u.getNondetLoads():
-                if subs.get(l):
-                    assert subs.get(l) == l.load, "We must create fresh values..."
-                subs[l] = l.load
-        # FIXME: EM is out of scope
-        S = EM.simplify(EM.And(EM.Not(S), H))
-
-        print(S)
 
         # FIXME: EM is out of scope
-        r = exec_on_loop(loc, self, L, post=[AssertAnnotation(S, subs, EM)])
-        print(r)
-        for s in r.ready:
-            print(state_to_annotation(s))
+        # This is the first inductive set on H
+        S = AssumeAnnotation(EM.simplify(EM.And(EM.Not(S.getExpr()), H)),
+                             S.getSubstitutions(), EM)
+        Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
+        #print('F0', S)
+        if __debug__:
+            r = exec_on_loop(loc, self, L, pre=[S], post=[Serr])
+            assert r.errors is None
 
-        r = exec_on_loop(loc, self, L, post=[state_to_annotation(r.ready[0])])
-        print(r)
-        for s in r.ready:
-            print(state_to_annotation(s))
 
+        # FIXME: EM is out of scope
+        print('--- starting executing ---')
+        EM = getGlobalExprManager()
+        while True:
+            print('--- iter ---')
+            r = exec_on_loop(loc, self, L, post=[Serr])
 
+            # NOTE: we must use Not(r.errors), r.ready does not yield inductive set
+            # for some reason... why? Why, oh, why? One would think they are
+            # complements... 
+            A = abstract(r, Serr)
+            if A is None:
+                A = states_to_annotation(r.errors).Not(EM)
+            S = strengthen(self, r, A, Serr, loc, L)
+            if S is None:
+                S = states_to_annotation(r.errors).Not(EM)
+
+            S = unify_annotations(S, Serr, EM)
+            if S == Serr: # we got syntactically the same formula
+                print('breaking', S)
+                Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
+                newpaths = []
+                for p in L.getEntries():
+                    a = AnnotatedCFGPath([p, loc])
+                    a.addPostcondition(Serr)
+                    print(a)
+                    newpaths.append(a)
+                self.queue_paths(newpaths)
+                break
+
+            Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
+            if __debug__:
+                # debugging check -- S should be now inductive on loc
+                r = exec_on_loop(loc, self, L, pre=[S], post=[Serr])
+                assert r.errors is None, "S is not inductive"
+                print(f"{S} is inductive...")
 
 
     def check_path(self, path):
