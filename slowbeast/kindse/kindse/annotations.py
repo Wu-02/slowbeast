@@ -4,6 +4,7 @@ from slowbeast.core.executor import PathExecutionResult
 
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
+from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 from . paths import SimpleLoop
@@ -27,13 +28,32 @@ def get_subs(state):
 
     return subs
 
+def get_safe_subexpressions(state, unsafe):
+    subs = get_subs(state)
+    EM = state.getExprManager()
+    print(state.getConstraints())
+
+    safe = set()
+    solver = Solver()
+    for c in state.getConstraints():
+        # FIXME: do it somehow smarter than iterating over all...
+        for sub in (s for s in c.subexpressions() if s.isBool()):
+            for u in unsafe:
+                if any(map(lambda u: u.is_sat(sub) is False, unsafe)):
+                    if any(map(lambda s: solver.is_sat(EM.And(sub, EM.Not(s))) is False,
+                               safe)):
+                        continue
+                    
+                   #sub implies s, we do not need to add it...
+                    safe.add(sub)
+                    yield AssertAnnotation(sub, subs, EM)
+
 
 def iter_load_pairs(state):
     loads = list(state.getNondetLoads())
     for i in range(0, len(loads)):
         for j in range(i + 1, len(loads)):
             yield loads[i], loads[j]
-
 
 def get_all_relations(state):
     subs = get_subs(state)
@@ -42,6 +62,7 @@ def get_all_relations(state):
     for l1, l2 in iter_load_pairs(state):
         l1bw = l1.getType().getBitWidth()
         l2bw = l2.getType().getBitWidth()
+
         bw = max(l1bw, l2bw)
         if l1bw == bw:
             l1 = EM.SExt(l1, EM.Constant(bw, bw))
@@ -54,9 +75,7 @@ def get_all_relations(state):
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            print('ABSTR', expr, EM.Ne(c, cval))
             nonunique = state.is_sat(expr, EM.Ne(c, cval))
-            print('ABSTR', nonunique)
             if nonunique is False:
                 yield AssertAnnotation(EM.substitute(expr, (c, cval)), subs, EM)
 

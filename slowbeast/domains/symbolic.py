@@ -94,14 +94,15 @@ class Expr(Value):
         return [Expr(e, Type(bv_size(e))) for e in exprsymbols(self._expr)]
 
     def subexpressions(self):
-        """ Traverse the expression and return it all subexpressions """
+        """ Traverse the expression and return its all subexpressions """
         def get_type(s):
             if is_bv(s):
                 return Type(s.sort().size())
             assert is_bool(s), "Unhandled expression"
             return BoolType()
 
-        return (Expr(s, get_type(s))
+        return (Constant(s.as_long(), get_type(s))
+                if is_bv_value(s) else Expr(s, get_type(s))
                 for s in subexpressions(self.unwrap()))
 
     def __hash__(self):

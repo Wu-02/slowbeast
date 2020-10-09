@@ -9,16 +9,16 @@ from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from . paths import SimpleLoop
-from . annotations import InvariantGenerator, exec_on_loop, get_inv_candidates, get_all_relations
+from . annotations import InvariantGenerator, exec_on_loop
+from . annotations import get_safe_relations, get_safe_subexpressions
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 from . utils import state_to_annotation, states_to_annotation, unify_annotations
 
 
-def abstract(r, post):
-    print([x for x in get_inv_candidates(r)])
-    for inv in get_inv_candidates(r):
-        return inv
-    return None
+def overapproximations(r):
+    yield from get_safe_relations(r.ready, r.errors)
+    for s in r.ready:
+        yield from get_safe_subexpressions(s, r.errors)
 
 
 def strengthen(executor, prestates, A, Sind, loc, L):
@@ -52,6 +52,20 @@ def strengthen(executor, prestates, A, Sind, loc, L):
     if not r.errors:
         return A
     # we failed...
+    return None
+
+def abstract(executor, loc, L, states, target):
+    EM = getGlobalExprManager()
+    for A in overapproximations(states):
+        print('Overapprox', A)
+
+        T = unify_annotations(A, target, EM)
+        r = exec_on_loop(loc, executor, L, pre=[A], post=[T])
+        if r.ready is None:
+            continue
+        S = strengthen(executor, r, A, T, loc, L)
+        if S:
+            return S
     return None
 
 
@@ -150,7 +164,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
         if __debug__:
             r = exec_on_loop(loc, self, L, pre=[S], post=[Serr])
-            assert r.errors is None
+            assert r.errors is None, 'F0 is not inductive'
 
         # FIXME: EM is out of scope
         print('--- starting executing ---')
@@ -158,26 +172,25 @@ class KindSymbolicExecutor(BaseKindSE):
         while True:
             print('--- iter ---')
             r = exec_on_loop(loc, self, L, pre=[Serr.Not(EM)], post=[Serr])
-            if r.errors is None:
-                loc.annotationsBefore.append(Serr)
+            # we could construct rule out the states that are in Serr.Not
+            # manually, to speed-up the process...
+            #r = exec_on_loop(loc, self, L, post=[Serr])
+            if r.errors is None or r.ready is None:
+                # no errors or all infeasible
                 break
             #print('Target', Serr)
 
-            # NOTE: we must use Not(r.errors), r.ready does not yield inductive set
-            # for some reason... why? Why, oh, why? One would think they are
-            # complements...
-            A = abstract(r, Serr)
-            print(Serr)
-            print(A)
+            A = abstract(self, loc, L, r, Serr)
             if A is None:
-                A = states_to_annotation(r.errors).Not(EM)
-                S = A
-            else:
-                S = strengthen(self, r, A, Serr, loc, L)
-                if S is None:
-                    S = states_to_annotation(r.errors).Not(EM)
-           #print('Strengthened', S)
-           #print('Abstracted', A)
+                # NOTE: we must use Not(r.errors), r.ready does not yield inductive set
+                # for some reason (even with early and other empty)...
+                # why? Why, oh, why?
+                # NOTE 2 hmm, was probably a bug...
+                # A = states_to_annotation(r.errors).Not(EM)
+                A = states_to_annotation(r.ready)
+
+            print('Abstracted to', A)
+            S = A
 
             S = unify_annotations(S, Serr, EM)
             Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
@@ -191,7 +204,6 @@ class KindSymbolicExecutor(BaseKindSE):
                 print_stdout(
                     f"{S} is invariant of loc {loc.getBBlock().getID()}",
                     color="BLUE")
-                loc.annotationsBefore.append(Serr)
                 break
 
     def check_path(self, path):
