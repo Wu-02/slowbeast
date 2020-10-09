@@ -13,11 +13,13 @@ def split_ready_states(states):
         (ready, notready)[0 if x.isReady() else 1].append(x)
     return ready, notready
 
+
 def split_nonready_states(states):
     errs, oth = [], []
     for x in states:
         (errs, oth)[0 if x.hasError() else 1].append(x)
     return errs or None, oth or None
+
 
 class PathExecutionResult:
     __slots__ = ['ready', 'errors', 'early', 'other']
@@ -91,8 +93,10 @@ class PathExecutionResult:
     def check(self):
         assert not self.ready or all(map(lambda x: x.isReady(), self.ready))
         assert not self.errors or all(map(lambda x: x.hasError(), self.errors))
-        assert not self.early or all(map(lambda x: not x.isReady(), self.early))
-        assert not self.other or all(map(lambda x: x.isTerminated() or x.wasKilled(), self.other))
+        assert not self.early or all(
+            map(lambda x: not x.isReady(), self.early))
+        assert not self.other or all(
+            map(lambda x: x.isTerminated() or x.wasKilled(), self.other))
         return True
 
     def __repr__(self):
@@ -118,7 +122,6 @@ class PathExecutionResult:
         return msg
 
 
-
 class Executor:
     """
     Class that takes care of executing single instructions.
@@ -133,7 +136,7 @@ class Executor:
         self._executed_instrs = 0
         self._executed_blks = 0
 
-   #def setMemoryModel(self, mm):
+   # def setMemoryModel(self, mm):
    #    self.memorymodel = mm
 
     def getMemoryModel(self):
@@ -542,4 +545,3 @@ class Executor:
         assert all(map(lambda x: not x.isReady(), earlytermstates))
 
         return states, earlytermstates
-

@@ -4,6 +4,7 @@ from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
 from slowbeast.util.debugging import dbg_sec
 from slowbeast.ir.instruction import Load, Alloc
 
+
 def reachable(node, what):
     def _reachable(node, what, visited):
         if node == what:
@@ -21,6 +22,7 @@ def reachable(node, what):
     visited = {}
     return _reachable(node, what, visited)
 
+
 def get_rel(s, x, curval):
     EM = s.getExprManager()
     Lt = EM.Lt
@@ -30,28 +32,30 @@ def get_rel(s, x, curval):
     lt = s.is_sat(Lt(x, curval))
     gt = s.is_sat(Gt(x, curval))
 
-    if lt is False: # x >= cur
-        if gt is False: # x <= cur
+    if lt is False:  # x >= cur
+        if gt is False:  # x <= cur
             assert s.is_sat(EM.Ne(x, curval)) is False
             return '='
-        elif gt is True: # x >= cur
+        elif gt is True:  # x >= cur
             if s.is_sat(Eq(x, curval)) is False:
                 return '>'
             else:
                 return '>='
     elif lt is True:
-        if gt is False: # x <= cur
+        if gt is False:  # x <= cur
             if s.is_sat(Eq(x, curval)) is False:
                 return '<'
             return '<='
 
     return None
 
+
 class SimpleLoop:
     """
     Represents a set of paths loc --> loc
     such that all these paths are acyclic
     """
+
     def __init__(self, loc, paths, exits):
         self.loc = loc
         self.paths = paths
@@ -93,26 +97,30 @@ class SimpleLoop:
                         if s == loc:
                             p.append(s)
                             paths.append(AnnotatedCFGPath(p))
-                        elif s in p: #FIXME: not very efficient
+                        elif s in p:  # FIXME: not very efficient
                             if reachable(p[-1], loc):
-                                return None # cyclic path
+                                return None  # cyclic path
                             else:
                                 exits.add((p[1]))
                         else:
                             newworkbag.append(p + [s])
             workbag = newworkbag
-        
-        return SimpleLoop(loc, paths, [AnnotatedCFGPath([loc, e]) for e in exits])
+
+        return SimpleLoop(
+            loc, paths, [AnnotatedCFGPath([loc, e]) for e in exits])
 
     def getVariables(self):
         V = set()
         for p in self.paths:
             for loc in p:
-                for L in (l for l in loc.getBBlock().getInstructions() if isinstance(l, Load)):
+                for L in (
+                    l for l in loc.getBBlock().getInstructions() if isinstance(
+                        l,
+                        Load)):
                     op = L.getPointerOperand()
                     if isinstance(op, Alloc):
                         V.add(op)
-        self.vars = {v : None for v in V}
+        self.vars = {v: None for v in V}
 
     def computeMonotonicVars(self, executor):
         """
@@ -123,7 +131,7 @@ class SimpleLoop:
         although the memory from which it load may change.
         """
 
-        dbg_sec(f"Checking monotonicity of variables in simple loop"\
+        dbg_sec(f"Checking monotonicity of variables in simple loop"
                 f" over {self.loc.getBBlock().getID()}")
         if self.vars is None:
             self.getVariables()
@@ -139,11 +147,10 @@ class SimpleLoop:
             if n is None:
                 return
 
-
             if r is None:
                 results[x] = None
-            if n == '?': # first assignment
-               results[x] = r
+            if n == '?':  # first assignment
+                results[x] = r
             elif n != r:
                 if n == '<' and r == '<=':
                     results[x] = '<='
@@ -161,7 +168,7 @@ class SimpleLoop:
                     results[x] = None
             else:
                 assert n == r and n is not None and n != '?'
-            
+
         V = self.vars.keys()
         loads = [Load(v, v.getSize().getValue()) for v in V]
         for p in self.paths:
@@ -176,10 +183,11 @@ class SimpleLoop:
                 continue
 
             for s in ready:
-               # NOTE: we do not need to handle the cases when x is not
+                # NOTE: we do not need to handle the cases when x is not
                 # present in the state, because in that case
                 # it is invariant for the path
-                for x in (l for l in s.getNondets() if l.isNondetLoad() and l.load in loads):
+                for x in (l for l in s.getNondets()
+                          if l.isNondetLoad() and l.load in loads):
                     curval = s.get(x.load)
                     assert curval, "BUG: must have the load as it is nondet"
                     addRel(x, get_rel(s, x, curval))
@@ -188,4 +196,3 @@ class SimpleLoop:
         for (x, r) in results.items():
             #print(x, r)
             V[x] = r
-

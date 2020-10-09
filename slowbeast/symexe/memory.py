@@ -77,7 +77,8 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         return val, err
 
     def read(self, state, toOp, fromOp, bytesNum):
-        assert isinstance(bytesNum, int), f"Invalid number of bytes: {bytesNum}"
+        assert isinstance(
+            bytesNum, int), f"Invalid number of bytes: {bytesNum}"
         frm = state.get(fromOp)
         if frm is None:
             self.lazyAllocate(state, fromOp)
@@ -92,7 +93,8 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
             if err:
                 assert err.isMemError()
                 if err.isUninitRead():
-                    val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
+                    val, err = self.uninitializedRead(
+                        state, fromOp, frm, bytesNum)
                     assert isinstance(toOp, Load)
                     state.addNondet(NondetLoad.fromExpr(val, toOp, fromOp))
 

@@ -83,9 +83,11 @@ def set_debugging(verbose=False):
     global _is_debugging
     _is_debugging = 2 if verbose else 1
 
+
 def unset_debugging():
     global _is_debugging
     _is_debugging = 0
+
 
 def set_debugging_prefix(prefix=''):
     global _debugging_prefix
@@ -122,11 +124,13 @@ def dbg(msg, print_ws='\n', color='GRAY', fn=print_stderr):
 
     fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
+
 def dbgv(msg, print_ws='\n', color='GRAY', fn=print_stderr):
     if _is_debugging < 2:
         return
 
     fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
+
 
 def warn(msg, print_ws='\n', color='BROWN'):
     print_stderr(msg, "[sb] WARNING: ", print_ws, color)

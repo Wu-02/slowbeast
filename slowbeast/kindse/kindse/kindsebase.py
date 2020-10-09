@@ -8,6 +8,7 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.ir.instruction import Cmp
 
+
 class KindSymbolicExecutor(SymbolicInterpreter):
     def __init__(
             self,
@@ -28,7 +29,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         dbg("Forbidding calls in induction step for now with k-induction")
         self.indexecutor.forbidCalls()
 
-        self.cfgs = {F : CFG(F) for F in prog.getFunctions() if not F.isUndefined()}
+        self.cfgs = {F: CFG(F)
+                     for F in prog.getFunctions() if not F.isUndefined()}
         self.paths = []
         # as we run the executor in nested manners,
         # we want to give different outputs
@@ -58,7 +60,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             states = self.states
             assert states
 
-            dbg(f"Executing (init) path: {path}", color="WHITE", fn=self.reportfn)
+            dbg(f"Executing (init) path: {path}",
+                color="WHITE", fn=self.reportfn)
         else:
             executor = self.getIndExecutor()
 
@@ -108,7 +111,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         num = 0
         newpaths = []
         locs = path.getLocations()[:]
-        locs.reverse() # reverse the list so that we can do append
+        locs.reverse()  # reverse the list so that we can do append
         worklist = [locs]
         while worklist:
             num += 1
@@ -145,7 +148,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                         # fall-through to further extending this path
 
                     assert all(map(lambda x: isinstance(x, CFG.AnnotatedNode),
-                    stoppoints))
+                                   stoppoints))
                     if pred in stoppoints:
                         newpath.reverse()
                         newpaths.append(path.copyandsetpath(newpath))
@@ -168,9 +171,9 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         if n.hasError():
             if fn:
                 fn("state {0}: {1}, {2}".format(
-                        n.getID(),
-                        n.pc,
-                        n.getError()),
+                    n.getID(),
+                    n.pc,
+                    n.getError()),
                     color='RED')
             self.stats.errors += 1
             return Result.UNSAFE

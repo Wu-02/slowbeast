@@ -418,7 +418,6 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.getNextInstruction()
         return [state]
 
-
     def execAssertExpr(self, state, v, msg=''):
         states = []
         assert v.isBool()

@@ -61,7 +61,8 @@ class ExprManager:
         names = self._names
         s = names.get(name)
         if s:
-            assert s.getType() == Type(bw), f"Creating the same value with different type: {s.getType()} != {Type(bw)}"
+            assert s.getType() == Type(
+                bw), f"Creating the same value with different type: {s.getType()} != {Type(bw)}"
         else:
             s = SymbolicDomain.Var(name, bw)
             names[name] = s
@@ -101,7 +102,8 @@ class ExprManager:
         if ConcreteDomain.belongto(expr):
             return expr
         lift = self.lift
-        return SymbolicDomain.substitute(expr, *((lift(a), lift(b)) for (a, b) in vals))
+        return SymbolicDomain.substitute(
+            expr, *((lift(a), lift(b)) for (a, b) in vals))
 
     def equals(self, e1, e2):
         """

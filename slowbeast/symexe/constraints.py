@@ -1,5 +1,6 @@
 from copy import copy
 
+
 class ConstraintsSet:
     __slots__ = ['constraints', '_ro']
 

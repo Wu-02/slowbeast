@@ -35,7 +35,12 @@ class SymbolicExecutor(Interpreter):
         self.solver = Solver()
         super(
             SymbolicExecutor,
-            self).__init__(P, opts, executor or ExecutorClass(self.solver, opts))
+            self).__init__(
+            P,
+            opts,
+            executor or ExecutorClass(
+                self.solver,
+                opts))
         self.stats = SEStats()
         self.testgen = testgen
 

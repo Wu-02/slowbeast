@@ -85,7 +85,11 @@ class AnnotatedCFGPath(CFGPath):
     are executed on given places.
     """
 
-    __slots__ = ['locannotations', 'locannotationsafter', 'precondition', 'postcondition']
+    __slots__ = [
+        'locannotations',
+        'locannotationsafter',
+        'precondition',
+        'postcondition']
 
     def __init__(self, locs=[]):
         super(AnnotatedCFGPath, self).__init__(locs)
@@ -119,7 +123,6 @@ class AnnotatedCFGPath(CFGPath):
 
     def getPrecondition(self):
         return self.precondition
-
 
     # def addAnnotationAfter(self, annot, idx=0):
     #    """
@@ -172,9 +175,9 @@ class AnnotatedCFGPath(CFGPath):
         def loc_str(x):
             blk = x.getBBlock()
             return "{0}{1}{2}".format(
-            'a' if self.getLocAnnotationsBefore(blk) else '',
-            blk.getID(),
-            'a' if self.getLocAnnotationsAfter(blk) else '')
+                'a' if self.getLocAnnotationsBefore(blk) else '',
+                blk.getID(),
+                'a' if self.getLocAnnotationsAfter(blk) else '')
 
         return "{0}{1}{2}".format("pre " if self.precondition else "",
                                   " -> ".join(map(loc_str, self.getLocations())),

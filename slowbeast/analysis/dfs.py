@@ -43,7 +43,6 @@ class DFSVisitor:
     def _getdata(self, node):
         return self._data.setdefault(node, DFSData())
 
-
     def foreach(self, fun, node=None):
         getdata = self._getdata
 

@@ -99,9 +99,11 @@ else:
 
 global_expr_manager = ExprManager()
 
+
 def getGlobalExprManager():
     global global_expr_manager
     return global_expr_manager
+
 
 class SolverIntf:
     """ Interface of solvers """

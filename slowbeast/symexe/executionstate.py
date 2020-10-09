@@ -4,6 +4,7 @@ from . constraints import ConstraintsSet
 from copy import copy
 from sys import stdout
 
+
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
     statesCounter = 0
@@ -65,9 +66,7 @@ class SEState(ExecutionState):
         return self._solver.concretize(self.getConstraints(), *e)
 
     def concretize_with_assumptions(self, assumptions, *e):
-        return self._solver.concretize(self.getConstraints()+assumptions, *e)
-
-
+        return self._solver.concretize(self.getConstraints() + assumptions, *e)
 
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
@@ -121,8 +120,8 @@ class SEState(ExecutionState):
             self._nondets = copy(self._nondets)
             self._nondets_ro = False
         # we can have only one nonded for a given allocation
-        assert not n.isNondetLoad() or\
-            all(map(lambda x: x.alloc != n.alloc, (l for l in self._nondets if l.isNondetLoad())))
+        assert not n.isNondetLoad() or all(map(lambda x: x.alloc != n.alloc,
+                                               (l for l in self._nondets if l.isNondetLoad())))
         self._nondets.append(n)
 
     def getNondets(self):

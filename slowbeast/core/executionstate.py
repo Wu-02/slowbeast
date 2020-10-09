@@ -88,7 +88,8 @@ class ExecutionState:
     def set(self, what, v):
         """ Associate a value to a register (in the current stack frame) """
         if __debug__:
-            dbgv("[{0}] -> {1} ({2})".format(what, v, v.getType()), color="GREEN")
+            dbgv("[{0}] -> {1} ({2})".format(what,
+                                             v, v.getType()), color="GREEN")
         # XXX: rename to bind?
         self.memory.set(what, v)
 

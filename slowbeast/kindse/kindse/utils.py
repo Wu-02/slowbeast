@@ -1,11 +1,13 @@
 from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation
 from slowbeast.domains.symbolic import NondetLoad
 
+
 def state_to_annotation(state):
     EM = state.getExprManager()
     return AssumeAnnotation(state.getConstraintsObj().asFormula(EM),
-                            {l : l.load for l in state.getNondetLoads()},
+                            {l: l.load for l in state.getNondetLoads()},
                             EM)
+
 
 def unify_annotations(annot1, annot2, EM, toassert=False):
     """ Take two annotations, unify their variables and "or" them together """
@@ -29,7 +31,8 @@ def unify_annotations(annot1, annot2, EM, toassert=False):
         instr2 = subs2.get(val)
         if instr2 and instr2 != instr:
             # collision
-            freshval = EM.freshValue(val.name(), bw=val.getType().getBitWidth())
+            freshval = EM.freshValue(
+                val.name(), bw=val.getType().getBitWidth())
             ndload = NondetLoad.fromExpr(freshval, val.load, val.alloc)
             expr2 = EM.substitute(expr2, (val, ndload))
             subs[ndload] = instr2
@@ -44,6 +47,7 @@ def unify_annotations(annot1, annot2, EM, toassert=False):
 
     return Ctor(EM.simplify(EM.Or(expr1, expr2)), subs, EM)
 
+
 def states_to_annotation(states):
     a = None
     for s in states:
@@ -51,5 +55,3 @@ def states_to_annotation(states):
         a = unify_annotations(a or AssumeAnnotation(EM.getFalse(), {}, EM),
                               state_to_annotation(s), EM)
     return a
-
-

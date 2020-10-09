@@ -14,6 +14,7 @@ class Load:
     def __init__(self, l):
         self.load = l
 
+
 class Annotation:
     ASSUME = 1
     ASSERT = 2
@@ -33,7 +34,8 @@ class Annotation:
 
     def isAssert(self):
         return self.type == Annotation.ASSERT
-        
+
+
 class InstrsAnnotation(Annotation):
     """
     Annotation that is barely a sequence of instructions
@@ -52,7 +54,8 @@ class InstrsAnnotation(Annotation):
         return self.instrs.__iter__()
 
     def __repr__(self):
-        return "[{0}]".format(", ".join(map(lambda i: i.asValue(), self.instrs)))
+        return "[{0}]".format(
+            ", ".join(map(lambda i: i.asValue(), self.instrs)))
 
     def dump(self):
         print("InstrsAnnotation[")
@@ -63,8 +66,10 @@ class InstrsAnnotation(Annotation):
 
 def _createCannonical(expr, subs, EM):
     for (val, x) in subs.items():
-        expr = EM.substitute(expr, (val, EM.Var(x.asValue(), val.getBitWidth())))
+        expr = EM.substitute(
+            expr, (val, EM.Var(x.asValue(), val.getBitWidth())))
     return expr
+
 
 class ExprAnnotation(Annotation):
     """
@@ -118,7 +123,7 @@ class ExprAnnotation(Annotation):
         # for (x, val) in self.subs.items():
         for (val, x) in self.subs.items():
             curval = get(x)
-            if curval: # do we have the value in this state?
+            if curval:  # do we have the value in this state?
                 expr = EM.substitute(expr, (val, curval))
         return expr
 
@@ -132,17 +137,29 @@ class ExprAnnotation(Annotation):
     def __repr__(self):
         assert self.cannonical
         return f"{self.cannonical}"
-        #return "{0}[{1}]".format(self.expr, ", ".join(f"{x.asValue()}/{val.unwrap()}" for (x, val) in self.subs.items()))
+        # return "{0}[{1}]".format(self.expr, ",
+        # ".join(f"{x.asValue()}/{val.unwrap()}" for (x, val) in
+        # self.subs.items()))
 
     def dump(self):
-        print("ExprAnnotation[{0}]:".format('assert' if self.type == Annotation.ASSERT else 'assume'))
+        print(
+            "ExprAnnotation[{0}]:".format(
+                'assert' if self.type == Annotation.ASSERT else 'assume'))
         print(f" expr: {self.expr}")
         print(f" cannonical expr: {self.cannonical}")
-        print(" substitutions: {0}".format(", ".join(f"{x.asValue()}/{val.unwrap()}" for (val, x) in self.subs.items())))
+        print(" substitutions: {0}".format(", ".join(
+            f"{x.asValue()}/{val.unwrap()}" for (val, x) in self.subs.items())))
+
 
 class AssertAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
-        super(AssertAnnotation, self).__init__(Annotation.ASSERT, expr, subs, EM)
+        super(
+            AssertAnnotation,
+            self).__init__(
+            Annotation.ASSERT,
+            expr,
+            subs,
+            EM)
 
     def toAssume(self, EM):
         return AssumeAnnotation(self.expr, self.subs, EM)
@@ -150,9 +167,16 @@ class AssertAnnotation(ExprAnnotation):
     def __repr__(self):
         return f"assert {ExprAnnotation.__repr__(self)}"
 
+
 class AssumeAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
-        super(AssumeAnnotation, self).__init__(Annotation.ASSUME, expr, subs, EM)
+        super(
+            AssumeAnnotation,
+            self).__init__(
+            Annotation.ASSUME,
+            expr,
+            subs,
+            EM)
 
     def __repr__(self):
         return f"assume {ExprAnnotation.__repr__(self)}"
@@ -164,18 +188,20 @@ def substitute_constraints(constr, EM, prex, x):
         expr = EM.substitute(c, (x, prex))
         if expr.isConstant():
             if expr.getValue() is False:
-                return None # infeasible constraints
+                return None  # infeasible constraints
             elif expr.getValue() is not True:
                 raise RuntimeError(f"Invalid constraint: {expr}")
         else:
             newC.append(expr)
     return newC
 
+
 class Executor(SExecutor):
     """
     Symbolic Executor instance adjusted to executing
     paths with possibly annotated with formulas.
     """
+
     def __init__(self, solver, opts, memorymodel=None):
         super(Executor, self).__init__(solver, opts, memorymodel)
 
@@ -206,7 +232,7 @@ class Executor(SExecutor):
         else:
             assert annot.isAssume() or annot.isAssert()
             subs = annot.getSubstitutions()
-           #for k in subs.keys():
+           # for k in subs.keys():
            #    ready, nr = executeInstr(ready, k)
            #    nonready += nr
 
@@ -219,7 +245,7 @@ class Executor(SExecutor):
             states = []
             for s in ready:
                #EM = s.getExprManager()
-               #for (x, val) in subs.items():
+               # for (x, val) in subs.items():
                #    curval = s.get(x)
                #    expr = EM.substitute(expr, (val, curval))
                 expr = annot.doSubs(s)
@@ -273,7 +299,8 @@ class Executor(SExecutor):
         dbg(f"vv ----- Loc {loc.getBBlock().getID()} ----- vv")
 
         # execute annotations before bblock
-        ready, nonready = self.executeAnnotations(states, loc.annotationsBefore)
+        ready, nonready = self.executeAnnotations(
+            states, loc.annotationsBefore)
         locannot = path.getLocAnnotationsBefore(loc) if path else None
         if locannot:
             ready, tu = self.executeAnnotations(ready, locannot)
@@ -287,7 +314,8 @@ class Executor(SExecutor):
         nonready += tmpnonready
 
         # execute annotations after
-        ready, tmpnonready = self.executeAnnotations(ready, loc.annotationsAfter)
+        ready, tmpnonready = self.executeAnnotations(
+            ready, loc.annotationsAfter)
         nonready += tmpnonready
 
         locannot = path.getLocAnnotationsAfter(loc) if path else None
@@ -336,7 +364,6 @@ class Executor(SExecutor):
         for s in states:
             s.pc = newpc
 
-
         # execute the precondition of the path
         pre = path.getPrecondition()
         if pre:
@@ -370,7 +397,8 @@ class Executor(SExecutor):
             else:  # this is the last location on path,
                 # so just normally execute the branch instruction in the block
                 newstates = self.executeTillBranch(ready)
-                # we executed only the branch inst, so the states still must be ready
+                # we executed only the branch inst, so the states still must be
+                # ready
                 assert all(map(lambda x: x.isReady(), newstates))
                 assert not result.errors, "Have unsafe states before the last location"
                 result.errors, result.other = split_nonready_states(nonready)
@@ -398,7 +426,7 @@ class Executor(SExecutor):
                 tmpr = r.copy()
                 newconstr = s.getConstraints()
 
-                FIXME("Handle other nondets") # FIXME
+                FIXME("Handle other nondets")  # FIXME
                 # map constraints from s to r
                 for x in (l for l in s.getNondets() if l.isNondetLoad()):
                     prex = tmpr.get(x.load)
@@ -408,7 +436,7 @@ class Executor(SExecutor):
                         prex = tmpr.get(x.load)
                     assert prex, "Do not have the value for x in pre-state"
                     if EM.equals(prex, x):
-                        continue # no substitution needed
+                        continue  # no substitution needed
                     newconstr = substitute_constraints(newconstr, EM, prex, x)
                     if newconstr is None:
                         tmpr = None
@@ -470,8 +498,7 @@ class Executor(SExecutor):
     #     dbg_sec()
     #     return finalstates
 
-
-   #def executeAnnotatedStepWithPrefix(self, state, prefix):
+   # def executeAnnotatedStepWithPrefix(self, state, prefix):
    #    """
    #    Execute the given path through CFG with annotations from the given
    #    state and then do one more step in CFG.
@@ -511,6 +538,3 @@ class Executor(SExecutor):
 
    #    dbg("Step executed, done.")
    #    return r
-
-
-

@@ -113,11 +113,12 @@ class Expr(Value):
     def __repr__(self):
         return "<{0}:{1}>".format(self._expr, self.getType())
 
+
 class NondetLoad(Expr):
     __slots__ = ['load', 'alloc']
 
     def __init__(self, e, t, load, alloc):
-        super(NondetLoad, self).__init__(e,  t)
+        super(NondetLoad, self).__init__(e, t)
         self.load = load
         self.alloc = alloc
 
@@ -130,6 +131,7 @@ class NondetLoad(Expr):
 
     def __repr__(self):
         return f"L({self.alloc.asValue()})={Expr.__repr__(self)}"
+
 
 class BVSymbolicDomain:
     """
@@ -159,11 +161,16 @@ class BVSymbolicDomain:
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
     def simplify(expr, *assumptions):
-        return Expr(simplify(expr.unwrap(), arith_ineq_lhs=True, sort_sums=True), expr.getType())
+        return Expr(
+            simplify(
+                expr.unwrap(),
+                arith_ineq_lhs=True,
+                sort_sums=True),
+            expr.getType())
 
     def substitute(expr, *what):
-        return Expr(substitute(expr.unwrap(),
-                    *((a.unwrap(), b.unwrap()) for (a, b) in what)), expr.getType())
+        return Expr(substitute(expr.unwrap(), *((a.unwrap(), b.unwrap())
+                                                for (a, b) in what)), expr.getType())
 
     def pythonConstant(expr):
         """ Take a symbolic constant and get a python constant for it.

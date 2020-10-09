@@ -15,21 +15,25 @@ from . paths import SimpleLoop
 # x2 = load X, x3 = load X, ... to one x = load X
 cannonic_loads = {}
 
+
 def get_subs(state):
     global cannonic_loads
     subs = {}
     for l in state.getNondetLoads():
         alloc = l.load.getPointerOperand()
-        load = cannonic_loads.setdefault(alloc, Load(alloc, alloc.getSize().getValue()))
+        load = cannonic_loads.setdefault(
+            alloc, Load(alloc, alloc.getSize().getValue()))
         subs[l] = load
 
     return subs
 
+
 def iter_load_pairs(state):
     loads = list(state.getNondetLoads())
     for i in range(0, len(loads)):
-        for j in range(i+1, len(loads)):
+        for j in range(i + 1, len(loads)):
             yield loads[i], loads[j]
+
 
 def get_all_relations(state):
     subs = get_subs(state)
@@ -91,7 +95,9 @@ def get_all_relations(state):
 #         trials += 1
 
 #     print(f'{lower} <= x <{upper}')
-#     return EM.Ge(x, EM.Constant(lower, x.getBitWidth())), Lt(x, EM.Constant(upper, x.getBitWidth()))
+# return EM.Ge(x, EM.Constant(lower, x.getBitWidth())), Lt(x,
+# EM.Constant(upper, x.getBitWidth()))
+
 
 def get_safe_relations(safe, unsafe):
     for s in safe:
@@ -101,11 +107,12 @@ def get_safe_relations(safe, unsafe):
         for x in saferels:
             yield x
 
-   #for s in unsafe:
+   # for s in unsafe:
    #    # get and filter out those relations that make the state safe
    #    EM = s.getExprManager()
    #    for r in get_all_relations(s):
    #        yield r.Not(EM)
+
 
 def get_inv_candidates(states):
     errs = states.errors
@@ -117,10 +124,12 @@ def get_inv_candidates(states):
                 yielded.add(r)
                 yield r
     if states.other:
-        for r in get_safe_relations((s for s in states.other if s.isTerminated()), errs):
+        for r in get_safe_relations(
+                (s for s in states.other if s.isTerminated()), errs):
             if r not in yielded:
                 yielded.add(r)
                 yield r
+
 
 def check_inv(prog, loc, invs, maxk=8):
     dbg_sec(
@@ -142,6 +151,7 @@ def check_inv(prog, loc, invs, maxk=8):
     dbg_sec()
     return res == 0
 
+
 def annotated_loop_paths(L, pre, post, invs):
     for p in L.getPaths():
         path = p.copy()
@@ -154,6 +164,7 @@ def annotated_loop_paths(L, pre, post, invs):
 
         yield path
 
+
 def exec_on_loop(loc, executor, L, pre=[], post=[], invs=[]):
 
     def ann(x): return ' & '.join(map(str, x))
@@ -162,11 +173,11 @@ def exec_on_loop(loc, executor, L, pre=[], post=[], invs=[]):
     for path in annotated_loop_paths(L, pre, post, invs):
         r = executor.executePath(path)
         result.merge(r)
-       #if r.ready:
+       # if r.ready:
        #    print_stdout(f"{ann(invs)} safe along {ann(pre)}{path}{ann(post)}", color="GREEN")
-       #if r.errors:
+       # if r.errors:
        #    print_stdout(f"{ann(invs)} unsafe along {ann(pre)}{path}{ann(post)}", color="RED")
-       #if not r.ready and not r.errors and not r.other:
+       # if not r.ready and not r.errors and not r.other:
        #    print_stdout(f"{ann(invs)} infeasible along {ann(pre)}{path}{ann(post)}", color="DARK_GREEN")
         if r.ready:
             print_stdout(f"safe along {path}", color="GREEN")
@@ -177,6 +188,7 @@ def exec_on_loop(loc, executor, L, pre=[], post=[], invs=[]):
 
     return result
 
+
 def strengthen(X, A, frames):
     print(X)
     print(A)
@@ -184,7 +196,10 @@ def strengthen(X, A, frames):
 
     assert False
 
+
 abstract = get_inv_candidates
+
+
 def execute_loop(executor, loc, states):
     dbg_sec(f"Gathering paths for loc {loc.getBBlock().getID()}")
     L = SimpleLoop.construct(loc)
@@ -211,7 +226,7 @@ def execute_loop(executor, loc, states):
 
    #executor = self.executor
    #L.states = {}
-   #for p in L.getPaths():
+   # for p in L.getPaths():
    #    dbg(f"Got {p}, generating states")
    #    r = executor.executePath(p)
    #    assert len(r.ready) == 1
@@ -222,6 +237,7 @@ def execute_loop(executor, loc, states):
    #self.loops[loc] = L
     dbg_sec()
     assert False, "FINISHED exec loop"
+
 
 class InvariantGenerator:
     """
@@ -259,7 +275,7 @@ class InvariantGenerator:
 
        #executor = self.executor
        #L.states = {}
-       #for p in L.getPaths():
+       # for p in L.getPaths():
        #    dbg(f"Got {p}, generating states")
        #    r = executor.executePath(p)
        #    assert len(r.ready) == 1
@@ -282,11 +298,17 @@ class InvariantGenerator:
             r = executor.executePath(path)
             result.merge(r)
             if r.ready:
-                print_stdout(f"{ann(invs)} safe along {ann(pre)}{path}{ann(post)}", color="GREEN")
+                print_stdout(
+                    f"{ann(invs)} safe along {ann(pre)}{path}{ann(post)}",
+                    color="GREEN")
             if r.errors:
-                print_stdout(f"{ann(invs)} unsafe along {ann(pre)}{path}{ann(post)}", color="RED")
+                print_stdout(
+                    f"{ann(invs)} unsafe along {ann(pre)}{path}{ann(post)}",
+                    color="RED")
             if not r.ready and not r.errors and not r.other:
-                print_stdout(f"{ann(invs)} infeasible along {ann(pre)}{path}{ann(post)}", color="DARK_GREEN")
+                print_stdout(
+                    f"{ann(invs)} infeasible along {ann(pre)}{path}{ann(post)}",
+                    color="DARK_GREEN")
 
         return result
 
@@ -298,7 +320,7 @@ class InvariantGenerator:
         L.computeMonotonicVars(self.executor)
         V = L.vars
         for (v, m) in V.items():
-            if m == '<' or m == '<=': # monotonic variable
+            if m == '<' or m == '<=':  # monotonic variable
                 for s in unsafe:
                     EM = s.getExprManager()
                     x = s.getNondetLoadOf(v)
@@ -347,11 +369,10 @@ class InvariantGenerator:
 
         assert False
 
-
         if False:
             yield []
 
-       #for rel in get_inv_candidates(states):
+       # for rel in get_inv_candidates(states):
        #    if rel in self.tested_invs.setdefault(locid, set()):
        #        continue
        #    self.tested_invs[locid].add(rel)
@@ -387,7 +408,6 @@ class InvariantGenerator:
        #                    newworkbag.append(newinv)
        #        workbag = newworkbag
        #    dbg_sec()
-
 
             # now it is partial invariant
 # class SimpleInvariantGenerator:
@@ -440,5 +460,3 @@ class InvariantGenerator:
 #         return True
 
 #     return False
-
-
