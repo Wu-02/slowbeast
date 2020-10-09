@@ -159,6 +159,7 @@ class KindSymbolicExecutor(BaseKindSE):
             print('--- iter ---')
             r = exec_on_loop(loc, self, L, pre=[Serr.Not(EM)], post=[Serr])
             if r.errors is None:
+                loc.annotationsBefore.append(Serr)
                 break
             #print('Target', Serr)
 
@@ -190,7 +191,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 print_stdout(
                     f"{S} is invariant of loc {loc.getBBlock().getID()}",
                     color="BLUE")
-                loc.annotationsBefore.append(S)
+                loc.annotationsBefore.append(Serr)
                 break
 
     def check_path(self, path):
