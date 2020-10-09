@@ -19,8 +19,9 @@ def state_to_annotation(state):
                             {l : l.load for l in state.getNondetLoads()},
                             EM)
 
-def unify_annotations(annot1, annot2, EM):
+def unify_annotations(annot1, annot2, EM, toassert=False):
     """ Take two annotations, unify their variables and "or" them together """
+    Ctor = AssertAnnotation if toassert else AssumeAnnotation
 
     subs1 = annot1.getSubstitutions()
     subs2 = annot2.getSubstitutions()
@@ -32,7 +33,7 @@ def unify_annotations(annot1, annot2, EM):
 
     if len(subs1) == 0:
         assert len(subs2) == 0
-        return AssumeAnnotation(EM.simplify(EM.Or(expr1, expr2)), {}, EM)
+        return Ctor(EM.simplify(EM.Or(expr1, expr2)), {}, EM)
 
     subs = {}
     col = False
@@ -53,7 +54,7 @@ def unify_annotations(annot1, annot2, EM):
         if not subs.get(val):
             subs[val] = instr
 
-    return AssumeAnnotation(EM.simplify(EM.Or(expr1, expr2)), subs, EM)
+    return Ctor(EM.simplify(EM.Or(expr1, expr2)), subs, EM)
 
 def states_to_annotation(states):
     a = None
@@ -64,15 +65,37 @@ def states_to_annotation(states):
     return a
  
 def abstract(r, post):
+    print([x for x in get_inv_candidates(r)])
     for inv in get_inv_candidates(r):
         return inv
     return None
     
 def strengthen(executor, prestates, A, Sind, loc, L):
-    T = unify_annotations(A, Sind, getGlobalExprManager())
+    # FIXME: make A assume, not assert... or?
+    T = unify_annotations(A, Sind, getGlobalExprManager(), toassert=True)
     r = exec_on_loop(loc, executor, L, pre=[A], post=[T])
     while r.errors:
-        break
+       #print('pre', A)
+       #print('post', T)
+       #print(r)
+        s = r.errors[0]
+        EM = s.getExprManager()
+        expr = A.getExpr()
+        for l in s.getNondetLoads():
+            c = s.concretize(l)[0]
+            assert c is not None, "Unhandled solver failure"
+            lt = s.is_sat(EM.Lt(l, c))
+            if lt is False and any(map(lambda s: s.is_sat(EM.Gt(l, c)), prestates.ready)):
+                expr = EM.And(expr, EM.Gt(l, c))
+                break
+            elif s.is_sat(EM.Gt(l, c)) is False and\
+                 any(map(lambda s: s.is_sat(EM.Lt(l, c)), prestates.ready)):
+                expr = EM.And(expr, EM.Lt(l, c))
+                break
+
+        A = AssumeAnnotation(expr, A.getSubstitutions(), EM)
+        T = unify_annotations(A, Sind, getGlobalExprManager(), toassert=True)
+        r = exec_on_loop(loc, executor, L, pre=[A], post=[T])
 
     if not r.errors:
         return A
@@ -155,36 +178,54 @@ class KindSymbolicExecutor(BaseKindSE):
         EM = getGlobalExprManager()
         while True:
             print('--- iter ---')
-            r = exec_on_loop(loc, self, L, post=[Serr])
+            r = exec_on_loop(loc, self, L, pre=[Serr.Not(EM)], post=[Serr])
+            if r.errors is None:
+                break
+            print('Target', Serr)
 
             # NOTE: we must use Not(r.errors), r.ready does not yield inductive set
             # for some reason... why? Why, oh, why? One would think they are
             # complements... 
             A = abstract(r, Serr)
             if A is None:
-                A = states_to_annotation(r.errors).Not(EM)
-            S = strengthen(self, r, A, Serr, loc, L)
-            if S is None:
-                S = states_to_annotation(r.errors).Not(EM)
-
-            S = unify_annotations(S, Serr, EM)
-            if S == Serr: # we got syntactically the same formula
-                print('breaking', S)
                 Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
                 newpaths = []
                 for p in L.getEntries():
                     a = AnnotatedCFGPath([p, loc])
                     a.addPostcondition(Serr)
-                    print(a)
                     newpaths.append(a)
                 self.queue_paths(newpaths)
                 break
+
+
+                A = states_to_annotation(r.errors).Not(EM)
+                S = A
+            else:
+                S = strengthen(self, r, A, Serr, loc, L)
+                if S is None:
+                    S = states_to_annotation(r.errors).Not(EM)
+            print('Strengthened', S)
+            print('Abstracted', A)
+
+            S = unify_annotations(S, Serr, EM)
+            if S == Serr: # we got syntactically the same formula
+                pass #loc.annotationsBefore = [S.Not(EM)]
+               #print('breaking', S)
+               #Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
+               #newpaths = []
+               #for p in L.getEntries():
+               #    a = AnnotatedCFGPath([p, loc])
+               #    a.addPostcondition(Serr)
+               #    print(a)
+               #    newpaths.append(a)
+               #self.queue_paths(newpaths)
+               #break
 
             Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
             if __debug__:
                 # debugging check -- S should be now inductive on loc
                 r = exec_on_loop(loc, self, L, pre=[S], post=[Serr])
-                assert r.errors is None, "S is not inductive"
+                assert r.errors is None, f"{S} is not inductive"
                 print(f"{S} is inductive...")
 
 
