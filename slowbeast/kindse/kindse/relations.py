@@ -7,7 +7,7 @@ from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
-from . paths import SimpleLoop
+from . loops import SimpleLoop
 
 # we want our annotations to talk about memory
 # and if they talk about the same memory, to look the same

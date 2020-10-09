@@ -8,9 +8,9 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
-from . paths import SimpleLoop
-from . annotations import InvariantGenerator, exec_on_loop
-from . annotations import get_safe_relations, get_safe_subexpressions
+from . loops import SimpleLoop
+from . relations import InvariantGenerator, exec_on_loop
+from . relations import get_safe_relations, get_safe_subexpressions
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 from . utils import state_to_annotation, states_to_annotation, unify_annotations
 
@@ -178,7 +178,7 @@ class KindSymbolicExecutor(BaseKindSE):
             if r.errors is None or r.ready is None:
                 # no errors or all infeasible
                 break
-            #print('Target', Serr)
+            print('Target', Serr)
 
             A = abstract(self, loc, L, r, Serr)
             if A is None:
