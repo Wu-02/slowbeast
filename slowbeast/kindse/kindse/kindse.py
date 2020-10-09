@@ -13,6 +13,7 @@ from . relations import InvariantGenerator, exec_on_loop
 from . relations import get_safe_relations, get_safe_subexpressions
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 from . utils import state_to_annotation, states_to_annotation, unify_annotations
+from . inductivesequence import InductiveSequence
 
 
 def overapproximations(r):
@@ -20,58 +21,49 @@ def overapproximations(r):
     for s in r.ready:
         yield from get_safe_subexpressions(s, r.errors)
 
+def strengthen(executor, seq, L):
+    """ Strengthen the last frame of the sequence """
 
-def strengthen(executor, prestates, A, Sind, loc, L):
-    # FIXME: make A assume, not assert... or?
-    T = unify_annotations(A, Sind, getGlobalExprManager(), toassert=True)
-    r = exec_on_loop(loc, executor, L, pre=[A], post=[T])
+    EM = getGlobalExprManager()
+    r = seq.check_ind_on_paths(executor, L.getPaths())
     while r.errors:
-       #print('pre', A)
-       #print('post', T)
-       # print(r)
         s = r.errors[0]
-        EM = s.getExprManager()
-        expr = A.getExpr()
         for l in s.getNondetLoads():
             c = s.concretize(l)[0]
             assert c is not None, "Unhandled solver failure"
             lt = s.is_sat(EM.Lt(l, c))
             if lt is False and any(
                     map(lambda s: s.is_sat(EM.Gt(l, c)), prestates.ready)):
-                expr = EM.And(expr, EM.Gt(l, c))
+                seq.strengthen(EM.Gt(l, c))
                 break
             elif s.is_sat(EM.Gt(l, c)) is False and\
                     any(map(lambda s: s.is_sat(EM.Lt(l, c)), prestates.ready)):
-                expr = EM.And(expr, EM.Lt(l, c))
+                seq.strengthen(EM.Lt(l, c))
                 break
 
-        A = AssumeAnnotation(expr, A.getSubstitutions(), EM)
-        T = unify_annotations(A, Sind, getGlobalExprManager(), toassert=True)
-        r = exec_on_loop(loc, executor, L, pre=[A], post=[T])
+        r = seq.check_ind_on_paths(executor, L.getPaths())
 
     if not r.errors:
-        return A
+        return seq
     # we failed...
     return None
 
-def abstract(executor, loc, L, states, target):
+def abstract(executor, L, states, seq):
     EM = getGlobalExprManager()
     for A in overapproximations(states):
-        print('Overapprox', A)
+        print('Overapprox:', A)
 
-        T = unify_annotations(A, target, EM)
-        r = exec_on_loop(loc, executor, L, pre=[A], post=[T])
-        if r.ready is None:
-            continue
-        S = strengthen(executor, r, A, T, loc, L)
+        tmp = seq.copy()
+        tmp.append(A, None)
+        S = strengthen(executor, tmp, L)
         if S:
             return S
     return None
 
 
-def check_inv(prog, loc, L, invs):
+def check_inv(prog, loc, L, inv):
     dbg_sec(
-        f"Checking if {invs} is invariant of loc {loc.getBBlock().getID()}")
+        f"Checking if {inv} is invariant of loc {loc.getBBlock().getID()}")
 
     def reportfn(msg, *args, **kwargs):
         print_stdout(f"> {msg}", *args, **kwargs)
@@ -82,8 +74,7 @@ def check_inv(prog, loc, L, invs):
     newpaths = []
     for p in L.getEntries():
         apath = AnnotatedCFGPath([p, loc])
-        for inv in invs:
-            apath.addLocAnnotationBefore(inv, loc)
+        apath.addLocAnnotationBefore(inv, loc)
         newpaths.append(apath)
 
     maxk = 5
@@ -157,50 +148,43 @@ class KindSymbolicExecutor(BaseKindSE):
 
         # FIXME: EM is out of scope
         # This is the first inductive set on H
-        S = AssumeAnnotation(EM.simplify(EM.And(EM.Not(S.getExpr()), H)),
+        S = AssertAnnotation(EM.simplify(EM.And(EM.Not(S.getExpr()), H)),
                              S.getSubstitutions(), EM)
-        Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
-        print('F0', S)
-
-        if __debug__:
-            r = exec_on_loop(loc, self, L, pre=[S], post=[Serr])
-            assert r.errors is None, 'F0 is not inductive'
+        seq = InductiveSequence(S)
 
         # FIXME: EM is out of scope
         print('--- starting executing ---')
         EM = getGlobalExprManager()
         while True:
             print('--- iter ---')
-            r = exec_on_loop(loc, self, L, pre=[Serr.Not(EM)], post=[Serr])
+            print('Seq:\n', seq)
+
+            if __debug__:
+                r = seq.check_ind_on_paths(self, L.getPaths())
+                assert r.errors is None, 'seq is not inductive'
+
+            r = seq.check_on_paths(self, L.getPaths())
             # we could construct rule out the states that are in Serr.Not
             # manually, to speed-up the process...
             #r = exec_on_loop(loc, self, L, post=[Serr])
             if r.errors is None or r.ready is None:
                 # no errors or all infeasible
                 break
-            print('Target', Serr)
 
-            A = abstract(self, loc, L, r, Serr)
-            if A is None:
+            newseq = abstract(self, L, r, seq)
+            if newseq:
+                seq = newseq
+            else:
                 # NOTE: we must use Not(r.errors), r.ready does not yield inductive set
                 # for some reason (even with early and other empty)...
                 # why? Why, oh, why?
                 # NOTE 2 hmm, was probably a bug...
                 # A = states_to_annotation(r.errors).Not(EM)
-                A = states_to_annotation(r.ready)
+                seq.append(states_to_annotation(r.ready), None)
 
-            print('Abstracted to', A)
-            S = A
-
-            S = unify_annotations(S, Serr, EM)
-            Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
-            if __debug__:
-                # debugging check -- S should be now inductive on loc
-                r = exec_on_loop(loc, self, L, pre=[S], post=[Serr])
-                assert r.errors is None, "S is not inductive"
-                print("S is inductive...")
-
-            if check_inv(self.getProgram(), loc, L, [Serr]):
+            print('New seq:\n', seq)
+            S = seq.toannotation(True)
+            if check_inv(self.getProgram(), loc, L, S):
                 print_stdout(
                     f"{S} is invariant of loc {loc.getBBlock().getID()}",
                     color="BLUE")
