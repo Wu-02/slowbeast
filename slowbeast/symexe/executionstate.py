@@ -64,6 +64,11 @@ class SEState(ExecutionState):
     def concretize(self, *e):
         return self._solver.concretize(self.getConstraints(), *e)
 
+    def concretize_with_assumptions(self, assumptions, *e):
+        return self._solver.concretize(self.getConstraints()+assumptions, *e)
+
+
+
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
         new = SEState(self.pc, self.memory, self.getSolver())

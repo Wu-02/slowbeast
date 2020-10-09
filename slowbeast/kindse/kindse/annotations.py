@@ -25,54 +25,40 @@ def get_subs(state):
 
     return subs
 
+def iter_load_pairs(state):
+    loads = list(state.getNondetLoads())
+    for i in range(0, len(loads)):
+        for j in range(i+1, len(loads)):
+            yield loads[i], loads[j]
+
 def get_all_relations(state):
-    rels = []
     subs = get_subs(state)
     EM = state.getExprManager()
 
-    # FIXME not efficient, just for testing now
-    values = list(state.getValuesList())
-    for i in range(0, len(values)):
-        for j in range(i + 1, len(values)):
-            val1 = state.get(values[i])
-            val2 = state.get(values[j])
+    for l1, l2 in iter_load_pairs(state):
+        l1bw = l1.getType().getBitWidth()
+        l2bw = l2.getType().getBitWidth()
+        bw = max(l1bw, l2bw)
+        if l1bw == bw:
+            l1 = EM.SExt(l1, EM.Constant(bw, bw))
+        if l2bw != bw:
+            l2 = EM.SExt(l2, EM.Constant(bw, bw))
 
-            if val1.getType() != val2.getType() or\
-               val1.isPointer() or val1.isBool():
-                continue
+        c = EM.Var("c_coef", bw)
+        expr = EM.Eq(EM.Sub(l2, l1), c)
+        c_concr = state.concretize_with_assumptions([expr], c)
+        if c_concr is not None:
+            # is c unique?
+            cval = c_concr[0]
+            print('ABSTR', expr, EM.Ne(c, cval))
+            nonunique = state.is_sat(expr, EM.Ne(c, cval))
+            print('ABSTR', nonunique)
+            if nonunique is False:
+                yield AssertAnnotation(EM.substitute(expr, (c, cval)), subs, EM)
 
-            # FIXME: do not compare exprs that has the same nondets...
-            # FIXME: do some quick syntectic checks
-            # NOTE: this is not the same as generating the invariant candidate
-            # from path condition. See simple-loop test
-            lt = EM.Lt(val1, val2)
-            islt = state.is_sat(lt)
-            expr = None
-            if islt is False:  # val1 >= val2
-                gt = EM.Gt(val1, val2)
-                isgt = state.is_sat(gt)
-                if isgt is False:  # val1 <= val2
-                    #print(val1, '=', val2)
-                    # to avoid generating x = y and y = x as different
-                    # expressions
-                    if str(val1) < str(val2):
-                        expr = EM.Eq(val1, val2)
-                    else:
-                        expr = EM.Eq(val2, val1)
-                elif isgt is True:
-                    pass
-                    #print(val1, '>=', val2)
-                    #expr = EM.Ge(val1, val2)
-            elif islt is True:
-                gt = EM.Gt(val1, val2)
-                isgt = state.is_sat(gt)
-                if isgt is False:
-                    pass
-                    #print(val1, '<=', val2)
-                    #expr = EM.Le(val1, val2)
-
-            if expr and not expr.isConstant():
-                yield AssertAnnotation(expr, subs, EM)
+       #expr = EM.Mul(a, l1), EM.Mul(b, l2)
+       #a = EM.Var("a_coef", bw)
+       #b = EM.Var("b_coef", bw)
 
 # def get_var_range(state, x):
 #     EM = state.getExprManager()

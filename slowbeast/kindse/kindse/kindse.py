@@ -51,6 +51,32 @@ def strengthen(executor, prestates, A, Sind, loc, L):
     # we failed...
     return None
 
+def check_inv(prog, loc, L, invs):
+    dbg_sec(
+        f"Checking if {invs} is invariant of loc {loc.getBBlock().getID()}")
+
+    def reportfn(msg, *args, **kwargs):
+        print_stdout(f"> {msg}", *args, **kwargs)
+
+    kindse = BaseKindSE(prog)
+    kindse.reportfn = reportfn
+
+    newpaths = []
+    for p in L.getEntries():
+        apath = AnnotatedCFGPath([p, loc])
+        for inv in invs:
+            apath.addLocAnnotationBefore(inv, loc)
+        newpaths.append(apath)
+
+    maxk=5
+    dbg_sec("Running nested KindSE")
+    res = kindse.run(newpaths, maxk=maxk)
+    dbg_sec()
+    dbg_sec()
+    return res == 0
+
+
+
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
             self,
@@ -130,53 +156,37 @@ class KindSymbolicExecutor(BaseKindSE):
             r = exec_on_loop(loc, self, L, pre=[Serr.Not(EM)], post=[Serr])
             if r.errors is None:
                 break
-            print('Target', Serr)
+            #print('Target', Serr)
 
             # NOTE: we must use Not(r.errors), r.ready does not yield inductive set
             # for some reason... why? Why, oh, why? One would think they are
             # complements... 
             A = abstract(r, Serr)
+            print(Serr)
+            print(A)
             if A is None:
-                Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
-                newpaths = []
-                for p in L.getEntries():
-                    a = AnnotatedCFGPath([p, loc])
-                    a.addPostcondition(Serr)
-                    newpaths.append(a)
-                self.queue_paths(newpaths)
-                break
-
-
                 A = states_to_annotation(r.errors).Not(EM)
                 S = A
             else:
                 S = strengthen(self, r, A, Serr, loc, L)
                 if S is None:
                     S = states_to_annotation(r.errors).Not(EM)
-            print('Strengthened', S)
-            print('Abstracted', A)
+           #print('Strengthened', S)
+           #print('Abstracted', A)
 
             S = unify_annotations(S, Serr, EM)
-            if S == Serr: # we got syntactically the same formula
-                pass #loc.annotationsBefore = [S.Not(EM)]
-               #print('breaking', S)
-               #Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
-               #newpaths = []
-               #for p in L.getEntries():
-               #    a = AnnotatedCFGPath([p, loc])
-               #    a.addPostcondition(Serr)
-               #    print(a)
-               #    newpaths.append(a)
-               #self.queue_paths(newpaths)
-               #break
-
             Serr = AssertAnnotation(S.getExpr(), S.getSubstitutions(), EM)
             if __debug__:
                 # debugging check -- S should be now inductive on loc
                 r = exec_on_loop(loc, self, L, pre=[S], post=[Serr])
-                assert r.errors is None, f"{S} is not inductive"
-                print(f"{S} is inductive...")
+                assert r.errors is None, "S is not inductive"
+                print("S is inductive...")
 
+            if check_inv(self.getProgram(), loc, L, [Serr]):
+                print_stdout(f"{S} is invariant of loc {loc.getBBlock().getID()}",
+                             color="BLUE")
+                loc.annotationsBefore.append(S)
+                break
 
     def check_path(self, path):
         first_loc = path.first()
