@@ -64,8 +64,8 @@ class Constant(Value):
     def isConstant(self):
         return True
 
-    def __str__(self):
-        return str(self._value)
+    def __repr__(self):
+        return f"{self._value}:{self.getType()}"
 
     def __hash__(self):
         return self._value
