@@ -16,10 +16,9 @@ from . utils import state_to_annotation, states_to_annotation, unify_annotations
 from . inductivesequence import InductiveSequence
 
 
-def overapproximations(r):
-    yield from get_safe_relations(r.ready, r.errors)
-    for s in r.ready:
-        yield from get_safe_subexpressions(s, r.errors)
+def overapproximations(s, unsafe):
+    yield from get_safe_relations([s], unsafe)
+    yield from get_safe_subexpressions(s, unsafe)
 
 def strengthen(executor, seq, L):
     """ Strengthen the last frame of the sequence """
@@ -48,18 +47,8 @@ def strengthen(executor, seq, L):
     # we failed...
     return None
 
-def abstract(executor, L, states, seq):
-    EM = getGlobalExprManager()
-    for A in overapproximations(states):
-        print('Overapprox:', A)
-
-        tmp = seq.copy()
-        tmp.append(A, None)
-        S = strengthen(executor, tmp, L)
-        if S:
-            return S
-    return None
-
+def abstract(executor, state, unsafe):
+    yield from overapproximations(state, unsafe)
 
 def check_inv(prog, loc, L, inv):
     dbg_sec(
@@ -117,6 +106,42 @@ class KindSymbolicExecutor(BaseKindSE):
         assert self.loops.get(loc.getBBlockID())
         self.execute_loop(loc, self.loops.get(loc.getBBlockID()))
 
+    def extend_seq(self, seq, L):
+        r = seq.check_last_frame(self, L.getPaths())
+        if not r.ready: # cannot step into this frame...
+            return None
+
+        EM = getGlobalExprManager()
+        newseqs = []
+        for s in r.ready:
+            abstractions = set(abstract(self, s, r.errors))
+
+            for A in abstractions:
+                if A == seq[-1].states:
+                    print('FIXME: merge the strengthenings')
+                    continue
+                tmp = seq.copy()
+                tmp.append(A, None)
+                print(tmp)
+                S = strengthen(self, tmp, L)
+                if S:
+                    newseqs.append(S)
+
+        return newseqs
+
+
+           #if newseq:
+           #    seq = newseq
+           #else:
+           #    # NOTE: we must use Not(r.errors), r.ready does not yield inductive set
+           #    # for some reason (even with early and other empty)...
+           #    # why? Why, oh, why?
+           #    # NOTE 2 hmm, was probably a bug...
+           #    # A = states_to_annotation(r.errors).Not(EM)
+           #    seq.append(states_to_annotation(r.ready), None)
+
+
+
     def execute_loop(self, loc, states):
         unsafe = []
         for r in states:
@@ -163,32 +188,18 @@ class KindSymbolicExecutor(BaseKindSE):
                 r = seq.check_ind_on_paths(self, L.getPaths())
                 assert r.errors is None, 'seq is not inductive'
 
-            r = seq.check_on_paths(self, L.getPaths())
-            # we could construct rule out the states that are in Serr.Not
-            # manually, to speed-up the process...
-            #r = exec_on_loop(loc, self, L, post=[Serr])
-            if r.errors is None or r.ready is None:
-                # no errors or all infeasible
+            seqs = self.extend_seq(seq, L)
+            if seqs is None:
+                # TODO infeasible, what we can say about it?
                 break
-
-            newseq = abstract(self, L, r, seq)
-            if newseq:
-                seq = newseq
-            else:
-                # NOTE: we must use Not(r.errors), r.ready does not yield inductive set
-                # for some reason (even with early and other empty)...
-                # why? Why, oh, why?
-                # NOTE 2 hmm, was probably a bug...
-                # A = states_to_annotation(r.errors).Not(EM)
-                seq.append(states_to_annotation(r.ready), None)
-
-            print('New seq:\n', seq)
-            S = seq.toannotation(True)
-            if check_inv(self.getProgram(), loc, L, S):
-                print_stdout(
-                    f"{S} is invariant of loc {loc.getBBlock().getID()}",
-                    color="BLUE")
-                break
+            for S in (s.toannotation(True) for s in seqs):
+                if check_inv(self.getProgram(), loc, L, S):
+                    print_stdout(
+                        f"{S} is invariant of loc {loc.getBBlock().getID()}",
+                        color="BLUE")
+                    return
+            #FIXME!
+            seq = seqs[0]
 
     def check_path(self, path):
         first_loc = path.first()

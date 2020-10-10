@@ -38,6 +38,9 @@ def get_safe_subexpressions(state, unsafe):
     for c in state.getConstraints():
         # FIXME: do it somehow smarter than iterating over all...
         for sub in (s for s in c.subexpressions() if s.isBool()):
+            if not (state.is_sat(sub) is True):
+                # rule out subexpressions that are not "entire"
+                continue
             for u in unsafe:
                 if any(map(lambda u: u.is_sat(sub) is False, unsafe)):
                     if any(map(lambda s: solver.is_sat(EM.And(sub, EM.Not(s))) is False,

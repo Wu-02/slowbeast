@@ -85,38 +85,71 @@ class InductiveSequence:
         return "\nvv seq vv\n{0}\n^^ seq ^^\n".format("\n-----\n".join(map(str, self.frames)))
 
     def check_on_paths(self, executor, paths, pre=[], post=[], self_as_pre=False):
+        """
+        Check whether when we execute paths, we get to one of the frames
+        """
         def ann(x): return ' & '.join(map(str, x))
 
         EM = getGlobalExprManager()
         result = PathExecutionResult()
         frames = self.frames
+        selfassert = self.toannotation(toassert=True)
         for path in paths:
-            # frames in the sequence are or'ed together,
-            # so just check them one by one
-            for frame in frames:
-                p = path.copy()
-                p.addPostcondition(frame.toassert())
-                for e in post:
-                    p.addPostcondition(e)
-                                                    
-                if self_as_pre:
-                    p.addPrecondition(frame.states)
-                    if frame.strengthening:
-                        p.addPrecondition(frame.strengthening)
+            p = path.copy()
+            # the post-condition is the whole frame
+            p.addPostcondition(selfassert)
+            for e in post:
+                p.addPostcondition(e)
+                                                
+            if self_as_pre:
+                p.addPrecondition(selfassert)
 
-                for e in pre:
-                    p.addPrecondition(e)
+            for e in pre:
+                p.addPrecondition(e)
 
-                r = executor.executePath(p)
+            r = executor.executePath(p)
 
-                result.merge(r)
+            result.merge(r)
 
-                if r.ready:
-                    print_stdout(f"safe along {path}", color="GREEN")
-                if r.errors:
-                    print_stdout(f"unsafe along {path}", color="RED")
-                if not r.ready and not r.errors and not r.other:
-                    print_stdout(f"infeasible along {path}", color="DARK_GREEN")
+            if r.ready:
+                print_stdout(f"safe along {path}", color="GREEN")
+            if r.errors:
+                print_stdout(f"unsafe along {path}", color="RED")
+            if not r.ready and not r.errors and not r.other:
+                print_stdout(f"infeasible along {path}", color="DARK_GREEN")
+
+        return result
+
+    def check_last_frame(self, executor, paths, pre=[], post=[]):
+        """
+        Check whether when we execute paths, we get to one of the frames
+        """
+        def ann(x): return ' & '.join(map(str, x))
+
+        EM = getGlobalExprManager()
+        result = PathExecutionResult()
+        frame = self.frames[-1]
+        frameassert = frame.toassert()
+        for path in paths:
+            p = path.copy()
+            # the post-condition is the whole frame
+            p.addPostcondition(frameassert)
+            for e in post:
+                p.addPostcondition(e)
+
+            for e in pre:
+                p.addPrecondition(e)
+
+            r = executor.executePath(p)
+
+            result.merge(r)
+
+            if r.ready:
+                print_stdout(f"safe along {path}", color="GREEN")
+            if r.errors:
+                print_stdout(f"unsafe along {path}", color="RED")
+            if not r.ready and not r.errors and not r.other:
+                print_stdout(f"infeasible along {path}", color="DARK_GREEN")
 
         return result
 
