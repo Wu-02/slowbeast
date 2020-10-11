@@ -4,16 +4,8 @@ from . constraints import ConstraintsSet
 from slowbeast.core.executor import PathExecutionResult, split_ready_states, split_nonready_states
 
 from slowbeast.domains.symbolic import Expr
-from slowbeast.ir.instruction import Branch, Instruction
+from slowbeast.ir.instruction import Branch, Instruction, Load
 from copy import copy
-
-
-class Load:
-    __slots__ = ['load']
-
-    def __init__(self, l):
-        self.load = l
-
 
 class Annotation:
     ASSUME = 1
@@ -65,10 +57,16 @@ class InstrsAnnotation(Annotation):
 
 
 def _createCannonical(expr, subs, EM):
-    for (val, x) in subs.items():
-        expr = EM.substitute(
-            expr, (val, EM.Var(x.asValue(), val.getBitWidth())))
-    return expr
+    def get_cannonic_var(val, x):
+        if isinstance(x, Load):
+            name = f"L({x.getOperand(0).asValue()})" 
+        else:
+            name = x.asValue()
+        return EM.Var(name, val.getBitWidth())
+
+    return EM.substitute(expr,
+                *((val, get_cannonic_var(val, x)) for (val, x) in subs.items())
+           )
 
 
 class ExprAnnotation(Annotation):
