@@ -1,7 +1,7 @@
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
-from slowbeast.solvers.solver import getGlobalExprManager 
+from slowbeast.solvers.solver import getGlobalExprManager
 from . utils import unify_annotations
 
 class InductiveSequence:
@@ -18,10 +18,10 @@ class InductiveSequence:
         """
         def __init__(self, states, strengthening):
             assert states, "BUG: empty states"
-            self.states = states 
+            self.states = states
             self.strengthening = strengthening
 
-        def toassert(self):
+        def toannot(self):
             EM = getGlobalExprManager()
             states = self.states
             stren = self.strengthening
@@ -30,7 +30,15 @@ class InductiveSequence:
                    states.getSubstitutions() == stren.getSubstitutions()
             expr = EM.And(states.getExpr(), stren.getExpr())\
                     if stren else states.getExpr()
-            return AssertAnnotation(expr, states.getSubstitutions(), EM)
+            return expr, states.getSubstitutions()
+
+        def toassert(self):
+            EM = getGlobalExprManager()
+            return AssertAnnotation(*self.toannot(), EM)
+
+        def toassume(self):
+            EM = getGlobalExprManager()
+            return AssumeAnnotation(*self.toannot(), EM)
 
         def strengthen(self, annot):
             EM = getGlobalExprManager()
@@ -43,6 +51,10 @@ class InductiveSequence:
            #self.strengthening = AssertAnnotation(newexpr,
            #                                      s.getSubstitutions(),
            #                                      EM)
+
+        def __eq__(self, rhs):
+            return self.states == rhs.states and\
+                   self.strengthening == rhs.strengthening
 
         def __repr__(self):
             return f"{self.states} with {self.strengthening}"
@@ -88,7 +100,6 @@ class InductiveSequence:
         """
         Check whether when we execute paths, we get to one of the frames
         """
-        def ann(x): return ' & '.join(map(str, x))
 
         EM = getGlobalExprManager()
         result = PathExecutionResult()
@@ -100,7 +111,7 @@ class InductiveSequence:
             p.addPostcondition(selfassert)
             for e in post:
                 p.addPostcondition(e)
-                                                
+
             if self_as_pre:
                 p.addPrecondition(selfassert)
 
@@ -124,7 +135,6 @@ class InductiveSequence:
         """
         Check whether when we execute paths, we get to one of the frames
         """
-        def ann(x): return ' & '.join(map(str, x))
 
         EM = getGlobalExprManager()
         result = PathExecutionResult()
@@ -144,12 +154,12 @@ class InductiveSequence:
 
             result.merge(r)
 
-            if r.ready:
-                print_stdout(f"safe along {path}", color="GREEN")
-            if r.errors:
-                print_stdout(f"unsafe along {path}", color="RED")
-            if not r.ready and not r.errors and not r.other:
-                print_stdout(f"infeasible along {path}", color="DARK_GREEN")
+           #if r.ready:
+           #    print_stdout(f"safe along {path}", color="GREEN")
+           #if r.errors:
+           #    print_stdout(f"unsafe along {path}", color="RED")
+           #if not r.ready and not r.errors and not r.other:
+           #    print_stdout(f"infeasible along {path}", color="DARK_GREEN")
 
         return result
 
