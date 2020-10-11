@@ -111,12 +111,12 @@ class InductiveSequence:
             r = executor.executePath(p)
             result.merge(r)
 
-            if r.ready:
-                print_stdout(f"safe along {path}", color="GREEN")
-            if r.errors:
-                print_stdout(f"unsafe along {path}", color="RED")
-            if not r.ready and not r.errors and not r.other:
-                print_stdout(f"infeasible along {path}", color="DARK_GREEN")
+           #if r.ready:
+           #    print_stdout(f"safe along {path}", color="GREEN")
+           #if r.errors:
+           #    print_stdout(f"unsafe along {path}", color="RED")
+           #if not r.ready and not r.errors and not r.other:
+           #    print_stdout(f"infeasible along {path}", color="DARK_GREEN")
 
         self.frames = oldframes
         return result

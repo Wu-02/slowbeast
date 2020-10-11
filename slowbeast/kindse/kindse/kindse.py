@@ -23,7 +23,7 @@ def strengthen(executor, s, a, seq, L):
     """
     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
     """
-    print(f'Strengthening {a}')
+    #print(f'Strengthening {a}')
     EM = getGlobalExprManager()
     solver = s.getSolver()
 
@@ -176,15 +176,29 @@ class KindSymbolicExecutor(BaseKindSE):
         self.loops = {}
         self.sum_loops = {}
 
-    def handle_loop(self, loc, states):
+    def handle_loop(self, loc, path, states):
         self.loops.setdefault(loc.getBBlockID(), []).append(states)
 
         assert loc in self.sum_loops[loc.getCFG()],\
                 "Handling a loop that should not be handled"
 
+        # first try to unroll it in the case the loop
+        # is easy to verify
+        kindse = BaseKindSE(self.getProgram())
+        maxk = 5
+        dbg_sec("Running nested KindSE")
+        res = kindse.run([path.copy()], maxk=maxk)
+        dbg_sec()
+        if res == 0:
+            print_stdout(f"Loop {loc.getBBlockID()} proved by the basic KindSE",
+                         color="GREEN")
+            return True
+
         assert self.loops.get(loc.getBBlockID())
         if not self.execute_loop(loc, self.loops.get(loc.getBBlockID())):
             self.sum_loops[loc.getCFG()].remove(loc)
+            print_stdout(f"Falling back to unwinding loop {loc.getBBlockID()}",
+                         color="BROWN")
             return False
         return True
 
@@ -230,7 +244,7 @@ class KindSymbolicExecutor(BaseKindSE):
         r = seq.check_last_frame(self, L.getPaths())
         if not r.ready: # cannot step into this frame...
             # FIXME we can use it at least for annotations
-            print('Infeasible frame...')
+            dbg('Infeasible frame...')
             return []
 
         EM = getGlobalExprManager()
@@ -241,7 +255,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 if a in checked_abstractions:
                     continue
                 checked_abstractions.add(a)
-                print('Abstraction: ', a)
+                #dbg('Abstraction: ', a)
 
                 S = strengthen(self, s, a, seq, L)
                 if S != seq[-1]:
@@ -254,8 +268,8 @@ class KindSymbolicExecutor(BaseKindSE):
                         tmp = seq.copy()
                         tmp.append(S.states, S.strengthening)
                         E.append(tmp)
-                        print('== extended to == ')
-                        print(tmp)
+                       #print('== extended to == ')
+                       #print(tmp)
         return E
 
 
@@ -273,19 +287,24 @@ class KindSymbolicExecutor(BaseKindSE):
         # FIXME: strengthen
         sequences = [get_initial_seq(unsafe)]
 
-        print('--- starting building sequences  ---')
+        print_stdout(f"Executing loop {loc.getBBlockID()} with assumption")
+        print_stdout(str(sequences[0][0].states))
+
+        #print('--- starting building sequences  ---')
         EM = getGlobalExprManager()
         while True:
-            print('--- iter ---')
+            #print('--- iter ---')
             E = []
             for seq in sequences:
-                print('Processing seq:\n', seq)
+                print_stdout(f"Got {len(sequences)} abstract paths of loop "
+                             f"{loc.getBBlockID()}", color="GRAY")
+                #print('Processing seq:\n', seq)
                 if __debug__:
                     r = seq.check_ind_on_paths(self, L.getPaths())
                     assert r.errors is None, 'seq is not inductive'
 
                 E += self.extend_seq(seq, L)
-                print(' -- extending DONE --')
+                #print(' -- extending DONE --')
 
             if not E:
                #seq not extended... it looks that there is no
@@ -298,7 +317,7 @@ class KindSymbolicExecutor(BaseKindSE):
             for s, S in ((s, s.toannotation(True)) for s in E):
                  if check_inv(self.getProgram(), L, S):
                      print_stdout(
-                         f"{S} is invariant of loc {loc.getBBlock().getID()}",
+                         f"{S} is inductive on {loc.getBBlock().getID()}",
                          color="BLUE")
                      if self.genannot:
                         # maybe remember the ind set even without genannot
@@ -383,6 +402,11 @@ class KindSymbolicExecutor(BaseKindSE):
         if not ready:
             ready = self.stalepaths
         if ready:
+            if len(ready) % 4 == 0:
+                # do not run DFS so that we do not starve
+                # some path indefinitely, but prefer the
+                # lastly added paths...
+                ready[-1], ready[0] = ready[0], ready[-1]
             return ready.pop()
         return None
 
@@ -437,7 +461,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 assert r is None
                 fl = path.first()
                 if self.is_inv_loc(fl) and fl in self.sum_loops[fl.getCFG()]:
-                    if not self.handle_loop(fl, states):
+                    if not self.handle_loop(fl, path, states):
                         # falled-back to unwinding
                         # XXX: could we try again later?
                         self.extend_and_queue_paths(path)
