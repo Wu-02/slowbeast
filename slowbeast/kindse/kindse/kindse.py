@@ -9,7 +9,6 @@ from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from . loops import SimpleLoop
-from . relations import InvariantGenerator, exec_on_loop
 from . relations import get_safe_relations, get_safe_subexpressions
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 from . utils import state_to_annotation, states_to_annotation, or_annotations
@@ -54,7 +53,8 @@ def strengthen(executor, s, a, seq, L):
 def abstract(executor, state, unsafe):
     yield from overapproximations(state, unsafe)
 
-def check_inv(prog, loc, L, inv):
+def check_inv(prog, L, inv):
+    loc = L.loc
     dbg_sec(
         f"Checking if {inv} is invariant of loc {loc.getBBlock().getID()}")
 
@@ -94,6 +94,8 @@ def get_initial_seq(unsafe):
                                state_to_annotation(u))
             H = EM.Or(H or EM.getFalse(), u.getConstraints()[0])
 
+        notS = EM.simplify(EM.Not(S.getExpr()))
+        S = AssertAnnotation(EM.And(H, notS), S.getSubstitutions(), EM)
         return InductiveSequence(S)
 
 class KindSymbolicExecutor(BaseKindSE):
@@ -121,10 +123,6 @@ class KindSymbolicExecutor(BaseKindSE):
 
     def handle_loop(self, loc, states):
         self.loops.setdefault(loc.getBBlockID(), []).append(states)
-
-       # if any(map(lambda p: self.is_inv_loc(p.first()), self.stalepaths)) or\
-       #   any(map(lambda p: self.is_inv_loc(p.first()), self.readypaths)):
-       #   return
 
         assert self.loops.get(loc.getBBlockID())
         self.execute_loop(loc, self.loops.get(loc.getBBlockID()))
@@ -240,7 +238,9 @@ class KindSymbolicExecutor(BaseKindSE):
             # FIXME: check that all the sequences together
             # cover the input paths
             for S in (s.toannotation(True) for s in E):
-                 if check_inv(self.getProgram(), loc, L, S):
+                 print("checking invariance of")
+                 print(S)
+                 if check_inv(self.getProgram(), L, S):
                      print_stdout(
                          f"{S} is invariant of loc {loc.getBBlock().getID()}",
                          color="BLUE")
