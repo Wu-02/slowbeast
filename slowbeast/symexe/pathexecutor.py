@@ -121,11 +121,10 @@ class ExprAnnotation(Annotation):
         get = state.get
         expr = self.expr
         # for (x, val) in self.subs.items():
-        for (val, x) in self.subs.items():
-            curval = get(x)
-            if curval:  # do we have the value in this state?
-                expr = EM.substitute(expr, (val, curval))
-        return expr
+        subs = ((v, get(x)) for (v, x) in self.subs.items())
+
+        # we must do all the substitution at once!
+        return EM.substitute(expr, *((val, curval) for (val, curval) in subs if curval))
 
     def __eq__(self, rhs):
         return self.cannonical == rhs.cannonical
