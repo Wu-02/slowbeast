@@ -153,6 +153,9 @@ class BVSymbolicDomain:
             return v
 
         if v.isConstant():
+            if v.isBool():
+                return Expr(BoolVal(v.getValue()),
+                            BoolType())
             return Expr(
                 bv_const(
                     v.getValue(),
