@@ -337,6 +337,10 @@ class KindSymbolicExecutor(BaseKindSE):
                 self.reportfn(f"Safe (init) path: {path}", color="DARK_GREEN")
                 return None, states  # this path is safe
             elif r is Result.UNKNOWN:
+                killed = (s for s in states.other if s.wasKilled())\
+                    if states.other else ()
+                for s in killed:
+                    self.report(s)
                 self.have_problematic_path = True
                 # there is a problem with this path,
                 # but we can still find an error

@@ -126,9 +126,12 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                 if atmost and predsnum == 0:
                     # FIXME: do not do this reverse, rather execute in reverse
                     # order (do a reverse iterator?)
-                    p.reverse()
-                    n = path.copyandsetpath(p)
-                    newpaths.append(path.copyandsetpath(p))
+                    if len(path) == len(p):
+                        print("Did not extend the path and reached entry of CFG")
+                    else:
+                        p.reverse()
+                        n = path.copyandsetpath(p)
+                        newpaths.append(path.copyandsetpath(p))
                     continue
 
                 for pred in preds:
@@ -195,10 +198,10 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         r = self.executePath(path, fromInit=True)
         if not r.errors:
-            killed = (s for s in r.early if s.wasKilled()) if r.early else None
+            killed = any(True for s in r.early if s.wasKilled()) if r.early else None
             if killed:
                 return Result.UNKNOWN, r
-            killed = (s for s in r.other if s.wasKilled()) if r.other else None
+            killed = any(True for s in r.other if s.wasKilled()) if r.other else None
             if killed:
                 return Result.UNKNOWN, r
             if len(path.first().getPredecessors()) == 0:
