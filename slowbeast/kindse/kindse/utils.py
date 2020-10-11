@@ -65,7 +65,6 @@ def or_annotations(EM, toassert, *annots):
     for a in annots:
         expr1, expr2, subs = unify_annotations(EM, S, a)
         if expr1 and expr2:
-            print(expr1, expr2, subs)
             S = Ctor(EM.simplify(EM.Or(expr1, expr2)), subs, EM)
         else:
             S = Ctor(expr1 or expr2, subs, EM)
