@@ -85,18 +85,29 @@ def get_initial_seq(unsafe):
         # negation of loop condition.
 
         S = None  # safe states
-        H = None  # negation of loop condition
+        H = None  # loop exit condition
 
         EM = getGlobalExprManager()
-        for u in unsafe:
-            S = or_annotations(EM, True,
-                               S or AssumeAnnotation(EM.getFalse(), {}, EM),
-                               state_to_annotation(u))
-            H = EM.Or(H or EM.getFalse(), u.getConstraints()[0])
+       #for u in unsafe:
+       #    S = or_annotations(EM, True,
+       #                       S or AssumeAnnotation(EM.getFalse(), {}, EM),
+       #                       state_to_annotation(u))
+       #    H = EM.Or(H or EM.getFalse(), u.getConstraints()[0])
+       #notS = EM.simplify(EM.Not(S.getExpr()))
+       #S = AssertAnnotation(EM.And(H, notS), S.getSubstitutions(), EM)
 
-        notS = EM.simplify(EM.Not(S.getExpr()))
-        S = AssertAnnotation(EM.And(H, notS), S.getSubstitutions(), EM)
-        return InductiveSequence(S)
+        for u in unsafe:
+            # constraints without loop exit condition
+            uconstr = u.getConstraints()
+            notu = EM.disjunction(*map(EM.Not, uconstr[1:]))
+            S = EM.And(notu, S) if S else notu # use conjunction too?
+            # loop exit condition
+            H = EM.Or(H, uconstr[0]) if H else uconstr[0]
+
+        Sa = AssertAnnotation(EM.And(H, S),
+                              {l : l.load for l in unsafe[0].getNondetLoads()},
+                              EM)
+        return InductiveSequence(Sa)
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(

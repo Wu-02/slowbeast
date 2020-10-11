@@ -156,6 +156,21 @@ class ExprManager:
         lift = self.lift
         return opt(SymbolicDomain.conjunction(*map(lift, args)))
 
+    def disjunction(self, *args):
+        """
+        Or() of multiple boolean arguments.
+        Or() itself works as logical or bitwise and depending
+        on the arguments.  This method is only logical or,
+        but of multiple arguments.
+        """
+        assert all(map(lambda a: a.isBool(), args))
+        if len(args) == 0:
+            return ConcreteDomain.getFalse()
+        if ConcreteDomain.belongto(*args):
+            return ConcreteDomain.disjunction(*args)
+        lift = self.lift
+        return opt(SymbolicDomain.disjunction(*map(lift, args)))
+
     def And(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.And(a, b)

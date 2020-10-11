@@ -226,6 +226,15 @@ class BVSymbolicDomain:
         assert all(map(lambda x: x.isBool(), args))
         return Expr(And(*map(lambda x: x.unwrap(), args)), BoolType())
 
+    def disjunction(*args):
+        """
+        Logical and that allows to put into disjunction more
+        than two formulas at once (just simplifies the formulas for
+        reading and simplifications), it is not needed, really.
+        """
+        assert BVSymbolicDomain.belongto(*args)
+        assert all(map(lambda x: x.isBool(), args))
+        return Expr(Or(*map(lambda x: x.unwrap(), args)), BoolType())
 
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)

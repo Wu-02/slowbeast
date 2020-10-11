@@ -39,6 +39,16 @@ class ConcreteDomain:
         assert all(map(lambda a: a.isBool(), args))
         return Constant(all(args), BoolType())
 
+    def disjunction(*args):
+        """
+        Or() of multiple boolean arguments.
+        Or() itself works as logical or bitwise and depending
+        on the arguments.  This method is only logical or,
+        but of multiple arguments """
+        assert ConcreteDomain.belongto(*args)
+        assert all(map(lambda a: a.isBool(), args))
+        return Constant(any(args), BoolType())
+
     def And(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType()
