@@ -45,13 +45,32 @@ def unify_annotations(annot1, annot2, EM, toassert=False):
         if not subs.get(val):
             subs[val] = instr
 
-    return Ctor(EM.simplify(EM.Or(expr1, expr2)), subs, EM)
+    return EM.simplify(expr1), EM.simplify(expr2), subs
+
+def or_annotations(EM, toassert, *annots):
+    assert isinstance(toassert, bool)
+    assert len(annots) > 0
+    if len(annots) == 1:
+        return annots[0]
+
+    Ctor = AssertAnnotation if toassert else AssumeAnnotation
+    subs = {}
+    S = None
+    for a in annots:
+        expr1, expr2, subs = unify_annotations(EM, S, a)
+        if expr1 and expr2:
+            print(expr1, expr2, subs)
+            S = Ctor(EM.simplify(EM.Or(expr1, expr2)), subs, EM)
+        else:
+            S = Ctor(expr1 or expr2, subs, EM)
+    return S
 
 
 def states_to_annotation(states):
     a = None
     for s in states:
         EM = s.getExprManager()
-        a = unify_annotations(a or AssumeAnnotation(EM.getFalse(), {}, EM),
-                              state_to_annotation(s), EM)
+        a = or_annotations(EM, False,
+                           a or AssumeAnnotation(EM.getFalse(), {}, EM),
+                           state_to_annotation(s))
     return a

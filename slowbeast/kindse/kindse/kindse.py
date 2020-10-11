@@ -12,7 +12,7 @@ from . loops import SimpleLoop
 from . relations import InvariantGenerator, exec_on_loop
 from . relations import get_safe_relations, get_safe_subexpressions
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
-from . utils import state_to_annotation, states_to_annotation, unify_annotations
+from . utils import state_to_annotation, states_to_annotation, or_annotations
 from . inductivesequence import InductiveSequence
 
 
@@ -73,6 +73,24 @@ def check_inv(prog, loc, L, inv):
     dbg_sec()
     return res == 0
 
+def get_initial_seq(unsafe):
+        # NOTE: Only safe states that reach the assert are not inductive on the
+        # loop header -- what we need is to have safe states that already left
+        # the loop and safely pass assertion or avoid it.
+        # These are the complement of error states intersected with the
+        # negation of loop condition.
+
+        S = None  # safe states
+        H = None  # negation of loop condition
+
+        EM = getGlobalExprManager()
+        for u in unsafe:
+            S = or_annotations(EM, True,
+                               S or AssumeAnnotation(EM.getFalse(), {}, EM),
+                               state_to_annotation(u))
+            H = EM.Or(H or EM.getFalse(), u.getConstraints()[0])
+
+        return InductiveSequence(S)
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(

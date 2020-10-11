@@ -2,7 +2,7 @@ from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 from slowbeast.solvers.solver import getGlobalExprManager
-from . utils import unify_annotations
+from . utils import or_annotations
 
 class InductiveSequence:
     """
@@ -79,13 +79,8 @@ class InductiveSequence:
 
     def toannotation(self, toassert=True):
         EM = getGlobalExprManager()
-        S = None
-        C = AssertAnnotation if toassert else AssumeAnnotation
-        for f in self.frames:
-            S = unify_annotations(S or C(EM.getFalse(), {}, EM),
-                                  f.toassert(), EM,
-                                  toassert=toassert)
-        return S
+        return or_annotations(EM, toassert,
+                              *map(lambda f: f.toassume(), self.frames))
 
     def __getitem__(self, idx):
         return self.frames[idx]
