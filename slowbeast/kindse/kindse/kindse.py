@@ -174,13 +174,19 @@ class KindSymbolicExecutor(BaseKindSE):
         self.invpoints = {}
         self.have_problematic_path = False
         self.loops = {}
-        self.sum_loops = True
+        self.sum_loops = {}
 
     def handle_loop(self, loc, states):
         self.loops.setdefault(loc.getBBlockID(), []).append(states)
 
+        assert loc in self.sum_loops[loc.getCFG()],\
+                "Handling a loop that should not be handled"
+
         assert self.loops.get(loc.getBBlockID())
-        self.execute_loop(loc, self.loops.get(loc.getBBlockID()))
+        if not self.execute_loop(loc, self.loops.get(loc.getBBlockID())):
+            self.sum_loops[loc.getCFG()].remove(loc)
+            return False
+        return True
 
     def to_distinct(self, frame1, frame2):
         """
@@ -262,8 +268,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
         L = SimpleLoop.construct(loc)
         if L is None:
-            raise NotImplementedError("We must execute the loop normally")
-            return None
+            return False # fall-back to loop unwinding...
 
         # FIXME: strengthen
         sequences = [get_initial_seq(unsafe)]
@@ -282,7 +287,11 @@ class KindSymbolicExecutor(BaseKindSE):
                 E += self.extend_seq(seq, L)
                 print(' -- extending DONE --')
 
-            assert E, "UNHANDLED, no sequence extended"
+            if not E:
+               #seq not extended... it looks that there is no
+               #safe invariant
+               #FIXME: could we use it for annotations?
+               return False # fall-back to unwinding
 
             # FIXME: check that all the sequences together
             # cover the input paths
@@ -292,8 +301,10 @@ class KindSymbolicExecutor(BaseKindSE):
                          f"{S} is invariant of loc {loc.getBBlock().getID()}",
                          color="BLUE")
                      if self.genannot:
+                        # maybe remember the ind set even without genannot
+                        # and use it just for another 'execute_loop'?
                         loc.addAnnotationBefore(s.toannotation().Not(EM))
-                     return
+                     return True
             sequences = E
 
     def check_path(self, path):
@@ -352,6 +363,7 @@ class KindSymbolicExecutor(BaseKindSE):
             cfg = self.getCFG(F)
             invpoints = self.findInvPoints(cfg)
             self.invpoints[cfg] = invpoints
+            self.sum_loops[cfg] = invpoints
 
             nodes = cfg.getNodes()
             npaths = [AnnotatedCFGPath([n]) for n in nodes if n.hasAssert()]
@@ -423,9 +435,14 @@ class KindSymbolicExecutor(BaseKindSE):
                 return 1
             elif states.errors:  # got error states that may not be real
                 assert r is None
-                if self.sum_loops and self.is_inv_loc(path.first()):
-                    self.handle_loop(path.first(), states)
+                fl = path.first()
+                if self.is_inv_loc(fl) and fl in self.sum_loops[fl.getCFG()]:
+                    if not self.handle_loop(fl, states):
+                        # falled-back to unwinding
+                        # XXX: could we try again later?
+                        self.extend_and_queue_paths(path)
                 else:
+                    # normal path or a loop that we cannot summarize
                     self.extend_and_queue_paths(path)
 
             k += 1

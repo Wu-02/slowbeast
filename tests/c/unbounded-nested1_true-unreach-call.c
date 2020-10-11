@@ -23,7 +23,7 @@ int main() {
 	assert(x == 0);
 
 	// CHECK-NOT: assertion failed!
-	// CHECK: Induction step succeeded!
+	// CHECK: Enumerating paths done!
 	// CHECK: Found errors: 0
 }
 
