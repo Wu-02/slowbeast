@@ -115,7 +115,7 @@ class KindSymbolicExecutor(BaseKindSE):
             prog,
             testgen=None,
             opts=KindSeOptions(),
-            genannot=True):
+            genannot=False):
         super(
             KindSymbolicExecutor,
             self).__init__(
@@ -248,13 +248,13 @@ class KindSymbolicExecutor(BaseKindSE):
 
             # FIXME: check that all the sequences together
             # cover the input paths
-            for S in (s.toannotation(True) for s in E):
-                 print("checking invariance of")
-                 print(S)
+            for s, S in ((s, s.toannotation(True)) for s in E):
                  if check_inv(self.getProgram(), L, S):
                      print_stdout(
                          f"{S} is invariant of loc {loc.getBBlock().getID()}",
                          color="BLUE")
+                     if self.genannot:
+                        loc.addAnnotationBefore(s.toannotation().Not(EM))
                      return
             sequences = E
 
