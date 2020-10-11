@@ -9,10 +9,17 @@ def state_to_annotation(state):
                             EM)
 
 
-def unify_annotations(annot1, annot2, EM, toassert=False):
-    """ Take two annotations, unify their variables and "or" them together """
-    Ctor = AssertAnnotation if toassert else AssumeAnnotation
+def unify_annotations(EM, annot1, annot2):
+    """
+    Take two annotations, unify their variables and substitutions.
+    Return the new expressions and the substitutions
+    """
+    if annot1 is None:
+        return None, annot2.getExpr(), annot2.getSubstitutions()
+    if annot2 is None:
+        return annot1.getExpr(), None, annot1.getSubstitutions()
 
+    # perform less substitutions if possible
     subs1 = annot1.getSubstitutions()
     subs2 = annot2.getSubstitutions()
     expr1 = annot1.getExpr()
@@ -23,7 +30,7 @@ def unify_annotations(annot1, annot2, EM, toassert=False):
 
     if len(subs1) == 0:
         assert len(subs2) == 0
-        return Ctor(EM.simplify(EM.Or(expr1, expr2)), {}, EM)
+        return EM.simplify(expr1), EM.simplify(expr2), {}
 
     subs = {}
     col = False
@@ -33,9 +40,8 @@ def unify_annotations(annot1, annot2, EM, toassert=False):
             # collision
             freshval = EM.freshValue(
                 val.name(), bw=val.getType().getBitWidth())
-            ndload = NondetLoad.fromExpr(freshval, val.load, val.alloc)
-            expr2 = EM.substitute(expr2, (val, ndload))
-            subs[ndload] = instr2
+            expr2 = EM.substitute(expr2, (val, freshval))
+            subs[freshval] = instr2
 
         # always add this one
         subs[val] = instr

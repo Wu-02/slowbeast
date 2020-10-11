@@ -31,7 +31,6 @@ def get_subs(state):
 def get_safe_subexpressions(state, unsafe):
     subs = get_subs(state)
     EM = state.getExprManager()
-    print(state.getConstraints())
 
     safe = set()
     solver = Solver()

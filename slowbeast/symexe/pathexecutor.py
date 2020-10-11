@@ -144,9 +144,9 @@ class ExprAnnotation(Annotation):
         print(
             "ExprAnnotation[{0}]:".format(
                 'assert' if self.type == Annotation.ASSERT else 'assume'))
-        print(f" expr: {self.expr}")
-        print(f" cannonical expr: {self.cannonical}")
-        print(" substitutions: {0}".format(", ".join(
+        print(f"> expr: {self.expr}")
+        print(f"> cannonical expr: {self.cannonical}")
+        print("> substitutions: {0}".format(", ".join(
             f"{x.asValue()}/{val.unwrap()}" for (val, x) in self.subs.items())))
 
 
@@ -205,7 +205,7 @@ class Executor(SExecutor):
         super(Executor, self).__init__(solver, opts, memorymodel)
 
     def executeAnnotation(self, states, annot, oldpc):
-        dbg_sec(f"executing annotation: {annot}")
+        dbg_sec(f"executing annotation:\n{annot}")
 
         def executeInstr(stts, instr):
             newstates = []
