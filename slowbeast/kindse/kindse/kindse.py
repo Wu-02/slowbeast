@@ -23,32 +23,76 @@ def strengthen(executor, s, a, seq, L):
     """
     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
     """
-    # XXX
-    return InductiveSequence.Frame(state_to_annotation(s), None)
-    return InductiveSequence.Frame(a, None)
+    print(f'Strengthening {a}')
     EM = getGlobalExprManager()
-    r = seq.check_ind_on_paths(executor, L.getPaths())
-    while r.errors:
-        s = r.errors[0]
-        for l in s.getNondetLoads():
-            c = s.concretize(l)[0]
-            assert c is not None, "Unhandled solver failure"
-            lt = s.is_sat(EM.Lt(l, c))
-            if lt is False and any(
-                    map(lambda s: s.is_sat(EM.Gt(l, c)), prestates.ready)):
-                seq.strengthen(EM.Gt(l, c))
-                break
-            elif s.is_sat(EM.Gt(l, c)) is False and\
-                    any(map(lambda s: s.is_sat(EM.Lt(l, c)), prestates.ready)):
-                seq.strengthen(EM.Lt(l, c))
-                break
+    solver = s.getSolver()
 
-        r = seq.check_ind_on_paths(executor, L.getPaths())
+    newframe = InductiveSequence.Frame(a, None)
+    # execute {a} L {seq + a}
+    r = seq.check_on_paths(executor, L.getPaths(),
+                           pre=[a], tmpframes = [newframe])
+    if not r.errors: # the abstraction is inductive w.r.t seq
+        return newframe
+    S = [] #strengthening
+    while r.errors:
+        for e in r.errors:
+            Schanged = False
+            m = e.model()
+            for (x, c) in m.items():
+                if c is None:
+                    continue
+                # Try extend the cex value such that it implies
+                # the original state (that's required to be
+                # a correct abstraction)
+                G = EM.Ge(x, c)
+                if s.is_sat(G, *S) is False:
+                    #x < c
+                    # try to push c as far as we can
+                    cp = EM.freshValue('c', c.getType().getBitWidth())
+                    cpval = s.concretize_with_assumptions(
+                            [*S, EM.Lt(cp, c), EM.Gt(x, cp)],
+                            cp)
+                    if cpval:
+                        expr = EM.Lt(x, cpval[0])
+                    else:
+                        expr = EM.Not(G)
+                    if solver.is_sat(expr, *S) is True:
+                        # append the expr but only if it does
+                        # not break the others...
+                        S.append(expr)
+                        Schanged = True
+
+                G = EM.Le(x, c)
+                if s.is_sat(G, *S) is False:
+                    cp = EM.freshValue('c', c.getType().getBitWidth())
+                    #x > c
+                    cpval = s.concretize_with_assumptions(
+                            [*S, EM.Gt(cp, c), EM.Lt(x, cp)],
+                            cp)
+                    if cpval:
+                        expr = EM.Gt(x, cpval[0])
+                    else:
+                        expr = EM.Not(G)
+
+                    expr = EM.Not(G)
+                    if solver.is_sat(expr, *S) is True:
+                        S.append(expr)
+                        Schanged = True
+
+        if not Schanged:
+            break
+        newframe = InductiveSequence.Frame(a,
+                              AssumeAnnotation(EM.conjunction(*S),
+                                               a.getSubstitutions(),
+                                               EM))
+        r = seq.check_on_paths(executor, L.getPaths(),
+                               pre=[newframe.toassume()],
+                               tmpframes = [newframe])
 
     if not r.errors:
-        return InductiveSequence.Frame(a, state_to_annotation(s))
+        return newframe
     # we failed...
-    return state_to_annotation(s)
+    return InductiveSequence.Frame(state_to_annotation(s), None)
 
 def abstract(executor, state, unsafe):
     yield from overapproximations(state, unsafe)
@@ -174,7 +218,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 return InductiveSequence.Frame(states_to_annotation(states), None)
             # they are implied
             return None
-        return frame1 
+        return frame1
 
     def extend_seq(self, seq, L):
         r = seq.check_last_frame(self, L.getPaths())
@@ -187,31 +231,25 @@ class KindSymbolicExecutor(BaseKindSE):
         E = []
         checked_abstractions = set()
         for s in r.ready:
-            tmp = seq.copy()
-            tmp.append(state_to_annotation(s), None)
-            E.append(tmp)
+            for a in abstract(self, s, r.errors):
+                if a in checked_abstractions:
+                    continue
+                checked_abstractions.add(a)
+                print('Abstraction: ', a)
 
-           #for a in abstract(self, s, r.errors):
-           #    print('Abstraction: ', a)
-           #    if a in checked_abstractions:
-           #        print('Skipping (had it)')
-           #        continue
-           #    checked_abstractions.add(a)
-
-           #    S = strengthen(self, s, a, seq, L)
-           #    assert S, "strengthening failed"
-           #    if S != seq[-1]:
-           #       #solver = s.getSolver()
-           #       #for e in E:
-           #       #    S = self.to_distinct(S, e[-1])
-           #       #    if S is None:
-           #       #        break
-           #        if S:
-           #            print('-- extended by -- ')
-           #            print(S)
-           #            tmp = seq.copy()
-           #            tmp.append(S.states, S.strengthening)
-           #            E.append(tmp)
+                S = strengthen(self, s, a, seq, L)
+                if S != seq[-1]:
+                   #solver = s.getSolver()
+                   #for e in E:
+                   #    S = self.to_distinct(S, e[-1])
+                   #    if S is None:
+                   #        break
+                    if S:
+                        tmp = seq.copy()
+                        tmp.append(S.states, S.strengthening)
+                        E.append(tmp)
+                        print('== extended to == ')
+                        print(tmp)
         return E
 
 
@@ -236,7 +274,7 @@ class KindSymbolicExecutor(BaseKindSE):
             print('--- iter ---')
             E = []
             for seq in sequences:
-                print('Seq:\n', seq)
+                print('Processing seq:\n', seq)
                 if __debug__:
                     r = seq.check_ind_on_paths(self, L.getPaths())
                     assert r.errors is None, 'seq is not inductive'

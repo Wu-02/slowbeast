@@ -29,6 +29,12 @@ class ConcreteDomain:
             return Constant(c, BoolType())
         return Constant(c, Type(bw))
 
+    def getTrue():
+        return Constant(True, BoolType())
+
+    def getFalse():
+        return Constant(False, BoolType())
+
     def conjunction(*args):
         """
         And() of multiple boolean arguments.

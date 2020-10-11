@@ -10,6 +10,7 @@ if _use_z3:
     def models(assumpt, *args):
         s = Z3Solver()
         for a in assumpt:
+            assert a.isBool()
             s.add(a.unwrap())
         r = s.check()
         if r != sat:
@@ -161,6 +162,10 @@ class SymbolicSolver(SolverIntf):
         return is_sat(*(x.unwrap() for x in e if not x.isConstant()))
 
     def concretize(self, assumpt, *e):
+        assert all(map(lambda x: not x.isConstant(), e)),\
+               "Constant instead of symbolic value"
+        if any(map(lambda x: x.isConstant() and x.getValue() is False, assumpt)):
+            return None
         #m = smallmodels(assumpt, *e)
         m = models(assumpt, *e)
         if m is None:  # unsat

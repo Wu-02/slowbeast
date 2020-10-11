@@ -21,6 +21,11 @@ class InductiveSequence:
             self.states = states
             self.strengthening = strengthening
 
+            states = self.states
+            stren = self.strengthening
+            assert stren is None or\
+                   states.getSubstitutions() == stren.getSubstitutions()
+
         def toannot(self):
             EM = getGlobalExprManager()
             states = self.states
@@ -39,18 +44,6 @@ class InductiveSequence:
         def toassume(self):
             EM = getGlobalExprManager()
             return AssumeAnnotation(*self.toannot(), EM)
-
-        def strengthen(self, annot):
-            EM = getGlobalExprManager()
-            s = self.strengthening
-            if s is None:
-                self.strengthening = annot
-            assert False, "Not implemented"
-           #newexpr = EM.And(e, s.getExpr())
-           #FIXME: need to unify the expressions
-           #self.strengthening = AssertAnnotation(newexpr,
-           #                                      s.getSubstitutions(),
-           #                                      EM)
 
         def __eq__(self, rhs):
             return self.states == rhs.states and\
@@ -91,14 +84,16 @@ class InductiveSequence:
     def __repr__(self):
         return "\nvv seq vv\n{0}\n^^ seq ^^\n".format("\n-----\n".join(map(str, self.frames)))
 
-    def check_on_paths(self, executor, paths, pre=[], post=[], self_as_pre=False):
+    def check_on_paths(self, executor, paths, tmpframes = [], pre=[], post=[], self_as_pre=False):
         """
         Check whether when we execute paths, we get to one of the frames
+        tmpframes are frames that should be appended to the self.frames
         """
 
         EM = getGlobalExprManager()
         result = PathExecutionResult()
-        frames = self.frames
+        oldframes = self.frames
+        self.frames = oldframes + tmpframes
         selfassert = self.toannotation(toassert=True)
         for path in paths:
             p = path.copy()
@@ -114,7 +109,6 @@ class InductiveSequence:
                 p.addPrecondition(e)
 
             r = executor.executePath(p)
-
             result.merge(r)
 
             if r.ready:
@@ -124,6 +118,7 @@ class InductiveSequence:
             if not r.ready and not r.errors and not r.other:
                 print_stdout(f"infeasible along {path}", color="DARK_GREEN")
 
+        self.frames = oldframes
         return result
 
     def check_last_frame(self, executor, paths, pre=[], post=[]):
@@ -146,7 +141,6 @@ class InductiveSequence:
                 p.addPrecondition(e)
 
             r = executor.executePath(p)
-
             result.merge(r)
 
            #if r.ready:
