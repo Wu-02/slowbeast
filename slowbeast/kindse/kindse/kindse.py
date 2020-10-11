@@ -113,6 +113,7 @@ class KindSymbolicExecutor(BaseKindSE):
         self.invpoints = {}
         self.have_problematic_path = False
         self.loops = {}
+        self.sum_loops = True
 
     def handle_loop(self, loc, states):
         self.loops.setdefault(loc.getBBlockID(), []).append(states)
@@ -346,7 +347,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 return 1
             elif states.errors:  # got error states that may not be real
                 assert r is None
-                if self.is_inv_loc(path.first()):
+                if self.sum_loops and self.is_inv_loc(path.first()):
                     self.handle_loop(path.first(), states)
                 else:
                     self.extend_and_queue_paths(path)
