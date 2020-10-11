@@ -20,9 +20,13 @@ def overapproximations(s, unsafe):
     yield from get_safe_relations([s], unsafe)
     yield from get_safe_subexpressions(s, unsafe)
 
-def strengthen(executor, seq, L):
-    """ Strengthen the last frame of the sequence """
-
+def strengthen(executor, s, a, seq, L):
+    """
+    Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
+    """
+    # XXX
+    return InductiveSequence.Frame(state_to_annotation(s), None)
+    return InductiveSequence.Frame(a, None)
     EM = getGlobalExprManager()
     r = seq.check_ind_on_paths(executor, L.getPaths())
     while r.errors:
@@ -43,9 +47,9 @@ def strengthen(executor, seq, L):
         r = seq.check_ind_on_paths(executor, L.getPaths())
 
     if not r.errors:
-        return seq
+        return InductiveSequence.Frame(a, state_to_annotation(s))
     # we failed...
-    return None
+    return state_to_annotation(s)
 
 def abstract(executor, state, unsafe):
     yield from overapproximations(state, unsafe)
@@ -125,40 +129,81 @@ class KindSymbolicExecutor(BaseKindSE):
         assert self.loops.get(loc.getBBlockID())
         self.execute_loop(loc, self.loops.get(loc.getBBlockID()))
 
+    def to_distinct(self, frame1, frame2):
+        """
+        return frame1 \ frame2 if frame1 and frame2 have intersection,
+        otherwise return frame1
+        """
+        assert frame1
+        assert frame2
+
+        #XXX
+        return frame1
+
+        executor = self.getIndExecutor()
+        tmps = executor.createState()
+        tmps.pushCall(None, self.getProgram().getEntry())
+
+        class DummyInst:
+            def getNextInstruction(self):
+                return self
+
+        #FIXME: do it part by part (so that we do not create the and
+        #formulas in toassume()
+        states, nonr = executor.executeAnnotation([tmps], frame1.toassume(), DummyInst())
+        assert states and not nonr and len(states) == 1
+        tmps2 = states[0].copy()
+        # FIXME: do this only when they have intersection
+        states, nonr = executor.executeAnnotation(states, frame2.toassume(), DummyInst())
+        assert not nonr
+        if states: # they have intersection
+            assert len(states) == 1
+            notframe2 = frame2.toassume().Not(tmps.getExprManager())
+            states, nonr = executor.executeAnnotation([tmps2], notframe2, DummyInst())
+            if states:
+                # FIXME: we broke 'states + strength' structure
+                return InductiveSequence.Frame(states_to_annotation(states), None)
+            # they are implied
+            return None
+        return frame1 
+
     def extend_seq(self, seq, L):
         r = seq.check_last_frame(self, L.getPaths())
         if not r.ready: # cannot step into this frame...
-            return None
+            # FIXME we can use it at least for annotations
+            print('Infeasible frame...')
+            return []
 
         EM = getGlobalExprManager()
-        newseqs = []
+        E = []
+        checked_abstractions = set()
         for s in r.ready:
-            abstractions = set(abstract(self, s, r.errors))
+            tmp = seq.copy()
+            tmp.append(state_to_annotation(s), None)
+            E.append(tmp)
 
-            for A in abstractions:
-                if A == seq[-1].states:
-                    print('FIXME: merge the strengthenings')
-                    continue
-                tmp = seq.copy()
-                tmp.append(A, None)
-                print(tmp)
-                S = strengthen(self, tmp, L)
-                if S:
-                    newseqs.append(S)
+           #for a in abstract(self, s, r.errors):
+           #    print('Abstraction: ', a)
+           #    if a in checked_abstractions:
+           #        print('Skipping (had it)')
+           #        continue
+           #    checked_abstractions.add(a)
 
-        return newseqs
-
-
-           #if newseq:
-           #    seq = newseq
-           #else:
-           #    # NOTE: we must use Not(r.errors), r.ready does not yield inductive set
-           #    # for some reason (even with early and other empty)...
-           #    # why? Why, oh, why?
-           #    # NOTE 2 hmm, was probably a bug...
-           #    # A = states_to_annotation(r.errors).Not(EM)
-           #    seq.append(states_to_annotation(r.ready), None)
-
+           #    S = strengthen(self, s, a, seq, L)
+           #    assert S, "strengthening failed"
+           #    if S != seq[-1]:
+           #       #solver = s.getSolver()
+           #       #for e in E:
+           #       #    S = self.to_distinct(S, e[-1])
+           #       #    if S is None:
+           #       #        break
+           #        if S:
+           #            print('-- extended by -- ')
+           #            print(S)
+           #            tmp = seq.copy()
+           #            tmp.append(S.states, S.strengthening)
+           #            E.append(tmp)
+        return E
 
 
     def execute_loop(self, loc, states):
@@ -173,52 +218,34 @@ class KindSymbolicExecutor(BaseKindSE):
             raise NotImplementedError("We must execute the loop normally")
             return None
 
-        # NOTE: Safe states are the complement of error states,
-        # but are not inductive on the loop header -- what we need is to
-        # have safe states that already left the loop (i.e., complement of
-        # error states intersected with the negation of loop condition).
-        # Ready and terminated states on the paths from header to the error
-        # could be used, but are not all the safe states (there may be safe
-        # states that miss the assertion)
+        # FIXME: strengthen
+        sequences = [get_initial_seq(unsafe)]
 
-        S = None  # safe states
-        H = None  # negation of loop condition
-
-        for u in unsafe:
-            EM = u.getExprManager()
-            S = unify_annotations(S or AssumeAnnotation(EM.getFalse(), {}, EM),
-                                  state_to_annotation(u), EM)
-            H = EM.Or(H or EM.getFalse(), u.getConstraints()[0])
-
-        # FIXME: EM is out of scope
-        # This is the first inductive set on H
-        S = AssertAnnotation(EM.simplify(EM.And(EM.Not(S.getExpr()), H)),
-                             S.getSubstitutions(), EM)
-        seq = InductiveSequence(S)
-
-        # FIXME: EM is out of scope
-        print('--- starting executing ---')
+        print('--- starting building sequences  ---')
         EM = getGlobalExprManager()
         while True:
             print('--- iter ---')
-            print('Seq:\n', seq)
+            E = []
+            for seq in sequences:
+                print('Seq:\n', seq)
+                if __debug__:
+                    r = seq.check_ind_on_paths(self, L.getPaths())
+                    assert r.errors is None, 'seq is not inductive'
 
-            if __debug__:
-                r = seq.check_ind_on_paths(self, L.getPaths())
-                assert r.errors is None, 'seq is not inductive'
+                E += self.extend_seq(seq, L)
+                print(' -- extending DONE --')
 
-            seqs = self.extend_seq(seq, L)
-            if seqs is None:
-                # TODO infeasible, what we can say about it?
-                break
-            for S in (s.toannotation(True) for s in seqs):
-                if check_inv(self.getProgram(), loc, L, S):
-                    print_stdout(
-                        f"{S} is invariant of loc {loc.getBBlock().getID()}",
-                        color="BLUE")
-                    return
-            #FIXME!
-            seq = seqs[0]
+            assert E, "UNHANDLED, no sequence extended"
+
+            # FIXME: check that all the sequences together
+            # cover the input paths
+            for S in (s.toannotation(True) for s in E):
+                 if check_inv(self.getProgram(), loc, L, S):
+                     print_stdout(
+                         f"{S} is invariant of loc {loc.getBBlock().getID()}",
+                         color="BLUE")
+                     return
+            sequences = E
 
     def check_path(self, path):
         first_loc = path.first()
