@@ -141,6 +141,21 @@ class ExprManager:
     def getFalse(self):
         return SymbolicDomain.getFalse()
 
+    def conjunction(self, *args):
+        """
+        And() of multiple boolean arguments.
+        And() itself works as logical or bitwise and depending
+        on the arguments.  This method is only logical and,
+        but of multiple arguments
+        """
+        assert all(map(lambda a: a.isBool(), args))
+        if len(args) == 0:
+            return ConcreteDomain.getTrue()
+        if ConcreteDomain.belongto(*args):
+            return ConcreteDomain.conjunction(*args)
+        lift = self.lift
+        return opt(SymbolicDomain.conjunction(*map(lift, args)))
+
     def And(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.And(a, b)

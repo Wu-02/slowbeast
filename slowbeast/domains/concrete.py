@@ -29,6 +29,16 @@ class ConcreteDomain:
             return Constant(c, BoolType())
         return Constant(c, Type(bw))
 
+    def conjunction(*args):
+        """
+        And() of multiple boolean arguments.
+        And() itself works as logical or bitwise and depending
+        on the arguments.  This method is only logical and,
+        but of multiple arguments """
+        assert ConcreteDomain.belongto(*args)
+        assert all(map(lambda a: a.isBool(), args))
+        return Constant(all(args), BoolType())
+
     def And(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType()

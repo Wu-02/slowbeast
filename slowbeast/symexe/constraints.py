@@ -19,10 +19,7 @@ class ConstraintsSet:
             self.constraints.append(c)
 
     def asFormula(self, EM):
-        F = EM.getTrue()
-        for c in self.constraints:
-            F = EM.And(F, c)
-        return F
+        return EM.conjunction(*self.constraints)
 
     def get(self):
         return self.constraints
