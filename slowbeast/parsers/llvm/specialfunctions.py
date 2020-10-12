@@ -13,6 +13,7 @@ special_functions = [
     '__VERIFIER_silent_exit',
     '__INSTR_check_nontermination_header',
     '__INSTR_check_nontermination',
+    '__INSTR_check_assume',
     '__INSTR_fail',
     '__slowbeast_print'
 ]
@@ -42,7 +43,7 @@ def create_special_fun(parser, inst, fun):
     elif fun == '__VERIFIER_silent_exit':
         A = Assume(ConstantFalse)
         return A, [A]
-    elif fun == '__VERIFIER_assert':
+    elif fun == '__VERIFIER_assert' or fun == '__INSTR_check_assume':
         operands = getLLVMOperands(inst)
         cond = parser.getOperand(operands[0])
         C = Cmp(

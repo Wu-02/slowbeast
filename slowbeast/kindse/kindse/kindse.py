@@ -341,6 +341,7 @@ class KindSymbolicExecutor(BaseKindSE):
                     if states.other else ()
                 for s in killed:
                     self.report(s)
+                self.reportfn(f"Inconclusive (init) path: {path}")
                 self.have_problematic_path = True
                 # there is a problem with this path,
                 # but we can still find an error
@@ -353,11 +354,11 @@ class KindSymbolicExecutor(BaseKindSE):
 
         r = self.executePath(path)
 
-        killed = (s for s in r.other if s.wasKilled()) if r.other else None
-        if killed:
+        killed = (s for s in r.other if s.wasKilled()) if r.other else ()
+        for s in killed:
+            self.report(s)
+            self.reportfn(f"Killed states when executing {path}")
             self.have_problematic_path = True
-            for s in killed:
-                self.report(s)
 
         if r.errors:
             self.reportfn(f"Possibly error path: {path}", color="ORANGE")

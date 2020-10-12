@@ -28,8 +28,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         # first, we need to split blocks such that every call is in
         # its own block, so that we can easily build interprocedural
         # paths
-        splitProgAroundCalls(prog)
-        prog.dump()
+       #splitProgAroundCalls(prog)
+       #prog.dump()
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
