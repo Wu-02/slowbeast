@@ -170,10 +170,10 @@ class KindSymbolicExecutor(BaseKindSE):
         self.readypaths = []
         self.stalepaths = []
 
-        self.genannot = genannot
         self.invpoints = {}
-        self.have_problematic_path = False
         self.loops = {}
+
+        self.genannot = genannot
         self.sum_loops = {}
 
     def handle_loop(self, loc, path, states):
@@ -394,7 +394,7 @@ class KindSymbolicExecutor(BaseKindSE):
             while k > 0:
                 npaths = [
                     np for p in npaths for np in self.extendPath(
-                        p, steps=step, atmost=True,
+                        p, None, steps=step, atmost=True,
                         stoppoints=invpoints)]
                 k -= 1
             paths += npaths
@@ -426,9 +426,10 @@ class KindSymbolicExecutor(BaseKindSE):
             else:
                 self.readypaths.append(p)
 
-    def extend_and_queue_paths(self, path):
+    def extend_and_queue_paths(self, path, states):
         step = self.getOptions().step
         newpaths = self.extendPath(path,
+                                   states,
                                    steps=step,
                                    atmost=step != 1,
                                    stoppoints=self.invpoints[path[0].getCFG()])
@@ -468,10 +469,10 @@ class KindSymbolicExecutor(BaseKindSE):
                     if not self.handle_loop(fl, path, states):
                         # falled-back to unwinding
                         # XXX: could we try again later?
-                        self.extend_and_queue_paths(path)
+                        self.extend_and_queue_paths(path, states)
                 else:
                     # normal path or a loop that we cannot summarize
-                    self.extend_and_queue_paths(path)
+                    self.extend_and_queue_paths(path, states)
 
             k += 1
             if maxk and maxk <= k:

@@ -1,6 +1,7 @@
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 from slowbeast.kindse.annotatedcfg import CFG
+from slowbeast.analysis.callgraph import CallGraph
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor as SymbolicInterpreter, SEOptions
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memory import LazySymbolicMemoryModel
@@ -29,12 +30,15 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         dbg("Forbidding calls in induction step for now with k-induction")
         self.indexecutor.forbidCalls()
 
+        self.callgraph = CallGraph(prog)
         self.cfgs = {F: CFG(F)
                      for F in prog.getFunctions() if not F.isUndefined()}
         self.paths = []
         # as we run the executor in nested manners,
         # we want to give different outputs
         self.reportfn = print_stdout
+
+        self.have_problematic_path = False
 
     def getIndExecutor(self):
         return self.indexecutor
@@ -90,7 +94,18 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def _is_init(self, loc):
         return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)
 
-    def extendPath(self, path, steps=-1, atmost=False, stoppoints=[]):
+    def extendToCaller(self, path, states):
+        self.have_problematic_path = True
+        print_stdout("Killing a path that goes to caller")
+       #start = path.first()
+       #cgnode = self.callgraph.getNode(start.getBBlock().getFunction())
+       #for callerfun, callsite in cgnode.getCallers():
+       #    print('caller', callerfun.getFun())
+       #    print('cs', callsite)
+       #    callsite.getBBlock()
+        return []
+
+    def extendPath(self, path, states, steps=-1, atmost=False, stoppoints=[]):
         """
         Take a path and extend it by prepending one or more
         predecessors.
@@ -124,11 +139,16 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
                 # no predecessors, we're done with this path
                 if atmost and predsnum == 0:
-                    # FIXME: do not do this reverse, rather execute in reverse
-                    # order (do a reverse iterator?)
-                    if len(path) == len(p):
-                        print("Did not extend the path and reached entry of CFG")
+                    if len(path) == len(p) and states:
+                        #we did not extend the path at all, so this
+                        #is a path that ends in the entry block and
+                        # we already processed it...
+                        dbg('Extending a path to the caller')
+                        np = self.extendToCaller(path, states)
+                        newpaths += np
                     else:
+                        # FIXME: do not do this reverse, rather execute in reverse
+                        # order (do a reverse iterator?)
                         p.reverse()
                         n = path.copyandsetpath(p)
                         newpaths.append(path.copyandsetpath(p))
@@ -238,7 +258,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             step = self.getOptions().step
             if r.errors:
                 has_err = True
-                newpaths += self.extendPath(path,
+                newpaths += self.extendPath(path, r,
                                             steps=step,
                                             atmost=step != 1)
 

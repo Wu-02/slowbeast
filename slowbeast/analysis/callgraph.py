@@ -4,7 +4,6 @@ from .. ir.instruction import Call
 from sys import stdout
 from copy import copy
 
-
 class CallGraph:
     class Node:
         def __init__(self, F):
