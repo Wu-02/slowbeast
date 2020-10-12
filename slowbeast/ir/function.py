@@ -48,6 +48,9 @@ class Function(ProgramElement):
     def getBBlocks(self):
         return self._bblocks
 
+    def __iter__(self):
+        return self._bblocks.__iter__()
+
     def dump(self, stream=stdout):
         super(Function, self).dump(stream)
         stream.write(

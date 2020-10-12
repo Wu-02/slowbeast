@@ -7,6 +7,7 @@ from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memory import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
+from slowbeast.transforms.splitbblocks import splitProgAroundCalls
 from slowbeast.ir.instruction import Cmp
 
 
@@ -23,6 +24,12 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             testgen=testgen,
             opts=opts,
             ExecutorClass=PathExecutor)
+
+        # first, we need to split blocks such that every call is in
+        # its own block, so that we can easily build interprocedural
+        # paths
+        splitProgAroundCalls(prog)
+        prog.dump()
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())

@@ -37,6 +37,9 @@ class Program:
     def getGlobals(self):
         return self._globals
 
+    def __iter__(self):
+        return self._functions.__iter__()
+
     def dump(self, stream=stdout):
         for g in self._globals:
             g.dump(stream=stream)

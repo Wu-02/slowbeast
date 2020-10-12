@@ -63,6 +63,15 @@ class BBlock(ProgramElement):
     def asValue(self):
         return 'bblock {0}'.format(self.getID())
 
+    def size(self):
+        return len(self._instructions)
+
+   #def __len__(self):
+   #    return len(self._instructions)
+
+    def __iter__(self):
+        return self._instructions.__iter__()
+
     def dump(self, ind=0, stream=stdout):
         super(BBlock, self).dump(ind, stream)
         stream.write("{0}; [bblock {1}]".format(" " * ind, self.getID()))

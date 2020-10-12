@@ -467,7 +467,7 @@ class Parser:
         block - llvm.block
         """
         B = self.getBBlock(block)
-        assert B, "Do not have a bblock"
+        assert B is not None, "Do not have a bblock"
 
         for inst in block.instructions:
             # the result of parsing one llvm instruction
