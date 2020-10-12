@@ -1,5 +1,6 @@
 from slowbeast.ir.instruction import Assume, Assert, Cmp, Print
 from slowbeast.ir.value import ConstantFalse, ConstantTrue, Constant
+from slowbeast.ir.types import Type
 from . utils import getLLVMOperands, getTypeSizeInBits
 
 # FIXME: turn to a dict with separate handlers
