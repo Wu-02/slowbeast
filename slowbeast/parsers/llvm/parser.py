@@ -8,6 +8,8 @@ from slowbeast.ir.instruction import *
 
 from slowbeast.util.debugging import print_stderr, warn
 
+from . specialfunctions import special_functions, create_special_fun
+
 import llvmlite.binding as llvm
 
 
@@ -188,7 +190,6 @@ def countSyms(s, sym):
             cnt += 1
     return cnt
 
-
 class Parser:
     def __init__(self):
         self.program = Program()
@@ -198,14 +199,6 @@ class Parser:
         # records about PHIs that we created. We must place
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
-
-        # FIXME: get rid of this once we support
-        # parsing the stuff inside __assert_fail
-        self._special_funs = ['__assert_fail', '__VERIFIER_error',
-                              '__VERIFIER_assert',
-                              '__VERIFIER_assume',
-                              '__VERIFIER_assert',
-                              '__slowbeast_print']
 
     def getOperand(self, op):
         ret = self._mapping.get(op)
@@ -396,44 +389,10 @@ class Parser:
         return [B]
 
     def _createSpecialCall(self, inst, fun):
-        if fun == '__assert_fail':
-            A = Assert(ConstantFalse, "assertion failed!")
-            self._addMapping(inst, A)
-            return [A]
-        elif fun == '__VERIFIER_error':
-            A = Assert(ConstantFalse, "__VERIFIER_error called!")
-            self._addMapping(inst, A)
-            return [A]
-        elif fun == '__VERIFIER_assume':
-            operands = getLLVMOperands(inst)
-            cond = self.getOperand(operands[0])
-            C = Cmp(
-                Cmp.NE, cond, Constant(
-                    0, Type(
-                        getTypeSizeInBits(
-                            operands[0].type))))
-            A = Assume(C)
-            self._addMapping(inst, A)
-            return [C, A]
-        elif fun == '__VERIFIER_assert':
-            operands = getLLVMOperands(inst)
-            cond = self.getOperand(operands[0])
-            C = Cmp(
-                Cmp.NE, cond, Constant(
-                    0, Type(
-                        getTypeSizeInBits(
-                            operands[0].type))))
-            A = Assert(C)
-            self._addMapping(inst, A)
-            return [C, A]
-        elif fun == '__slowbeast_print':
-            P = Print(*[self.getOperand(x)
-                        for x in getLLVMOperands(inst)[:-1]])
-            self._addMapping(inst, P)
-            return [P]
-        else:
-            raise NotImplementedError(
-                "Unknown special function: {0}".format(fun))
+        mp, seq = create_special_fun(inst, fun)
+        if mp:
+            self._addMapping(inst, mp)
+        return seq
 
     def _createCall(self, inst):
         operands = getLLVMOperands(inst)
@@ -458,7 +417,7 @@ class Parser:
         if fun.startswith('llvm.dbg'):
             return []
 
-        if fun in self._special_funs:
+        if fun in special_functions:
             return self._createSpecialCall(inst, fun)
 
         F = self.getFun(fun)
@@ -719,7 +678,7 @@ class Parser:
                             f.arguments)), retty))
 
         for f in m.functions:
-            if f.name in self._special_funs:
+            if f.name in special_functions:
                 # do not build these as we will replace their
                 # calls with our stubs anyway
                 continue

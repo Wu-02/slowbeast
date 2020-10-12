@@ -8,7 +8,7 @@ from os.path import join as pathjoin
 from os.path import basename
 from subprocess import run
 
-from slowbeast.parsers.llvm import Parser as LLVMParser
+from slowbeast.parsers.llvm.parser import Parser as LLVMParser
 from slowbeast.symexe.symbolicexecution import SEOptions
 from slowbeast.util.debugging import set_debugging, dbg, print_stdout, print_stderr
 
