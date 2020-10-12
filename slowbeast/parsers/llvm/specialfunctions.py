@@ -1,5 +1,6 @@
 from slowbeast.ir.instruction import Assume, Assert, Cmp, Print
 from slowbeast.ir.value import ConstantFalse, ConstantTrue, Constant
+from . utils import getLLVMOperands, getTypeSizeInBits
 
 # FIXME: turn to a dict with separate handlers
 special_functions = [
@@ -15,7 +16,7 @@ special_functions = [
     '__slowbeast_print'
 ]
 
-def create_special_fun(inst, fun):
+def create_special_fun(parser, inst, fun):
     """
     Return a pair R, S where R is the representant
     used for mapping of instructions and S is the sequence
@@ -29,7 +30,7 @@ def create_special_fun(inst, fun):
         return A, [A]
     elif fun == '__VERIFIER_assume':
         operands = getLLVMOperands(inst)
-        cond = self.getOperand(operands[0])
+        cond = parser.getOperand(operands[0])
         C = Cmp(
             Cmp.NE, cond, Constant(
                 0, Type(
@@ -42,7 +43,7 @@ def create_special_fun(inst, fun):
         return A, [A]
     elif fun == '__VERIFIER_assert':
         operands = getLLVMOperands(inst)
-        cond = self.getOperand(operands[0])
+        cond = parser.getOperand(operands[0])
         C = Cmp(
             Cmp.NE, cond, Constant(
                 0, Type(
@@ -57,14 +58,13 @@ def create_special_fun(inst, fun):
         return A, [A]
     elif fun == '__INSTR_check_nontermination':
         operands = getLLVMOperands(inst)
-        cond = self.getOperand(operands[0])
+        cond = parser.getOperand(operands[0])
         C = Cmp(Cmp.NE, cond, ConstantTrue)
         A = Assert(C)
         return A, [C, A]
     elif fun == '__slowbeast_print':
-        P = Print(*[self.getOperand(x)
+        P = Print(*[parser.getOperand(x)
                     for x in getLLVMOperands(inst)[:-1]])
-        self._addMapping(inst, P)
         return P, [P]
     else:
         raise NotImplementedError(
