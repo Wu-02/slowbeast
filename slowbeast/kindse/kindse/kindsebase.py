@@ -232,7 +232,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             r = self.executePath(path)
 
             oth = r.other
-            if oth and any(map(lambda s: s.isKilled(), oth)):
+            if oth and any(map(lambda s: s.wasKilled(), oth)):
                 return Result.UNKNOWN, oth
 
             step = self.getOptions().step

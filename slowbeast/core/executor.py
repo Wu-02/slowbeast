@@ -96,7 +96,8 @@ class PathExecutionResult:
         assert not self.early or all(
             map(lambda x: not x.isReady(), self.early))
         assert not self.other or all(
-            map(lambda x: x.isTerminated() or x.wasKilled(), self.other))
+            map(lambda x: x.isTerminated() or x.wasKilled() or x.exited(),
+                self.other))
         return True
 
     def __repr__(self):
