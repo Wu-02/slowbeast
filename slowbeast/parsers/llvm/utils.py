@@ -1,3 +1,4 @@
+from slowbeast.util.debugging import warn
 from slowbeast.ir.value import Constant, ConstantTrue, ConstantFalse
 from slowbeast.ir.types import Type
 
