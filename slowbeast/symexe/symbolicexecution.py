@@ -30,7 +30,7 @@ class SEStats:
 
 
 class SymbolicExecutor(Interpreter):
-    def __init__(self, P, testgen=None, opts=SEOptions(),
+    def __init__(self, P, ohandler=None, opts=SEOptions(),
                  executor=None, ExecutorClass=SExecutor):
         self.solver = Solver()
         super(
@@ -42,7 +42,8 @@ class SymbolicExecutor(Interpreter):
                 self.solver,
                 opts))
         self.stats = SEStats()
-        self.testgen = testgen
+        # outputs handler
+        self.ohandler = ohandler
 
     def getSolver(self):
         return self.solver
@@ -55,6 +56,7 @@ class SymbolicExecutor(Interpreter):
         return self.states.pop()
 
     def handleNewStates(self, newstates):
+        testgen = self.ohandler.testgen if self.ohandler else None
         for s in newstates:
             if s.isReady():
                 self.states.append(s)
@@ -67,8 +69,8 @@ class SymbolicExecutor(Interpreter):
                     color='RED')
                 self.stats.errors += 1
                 self.stats.paths += 1
-                if self.testgen:
-                    self.testgen.processState(s)
+                if testgen:
+                    testgen.processState(s)
                 if self.getOptions().exit_on_error:
                     dbg("Found an error, terminating the search.")
                     self.states = []
@@ -77,8 +79,8 @@ class SymbolicExecutor(Interpreter):
                 print_stderr(s.getError(), color='BROWN')
                 self.stats.paths += 1
                 self.stats.terminated_paths += 1
-                if self.testgen:
-                    self.testgen.processState(s)
+                if testgen:
+                    testgen.processState(s)
             elif s.wasKilled():
                 self.stats.paths += 1
                 self.stats.killed_paths += 1
@@ -86,12 +88,12 @@ class SymbolicExecutor(Interpreter):
                     s.getStatusDetail(),
                     prefix='KILLED STATE: ',
                     color='WINE')
-                if self.testgen:
-                    self.testgen.processState(s)
+                if testgen:
+                    testgen.processState(s)
             else:
                 assert s.exited()
                 dbg("state exited with exitcode {0}".format(s.getExitCode()))
                 self.stats.paths += 1
                 self.stats.exited_paths += 1
-                if self.testgen:
-                    self.testgen.processState(s)
+                if testgen:
+                    testgen.processState(s)

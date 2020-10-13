@@ -161,6 +161,14 @@ class TestCaseGenerator:
                 fl.write('\n')
                 state.dump(stream=fl)
 
+class OutputsHandler:
+    def __init__(self, testgen, outdir):
+        # test generator
+        self.testgen = testgen
+        # where can the algorithm dump debugging data
+        self.outdir = outdir
+        # stream for logging
+        #self.logstream = logstream
 
 def sort_input_files(files):
     c_files = []
@@ -278,6 +286,9 @@ def main():
         if not args.no_tests:
             testgen = TestCaseGenerator(args.out_dir, args.all_tests)
 
+    ohandler = OutputsHandler(testgen,
+                              None if args.no_output else args.out_dir)
+
     P.setEntry(entry)
 
     assert args.se, "We only support symbolic execution now"
@@ -296,7 +307,7 @@ def main():
             from slowbeast.kindse.legacy.noinvkindse import KindSymbolicExecutor
         else:
             from slowbeast.kindse.kindse.kindse import KindSymbolicExecutor
-        SE = KindSymbolicExecutor(P, testgen, opts)
+        SE = KindSymbolicExecutor(P, ohandler, opts)
     else:
         opts = SEOptions()
 
@@ -307,7 +318,7 @@ def main():
             opts.setBlockStep()
 
         from slowbeast.symexe.symbolicexecution import SymbolicExecutor
-        SE = SymbolicExecutor(P, testgen, opts)
+        SE = SymbolicExecutor(P, ohandler, opts)
 
     opts.concretize_nondets = args.concretize_nondet
     opts.uninit_is_nondet = args.uninitialized_nondet

@@ -12,7 +12,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def __init__(
             self,
             prog,
-            testgen=None,
+            ohandler=None,
             opts=KindSeOptions()):
         super(
             KindSymbolicExecutor, self).__init__(prog, opts)

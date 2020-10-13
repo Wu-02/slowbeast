@@ -22,13 +22,13 @@ class KindSymbolicExecutor(SymbolicExecutor):
     def __init__(
             self,
             prog,
-            testgen=None,
+            ohandler=None,
             opts=KindSeOptions()):
         super(
             KindSymbolicExecutor,
             self).__init__(
             P=prog,
-            testgen=testgen,
+            ohandler=ohandler,
             opts=opts)
 
         # the executor for induction checks -- we need lazy memory access

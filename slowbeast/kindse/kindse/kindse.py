@@ -157,14 +157,14 @@ class KindSymbolicExecutor(BaseKindSE):
     def __init__(
             self,
             prog,
-            testgen=None,
+            ohandler=None,
             opts=KindSeOptions(),
             genannot=False):
         super(
             KindSymbolicExecutor,
             self).__init__(
             prog=prog,
-            testgen=testgen,
+            ohandler=ohandler,
             opts=opts)
 
         self.readypaths = []

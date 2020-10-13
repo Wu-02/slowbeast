@@ -15,13 +15,13 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def __init__(
             self,
             prog,
-            testgen=None,
+            ohandler=None,
             opts=KindSeOptions()):
         super(
             KindSymbolicExecutor,
             self).__init__(
             P=prog,
-            testgen=testgen,
+            ohandler=ohandler,
             opts=opts,
             ExecutorClass=PathExecutor)
 
