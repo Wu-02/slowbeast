@@ -63,6 +63,9 @@ class InductiveSequence:
         n.frames = self.frames.copy()
         return n
 
+    def __len__(self):
+        return len(self.frames)
+
     def append(self, states, strength):
         self.frames.append(InductiveSequence.Frame(states, strength))
 

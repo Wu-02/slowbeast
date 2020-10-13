@@ -12,9 +12,29 @@ if _use_z3:
     from z3 import SignExt as BVSExt
     from z3 import Extract as BVExtract
     from z3 import LShR as BVLShR
-    from z3 import is_bv, is_bv_value, is_bool
+    from z3 import is_bv, is_bv_value, is_bool, is_and, is_or, is_not
     from z3 import is_true, is_false
     from z3 import simplify, substitute
+
+    def eliminate_common_subexpr(expr):
+       #XXX: not efficient, it is rather
+       #to prettify expressions while debugging
+        if is_and(expr):
+            subexp = [eliminate_common_subexpr(c) for c in expr.children()]
+            n = 0
+            for idx in range(0, len(subexp)):
+                c = subexp[idx]
+                subs = [(s, BoolVal(True)) for (i, s) in enumerate(subexp) if i != n]
+                subexp[idx] = simplify(substitute(c, *subs))
+                n += 1
+            return And(*subexp)
+        elif is_or(expr):
+            return Or(*(eliminate_common_subexpr(c) for c in expr.children()))
+        elif is_not(expr):
+            return Not(*(eliminate_common_subexpr(c) for c in expr.children()))
+        else:
+            return expr
+
 
     def TRUE():
         return BoolVal(True)

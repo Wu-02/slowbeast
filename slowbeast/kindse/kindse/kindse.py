@@ -11,7 +11,8 @@ from slowbeast.solvers.solver import getGlobalExprManager, Solver
 from . loops import SimpleLoop
 from . relations import get_safe_relations, get_safe_subexpressions
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
-from . utils import state_to_annotation, states_to_annotation, or_annotations
+from . utils import state_to_annotation, states_to_annotation,\
+                    or_annotations, and_annotations
 from . inductivesequence import InductiveSequence
 
 
@@ -94,8 +95,23 @@ def strengthen(executor, s, a, seq, L):
     # we failed...
     return InductiveSequence.Frame(state_to_annotation(s), None)
 
-def abstract(executor, state, unsafe):
-    yield from overapproximations(state, unsafe)
+def ensure_safe(a, errs0):
+    # if the annotations intersect, remove errs0 from a
+    return a # XXX
+    EM = getGlobalExprManager()
+    return and_annotations(EM, True, a, errs0.Not(EM))
+
+def abstract(executor, state, unsafe, errs0):
+    """
+    unsafe - unsafe states from the last step
+    errs0  - target unsafe states (those whose unreachability
+             we are trying to prove)
+    """
+    for a in overapproximations(state, unsafe):
+        x = ensure_safe(a, errs0)
+        if x is None:
+            x = a
+        yield x
 
 def check_inv(prog, L, inv):
     loc = L.loc
@@ -122,36 +138,35 @@ def check_inv(prog, L, inv):
     return res == 0
 
 def get_initial_seq(unsafe):
-        # NOTE: Only safe states that reach the assert are not inductive on the
-        # loop header -- what we need is to have safe states that already left
-        # the loop and safely pass assertion or avoid it.
-        # These are the complement of error states intersected with the
-        # negation of loop condition.
+    """
+    Return two annotations, one that is the initial safe sequence
+    and one that represents the error states
+    """
+    # NOTE: Only safe states that reach the assert are not inductive on the
+    # loop header -- what we need is to have safe states that already left
+    # the loop and safely pass assertion or avoid it.
+    # These are the complement of error states intersected with the
+    # negation of loop condition.
 
-        S = None  # safe states
-        H = None  # loop exit condition
+    S = None  # safe states
+    H = None  # loop exit condition
 
-        EM = getGlobalExprManager()
-       #for u in unsafe:
-       #    S = or_annotations(EM, True,
-       #                       S or AssumeAnnotation(EM.getFalse(), {}, EM),
-       #                       state_to_annotation(u))
-       #    H = EM.Or(H or EM.getFalse(), u.getConstraints()[0])
-       #notS = EM.simplify(EM.Not(S.getExpr()))
-       #S = AssertAnnotation(EM.And(H, notS), S.getSubstitutions(), EM)
+    EM = getGlobalExprManager()
+    for u in unsafe:
+        # add constraints without loop exit condition
+        # (we'll add the loop condition later)
+        uconstr = u.getConstraints()
+        notu = EM.disjunction(*map(EM.Not, uconstr[1:]))
+        S = EM.And(notu, S) if S else notu # use conjunction too?
+        # loop exit condition
+        H = EM.Or(H, uconstr[0]) if H else uconstr[0]
 
-        for u in unsafe:
-            # constraints without loop exit condition
-            uconstr = u.getConstraints()
-            notu = EM.disjunction(*map(EM.Not, uconstr[1:]))
-            S = EM.And(notu, S) if S else notu # use conjunction too?
-            # loop exit condition
-            H = EM.Or(H, uconstr[0]) if H else uconstr[0]
-
-        Sa = AssertAnnotation(EM.And(H, S),
-                              {l : l.load for l in unsafe[0].getNondetLoads()},
-                              EM)
-        return InductiveSequence(Sa)
+    errs = or_annotations(EM, True,
+                          *(state_to_annotation(u) for u in unsafe))
+    Sa = AssertAnnotation(EM.And(H, S),
+                          {l : l.load for l in unsafe[0].getNondetLoads()},
+                          EM)
+    return InductiveSequence(Sa), errs
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
@@ -202,45 +217,7 @@ class KindSymbolicExecutor(BaseKindSE):
             return False
         return True
 
-    def to_distinct(self, frame1, frame2):
-        """
-        return frame1 \ frame2 if frame1 and frame2 have intersection,
-        otherwise return frame1
-        """
-        assert frame1
-        assert frame2
-
-        #XXX
-        return frame1
-
-        executor = self.getIndExecutor()
-        tmps = executor.createState()
-        tmps.pushCall(None, self.getProgram().getEntry())
-
-        class DummyInst:
-            def getNextInstruction(self):
-                return self
-
-        #FIXME: do it part by part (so that we do not create the and
-        #formulas in toassume()
-        states, nonr = executor.executeAnnotation([tmps], frame1.toassume(), DummyInst())
-        assert states and not nonr and len(states) == 1
-        tmps2 = states[0].copy()
-        # FIXME: do this only when they have intersection
-        states, nonr = executor.executeAnnotation(states, frame2.toassume(), DummyInst())
-        assert not nonr
-        if states: # they have intersection
-            assert len(states) == 1
-            notframe2 = frame2.toassume().Not(tmps.getExprManager())
-            states, nonr = executor.executeAnnotation([tmps2], notframe2, DummyInst())
-            if states:
-                # FIXME: we broke 'states + strength' structure
-                return InductiveSequence.Frame(states_to_annotation(states), None)
-            # they are implied
-            return None
-        return frame1
-
-    def extend_seq(self, seq, L):
+    def extend_seq(self, seq, errs0, L):
         r = seq.check_last_frame(self, L.getPaths())
         if not r.ready: # cannot step into this frame...
             # FIXME we can use it at least for annotations
@@ -251,13 +228,15 @@ class KindSymbolicExecutor(BaseKindSE):
         E = []
         checked_abstractions = set()
         for s in r.ready:
-            for a in abstract(self, s, r.errors):
+            for a in abstract(self, s, r.errors, errs0):
                 if a in checked_abstractions:
                     continue
                 checked_abstractions.add(a)
                 #dbg('Abstraction: ', a)
 
+                print('>strength: ', a)
                 S = strengthen(self, s, a, seq, L)
+                print('<strength')
                 if S != seq[-1]:
                    #solver = s.getSolver()
                    #for e in E:
@@ -268,6 +247,9 @@ class KindSymbolicExecutor(BaseKindSE):
                         tmp = seq.copy()
                         tmp.append(S.states, S.strengthening)
                         E.append(tmp)
+                        #we have one strengthened abstraction,
+                        #it is enough
+                        break
                        #print('== extended to == ')
                        #print(tmp)
         return E
@@ -284,26 +266,29 @@ class KindSymbolicExecutor(BaseKindSE):
         if L is None:
             return False # fall-back to loop unwinding...
 
-        # FIXME: strengthen
-        sequences = [get_initial_seq(unsafe)]
+        # FIXME: strengthen seq0
+        seq0, errs0 = get_initial_seq(unsafe)
+        sequences = [seq0]
 
         print_stdout(f"Executing loop {loc.getBBlockID()} with assumption")
-        print_stdout(str(sequences[0][0].states))
+        print_stdout(str(seq0[0]))
+        print_stdout(f'and errors : {errs0}')
 
         #print('--- starting building sequences  ---')
         EM = getGlobalExprManager()
         while True:
-            #print('--- iter ---')
+            print('--- iter ---')
             E = []
+            print_stdout(f"Got {len(sequences)} abstract paths of loop "
+                         f"{loc.getBBlockID()}", color="GRAY")
             for seq in sequences:
-                print_stdout(f"Got {len(sequences)} abstract paths of loop "
-                             f"{loc.getBBlockID()}", color="GRAY")
-                #print('Processing seq:\n', seq)
+                print_stdout(f'Processing sequence of len {len(seq)}')
+                print('Processing seq:\n', seq)
                 if __debug__:
                     r = seq.check_ind_on_paths(self, L.getPaths())
                     assert r.errors is None, 'seq is not inductive'
 
-                E += self.extend_seq(seq, L)
+                E += self.extend_seq(seq, errs0, L)
                 #print(' -- extending DONE --')
 
             if not E:

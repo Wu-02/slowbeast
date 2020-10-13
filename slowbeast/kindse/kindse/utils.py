@@ -1,4 +1,4 @@
-from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation
+from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation, ExprAnnotation
 from slowbeast.domains.symbolic import NondetLoad
 
 
@@ -53,23 +53,35 @@ def unify_annotations(EM, annot1, annot2):
 
     return EM.simplify(expr1), EM.simplify(expr2), subs
 
-def or_annotations(EM, toassert, *annots):
-    assert isinstance(toassert, bool)
+def join_annotations(EM, Ctor, op, annots):
     assert len(annots) > 0
     if len(annots) == 1:
         return annots[0]
 
-    Ctor = AssertAnnotation if toassert else AssumeAnnotation
+    simplify = EM.simplify
     subs = {}
     S = None
     for a in annots:
         expr1, expr2, subs = unify_annotations(EM, S, a)
         if expr1 and expr2:
-            S = Ctor(EM.simplify(EM.Or(expr1, expr2)), subs, EM)
+            S = Ctor(simplify(op(expr1, expr2)), subs, EM)
         else:
             S = Ctor(expr1 or expr2, subs, EM)
     return S
 
+def or_annotations(EM, toassert, *annots):
+    assert isinstance(toassert, bool)
+    assert all(map(lambda x: isinstance(x, ExprAnnotation), annots))
+
+    Ctor = AssertAnnotation if toassert else AssumeAnnotation
+    return join_annotations(EM, Ctor, EM.Or, annots)
+
+def and_annotations(EM, toassert, *annots):
+    assert isinstance(toassert, bool)
+    assert all(map(lambda x: isinstance(x, ExprAnnotation), annots))
+
+    Ctor = AssertAnnotation if toassert else AssumeAnnotation
+    return join_annotations(EM, Ctor, EM.And, annots)
 
 def states_to_annotation(states):
     a = None
