@@ -1,11 +1,12 @@
 from . expressions import ExprManager
 from .. domains.symbolic import _use_z3
-from .. ir.value import Constant
+from .. ir.value import Constant, ConstantFalse
 from .. util.debugging import FIXME
 
 if _use_z3:
     from z3 import Solver as Z3Solver
     from z3 import sat, unsat, unknown
+    from z3 import BitVecVal, BoolVal
 
     def models(assumpt, *args):
         s = Z3Solver()
@@ -19,7 +20,12 @@ if _use_z3:
         m = s.model()
         vals = []
         for a in args:
-            vals.append(m[a.unwrap()])
+            c = m[a.unwrap()]
+            if c is None:
+                # m does not have a value for this variable
+                # use 0
+                c = BoolVal(False) if a.isBool() else BitVecVal(0, a.getType().getBitWidth())
+            vals.append(c)
 
         return vals
 
