@@ -48,7 +48,7 @@ class SymbolicExecutor(Interpreter):
     def new_output_file(self, name):
         odir = self.ohandler.outdir if self.ohandler else None
         return open('{0}/{1}'.format(odir or '.', name), 'w')
-        
+
     def getSolver(self):
         return self.solver
 

@@ -32,6 +32,8 @@ def splitAfter(block, after):
 
 # FIXME: not efficient, but let's fix that once
 # it is a problem
+
+
 def splitAround(block, P):
     B = BBlock(block.getFunction())
     blocks = [block]
@@ -46,7 +48,7 @@ def splitAround(block, P):
             assert B.size() == 0
             B.append(I)
             blocks.append(B)
-            if I != last: # start new one
+            if I != last:  # start new one
                 B = BBlock(block.getFunction())
         else:
             B.append(I)
@@ -72,9 +74,11 @@ def splitBlockAroundCalls(block):
     def iscall(c): return isinstance(c, Call)
     return splitAround(block, iscall)
 
+
 def splitFunAroundCalls(F):
     F._bblocks = [b for block in F.getBBlocks().copy()
                   for b in splitBlockAroundCalls(block)]
+
 
 def splitProgAroundCalls(P):
     for F in P:

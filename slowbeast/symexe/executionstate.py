@@ -66,7 +66,7 @@ class SEState(ExecutionState):
         return self._solver.concretize(self.getConstraints(), *e)
 
     def model(self):
-        return { x: c for (x,c) in
+        return {x: c for (x, c) in
                 zip(self.getNondets(), self.concretize(*self.getNondets()))}
 
     def concretize_with_assumptions(self, assumptions, *e):

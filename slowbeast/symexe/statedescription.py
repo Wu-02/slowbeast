@@ -1,17 +1,18 @@
 from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Instruction, Load
 
+
 def _createCannonical(expr, subs, EM):
     def get_cannonic_var(val, x):
         if isinstance(x, Load):
-            name = f"L({x.getOperand(0).asValue()})" 
+            name = f"L({x.getOperand(0).asValue()})"
         else:
             name = x.asValue()
         return EM.Var(name, val.getBitWidth())
 
-    return EM.substitute(expr,
-                *((val, get_cannonic_var(val, x)) for (val, x) in subs.items())
-           )
+    return EM.substitute(expr, *((val, get_cannonic_var(val, x))
+                                 for (val, x) in subs.items()))
+
 
 class StateDescription:
     """
@@ -60,10 +61,12 @@ class StateDescription:
         subs = ((v, get(x)) for (v, x) in self._subs.items())
 
         # we must do all the substitution at once!
-        return EM.substitute(expr, *((val, curval) for (val, curval) in subs if curval))
+        return EM.substitute(expr, *((val, curval)
+                                     for (val, curval) in subs if curval))
 
     def __repr__(self):
-        return "{0}[{1}]".format(self._expr, ", ".join(f"{x.asValue()}->{val.unwrap()}" for (x, val) in self.subs.items()))
+        return "{0}[{1}]".format(self._expr, ", ".join(
+            f"{x.asValue()}->{val.unwrap()}" for (x, val) in self.subs.items()))
 
     def dump(self):
         print(
@@ -71,4 +74,3 @@ class StateDescription:
         print(f"> expr: {self._expr}")
         print("> substitutions: {0}".format(", ".join(
             f"{x.asValue()} -> {val.unwrap()}" for (val, x) in self._subs.items())))
-

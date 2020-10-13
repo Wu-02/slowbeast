@@ -18,6 +18,7 @@ special_functions = [
     '__slowbeast_print'
 ]
 
+
 def create_special_fun(parser, inst, fun):
     """
     Return a pair R, S where R is the representant
@@ -71,4 +72,3 @@ def create_special_fun(parser, inst, fun):
     else:
         raise NotImplementedError(
             "Unknown special function: {0}".format(fun))
-

@@ -24,7 +24,8 @@ if _use_z3:
             if c is None:
                 # m does not have a value for this variable
                 # use 0
-                c = BoolVal(False) if a.isBool() else BitVecVal(0, a.getType().getBitWidth())
+                c = BoolVal(False) if a.isBool() else BitVecVal(
+                    0, a.getType().getBitWidth())
             vals.append(c)
 
         return vals
@@ -169,7 +170,7 @@ class SymbolicSolver(SolverIntf):
 
     def concretize(self, assumpt, *e):
         assert all(map(lambda x: not x.isConstant(), e)),\
-               "Constant instead of symbolic value"
+            "Constant instead of symbolic value"
         if any(map(lambda x: x.isConstant() and x.getValue() is False, assumpt)):
             return None
         #m = smallmodels(assumpt, *e)

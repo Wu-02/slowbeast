@@ -112,7 +112,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         print_stdout("Killing a path that goes to caller")
        #start = path.first()
        #cgnode = self.callgraph.getNode(start.getBBlock().getFunction())
-       #for callerfun, callsite in cgnode.getCallers():
+       # for callerfun, callsite in cgnode.getCallers():
        #    print('caller', callerfun.getFun())
        #    print('cs', callsite)
        #    callsite.getBBlock()
@@ -153,8 +153,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                 # no predecessors, we're done with this path
                 if atmost and predsnum == 0:
                     if len(path) == len(p) and states:
-                        #we did not extend the path at all, so this
-                        #is a path that ends in the entry block and
+                        # we did not extend the path at all, so this
+                        # is a path that ends in the entry block and
                         # we already processed it...
                         dbg('Extending a path to the caller')
                         np = self.extendToCaller(path, states)
@@ -231,10 +231,12 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         r = self.executePath(path, fromInit=True)
         if not r.errors:
-            killed = any(True for s in r.early if s.wasKilled()) if r.early else None
+            killed = any(True for s in r.early if s.wasKilled()
+                         ) if r.early else None
             if killed:
                 return Result.UNKNOWN, r
-            killed = any(True for s in r.other if s.wasKilled()) if r.other else None
+            killed = any(True for s in r.other if s.wasKilled()
+                         ) if r.other else None
             if killed:
                 return Result.UNKNOWN, r
             if len(path.first().getPredecessors()) == 0:

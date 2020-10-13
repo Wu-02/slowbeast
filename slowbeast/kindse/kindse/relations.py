@@ -28,6 +28,7 @@ def get_subs(state):
 
     return subs
 
+
 def get_safe_subexpressions(state, unsafe):
     subs = get_subs(state)
     EM = state.getExprManager()
@@ -48,8 +49,8 @@ def get_safe_subexpressions(state, unsafe):
                 if any(map(lambda u: u.is_sat(sub) is False, unsafe)):
                     # if it is implied by some of the safe abstractions that we
                     # already yielded, skip it
-                    if any(map(lambda s: solver.is_sat(EM.And(sub, EM.Not(s))) is False,
-                               safe)):
+                    if any(map(lambda s: solver.is_sat(
+                            EM.And(sub, EM.Not(s))) is False, safe)):
                         continue
 
                     sub = EM.simplify(sub)
@@ -62,6 +63,7 @@ def iter_load_pairs(state):
     for i in range(0, len(loads)):
         for j in range(i + 1, len(loads)):
             yield loads[i], loads[j]
+
 
 def get_all_relations(state):
     subs = get_subs(state)

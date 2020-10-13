@@ -9,6 +9,7 @@ from slowbeast.ir.instruction import Branch, Instruction, Load
 
 from copy import copy
 
+
 class Executor(SExecutor):
     """
     Symbolic Executor instance adjusted to executing
@@ -167,8 +168,7 @@ class Executor(SExecutor):
 #             newC.append(expr)
 #     return newC
 
-
-   #def joinStates(self, fromstates, tostates):
+   # def joinStates(self, fromstates, tostates):
    #    dbg_sec("Joining states")
    #    # join the states
    #    finalstates = []
@@ -204,7 +204,7 @@ class Executor(SExecutor):
    #    dbg_sec()
    #    return finalstates
 
-   #def preimage(self, fromstate, tostates, path):
+   # def preimage(self, fromstate, tostates, path):
    #    """
    #    Get the states that make the execution
    #    of path from 'fromstate' end up in 'tostates'

@@ -6,8 +6,8 @@ from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKind
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.annotations import AssumeAnnotation, AssertAnnotation,\
-                                         state_to_annotation, states_to_annotation,\
-                                         or_annotations, and_annotations
+    state_to_annotation, states_to_annotation,\
+    or_annotations, and_annotations
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from . loops import SimpleLoop
@@ -20,6 +20,7 @@ def overapproximations(s, unsafe):
     yield from get_safe_relations([s], unsafe)
     yield from get_safe_subexpressions(s, unsafe)
 
+
 def strengthen(executor, s, a, seq, L):
     """
     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
@@ -31,10 +32,10 @@ def strengthen(executor, s, a, seq, L):
     newframe = InductiveSequence.Frame(a, None)
     # execute {a} L {seq + a}
     r = seq.check_on_paths(executor, L.getPaths(),
-                           pre=[a], tmpframes = [newframe])
-    if not r.errors: # the abstraction is inductive w.r.t seq
+                           pre=[a], tmpframes=[newframe])
+    if not r.errors:  # the abstraction is inductive w.r.t seq
         return newframe
-    S = [] #strengthening
+    S = []  # strengthening
     while r.errors:
         for e in r.errors:
             Schanged = False
@@ -51,8 +52,8 @@ def strengthen(executor, s, a, seq, L):
                     # try to push c as far as we can
                     cp = EM.freshValue('c', c.getType().getBitWidth())
                     cpval = s.concretize_with_assumptions(
-                            [*S, EM.Lt(cp, c), EM.Gt(x, cp)],
-                            cp)
+                        [*S, EM.Lt(cp, c), EM.Gt(x, cp)],
+                        cp)
                     if cpval:
                         expr = EM.Lt(x, cpval[0])
                     else:
@@ -68,8 +69,8 @@ def strengthen(executor, s, a, seq, L):
                     cp = EM.freshValue('c', c.getType().getBitWidth())
                     #x > c
                     cpval = s.concretize_with_assumptions(
-                            [*S, EM.Gt(cp, c), EM.Lt(x, cp)],
-                            cp)
+                        [*S, EM.Gt(cp, c), EM.Lt(x, cp)],
+                        cp)
                     if cpval:
                         expr = EM.Gt(x, cpval[0])
                     else:
@@ -82,24 +83,26 @@ def strengthen(executor, s, a, seq, L):
 
         if not Schanged:
             break
-        newframe = InductiveSequence.Frame(a,
-                              AssumeAnnotation(EM.conjunction(*S),
-                                               a.getSubstitutions(),
-                                               EM))
+        newframe = InductiveSequence.Frame(
+            a, AssumeAnnotation(
+                EM.conjunction(
+                    *S), a.getSubstitutions(), EM))
         r = seq.check_on_paths(executor, L.getPaths(),
                                pre=[newframe.toassume()],
-                               tmpframes = [newframe])
+                               tmpframes=[newframe])
 
     if not r.errors:
         return newframe
     # we failed...
     return InductiveSequence.Frame(state_to_annotation(s), None)
 
+
 def ensure_safe(a, errs0):
     # if the annotations intersect, remove errs0 from a
-    return a # XXX
+    return a  # XXX
     EM = getGlobalExprManager()
     return and_annotations(EM, True, a, errs0.Not(EM))
+
 
 def abstract(executor, state, unsafe, errs0):
     """
@@ -112,6 +115,7 @@ def abstract(executor, state, unsafe, errs0):
         if x is None:
             x = a
         yield x
+
 
 def check_inv(prog, L, inv):
     loc = L.loc
@@ -137,6 +141,7 @@ def check_inv(prog, L, inv):
     dbg_sec()
     return res == 0
 
+
 def get_initial_seq(unsafe):
     """
     Return two annotations, one that is the initial safe sequence
@@ -157,16 +162,17 @@ def get_initial_seq(unsafe):
         # (we'll add the loop condition later)
         uconstr = u.getConstraints()
         notu = EM.disjunction(*map(EM.Not, uconstr[1:]))
-        S = EM.And(notu, S) if S else notu # use conjunction too?
+        S = EM.And(notu, S) if S else notu  # use conjunction too?
         # loop exit condition
         H = EM.Or(H, uconstr[0]) if H else uconstr[0]
 
     errs = or_annotations(EM, True,
                           *(state_to_annotation(u) for u in unsafe))
     Sa = AssertAnnotation(EM.And(H, S),
-                          {l : l.load for l in unsafe[0].getNondetLoads()},
+                          {l: l.load for l in unsafe[0].getNondetLoads()},
                           EM)
     return InductiveSequence(Sa), errs
+
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
@@ -195,7 +201,7 @@ class KindSymbolicExecutor(BaseKindSE):
         self.loops.setdefault(loc.getBBlockID(), []).append(states)
 
         assert loc in self.sum_loops[loc.getCFG()],\
-                "Handling a loop that should not be handled"
+            "Handling a loop that should not be handled"
 
         # first try to unroll it in the case the loop
         # is easy to verify
@@ -205,8 +211,9 @@ class KindSymbolicExecutor(BaseKindSE):
         res = kindse.run([path.copy()], maxk=maxk)
         dbg_sec()
         if res == 0:
-            print_stdout(f"Loop {loc.getBBlockID()} proved by the basic KindSE",
-                         color="GREEN")
+            print_stdout(
+                f"Loop {loc.getBBlockID()} proved by the basic KindSE",
+                color="GREEN")
             return True
 
         assert self.loops.get(loc.getBBlockID())
@@ -219,7 +226,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
     def extend_seq(self, seq, errs0, L):
         r = seq.check_last_frame(self, L.getPaths())
-        if not r.ready: # cannot step into this frame...
+        if not r.ready:  # cannot step into this frame...
             # FIXME we can use it at least for annotations
             dbg('Infeasible frame...')
             return []
@@ -237,7 +244,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 S = strengthen(self, s, a, seq, L)
                 if S != seq[-1]:
                    #solver = s.getSolver()
-                   #for e in E:
+                   # for e in E:
                    #    S = self.to_distinct(S, e[-1])
                    #    if S is None:
                    #        break
@@ -245,13 +252,12 @@ class KindSymbolicExecutor(BaseKindSE):
                         tmp = seq.copy()
                         tmp.append(S.states, S.strengthening)
                         E.append(tmp)
-                        #we have one strengthened abstraction,
+                        # we have one strengthened abstraction,
                         #it is enough
                         break
                        #print('== extended to == ')
-                       #print(tmp)
+                       # print(tmp)
         return E
-
 
     def execute_loop(self, loc, states):
         unsafe = []
@@ -262,7 +268,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
         L = SimpleLoop.construct(loc)
         if L is None:
-            return False # fall-back to loop unwinding...
+            return False  # fall-back to loop unwinding...
 
         # FIXME: strengthen seq0
         seq0, errs0 = get_initial_seq(unsafe)
@@ -290,23 +296,23 @@ class KindSymbolicExecutor(BaseKindSE):
                 #print(' -- extending DONE --')
 
             if not E:
-               #seq not extended... it looks that there is no
-               #safe invariant
-               #FIXME: could we use it for annotations?
-               return False # fall-back to unwinding
+                # seq not extended... it looks that there is no
+                # safe invariant
+                # FIXME: could we use it for annotations?
+                return False  # fall-back to unwinding
 
             # FIXME: check that all the sequences together
             # cover the input paths
             for s, S in ((s, s.toannotation(True)) for s in E):
-                 if check_inv(self.getProgram(), L, S):
-                     print_stdout(
-                         f"{S} is inductive on {loc.getBBlock().getID()}",
-                         color="BLUE")
-                     if self.genannot:
+                if check_inv(self.getProgram(), L, S):
+                    print_stdout(
+                        f"{S} is inductive on {loc.getBBlock().getID()}",
+                        color="BLUE")
+                    if self.genannot:
                         # maybe remember the ind set even without genannot
                         # and use it just for another 'execute_loop'?
                         loc.addAnnotationBefore(s.toannotation().Not(EM))
-                     return True
+                    return True
             sequences = E
 
     def check_path(self, path):

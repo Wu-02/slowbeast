@@ -2,6 +2,7 @@ from slowbeast.util.debugging import warn
 from slowbeast.ir.value import Constant, ConstantTrue, ConstantFalse
 from slowbeast.ir.types import Type
 
+
 def _getInt(s):
     try:
         if s.startswith('0x'):
@@ -49,6 +50,7 @@ def isArrayTy(ty):
 
 def parseArrayTyByParts(ty):
     print(parts)
+
 
 def getArrayTySize(ty):
     assert isArrayTy(ty)
@@ -114,6 +116,6 @@ def getConstantInt(val):
 
     return Constant(c, Type(bw))
 
+
 def getLLVMOperands(inst):
     return [x for x in inst.operands]
-

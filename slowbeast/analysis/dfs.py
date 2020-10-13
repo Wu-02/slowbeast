@@ -143,4 +143,4 @@ class DFSVisitor:
 
         print("}", file=out)
         if isinstance(outfl, str):
-            out.close() # we opened it
+            out.close()  # we opened it

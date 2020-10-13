@@ -22,6 +22,7 @@ def _get_llvm_module(path):
         with open(path, 'rb') as f:
             return llvm.parse_bitcode(f.read())
 
+
 def parseCmp(inst):
     parts = str(inst).split()
     if parts[1] != '=' and parts[2] != 'icmp':
@@ -71,6 +72,7 @@ def countSyms(s, sym):
         if x == sym:
             cnt += 1
     return cnt
+
 
 class Parser:
     def __init__(self):

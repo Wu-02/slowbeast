@@ -17,14 +17,15 @@ if _use_z3:
     from z3 import simplify, substitute
 
     def eliminate_common_subexpr(expr):
-       #XXX: not efficient, it is rather
-       #to prettify expressions while debugging
+       # XXX: not efficient, it is rather
+       # to prettify expressions while debugging
         if is_and(expr):
             subexp = [eliminate_common_subexpr(c) for c in expr.children()]
             n = 0
             for idx in range(0, len(subexp)):
                 c = subexp[idx]
-                subs = [(s, BoolVal(True)) for (i, s) in enumerate(subexp) if i != n]
+                subs = [(s, BoolVal(True))
+                        for (i, s) in enumerate(subexp) if i != n]
                 subexp[idx] = simplify(substitute(c, *subs))
                 n += 1
             return And(*subexp)
@@ -34,7 +35,6 @@ if _use_z3:
             return Not(*(eliminate_common_subexpr(c) for c in expr.children()))
         else:
             return expr
-
 
     def TRUE():
         return BoolVal(True)

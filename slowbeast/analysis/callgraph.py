@@ -4,6 +4,7 @@ from .. ir.instruction import Call
 from sys import stdout
 from copy import copy
 
+
 class CallGraph:
     class Node:
         def __init__(self, F):
@@ -40,8 +41,8 @@ class CallGraph:
             """
             Simple successors (over functios)
             """
-            return set((v for funs in self.callsites.values() for v in funs)).__iter__()
-
+            return set((v for funs in self.callsites.values()
+                        for v in funs)).__iter__()
 
     __slots__ = ['program', '_nodes']
 
