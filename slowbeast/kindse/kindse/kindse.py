@@ -5,15 +5,15 @@ from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath, CFG
 from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
-from slowbeast.symexe.annotations import AssumeAnnotation, AssertAnnotation,\
-    state_to_annotation, states_to_annotation,\
+from slowbeast.symexe.annotations import AssumeAnnotation, AssertAnnotation, \
+    state_to_annotation, states_to_annotation, \
     or_annotations, and_annotations
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
-from . loops import SimpleLoop
-from . relations import get_safe_relations, get_safe_subexpressions
-from . kindsebase import KindSymbolicExecutor as BaseKindSE
-from . inductivesequence import InductiveSequence
+from .loops import SimpleLoop
+from .relations import get_safe_relations, get_safe_subexpressions
+from .kindsebase import KindSymbolicExecutor as BaseKindSE
+from .inductivesequence import InductiveSequence
 
 
 def overapproximations(s, unsafe):
@@ -25,7 +25,7 @@ def strengthen(executor, s, a, seq, L):
     """
     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
     """
-    #print(f'Strengthening {a}')
+    # print(f'Strengthening {a}')
     EM = getGlobalExprManager()
     solver = s.getSolver()
 
@@ -48,7 +48,7 @@ def strengthen(executor, s, a, seq, L):
                 # a correct abstraction)
                 G = EM.Ge(x, c)
                 if s.is_sat(G, *S) is False:
-                    #x < c
+                    # x < c
                     # try to push c as far as we can
                     cp = EM.freshValue('c', c.getType().getBitWidth())
                     cpval = s.concretize_with_assumptions(
@@ -67,7 +67,7 @@ def strengthen(executor, s, a, seq, L):
                 G = EM.Le(x, c)
                 if s.is_sat(G, *S) is False:
                     cp = EM.freshValue('c', c.getType().getBitWidth())
-                    #x > c
+                    # x > c
                     cpval = s.concretize_with_assumptions(
                         [*S, EM.Gt(cp, c), EM.Lt(x, cp)],
                         cp)
@@ -200,7 +200,7 @@ class KindSymbolicExecutor(BaseKindSE):
     def handle_loop(self, loc, path, states):
         self.loops.setdefault(loc.getBBlockID(), []).append(states)
 
-        assert loc in self.sum_loops[loc.getCFG()],\
+        assert loc in self.sum_loops[loc.getCFG()], \
             "Handling a loop that should not be handled"
 
         # first try to unroll it in the case the loop
@@ -239,24 +239,24 @@ class KindSymbolicExecutor(BaseKindSE):
                 if a in checked_abstractions:
                     continue
                 checked_abstractions.add(a)
-                #dbg('Abstraction: ', a)
+                # dbg('Abstraction: ', a)
 
                 S = strengthen(self, s, a, seq, L)
                 if S != seq[-1]:
-                   #solver = s.getSolver()
-                   # for e in E:
-                   #    S = self.to_distinct(S, e[-1])
-                   #    if S is None:
-                   #        break
+                    # solver = s.getSolver()
+                    # for e in E:
+                    #    S = self.to_distinct(S, e[-1])
+                    #    if S is None:
+                    #        break
                     if S:
                         tmp = seq.copy()
                         tmp.append(S.states, S.strengthening)
                         E.append(tmp)
                         # we have one strengthened abstraction,
-                        #it is enough
+                        # it is enough
                         break
-                       #print('== extended to == ')
-                       # print(tmp)
+                    # print('== extended to == ')
+                    # print(tmp)
         return E
 
     def execute_loop(self, loc, states):
@@ -278,7 +278,7 @@ class KindSymbolicExecutor(BaseKindSE):
         print_stdout(str(seq0[0]))
         print_stdout(f'and errors : {errs0}')
 
-        #print('--- starting building sequences  ---')
+        # print('--- starting building sequences  ---')
         EM = getGlobalExprManager()
         while True:
             print('--- iter ---')
@@ -293,7 +293,7 @@ class KindSymbolicExecutor(BaseKindSE):
                     assert r.errors is None, 'seq is not inductive'
 
                 E += self.extend_seq(seq, errs0, L)
-                #print(' -- extending DONE --')
+                # print(' -- extending DONE --')
 
             if not E:
                 # seq not extended... it looks that there is no
@@ -326,7 +326,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 self.reportfn(f"Safe (init) path: {path}", color="DARK_GREEN")
                 return None, states  # this path is safe
             elif r is Result.UNKNOWN:
-                killed = (s for s in states.other if s.wasKilled())\
+                killed = (s for s in states.other if s.wasKilled()) \
                     if states.other else ()
                 for s in killed:
                     self.report(s)
