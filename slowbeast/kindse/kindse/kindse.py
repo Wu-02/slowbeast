@@ -5,14 +5,14 @@ from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath, CFG
 from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
-from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation
+from slowbeast.symexe.annotations import AssumeAnnotation, AssertAnnotation,\
+                                         state_to_annotation, states_to_annotation,\
+                                         or_annotations, and_annotations
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from . loops import SimpleLoop
 from . relations import get_safe_relations, get_safe_subexpressions
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
-from . utils import state_to_annotation, states_to_annotation,\
-                    or_annotations, and_annotations
 from . inductivesequence import InductiveSequence
 
 
@@ -234,9 +234,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 checked_abstractions.add(a)
                 #dbg('Abstraction: ', a)
 
-                print('>strength: ', a)
                 S = strengthen(self, s, a, seq, L)
-                print('<strength')
                 if S != seq[-1]:
                    #solver = s.getSolver()
                    #for e in E:

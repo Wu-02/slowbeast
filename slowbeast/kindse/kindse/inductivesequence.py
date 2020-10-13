@@ -1,8 +1,7 @@
 from slowbeast.core.executor import PathExecutionResult
-from slowbeast.symexe.pathexecutor import AssumeAnnotation, AssertAnnotation
+from slowbeast.symexe.annotations import AssumeAnnotation, AssertAnnotation, or_annotations
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 from slowbeast.solvers.solver import getGlobalExprManager
-from . utils import or_annotations
 
 class InductiveSequence:
     """

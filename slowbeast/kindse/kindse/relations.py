@@ -1,10 +1,10 @@
-from slowbeast.ir.instruction import Cmp, Load, Assume, Assert
-from slowbeast.symexe.pathexecutor import AssertAnnotation
+from slowbeast.ir.instruction import Load
+from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.core.executor import PathExecutionResult
 
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
-from slowbeast.solvers.solver import getGlobalExprManager, Solver
+from slowbeast.solvers.solver import Solver
 
 from . kindsebase import KindSymbolicExecutor as BaseKindSE
 from . loops import SimpleLoop

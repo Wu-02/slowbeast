@@ -1,5 +1,5 @@
 from slowbeast.analysis.dfs import DFSVisitor
-from slowbeast.symexe.pathexecutor import InstrsAnnotation
+from slowbeast.symexe.annotations import InstrsAnnotation
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
 from slowbeast.util.debugging import dbg_sec
 from slowbeast.ir.instruction import Load, Alloc
