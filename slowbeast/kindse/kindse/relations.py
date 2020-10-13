@@ -28,6 +28,7 @@ def get_subs(state):
 
     return subs
 
+
 def get_safe_subexpressions(state, unsafe):
     subs = get_subs(state)
     EM = state.getExprManager()
@@ -103,4 +104,3 @@ def get_safe_relations(safe, unsafe):
    #    EM = s.getExprManager()
    #    for r in get_all_relations(s):
    #        yield r.Not(EM)
-

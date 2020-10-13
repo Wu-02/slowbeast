@@ -6,164 +6,164 @@ from . statedescription import StateDescription
 
 
 class Annotation:
-ASSUME = 1
-ASSERT = 2
-INSTRS = 3
+    ASSUME = 1
+    ASSERT = 2
+    INSTRS = 3
 
-__slots__ = ['type']
+    __slots__ = ['type']
 
-def __init__(self, ty):
-    assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
-    self.type = ty
+    def __init__(self, ty):
+        assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
+        self.type = ty
 
-def isInstrs(self):
-    return self.type == Annotation.INSTRS
+    def isInstrs(self):
+        return self.type == Annotation.INSTRS
 
-def isAssume(self):
-    return self.type == Annotation.ASSUME
+    def isAssume(self):
+        return self.type == Annotation.ASSUME
 
-def isAssert(self):
-    return self.type == Annotation.ASSERT
+    def isAssert(self):
+        return self.type == Annotation.ASSERT
 
 
 class InstrsAnnotation(Annotation):
-"""
-Annotation that is barely a sequence of instructions
-that should be executed
-"""
-__slots__ = ['instrs']
+    """
+    Annotation that is barely a sequence of instructions
+    that should be executed
+    """
+    __slots__ = ['instrs']
 
-def __init__(self, instrs):
-    super(InstrsAnnotation, self).__init__(Annotation.INSTRS)
-    self.instrs = instrs
+    def __init__(self, instrs):
+        super(InstrsAnnotation, self).__init__(Annotation.INSTRS)
+        self.instrs = instrs
 
-def getInstructions(self):
-    return self.instrs
+    def getInstructions(self):
+        return self.instrs
 
-def __iter__(self):
-    return self.instrs.__iter__()
+    def __iter__(self):
+        return self.instrs.__iter__()
 
-def __repr__(self):
-    return "[{0}]".format(
-        ", ".join(map(lambda i: i.asValue(), self.instrs)))
+    def __repr__(self):
+        return "[{0}]".format(
+            ", ".join(map(lambda i: i.asValue(), self.instrs)))
 
-def dump(self):
-    print("InstrsAnnotation[")
-    for i in self.instrs:
-        print(f"  {i}")
-    print("]")
+    def dump(self):
+        print("InstrsAnnotation[")
+        for i in self.instrs:
+            print(f"  {i}")
+        print("]")
 
 
 class ExprAnnotation(Annotation):
 
-__slots__ = ['_sd', 'cannonical']
+    __slots__ = ['_sd', 'cannonical']
 
-def __init__(self, ty, expr, subs, EM):
-    super(
-        ExprAnnotation, self).__init__(ty)
+    def __init__(self, ty, expr, subs, EM):
+        super(
+            ExprAnnotation, self).__init__(ty)
 
-    # state description
-    self._sd = StateDescription(expr, subs)
+        # state description
+        self._sd = StateDescription(expr, subs)
 
-    # cannonical form of the annotation (so that we can compare
-    # annotations)
-    self.cannonical = self._sd.cannonical(EM)
+        # cannonical form of the annotation (so that we can compare
+        # annotations)
+        self.cannonical = self._sd.cannonical(EM)
 
-def getExpr(self):
-    return self._sd.getExpr()
+    def getExpr(self):
+        return self._sd.getExpr()
 
-def getSubstitutions(self):
-    return self._sd.getSubstitutions()
+    def getSubstitutions(self):
+        return self._sd.getSubstitutions()
 
-def getCannonical(self):
-    return self.cannonical
+    def getCannonical(self):
+        return self.cannonical
 
-def Not(self, EM):
-    n = copy(self) # to copy the type and methods
-    n._sd = StateDescription(EM.Not(self._expr), self.getSubstitutions())
-    n.cannonical = n._sd.cannonical(EM)
-    return n
+    def Not(self, EM):
+        n = copy(self)  # to copy the type and methods
+        n._sd = StateDescription(EM.Not(self._expr), self.getSubstitutions())
+        n.cannonical = n._sd.cannonical(EM)
+        return n
 
-def doSubs(self, state):
-    return self._sd.doSubs(state)
+    def doSubs(self, state):
+        return self._sd.doSubs(state)
 
-def __eq__(self, rhs):
-    return self.cannonical == rhs.cannonical
+    def __eq__(self, rhs):
+        return self.cannonical == rhs.cannonical
 
-def __hash__(self):
-    assert self.cannonical
-    return self.cannonical.__hash__()
+    def __hash__(self):
+        assert self.cannonical
+        return self.cannonical.__hash__()
 
-def __repr__(self):
-    assert self.cannonical
-    return f"{self.cannonical}"
-    # return "{0}[{1}]".format(self._expr, ",
-    # ".join(f"{x.asValue()}/{val.unwrap()}" for (x, val) in
-    # self.subs.items()))
+    def __repr__(self):
+        assert self.cannonical
+        return f"{self.cannonical}"
+        # return "{0}[{1}]".format(self._expr, ",
+        # ".join(f"{x.asValue()}/{val.unwrap()}" for (x, val) in
+        # self.subs.items()))
 
-def dump(self):
-    print(
-        "ExprAnnotation[{0}]:".format(
-            'assert' if self.type == Annotation.ASSERT else 'assume'))
-    print(f"> expr: {self.getExpr()}")
-    print(f"> cannonical: {self.getCannonical()}")
-    print("> substitutions: {0}".format(", ".join(
-        f"{x.asValue()}/{val.unwrap()}" for (val, x) in self.getSubstitutions().items())))
+    def dump(self):
+        print(
+            "ExprAnnotation[{0}]:".format(
+                'assert' if self.type == Annotation.ASSERT else 'assume'))
+        print(f"> expr: {self.getExpr()}")
+        print(f"> cannonical: {self.getCannonical()}")
+        print("> substitutions: {0}".format(", ".join(
+            f"{x.asValue()}/{val.unwrap()}" for (val, x) in self.getSubstitutions().items())))
 
 
 class AssertAnnotation(ExprAnnotation):
-def __init__(self, expr, subs, EM):
-    super(
-        AssertAnnotation,
-        self).__init__(
-        Annotation.ASSERT,
-        expr,
-        subs,
-        EM)
+    def __init__(self, expr, subs, EM):
+        super(
+            AssertAnnotation,
+            self).__init__(
+            Annotation.ASSERT,
+            expr,
+            subs,
+            EM)
 
-def toAssume(self, EM):
-    return AssumeAnnotation(self.getExpr(), self.getSubstitutions(), EM)
+    def toAssume(self, EM):
+        return AssumeAnnotation(self.getExpr(), self.getSubstitutions(), EM)
 
-def __repr__(self):
-    return f"assert {ExprAnnotation.__repr__(self)}"
+    def __repr__(self):
+        return f"assert {ExprAnnotation.__repr__(self)}"
 
 
 class AssumeAnnotation(ExprAnnotation):
-def __init__(self, expr, subs, EM):
-    super(
-        AssumeAnnotation,
-        self).__init__(
-        Annotation.ASSUME,
-        expr,
-        subs,
-        EM)
+    def __init__(self, expr, subs, EM):
+        super(
+            AssumeAnnotation,
+            self).__init__(
+            Annotation.ASSUME,
+            expr,
+            subs,
+            EM)
 
-def __repr__(self):
-    return f"assume {ExprAnnotation.__repr__(self)}"
+    def __repr__(self):
+        return f"assume {ExprAnnotation.__repr__(self)}"
 
 
 def _execute_instr(executor, states, instr):
-newstates = []
-for state in states:
-    # FIXME: get rid of this -- make a version of
-    # execute() that does not mess with pc
-    oldpc = state.pc
-    assert state.isReady()
-    newstates += executor.execute(state, instr)
+    newstates = []
+    for state in states:
+        # FIXME: get rid of this -- make a version of
+        # execute() that does not mess with pc
+        oldpc = state.pc
+        assert state.isReady()
+        newstates += executor.execute(state, instr)
 
-ready, nonready = [], []
-for x in newstates:
-    x.pc = oldpc
-    (ready, nonready)[0 if x.isReady() else 1].append(x)
-return ready, nonready
+    ready, nonready = [], []
+    for x in newstates:
+        x.pc = oldpc
+        (ready, nonready)[0 if x.isReady() else 1].append(x)
+    return ready, nonready
 
 
 def _execute_instr_annotation(executor, states, annot):
-nonready = []
-for instr in annot:
-    states, u = _execute_instr(executor, states, instr)
-    nonready += u
-return states, nonready
+    nonready = []
+    for instr in annot:
+        states, u = _execute_instr(executor, states, instr)
+        nonready += u
+    return states, nonready
 
 
 def _execute_expr_annotation(executor, states, annot):
