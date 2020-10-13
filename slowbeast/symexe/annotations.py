@@ -1,8 +1,9 @@
 from slowbeast.util.debugging import dbg, dbgv, dbg_sec, FIXME
 from slowbeast.core.executor import split_ready_states
 from slowbeast.domains.symbolic import NondetLoad
-
 from . statedescription import StateDescription
+
+from copy import copy
 
 
 class Annotation:
@@ -80,7 +81,7 @@ class ExprAnnotation(Annotation):
 
     def Not(self, EM):
         n = copy(self)  # to copy the type and methods
-        n._sd = StateDescription(EM.Not(self._expr), self.getSubstitutions())
+        n._sd = StateDescription(EM.Not(self.getExpr()), self.getSubstitutions())
         n.cannonical = n._sd.cannonical(EM)
         return n
 

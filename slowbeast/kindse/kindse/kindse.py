@@ -99,7 +99,6 @@ def strengthen(executor, s, a, seq, L):
 
 def ensure_safe(a, errs0):
     # if the annotations intersect, remove errs0 from a
-    return a  # XXX
     EM = getGlobalExprManager()
     return and_annotations(EM, True, a, errs0.Not(EM))
 
