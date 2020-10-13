@@ -25,21 +25,27 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             opts=opts,
             ExecutorClass=PathExecutor)
 
-        # first, we need to split blocks such that every call is in
-        # its own block, so that we can easily build interprocedural
-        # paths
-       #splitProgAroundCalls(prog)
-       #prog.dump()
-
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
         self.indexecutor = PathExecutor(self.getSolver(), opts, memorymodel)
         dbg("Forbidding calls in induction step for now with k-induction")
         self.indexecutor.forbidCalls()
 
-        self.callgraph = CallGraph(prog)
+        # run only on reachable functions
+        callgraph = CallGraph(prog)
+        if __debug__:
+            odir = self.ohandler.outdir if self.ohandler else None
+            with open('{0}/callgraph-full.txt'.format(odir or '.'), 'w') as f:
+                callgraph.dump(f)
+        callgraph.pruneUnreachable(prog.getEntry())
+        if __debug__:
+            odir = self.ohandler.outdir if self.ohandler else None
+            with open('{0}/callgraph.txt'.format(odir or '.'), 'w') as f:
+                callgraph.dump(f)
+
+        self.callgraph = callgraph
         self.cfgs = {F: CFG(F)
-                     for F in prog.getFunctions() if not F.isUndefined()}
+                     for F in callgraph.getFunctions() if not F.isUndefined()}
         self.paths = []
         # as we run the executor in nested manners,
         # we want to give different outputs

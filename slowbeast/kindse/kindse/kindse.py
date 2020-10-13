@@ -380,7 +380,9 @@ class KindSymbolicExecutor(BaseKindSE):
 
     def initializePaths(self, k=1):
         paths = []
-        for F in self.getProgram().getFunctions():
+        # initialize the paths only in functions
+        # that are reachable in the callgraph
+        for F in self.callgraph.getFunctions():
             if F.isUndefined():
                 continue
 
