@@ -374,6 +374,10 @@ class KindSymbolicExecutor(BaseKindSE):
             if dfstype == DFSEdgeType.BACK:
                 points.append(end)
 
+        if __debug__:
+            with self.new_output_file(f'{cfg.getFun().getName()}-dfs.dot') as f:
+                DFSVisitor().dump(cfg, f)
+
         DFSVisitor().foreachedge(processedge, cfg.getEntry())
 
         return points

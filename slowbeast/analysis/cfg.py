@@ -50,6 +50,9 @@ class CFG:
 
         self._build()
 
+    def getFun(self):
+        return self.fun
+
     def createNode(self, *args):
         """ Override this method in child classes
         to get nodes with more data

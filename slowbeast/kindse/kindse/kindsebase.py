@@ -34,18 +34,18 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         # run only on reachable functions
         callgraph = CallGraph(prog)
         if __debug__:
-            odir = self.ohandler.outdir if self.ohandler else None
-            with open('{0}/callgraph-full.txt'.format(odir or '.'), 'w') as f:
+            with self.new_output_file('callgraph-full.txt') as f:
                 callgraph.dump(f)
+
         callgraph.pruneUnreachable(prog.getEntry())
         if __debug__:
-            odir = self.ohandler.outdir if self.ohandler else None
-            with open('{0}/callgraph.txt'.format(odir or '.'), 'w') as f:
+            with self.new_output_file('callgraph.txt') as f:
                 callgraph.dump(f)
 
         self.callgraph = callgraph
         self.cfgs = {F: CFG(F)
                      for F in callgraph.getFunctions() if not F.isUndefined()}
+
         self.paths = []
         # as we run the executor in nested manners,
         # we want to give different outputs

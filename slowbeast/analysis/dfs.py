@@ -89,13 +89,19 @@ class DFSVisitor:
         counter.counter += 1
         nddata.outnum = counter.counter
 
-    def dump(self, cfg, out=None):
-        if out is None:
+    def dump(self, cfg, outfl=None):
+        out = None
+        if outfl is None:
             from sys import stdout
             out = stdout
         else:
-            if isinstance(out, str):
+            if isinstance(outfl, str):
                 out = open(out, 'w')
+            else:
+                assert not outfl.closed, "Invalid stream"
+                out = outfl
+        assert out, "Do not have the output stream"
+        assert not out.closed, "Invalid stream"
 
         def edgecol(val):
             if val == DFSEdgeType.TREE:
@@ -136,3 +142,5 @@ class DFSVisitor:
                 file=out)
 
         print("}", file=out)
+        if isinstance(outfl, str):
+            out.close() # we opened it
