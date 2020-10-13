@@ -74,6 +74,6 @@ class BBlock(ProgramElement):
 
     def dump(self, ind=0, stream=stdout):
         super(BBlock, self).dump(ind, stream)
-        stream.write("{0}; [bblock {1}]".format(" " * ind, self.getID()))
+        stream.write("{0}; [bblock {1}]\n".format(" " * ind, self.getID()))
         for i in self._instructions:
             i.dump(ind, stream)

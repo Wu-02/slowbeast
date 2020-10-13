@@ -94,6 +94,5 @@ class ProgramElement:
 
     def dump(self, ind=0, stream=stdout):
         for k, v in self._metadata:
-            print_stream("{0} ; {1} : {2}".format(
-                         ''.join([' ' for x in range(0, ind)]),
-                         k, v), color="GRAY", stream=stream)
+            print_stream("{0} ; {1} : {2}".format(' ' * ind, k, v),
+                         color="GRAY", stream=stream)
