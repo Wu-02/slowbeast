@@ -26,16 +26,19 @@ def strengthenInv(executor, s, a, seq, L):
     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
     so that a \cup seq is inductive.
     """
-    # print(f'Strengthening {a}')
+    #print(f'Strengthening {a}')
     EM = getGlobalExprManager()
     solver = s.getSolver()
 
-    newframe = InductiveSequence.Frame(a, None)
+    assert isinstance(a, InductiveSequence.Frame)
+
     # execute {a} L {seq + a}
     r = seq.check_on_paths(executor, L.getPaths(),
-                           pre=[a], tmpframes=[newframe])
+                           pre=[a.toassume()], tmpframes=[a])
     if not r.errors:  # the abstraction is inductive w.r.t seq
-        return newframe
+        return a
+
+    newframe = InductiveSequence.Frame(a.states, a.strengthening)
     S = []  # strengthening
     while r.errors:
         for e in r.errors:
@@ -84,10 +87,11 @@ def strengthenInv(executor, s, a, seq, L):
 
         if not Schanged:
             break
-        newframe = InductiveSequence.Frame(
-            a, AssumeAnnotation(
-                EM.conjunction(
-                    *S), a.getSubstitutions(), EM))
+        origstren = a.strengthening
+        stren = EM.conjunction(*S, origstren.getExpr())
+        newframe.strengthening =\
+            AssumeAnnotation(stren, origstren.getSubstitutions(), EM)
+        # check with the new frame
         r = seq.check_on_paths(executor, L.getPaths(),
                                pre=[newframe.toassume()],
                                tmpframes=[newframe])
@@ -268,12 +272,16 @@ class KindSymbolicExecutor(BaseKindSE):
                 checked_abstractions.add(a)
                 # dbg('Abstraction: ', a)
 
+                # strengthen S such that it is safe (does not
+                # intersect the errs0 states
+                F = InductiveSequence.Frame(a, None)
+                S = strengthenSafe(self, s, F, seq, errs0, L)
+                if S is None:
+                    print("Failed strengthening to safe states")
+                    continue
                 #inductively strengthen s
-                S = strengthenInv(self, s, a, seq, L)
+                S = strengthenInv(self, s, S, seq, L)
                 if S != seq[-1]:
-                    # strengthen S such that it is safe (does not
-                    # intersect the errs0 states
-                    S = strengthenSafe(self, s, S, seq, errs0, L)
                     if S:
                         tmp = seq.copy()
                         tmp.append(S.states, S.strengthening)
