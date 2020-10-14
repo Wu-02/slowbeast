@@ -21,7 +21,7 @@ def overapproximations(s, unsafe):
     yield from get_safe_subexpressions(s, unsafe)
 
 
-def strengthenInv(executor, s, a, seq, L):
+def strengthenInd(executor, s, a, seq, L):
     """
     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
     so that a \cup seq is inductive.
@@ -280,7 +280,8 @@ class KindSymbolicExecutor(BaseKindSE):
                     print("Failed strengthening to safe states")
                     continue
                 #inductively strengthen s
-                S = strengthenInv(self, s, S, seq, L)
+                S = strengthenInd(self, s, S, seq, L)
+                # this does not work...
                 if S != seq[-1]:
                     if S:
                         tmp = seq.copy()
