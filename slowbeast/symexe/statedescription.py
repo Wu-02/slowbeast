@@ -28,6 +28,9 @@ class StateDescription:
     __slots__ = ['_expr', '_subs']
 
     def __init__(self, expr, subs):
+        assert expr is not None and isinstance(expr, Expr)
+        assert subs is not None and isinstance(subs, dict)
+
         # the expression to evaluate
         self._expr = expr
 

@@ -25,7 +25,9 @@ class InductiveSequence:
             states = self.states
             stren = self.strengthening
             assert stren is None or\
-                states.getSubstitutions() == stren.getSubstitutions()
+                (states.getSubstitutions() and stren.getSubstitutions())
+            assert stren is None or\
+                (states.getSubstitutions() == stren.getSubstitutions())
 
         def toannot(self):
             EM = getGlobalExprManager()
@@ -47,17 +49,21 @@ class InductiveSequence:
             return AssumeAnnotation(*self.toannot(), EM)
 
         def __eq__(self, rhs):
-            return self.states == rhs.states and\
-                self.strengthening == rhs.strengthening
+            st1 = self.strengthening
+            st2 = rhs.strengthening
+            if st1:
+                return st2 and st1 == st2 and self.states == rhs.states
+            else:
+                return st2 is None and self.states == rhs.states
 
         def __repr__(self):
             return f"{self.states} with {self.strengthening}"
 
-    def __init__(self, fst=None):
+    def __init__(self, fst=None, fststr=None):
         self.frames = []
         if fst:
             # the first frame is supposed to be inductive
-            self.frames.append(InductiveSequence.Frame(fst, None))
+            self.frames.append(InductiveSequence.Frame(fst, fststr))
 
     def copy(self):
         n = InductiveSequence()
@@ -68,6 +74,7 @@ class InductiveSequence:
         return len(self.frames)
 
     def append(self, states, strength):
+        assert states
         self.frames.append(InductiveSequence.Frame(states, strength))
 
     def strengthen(self, annot, idx):

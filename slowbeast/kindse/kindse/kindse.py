@@ -7,7 +7,7 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.annotations import AssumeAnnotation, AssertAnnotation, \
     state_to_annotation, states_to_annotation, \
-    or_annotations, and_annotations
+    or_annotations, and_annotations, unify_annotations
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from .loops import SimpleLoop
@@ -21,9 +21,10 @@ def overapproximations(s, unsafe):
     yield from get_safe_subexpressions(s, unsafe)
 
 
-def strengthen(executor, s, a, seq, L):
+def strengthenInv(executor, s, a, seq, L):
     """
     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
+    so that a \cup seq is inductive.
     """
     # print(f'Strengthening {a}')
     EM = getGlobalExprManager()
@@ -97,24 +98,43 @@ def strengthen(executor, s, a, seq, L):
     return InductiveSequence.Frame(state_to_annotation(s), None)
 
 
-def ensure_safe(a, errs0):
-    # if the annotations intersect, remove errs0 from a
-    EM = getGlobalExprManager()
-    return and_annotations(EM, True, a, errs0.Not(EM))
-
-
-def abstract(executor, state, unsafe, errs0):
+def abstract(executor, state, unsafe):
     """
     unsafe - unsafe states from the last step
-    errs0  - target unsafe states (those whose unreachability
-             we are trying to prove)
     """
-    for a in overapproximations(state, unsafe):
-        x = ensure_safe(a, errs0)
-        if x is None:
-            x = a
-        yield x
+    yield from overapproximations(state, unsafe)
 
+def strengthenSafe(executor, s, a, seq, errs0, L):
+    # if the annotations intersect, remove errs0 from a
+    EM = getGlobalExprManager()
+
+    # FIXME: proceed only when a intersects errs0
+
+    # NOTE: the strengthening is the loop-exit condition.
+    # It is sufficient to exclude the unsafe states
+    states, stren, subs, noterrstates = None, None, None, None
+    if errs0.strengthening:
+        if a.strengthening is None:
+            noterrstates = errs0.strengthening.Not(EM)
+        else:
+            noterrstates = and_annotations(EM, True,
+                                a.strengthening, errs0.strengthening.Not(EM))
+    else:
+        #the error loc is inside a loop - we must use the whole error
+        #states decription
+        #FIXME: try use only a part of the condition (unsat core)
+        assert errs0.states
+        if a.strengthening is None:
+            noterrstates = errs0.states.Not(EM)
+        else:
+            noterrstates =\
+                and_annotations(EM, True,
+                                a.strengthening, errs0.states.Not(EM))
+    states, stren, subs\
+        = unify_annotations(EM, a.states, noterrstates)
+    A1 = AssertAnnotation(states, subs, EM)
+    A2 = AssertAnnotation(stren, subs, EM)
+    return InductiveSequence.Frame(A1, A2)
 
 def check_inv(prog, L, inv):
     loc = L.loc
@@ -153,25 +173,33 @@ def get_initial_seq(unsafe):
     # negation of loop condition.
 
     S = None  # safe states
+    E = None  # safe states
     H = None  # loop exit condition
 
     EM = getGlobalExprManager()
+    Not = EM.Not
     for u in unsafe:
         # add constraints without loop exit condition
         # (we'll add the loop condition later)
         uconstr = u.getConstraints()
-        notu = EM.disjunction(*map(EM.Not, uconstr[1:]))
+        # same as uconstr[1:], but via generators
+        uconstrnh = (c for (n, c) in enumerate(uconstr) if n > 0)
+        #safe states
+        notu = EM.disjunction(*map(Not, uconstrnh))
         S = EM.And(notu, S) if S else notu  # use conjunction too?
+        #unsafe states
+        su = EM.conjunction(*(c for (n, c) in enumerate(uconstr) if n > 0))
+        E = EM.Or(su, E) if E else su
+
         # loop exit condition
         H = EM.Or(H, uconstr[0]) if H else uconstr[0]
 
-    errs = or_annotations(EM, True,
-                          *(state_to_annotation(u) for u in unsafe))
-    Sa = AssertAnnotation(EM.And(H, S),
-                          {l: l.load for l in unsafe[0].getNondetLoads()},
-                          EM)
-    return InductiveSequence(Sa), errs
+    subs = {l: l.load for l in unsafe[0].getNondetLoads()}
+    Sh = AssertAnnotation(H, subs, EM)
+    Sa = AssertAnnotation(S, subs, EM)
+    Se = AssertAnnotation(E, subs, EM)
 
+    return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
@@ -234,19 +262,18 @@ class KindSymbolicExecutor(BaseKindSE):
         E = []
         checked_abstractions = set()
         for s in r.ready:
-            for a in abstract(self, s, r.errors, errs0):
+            for a in abstract(self, s, r.errors):
                 if a in checked_abstractions:
                     continue
                 checked_abstractions.add(a)
                 # dbg('Abstraction: ', a)
 
-                S = strengthen(self, s, a, seq, L)
+                #inductively strengthen s
+                S = strengthenInv(self, s, a, seq, L)
                 if S != seq[-1]:
-                    # solver = s.getSolver()
-                    # for e in E:
-                    #    S = self.to_distinct(S, e[-1])
-                    #    if S is None:
-                    #        break
+                    # strengthen S such that it is safe (does not
+                    # intersect the errs0 states
+                    S = strengthenSafe(self, s, S, seq, errs0, L)
                     if S:
                         tmp = seq.copy()
                         tmp.append(S.states, S.strengthening)
