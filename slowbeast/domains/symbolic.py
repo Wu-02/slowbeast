@@ -79,7 +79,6 @@ else:
     def bv_const(v, bw):
         return BV(v, bw)
 
-
 class Expr(Value):
     """
     Wrapper around a formula that carries

@@ -81,7 +81,10 @@ class ExprAnnotation(Annotation):
 
     def Not(self, EM):
         n = copy(self)  # to copy the type and methods
-        n._sd = StateDescription(EM.Not(self.getExpr()), self.getSubstitutions())
+        n._sd = StateDescription(
+            EM.Not(
+                self.getExpr()),
+            self.getSubstitutions())
         n.cannonical = n._sd.cannonical(EM)
         return n
 

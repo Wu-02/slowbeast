@@ -108,6 +108,7 @@ def abstract(executor, state, unsafe):
     """
     yield from overapproximations(state, unsafe)
 
+
 def strengthenSafe(executor, s, a, seq, errs0, L):
     # if the annotations intersect, remove errs0 from a
     EM = getGlobalExprManager()
@@ -121,12 +122,12 @@ def strengthenSafe(executor, s, a, seq, errs0, L):
         if a.strengthening is None:
             noterrstates = errs0.strengthening.Not(EM)
         else:
-            noterrstates = and_annotations(EM, True,
-                                a.strengthening, errs0.strengthening.Not(EM))
+            noterrstates = and_annotations(
+                EM, True, a.strengthening, errs0.strengthening.Not(EM))
     else:
-        #the error loc is inside a loop - we must use the whole error
-        #states decription
-        #FIXME: try use only a part of the condition (unsat core)
+        # the error loc is inside a loop - we must use the whole error
+        # states decription
+        # FIXME: try use only a part of the condition (unsat core)
         assert errs0.states
         if a.strengthening is None:
             noterrstates = errs0.states.Not(EM)
@@ -139,6 +140,7 @@ def strengthenSafe(executor, s, a, seq, errs0, L):
     A1 = AssertAnnotation(states, subs, EM)
     A2 = AssertAnnotation(stren, subs, EM)
     return InductiveSequence.Frame(A1, A2)
+
 
 def check_inv(prog, L, inv):
     loc = L.loc
@@ -188,10 +190,10 @@ def get_initial_seq(unsafe):
         uconstr = u.getConstraints()
         # same as uconstr[1:], but via generators
         uconstrnh = (c for (n, c) in enumerate(uconstr) if n > 0)
-        #safe states
+        # safe states
         notu = EM.disjunction(*map(Not, uconstrnh))
         S = EM.And(notu, S) if S else notu  # use conjunction too?
-        #unsafe states
+        # unsafe states
         su = EM.conjunction(*(c for (n, c) in enumerate(uconstr) if n > 0))
         E = EM.Or(su, E) if E else su
 
@@ -204,6 +206,7 @@ def get_initial_seq(unsafe):
     Se = AssertAnnotation(E, subs, EM)
 
     return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
+
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(
@@ -279,7 +282,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 if S is None:
                     print("Failed strengthening to safe states")
                     continue
-                #inductively strengthen s
+                # inductively strengthen s
                 S = strengthenInd(self, s, S, seq, L)
                 # this does not work...
                 if S != seq[-1]:
