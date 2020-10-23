@@ -15,6 +15,7 @@ if _use_z3:
     from z3 import is_bv, is_bv_value, is_bool, is_and, is_or, is_not
     from z3 import is_true, is_false
     from z3 import simplify, substitute
+    from z3 import Goal, Tactic
 
     def eliminate_common_subexpr(expr):
        # XXX: not efficient, it is rather
@@ -67,6 +68,18 @@ if _use_z3:
             yield from subexpressions(c)
         yield expr
 
+    def to_cnf(*exprs):
+        g = Goal()
+        g.add(*exprs)
+        t = Tactic('tseitin-cnf')
+        return t(g)[0]
+
+    def solver_to_sb_type(s):
+        if is_bv(s):
+            return Type(s.sort().size())
+        assert is_bool(s), "Unhandled expression"
+        return BoolType()
+
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
     from pysmt.shortcuts import BVULT, BVULE, BVUGT, BVUGE
@@ -114,15 +127,24 @@ class Expr(Value):
 
     def subexpressions(self):
         """ Traverse the expression and return its all subexpressions """
-        def get_type(s):
-            if is_bv(s):
-                return Type(s.sort().size())
-            assert is_bool(s), "Unhandled expression"
-            return BoolType()
-
-        return (Constant(s.as_long(), get_type(s))
-                if is_bv_value(s) else Expr(s, get_type(s))
+        return (Constant(s.as_long(), solver_to_sb_type(s))
+                if is_bv_value(s) else Expr(s, solver_to_sb_type(s))
                 for s in subexpressions(self.unwrap()))
+
+    def children(self):
+        """
+        Get the children (1st-level subexpressions) of this expression.
+        E.g. for And(a, b) this method returns [a, b].
+        """
+        return (Constant(s.as_long(), solver_to_sb_type(s))
+                if is_bv_value(s) else Expr(s, solver_to_sb_type(s))
+                for s in self.unwrap().children())
+
+    def to_cnf(self):
+        """
+        Get the expression in CNF form.
+        """
+        return Expr(And(*to_cnf(self.unwrap())), self.getType())
 
     def __hash__(self):
         return self._expr.__hash__()
