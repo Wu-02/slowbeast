@@ -4,7 +4,6 @@
 # value with a specified bitwidth
 # a pointer to a value (not boolean)
 
-
 class Type:
     __slots__ = ["_bitwidth"]
 
@@ -41,7 +40,7 @@ class Type:
         return s
 
 
-# FIXME: make this configurable
+# TODO: make this configurable
 POINTER_BIT_WIDTH = 64
 
 

@@ -102,8 +102,8 @@ class InteractiveHandler:
         elif query[0] in ["i", "inst", "instruction"]:
             self._break_inst.append(int(query[1]))
             print("Break on instructions: ", self._break_inst)
-        # elif query[0] in ['s', 'state']: # XXX: states do not have any unique
-        # id (yet?)...
+        # elif query[0] in ['s', 'state']: # NOTE: will not work, states do not
+        # have any unique id
 
     def handlePrint(self, query, state):
         if not query:
@@ -123,7 +123,7 @@ class InteractiveHandler:
             else:
                 print("No such a state")
         # elif query[0].startswith('x'):
-        # FIXME need to get the Instruction first
+        # NOTE: need to get the Instruction first
         # if val is None:
         #    print("No such a value")
         # else:
