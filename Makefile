@@ -4,6 +4,9 @@ all: pylint check
 pylint:
 	pylint slowbeast/
 
+fixme:
+	pylint --enable=fixme slowbeast/
+
 # FORMATTING
 black:
 	black slowbeast/
