@@ -93,10 +93,8 @@ class ProgramElement:
         return self._id
 
     def dump(self, ind=0, stream=stdout, color=True):
-        col="GRAY" if color else "BLACK"
+        col = "GRAY" if color else "BLACK"
         for k, v in self._metadata:
             print_stream(
-                "{0} ; {1} : {2}".format(" " * ind, k, v),
-                color=col,
-                stream=stream
+                "{0} ; {1} : {2}".format(" " * ind, k, v), color=col, stream=stream
             )
