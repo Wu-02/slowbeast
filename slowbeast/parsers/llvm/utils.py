@@ -1,5 +1,5 @@
 from slowbeast.util.debugging import warn
-from slowbeast.ir.value import Constant, ConstantTrue, ConstantFalse
+from slowbeast.ir.value import Constant, ConstantTrue, ConstantFalse, Pointer
 from slowbeast.ir.types import Type
 
 
@@ -84,7 +84,9 @@ def getTypeSizeInBits(ty):
 
 def getTypeSize(ty):
     ts = getTypeSizeInBits(ty)
-    if ts:
+    if ts is not None:
+        if ts == 0:
+            return 0
         return int(max(ts / 8, 1))
     return None
 
@@ -116,6 +118,15 @@ def getConstantInt(val):
 
     return Constant(c, Type(bw))
 
+def getConstantPtr(val):
+    # good, this is so ugly. But llvmlite does
+    # not provide any other way...
+    if not val.type.is_pointer:
+        return None
+
+    if str(val).endswith('null'):
+        return Pointer(0)
+    return None
 
 def getLLVMOperands(inst):
     return [x for x in inst.operands]

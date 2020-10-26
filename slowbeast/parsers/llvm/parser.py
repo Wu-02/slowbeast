@@ -88,6 +88,8 @@ class Parser:
         ret = self._mapping.get(op)
         if not ret:
             ret = getConstantInt(op)
+        if not ret:
+            ret = getConstantPtr(op)
 
         assert ret, "Do not have an operand: {0}".format(op)
         return ret
@@ -513,8 +515,10 @@ class Parser:
         for g in m.global_variables:
             assert g.type.is_pointer
             # FIXME: check and set whether it is a constant
+            ts = getTypeSize(g.type.element_type)
+            assert ts is not None, "Unsupported type size: {g.type.element_type}"
             G = GlobalVariable(
-                Constant(getTypeSize(g.type.element_type), SizeType), g.name
+                Constant(ts, SizeType), g.name
             )
             c = getConstantInt(g.initializer)
             if c:
