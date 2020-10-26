@@ -7,6 +7,8 @@ if __debug__:
 
 
 class ExecutionState:
+    __slots__ = ["pc", "memory", "status"]
+
     def __init__(self, pc, m):
         # program counter
         self.pc = pc

@@ -8,6 +8,18 @@ from sys import stdout
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
 
+    # XXX do not store warnings in the state but keep them in a map in the interpreter or so?
+    __slots__ = [
+        "_executor",
+        "_solver",
+        "_constraints",
+        "_constraints_ro",
+        "_id",
+        "_warnings",
+        "_warnings_ro",
+        "_nondets",
+        "_nondets_ro",
+    ]
     statesCounter = 0
 
     def __init__(self, executor, pc, m, solver, constraints=None):
@@ -15,18 +27,19 @@ class SEState(ExecutionState):
         assert not C.get(), C.get()
         ExecutionState.__init__(self, pc, m)
 
+        SEState.statesCounter += 1
+        self._id = SEState.statesCounter
+
         self._executor = executor
         self._solver = solver
         self._constraints = constraints or ConstraintsSet()
         self._constraints_ro = False
-
-        SEState.statesCounter += 1
-        self._id = SEState.statesCounter
-        self._warnings = []
-        self._warnings_ro = False
         # a sequence of nondets as met on this path
         self._nondets = []
         self._nondets_ro = False
+
+        self._warnings = []
+        self._warnings_ro = False
 
     def getID(self):
         return self._id

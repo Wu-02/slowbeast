@@ -7,6 +7,10 @@ from copy import copy
 
 
 class Annotation:
+    """
+    Object representing what to do/assume/assert in a state.
+    """
+
     ASSUME = 1
     ASSERT = 2
     INSTRS = 3
