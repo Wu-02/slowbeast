@@ -1,4 +1,4 @@
-from .. util.debugging import dbg
+from ..util.debugging import dbg
 
 
 class InteractiveHandler:
@@ -25,13 +25,14 @@ class InteractiveHandler:
         return True
 
     def prompt(self, s, newstates):
-        """ s = currently executed state
-            newstates = states generated
+        """s = currently executed state
+        newstates = states generated
         """
         try:
             return self._prompt(s, newstates)
         except EOFError:
             from sys import exit
+
             print("Exiting...")
             exit(0)
 
@@ -41,12 +42,9 @@ class InteractiveHandler:
 
         self._stop_next_time = False
 
-        print(
-            "Stopped before executing: ({0}) {1}".format(
-                s.getID(), str(
-                    s.pc)))
+        print("Stopped before executing: ({0}) {1}".format(s.getID(), str(s.pc)))
         q = input("> ")
-        if q == '':
+        if q == "":
             q = self._last_query
         while not self.handle(q, s, newstates):
             q = input("> ")
@@ -67,21 +65,21 @@ class InteractiveHandler:
         return False
 
     def _handle(self, q, s, newstates):
-        dbg('query: {0}'.format(q))
+        dbg("query: {0}".format(q))
         query = q.split()
         if len(query) < 1:
             return False
 
-        if query[0] in ['c', 'continue']:
+        if query[0] in ["c", "continue"]:
             return True  # True = continute
-        if query[0] in ['n', 's', 'step', 'next']:
+        if query[0] in ["n", "s", "step", "next"]:
             self._stop_next_time = True
             return True
-        elif query[0] == 'p':
+        elif query[0] == "p":
             self.handlePrint(query[1:], s, newstates)
-        elif query[0] == 'b':
+        elif query[0] == "b":
             self.handleBreak(query[1:], s, newstates)
-        elif query[0] in ['l', 'list']:
+        elif query[0] in ["l", "list"]:
             if len(query) == 1:
                 i = s.pc
                 n = 0
@@ -89,7 +87,7 @@ class InteractiveHandler:
                     i.dump()
                     i = i.getNextInstruction()
                     n += 1
-            elif query[1] in ['b', 'bblock', 'block']:
+            elif query[1] in ["b", "bblock", "block"]:
                 s.pc.getBBlock().dump()
         else:
             print("Unknown query: {0}".format(q))
@@ -106,10 +104,10 @@ class InteractiveHandler:
         if not query:
             print("Break on instructions: ", self._break_inst)
             print("Break on path ID: ", self._break_pathid)
-        if query[0] in ['p', 'path']:
+        if query[0] in ["p", "path"]:
             self._break_pathid.append(int(query[1]))
             print("Break on path ID: ", self._break_pathid)
-        elif query[0] in ['i', 'inst', 'instruction']:
+        elif query[0] in ["i", "inst", "instruction"]:
             self._break_inst.append(int(query[1]))
             print("Break on instructions: ", self._break_inst)
         # elif query[0] in ['s', 'state']: # XXX: states do not have any unique
@@ -118,11 +116,11 @@ class InteractiveHandler:
     def handlePrint(self, query, state, newstates):
         if not query:
             raise RuntimeError("Invalid arguments to print")
-        if query[0] == 'states':
+        if query[0] == "states":
             print([x.getID() for x in self.interpreter.getStates()])
-        elif query[0] in ['new', 'newstates']:
+        elif query[0] in ["new", "newstates"]:
             print([x.getID() for x in self.interpreter.getStates()])
-        elif query[0] in ['s', 'state']:
+        elif query[0] in ["s", "state"]:
             if len(query) == 1:
                 assert state, "No current state"
                 s = state
@@ -131,12 +129,12 @@ class InteractiveHandler:
             if s:
                 s.dump()
             else:
-                print('No such a state')
+                print("No such a state")
         # elif query[0].startswith('x'):
-           # FIXME need to get the Instruction first
-           # if val is None:
-           #    print("No such a value")
-           # else:
-           #    print("{0} -> {1}".format(query[0], val))
+        # FIXME need to get the Instruction first
+        # if val is None:
+        #    print("No such a value")
+        # else:
+        #    print("{0} -> {1}".format(query[0], val))
         else:
             raise NotImplementedError("Invalid print command")

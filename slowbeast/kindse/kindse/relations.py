@@ -6,8 +6,8 @@ from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
 from slowbeast.solvers.solver import Solver
 
-from . kindsebase import KindSymbolicExecutor as BaseKindSE
-from . loops import SimpleLoop
+from .kindsebase import KindSymbolicExecutor as BaseKindSE
+from .loops import SimpleLoop
 
 # we want our annotations to talk about memory
 # and if they talk about the same memory, to look the same
@@ -22,8 +22,7 @@ def get_subs(state):
     subs = {}
     for l in state.getNondetLoads():
         alloc = l.load.getPointerOperand()
-        load = cannonic_loads.setdefault(
-            alloc, Load(alloc, alloc.getSize().getValue()))
+        load = cannonic_loads.setdefault(alloc, Load(alloc, alloc.getSize().getValue()))
         subs[l] = load
 
     return subs
@@ -49,8 +48,12 @@ def get_safe_subexpressions(state, unsafe):
                 if any(map(lambda u: u.is_sat(sub) is False, unsafe)):
                     # if it is implied by some of the safe abstractions that we
                     # already yielded, skip it
-                    if any(map(lambda s: solver.is_sat(
-                            EM.And(sub, EM.Not(s))) is False, safe)):
+                    if any(
+                        map(
+                            lambda s: solver.is_sat(EM.And(sub, EM.Not(s))) is False,
+                            safe,
+                        )
+                    ):
                         continue
 
                     sub = EM.simplify(sub)
@@ -87,20 +90,21 @@ def get_all_relations(state):
             cval = c_concr[0]
             nonunique = state.is_sat(expr, EM.Ne(c, cval))
             if nonunique is False:
-                yield AssertAnnotation(EM.simplify(EM.substitute(expr, (c, cval))),
-                                       subs, EM)
+                yield AssertAnnotation(
+                    EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
+                )
 
 
 def get_safe_relations(safe, unsafe):
     for s in safe:
         # get and filter out those relations that make the state safe
-        saferels = (
-            r for r in get_all_relations(s))
+        saferels = (r for r in get_all_relations(s))
         for x in saferels:
             yield x
 
-   # for s in unsafe:
-   #    # get and filter out those relations that make the state safe
-   #    EM = s.getExprManager()
-   #    for r in get_all_relations(s):
-   #        yield r.Not(EM)
+
+# for s in unsafe:
+#    # get and filter out those relations that make the state safe
+#    EM = s.getExprManager()
+#    for r in get_all_relations(s):
+#        yield r.Not(EM)

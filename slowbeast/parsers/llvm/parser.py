@@ -8,45 +8,45 @@ from slowbeast.ir.instruction import *
 
 from slowbeast.util.debugging import print_stderr, warn
 
-from . specialfunctions import special_functions, create_special_fun
-from . utils import *
+from .specialfunctions import special_functions, create_special_fun
+from .utils import *
 
 import llvmlite.binding as llvm
 
 
 def _get_llvm_module(path):
-    if path.endswith('.ll'):
-        with open(path, 'rt') as f:
+    if path.endswith(".ll"):
+        with open(path, "rt") as f:
             return llvm.parse_assembly(f.read())
     else:
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             return llvm.parse_bitcode(f.read())
 
 
 def parseCmp(inst):
     parts = str(inst).split()
-    if parts[1] != '=' and parts[2] != 'icmp':
+    if parts[1] != "=" and parts[2] != "icmp":
         return None, False
 
-    if parts[3] == 'eq':
+    if parts[3] == "eq":
         return Cmp.EQ, False
-    elif parts[3] == 'ne':
+    elif parts[3] == "ne":
         return Cmp.NE, False
-    elif parts[3] == 'le' or parts[3] == 'sle':
+    elif parts[3] == "le" or parts[3] == "sle":
         return Cmp.LE, False
-    elif parts[3] == 'ge' or parts[3] == 'sge':
+    elif parts[3] == "ge" or parts[3] == "sge":
         return Cmp.GE, False
-    elif parts[3] == 'lt' or parts[3] == 'slt':
+    elif parts[3] == "lt" or parts[3] == "slt":
         return Cmp.LT, False
-    elif parts[3] == 'gt' or parts[3] == 'sgt':
+    elif parts[3] == "gt" or parts[3] == "sgt":
         return Cmp.GT, False
-    elif parts[3] == 'ule':
+    elif parts[3] == "ule":
         return Cmp.LE, True
-    elif parts[3] == 'uge':
+    elif parts[3] == "uge":
         return Cmp.GE, True
-    elif parts[3] == 'ult':
+    elif parts[3] == "ult":
         return Cmp.LT, True
-    elif parts[3] == 'ugt':
+    elif parts[3] == "ugt":
         return Cmp.GT, True
 
     else:
@@ -57,7 +57,7 @@ def parseFunctionRetTy(ty):
     parts = str(ty).split()
     if len(parts) < 2:
         return False, None
-    if parts[0] == 'void':
+    if parts[0] == "void":
         return True, None
     else:
         sz = getTypeSizeInBits(parts[0])
@@ -79,7 +79,7 @@ class Parser:
         self.program = Program()
         self._bblocks = {}
         self._mapping = {}
-        self._metadata_opts = ['llvm']
+        self._metadata_opts = ["llvm"]
         # records about PHIs that we created. We must place
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
@@ -99,8 +99,8 @@ class Parser:
         return self.program.getFunction(fn)
 
     def _addMapping(self, llinst, sbinst):
-        if 'llvm' in self._metadata_opts:
-            sbinst.addMetadata('llvm', str(llinst))
+        if "llvm" in self._metadata_opts:
+            sbinst.addMetadata("llvm", str(llinst))
         assert self._mapping.get(llinst) is None, "Duplicated mapping"
         self._mapping[llinst] = sbinst
 
@@ -118,12 +118,7 @@ class Parser:
             self._addMapping(inst, A)
             return [M, A]
         else:
-            A = Alloc(
-                Constant(
-                    tySize *
-                    num.getValue(),
-                    Type(
-                        num.getBitWidth())))
+            A = Alloc(Constant(tySize * num.getValue(), Type(num.getBitWidth())))
             self._addMapping(inst, A)
             return [A]
 
@@ -163,19 +158,20 @@ class Parser:
 
         op1 = self.getOperand(operands[0])
         op2 = self.getOperand(operands[1])
-        if opcode == 'add':
+        if opcode == "add":
             I = Add(op1, op2)
-        elif opcode == 'sub':
+        elif opcode == "sub":
             I = Sub(op1, op2)
-        elif opcode == 'mul':
+        elif opcode == "mul":
             I = Mul(op1, op2)
-        elif opcode == 'sdiv':
+        elif opcode == "sdiv":
             I = Div(op1, op2)
-        elif opcode == 'udiv':
+        elif opcode == "udiv":
             I = Div(op1, op2, unsigned=True)
         else:
             raise NotImplementedError(
-                "Artihmetic operation unsupported: {0}".format(inst))
+                "Artihmetic operation unsupported: {0}".format(inst)
+            )
 
         self._addMapping(inst, I)
         return [I]
@@ -188,15 +184,14 @@ class Parser:
         op2 = self.getOperand(operands[1])
         opcode = inst.opcode
 
-        if opcode == 'shl':
+        if opcode == "shl":
             I = Shl(op1, op2)
-        elif opcode == 'lshr':
+        elif opcode == "lshr":
             I = LShr(op1, op2)
-        elif opcode == 'ashr':
+        elif opcode == "ashr":
             I = AShr(op1, op2)
         else:
-            raise NotImplementedError(
-                "Shift operation unsupported: {0}".format(inst))
+            raise NotImplementedError("Shift operation unsupported: {0}".format(inst))
 
         self._addMapping(inst, I)
         return [I]
@@ -209,15 +204,14 @@ class Parser:
         op2 = self.getOperand(operands[1])
         opcode = inst.opcode
 
-        if opcode == 'and':
+        if opcode == "and":
             I = And(op1, op2)
-        elif opcode == 'or':
+        elif opcode == "or":
             I = Or(op1, op2)
-        elif opcode == 'xor':
+        elif opcode == "xor":
             I = Xor(op1, op2)
         else:
-            raise NotImplementedError(
-                "Logic operation unsupported: {0}".format(inst))
+            raise NotImplementedError("Logic operation unsupported: {0}".format(inst))
 
         self._addMapping(inst, I)
         return [I]
@@ -230,13 +224,14 @@ class Parser:
         op2 = self.getOperand(operands[1])
         opcode = inst.opcode
 
-        if opcode == 'srem':
+        if opcode == "srem":
             I = Rem(op1, op2)
-        elif opcode == 'urem':
+        elif opcode == "urem":
             I = Rem(op1, op2, unsigned=True)
         else:
             raise NotImplementedError(
-                "Remainder operation unsupported: {0}".format(inst))
+                "Remainder operation unsupported: {0}".format(inst)
+            )
 
         self._addMapping(inst, I)
         return [I]
@@ -246,12 +241,11 @@ class Parser:
         assert len(operands) == 2, "Invalid number of operands for cmp"
         P, is_unsigned = parseCmp(inst)
         if not P:
-            raise NotImplementedError(
-                "Unsupported cmp instruction: {0}".format(inst))
+            raise NotImplementedError("Unsupported cmp instruction: {0}".format(inst))
 
-        C = Cmp(P, self.getOperand(operands[0]),
-                self.getOperand(operands[1]),
-                is_unsigned)
+        C = Cmp(
+            P, self.getOperand(operands[0]), self.getOperand(operands[1]), is_unsigned
+        )
         self._addMapping(inst, C)
         return [C]
 
@@ -287,9 +281,9 @@ class Parser:
         fun = operands[-1].name
         if not fun:
             sop = str(operands[-1])
-            if 'bitcast' in sop:
+            if "bitcast" in sop:
                 for x in sop.split():
-                    if x[0] == '@':
+                    if x[0] == "@":
                         fun = x[1:]
                         if self.getFun(fun):
                             break
@@ -298,7 +292,7 @@ class Parser:
         if not fun:
             raise NotImplementedError("Unsupported call: {0}".format(inst))
 
-        if fun.startswith('llvm.dbg'):
+        if fun.startswith("llvm.dbg"):
             return []
 
         if fun in special_functions:
@@ -321,10 +315,9 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
-            self.getOperand(
-                operands[0]), Constant(
-                getTypeSizeInBits(
-                    inst.type), Type(32)))
+            self.getOperand(operands[0]),
+            Constant(getTypeSizeInBits(inst.type), Type(32)),
+        )
         self._addMapping(inst, zext)
         return [zext]
 
@@ -333,10 +326,9 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no ZExt for now
         sext = SExt(
-            self.getOperand(
-                operands[0]), Constant(
-                getTypeSizeInBits(
-                    inst.type), Type(32)))
+            self.getOperand(operands[0]),
+            Constant(getTypeSizeInBits(inst.type), Type(32)),
+        )
         self._addMapping(inst, sext)
         return [sext]
 
@@ -346,10 +338,10 @@ class Parser:
         # just behave that there's no ZExt for now
         bits = getTypeSizeInBits(inst.type)
         ext = ExtractBits(
-            self.getOperand(
-                operands[0]), Constant(
-                0, Type(32)), Constant(
-                bits - 1, Type(32)))
+            self.getOperand(operands[0]),
+            Constant(0, Type(32)),
+            Constant(bits - 1, Type(32)),
+        )
         self._addMapping(inst, ext)
         return [ext]
 
@@ -370,8 +362,7 @@ class Parser:
 
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
-        assert isPointerTy(
-            operands[0].type), "First type of GEP is not a pointer"
+        assert isPointerTy(operands[0].type), "First type of GEP is not a pointer"
         ty = operands[0].type.element_type
         elemSize = getTypeSize(ty)
         shift = 0
@@ -381,7 +372,9 @@ class Parser:
             if not c:
                 var = self.getOperand(idx)
                 assert var, "Unsupported GEP instruction"
-                assert idx is operands[-1], "Variable in the middle of GEP is unsupported now"
+                assert (
+                    idx is operands[-1]
+                ), "Variable in the middle of GEP is unsupported now"
                 M = Mul(var, Constant(elemSize, SizeType))
                 varIdx.append(M)
                 if shift != 0:
@@ -394,7 +387,7 @@ class Parser:
             elif isArrayTy(ty):
                 sty = str(ty)
                 # get the type of the element of array
-                ty = sty[sty.find('x ') + 2:-1]
+                ty = sty[sty.find("x ") + 2 : -1]
             elemSize = getTypeSize(ty)
 
         mem = self.getOperand(operands[0])
@@ -423,45 +416,44 @@ class Parser:
         return [L]
 
     def _parse_instruction(self, inst):
-        if inst.opcode == 'alloca':
+        if inst.opcode == "alloca":
             return self._createAlloca(inst)
-        elif inst.opcode == 'store':
+        elif inst.opcode == "store":
             return self._createStore(inst)
-        elif inst.opcode == 'load':
+        elif inst.opcode == "load":
             return self._createLoad(inst)
-        elif inst.opcode == 'ret':
+        elif inst.opcode == "ret":
             return self._createRet(inst)
-        elif inst.opcode == 'icmp':
+        elif inst.opcode == "icmp":
             return self._createCmp(inst)
-        elif inst.opcode == 'br':
+        elif inst.opcode == "br":
             return self._createBranch(inst)
-        elif inst.opcode == 'call':
+        elif inst.opcode == "call":
             return self._createCall(inst)
-        elif inst.opcode == 'unreachable':
+        elif inst.opcode == "unreachable":
             return self._createUnreachable(inst)
-        elif inst.opcode == 'zext':
+        elif inst.opcode == "zext":
             return self._createZExt(inst)
-        elif inst.opcode == 'sext':
+        elif inst.opcode == "sext":
             return self._createSExt(inst)
-        elif inst.opcode == 'trunc':
+        elif inst.opcode == "trunc":
             return self._createTrunc(inst)
-        elif inst.opcode == 'getelementptr':
+        elif inst.opcode == "getelementptr":
             return self._createGep(inst)
-        elif inst.opcode == 'bitcast':
+        elif inst.opcode == "bitcast":
             return self._createCast(inst)
-        elif inst.opcode in ['add', 'sub', 'sdiv', 'mul', 'udiv']:
+        elif inst.opcode in ["add", "sub", "sdiv", "mul", "udiv"]:
             return self._createArith(inst, inst.opcode)
-        elif inst.opcode in ['shl', 'lshr', 'ashr']:
+        elif inst.opcode in ["shl", "lshr", "ashr"]:
             return self._createShift(inst)
-        elif inst.opcode in ['and', 'or', 'xor']:
+        elif inst.opcode in ["and", "or", "xor"]:
             return self._createLogicOp(inst)
-        elif inst.opcode in ['srem', 'urem']:
+        elif inst.opcode in ["srem", "urem"]:
             return self._createRem(inst)
-        elif inst.opcode == 'phi':
+        elif inst.opcode == "phi":
             return self._handlePhi(inst)
         else:
-            raise NotImplementedError(
-                "Unsupported instruction: {0}".format(inst))
+            raise NotImplementedError("Unsupported instruction: {0}".format(inst))
 
     def _parse_block(self, F, block):
         """
@@ -476,14 +468,15 @@ class Parser:
             # may be several slowbeast instructions
             try:
                 instrs = self._parse_instruction(inst)
-                assert inst.opcode in [
-                    'bitcast', 'call', 'getelementptr'] or instrs, "No instruction was created"
+                assert (
+                    inst.opcode in ["bitcast", "call", "getelementptr"] or instrs
+                ), "No instruction was created"
                 for I in instrs:
                     B.append(I)
             except Exception as e:
                 print_stderr(
-                    "Failed parsing llvm while parsing: {0}".format(inst),
-                    color="RED")
+                    "Failed parsing llvm while parsing: {0}".format(inst), color="RED"
+                )
                 raise e
 
         assert B.getFunction() is F
@@ -521,25 +514,22 @@ class Parser:
             assert g.type.is_pointer
             # FIXME: check and set whether it is a constant
             G = GlobalVariable(
-                Constant(
-                    getTypeSize(
-                        g.type.element_type),
-                    SizeType),
-                g.name)
+                Constant(getTypeSize(g.type.element_type), SizeType), g.name
+            )
             c = getConstantInt(g.initializer)
             if c:
                 # FIXME: add composed instruction
                 G.setInit([Store(c, G)])
-           # elif isArrayTy(g.initializer.type):
-           #    parts=str(g.initializer.type).split()
-           #    assert parts[1] == 'x'
-           #    if parts[2].startswith('i'):
-           #        print(parts)
-           #    # FIXME: add String type to represent strings
+            # elif isArrayTy(g.initializer.type):
+            #    parts=str(g.initializer.type).split()
+            #    assert parts[1] == 'x'
+            #    if parts[2].startswith('i'):
+            #        print(parts)
+            #    # FIXME: add String type to represent strings
             else:
                 print_stderr(
-                    'Unsupported initializer: {0}'.format(
-                        g.initializer), color='YELLOW')
+                    "Unsupported initializer: {0}".format(g.initializer), color="YELLOW"
+                )
             self.program.addGlobal(G)
             self._addMapping(g, G)
 
@@ -553,13 +543,9 @@ class Parser:
             succ, retty = parseFunctionRetTy(f.type.element_type)
             if not succ:
                 raise NotImplementedError(
-                    "Cannot parse function return type: {0}".format(
-                        f.type.element_type))
-            self.program.addFun(
-                Function(
-                    f.name, len(
-                        list(
-                            f.arguments)), retty))
+                    "Cannot parse function return type: {0}".format(f.type.element_type)
+                )
+            self.program.addFun(Function(f.name, len(list(f.arguments)), retty))
 
         for f in m.functions:
             if f.name in special_functions:
@@ -583,6 +569,7 @@ class Parser:
 
 if __name__ == "__main__":
     from sys import argv
+
     parser = Parser()
     P = parser.parse(argv[1])
     P.dump()

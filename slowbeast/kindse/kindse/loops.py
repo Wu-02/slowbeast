@@ -35,17 +35,17 @@ def get_rel(s, x, curval):
     if lt is False:  # x >= cur
         if gt is False:  # x <= cur
             assert s.is_sat(EM.Ne(x, curval)) is False
-            return '='
+            return "="
         elif gt is True:  # x >= cur
             if s.is_sat(Eq(x, curval)) is False:
-                return '>'
+                return ">"
             else:
-                return '>='
+                return ">="
     elif lt is True:
         if gt is False:  # x <= cur
             if s.is_sat(Eq(x, curval)) is False:
-                return '<'
-            return '<='
+                return "<"
+            return "<="
 
     return None
 
@@ -106,17 +106,15 @@ class SimpleLoop:
                             newworkbag.append(p + [s])
             workbag = newworkbag
 
-        return SimpleLoop(
-            loc, paths, [AnnotatedCFGPath([loc, e]) for e in exits])
+        return SimpleLoop(loc, paths, [AnnotatedCFGPath([loc, e]) for e in exits])
 
     def getVariables(self):
         V = set()
         for p in self.paths:
             for loc in p:
                 for L in (
-                    l for l in loc.getBBlock().getInstructions() if isinstance(
-                        l,
-                        Load)):
+                    l for l in loc.getBBlock().getInstructions() if isinstance(l, Load)
+                ):
                     op = L.getPointerOperand()
                     if isinstance(op, Alloc):
                         V.add(op)
@@ -131,43 +129,46 @@ class SimpleLoop:
         although the memory from which it load may change.
         """
 
-        dbg_sec(f"Checking monotonicity of variables in simple loop"
-                f" over {self.loc.getBBlock().getID()}")
+        dbg_sec(
+            f"Checking monotonicity of variables in simple loop"
+            f" over {self.loc.getBBlock().getID()}"
+        )
         if self.vars is None:
             self.getVariables()
 
         results = {}
 
         def addRel(x, r):
-            assert r in [None, '<', '<=', '>', '>=', '=']
+            assert r in [None, "<", "<=", ">", ">=", "="]
             # group by the allocations
             x = x.load.getPointerOperand()
-            n = results.setdefault(x, '?')
-            #print(x, n, r)
+            n = results.setdefault(x, "?")
+            # print(x, n, r)
             if n is None:
                 return
 
             if r is None:
                 results[x] = None
-            if n == '?':  # first assignment
+            if n == "?":  # first assignment
                 results[x] = r
             elif n != r:
-                if n == '<' and r == '<=':
-                    results[x] = '<='
-                elif n == '<=' and r in ['<', '=']:
+                if n == "<" and r == "<=":
+                    results[x] = "<="
+                elif n == "<=" and r in ["<", "="]:
                     pass
-                elif n == '>' and r == '>=':
-                    results[x] = '>='
-                elif n == '>=' and r in ['>', '=']:
+                elif n == ">" and r == ">=":
+                    results[x] = ">="
+                elif n == ">=" and r in [">", "="]:
                     pass
-                elif n == '=' and r in ['>=', '<=']:
+                elif n == "=" and r in [">=", "<="]:
                     results[x] = r
                 else:
-                    assert (n == '=' and r in ['>', '<']) or\
-                           (r == '=' and n in ['>', '<'])
+                    assert (n == "=" and r in [">", "<"]) or (
+                        r == "=" and n in [">", "<"]
+                    )
                     results[x] = None
             else:
-                assert n == r and n is not None and n != '?'
+                assert n == r and n is not None and n != "?"
 
         V = self.vars.keys()
         loads = [Load(v, v.getSize().getValue()) for v in V]
@@ -186,13 +187,14 @@ class SimpleLoop:
                 # NOTE: we do not need to handle the cases when x is not
                 # present in the state, because in that case
                 # it is invariant for the path
-                for x in (l for l in s.getNondets()
-                          if l.isNondetLoad() and l.load in loads):
+                for x in (
+                    l for l in s.getNondets() if l.isNondetLoad() and l.load in loads
+                ):
                     curval = s.get(x.load)
                     assert curval, "BUG: must have the load as it is nondet"
                     addRel(x, get_rel(s, x, curval))
 
         V = self.vars
         for (x, r) in results.items():
-            #print(x, r)
+            # print(x, r)
             V[x] = r

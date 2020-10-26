@@ -1,12 +1,13 @@
-from .. core.executionstate import ExecutionState
-from .. util.debugging import warn, FIXME
-from . constraints import ConstraintsSet
+from ..core.executionstate import ExecutionState
+from ..util.debugging import warn, FIXME
+from .constraints import ConstraintsSet
 from copy import copy
 from sys import stdout
 
 
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
+
     statesCounter = 0
 
     def __init__(self, pc, m, solver, constraints=ConstraintsSet()):
@@ -30,8 +31,9 @@ class SEState(ExecutionState):
         return self._id
 
     def __eq__(self, rhs):
-        return super(SEState, self).__eq__(rhs) and\
-            self._constraints == rhs._constraints
+        return (
+            super(SEState, self).__eq__(rhs) and self._constraints == rhs._constraints
+        )
 
     def getSolver(self):
         return self._solver
@@ -66,8 +68,10 @@ class SEState(ExecutionState):
         return self._solver.concretize(self.getConstraints(), *e)
 
     def model(self):
-        return {x: c for (x, c) in
-                zip(self.getNondets(), self.concretize(*self.getNondets()))}
+        return {
+            x: c
+            for (x, c) in zip(self.getNondets(), self.concretize(*self.getNondets()))
+        }
 
     def concretize_with_assumptions(self, assumptions, *e):
         return self._solver.concretize(self.getConstraints() + assumptions, *e)
@@ -124,8 +128,12 @@ class SEState(ExecutionState):
             self._nondets = copy(self._nondets)
             self._nondets_ro = False
         # we can have only one nonded for a given allocation
-        assert not n.isNondetLoad() or all(map(lambda x: x.alloc != n.alloc,
-                                               (l for l in self._nondets if l.isNondetLoad())))
+        assert not n.isNondetLoad() or all(
+            map(
+                lambda x: x.alloc != n.alloc,
+                (l for l in self._nondets if l.isNondetLoad()),
+            )
+        )
         self._nondets.append(n)
 
     def getNondets(self):
@@ -146,7 +154,7 @@ class SEState(ExecutionState):
         write(" -- nondets --\n")
         for n in self._nondets:
             write(str(n))
-            write('\n')
+            write("\n")
         write(" -- constraints --\n")
         write(str(self.getConstraintsObj()))
-        write('\n')
+        write("\n")

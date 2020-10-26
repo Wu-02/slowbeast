@@ -10,8 +10,9 @@ def _createCannonical(expr, subs, EM):
             name = x.asValue()
         return EM.Var(name, val.getBitWidth())
 
-    return EM.substitute(expr, *((val, get_cannonic_var(val, x))
-                                 for (val, x) in subs.items()))
+    return EM.substitute(
+        expr, *((val, get_cannonic_var(val, x)) for (val, x) in subs.items())
+    )
 
 
 class StateDescription:
@@ -25,7 +26,7 @@ class StateDescription:
     the substitutions.
     """
 
-    __slots__ = ['_expr', '_subs']
+    __slots__ = ["_expr", "_subs"]
 
     def __init__(self, expr, subs):
         assert expr is not None and isinstance(expr, Expr)
@@ -64,16 +65,24 @@ class StateDescription:
         subs = ((v, get(x)) for (v, x) in self._subs.items())
 
         # we must do all the substitution at once!
-        return EM.substitute(expr, *((val, curval)
-                                     for (val, curval) in subs if curval))
+        return EM.substitute(expr, *((val, curval) for (val, curval) in subs if curval))
 
     def __repr__(self):
-        return "{0}[{1}]".format(self._expr, ", ".join(
-            f"{x.asValue()}->{val.unwrap()}" for (x, val) in self.subs.items()))
+        return "{0}[{1}]".format(
+            self._expr,
+            ", ".join(
+                f"{x.asValue()}->{val.unwrap()}" for (x, val) in self.subs.items()
+            ),
+        )
 
     def dump(self):
-        print(
-            "StateDescription:")
+        print("StateDescription:")
         print(f"> expr: {self._expr}")
-        print("> substitutions: {0}".format(", ".join(
-            f"{x.asValue()} -> {val.unwrap()}" for (val, x) in self._subs.items())))
+        print(
+            "> substitutions: {0}".format(
+                ", ".join(
+                    f"{x.asValue()} -> {val.unwrap()}"
+                    for (val, x) in self._subs.items()
+                )
+            )
+        )

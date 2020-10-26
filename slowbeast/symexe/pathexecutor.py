@@ -1,8 +1,12 @@
 from slowbeast.util.debugging import dbg, dbgv, dbg_sec
-from . executor import Executor as SExecutor
-from . constraints import ConstraintsSet
-from . annotations import execute_annotations
-from slowbeast.core.executor import PathExecutionResult, split_ready_states, split_nonready_states
+from .executor import Executor as SExecutor
+from .constraints import ConstraintsSet
+from .annotations import execute_annotations
+from slowbeast.core.executor import (
+    PathExecutionResult,
+    split_ready_states,
+    split_nonready_states,
+)
 
 from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Branch, Instruction, Load
@@ -37,8 +41,7 @@ class Executor(SExecutor):
         dbg(f"vv ----- Loc {loc.getBBlock().getID()} ----- vv")
 
         # execute annotations before bblock
-        ready, nonready = self.executeAnnotations(
-            states, loc.annotationsBefore)
+        ready, nonready = self.executeAnnotations(states, loc.annotationsBefore)
         locannot = path.getLocAnnotationsBefore(loc) if path else None
         if locannot:
             ready, tu = self.executeAnnotations(ready, locannot)
@@ -52,8 +55,7 @@ class Executor(SExecutor):
         nonready += tmpnonready
 
         # execute annotations after
-        ready, tmpnonready = self.executeAnnotations(
-            ready, loc.annotationsAfter)
+        ready, tmpnonready = self.executeAnnotations(ready, loc.annotationsAfter)
         nonready += tmpnonready
 
         locannot = path.getLocAnnotationsAfter(loc) if path else None
@@ -114,7 +116,8 @@ class Executor(SExecutor):
             ready, nonready = self.executeAnnotatedLoc(states, loc, path)
             assert all(map(lambda x: x.isReady(), ready))
             assert all(map(lambda x: isinstance(x.pc, Branch), ready)), [
-                s.pc for s in ready]
+                s.pc for s in ready
+            ]
 
             # now execute the branch following the edge on the path
             if idx < locsnum - 1:
@@ -154,6 +157,7 @@ class Executor(SExecutor):
         assert result.check(), "The states were partitioned incorrectly"
         return result
 
+
 # def substitute_constraints(constr, EM, prex, x):
 #     newC = []
 #     # FIXME: we need to do that at once!
@@ -168,125 +172,125 @@ class Executor(SExecutor):
 #             newC.append(expr)
 #     return newC
 
-   # def joinStates(self, fromstates, tostates):
-   #    dbg_sec("Joining states")
-   #    # join the states
-   #    finalstates = []
-   #    for r in fromstates:
-   #        EM = r.getExprManager()
-   #        for s in tostates:
-   #            tmpr = r.copy()
-   #            newconstr = s.getConstraints()
+# def joinStates(self, fromstates, tostates):
+#    dbg_sec("Joining states")
+#    # join the states
+#    finalstates = []
+#    for r in fromstates:
+#        EM = r.getExprManager()
+#        for s in tostates:
+#            tmpr = r.copy()
+#            newconstr = s.getConstraints()
 
-   #            FIXME("Handle other nondets")  # FIXME
-   #            # map constraints from s to r
-   #            for x in (l for l in s.getNondets() if l.isNondetLoad()):
-   #                prex = tmpr.get(x.load)
-   #                if not prex:
-   #                    res = self.execute(tmpr, x.load)
-   #                    assert len(res) == 1 and res[0] is tmpr
-   #                    prex = tmpr.get(x.load)
-   #                assert prex, "Do not have the value for x in pre-state"
-   #                if EM.equals(prex, x):
-   #                    continue  # no substitution needed
-   #                newconstr = substitute_constraints(newconstr, EM, prex, x)
-   #                if newconstr is None:
-   #                    tmpr = None
-   #                    break
+#            FIXME("Handle other nondets")  # FIXME
+#            # map constraints from s to r
+#            for x in (l for l in s.getNondets() if l.isNondetLoad()):
+#                prex = tmpr.get(x.load)
+#                if not prex:
+#                    res = self.execute(tmpr, x.load)
+#                    assert len(res) == 1 and res[0] is tmpr
+#                    prex = tmpr.get(x.load)
+#                assert prex, "Do not have the value for x in pre-state"
+#                if EM.equals(prex, x):
+#                    continue  # no substitution needed
+#                newconstr = substitute_constraints(newconstr, EM, prex, x)
+#                if newconstr is None:
+#                    tmpr = None
+#                    break
 
-   #            if tmpr:
-   #                tmpr.addConstraint(*newconstr)
-   #                feas = tmpr.isfeasible()
-   #                assert feas is not None, "Solver failure"
-   #                if feas is True:
-   #                    finalstates.append(tmpr)
+#            if tmpr:
+#                tmpr.addConstraint(*newconstr)
+#                feas = tmpr.isfeasible()
+#                assert feas is not None, "Solver failure"
+#                if feas is True:
+#                    finalstates.append(tmpr)
 
-   #    dbg_sec()
-   #    return finalstates
+#    dbg_sec()
+#    return finalstates
 
-   # def preimage(self, fromstate, tostates, path):
-   #    """
-   #    Get the states that make the execution
-   #    of path from 'fromstate' end up in 'tostates'
-   #    (ignoring pc of tostates).
-   #    NOTE: modifies 'fromstates'.
-   #    NOTE: This method does not set registers and memory
-   #    to mimic the execution of path -> tostates,
-   #    so it is sutiable only for computing the pre-condition
-   #    (the PC) of such path.
-   #    """
+# def preimage(self, fromstate, tostates, path):
+#    """
+#    Get the states that make the execution
+#    of path from 'fromstate' end up in 'tostates'
+#    (ignoring pc of tostates).
+#    NOTE: modifies 'fromstates'.
+#    NOTE: This method does not set registers and memory
+#    to mimic the execution of path -> tostates,
+#    so it is sutiable only for computing the pre-condition
+#    (the PC) of such path.
+#    """
 
-   #    # execute the given path/block from 'fromstates'
-   #    dbg_sec("Computing preimage")
-   #    r = self.executeAnnotatedPath(fromstate, path)
-   #    finalstates = self.joinStates(r.ready or [], tostates)
+#    # execute the given path/block from 'fromstates'
+#    dbg_sec("Computing preimage")
+#    r = self.executeAnnotatedPath(fromstate, path)
+#    finalstates = self.joinStates(r.ready or [], tostates)
 
-   #    dbg_sec()
-   #    return finalstates
+#    dbg_sec()
+#    return finalstates
 
-    # def preimage(self, fromstates, tostates, blk):
-    #     """
-    #     Get the states that make the execution
-    #     of blk from 'fromstates' end up in 'tostates'.
-    #     NOTE: modifies 'fromstates'.
-    #     NOTE: This method does not set registers and memory
-    #     to mimic the execution of blk -> tostates,
-    #     so it is sutiable only for computing the pre-condition
-    #     (the PC) of such path.
-    #     """
+# def preimage(self, fromstates, tostates, blk):
+#     """
+#     Get the states that make the execution
+#     of blk from 'fromstates' end up in 'tostates'.
+#     NOTE: modifies 'fromstates'.
+#     NOTE: This method does not set registers and memory
+#     to mimic the execution of blk -> tostates,
+#     so it is sutiable only for computing the pre-condition
+#     (the PC) of such path.
+#     """
 
-    #     # execute the given path/block from 'fromstates'
-    #     dbg_sec("Computing preimage")
-    #     ready = []
-    #     for s in fromstates:
-    #         s.pc = blk.first()
-    #         rdy = self.executeTillBranch(s)
-    #         for r in rdy:
-    #             if r.isReady():
-    #                 ready.append(r)
+#     # execute the given path/block from 'fromstates'
+#     dbg_sec("Computing preimage")
+#     ready = []
+#     for s in fromstates:
+#         s.pc = blk.first()
+#         rdy = self.executeTillBranch(s)
+#         for r in rdy:
+#             if r.isReady():
+#                 ready.append(r)
 
-    #     finalstates = self.joinStates(ready, tostates)
+#     finalstates = self.joinStates(ready, tostates)
 
-    #     dbg_sec()
-    #     return finalstates
+#     dbg_sec()
+#     return finalstates
 
-   # def executeAnnotatedStepWithPrefix(self, state, prefix):
-   #    """
-   #    Execute the given path through CFG with annotations from the given
-   #    state and then do one more step in CFG.
+# def executeAnnotatedStepWithPrefix(self, state, prefix):
+#    """
+#    Execute the given path through CFG with annotations from the given
+#    state and then do one more step in CFG.
 
-   #    Returns three lists of states.
-   #    The first list contains safe states reachable after executing the 'path'
-   #    and doing one more step in CFG.
-   #    The second list contains unsafe states reachable after executing the 'path'
-   #    and doing one more step in CFG.
-   #    The last list contains states that terminate (e.g., are killed or are error
-   #    states) during the execution of the path, but that does not reach the last
-   #    step.
-   #    """
+#    Returns three lists of states.
+#    The first list contains safe states reachable after executing the 'path'
+#    and doing one more step in CFG.
+#    The second list contains unsafe states reachable after executing the 'path'
+#    and doing one more step in CFG.
+#    The last list contains states that terminate (e.g., are killed or are error
+#    states) during the execution of the path, but that does not reach the last
+#    step.
+#    """
 
-   #    r = self.executeAnnotatedPath(state, prefix)
-   #    r.errorsToEarly()
-   #    r.otherToEarly()
+#    r = self.executeAnnotatedPath(state, prefix)
+#    r.errorsToEarly()
+#    r.otherToEarly()
 
-   #    dbg("Prefix executed, executing one more step")
+#    dbg("Prefix executed, executing one more step")
 
-   #    # execute the last step -- all unsafe states are now really unsafe
-   #    cfg = prefix[0].getCFG()
-   #    tmpready = []
-   #    nonready = []
-   #    if r.ready:
-   #        for s in r.ready:
-   #            # get the CFG node that is going to be executed
-   #            # (executeAnnotatedPath transferd the control to the right bblocks)
-   #            loc = cfg.getNode(s.pc.getBBlock())
-   #            ts, tu = self.executeAnnotatedLoc([s], loc, prefix)
-   #            tmpready += ts
-   #            nonready += tu
+#    # execute the last step -- all unsafe states are now really unsafe
+#    cfg = prefix[0].getCFG()
+#    tmpready = []
+#    nonready = []
+#    if r.ready:
+#        for s in r.ready:
+#            # get the CFG node that is going to be executed
+#            # (executeAnnotatedPath transferd the control to the right bblocks)
+#            loc = cfg.getNode(s.pc.getBBlock())
+#            ts, tu = self.executeAnnotatedLoc([s], loc, prefix)
+#            tmpready += ts
+#            nonready += tu
 
-   #    assert r.errors is None
-   #    assert r.other is None
-   #    r.errors, r.other = split_nonready_states(nonready)
+#    assert r.errors is None
+#    assert r.other is None
+#    r.errors, r.other = split_nonready_states(nonready)
 
-   #    dbg("Step executed, done.")
-   #    return r
+#    dbg("Step executed, done.")
+#    return r

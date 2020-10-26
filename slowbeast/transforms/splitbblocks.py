@@ -23,12 +23,11 @@ def splitAfter(block, after):
     # to the first new block (so that all the references
     # to the original block stay valid)
     block._instructions = []
-    block.append(Branch(ConstantTrue,
-                        blocks[1], blocks[1]))
+    block.append(Branch(ConstantTrue, blocks[1], blocks[1]))
     for idx in range(1, len(blocks) - 1):
-        blocks[idx].append(Branch(ConstantTrue,
-                                  blocks[idx + 1], blocks[idx + 1]))
+        blocks[idx].append(Branch(ConstantTrue, blocks[idx + 1], blocks[idx + 1]))
     return blocks
+
 
 # FIXME: not efficient, but let's fix that once
 # it is a problem
@@ -59,11 +58,9 @@ def splitAround(block, P):
     # to the first new block (so that all the references
     # to the original block stay valid)
     block._instructions = []
-    block.append(Branch(ConstantTrue,
-                        blocks[1], blocks[1]))
+    block.append(Branch(ConstantTrue, blocks[1], blocks[1]))
     for idx in range(1, len(blocks) - 1):
-        blocks[idx].append(Branch(ConstantTrue,
-                                  blocks[idx + 1], blocks[idx + 1]))
+        blocks[idx].append(Branch(ConstantTrue, blocks[idx + 1], blocks[idx + 1]))
     return blocks
 
 
@@ -71,13 +68,16 @@ def splitBlockAroundCalls(block):
     if block.size() == 0:
         return [block]
 
-    def iscall(c): return isinstance(c, Call)
+    def iscall(c):
+        return isinstance(c, Call)
+
     return splitAround(block, iscall)
 
 
 def splitFunAroundCalls(F):
-    F._bblocks = [b for block in F.getBBlocks().copy()
-                  for b in splitBlockAroundCalls(block)]
+    F._bblocks = [
+        b for block in F.getBBlocks().copy() for b in splitBlockAroundCalls(block)
+    ]
 
 
 def splitProgAroundCalls(P):

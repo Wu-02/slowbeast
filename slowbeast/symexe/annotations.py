@@ -1,7 +1,7 @@
 from slowbeast.util.debugging import dbg, dbgv, dbg_sec, FIXME
 from slowbeast.core.executor import split_ready_states
 from slowbeast.domains.symbolic import NondetLoad
-from . statedescription import StateDescription
+from .statedescription import StateDescription
 
 from copy import copy
 
@@ -11,7 +11,7 @@ class Annotation:
     ASSERT = 2
     INSTRS = 3
 
-    __slots__ = ['type']
+    __slots__ = ["type"]
 
     def __init__(self, ty):
         assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
@@ -32,7 +32,8 @@ class InstrsAnnotation(Annotation):
     Annotation that is barely a sequence of instructions
     that should be executed
     """
-    __slots__ = ['instrs']
+
+    __slots__ = ["instrs"]
 
     def __init__(self, instrs):
         super(InstrsAnnotation, self).__init__(Annotation.INSTRS)
@@ -45,8 +46,7 @@ class InstrsAnnotation(Annotation):
         return self.instrs.__iter__()
 
     def __repr__(self):
-        return "[{0}]".format(
-            ", ".join(map(lambda i: i.asValue(), self.instrs)))
+        return "[{0}]".format(", ".join(map(lambda i: i.asValue(), self.instrs)))
 
     def dump(self):
         print("InstrsAnnotation[")
@@ -57,11 +57,10 @@ class InstrsAnnotation(Annotation):
 
 class ExprAnnotation(Annotation):
 
-    __slots__ = ['_sd', 'cannonical']
+    __slots__ = ["_sd", "cannonical"]
 
     def __init__(self, ty, expr, subs, EM):
-        super(
-            ExprAnnotation, self).__init__(ty)
+        super(ExprAnnotation, self).__init__(ty)
 
         # state description
         self._sd = StateDescription(expr, subs)
@@ -81,10 +80,7 @@ class ExprAnnotation(Annotation):
 
     def Not(self, EM):
         n = copy(self)  # to copy the type and methods
-        n._sd = StateDescription(
-            EM.Not(
-                self.getExpr()),
-            self.getSubstitutions())
+        n._sd = StateDescription(EM.Not(self.getExpr()), self.getSubstitutions())
         n.cannonical = n._sd.cannonical(EM)
         return n
 
@@ -108,22 +104,24 @@ class ExprAnnotation(Annotation):
     def dump(self):
         print(
             "ExprAnnotation[{0}]:".format(
-                'assert' if self.type == Annotation.ASSERT else 'assume'))
+                "assert" if self.type == Annotation.ASSERT else "assume"
+            )
+        )
         print(f"> expr: {self.getExpr()}")
         print(f"> cannonical: {self.getCannonical()}")
-        print("> substitutions: {0}".format(", ".join(
-            f"{x.asValue()}/{val.unwrap()}" for (val, x) in self.getSubstitutions().items())))
+        print(
+            "> substitutions: {0}".format(
+                ", ".join(
+                    f"{x.asValue()}/{val.unwrap()}"
+                    for (val, x) in self.getSubstitutions().items()
+                )
+            )
+        )
 
 
 class AssertAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
-        super(
-            AssertAnnotation,
-            self).__init__(
-            Annotation.ASSERT,
-            expr,
-            subs,
-            EM)
+        super(AssertAnnotation, self).__init__(Annotation.ASSERT, expr, subs, EM)
 
     def toAssume(self, EM):
         return AssumeAnnotation(self.getExpr(), self.getSubstitutions(), EM)
@@ -134,13 +132,7 @@ class AssertAnnotation(ExprAnnotation):
 
 class AssumeAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
-        super(
-            AssumeAnnotation,
-            self).__init__(
-            Annotation.ASSUME,
-            expr,
-            subs,
-            EM)
+        super(AssumeAnnotation, self).__init__(Annotation.ASSUME, expr, subs, EM)
 
     def __repr__(self):
         return f"assume {ExprAnnotation.__repr__(self)}"
@@ -263,8 +255,7 @@ def unify_annotations(EM, annot1, annot2):
         instr2 = subs2.get(val)
         if instr2 and instr2 != instr:
             # collision
-            freshval = EM.freshValue(
-                val.name(), bw=val.getType().getBitWidth())
+            freshval = EM.freshValue(val.name(), bw=val.getType().getBitWidth())
             expr2 = EM.substitute(expr2, (val, freshval))
             subs[freshval] = instr2
 
@@ -314,16 +305,21 @@ def and_annotations(EM, toassert, *annots):
 
 def state_to_annotation(state):
     EM = state.getExprManager()
-    return AssumeAnnotation(state.getConstraintsObj().asFormula(EM),
-                            {l: l.load for l in state.getNondetLoads()},
-                            EM)
+    return AssumeAnnotation(
+        state.getConstraintsObj().asFormula(EM),
+        {l: l.load for l in state.getNondetLoads()},
+        EM,
+    )
 
 
 def states_to_annotation(states):
     a = None
     for s in states:
         EM = s.getExprManager()
-        a = or_annotations(EM, False,
-                           a or AssumeAnnotation(EM.getFalse(), {}, EM),
-                           state_to_annotation(s))
+        a = or_annotations(
+            EM,
+            False,
+            a or AssumeAnnotation(EM.getFalse(), {}, EM),
+            state_to_annotation(s),
+        )
     return a

@@ -1,4 +1,4 @@
-from . cfg import CFG
+from .cfg import CFG
 
 
 class DFSEdgeType:
@@ -93,10 +93,11 @@ class DFSVisitor:
         out = None
         if outfl is None:
             from sys import stdout
+
             out = stdout
         else:
             if isinstance(outfl, str):
-                out = open(out, 'w')
+                out = open(out, "w")
             else:
                 assert not outfl.closed, "Invalid stream"
                 out = outfl
@@ -115,18 +116,21 @@ class DFSVisitor:
             return "black"
 
         def dumpdot(start, end, edgetype):
-            print('  {0} -> {1} [label="{2}", color="{3}"]'.format(
-                  start.getBBlock().getID(),
-                  end.getBBlock().getID(),
-                  DFSEdgeType.tostr(edgetype),
-                  edgecol(edgetype)),
-                  file=out)
+            print(
+                '  {0} -> {1} [label="{2}", color="{3}"]'.format(
+                    start.getBBlock().getID(),
+                    end.getBBlock().getID(),
+                    DFSEdgeType.tostr(edgetype),
+                    edgecol(edgetype),
+                ),
+                file=out,
+            )
 
         print("digraph {", file=out)
 
         # dump nodes
         for n in cfg.getNodes():
-            print('  {0}'.format(n.getBBlock().getID()), file=out)
+            print("  {0}".format(n.getBBlock().getID()), file=out)
 
         # dump edges
         print("", file=out)
@@ -138,8 +142,10 @@ class DFSVisitor:
                 '  {0} [label="{0}\\nin,out = {1}, {2}"]'.format(
                     n.getBBlock().getID(),
                     self._getdata(n).innum,
-                    self._getdata(n).outnum),
-                file=out)
+                    self._getdata(n).outnum,
+                ),
+                file=out,
+            )
 
         print("}", file=out)
         if isinstance(outfl, str):

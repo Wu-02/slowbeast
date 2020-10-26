@@ -1,9 +1,9 @@
-from .. ir.value import Constant
-from .. core.executionstatus import ExecutionStatus
+from ..ir.value import Constant
+from ..core.executionstatus import ExecutionStatus
 from sys import stdout
 
 if __debug__:
-    from .. util.debugging import dbgv
+    from ..util.debugging import dbgv
 
 
 class ExecutionState:
@@ -18,11 +18,12 @@ class ExecutionState:
     def __eq__(self, rhs):
         if self is rhs:
             return True
-        assert self.pc is not None and\
-            rhs.pc is not None
-        return self.pc == rhs.pc and\
-            self.status == rhs.status and\
-            self.memory == rhs.memory
+        assert self.pc is not None and rhs.pc is not None
+        return (
+            self.pc == rhs.pc
+            and self.status == rhs.status
+            and self.memory == rhs.memory
+        )
 
     def copyTo(self, rhs):
         assert isinstance(rhs, ExecutionState)
@@ -81,15 +82,13 @@ class ExecutionState:
             return v
         value = self.get(v)
         if value is None:
-            raise RuntimeError(
-                "Use of uninitialized/unknown variable {0}".format(v))
+            raise RuntimeError("Use of uninitialized/unknown variable {0}".format(v))
         return value
 
     def set(self, what, v):
         """ Associate a value to a register (in the current stack frame) """
         if __debug__:
-            dbgv("[{0}] -> {1} ({2})".format(what,
-                                             v, v.getType()), color="GREEN")
+            dbgv("[{0}] -> {1} ({2})".format(what, v, v.getType()), color="GREEN")
         # XXX: rename to bind?
         self.memory.set(what, v)
 
@@ -117,6 +116,6 @@ class ExecutionState:
         stream.write("---- State ----\n")
         self.status.dump(stream)
         stream.write(" -- program counter --\n")
-        stream.write('{0}\n'.format(self.pc))
+        stream.write("{0}\n".format(self.pc))
         stream.write("-- Memory:\n")
         self.memory.dump(stream)

@@ -6,7 +6,7 @@
 
 
 class Type:
-    __slots__ = ['_bitwidth']
+    __slots__ = ["_bitwidth"]
 
     def __init__(self, bw):
         assert isinstance(bw, int)
@@ -26,16 +26,18 @@ class Type:
 
     def __eq__(self, x):
 
-        return self.isBool() == x.isBool() and\
-            self.isPointer() == x.isPointer() and\
-            self.getBitWidth() == x.getBitWidth()
+        return (
+            self.isBool() == x.isBool()
+            and self.isPointer() == x.isPointer()
+            and self.getBitWidth() == x.getBitWidth()
+        )
 
     def __str__(self):
         if self.isBool():
-            return 'bool'
-        s = '{0}b'.format(self._bitwidth)
+            return "bool"
+        s = "{0}b".format(self._bitwidth)
         if self.isPointer():
-            s += '*'
+            s += "*"
         return s
 
 

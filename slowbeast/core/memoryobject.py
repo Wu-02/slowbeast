@@ -1,16 +1,16 @@
 from sys import stdout
 from copy import deepcopy, copy
-from .. util.debugging import FIXME
+from ..util.debugging import FIXME
 
-from .. ir.value import Constant, Value
-from .. ir.types import OffsetType
-from .. core.errors import MemError
+from ..ir.value import Constant, Value
+from ..ir.types import OffsetType
+from ..core.errors import MemError
 
 
 class MemoryObject:
     ids = 0
 
-    __slots__ = '_id', 'values', 'size', 'name', 'allocation', '_ro'
+    __slots__ = "_id", "values", "size", "name", "allocation", "_ro"
 
     def __init__(self, size, nm="unnamed", objid=None):
         if objid:
@@ -59,21 +59,24 @@ class MemoryObject:
         assert self._ro is False, "Writing read-only object (COW bug)"
 
         if not off.isConstant():
-            raise NotImplementedError(
-                "Write to non-constant offset not supported")
+            raise NotImplementedError("Write to non-constant offset not supported")
 
         if not self.getSize().isConstant():
             raise NotImplementedError(
-                "Write to symbolic-sized objects not implemented yet")
+                "Write to symbolic-sized objects not implemented yet"
+            )
 
         offval = off.getValue()
         if offval != 0:
             FIXME("check that writes to MO do not overlap")
         if x.getByteWidth() > self.getSize().getValue() + offval:
-            return MemError(MemError.OOB_ACCESS,
-                            "Written value too big for the object. "
-                            "Writing {0}B to offset {1} of {2}B object".format(
-                                x.getByteWidth(), off, self.getSize()))
+            return MemError(
+                MemError.OOB_ACCESS,
+                "Written value too big for the object. "
+                "Writing {0}B to offset {1} of {2}B object".format(
+                    x.getByteWidth(), off, self.getSize()
+                ),
+            )
         self.values[offval] = x
         return None
 
@@ -85,19 +88,20 @@ class MemoryObject:
         assert isinstance(bts, int), "Read non-constant number of bytes"
 
         if not off.isConstant():
-            raise NotImplementedError(
-                "Read from non-constant offset not supported")
+            raise NotImplementedError("Read from non-constant offset not supported")
 
         if not self.getSize().isConstant():
             raise NotImplementedError(
-                "Read from symbolic-sized objects not implemented yet")
+                "Read from symbolic-sized objects not implemented yet"
+            )
 
         offval = off.getValue()
 
         if self.getSize().getValue() < bts:
-            return None, MemError(MemError.OOB_ACCESS,
-                                  "Read {0}B from object of size {1}B".format(
-                                      bts, self.getSize()))
+            return None, MemError(
+                MemError.OOB_ACCESS,
+                "Read {0}B from object of size {1}B".format(bts, self.getSize()),
+            )
 
         val = self.values.get(offval)
         if val is None:
@@ -105,7 +109,8 @@ class MemoryObject:
                 MemError.UNINIT_READ,
                 f"Read from uninitialized memory (or unaligned read (not supp.  yet)).\n"
                 f"Reading bytes {offval}-{offval+bts-1} from obj {self._id} with contents:\n"
-                f"{self.values}")
+                f"{self.values}",
+            )
 
         return val, None
 
@@ -121,7 +126,9 @@ class MemoryObject:
             self._id,
             self.name if self.name else "no name",
             self.allocation.asValue() if self.allocation else "unknown",
-            self._ro, self.getSize())
+            self._ro,
+            self.getSize(),
+        )
         for k, v in self.values.items():
             s += "\n  {0} -> {1}".format(k, v)
         return s
@@ -131,4 +138,4 @@ class MemoryObject:
 
     def dump(self, stream=stdout):
         stream.write(str(self))
-        stream.write('\n')
+        stream.write("\n")

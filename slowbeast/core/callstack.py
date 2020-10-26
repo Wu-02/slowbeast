@@ -11,9 +11,11 @@ class CallStack:
             self._ro = False
 
         def __eq__(self, rhs):
-            return self.function == rhs.function and\
-                self.values == rhs.values and\
-                self.returnsite == rhs.returnsite
+            return (
+                self.function == rhs.function
+                and self.values == rhs.values
+                and self.returnsite == rhs.returnsite
+            )
 
         def _setRO(self):
             self._ro = True

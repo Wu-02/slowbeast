@@ -1,10 +1,10 @@
-from . program import ProgramElement
+from .program import ProgramElement
 from sys import stdout
 
 
 class BBlock(ProgramElement):
 
-    __slots__ = ['_instructions', '_function']
+    __slots__ = ["_instructions", "_function"]
 
     def __init__(self, f=None):
         super(BBlock, self).__init__()
@@ -61,13 +61,13 @@ class BBlock(ProgramElement):
         return self._function
 
     def asValue(self):
-        return 'bblock {0}'.format(self.getID())
+        return "bblock {0}".format(self.getID())
 
     def size(self):
         return len(self._instructions)
 
-   # def __len__(self):
-   #    return len(self._instructions)
+    # def __len__(self):
+    #    return len(self._instructions)
 
     def __iter__(self):
         return self._instructions.__iter__()

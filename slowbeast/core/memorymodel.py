@@ -1,7 +1,7 @@
-from .. util.debugging import dbg, FIXME
-from .. ir.instruction import Alloc, GlobalVariable
-from .. ir.value import Value
-from . memory import Memory
+from ..util.debugging import dbg, FIXME
+from ..ir.instruction import Alloc, GlobalVariable
+from ..ir.value import Value
+from .memory import Memory
 
 
 class MemoryModel:
@@ -40,9 +40,7 @@ class MemoryModel:
         value = state.eval(valueOp)
         to = state.get(toOp)
         if to is None:
-            state.setKilled(
-                "Use of unknown variable: {0}".format(
-                    toOp))
+            state.setKilled("Use of unknown variable: {0}".format(toOp))
             return [state]
 
         assert isinstance(value, Value)
@@ -63,8 +61,7 @@ class MemoryModel:
     def read(self, state, toOp, fromOp, bytesNum):
         frm = state.get(fromOp)
         if frm is None:
-            state.setKilled(
-                "Use of unknown variable: {0}".format(fromOp))
+            state.setKilled("Use of unknown variable: {0}".format(fromOp))
             return [state]
 
         assert frm.isPointer()

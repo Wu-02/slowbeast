@@ -1,14 +1,14 @@
-from .. ir.instruction import *
-from .. ir.types import Type
-from .. ir.value import Value, ConstantBool, Pointer, Constant
-from .. core.executor import Executor as ConcreteExecutor
-from .. core.memory import MemoryObject
-from .. solvers.expressions import is_symbolic
-from .. util.debugging import dbgv
-from .. core.errors import AssertFailError
+from ..ir.instruction import *
+from ..ir.types import Type
+from ..ir.value import Value, ConstantBool, Pointer, Constant
+from ..core.executor import Executor as ConcreteExecutor
+from ..core.memory import MemoryObject
+from ..solvers.expressions import is_symbolic
+from ..util.debugging import dbgv
+from ..core.errors import AssertFailError
 
-from . memory import SymbolicMemoryModel
-from . executionstate import SEState
+from .memory import SymbolicMemoryModel
+from .executionstate import SEState
 
 from random import getrandbits
 
@@ -78,9 +78,7 @@ class Executor(ConcreteExecutor):
             elif cond.getValue() == False:
                 return None, state
             else:
-                raise RuntimeError(
-                    "Invalid condition: {0}".format(
-                        cond.getValue()))
+                raise RuntimeError("Invalid condition: {0}".format(cond.getValue()))
 
         # check SAT of cond and its negation
         csat = state.is_sat(cond)
@@ -116,9 +114,9 @@ class Executor(ConcreteExecutor):
 
     # FIXME: make this a method of State?
     def assume(self, state, cond):
-        """ Put an assumption _into_ the given state.
-            Return the statte or None if that situation cannot happen
-            (the assumption is inconsistent with the state).
+        """Put an assumption _into_ the given state.
+        Return the statte or None if that situation cannot happen
+        (the assumption is inconsistent with the state).
         """
         if cond.isConstant():
             assert cond.isBool(), "Invalid constant"
@@ -212,7 +210,8 @@ class Executor(ConcreteExecutor):
         mo2 = p2.getObject()
         if is_symbolic(mo1) or is_symbolic(mo2):
             state.setKilled(
-                "Comparison of symbolic pointers unimplemented: {0}".format(instr))
+                "Comparison of symbolic pointers unimplemented: {0}".format(instr)
+            )
             return [state]
 
         E = state.getExprManager()
@@ -220,18 +219,18 @@ class Executor(ConcreteExecutor):
         if mo1.getID() == mo2.getID():
             state.set(
                 instr,
-                self.cmpValues(E,
-                               p,
-                               p1.getOffset(),
-                               p2.getOffset(),
-                               instr.isUnsigned()))
+                self.cmpValues(
+                    E, p, p1.getOffset(), p2.getOffset(), instr.isUnsigned()
+                ),
+            )
             state.pc = state.pc.getNextInstruction()
             return [state]
         else:
             if p != Cmp.EQ and p != Cmp.NE:
                 state.setKilled(
                     "Comparison of pointers implemented only for "
-                    "(non-)equality or into the same object")
+                    "(non-)equality or into the same object"
+                )
                 return [state]
             else:
                 state.set(instr, ConstantBool(p == Cmp.NE))
@@ -249,16 +248,12 @@ class Executor(ConcreteExecutor):
             if op1.isPointer() and op2.isPointer():
                 return self.cmpPointers(state, instr, op1, op2)
             else:
-                state.setKilled(
-                    "Comparison of pointer to a constant not implemented")
+                state.setKilled("Comparison of pointer to a constant not implemented")
                 return state
 
         x = self.cmpValues(
-            state.getExprManager(),
-            instr.getPredicate(),
-            op1,
-            op2,
-            instr.isUnsigned())
+            state.getExprManager(), instr.getPredicate(), op1, op2, instr.isUnsigned()
+        )
         state.set(instr, x)
         state.pc = state.pc.getNextInstruction()
 
@@ -273,20 +268,21 @@ class Executor(ConcreteExecutor):
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
             state.setKilled(
-                "calling '{0}', but calls are forbidden".format(
-                    fun.getName()))
+                "calling '{0}', but calls are forbidden".format(fun.getName())
+            )
             return [state]
 
         # map values to arguments
         assert len(instr.getOperands()) == len(fun.getArguments())
-        mapping = {x: state.eval(y) for (x, y)
-                   in zip(fun.getArguments(), instr.getOperands())}
+        mapping = {
+            x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.getOperands())
+        }
         state.pushCall(instr, fun, mapping)
         return [state]
 
     def execUndefFun(self, state, instr, fun):
         name = fun.getName()
-        if name == 'abort':
+        if name == "abort":
             state.setTerminated("Aborted via an abort() call")
             return [state]
 
@@ -314,14 +310,16 @@ class Executor(ConcreteExecutor):
                 r = addPointerWithConstant(E, op1, op2)
             else:
                 state.setKilled(
-                    "Arithmetic on pointers not implemented yet: {0}".format(instr))
+                    "Arithmetic on pointers not implemented yet: {0}".format(instr)
+                )
                 return [state]
         elif op2.isPointer():
             if not op1.isPointer():
                 r = addPointerWithConstant(E, op2, op1)
             else:
                 state.setKilled(
-                    "Arithmetic on pointers not implemented yet: {0}".format(instr))
+                    "Arithmetic on pointers not implemented yet: {0}".format(instr)
+                )
                 return [state]
         else:
             if instr.getOperation() == BinaryOperation.ADD:
@@ -347,8 +345,7 @@ class Executor(ConcreteExecutor):
             elif instr.getOperation() == BinaryOperation.XOR:
                 r = E.Xor(op1, op2)
             else:
-                state.setKilled(
-                    "Not implemented binary operation: {0}".format(instr))
+                state.setKilled("Not implemented binary operation: {0}".format(instr))
                 return [state]
 
         assert r, "Bug in creating a binary op expression"
@@ -373,8 +370,7 @@ class Executor(ConcreteExecutor):
         elif instr.getOperation() == UnaryOperation.NOT:
             r = E.Not(op1)
         else:
-            state.setKilled(
-                "Unary instruction not implemented: {0}".format(instr))
+            state.setKilled("Unary instruction not implemented: {0}".format(instr))
             return [state]
 
         state.set(instr, r)
@@ -391,9 +387,7 @@ class Executor(ConcreteExecutor):
             isunsat = tmp is None
 
         if isunsat:
-            state.setTerminated(
-                "Assumption unsat: {0} == {1} (!= True)".format(
-                    o, v))
+            state.setTerminated("Assumption unsat: {0} == {1} (!= True)".format(o, v))
 
         return [state]
 
@@ -411,14 +405,14 @@ class Executor(ConcreteExecutor):
 
             if isunsat:
                 state.setTerminated(
-                    "Assumption unsat: {0} == {1} (!= True)".format(
-                        o, v))
+                    "Assumption unsat: {0} == {1} (!= True)".format(o, v)
+                )
                 return [state]
 
         state.pc = state.pc.getNextInstruction()
         return [state]
 
-    def execAssertExpr(self, state, v, msg=''):
+    def execAssertExpr(self, state, v, msg=""):
         states = []
         assert v.isBool()
         if v.isConstant():

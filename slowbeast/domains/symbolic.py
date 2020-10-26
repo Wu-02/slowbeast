@@ -1,5 +1,5 @@
-from .. ir.value import Value, Constant
-from .. ir.types import Type, BoolType
+from ..ir.value import Value, Constant
+from ..ir.types import Type, BoolType
 
 _use_z3 = True
 if _use_z3:
@@ -18,15 +18,14 @@ if _use_z3:
     from z3 import Goal, Tactic
 
     def eliminate_common_subexpr(expr):
-       # XXX: not efficient, it is rather
-       # to prettify expressions while debugging
+        # XXX: not efficient, it is rather
+        # to prettify expressions while debugging
         if is_and(expr):
             subexp = [eliminate_common_subexpr(c) for c in expr.children()]
             n = 0
             for idx in range(0, len(subexp)):
                 c = subexp[idx]
-                subs = [(s, BoolVal(True))
-                        for (i, s) in enumerate(subexp) if i != n]
+                subs = [(s, BoolVal(True)) for (i, s) in enumerate(subexp) if i != n]
                 subexp[idx] = simplify(substitute(c, *subs))
                 n += 1
             return And(*subexp)
@@ -71,7 +70,7 @@ if _use_z3:
     def to_cnf(*exprs):
         g = Goal()
         g.add(*exprs)
-        t = Tactic('tseitin-cnf')
+        t = Tactic("tseitin-cnf")
         return t(g)[0]
 
     def solver_to_sb_type(s):
@@ -79,6 +78,7 @@ if _use_z3:
             return Type(s.sort().size())
         assert is_bool(s), "Unhandled expression"
         return BoolType()
+
 
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
@@ -92,13 +92,14 @@ else:
     def bv_const(v, bw):
         return BV(v, bw)
 
+
 class Expr(Value):
     """
     Wrapper around a formula that carries
     metadata like a type (and hash in the future, etc.)
     """
 
-    __slots__ = ['_expr']
+    __slots__ = ["_expr"]
 
     def __init__(self, e, t):
         assert not isinstance(e, int)
@@ -127,18 +128,24 @@ class Expr(Value):
 
     def subexpressions(self):
         """ Traverse the expression and return its all subexpressions """
-        return (Constant(s.as_long(), solver_to_sb_type(s))
-                if is_bv_value(s) else Expr(s, solver_to_sb_type(s))
-                for s in subexpressions(self.unwrap()))
+        return (
+            Constant(s.as_long(), solver_to_sb_type(s))
+            if is_bv_value(s)
+            else Expr(s, solver_to_sb_type(s))
+            for s in subexpressions(self.unwrap())
+        )
 
     def children(self):
         """
         Get the children (1st-level subexpressions) of this expression.
         E.g. for And(a, b) this method returns [a, b].
         """
-        return (Constant(s.as_long(), solver_to_sb_type(s))
-                if is_bv_value(s) else Expr(s, solver_to_sb_type(s))
-                for s in self.unwrap().children())
+        return (
+            Constant(s.as_long(), solver_to_sb_type(s))
+            if is_bv_value(s)
+            else Expr(s, solver_to_sb_type(s))
+            for s in self.unwrap().children()
+        )
 
     def to_cnf(self):
         """
@@ -157,7 +164,7 @@ class Expr(Value):
 
 
 class NondetLoad(Expr):
-    __slots__ = ['load', 'alloc']
+    __slots__ = ["load", "alloc"]
 
     def __init__(self, e, t, load, alloc):
         super(NondetLoad, self).__init__(e, t)
@@ -195,32 +202,26 @@ class BVSymbolicDomain:
 
         if v.isConstant():
             if v.isBool():
-                return Expr(BoolVal(v.getValue()),
-                            BoolType())
-            return Expr(
-                bv_const(
-                    v.getValue(),
-                    v.getType().getBitWidth()),
-                v.getType())
+                return Expr(BoolVal(v.getValue()), BoolType())
+            return Expr(bv_const(v.getValue(), v.getType().getBitWidth()), v.getType())
 
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
     def simplify(expr, *assumptions):
         return Expr(
-            simplify(
-                expr.unwrap(),
-                arith_ineq_lhs=True,
-                sort_sums=True),
-            expr.getType())
+            simplify(expr.unwrap(), arith_ineq_lhs=True, sort_sums=True), expr.getType()
+        )
 
     def substitute(expr, *what):
-        return Expr(substitute(expr.unwrap(), *((a.unwrap(), b.unwrap())
-                                                for (a, b) in what)), expr.getType())
+        return Expr(
+            substitute(expr.unwrap(), *((a.unwrap(), b.unwrap()) for (a, b) in what)),
+            expr.getType(),
+        )
 
     def pythonConstant(expr):
-        """ Take a symbolic constant and get a python constant for it.
-            Return None if the given expression is not a constant number
-            or boolean
+        """Take a symbolic constant and get a python constant for it.
+        Return None if the given expression is not a constant number
+        or boolean
         """
         val = expr.unwrap()
         if is_bv_value(val):
@@ -317,31 +318,25 @@ class BVSymbolicDomain:
         assert a.getBitWidth() <= b.getValue(), "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
         return Expr(
-            BVZExt(
-                b.getValue() -
-                a.getBitWidth(),
-                castToBV(a)),
-            Type(
-                b.getValue()))
+            BVZExt(b.getValue() - a.getBitWidth(), castToBV(a)), Type(b.getValue())
+        )
 
     def SExt(a, b):
         assert BVSymbolicDomain.belongto(a)
         assert b.isConstant()
         assert a.getBitWidth() <= b.getValue(), "Invalid sext argument"
         return Expr(
-            BVSExt(
-                b.getValue() -
-                a.getBitWidth(),
-                castToBV(a)),
-            Type(
-                b.getValue()))
+            BVSExt(b.getValue() - a.getBitWidth(), castToBV(a)), Type(b.getValue())
+        )
 
     def Extract(a, start, end):
         assert BVSymbolicDomain.belongto(a)
         assert start.isConstant()
         assert end.isConstant()
-        return Expr(BVExtract(end.getValue(), start.getValue(), a.unwrap()),
-                    Type(end.getValue() - start.getValue() + 1))
+        return Expr(
+            BVExtract(end.getValue(), start.getValue(), a.unwrap()),
+            Type(end.getValue() - start.getValue() + 1),
+        )
 
     def Shl(a, b):
         assert BVSymbolicDomain.belongto(a, b)
@@ -400,33 +395,33 @@ class BVSymbolicDomain:
     # Arithmetic operations
     def Add(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType(),\
-            "Operation on invalid types: {0} != {1}".format(
-            a.getType(), b.getType())
+        assert (
+            a.getType() == b.getType()
+        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
         result_ty = a.getType()
         return Expr(a.unwrap() + b.unwrap(), result_ty)
 
     def Sub(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType(),\
-            "Operation on invalid types: {0} != {1}".format(
-            a.getType(), b.getType())
+        assert (
+            a.getType() == b.getType()
+        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
         result_ty = a.getType()
         return Expr(a.unwrap() - b.unwrap(), result_ty)
 
     def Mul(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType(),\
-            "Operation on invalid types: {0} != {1}".format(
-            a.getType(), b.getType())
+        assert (
+            a.getType() == b.getType()
+        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
         result_ty = a.getType()
         return Expr(a.unwrap() * b.unwrap(), result_ty)
 
     def Div(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType(),\
-            "Operation on invalid types: {0} != {1}".format(
-            a.getType(), b.getType())
+        assert (
+            a.getType() == b.getType()
+        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
         result_ty = a.getType()
         if unsigned:
             return Expr(UDiv(a.unwrap(), b.unwrap()), result_ty)
@@ -434,9 +429,9 @@ class BVSymbolicDomain:
 
     def Rem(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType(),\
-            "Operation on invalid types: {0} != {1}".format(
-            a.getType(), b.getType())
+        assert (
+            a.getType() == b.getType()
+        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
         result_ty = a.getType()
         if unsigned:
             return Expr(URem(a.unwrap(), b.unwrap()), result_ty)

@@ -2,7 +2,7 @@ from copy import copy
 
 
 class ConstraintsSet:
-    __slots__ = ['constraints', '_ro']
+    __slots__ = ["constraints", "_ro"]
 
     def __init__(self, C=None):
         self.constraints = C or []

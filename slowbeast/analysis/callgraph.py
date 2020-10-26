@@ -1,5 +1,5 @@
-from .. ir.function import Function
-from .. ir.instruction import Call
+from ..ir.function import Function
+from ..ir.instruction import Call
 
 from sys import stdout
 from copy import copy
@@ -8,7 +8,7 @@ from copy import copy
 class CallGraph:
     class Node:
         def __init__(self, F):
-            __slots__ = ['fun', 'callsites', 'callers']
+            __slots__ = ["fun", "callsites", "callers"]
             self.fun = F
             self.callers = []
             self.callsites = {}
@@ -41,10 +41,9 @@ class CallGraph:
             """
             Simple successors (over functios)
             """
-            return set((v for funs in self.callsites.values()
-                        for v in funs)).__iter__()
+            return set((v for funs in self.callsites.values() for v in funs)).__iter__()
 
-    __slots__ = ['program', '_nodes']
+    __slots__ = ["program", "_nodes"]
 
     def __init__(self, P):
         self.program = P
@@ -53,7 +52,7 @@ class CallGraph:
         self._build()
 
     def createNode(self, *args):
-        """ Override this method in child classes
+        """Override this method in child classes
         to get nodes with more data
         """
         assert len(args) == 1
@@ -112,8 +111,8 @@ class CallGraph:
             for cs, funs in node.getCallSites().items():
                 for n, cf in enumerate(funs):
                     if n == 0:
-                        stream.write("  {0} -> {1}\n".format(cs.getID(),
-                                                             cf.getFun().getName()))
-                    else:
                         stream.write(
-                            "     -> {0}\n".format(cf.getFun().getName()))
+                            "  {0} -> {1}\n".format(cs.getID(), cf.getFun().getName())
+                        )
+                    else:
+                        stream.write("     -> {0}\n".format(cf.getFun().getName()))

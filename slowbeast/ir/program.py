@@ -1,10 +1,10 @@
-from .. util.debugging import print_stream
+from ..util.debugging import print_stream
 from sys import stdout
 
 
 class Program:
 
-    __slots__ = ['_functions', '_entry', '_metadata', '_globals']
+    __slots__ = ["_functions", "_entry", "_metadata", "_globals"]
 
     def __init__(self):
         self._functions = []
@@ -43,10 +43,10 @@ class Program:
     def dump(self, stream=stdout):
         for g in self._globals:
             g.dump(stream=stream)
-            stream.write('\n')
+            stream.write("\n")
         for f in self._functions:
             f.dump(stream)
-            stream.write('\n')
+            stream.write("\n")
 
 
 class ProgramElement:
@@ -57,7 +57,7 @@ class ProgramElement:
 
     elemsCounter = 0
 
-    __slots__ = ['_metadata', '_id']
+    __slots__ = ["_metadata", "_id"]
 
     def __init__(self):
         """
@@ -87,12 +87,13 @@ class ProgramElement:
         return self._id == rhs._id
 
     def __ne__(self, other):
-        return not(self.__eq__(other))
+        return not (self.__eq__(other))
 
     def __hash__(self):
         return self._id
 
     def dump(self, ind=0, stream=stdout):
         for k, v in self._metadata:
-            print_stream("{0} ; {1} : {2}".format(' ' * ind, k, v),
-                         color="GRAY", stream=stream)
+            print_stream(
+                "{0} ; {1} : {2}".format(" " * ind, k, v), color="GRAY", stream=stream
+            )

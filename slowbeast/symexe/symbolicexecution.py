@@ -1,8 +1,8 @@
-from .. interpreter.interpreter import Interpreter, ExecutionOptions
-from . executor import Executor as SExecutor
-from . memory import SymbolicMemoryModel
-from .. solvers.solver import Solver
-from .. util.debugging import print_stderr, print_stdout, dbg
+from ..interpreter.interpreter import Interpreter, ExecutionOptions
+from .executor import Executor as SExecutor
+from .memory import SymbolicMemoryModel
+from ..solvers.solver import Solver
+from ..util.debugging import print_stderr, print_stdout, dbg
 
 
 class SEOptions(ExecutionOptions):
@@ -30,24 +30,20 @@ class SEStats:
 
 
 class SymbolicExecutor(Interpreter):
-    def __init__(self, P, ohandler=None, opts=SEOptions(),
-                 executor=None, ExecutorClass=SExecutor):
+    def __init__(
+        self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=SExecutor
+    ):
         self.solver = Solver()
-        super(
-            SymbolicExecutor,
-            self).__init__(
-            P,
-            opts,
-            executor or ExecutorClass(
-                self.solver,
-                opts))
+        super(SymbolicExecutor, self).__init__(
+            P, opts, executor or ExecutorClass(self.solver, opts)
+        )
         self.stats = SEStats()
         # outputs handler
         self.ohandler = ohandler
 
     def new_output_file(self, name):
         odir = self.ohandler.outdir if self.ohandler else None
-        return open('{0}/{1}'.format(odir or '.', name), 'w')
+        return open("{0}/{1}".format(odir or ".", name), "w")
 
     def getSolver(self):
         return self.solver
@@ -66,11 +62,8 @@ class SymbolicExecutor(Interpreter):
                 self.states.append(s)
             elif s.hasError():
                 print_stderr(
-                    "{0}: {1}, {2}".format(
-                        s.getID(),
-                        s.pc,
-                        s.getError()),
-                    color='RED')
+                    "{0}: {1}, {2}".format(s.getID(), s.pc, s.getError()), color="RED"
+                )
                 self.stats.errors += 1
                 self.stats.paths += 1
                 if testgen:
@@ -80,7 +73,7 @@ class SymbolicExecutor(Interpreter):
                     self.states = []
                     return
             elif s.isTerminated():
-                print_stderr(s.getError(), color='BROWN')
+                print_stderr(s.getError(), color="BROWN")
                 self.stats.paths += 1
                 self.stats.terminated_paths += 1
                 if testgen:
@@ -88,10 +81,7 @@ class SymbolicExecutor(Interpreter):
             elif s.wasKilled():
                 self.stats.paths += 1
                 self.stats.killed_paths += 1
-                print_stderr(
-                    s.getStatusDetail(),
-                    prefix='KILLED STATE: ',
-                    color='WINE')
+                print_stderr(s.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
                 if testgen:
                     testgen.processState(s)
             else:

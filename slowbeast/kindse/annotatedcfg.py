@@ -1,7 +1,7 @@
-from .. analysis.cfg import CFG as PureCFG
-from .. analysis.cfg import CFGPath as PureCFGPath
-from .. ir.instruction import Assert
-from .. ir.bblock import BBlock
+from ..analysis.cfg import CFG as PureCFG
+from ..analysis.cfg import CFGPath as PureCFGPath
+from ..ir.instruction import Assert
+from ..ir.bblock import BBlock
 
 
 class CFG(PureCFG):
@@ -12,7 +12,7 @@ class CFG(PureCFG):
     """
 
     class AnnotatedNode(PureCFG.Node):
-        __slots__ = ['_has_assert', 'annotationsAfter', 'annotationsBefore']
+        __slots__ = ["_has_assert", "annotationsAfter", "annotationsBefore"]
 
         def __init__(self, cfg, B):
             super(CFG.AnnotatedNode, self).__init__(cfg, B)
@@ -86,10 +86,11 @@ class AnnotatedCFGPath(CFGPath):
     """
 
     __slots__ = [
-        'locannotations',
-        'locannotationsafter',
-        'precondition',
-        'postcondition']
+        "locannotations",
+        "locannotationsafter",
+        "precondition",
+        "postcondition",
+    ]
 
     def __init__(self, locs=[]):
         super(AnnotatedCFGPath, self).__init__(locs)
@@ -99,8 +100,7 @@ class AnnotatedCFGPath(CFGPath):
         self.postcondition = []
 
     def addLocAnnotationAfter(self, annot, loc):
-        self.locannotationsafter.setdefault(
-            _get_loc_key(loc), []).append(annot)
+        self.locannotationsafter.setdefault(_get_loc_key(loc), []).append(annot)
 
     def getLocAnnotationsAfter(self, loc):
         return self.locannotationsafter.get(_get_loc_key(loc))
@@ -175,10 +175,13 @@ class AnnotatedCFGPath(CFGPath):
         def loc_str(x):
             blk = x.getBBlock()
             return "{0}{1}{2}".format(
-                'a' if self.getLocAnnotationsBefore(blk) else '',
+                "a" if self.getLocAnnotationsBefore(blk) else "",
                 blk.getID(),
-                'a' if self.getLocAnnotationsAfter(blk) else '')
+                "a" if self.getLocAnnotationsAfter(blk) else "",
+            )
 
-        return "{0}{1}{2}".format("pre " if self.precondition else "",
-                                  " -> ".join(map(loc_str, self.getLocations())),
-                                  " post" if self.postcondition else "")
+        return "{0}{1}{2}".format(
+            "pre " if self.precondition else "",
+            " -> ".join(map(loc_str, self.getLocations())),
+            " post" if self.postcondition else "",
+        )

@@ -1,11 +1,11 @@
-from . argument import Argument
-from . program import ProgramElement
+from .argument import Argument
+from .program import ProgramElement
 from sys import stdout
 
 
 class Function(ProgramElement):
 
-    __slots__ = ['_name', '_bblocks', '_arguments', '_retty']
+    __slots__ = ["_name", "_bblocks", "_arguments", "_retty"]
 
     def __init__(self, name, argNum=0, retty=None):
         super(Function, self).__init__()
@@ -54,13 +54,14 @@ class Function(ProgramElement):
     def dump(self, stream=stdout):
         super(Function, self).dump(stream)
         stream.write(
-            'fun {0}({1})\n'.format(self._name,
-                                    ', '.join(map(lambda x: x.asValue(),
-                                                  self._arguments))))
+            "fun {0}({1})\n".format(
+                self._name, ", ".join(map(lambda x: x.asValue(), self._arguments))
+            )
+        )
 
         for b in self._bblocks:
             b.dump(2, stream=stream)
-            stream.write('\n')
+            stream.write("\n")
 
         if len(self._bblocks) > 0:
             stream.write("nuf\n")

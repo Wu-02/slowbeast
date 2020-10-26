@@ -2,7 +2,10 @@ from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 from slowbeast.kindse.annotatedcfg import CFG
 from slowbeast.analysis.callgraph import CallGraph
-from slowbeast.symexe.symbolicexecution import SymbolicExecutor as SymbolicInterpreter, SEOptions
+from slowbeast.symexe.symbolicexecution import (
+    SymbolicExecutor as SymbolicInterpreter,
+    SEOptions,
+)
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memory import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
@@ -12,18 +15,10 @@ from slowbeast.ir.instruction import Cmp
 
 
 class KindSymbolicExecutor(SymbolicInterpreter):
-    def __init__(
-            self,
-            prog,
-            ohandler=None,
-            opts=KindSeOptions()):
-        super(
-            KindSymbolicExecutor,
-            self).__init__(
-            P=prog,
-            ohandler=ohandler,
-            opts=opts,
-            ExecutorClass=PathExecutor)
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
+        super(KindSymbolicExecutor, self).__init__(
+            P=prog, ohandler=ohandler, opts=opts, ExecutorClass=PathExecutor
+        )
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
@@ -34,17 +29,16 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         # run only on reachable functions
         callgraph = CallGraph(prog)
         if __debug__:
-            with self.new_output_file('callgraph-full.txt') as f:
+            with self.new_output_file("callgraph-full.txt") as f:
                 callgraph.dump(f)
 
         callgraph.pruneUnreachable(prog.getEntry())
         if __debug__:
-            with self.new_output_file('callgraph.txt') as f:
+            with self.new_output_file("callgraph.txt") as f:
                 callgraph.dump(f)
 
         self.callgraph = callgraph
-        self.cfgs = {F: CFG(F)
-                     for F in callgraph.getFunctions() if not F.isUndefined()}
+        self.cfgs = {F: CFG(F) for F in callgraph.getFunctions() if not F.isUndefined()}
 
         self.paths = []
         # as we run the executor in nested manners,
@@ -77,8 +71,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             states = self.states
             assert states
 
-            dbg(f"Executing (init) path: {path}",
-                color="WHITE", fn=self.reportfn)
+            dbg(f"Executing (init) path: {path}", color="WHITE", fn=self.reportfn)
         else:
             executor = self.getIndExecutor()
 
@@ -110,12 +103,12 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def extendToCaller(self, path, states):
         self.have_problematic_path = True
         print_stdout("Killing a path that goes to caller")
-       #start = path.first()
-       #cgnode = self.callgraph.getNode(start.getBBlock().getFunction())
-       # for callerfun, callsite in cgnode.getCallers():
-       #    print('caller', callerfun.getFun())
-       #    print('cs', callsite)
-       #    callsite.getBBlock()
+        # start = path.first()
+        # cgnode = self.callgraph.getNode(start.getBBlock().getFunction())
+        # for callerfun, callsite in cgnode.getCallers():
+        #    print('caller', callerfun.getFun())
+        #    print('cs', callsite)
+        #    callsite.getBBlock()
         return []
 
     def extendPath(self, path, states, steps=-1, atmost=False, stoppoints=[]):
@@ -156,7 +149,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                         # we did not extend the path at all, so this
                         # is a path that ends in the entry block and
                         # we already processed it...
-                        dbg('Extending a path to the caller')
+                        dbg("Extending a path to the caller")
                         np = self.extendToCaller(path, states)
                         newpaths += np
                     else:
@@ -183,8 +176,9 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                         newpaths.append(path.copyandsetpath(tmp))
                         # fall-through to further extending this path
 
-                    assert all(map(lambda x: isinstance(x, CFG.AnnotatedNode),
-                                   stoppoints))
+                    assert all(
+                        map(lambda x: isinstance(x, CFG.AnnotatedNode), stoppoints)
+                    )
                     if pred in stoppoints:
                         newpath.reverse()
                         newpaths.append(path.copyandsetpath(newpath))
@@ -206,18 +200,15 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def report(self, n, fn=print_stderr):
         if n.hasError():
             if fn:
-                fn("state {0}: {1}, {2}".format(
-                    n.getID(),
-                    n.pc,
-                    n.getError()),
-                    color='RED')
+                fn(
+                    "state {0}: {1}, {2}".format(n.getID(), n.pc, n.getError()),
+                    color="RED",
+                )
             self.stats.errors += 1
             return Result.UNSAFE
         elif n.wasKilled():
             if fn:
-                fn(n.getStatusDetail(),
-                    prefix='KILLED STATE: ',
-                    color='WINE')
+                fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
             self.stats.killed_paths += 1
             return Result.UNKNOWN
 
@@ -231,12 +222,10 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         r = self.executePath(path, fromInit=True)
         if not r.errors:
-            killed = any(True for s in r.early if s.wasKilled()
-                         ) if r.early else None
+            killed = any(True for s in r.early if s.wasKilled()) if r.early else None
             if killed:
                 return Result.UNKNOWN, r
-            killed = any(True for s in r.other if s.wasKilled()
-                         ) if r.other else None
+            killed = any(True for s in r.other if s.wasKilled()) if r.other else None
             if killed:
                 return Result.UNKNOWN, r
             if len(path.first().getPredecessors()) == 0:
@@ -273,9 +262,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             step = self.getOptions().step
             if r.errors:
                 has_err = True
-                newpaths += self.extendPath(path, r,
-                                            steps=step,
-                                            atmost=step != 1)
+                newpaths += self.extendPath(path, r, steps=step, atmost=step != 1)
 
         self.paths = newpaths
 
@@ -287,14 +274,15 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def run(self, paths, maxk=None):
         dbg(
             f"Performing the k-ind algorithm for specified paths with maxk={maxk}",
-            color="ORANGE")
+            color="ORANGE",
+        )
 
         k = 1
 
         self.paths = paths
 
         if len(self.paths) == 0:
-            dbg("Found no error state!", color='GREEN')
+            dbg("Found no error state!", color="GREEN")
             return 0
 
         while True:
@@ -303,22 +291,19 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
             r, states = self.checkPaths()
             if r is Result.SAFE:
-                dbg("All possible error paths ruled out!",
-                    color="GREEN")
+                dbg("All possible error paths ruled out!", color="GREEN")
                 dbg("Induction step succeeded!", color="GREEN")
                 return 0
             elif r is Result.UNSAFE:
-                dbg("Error found.", color='RED')
+                dbg("Error found.", color="RED")
                 return 1
             elif r is Result.UNKNOWN:
-                dbg("Hit a problem, giving up.", color='ORANGE')
+                dbg("Hit a problem, giving up.", color="ORANGE")
                 return 1
             else:
                 assert r is None
 
             k += 1
             if maxk and maxk <= k:
-                dbg(
-                    "Hit the maximal number of iterations, giving up.",
-                    color='ORANGE')
+                dbg("Hit the maximal number of iterations, giving up.", color="ORANGE")
                 return 1

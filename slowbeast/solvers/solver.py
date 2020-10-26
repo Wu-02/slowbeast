@@ -1,7 +1,7 @@
-from . expressions import ExprManager
-from .. domains.symbolic import _use_z3
-from .. ir.value import Constant, ConstantFalse
-from .. util.debugging import FIXME
+from .expressions import ExprManager
+from ..domains.symbolic import _use_z3
+from ..ir.value import Constant, ConstantFalse
+from ..util.debugging import FIXME
 
 if _use_z3:
     from z3 import Solver as Z3Solver
@@ -24,8 +24,11 @@ if _use_z3:
             if c is None:
                 # m does not have a value for this variable
                 # use 0
-                c = BoolVal(False) if a.isBool() else BitVecVal(
-                    0, a.getType().getBitWidth())
+                c = (
+                    BoolVal(False)
+                    if a.isBool()
+                    else BitVecVal(0, a.getType().getBitWidth())
+                )
             vals.append(c)
 
         return vals
@@ -89,8 +92,7 @@ if _use_z3:
             return False
         elif r == unknown:
             reason = s.reason_unknown()
-            if reason == 'canceled' or\
-               reason == 'interrupted from keyboard':
+            if reason == "canceled" or reason == "interrupted from keyboard":
                 # If the user interrupted the computation,
                 # re-raise the interrupt if it was consumed
                 # in the solver so that the rest of the code
@@ -99,6 +101,8 @@ if _use_z3:
             return reason
 
         return None
+
+
 else:
     from pysmt.shortcuts import is_sat
 
@@ -116,7 +120,7 @@ def getGlobalExprManager():
 class SolverIntf:
     """ Interface of solvers """
 
-    __slots__ = ['_exprmanager']
+    __slots__ = ["_exprmanager"]
 
     def __init__(self, em=global_expr_manager):
         # for now we use a global expr manager
@@ -169,11 +173,12 @@ class SymbolicSolver(SolverIntf):
         return is_sat(*(x.unwrap() for x in e if not x.isConstant()))
 
     def concretize(self, assumpt, *e):
-        assert all(map(lambda x: not x.isConstant(), e)),\
-            "Constant instead of symbolic value"
+        assert all(
+            map(lambda x: not x.isConstant(), e)
+        ), "Constant instead of symbolic value"
         if any(map(lambda x: x.isConstant() and x.getValue() is False, assumpt)):
             return None
-        #m = smallmodels(assumpt, *e)
+        # m = smallmodels(assumpt, *e)
         m = models(assumpt, *e)
         if m is None:  # unsat
             return None
@@ -185,11 +190,12 @@ class SymbolicSolver(SolverIntf):
                 ret.append(Constant(m[n].as_long(), v.getType()))
         return ret
 
-  # def getUnique(self, val, *e):
-  #     v = self.concretize(val, *e)
-  #     if self.is_sat(self.exprmanager.Ne(val, v)):
-  #         return None
-  #     return v
+
+# def getUnique(self, val, *e):
+#     v = self.concretize(val, *e)
+#     if self.is_sat(self.exprmanager.Ne(val, v)):
+#         return None
+#     return v
 
 # For efficiency, we solve the True/False case incrementally
 # in the state.is_sat(). Keep this code if needed for the future

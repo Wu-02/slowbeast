@@ -1,5 +1,5 @@
-from .. ir.function import Function
-from .. ir.instruction import Branch
+from ..ir.function import Function
+from ..ir.instruction import Branch
 
 from sys import stdout
 from copy import copy
@@ -7,7 +7,7 @@ from copy import copy
 
 class CFG:
     class Node:
-        __slots__ = ['cfg', 'block', 'successors', 'predecessors']
+        __slots__ = ["cfg", "block", "successors", "predecessors"]
 
         def __init__(self, cfg, B):
             self.cfg = cfg
@@ -54,7 +54,7 @@ class CFG:
         return self.fun
 
     def createNode(self, *args):
-        """ Override this method in child classes
+        """Override this method in child classes
         to get nodes with more data
         """
         assert len(args) == 1
@@ -74,7 +74,7 @@ class CFG:
         if not isinstance(n, CFG.Node):
             n = self.getNode(n)
 
-        assert hasattr(n, 'getSuccessors')
+        assert hasattr(n, "getSuccessors")
         self.entry = n
 
     def _build(self):
@@ -99,8 +99,11 @@ class CFG:
     def dump(self, stream=stdout):
         for node in self._nodes.values():
             for succ in node.getSuccessors():
-                stream.write("{0} -> {1}\n".format(node.getBBlock().getID(),
-                                                   succ.getBBlock().getID()))
+                stream.write(
+                    "{0} -> {1}\n".format(
+                        node.getBBlock().getID(), succ.getBBlock().getID()
+                    )
+                )
 
 
 class CFGPath:
@@ -162,8 +165,7 @@ class CFGPath:
 
     def dump(self, stream=stdout):
         stream.write(str(self))
-        stream.write('\n')
+        stream.write("\n")
 
     def __repr__(self):
-        return " -> ".join(map(lambda x: str(x.getBBlock().getID()),
-                               self.locations))
+        return " -> ".join(map(lambda x: str(x.getBBlock().getID()), self.locations))

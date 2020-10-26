@@ -3,14 +3,14 @@ from sys import stdout
 
 
 class ExecutionStatus:
-    READY = 1      # ready for execution
-    EXITED = 2     # normally exited
+    READY = 1  # ready for execution
+    EXITED = 2  # normally exited
     TERMINATED = 3  # terminated by instruction (abort, etc.)
-    ERROR = 4      # hit an error (violated assertion, oob access, etc.)
+    ERROR = 4  # hit an error (violated assertion, oob access, etc.)
     # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
     KILLED = 5
 
-    __slots__ = 'value', 'detail'
+    __slots__ = "value", "detail"
 
     def __init__(self, st=READY):
         self.value = st
@@ -63,16 +63,16 @@ class ExecutionStatus:
 
     def __repr__(self):
         if self.value == ExecutionStatus.READY:
-            return 'READY'
+            return "READY"
         elif self.value == ExecutionStatus.ERROR:
-            return 'ERROR'
+            return "ERROR"
         elif self.value == ExecutionStatus.EXITED:
-            return 'EXITED'
+            return "EXITED"
         elif self.value == ExecutionStatus.TERMINATED:
-            return 'TERMINATED'
+            return "TERMINATED"
         elif self.value == ExecutionStatus.KILLED:
-            return 'KILLED'
+            return "KILLED"
         raise RuntimeError("Invalid state status")
 
     def dump(self, stream=stdout):
-        stream.write('status: {0}\n'.format(str(self)))
+        stream.write("status: {0}\n".format(str(self)))

@@ -1,4 +1,4 @@
-from . program import ProgramElement
+from .program import ProgramElement
 
 
 class Argument(ProgramElement):

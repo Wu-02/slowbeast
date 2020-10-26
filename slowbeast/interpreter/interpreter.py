@@ -1,7 +1,7 @@
-from .. core.executor import Executor
+from ..core.executor import Executor
 
-from .. util.debugging import print_stderr, dbg
-from . interactive import InteractiveHandler
+from ..util.debugging import print_stderr, dbg
+from .interactive import InteractiveHandler
 
 
 class ExecutionOptions:
@@ -33,19 +33,14 @@ class GlobalInit:
 
 
 class Interpreter:
-    def __init__(
-            self,
-            program,
-            opts=ExecutionOptions(),
-            executor=None):
+    def __init__(self, program, opts=ExecutionOptions(), executor=None):
         self._program = program
         self._options = opts
         self._executor = Executor(opts) if executor is None else executor
-        self._interactive = InteractiveHandler(
-            self) if opts.interactive else None
+        self._interactive = InteractiveHandler(self) if opts.interactive else None
 
         self.states = []
-        #self.states_num = 0
+        # self.states_num = 0
 
     def getProgram(self):
         return self._program
@@ -77,25 +72,20 @@ class Interpreter:
         return s
 
     def handleNewStates(self, newstates):
-        assert len(newstates) == 1,\
-            "Concrete execution returned more than one state"
+        assert len(newstates) == 1, "Concrete execution returned more than one state"
 
         state = newstates[0]
         if state.isReady():
-            assert(len(self.states) == 0)
+            assert len(self.states) == 0
             self.states.append(state)
         elif state.hasError():
-            print_stderr("Error while executing '{0}'".format(state),
-                         color='RED')
-            print_stderr(state.getError(), color='BROWN')
+            print_stderr("Error while executing '{0}'".format(state), color="RED")
+            print_stderr(state.getError(), color="BROWN")
             state.dump()
         elif s.isTerminated():
-            print_stderr(s.getError(), color='BROWN')
+            print_stderr(s.getError(), color="BROWN")
         elif s.wasKilled():
-            print_stderr(
-                s.getStatusDetail(),
-                prefix='KILLED STATE: ',
-                color='WINE')
+            print_stderr(s.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
         else:
             assert s.exited()
             dbg("state exited with exitcode {0}".format(s.getExitCode()))
@@ -130,8 +120,11 @@ class Interpreter:
                     ret = self._executor.execute(s, i)
                     assert len(ret) == 1, "Unhandled initialization"
                     assert ret[0] is s, "Unhandled initialization instruction"
-                    assert ret[0].isReady(
-                    ), "Generated errorneous state during initialization of globals"
+                    assert ret[
+                        0
+                    ].isReady(), (
+                        "Generated errorneous state during initialization of globals"
+                    )
 
     def prepare(self):
         """
@@ -148,7 +141,7 @@ class Interpreter:
         for s in self.states:
             s.pushCall(None, self.getProgram().getEntry())
 
-        #self.states_num += len(self.states)
+        # self.states_num += len(self.states)
 
     def run(self):
         self.prepare()
@@ -165,16 +158,17 @@ class Interpreter:
                     newstates = self._executor.executeTillBranch(state)
                 else:
                     raise NotImplementedError(
-                        "Invalid step: {0}".format(
-                            self._options.step))
+                        "Invalid step: {0}".format(self._options.step)
+                    )
 
-               #self.states_num += len(newstates)
-               # if self.states_num % 100 == 0:
-               #    print("Searched states: {0}".format(self.states_num))
+                # self.states_num += len(newstates)
+                # if self.states_num % 100 == 0:
+                #    print("Searched states: {0}".format(self.states_num))
                 self.handleNewStates(newstates)
         except Exception as e:
-            print_stderr("Fatal error while executing '{0}'".format(state.pc),
-                         color='RED')
+            print_stderr(
+                "Fatal error while executing '{0}'".format(state.pc), color="RED"
+            )
             state.dump()
             raise e
 

@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
-from . bblock import BBlock  # due to assertions
-from . argument import Argument
-from . program import ProgramElement
+from .bblock import BBlock  # due to assertions
+from .argument import Argument
+from .program import ProgramElement
 
-from .. util.debugging import print_highlight
+from ..util.debugging import print_highlight
 from sys import stdout
 
 
@@ -35,15 +35,16 @@ class GlobalVariable(ProgramElement):
 
     def setInit(self, I):
         for i in I:
-            self.addMetadata('init', str(i))
+            self.addMetadata("init", str(i))
         self._init = I
 
     def asValue(self):
-        return 'g{0}'.format(self.getID())
+        return "g{0}".format(self.getID())
 
     def __str__(self):
         return "{0} = global {1} of size {2}".format(
-            self.asValue(), self.getName(), self.getSize())
+            self.asValue(), self.getName(), self.getSize()
+        )
 
     def dump(self, ind=0, stream=stdout, color=True):
         super(GlobalVariable, self).dump(ind, stream)
@@ -51,7 +52,6 @@ class GlobalVariable(ProgramElement):
 
 
 class Instruction(ProgramElement):
-
     def __init__(self, ops=[]):
         super(Instruction, self).__init__()
         self._operands = ops
@@ -84,20 +84,25 @@ class Instruction(ProgramElement):
     def dump(self, ind=0, stream=stdout, color=True):
         super(Instruction, self).dump(ind, stream)
         if color:
-            print_highlight(str(self), {"store": "WINE",
-                                        "load": "WINE",
-                                        "sext": "WINE",
-                                        "zext": "WINE",
-                                        "call": "WINE",
-                                        "assert": "WINE",
-                                        "assume": "WINE",
-                                        "branch": "WINE",
-                                        "ret": "WINE",
-                                        "cmp": "WINE",
-                                        "alloc": "WINE",
-                                        "bblock": "GREEN",
-                                        },
-                            " " * ind, stream=stream)
+            print_highlight(
+                str(self),
+                {
+                    "store": "WINE",
+                    "load": "WINE",
+                    "sext": "WINE",
+                    "zext": "WINE",
+                    "call": "WINE",
+                    "assert": "WINE",
+                    "assume": "WINE",
+                    "branch": "WINE",
+                    "ret": "WINE",
+                    "cmp": "WINE",
+                    "alloc": "WINE",
+                    "bblock": "GREEN",
+                },
+                " " * ind,
+                stream=stream,
+            )
         else:
             stream.write("{0}{1}\n".format(" " * ind, self))
 
@@ -116,15 +121,16 @@ class Instruction(ProgramElement):
         assert isinstance(self._bblock, BBlock)
         return self._bblock.getNextInstruction(self._bblock_idx)
 
-   # Defined in super class
-   # def __eq__(self, other):
-   #    return self.getID() == other.getID()
 
-   # def __ne__(self, other):
-   #    return not(self.__eq__(self, other))
+# Defined in super class
+# def __eq__(self, other):
+#    return self.getID() == other.getID()
 
-   # def __hash__(self):
-   #    return self.getID()
+# def __ne__(self, other):
+#    return not(self.__eq__(self, other))
+
+# def __hash__(self):
+#    return self.getID()
 
 
 class ValueInstruction(Instruction):
@@ -139,16 +145,17 @@ class ValueInstruction(Instruction):
         return False
 
     def asValue(self):
-        return 'x{0}'.format(self.getID())
+        return "x{0}".format(self.getID())
 
 
 class Store(Instruction):
     def __init__(self, val, to):
         super(Store, self).__init__([val, to])
-       # assert isinstance(val, Constant) or\
-       #       isinstance(val, ValueInstruction) or\
-       #       isinstance(val, Argument)
-       # assert isinstance(to, ValueInstruction)
+
+    # assert isinstance(val, Constant) or\
+    #       isinstance(val, ValueInstruction) or\
+    #       isinstance(val, Argument)
+    # assert isinstance(to, ValueInstruction)
 
     def getPointerOperand(self):
         return self.getOperand(1)
@@ -157,8 +164,9 @@ class Store(Instruction):
         return self.getOperand(0)
 
     def __str__(self):
-        return "store {0} to {1}".format(self.getValueOperand().asValue(),
-                                         self.getPointerOperand().asValue())
+        return "store {0} to {1}".format(
+            self.getValueOperand().asValue(), self.getPointerOperand().asValue()
+        )
 
 
 class Load(ValueInstruction):
@@ -176,7 +184,8 @@ class Load(ValueInstruction):
 
     def __str__(self):
         return "x{0} = load {1}:{2}B".format(
-            self.getID(), self.getPointerOperand().asValue(), self.bytes)
+            self.getID(), self.getPointerOperand().asValue(), self.bytes
+        )
 
 
 class Alloc(ValueInstruction):
@@ -188,21 +197,20 @@ class Alloc(ValueInstruction):
         return self._size
 
     def __str__(self):
-        return "x{0} = alloc {1} bytes".format(
-            self.getID(), self.getSize().asValue())
+        return "x{0} = alloc {1} bytes".format(self.getID(), self.getSize().asValue())
 
     # the allocations return pointers, we need to compare them
     def __lt__(self, other):
-        return (self.getID() < other.getID())
+        return self.getID() < other.getID()
 
     def __le__(self, other):
-        return(self.getID() <= other.getID())
+        return self.getID() <= other.getID()
 
     def __gt__(self, other):
-        return(self.getID() > other.getID())
+        return self.getID() > other.getID()
 
     def __ge__(self, other):
-        return(self.getID() >= other.getID())
+        return self.getID() >= other.getID()
 
     # must override the hash since we defined the operators
     # defined in super class
@@ -229,7 +237,8 @@ class Branch(Instruction):
         return "branch {0} ? {1} : {2}".format(
             self.getCondition().asValue(),
             self.getTrueSuccessor().asValue(),
-            self.getFalseSuccessor().asValue())
+            self.getFalseSuccessor().asValue(),
+        )
 
 
 class Call(ValueInstruction):
@@ -245,10 +254,9 @@ class Call(ValueInstruction):
         # return self._function
 
     def __str__(self):
-        r = "x{0} = call {1}(".format(self.getID(),
-                                      self.getCalledFunction().asValue())
-        r += ', '.join(map(lambda x: x.asValue(), self.getOperands()))
-        return r + ')'
+        r = "x{0} = call {1}(".format(self.getID(), self.getCalledFunction().asValue())
+        r += ", ".join(map(lambda x: x.asValue(), self.getOperands()))
+        return r + ")"
 
 
 class Return(Instruction):
@@ -272,9 +280,9 @@ class Print(Instruction):
         return self._function
 
     def __str__(self):
-        r = 'print '
+        r = "print "
         for o in self._operands:
-            r += o.asValue() + ' '
+            r += o.asValue() + " "
         return r
 
 
@@ -293,10 +301,10 @@ class Assert(Instruction):
         return self.getOperand(0)
 
     def __str__(self):
-        r = 'assert {0}'.format(self.getCondition().asValue())
+        r = "assert {0}".format(self.getCondition().asValue())
         m = self.getMessage()
         if m:
-            r += ", \"{0}\"".format(m)
+            r += ', "{0}"'.format(m)
         return r
 
 
@@ -305,10 +313,10 @@ class Assume(Instruction):
         super(Assume, self).__init__([*operands])
 
     def __str__(self):
-        r = 'assume '
+        r = "assume "
         for n, o in enumerate(self._operands):
             if n > 0:
-                r += ' && '
+                r += " && "
             r += o.asValue()
         return r
 
@@ -323,22 +331,22 @@ class Cmp(ValueInstruction):
 
     def predicateStr(p, u=False):
         if p == Cmp.LE:
-            s = '<='
+            s = "<="
         elif p == Cmp.LT:
-            s = '<'
+            s = "<"
         elif p == Cmp.GE:
-            s = '>='
+            s = ">="
         elif p == Cmp.GT:
-            s = '>'
+            s = ">"
         elif p == Cmp.EQ:
-            s = '=='
+            s = "=="
         elif p == Cmp.NE:
-            s = '!='
+            s = "!="
         else:
             raise NotImplementedError("Invalid comparison")
 
         if u:
-            s += 'u'
+            s += "u"
 
         return s
 
@@ -377,10 +385,9 @@ class Cmp(ValueInstruction):
         return "{0} = cmp {1} {2} {3}".format(
             self.asValue(),
             self.getOperand(0).asValue(),
-            Cmp.predicateStr(
-                self.getPredicate(),
-                self.isUnsigned()),
-            self.getOperand(1).asValue())
+            Cmp.predicateStr(self.getPredicate(), self.isUnsigned()),
+            self.getOperand(1).asValue(),
+        )
 
 
 class UnaryOperation(ValueInstruction):
@@ -416,9 +423,9 @@ class ZExt(Extend):
         super(ZExt, self).__init__(UnaryOperation.ZEXT, a, bw)
 
     def __str__(self):
-        return "x{0} = zext {1} to {2}b".format(self.getID(),
-                                                self.getOperand(0).asValue(),
-                                                self.getBitWidth())
+        return "x{0} = zext {1} to {2}b".format(
+            self.getID(), self.getOperand(0).asValue(), self.getBitWidth()
+        )
 
 
 class SExt(Extend):
@@ -426,9 +433,9 @@ class SExt(Extend):
         super(SExt, self).__init__(UnaryOperation.SEXT, a, bw)
 
     def __str__(self):
-        return "x{0} = sext {1} to {2}b".format(self.getID(),
-                                                self.getOperand(0).asValue(),
-                                                self.getBitWidth())
+        return "x{0} = sext {1} to {2}b".format(
+            self.getID(), self.getOperand(0).asValue(), self.getBitWidth()
+        )
 
 
 class ExtractBits(UnaryOperation):
@@ -450,7 +457,8 @@ class ExtractBits(UnaryOperation):
 
     def __str__(self):
         return "x{0} = extractbits {1}-{2} from {3}b".format(
-            self.getID(), self.getStart(), self.getEnd(), self.getOperand(0).asValue())
+            self.getID(), self.getStart(), self.getEnd(), self.getOperand(0).asValue()
+        )
 
 
 class BinaryOperation(ValueInstruction):
@@ -488,9 +496,9 @@ class Add(BinaryOperation):
         super(Add, self).__init__(BinaryOperation.ADD, a, b)
 
     def __str__(self):
-        return "x{0} = {1} + {2}".format(self.getID(),
-                                         self.getOperand(0).asValue(),
-                                         self.getOperand(1).asValue())
+        return "x{0} = {1} + {2}".format(
+            self.getID(), self.getOperand(0).asValue(), self.getOperand(1).asValue()
+        )
 
 
 class Sub(BinaryOperation):
@@ -498,9 +506,9 @@ class Sub(BinaryOperation):
         super(Sub, self).__init__(BinaryOperation.SUB, a, b)
 
     def __str__(self):
-        return "x{0} = {1} - {2}".format(self.getID(),
-                                         self.getOperand(0).asValue(),
-                                         self.getOperand(1).asValue())
+        return "x{0} = {1} - {2}".format(
+            self.getID(), self.getOperand(0).asValue(), self.getOperand(1).asValue()
+        )
 
 
 class Mul(BinaryOperation):
@@ -508,9 +516,9 @@ class Mul(BinaryOperation):
         super(Mul, self).__init__(BinaryOperation.MUL, a, b)
 
     def __str__(self):
-        return "x{0} = {1} * {2}".format(self.getID(),
-                                         self.getOperand(0).asValue(),
-                                         self.getOperand(1).asValue())
+        return "x{0} = {1} * {2}".format(
+            self.getID(), self.getOperand(0).asValue(), self.getOperand(1).asValue()
+        )
 
 
 class Div(BinaryOperation):
@@ -522,10 +530,12 @@ class Div(BinaryOperation):
         return self._unsigned
 
     def __str__(self):
-        return "x{0} = {1} /{3} {2}".format(self.getID(),
-                                            self.getOperand(0).asValue(),
-                                            self.getOperand(1).asValue(),
-                                            "u" if self.isUnsigned() else "")
+        return "x{0} = {1} /{3} {2}".format(
+            self.getID(),
+            self.getOperand(0).asValue(),
+            self.getOperand(1).asValue(),
+            "u" if self.isUnsigned() else "",
+        )
 
 
 class Rem(BinaryOperation):
@@ -537,10 +547,12 @@ class Rem(BinaryOperation):
         return self._unsigned
 
     def __str__(self):
-        return "x{0} = {1} %{3} {2}".format(self.getID(),
-                                            self.getOperand(0).asValue(),
-                                            self.getOperand(1).asValue(),
-                                            "u" if self.isUnsigned() else "")
+        return "x{0} = {1} %{3} {2}".format(
+            self.getID(),
+            self.getOperand(0).asValue(),
+            self.getOperand(1).asValue(),
+            "u" if self.isUnsigned() else "",
+        )
 
 
 class Shl(BinaryOperation):
@@ -548,9 +560,9 @@ class Shl(BinaryOperation):
         super(Shl, self).__init__(BinaryOperation.SHL, a, b)
 
     def __str__(self):
-        return "x{0} = {1} << {2}".format(self.getID(),
-                                          self.getOperand(0).asValue(),
-                                          self.getOperand(1).asValue())
+        return "x{0} = {1} << {2}".format(
+            self.getID(), self.getOperand(0).asValue(), self.getOperand(1).asValue()
+        )
 
 
 class LShr(BinaryOperation):
@@ -558,9 +570,9 @@ class LShr(BinaryOperation):
         super(LShr, self).__init__(BinaryOperation.LSHR, a, b)
 
     def __str__(self):
-        return "x{0} = {1} l>> {2}".format(self.getID(),
-                                           self.getOperand(0).asValue(),
-                                           self.getOperand(1).asValue())
+        return "x{0} = {1} l>> {2}".format(
+            self.getID(), self.getOperand(0).asValue(), self.getOperand(1).asValue()
+        )
 
 
 class AShr(BinaryOperation):
@@ -568,9 +580,9 @@ class AShr(BinaryOperation):
         super(AShr, self).__init__(BinaryOperation.ASHR, a, b)
 
     def __str__(self):
-        return "x{0} = {1} >> {2}".format(self.getID(),
-                                          self.getOperand(0).asValue(),
-                                          self.getOperand(1).asValue())
+        return "x{0} = {1} >> {2}".format(
+            self.getID(), self.getOperand(0).asValue(), self.getOperand(1).asValue()
+        )
 
 
 class And(BinaryOperation):
@@ -578,9 +590,9 @@ class And(BinaryOperation):
         super(And, self).__init__(BinaryOperation.AND, a, b)
 
     def __str__(self):
-        return "x{0} = {1} & {2}".format(self.getID(),
-                                         self.getOperand(0).asValue(),
-                                         self.getOperand(1).asValue())
+        return "x{0} = {1} & {2}".format(
+            self.getID(), self.getOperand(0).asValue(), self.getOperand(1).asValue()
+        )
 
 
 class Or(BinaryOperation):
@@ -588,9 +600,9 @@ class Or(BinaryOperation):
         super(Or, self).__init__(BinaryOperation.OR, a, b)
 
     def __str__(self):
-        return "x{0} = {1} | {2}".format(self.getID(),
-                                         self.getOperand(0).asValue(),
-                                         self.getOperand(1).asValue())
+        return "x{0} = {1} | {2}".format(
+            self.getID(), self.getOperand(0).asValue(), self.getOperand(1).asValue()
+        )
 
 
 class Xor(BinaryOperation):
@@ -598,6 +610,6 @@ class Xor(BinaryOperation):
         super(Xor, self).__init__(BinaryOperation.XOR, a, b)
 
     def __str__(self):
-        return "x{0} = xor {1}, {2}".format(self.getID(),
-                                            self.getOperand(0).asValue(),
-                                            self.getOperand(1).asValue())
+        return "x{0} = xor {1}, {2}".format(
+            self.getID(), self.getOperand(0).asValue(), self.getOperand(1).asValue()
+        )

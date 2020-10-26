@@ -1,10 +1,10 @@
 import sys
-from .. util.debugging import dbg, dbg_sec, FIXME
-from .. ir.instruction import *
-from .. ir.value import *
-from . errors import GenericError
-from . memorymodel import MemoryModel
-from . executionstate import ExecutionState
+from ..util.debugging import dbg, dbg_sec, FIXME
+from ..ir.instruction import *
+from ..ir.value import *
+from .errors import GenericError
+from .memorymodel import MemoryModel
+from .executionstate import ExecutionState
 
 
 def split_ready_states(states):
@@ -22,7 +22,7 @@ def split_nonready_states(states):
 
 
 class PathExecutionResult:
-    __slots__ = ['ready', 'errors', 'early', 'other']
+    __slots__ = ["ready", "errors", "early", "other"]
 
     def __init__(self, ready=None, errors=None, early=None, other=None):
         # states that can be further executed
@@ -93,16 +93,15 @@ class PathExecutionResult:
     def check(self):
         assert not self.ready or all(map(lambda x: x.isReady(), self.ready))
         assert not self.errors or all(map(lambda x: x.hasError(), self.errors))
-        assert not self.early or all(
-            map(lambda x: not x.isReady(), self.early))
+        assert not self.early or all(map(lambda x: not x.isReady(), self.early))
         assert not self.other or all(
-            map(lambda x: x.isTerminated() or x.wasKilled() or x.exited(),
-                self.other))
+            map(lambda x: x.isTerminated() or x.wasKilled() or x.exited(), self.other)
+        )
         return True
 
     def __repr__(self):
         haveany = False
-        msg = 'PathExecutionResult: {'
+        msg = "PathExecutionResult: {"
         if self.ready:
             haveany = True
             msg += f"\n  ready: {[x.getID() for x in self.ready]}"
@@ -116,9 +115,9 @@ class PathExecutionResult:
             haveany = True
             msg += f"\n  other: {[x.getID() for x in self.other]}"
         if haveany:
-            msg += '\n}'
+            msg += "\n}"
         else:
-            msg += '}'
+            msg += "}"
 
         return msg
 
@@ -137,8 +136,8 @@ class Executor:
         self._executed_instrs = 0
         self._executed_blks = 0
 
-   # def setMemoryModel(self, mm):
-   #    self.memorymodel = mm
+    # def setMemoryModel(self, mm):
+    #    self.memorymodel = mm
 
     def getMemoryModel(self):
         assert self.memorymodel is not None
@@ -170,9 +169,9 @@ class Executor:
     def execStore(self, state, instr):
         assert isinstance(instr, Store)
 
-        states = self.memorymodel.write(state,
-                                        instr.getValueOperand(),
-                                        instr.getPointerOperand())
+        states = self.memorymodel.write(
+            state, instr.getValueOperand(), instr.getPointerOperand()
+        )
 
         for s in states:
             if s.isReady():
@@ -182,9 +181,9 @@ class Executor:
     def execLoad(self, state, instr):
         assert isinstance(instr, Load)
 
-        states = self.memorymodel.read(state, instr,
-                                       instr.getPointerOperand(),
-                                       instr.getBytesNum())
+        states = self.memorymodel.read(
+            state, instr, instr.getPointerOperand(), instr.getBytesNum()
+        )
 
         for s in states:
             if s.isReady():
@@ -239,7 +238,7 @@ class Executor:
             if isinstance(v, Constant):
                 v = v.getValue()
             sys.stdout.write(str(v))
-        sys.stdout.write('\n')
+        sys.stdout.write("\n")
         sys.stdout.flush()
 
         state.pc = state.pc.getNextInstruction()
@@ -275,8 +274,9 @@ class Executor:
             if v.getValue() != True:
                 state.setError(
                     AssertFailError(
-                        "Assertion failed: {0} is {1} (!= True)".format(
-                            o, v)))
+                        "Assertion failed: {0} is {1} (!= True)".format(o, v)
+                    )
+                )
                 return [state]
 
         state.pc = state.pc.getNextInstruction()
@@ -297,8 +297,7 @@ class Executor:
         return [state]
 
     def execUnaryOp(self, state, instr):
-        raise NotImplementedError(
-            "Concrete executor does not implement unary op yet")
+        raise NotImplementedError("Concrete executor does not implement unary op yet")
 
     def execBinaryOp(self, state, instr):
         assert isinstance(instr, BinaryOperation)
@@ -371,14 +370,14 @@ class Executor:
         dbg("-- CALL {0} --".format(fun.getName()))
         if fun.isUndefined():
             state.setError(
-                GenericError(
-                    "Called undefined function: {0}".format(
-                        fun.getName())))
+                GenericError("Called undefined function: {0}".format(fun.getName()))
+            )
             return [state]
         # map values to arguments
         assert len(instr.getOperands()) == len(fun.getArguments())
-        mapping = {x: state.eval(y) for (x, y)
-                   in zip(fun.getArguments(), instr.getOperands())}
+        mapping = {
+            x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.getOperands())
+        }
         state.pushCall(instr, fun, mapping)
         return [state]
 
@@ -394,12 +393,12 @@ class Executor:
         rs = state.popCall()
         if rs is None:  # popped the last frame
             if ret.isPointer():
-                state.setError(
-                    GenericError("Returning a pointer from main function"))
+                state.setError(GenericError("Returning a pointer from main function"))
                 return [state]
             elif not ret.isConstant():
                 state.addWarning(
-                    "Returning a non-constant value from the main function")
+                    "Returning a non-constant value from the main function"
+                )
 
             state.setExited(ret)
             return [state]
@@ -417,9 +416,13 @@ class Executor:
         TODO: exceptional termination (like assert?)
         """
         # debug print
-        dbg("({2}) {0}: {1}".format(
-            '--' if not instr.getBBlock() else instr.getFunction().getName(),
-            str(instr), state.getID()))
+        dbg(
+            "({2}) {0}: {1}".format(
+                "--" if not instr.getBBlock() else instr.getFunction().getName(),
+                str(instr),
+                state.getID(),
+            )
+        )
 
         self._executed_instrs += 1
 

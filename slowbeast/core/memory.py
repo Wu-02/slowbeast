@@ -1,12 +1,12 @@
 import sys
 from copy import copy
 
-from .. core.callstack import CallStack
-from .. core.errors import MemError
-from .. ir.value import Pointer, Constant
-from .. ir.types import SizeType
+from ..core.callstack import CallStack
+from ..core.errors import MemError
+from ..ir.value import Pointer, Constant
+from ..ir.types import SizeType
 
-from . memoryobject import MemoryObject
+from .memoryobject import MemoryObject
 
 
 class Memory:
@@ -103,8 +103,9 @@ class Memory:
 
     def allocate(self, size, instr=None, nm=None, objid=None):
         """ Allocate a new memory object and return a pointer to it """
-        assert objid is None or self._objects.get(objid) is None,\
-            "Already has an object with id {0}".format(objid)
+        assert (
+            objid is None or self._objects.get(objid) is None
+        ), "Already has an object with id {0}".format(objid)
 
         o = self._allocate(size, instr, nm, objid)
 
@@ -116,8 +117,9 @@ class Memory:
 
     def allocateGlobal(self, G, objid=None):
         """ Allocate a new memory object and return a pointer to it """
-        assert objid is None or self._glob_objects.get(objid) is None,\
-            "Already has a global object with id {0}".format(objid)
+        assert (
+            objid is None or self._glob_objects.get(objid) is None
+        ), "Already has a global object with id {0}".format(objid)
 
         o = self._allocate(G.getSize(), G, G.getName(), objid)
 
@@ -137,8 +139,7 @@ class Memory:
         return self._glob_objects.get(moid) is not None
 
     def hasObject(self, moid):
-        return self._objects.get(
-            moid) is not None or self.hasGlobalObject(moid)
+        return self._objects.get(moid) is not None or self.hasGlobalObject(moid)
 
     def write(self, ptr, x):
         isglob = False

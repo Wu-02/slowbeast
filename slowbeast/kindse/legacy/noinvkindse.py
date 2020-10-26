@@ -1,7 +1,9 @@
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 from slowbeast.kindse.annotatedcfg import CFG, CFGPath
-from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
+from slowbeast.kindse.naive.naivekindse import (
+    KindSymbolicExecutor as BasicKindSymbolicExecutor,
+)
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.kindse.naive.inductionpath import InductionPath
 
@@ -9,13 +11,8 @@ from copy import copy
 
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
-    def __init__(
-            self,
-            prog,
-            ohandler=None,
-            opts=KindSeOptions()):
-        super(
-            KindSymbolicExecutor, self).__init__(prog, opts)
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
+        super(KindSymbolicExecutor, self).__init__(prog, opts)
 
         self.cfgs = {}
         self.paths = []
@@ -29,9 +26,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 self.prepare()
             states = self.states
             assert states
-            print_stdout(
-                "Executing path from init: {0}".format(path),
-                color="ORANGE")
+            print_stdout("Executing path from init: {0}".format(path), color="ORANGE")
             # we must execute without lazy memory
             executor = self.getExecutor()
         else:
@@ -48,20 +43,20 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         self.stats.paths += 1
         return ready, notready
 
-   # def extendPath(self, path, atmost=False):
-   #    front = path.first()
+    # def extendPath(self, path, atmost=False):
+    #    front = path.first()
 
-   #    preds = front.getPredecessors()
-   #    # FIXME: do not do this prepend, we always construct a new list....
-   #    # rather do append and then execute in reverse order (do a reverse
-   #    # iterator)
-   #    newpaths = [CFGPath([p] + path.getLocations()) for p in preds]
+    #    preds = front.getPredecessors()
+    #    # FIXME: do not do this prepend, we always construct a new list....
+    #    # rather do append and then execute in reverse order (do a reverse
+    #    # iterator)
+    #    newpaths = [CFGPath([p] + path.getLocations()) for p in preds]
 
-   #    if atmost and len(preds) == 0:
-   #        assert len(newpaths) == 0
-   #        newpaths.append(path)
+    #    if atmost and len(preds) == 0:
+    #        assert len(newpaths) == 0
+    #        newpaths.append(path)
 
-   #    return newpaths
+    #    return newpaths
 
     def extendPath(self, path, steps=0, atmost=False):
         """
@@ -120,18 +115,12 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def report(self, n):
         if n.hasError():
             print_stderr(
-                "{0}: {1}, {2}".format(
-                    n.getID(),
-                    n.pc,
-                    n.getError()),
-                color='RED')
+                "{0}: {1}, {2}".format(n.getID(), n.pc, n.getError()), color="RED"
+            )
             self.stats.errors += 1
             return Result.UNSAFE
         elif n.wasKilled():
-            print_stderr(
-                n.getStatusDetail(),
-                prefix='KILLED STATE: ',
-                color='WINE')
+            print_stderr(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
             self.stats.killed_paths += 1
             return Result.UNKNOWN
 
@@ -190,21 +179,20 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         step = self.getOptions().step
         while k > 0:
             paths = [
-                np for p in paths for np in self.extendPath(
-                    p, steps=step, atmost=True)]
+                np for p in paths for np in self.extendPath(p, steps=step, atmost=True)
+            ]
             k -= 1
         return paths
 
     def run(self):
-        dbg("Performing the k-ind algorithm only for the main function",
-            color="ORANGE")
+        dbg("Performing the k-ind algorithm only for the main function", color="ORANGE")
 
         k = 1
 
         self.paths = self.initializePaths()
 
         if len(self.paths) == 0:
-            print_stdout("Found no error state!", color='GREEN')
+            print_stdout("Found no error state!", color="GREEN")
             return 0
 
         while True:
@@ -213,16 +201,14 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
             r = self.checkPaths()
             if r is Result.SAFE:
-                print_stdout(
-                    "All possible error paths ruled out!",
-                    color="GREEN")
+                print_stdout("All possible error paths ruled out!", color="GREEN")
                 print_stdout("Induction step succeeded!", color="GREEN")
                 return 0
             elif r is Result.UNSAFE:
-                dbg("Error found.", color='RED')
+                dbg("Error found.", color="RED")
                 return 1
             elif r is Result.UNKNOWN:
-                print_stdout("Hit a problem, giving up.", color='ORANGE')
+                print_stdout("Hit a problem, giving up.", color="ORANGE")
                 return 1
             else:
                 assert r is None

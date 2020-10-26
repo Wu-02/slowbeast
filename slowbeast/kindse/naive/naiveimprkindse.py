@@ -3,7 +3,9 @@ from slowbeast.symexe.executionstate import SEState
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 from slowbeast.kindse.annotatedcfg import CFG
-from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor as BasicKindSymbolicExecutor
+from slowbeast.kindse.naive.naivekindse import (
+    KindSymbolicExecutor as BasicKindSymbolicExecutor,
+)
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.kindse.naive.inductionpath import InductionPath
 
@@ -11,13 +13,8 @@ from copy import copy
 
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
-    def __init__(
-            self,
-            prog,
-            ohandler=None,
-            opts=KindSeOptions()):
-        super(
-            KindSymbolicExecutor, self).__init__(prog, opts)
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
+        super(KindSymbolicExecutor, self).__init__(prog, opts)
 
         self.cfgs = {}
         self._infeasibleSuffixes = []
@@ -33,8 +30,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
     def executePath(self, path):
         print_stdout("Executing path: {0}".format(path), color="ORANGE")
-        ready, notready = self.getIndExecutor().executePath(path.getState(),
-                                                            path.getPath())
+        ready, notready = self.getIndExecutor().executePath(
+            path.getState(), path.getPath()
+        )
         return ready, notready
 
     def extendIndPath(self, path):
@@ -65,13 +63,16 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             for ns in notready:
                 if ns.hasError():
                     found_err = True
-                    dbg("Hit error state in induction check: {0}: {1}, {2}".format(
-                        ns.getID(), ns.pc, ns.getError()), color="PURPLE")
+                    dbg(
+                        "Hit error state in induction check: {0}: {1}, {2}".format(
+                            ns.getID(), ns.pc, ns.getError()
+                        ),
+                        color="PURPLE",
+                    )
                 if ns.wasKilled():
                     print_stderr(
-                        ns.getStatusDetail(),
-                        prefix='KILLED STATE: ',
-                        color='WINE')
+                        ns.getStatusDetail(), prefix="KILLED STATE: ", color="WINE"
+                    )
                     return [], Result.UNKNOWN
 
         return newpaths, Result.UNSAFE if found_err else Result.SAFE

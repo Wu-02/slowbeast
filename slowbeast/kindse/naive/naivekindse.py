@@ -11,7 +11,7 @@ class Result:
 
 
 class KindSeOptions(SEOptions):
-    __slots__ = ['step']
+    __slots__ = ["step"]
 
     def __init__(self, opts=None, step=-1):
         super(KindSeOptions, self).__init__(opts)
@@ -19,17 +19,8 @@ class KindSeOptions(SEOptions):
 
 
 class KindSymbolicExecutor(SymbolicExecutor):
-    def __init__(
-            self,
-            prog,
-            ohandler=None,
-            opts=KindSeOptions()):
-        super(
-            KindSymbolicExecutor,
-            self).__init__(
-            P=prog,
-            ohandler=ohandler,
-            opts=opts)
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
+        super(KindSymbolicExecutor, self).__init__(P=prog, ohandler=ohandler, opts=opts)
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
@@ -46,27 +37,24 @@ class KindSymbolicExecutor(SymbolicExecutor):
         for ns in states:
             if ns.hasError():
                 print_stderr(
-                    "{0}: {1}, {2}".format(
-                        ns.getID(),
-                        ns.pc,
-                        ns.getError()),
-                    color='RED')
+                    "{0}: {1}, {2}".format(ns.getID(), ns.pc, ns.getError()),
+                    color="RED",
+                )
                 self.stats.errors += 1
                 self.stats.paths += 1
                 return Result.UNSAFE
             elif ns.isReady():
                 self.base.append(ns)
             elif ns.isTerminated():
-                print_stderr(ns.getError(), color='BROWN')
+                print_stderr(ns.getError(), color="BROWN")
                 self.stats.paths += 1
                 self.stats.terminated_paths += 1
             elif ns.wasKilled():
                 self.stats.paths += 1
                 self.stats.killed_paths += 1
                 print_stderr(
-                    ns.getStatusDetail(),
-                    prefix='KILLED STATE: ',
-                    color='WINE')
+                    ns.getStatusDetail(), prefix="KILLED STATE: ", color="WINE"
+                )
                 return Result.UNKNOWN
             else:
                 assert ns.exited()
@@ -87,17 +75,20 @@ class KindSymbolicExecutor(SymbolicExecutor):
         for ns in states:
             if ns.hasError():
                 found_err = True
-                dbg("Hit error state while building IS assumptions: {0}: {1}, {2}".format(
-                    ns.getID(), ns.pc, ns.getError()), color="PURPLE")
+                dbg(
+                    "Hit error state while building IS assumptions: {0}: {1}, {2}".format(
+                        ns.getID(), ns.pc, ns.getError()
+                    ),
+                    color="PURPLE",
+                )
             elif ns.isReady():
                 self.ind.append(ns)
             elif ns.isTerminated():
-                print_stderr(ns.getError(), color='BROWN')
+                print_stderr(ns.getError(), color="BROWN")
             elif ns.wasKilled():
                 print_stderr(
-                    ns.getStatusDetail(),
-                    prefix='KILLED STATE: ',
-                    color='WINE')
+                    ns.getStatusDetail(), prefix="KILLED STATE: ", color="WINE"
+                )
                 return Result.UNKNOWN
             else:
                 assert ns.exited()
@@ -112,15 +103,17 @@ class KindSymbolicExecutor(SymbolicExecutor):
         for ns in states:
             if ns.hasError():
                 has_error = True
-                dbg("Induction check hit error state: {0}: {1}, {2}".format(
-                    ns.getID(), ns.pc, ns.getError()),
-                    color="PURPLE")
+                dbg(
+                    "Induction check hit error state: {0}: {1}, {2}".format(
+                        ns.getID(), ns.pc, ns.getError()
+                    ),
+                    color="PURPLE",
+                )
                 break
             elif ns.wasKilled():
                 print_stderr(
-                    ns.getStatusDetail(),
-                    prefix='KILLED STATE: ',
-                    color='WINE')
+                    ns.getStatusDetail(), prefix="KILLED STATE: ", color="WINE"
+                )
                 return Result.UNKNOWN
 
         return Result.UNSAFE if has_error else Result.SAFE
@@ -141,15 +134,14 @@ class KindSymbolicExecutor(SymbolicExecutor):
     def run(self):
         self.prepare()
 
-        dbg("Performing the k-ind algorithm only for the main function",
-            color="ORANGE")
+        dbg("Performing the k-ind algorithm only for the main function", color="ORANGE")
 
         k = 1
         self.base = self.states  # start from the initial states
         self.ind, safe = self.initializeInduction()
 
         if safe:
-            print_stdout("Found no error state!", color='GREEN')
+            print_stdout("Found no error state!", color="GREEN")
             return 0
 
         while True:
@@ -158,33 +150,35 @@ class KindSymbolicExecutor(SymbolicExecutor):
             dbg("Extending base".format(k), color="BLUE")
             r = self.extendBase()
             if r == Result.UNSAFE:
-                dbg("Error found.", color='RED')
+                dbg("Error found.", color="RED")
                 return 1
             elif r is Result.SAFE:
-                print_stdout("We searched the whole program!", color='GREEN')
+                print_stdout("We searched the whole program!", color="GREEN")
                 return 0
             elif r is Result.UNKNOWN:
-                print_stdout("Hit a problem, giving up.", color='ORANGE')
+                print_stdout("Hit a problem, giving up.", color="ORANGE")
                 return 1
 
             dbg("Extending induction step".format(k), color="BLUE")
             r = self.extendInd()
             if r == Result.SAFE:
-                print_stdout("Did not hit any possible error while building "
-                             "induction step!".format(k),
-                             color="GREEN")
+                print_stdout(
+                    "Did not hit any possible error while building "
+                    "induction step!".format(k),
+                    color="GREEN",
+                )
                 return 0
             elif r is Result.UNKNOWN:
-                print_stdout("Hit a problem, giving up.", color='ORANGE')
+                print_stdout("Hit a problem, giving up.", color="ORANGE")
                 return 1
 
             dbg("Checking induction step".format(k), color="BLUE")
             r = self.checkInd()
             if r == Result.SAFE:
-                print_stdout("Induction step succeeded!", color='GREEN')
+                print_stdout("Induction step succeeded!", color="GREEN")
                 return 0
             elif r is Result.UNKNOWN:
-                print_stdout("Hit a problem, giving up.", color='ORANGE')
+                print_stdout("Hit a problem, giving up.", color="ORANGE")
                 return 1
 
             k += 1

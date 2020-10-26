@@ -1,5 +1,5 @@
-from .. ir.types import Type, BoolType
-from .. ir.value import Value, Constant
+from ..ir.types import Type, BoolType
+from ..ir.value import Value, Constant
 
 
 def getUnsigned(a):
@@ -40,7 +40,7 @@ class ConcreteDomain:
         And() of multiple boolean arguments.
         And() itself works as logical or bitwise and depending
         on the arguments.  This method is only logical and,
-        but of multiple arguments """
+        but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.isBool(), args))
         return Constant(all(args), BoolType())
@@ -50,7 +50,7 @@ class ConcreteDomain:
         Or() of multiple boolean arguments.
         Or() itself works as logical or bitwise and depending
         on the arguments.  This method is only logical or,
-        but of multiple arguments """
+        but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.isBool(), args))
         return Constant(any(args), BoolType())
@@ -109,8 +109,12 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert b.getValue() < a.getBitWidth(), "Invalid shift"
         val = a.getValue()
-        return Constant(a.getValue() >> b.getValue() if val >= 0 else (
-            val + (1 << a.getBitWidth())) >> b.getValue(), a.getType())
+        return Constant(
+            a.getValue() >> b.getValue()
+            if val >= 0
+            else (val + (1 << a.getBitWidth())) >> b.getValue(),
+            a.getType(),
+        )
 
     def Extract(a, start, end):
         assert ConcreteDomain.belongto(a)
@@ -118,14 +122,13 @@ class ConcreteDomain:
         assert end.isConstant()
         bitsnum = end.getValue() - start.getValue() + 1
         return Constant(
-            (a.getValue() >> start.getValue()) & (
-                (1 << (bitsnum)) - 1),
-            Type(bitsnum))
+            (a.getValue() >> start.getValue()) & ((1 << (bitsnum)) - 1), Type(bitsnum)
+        )
 
     def Rem(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         assert b.getValue() != 0, "Invalid remainder"
-        if (b.getValue() > a.getValue()):
+        if b.getValue() > a.getValue():
             return a
         if unsigned:
             return Constant(abs(a.getValue()) % abs(b.getValue()), a.getType())
@@ -191,9 +194,6 @@ class ConcreteDomain:
         result_ty = a.getType()
         if unsigned:
             return Constant(
-                getUnsigned(
-                    a.getValue()) /
-                getUnsigned(
-                    b.getValue()),
-                result_ty)
+                getUnsigned(a.getValue()) / getUnsigned(b.getValue()), result_ty
+            )
         return Constant(int(a.getValue() / b.getValue()), result_ty)

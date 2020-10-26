@@ -5,10 +5,10 @@ from slowbeast.ir.types import Type
 
 def _getInt(s):
     try:
-        if s.startswith('0x'):
+        if s.startswith("0x"):
             return int(s, 16)
         else:
-            if 'e' in s:  # scientific notation
+            if "e" in s:  # scientific notation
                 if float(s) > 0 or float(s) < 0:
                     warn("Concretized float number: {0}".format(s))
                     # return None
@@ -22,12 +22,12 @@ def _getInt(s):
 def _getBitWidth(ty):
     if len(ty) < 2:
         return None
-    if ty[0] == 'i':
+    if ty[0] == "i":
         return _getInt(ty[1:])
-    elif ty.startswith('double'):
+    elif ty.startswith("double"):
         # FIXME: get this from program
         return 64
-    elif ty.startswith('float'):
+    elif ty.startswith("float"):
         return 32
     else:
         return None
@@ -35,7 +35,7 @@ def _getBitWidth(ty):
 
 def isPointerTy(ty):
     if isinstance(ty, str):
-        return ty[-1] == '*'
+        return ty[-1] == "*"
 
     assert ty.is_pointer == isPointerTy(str(ty))
     return ty.is_pointer
@@ -45,7 +45,7 @@ def isArrayTy(ty):
     sty = str(ty)
     if len(sty) < 2:
         return False
-    return sty[0] == '[' and sty[-1] == ']'
+    return sty[0] == "[" and sty[-1] == "]"
 
 
 def parseArrayTyByParts(ty):
@@ -56,9 +56,9 @@ def getArrayTySize(ty):
     assert isArrayTy(ty)
     sty = str(ty)
     parts = sty.split()
-    assert parts[1] == 'x', "Invalid array type"
-    assert parts[0].startswith('[')
-    assert parts[-1].endswith(']')
+    assert parts[1] == "x", "Invalid array type"
+    assert parts[0].startswith("[")
+    assert parts[-1].endswith("]")
     return int(parts[0][1:]) * getTypeSizeInBits(" ".join(parts[2:])[:-1])
 
 
@@ -73,12 +73,12 @@ def getTypeSizeInBits(ty):
         return s
     elif isPointerTy(ty):
         return 64
-    elif sty == 'double':
+    elif sty == "double":
         return 64
-    elif sty == 'float':
+    elif sty == "float":
         return 32
     else:
-        assert '*' not in sty, "Unsupported type: {0}".format(sty)
+        assert "*" not in sty, "Unsupported type: {0}".format(sty)
         return _getBitWidth(sty)
 
 
@@ -95,7 +95,7 @@ def getConstantInt(val):
     if val.type.is_pointer:
         return None
 
-    if '*' in str(val):
+    if "*" in str(val):
         return None
     parts = str(val).split()
     if len(parts) != 2:
@@ -108,9 +108,9 @@ def getConstantInt(val):
     c = _getInt(parts[1])
     if c is None:
         if bw == 1:
-            if parts[1] == 'true':
+            if parts[1] == "true":
                 return ConstantTrue
-            elif parts[1] == 'false':
+            elif parts[1] == "false":
                 return ConstantFalse
         return None
 

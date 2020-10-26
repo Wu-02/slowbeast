@@ -1,5 +1,9 @@
 from slowbeast.core.executor import PathExecutionResult
-from slowbeast.symexe.annotations import AssumeAnnotation, AssertAnnotation, or_annotations
+from slowbeast.symexe.annotations import (
+    AssumeAnnotation,
+    AssertAnnotation,
+    or_annotations,
+)
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 from slowbeast.solvers.solver import getGlobalExprManager
 
@@ -11,6 +15,7 @@ class InductiveSequence:
     the or of this sequence is inductive on a
     given location.
     """
+
     class Frame:
         """
         A frame is a pair 'states' and their
@@ -24,10 +29,12 @@ class InductiveSequence:
 
             states = self.states
             stren = self.strengthening
-            assert stren is None or\
-                (states.getSubstitutions() and stren.getSubstitutions())
-            assert stren is None or\
-                (states.getSubstitutions() == stren.getSubstitutions())
+            assert stren is None or (
+                states.getSubstitutions() and stren.getSubstitutions()
+            )
+            assert stren is None or (
+                states.getSubstitutions() == stren.getSubstitutions()
+            )
 
         def toannot(self):
             EM = getGlobalExprManager()
@@ -35,10 +42,12 @@ class InductiveSequence:
             stren = self.strengthening
 
             assert states and states.getSubstitutions()
-            assert stren is None or\
-                states.getSubstitutions() == stren.getSubstitutions()
-            expr = EM.And(states.getExpr(), stren.getExpr())\
-                if stren else states.getExpr()
+            assert (
+                stren is None or states.getSubstitutions() == stren.getSubstitutions()
+            )
+            expr = (
+                EM.And(states.getExpr(), stren.getExpr()) if stren else states.getExpr()
+            )
             return expr, states.getSubstitutions()
 
         def toassert(self):
@@ -84,8 +93,7 @@ class InductiveSequence:
 
     def toannotation(self, toassert=True):
         EM = getGlobalExprManager()
-        return or_annotations(EM, toassert,
-                              *map(lambda f: f.toassume(), self.frames))
+        return or_annotations(EM, toassert, *map(lambda f: f.toassume(), self.frames))
 
     def __getitem__(self, idx):
         return self.frames[idx]
@@ -95,16 +103,12 @@ class InductiveSequence:
 
     def __repr__(self):
         return "\nvv seq vv\n{0}\n^^ seq ^^\n".format(
-            "\n-----\n".join(map(str, self.frames)))
+            "\n-----\n".join(map(str, self.frames))
+        )
 
     def check_on_paths(
-            self,
-            executor,
-            paths,
-            tmpframes=[],
-            pre=[],
-            post=[],
-            self_as_pre=False):
+        self, executor, paths, tmpframes=[], pre=[], post=[], self_as_pre=False
+    ):
         """
         Check whether when we execute paths, we get to one of the frames
         tmpframes are frames that should be appended to the self.frames
@@ -131,12 +135,12 @@ class InductiveSequence:
             r = executor.executePath(p)
             result.merge(r)
 
-           # if r.ready:
-           #    print_stdout(f"safe along {path}", color="GREEN")
-           # if r.errors:
-           #    print_stdout(f"unsafe along {path}", color="RED")
-           # if not r.ready and not r.errors and not r.other:
-           #    print_stdout(f"infeasible along {path}", color="DARK_GREEN")
+        # if r.ready:
+        #    print_stdout(f"safe along {path}", color="GREEN")
+        # if r.errors:
+        #    print_stdout(f"unsafe along {path}", color="RED")
+        # if not r.ready and not r.errors and not r.other:
+        #    print_stdout(f"infeasible along {path}", color="DARK_GREEN")
 
         self.frames = oldframes
         return result
@@ -163,12 +167,12 @@ class InductiveSequence:
             r = executor.executePath(p)
             result.merge(r)
 
-           # if r.ready:
-           #    print_stdout(f"safe along {path}", color="GREEN")
-           # if r.errors:
-           #    print_stdout(f"unsafe along {path}", color="RED")
-           # if not r.ready and not r.errors and not r.other:
-           #    print_stdout(f"infeasible along {path}", color="DARK_GREEN")
+        # if r.ready:
+        #    print_stdout(f"safe along {path}", color="GREEN")
+        # if r.errors:
+        #    print_stdout(f"unsafe along {path}", color="RED")
+        # if not r.ready and not r.errors and not r.other:
+        #    print_stdout(f"infeasible along {path}", color="DARK_GREEN")
 
         return result
 

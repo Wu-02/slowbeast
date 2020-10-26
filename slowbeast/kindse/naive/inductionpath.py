@@ -16,8 +16,9 @@ class InductionPath:
         self.path = CFGPath(blocks)
 
     def copy(self):
-        return InductionPath(self.cfg, self.state.copy(),
-                             copy(self.path.getLocations()))
+        return InductionPath(
+            self.cfg, self.state.copy(), copy(self.path.getLocations())
+        )
 
     def getState(self):
         return self.state

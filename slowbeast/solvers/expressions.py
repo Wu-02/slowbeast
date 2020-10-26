@@ -1,7 +1,7 @@
-from .. ir.types import Type
-from .. ir.value import Value
-from .. domains.concrete import ConcreteDomain
-from .. domains.symbolic import *
+from ..ir.types import Type
+from ..ir.value import Value
+from ..domains.concrete import ConcreteDomain
+from ..domains.symbolic import *
 
 optimize_exprs = True
 
@@ -19,6 +19,7 @@ class ExprOptIntf:
     """
     Expressions optimizer interface
     """
+
     def optimize(expr, *assumptions):
         """ Optimize the expression given the assumptions """
         return expr
@@ -38,7 +39,9 @@ class SymbolicExprOpt(ExprOptIntf):
 if optimize_exprs:
     opt = SymbolicExprOpt.optimize
 else:
-    def opt(x): return x
+
+    def opt(x):
+        return x
 
 
 class ExprManager:
@@ -48,7 +51,7 @@ class ExprManager:
     SMT formulas, but we'll be ready for the future :)
     """
 
-    __slots__ = ['_names']
+    __slots__ = ["_names"]
 
     def __init__(self):
         self._names = {}
@@ -62,7 +65,8 @@ class ExprManager:
         s = names.get(name)
         if s:
             assert s.getType() == Type(
-                bw), f"Creating the same value with different type: {s.getType()} != {Type(bw)}"
+                bw
+            ), f"Creating the same value with different type: {s.getType()} != {Type(bw)}"
         else:
             s = SymbolicDomain.Var(name, bw)
             names[name] = s
@@ -102,8 +106,7 @@ class ExprManager:
         if ConcreteDomain.belongto(expr):
             return expr
         lift = self.lift
-        return SymbolicDomain.substitute(
-            expr, *((lift(a), lift(b)) for (a, b) in vals))
+        return SymbolicDomain.substitute(expr, *((lift(a), lift(b)) for (a, b) in vals))
 
     def equals(self, e1, e2):
         """
