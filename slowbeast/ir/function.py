@@ -1,6 +1,6 @@
+from sys import stdout
 from .argument import Argument
 from .program import ProgramElement
-from sys import stdout
 
 
 class Function(ProgramElement):
@@ -18,8 +18,7 @@ class Function(ProgramElement):
         assert self._name != other._name or self.getID() == other.getID()
         return self._name == other._name
 
-    def __hash__(self):
-        return super(Function, self).__hash__()
+    __hash__ = ProgramElement.__hash__
 
     def isUndefined(self):
         return self._bblocks == []
@@ -51,8 +50,8 @@ class Function(ProgramElement):
     def __iter__(self):
         return self._bblocks.__iter__()
 
-    def dump(self, stream=stdout):
-        super(Function, self).dump(stream)
+    def dump(self, ind=0, stream=stdout, color=True):
+        super().dump(ind, stream, color)
         stream.write(
             "fun {0}({1})\n".format(
                 self._name, ", ".join(map(lambda x: x.asValue(), self._arguments))

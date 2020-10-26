@@ -1,5 +1,5 @@
-from .program import ProgramElement
 from sys import stdout
+from .program import ProgramElement
 
 
 class BBlock(ProgramElement):
@@ -19,16 +19,16 @@ class BBlock(ProgramElement):
 
     def insert(self, i, idx):
         assert len(self._instructions) > idx
-        oldi = self._instructions[idx]
         # shift indices of the suffix of the bblock
+        # FIXME: do not copy the suffix
         for sufi in self._instructions[idx:]:
             sufi._bblock_idx += 1
         self._instructions.insert(idx, i)
         i.setBBlock(self, idx)
 
         if __debug__:
-            for n, i in enumerate(self._instructions):
-                assert i._bblock_idx == n, "Invalid insertion of instruction"
+            for n, inst in enumerate(self._instructions):
+                assert inst.getBBlockIdx() == n, "Invalid insertion of instruction"
                 n += 1
 
     def first(self):
@@ -72,8 +72,8 @@ class BBlock(ProgramElement):
     def __iter__(self):
         return self._instructions.__iter__()
 
-    def dump(self, ind=0, stream=stdout):
-        super(BBlock, self).dump(ind, stream)
+    def dump(self, ind=0, stream=stdout, color=True):
+        super().dump(ind, stream, color)
         stream.write("{0}; [bblock {1}]\n".format(" " * ind, self.getID()))
         for i in self._instructions:
             i.dump(ind, stream)

@@ -44,16 +44,14 @@ class Constant(Value):
     __slots__ = ["_value"]
 
     def __init__(self, c, ty):
-        assert isinstance(c, int) or isinstance(
-            c, bool
-        ), f"Invalid constant: {c} {type(c)}"
+        assert isinstance(c, (int, bool)), f"Invalid constant: {c} {type(c)}"
         assert isinstance(ty, Type), f"Invalid type: {ty}"
         assert not isinstance(ty, PointerType), f"Invalid type: {ty}"
         super(Constant, self).__init__(ty)
         self._value = c
 
-        assert self.isPointer() == False, "Incorrectly constructed pointer"
-        assert not self.isBool() or (c or c == False), "Invalid boolean constant"
+        assert not self.isPointer(), "Incorrectly constructed pointer"
+        assert not self.isBool() or (c in (True, False)), "Invalid boolean constant"
         assert self.isBool() or isinstance(c, int)
 
     def asValue(self):
@@ -87,8 +85,8 @@ class Pointer(Value):
         self.offset = off
 
         assert self.isPointer(), "Incorrectly constructed pointer"
-        assert self.isBool() == False, "Incorrectly constructed pointer"
-        assert self.isConstant() == False, "Incorrectly constructed pointer"
+        assert not self.isBool(), "Incorrectly constructed pointer"
+        assert not self.isConstant(), "Incorrectly constructed pointer"
 
     def __str__(self):
         return "({0}, {1})".format(self.object.asValue(), self.offset)

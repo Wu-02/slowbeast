@@ -15,7 +15,7 @@ class InteractiveHandler:
         def __init__(self, _id):
             self._id = _id
 
-    def _shouldSkip(self, s, newstates):
+    def _shouldSkip(self, s):
         if self._stop_next_time:
             return False
         if s.getID() in self._break_pathid:
@@ -24,20 +24,18 @@ class InteractiveHandler:
             return False
         return True
 
-    def prompt(self, s, newstates):
+    def prompt(self, s):
         """s = currently executed state
         newstates = states generated
         """
         try:
-            return self._prompt(s, newstates)
+            return self._prompt(s)
         except EOFError:
-            from sys import exit
-
             print("Exiting...")
             exit(0)
 
-    def _prompt(self, s, newstates):
-        if self._shouldSkip(s, newstates):
+    def _prompt(self, s):
+        if self._shouldSkip(s):
             return
 
         self._stop_next_time = False
@@ -46,15 +44,15 @@ class InteractiveHandler:
         q = input("> ")
         if q == "":
             q = self._last_query
-        while not self.handle(q, s, newstates):
+        while not self.handle(q, s):
             q = input("> ")
 
         self._last_query = q
 
-    def handle(self, q, s, newstates):
+    def handle(self, q, s):
         """ Return False for new prompt (the handling was unsuccessful) """
         try:
-            return self._handle(q, s, newstates)
+            return self._handle(q, s)
         except KeyboardInterrupt:
             print("Interrupted")
             return False
@@ -64,7 +62,7 @@ class InteractiveHandler:
             return False
         return False
 
-    def _handle(self, q, s, newstates):
+    def _handle(self, q, s):
         dbg("query: {0}".format(q))
         query = q.split()
         if len(query) < 1:
@@ -76,9 +74,9 @@ class InteractiveHandler:
             self._stop_next_time = True
             return True
         elif query[0] == "p":
-            self.handlePrint(query[1:], s, newstates)
+            self.handlePrint(query[1:], s)
         elif query[0] == "b":
-            self.handleBreak(query[1:], s, newstates)
+            self.handleBreak(query[1:])
         elif query[0] in ["l", "list"]:
             if len(query) == 1:
                 i = s.pc
@@ -100,7 +98,7 @@ class InteractiveHandler:
                 return s
         return None
 
-    def handleBreak(self, query, state, newstates):
+    def handleBreak(self, query):
         if not query:
             print("Break on instructions: ", self._break_inst)
             print("Break on path ID: ", self._break_pathid)
@@ -113,7 +111,7 @@ class InteractiveHandler:
         # elif query[0] in ['s', 'state']: # XXX: states do not have any unique
         # id (yet?)...
 
-    def handlePrint(self, query, state, newstates):
+    def handlePrint(self, query, state):
         if not query:
             raise RuntimeError("Invalid arguments to print")
         if query[0] == "states":

@@ -1,11 +1,9 @@
-#!/usr/bin/python
+from sys import stdout
 
 from .bblock import BBlock  # due to assertions
-from .argument import Argument
 from .program import ProgramElement
 
 from ..util.debugging import print_highlight
-from sys import stdout
 
 
 class GlobalVariable(ProgramElement):
@@ -47,14 +45,14 @@ class GlobalVariable(ProgramElement):
         )
 
     def dump(self, ind=0, stream=stdout, color=True):
-        super(GlobalVariable, self).dump(ind, stream)
+        super().dump(ind, stream, color)
         stream.write("{0}{1}\n".format(" " * ind, self))
 
 
 class Instruction(ProgramElement):
-    def __init__(self, ops=[]):
+    def __init__(self, ops=None):
         super(Instruction, self).__init__()
-        self._operands = ops
+        self._operands = ops or []
         self._bblock = None
         self._bblock_idx = None
 
@@ -80,6 +78,9 @@ class Instruction(ProgramElement):
     def getFunction(self):
         assert self._bblock
         return self._bblock.getFunction()
+
+    def getBBlockIdx(self):
+        return self._bblock_idx
 
     def dump(self, ind=0, stream=stdout, color=True):
         super(Instruction, self).dump(ind, stream)
@@ -109,17 +110,17 @@ class Instruction(ProgramElement):
     ###
     # Helper methods
     def insertBefore(self, i):
-        assert self._bblock is None
-        assert self._bblock_idx is None
-        assert i._bblock is not None
-        assert i._bblock_idx is not None
-        return i._bblock.insert(self, i._bblock_idx)
+        assert self.getBBlock() is None
+        assert self.getBBlockIdx() is None
+        assert i.getBBlock() is not None
+        assert i.getBBlockIdx() is not None
+        return i.getBBlock().insert(self, i.getBBlockIdx())
 
     def getNextInstruction(self):
-        assert self._bblock is not None
-        assert self._bblock_idx is not None
-        assert isinstance(self._bblock, BBlock)
-        return self._bblock.getNextInstruction(self._bblock_idx)
+        assert self.getBBlock() is not None
+        assert self.getBBlockIdx() is not None
+        assert isinstance(self.getBBlock(), BBlock)
+        return self.getBBlock().getNextInstruction(self.getBBlockIdx())
 
 
 # Defined in super class
@@ -138,8 +139,8 @@ class ValueInstruction(Instruction):
     Instruction that returns a value
     """
 
-    def __init__(self, ops=[]):
-        super(ValueInstruction, self).__init__(ops)
+    def __init__(self, ops=None):
+        super(ValueInstruction, self).__init__(ops or [])
 
     def isConstant(self):
         return False
@@ -397,7 +398,7 @@ class UnaryOperation(ValueInstruction):
     EXTRACT = 4
 
     def __check(op):
-        assert op >= UnaryOperation.NEG and op <= UnaryOperation.EXTRACT
+        assert UnaryOperation.NEG <= op <= UnaryOperation.EXTRACT
 
     def __init__(self, op, a):
         super(UnaryOperation, self).__init__([a])
@@ -480,7 +481,7 @@ class BinaryOperation(ValueInstruction):
     LAST = 12
 
     def __check(op):
-        assert op >= BinaryOperation.ADD and op <= BinaryOperation.LAST
+        assert BinaryOperation.ADD <= op <= BinaryOperation.LAST
 
     def __init__(self, op, a, b):
         super(BinaryOperation, self).__init__([a, b])

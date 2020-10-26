@@ -82,21 +82,21 @@ class Interpreter:
             print_stderr("Error while executing '{0}'".format(state), color="RED")
             print_stderr(state.getError(), color="BROWN")
             state.dump()
-        elif s.isTerminated():
-            print_stderr(s.getError(), color="BROWN")
-        elif s.wasKilled():
-            print_stderr(s.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
+        elif state.isTerminated():
+            print_stderr(state.getError(), color="BROWN")
+        elif state.wasKilled():
+            print_stderr(state.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
         else:
-            assert s.exited()
-            dbg("state exited with exitcode {0}".format(s.getExitCode()))
+            assert state.exited()
+            dbg(f"state exited with exitcode {state.getExitCode()}")
 
         raise RuntimeError("This line should be unreachable")
 
-    def interact_if_needed(self, s, newstates):
+    def interact_if_needed(self, s):
         if self._interactive is None:
             return
 
-        self._interactive.prompt(s, newstates)
+        self._interactive.prompt(s)
 
     def run_static(self):
         """ Run static ctors (e.g. initialize globals) """
@@ -151,7 +151,7 @@ class Interpreter:
         try:
             while self.states:
                 state = self.getNextState()
-                self.interact_if_needed(state, newstates)
+                self.interact_if_needed(state)
                 if self._options.step == ExecutionOptions.INSTR_STEP:
                     newstates = self._executor.execute(state, state.pc)
                 elif self._options.step == ExecutionOptions.BLOCK_STEP:

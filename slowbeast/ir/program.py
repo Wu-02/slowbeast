@@ -1,5 +1,5 @@
-from ..util.debugging import print_stream
 from sys import stdout
+from slowbeast.util.debugging import print_stream
 
 
 class Program:
@@ -87,13 +87,16 @@ class ProgramElement:
         return self._id == rhs._id
 
     def __ne__(self, other):
-        return not (self.__eq__(other))
+        return not self.__eq__(other)
 
     def __hash__(self):
         return self._id
 
-    def dump(self, ind=0, stream=stdout):
+    def dump(self, ind=0, stream=stdout, color=True):
+        col="GRAY" if color else "BLACK"
         for k, v in self._metadata:
             print_stream(
-                "{0} ; {1} : {2}".format(" " * ind, k, v), color="GRAY", stream=stream
+                "{0} ; {1} : {2}".format(" " * ind, k, v),
+                color=col,
+                stream=stream
             )
