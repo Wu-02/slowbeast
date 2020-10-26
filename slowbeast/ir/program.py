@@ -45,7 +45,7 @@ class Program:
             g.dump(stream=stream)
             stream.write("\n")
         for f in self._functions:
-            f.dump(stream)
+            f.dump(stream=stream)
             stream.write("\n")
 
 
