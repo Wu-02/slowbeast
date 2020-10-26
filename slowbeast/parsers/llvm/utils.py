@@ -118,15 +118,17 @@ def getConstantInt(val):
 
     return Constant(c, Type(bw))
 
+
 def getConstantPtr(val):
     # good, this is so ugly. But llvmlite does
     # not provide any other way...
     if not val.type.is_pointer:
         return None
 
-    if str(val).endswith('null'):
+    if str(val).endswith("null"):
         return Pointer(0)
     return None
+
 
 def getLLVMOperands(inst):
     return [x for x in inst.operands]

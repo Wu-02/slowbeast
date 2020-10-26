@@ -10,13 +10,14 @@ class SEState(ExecutionState):
 
     statesCounter = 0
 
-    def __init__(self, pc, m, solver, constraints=ConstraintsSet()):
+    def __init__(self, executor, pc, m, solver, constraints=None):
         C = ConstraintsSet()
         assert not C.get(), C.get()
         ExecutionState.__init__(self, pc, m)
 
+        self._executor = executor
         self._solver = solver
-        self._constraints = ConstraintsSet()
+        self._constraints = constraints or ConstraintsSet()
         self._constraints_ro = False
 
         SEState.statesCounter += 1
@@ -31,12 +32,17 @@ class SEState(ExecutionState):
         return self._id
 
     def __eq__(self, rhs):
-        return (
-            super(SEState, self).__eq__(rhs) and self._constraints == rhs._constraints
-        )
+        """ Syntactic comparison """
+        assert (
+            self._executor is rhs._executor
+        ), "Comparing execution states of different executors"
+        return super().__eq__(rhs) and self._constraints == rhs._constraints
 
     def getSolver(self):
         return self._solver
+
+    def getExecutor(self):
+        return self._executor
 
     def getExprManager(self):
         return self._solver.getExprManager()
@@ -78,8 +84,8 @@ class SEState(ExecutionState):
 
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
-        new = SEState(self.pc, self.memory, self.getSolver())
-        super(SEState, self).copyTo(new)  # cow copy of super class
+        new = SEState(self._executor, self.pc, self.memory, self._solver)
+        super().copyTo(new)  # cow copy of super class
 
         new._constraints = self._constraints
         new._constraints_ro = True

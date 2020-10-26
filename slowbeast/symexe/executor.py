@@ -61,7 +61,7 @@ class Executor(ConcreteExecutor):
     def createState(self, pc=None, m=None):
         if m is None:
             m = self.getMemoryModel().createMemory()
-        s = SEState(pc, m, self.solver)
+        s = SEState(self, pc, m, self.solver)
         assert not s.getConstraints(), "the state is not clean"
         return s
 
@@ -115,7 +115,7 @@ class Executor(ConcreteExecutor):
     # FIXME: make this a method of State?
     def assume(self, state, cond):
         """Put an assumption _into_ the given state.
-        Return the statte or None if that situation cannot happen
+        Return the state or None if that situation cannot happen
         (the assumption is inconsistent with the state).
         """
         if cond.isConstant():

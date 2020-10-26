@@ -1,5 +1,6 @@
 from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Instruction, Load
+from slowbeast.core.executor import split_ready_states
 
 
 def _createCannonical(expr, subs, EM):
@@ -50,6 +51,10 @@ class StateDescription:
     def getExpr(self):
         return self._expr
 
+    def setExpr(self, expr):
+        """ Set expression in this states decriptior. Use responsibly!"""
+        self._expr = expr
+
     def getSubstitutions(self):
         return self._subs
 
@@ -71,7 +76,7 @@ class StateDescription:
         return "{0}[{1}]".format(
             self._expr,
             ", ".join(
-                f"{x.asValue()}->{val.unwrap()}" for (x, val) in self.subs.items()
+                f"{x.asValue()}->{val.unwrap()}" for (val, x) in self._subs.items()
             ),
         )
 
@@ -88,21 +93,21 @@ class StateDescription:
         )
 
 
-def unify_state_descriptions(EM, annot1, annot2):
+def unify_state_descriptions(EM, sd1, sd2):
     """
     Take two annotations, unify their variables and substitutions.
     Return the new expressions and the substitutions
     """
-    if annot1 is None:
-        return None, annot2.getExpr(), annot2.getSubstitutions()
-    if annot2 is None:
-        return annot1.getExpr(), None, annot1.getSubstitutions()
+    if sd1 is None:
+        return None, sd2.getExpr(), sd2.getSubstitutions()
+    if sd2 is None:
+        return sd1.getExpr(), None, sd1.getSubstitutions()
 
     # perform less substitutions if possible
-    subs1 = annot1.getSubstitutions()
-    subs2 = annot2.getSubstitutions()
-    expr1 = annot1.getExpr()
-    expr2 = annot2.getExpr()
+    subs1 = sd1.getSubstitutions()
+    subs2 = sd2.getSubstitutions()
+    expr1 = sd1.getExpr()
+    expr2 = sd2.getExpr()
     if 0 < len(subs2) < len(subs1) or len(subs1) == 0:
         subs1, subs2 = subs2, subs1
         expr1, expr2 = expr2, expr1
@@ -130,3 +135,50 @@ def unify_state_descriptions(EM, annot1, annot2):
             subs[val] = instr
 
     return EM.simplify(expr1), EM.simplify(expr2), subs
+
+
+def state_to_description(state):
+    EM = state.getExprManager()
+    return StateDescription(
+        state.getConstraintsObj().asFormula(EM),
+        {l: l.load for l in state.getNondetLoads()},
+    )
+
+
+def states_to_description(states) -> StateDescription:
+    a = None
+    for s in states:
+        # FIXME: this can break things in the future
+        EM = s.getExprManager()
+        if a is None:
+            a = state_to_description(s)
+        else:
+            e1, e2, subs = unify_state_descriptions(
+                EM,
+                a,
+                state_to_description(s),
+            )
+            a = StateDescription(EM.Or(e1, e2), subs)
+    return a
+
+
+def _execute_instr(executor, state, instr):
+    assert state.isReady()
+    # FIXME: get rid of this -- make a version of execute() that does not mess with pc
+    oldpc = state.pc
+    newstates = executor.execute(state, instr)
+    assert newstates, "Executing instruction resulted in no state"
+    if len(newstates) != 1:
+        raise NotImplementedError("Executing forking instructions not supported")
+    state = newstates[0]
+    assert state.isReady(), "Executing instruction resulted in non-ready state"
+    state.pc = oldpc
+    return state
+
+
+def eval_state_description(executor, state, sd):
+    subs = sd.getSubstitutions()
+    for i in set(subs.values()):
+        state = _execute_instr(executor, state, i)
+
+    return sd.doSubs(state)

@@ -4,6 +4,7 @@
 # value with a specified bitwidth
 # a pointer to a value (not boolean)
 
+
 class Type:
     __slots__ = ["_bitwidth"]
 

@@ -153,6 +153,12 @@ class Expr(Value):
         """
         return Expr(And(*to_cnf(self.unwrap())), self.getType())
 
+    def isAnd(self):
+        return is_and(self.unwrap())
+
+    def isOr(self):
+        return is_or(self.unwrap())
+
     def __hash__(self):
         return self._expr.__hash__()
 
@@ -207,7 +213,7 @@ class BVSymbolicDomain:
 
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
-    def simplify(expr, *assumptions):
+    def simplify(expr):
         return Expr(
             simplify(expr.unwrap(), arith_ineq_lhs=True, sort_sums=True), expr.getType()
         )

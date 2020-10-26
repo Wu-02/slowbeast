@@ -517,9 +517,7 @@ class Parser:
             # FIXME: check and set whether it is a constant
             ts = getTypeSize(g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
-            G = GlobalVariable(
-                Constant(ts, SizeType), g.name
-            )
+            G = GlobalVariable(Constant(ts, SizeType), g.name)
             c = getConstantInt(g.initializer)
             if c:
                 # FIXME: add composed instruction

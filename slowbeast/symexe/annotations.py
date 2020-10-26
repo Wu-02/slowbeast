@@ -69,6 +69,9 @@ class ExprAnnotation(Annotation):
         # annotations)
         self.cannonical = self._sd.cannonical(EM)
 
+    def getDescr(self):
+        return self._sd
+
     def getExpr(self):
         return self._sd.getExpr()
 
@@ -226,7 +229,6 @@ def execute_annotations(executor, s, annots):
     return ready, nonready
 
 
-
 def _join_annotations(EM, Ctor, op, annots):
     assert len(annots) > 0
     if len(annots) == 1:
@@ -242,6 +244,10 @@ def _join_annotations(EM, Ctor, op, annots):
         else:
             S = Ctor(expr1 or expr2, subs, EM)
     return S
+
+
+def unify_annotations(EM, a1, a2):
+    return unify_state_descriptions(EM, a1.getDescr(), a2.getDescr())
 
 
 def or_annotations(EM, toassert, *annots):

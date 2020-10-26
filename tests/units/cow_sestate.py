@@ -17,7 +17,7 @@ B0.append(Return(Constant(3, Type(2))))
 
 C = Call(FOO)
 
-s1 = SEState(A)
+s1 = SEState(None, A)
 s2 = s1.copy()
 
 assert s1 == s2, "FAILED: Copying empty states"

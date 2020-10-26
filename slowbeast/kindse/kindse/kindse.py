@@ -16,6 +16,7 @@ from slowbeast.symexe.annotations import (
     and_annotations,
     unify_annotations,
 )
+from slowbeast.symexe.statesset import StatesSet
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from .loops import SimpleLoop
@@ -29,7 +30,7 @@ def overapproximations(s, unsafe):
     yield from get_safe_subexpressions(s, unsafe)
 
 
-def strengthenInd(executor, s, a, seq, L):
+def strengthenIndFromTop(executor, s, a, seq, L):
     """
     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
     so that a \cup seq is inductive.
@@ -108,6 +109,166 @@ def strengthenInd(executor, s, a, seq, L):
         return newframe
     # we failed...
     return InductiveSequence.Frame(state_to_annotation(s), None)
+
+
+def _simplify_with_assumption(lhs, rhs):
+    """
+    Remove from 'rhs' (some) parts implied by the 'lhs'
+    'rhs' is a list of Or expressions
+    'lhs' is a list of Or expressions
+    """
+    # FIXME do this with an incremental solver
+    assumptions = lhs.copy()
+
+    # split clauses to singleton clauses and the others
+    singletons = []
+    rest = []
+    for c in rhs:
+        if c.isOr():
+            rest.append(c)
+        else:  # the formula is in CNF, so this must be a singleton
+            singletons.append(c)
+
+    assumptions += singletons
+
+    # remove the implied parts of the rest of clauses
+    changed = False
+    newrhs = []
+    newsingletons = []
+    solver = Solver()
+    EM = getGlobalExprManager()
+    Not = EM.Not
+    for c in rest:
+        newliterals = []
+        for l in c.children():
+            assert l.isBool()
+            q = solver.is_sat(*assumptions, l)
+            if q is not False:
+                q = solver.is_sat(*assumptions, Not(l))
+                if q is False:
+                    # this literal is implied and thus the whole clause is true
+                    changed = True
+                    break
+                else:
+                    # we know that the literal can be true
+                    # or the solver failed, so keep the literal
+                    newliterals.append(l)
+            else:
+                # we dropped the literal
+                changed = True
+
+        assert len(newliterals) > 0, "Unsat clause..."
+        if len(newliterals) == 1:
+            # XXX: we could do this also for non-singletons,
+            # but do we want to?
+            assumptions.append(literals[0])
+            newsingletons.append(literals[0])
+        else:
+            newrhs.append(newliterals)
+
+    # get rid of redundant singletons
+    assumptions = lhs.copy()
+    tmp = []
+    for c in singletons:
+        assert c.isBool()
+        q = solver.is_sat(*assumptions, Not(c))
+        if q is False:
+            # this literal is implied and we can drop it
+            changed = True
+            continue
+        else:
+            # we know that the literal can be true
+            # or the solver failed, so keep the literal
+            tmp.append(c)
+    singletons = tmp
+
+    return newsingletons, singletons + newrhs, changed
+
+
+def simplify_with_assumption(lhs, rhs):
+    lhs = list(lhs.to_cnf().children())
+    rhs = list(rhs.to_cnf().children())
+    changed = True
+
+    while changed:
+        singletons, rhs, changed = _simplify_with_assumption(lhs, rhs)
+        lhs += singletons
+
+    return getGlobalExprManager().conjunction(*rhs)
+
+
+def strengthenInd(executor, s, a, seq, L):
+    """
+    Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
+    so that a \cup seq is inductive.
+    """
+    print(f"Strengthening {a}")
+    EM = getGlobalExprManager()
+    solver = s.getSolver()
+
+    assert isinstance(a, InductiveSequence.Frame)
+
+    subs = a.states.getSubstitutions()
+    abstraction = a.states.getExpr()
+    strengthening = a.strengthening.getExpr() if a.strengthening else None
+
+    constraints = s.getConstraintsObj().asFormula(EM)
+    strengthening = simplify_with_assumption(
+        abstraction,
+        EM.And(constraints, strengthening) if strengthening else constraints,
+    )
+
+    st = StatesSet(s)
+    print(st)
+    st.unite(a.states)
+    print(st)
+    st.intersect(a.strengthening)
+    print(st)
+    assert False
+
+    # execute {a} L {seq + a}
+    if __debug__:
+        a = InductiveSequence.Frame(
+            AssumeAnnotation(abstraction, subs, EM),
+            AssumeAnnotation(strengthening, subs, EM),
+        )
+
+        print("Decomposition: ", a)
+        r = seq.check_on_paths(
+            executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
+        )
+        assert r.errors is None, "The non-abstracted set of states is not inductive"
+
+    while True:  # the abstraction is inductive w.r.t seq
+        # try to drop whole clauses
+        for chld in strengthening.children():
+            tmp = EM.simplify(EM.substitute(strengthening, (chld, EM.getTrue())))
+
+            a = InductiveSequence.Frame(
+                AssumeAnnotation(abstraction, subs, EM), AssumeAnnotation(tmp, subs, EM)
+            )
+
+            r = seq.check_on_paths(
+                executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
+            )
+            if r.errors is None:
+                strengthening = tmp
+
+        break
+
+    a = InductiveSequence.Frame(
+        AssumeAnnotation(abstraction, subs, EM),
+        AssumeAnnotation(strengthening, subs, EM),
+    )
+
+    if __debug__:
+        r = seq.check_on_paths(
+            executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
+        )
+        assert r.errors is None, "The non-abstracted set of states is not inductive"
+
+    print(f"Strengthened to {a}")
+    return a  # return the best we have
 
 
 def abstract(executor, state, unsafe):
