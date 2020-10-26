@@ -20,16 +20,15 @@ class BBlock(ProgramElement):
     def insert(self, i, idx):
         assert len(self._instructions) > idx
         # shift indices of the suffix of the bblock
-        # FIXME: do not copy the suffix
-        for sufi in self._instructions[idx:]:
-            sufi._bblock_idx += 1
-        self._instructions.insert(idx, i)
+        instrs = self._instructions
+        for n in range(idx, len(instrs)):
+            instrs[n]._bblock_idx += 1
+        instrs.insert(idx, i)
         i.setBBlock(self, idx)
 
         if __debug__:
             for n, inst in enumerate(self._instructions):
                 assert inst.getBBlockIdx() == n, "Invalid insertion of instruction"
-                n += 1
 
     def first(self):
         assert len(self._instructions) > 0
