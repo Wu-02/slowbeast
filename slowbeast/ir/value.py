@@ -47,7 +47,7 @@ class Constant(Value):
         assert isinstance(c, (int, bool)), f"Invalid constant: {c} {type(c)}"
         assert isinstance(ty, Type), f"Invalid type: {ty}"
         assert not isinstance(ty, PointerType), f"Invalid type: {ty}"
-        super(Constant, self).__init__(ty)
+        super().__init__(ty)
         self._value = c
 
         assert not self.isPointer(), "Incorrectly constructed pointer"
@@ -80,7 +80,7 @@ class Pointer(Value):
 
     def __init__(self, obj, off=Constant(0, Type(POINTER_BIT_WIDTH))):
         assert isinstance(off, Value)
-        super(Pointer, self).__init__(PointerType())
+        super().__init__(PointerType())
         self.object = obj
         self.offset = off
 

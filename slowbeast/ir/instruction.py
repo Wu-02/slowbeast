@@ -8,7 +8,7 @@ from ..util.debugging import print_highlight
 
 class GlobalVariable(ProgramElement):
     def __init__(self, size, name, const=False):
-        super(GlobalVariable, self).__init__()
+        super().__init__()
         self._size = size
         self._name = name
         # is the pointed memory constant?
@@ -51,7 +51,7 @@ class GlobalVariable(ProgramElement):
 
 class Instruction(ProgramElement):
     def __init__(self, ops=None):
-        super(Instruction, self).__init__()
+        super().__init__()
         self._operands = ops or []
         self._bblock = None
         self._bblock_idx = None
@@ -83,7 +83,7 @@ class Instruction(ProgramElement):
         return self._bblock_idx
 
     def dump(self, ind=0, stream=stdout, color=True):
-        super(Instruction, self).dump(ind, stream)
+        super().dump(ind, stream)
         if color:
             print_highlight(
                 str(self),
@@ -140,7 +140,7 @@ class ValueInstruction(Instruction):
     """
 
     def __init__(self, ops=None):
-        super(ValueInstruction, self).__init__(ops or [])
+        super().__init__(ops or [])
 
     def isConstant(self):
         return False
@@ -151,7 +151,7 @@ class ValueInstruction(Instruction):
 
 class Store(Instruction):
     def __init__(self, val, to):
-        super(Store, self).__init__([val, to])
+        super().__init__([val, to])
 
     # assert isinstance(val, Constant) or\
     #       isinstance(val, ValueInstruction) or\
@@ -174,7 +174,7 @@ class Load(ValueInstruction):
     """ Load 'bw' bytes from 'frm' """
 
     def __init__(self, frm, bw):
-        super(Load, self).__init__([frm])
+        super().__init__([frm])
         self.bytes = bw
 
     def getBytesNum(self):
@@ -191,7 +191,7 @@ class Load(ValueInstruction):
 
 class Alloc(ValueInstruction):
     def __init__(self, size):
-        super(Alloc, self).__init__()
+        super().__init__()
         self._size = size
 
     def getSize(self):
@@ -221,7 +221,7 @@ class Alloc(ValueInstruction):
 
 class Branch(Instruction):
     def __init__(self, cond, b1, b2):
-        super(Branch, self).__init__([cond, b1, b2])
+        super().__init__([cond, b1, b2])
         assert isinstance(b1, BBlock)
         assert isinstance(b2, BBlock)
 
@@ -244,7 +244,7 @@ class Branch(Instruction):
 
 class Call(ValueInstruction):
     def __init__(self, wht, *operands):
-        super(Call, self).__init__([*operands])
+        super().__init__([*operands])
         self._function = wht
 
     def getCalledFunction(self):
@@ -263,9 +263,9 @@ class Call(ValueInstruction):
 class Return(Instruction):
     def __init__(self, val=None):
         if val is None:
-            super(Return, self).__init__([])
+            super().__init__([])
         else:
-            super(Return, self).__init__([val])
+            super().__init__([val])
 
     def __str__(self):
         if len(self.getOperands()) == 0:
@@ -275,10 +275,7 @@ class Return(Instruction):
 
 class Print(Instruction):
     def __init__(self, *operands):
-        super(Print, self).__init__([*operands])
-
-    def getCalledFunction(self):
-        return self._function
+        super().__init__([*operands])
 
     def __str__(self):
         r = "print "
@@ -289,7 +286,7 @@ class Print(Instruction):
 
 class Assert(Instruction):
     def __init__(self, cond, msg=None):
-        super(Assert, self).__init__([cond, msg])
+        super().__init__([cond, msg])
 
     def getMessage(self):
         ops = self.getOperands()
@@ -311,7 +308,7 @@ class Assert(Instruction):
 
 class Assume(Instruction):
     def __init__(self, *operands):
-        super(Assume, self).__init__([*operands])
+        super().__init__([*operands])
 
     def __str__(self):
         r = "assume "
@@ -354,21 +351,21 @@ class Cmp(ValueInstruction):
     def predicateNeg(p):
         if p == Cmp.LE:
             return Cmp.GT
-        elif p == Cmp.LT:
+        if p == Cmp.LT:
             return Cmp.GE
-        elif p == Cmp.GE:
+        if p == Cmp.GE:
             return Cmp.LT
-        elif p == Cmp.GT:
+        if p == Cmp.GT:
             return Cmp.LE
-        elif p == Cmp.EQ:
+        if p == Cmp.EQ:
             return Cmp.NE
-        elif p == Cmp.NE:
+        if p == Cmp.NE:
             return Cmp.EQ
-        else:
-            raise NotImplementedError("Invalid comparison")
+
+        raise NotImplementedError("Invalid comparison")
 
     def __init__(self, p, val1, val2, unsgn=False):
-        super(Cmp, self).__init__([val1, val2])
+        super().__init__([val1, val2])
         self._predicate = p
         self._unsigned = unsgn
 
@@ -401,7 +398,7 @@ class UnaryOperation(ValueInstruction):
         assert UnaryOperation.NEG <= op <= UnaryOperation.EXTRACT
 
     def __init__(self, op, a):
-        super(UnaryOperation, self).__init__([a])
+        super().__init__([a])
         UnaryOperation.__check(op)
         self._op = op
 
@@ -412,7 +409,7 @@ class UnaryOperation(ValueInstruction):
 class Extend(UnaryOperation):
     def __init__(self, op, a, bw):
         assert bw.isConstant(), "Invalid bitwidth to extend"
-        super(Extend, self).__init__(op, a)
+        super().__init__(op, a)
         self._bw = bw
 
     def getBitWidth(self):
@@ -421,7 +418,7 @@ class Extend(UnaryOperation):
 
 class ZExt(Extend):
     def __init__(self, a, bw):
-        super(ZExt, self).__init__(UnaryOperation.ZEXT, a, bw)
+        super().__init__(UnaryOperation.ZEXT, a, bw)
 
     def __str__(self):
         return "x{0} = zext {1} to {2}b".format(
@@ -431,7 +428,7 @@ class ZExt(Extend):
 
 class SExt(Extend):
     def __init__(self, a, bw):
-        super(SExt, self).__init__(UnaryOperation.SEXT, a, bw)
+        super().__init__(UnaryOperation.SEXT, a, bw)
 
     def __str__(self):
         return "x{0} = sext {1} to {2}b".format(
@@ -443,7 +440,7 @@ class ExtractBits(UnaryOperation):
     def __init__(self, val, start, end):
         assert start.isConstant(), "Invalid bitwidth to extend"
         assert end.isConstant(), "Invalid bitwidth to extend"
-        super(ExtractBits, self).__init__(UnaryOperation.EXTRACT, val)
+        super().__init__(UnaryOperation.EXTRACT, val)
         self._start = start
         self._end = end
 
@@ -484,7 +481,7 @@ class BinaryOperation(ValueInstruction):
         assert BinaryOperation.ADD <= op <= BinaryOperation.LAST
 
     def __init__(self, op, a, b):
-        super(BinaryOperation, self).__init__([a, b])
+        super().__init__([a, b])
         BinaryOperation.__check(op)
         self._op = op
 
@@ -494,7 +491,7 @@ class BinaryOperation(ValueInstruction):
 
 class Add(BinaryOperation):
     def __init__(self, a, b):
-        super(Add, self).__init__(BinaryOperation.ADD, a, b)
+        super().__init__(BinaryOperation.ADD, a, b)
 
     def __str__(self):
         return "x{0} = {1} + {2}".format(
@@ -504,7 +501,7 @@ class Add(BinaryOperation):
 
 class Sub(BinaryOperation):
     def __init__(self, a, b):
-        super(Sub, self).__init__(BinaryOperation.SUB, a, b)
+        super().__init__(BinaryOperation.SUB, a, b)
 
     def __str__(self):
         return "x{0} = {1} - {2}".format(
@@ -514,7 +511,7 @@ class Sub(BinaryOperation):
 
 class Mul(BinaryOperation):
     def __init__(self, a, b):
-        super(Mul, self).__init__(BinaryOperation.MUL, a, b)
+        super().__init__(BinaryOperation.MUL, a, b)
 
     def __str__(self):
         return "x{0} = {1} * {2}".format(
@@ -524,7 +521,7 @@ class Mul(BinaryOperation):
 
 class Div(BinaryOperation):
     def __init__(self, a, b, unsigned=False):
-        super(Div, self).__init__(BinaryOperation.DIV, a, b)
+        super().__init__(BinaryOperation.DIV, a, b)
         self._unsigned = unsigned
 
     def isUnsigned(self):
@@ -541,7 +538,7 @@ class Div(BinaryOperation):
 
 class Rem(BinaryOperation):
     def __init__(self, a, b, unsigned=False):
-        super(Rem, self).__init__(BinaryOperation.REM, a, b)
+        super().__init__(BinaryOperation.REM, a, b)
         self._unsigned = unsigned
 
     def isUnsigned(self):
@@ -558,7 +555,7 @@ class Rem(BinaryOperation):
 
 class Shl(BinaryOperation):
     def __init__(self, a, b):
-        super(Shl, self).__init__(BinaryOperation.SHL, a, b)
+        super().__init__(BinaryOperation.SHL, a, b)
 
     def __str__(self):
         return "x{0} = {1} << {2}".format(
@@ -568,7 +565,7 @@ class Shl(BinaryOperation):
 
 class LShr(BinaryOperation):
     def __init__(self, a, b):
-        super(LShr, self).__init__(BinaryOperation.LSHR, a, b)
+        super().__init__(BinaryOperation.LSHR, a, b)
 
     def __str__(self):
         return "x{0} = {1} l>> {2}".format(
@@ -578,7 +575,7 @@ class LShr(BinaryOperation):
 
 class AShr(BinaryOperation):
     def __init__(self, a, b):
-        super(AShr, self).__init__(BinaryOperation.ASHR, a, b)
+        super().__init__(BinaryOperation.ASHR, a, b)
 
     def __str__(self):
         return "x{0} = {1} >> {2}".format(
@@ -588,7 +585,7 @@ class AShr(BinaryOperation):
 
 class And(BinaryOperation):
     def __init__(self, a, b):
-        super(And, self).__init__(BinaryOperation.AND, a, b)
+        super().__init__(BinaryOperation.AND, a, b)
 
     def __str__(self):
         return "x{0} = {1} & {2}".format(
@@ -598,7 +595,7 @@ class And(BinaryOperation):
 
 class Or(BinaryOperation):
     def __init__(self, a, b):
-        super(Or, self).__init__(BinaryOperation.OR, a, b)
+        super().__init__(BinaryOperation.OR, a, b)
 
     def __str__(self):
         return "x{0} = {1} | {2}".format(
@@ -608,7 +605,7 @@ class Or(BinaryOperation):
 
 class Xor(BinaryOperation):
     def __init__(self, a, b):
-        super(Xor, self).__init__(BinaryOperation.XOR, a, b)
+        super().__init__(BinaryOperation.XOR, a, b)
 
     def __str__(self):
         return "x{0} = xor {1}, {2}".format(

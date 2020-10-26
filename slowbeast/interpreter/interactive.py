@@ -9,12 +9,6 @@ class InteractiveHandler:
         self._break_inst = []
         self._break_pathid = []
 
-    # a helper wrapper for _id do to look-up in memory
-    # (this is a bit of a hack...)
-    class DummyValue:
-        def __init__(self, _id):
-            self._id = _id
-
     def _shouldSkip(self, s):
         if self._stop_next_time:
             return False
@@ -73,7 +67,7 @@ class InteractiveHandler:
         if query[0] in ["n", "s", "step", "next"]:
             self._stop_next_time = True
             return True
-        elif query[0] == "p":
+        if query[0] == "p":
             self.handlePrint(query[1:], s)
         elif query[0] == "b":
             self.handleBreak(query[1:])

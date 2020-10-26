@@ -7,7 +7,7 @@ class BBlock(ProgramElement):
     __slots__ = ["_instructions", "_function"]
 
     def __init__(self, f=None):
-        super(BBlock, self).__init__()
+        super().__init__()
         self._instructions = []
         self._function = None
         if f:

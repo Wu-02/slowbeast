@@ -8,7 +8,7 @@ class Function(ProgramElement):
     __slots__ = ["_name", "_bblocks", "_arguments", "_retty"]
 
     def __init__(self, name, argNum=0, retty=None):
-        super(Function, self).__init__()
+        super().__init__()
         self._name = name
         self._bblocks = []
         self._arguments = [Argument() for x in range(0, argNum)]
