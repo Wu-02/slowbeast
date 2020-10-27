@@ -105,5 +105,6 @@ class CallStack:
 
     def dump(self, stream=stdout):
         for n, f in enumerate(self._cs):
-            stream.write(" -- {0}: {1} --\n".format(n, f.function.getName()))
+            name = f.function.getName() if f.function else None
+            stream.write(f" -- {n}: {name} --\n")
             f.dump(stream)

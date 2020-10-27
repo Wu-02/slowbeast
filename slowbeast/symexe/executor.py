@@ -65,6 +65,11 @@ class Executor(ConcreteExecutor):
         assert not s.getConstraints(), "the state is not clean"
         return s
 
+    def createCleanState(self, pc=None, m=None):
+        s = self.createState(pc, m)
+        s.pushCall(None)
+        return s
+
     def fork(self, state, cond):
         self.stats.fork_calls += 1
 

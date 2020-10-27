@@ -107,9 +107,16 @@ class ExecutionState:
     def getValuesList(self):
         return self.memory.getValuesList()
 
-    def pushCall(self, callsite, fun, argsMapping={}):
-        self.memory.pushCall(callsite, fun, argsMapping)
-        self.pc = fun.getBBlock(0).getInstruction(0)
+    def pushCall(self, callsite, fun=None, argsMapping=None):
+        """
+        Push a new frame to the call stack. Callsite and fun can be None
+        in the cases where we create dummy states and we just need some
+        frame on the stack.
+        """
+        assert fun or not callsite, "Got no fun by some callsite..."
+        self.memory.pushCall(callsite, fun, argsMapping or {})
+        if fun:
+            self.pc = fun.getBBlock(0).getInstruction(0)
 
     def popCall(self):
         return self.memory.popCall()
