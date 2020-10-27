@@ -5,7 +5,9 @@ class ConstraintsSet:
     __slots__ = ["constraints"]
 
     def __init__(self, C=None):
-        self.constraints = C or []
+        self.constraints = []
+        if C:
+            self.addConstraint(*C)
 
     def copy(self):
         return ConstraintsSet(self.constraints.copy())

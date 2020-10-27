@@ -47,6 +47,12 @@ class StatesSet:
         """ NOTE: use carefully, only when you know what you do... """
         return self._state.getConstraintsObj().asFormula(self.getExprManager())
 
+    def reset_expr(self, expr):
+        """ NOTE: use carefully, only when you know what you do... """
+        C = ConstraintsSet()
+        C.addConstraint(expr)
+        self._state.setConstraints(C)
+
     def unite(self, s):
         state = self._state
         sd = to_states_descr(s)
