@@ -18,13 +18,18 @@ class StatesSet:
     This class is a wrapper that makes it convenient to treat
     SE state as a set of concrete states (i.e., it allows to
     use set operations, etc.
+    NOTE that the state given to ctor is stored as a reference,
+    i.e. the operations modify the state and it is intentional.
+    To avoid this, pass a fresh copy of the state into the ctor
+    (state.copy()).
     """
 
     __slots__ = ["_state"]
 
-    def __init__(self, state):
+    def __init__(self, state : SEState):
+        assert state is not None and isinstance(state, SEState)
         assert state.isfeasible(), "Infeasible state given"
-        self._state = state.copy()
+        self._state = state
 
     def copy(self):
         return StatesSet(self.get_se_state().copy())
@@ -43,6 +48,11 @@ class StatesSet:
         sd = to_states_descr(s)
         expr = eval_state_description(state.getExecutor(), state, sd)
 
+        if not state.getConstraints():
+            # the state is clean, just add the first constraints
+            state.addConstraint(expr)
+            return
+
         EM = state.getExprManager()
         C = ConstraintsSet()
         C.addConstraint(EM.Or(expr, state.getConstraintsObj().asFormula(EM)))
@@ -60,10 +70,17 @@ class StatesSet:
     def complement(self):
         state = self._state
         EM = state.getExprManager()
-        expr = EM.Not(state.getConstraintsObj.asFormula())
+        expr = EM.Not(state.getConstraintsObj().asFormula(EM))
         C = ConstraintsSet()
         C.addConstraint(expr)
         state.setConstraints(C)
+
+    def minus(self, s):
+        state = self._state
+        sd = to_states_descr(s)
+        expr = eval_state_description(state.getExecutor(), state, sd)
+        EM = state.getExprManager()
+        state.addConstraint(EM.Not(expr))
 
     def is_empty(self):
         """ Check whether the set is empty. Involves a solver call """
@@ -80,7 +97,7 @@ def to_states_descr(S) -> StateDescription:
     EM = getGlobalExprManager()
 
     if isinstance(S, StatesSet):
-        return S.get_descr()
+        return S.as_description()
     if isinstance(S, SEState):
         return state_to_description(S)
     elif isinstance(S, StateDescription):

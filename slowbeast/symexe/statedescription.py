@@ -1,6 +1,6 @@
 from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Instruction, Load
-from slowbeast.core.executor import split_ready_states
+from slowbeast.ir.value import Constant
 
 
 def _createCannonical(expr, subs, EM):
@@ -30,7 +30,8 @@ class StateDescription:
     __slots__ = ["_expr", "_subs"]
 
     def __init__(self, expr, subs):
-        assert expr is not None and isinstance(expr, Expr)
+        assert expr.isBool()
+        assert expr is not None and isinstance(expr, (Expr, Constant))
         assert subs is not None and isinstance(subs, dict)
 
         # the expression to evaluate
@@ -163,9 +164,17 @@ def states_to_description(states) -> StateDescription:
 
 
 def _execute_instr(executor, state, instr):
+    class DummyInstr:
+        """
+        Dummy class that returns self as the next instruction.
+        Needed to execute the instructions from substitutions.
+        """
+        def getNextInstruction(self):
+            return self
+
     assert state.isReady()
     # FIXME: get rid of this -- make a version of execute() that does not mess with pc
-    oldpc = state.pc
+    oldpc, state.pc = state.pc, DummyInstr()
     newstates = executor.execute(state, instr)
     assert newstates, "Executing instruction resulted in no state"
     if len(newstates) != 1:

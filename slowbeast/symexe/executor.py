@@ -9,6 +9,7 @@ from ..core.errors import AssertFailError
 
 from .memory import SymbolicMemoryModel
 from .executionstate import SEState
+from .statesset import StatesSet
 
 from random import getrandbits
 
@@ -69,6 +70,12 @@ class Executor(ConcreteExecutor):
         s = self.createState(pc, m)
         s.pushCall(None)
         return s
+
+    def createStatesSet(self, S = None):
+        ss = StatesSet(self.createCleanState())
+        if S:
+            ss.add(S)
+        return ss
 
     def fork(self, state, cond):
         self.stats.fork_calls += 1
