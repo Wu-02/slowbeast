@@ -43,6 +43,10 @@ class StatesSet:
     def as_description(self):
         return state_to_description(self.get_se_state())
 
+    def as_expr(self):
+        """ NOTE: use carefully, only when you know what you do... """
+        return self._state.getConstraintsObj().asFormula(self.getExprManager())
+
     def unite(self, s):
         state = self._state
         sd = to_states_descr(s)
@@ -105,6 +109,11 @@ def to_states_descr(S) -> StateDescription:
     elif isinstance(S, ExprAnnotation):
         return S.getDescr()
     elif isinstance(S, Expr):
+        # NOTE: maybe we should have a special method for Expr,
+        # because Expr does not fully describe the state (unlike the others)
+        # and therefore can break things... For this reason, it would
+        # be reasonable to have explicit method conserning adding Expr
+        # so that the user is aware of this problem...
         return StateDescription(S, {})
     elif S is None and hasattr(S, "__iter__"):
         R = None

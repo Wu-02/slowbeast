@@ -14,9 +14,13 @@ class ConstraintsSet:
         return self.constraints == rhs.constraints
 
     def addConstraint(self, *C):
+        constr = self.constraints
         for c in C:
             assert not c.isConstant(), "Adding True or False, catch these cases atm"
-            self.constraints.append(c)
+            if c.isAnd():
+                constr.extend(c.children())
+            else:
+                constr.append(c)
 
     def asFormula(self, EM):
         return EM.conjunction(*self.constraints)
