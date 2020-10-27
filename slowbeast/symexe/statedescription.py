@@ -178,7 +178,10 @@ def _execute_instr(executor, state, instr):
 
 def eval_state_description(executor, state, sd):
     subs = sd.getSubstitutions()
+    # execute those instructions whose value we are going to substitute
     for i in set(subs.values()):
+        if state.get(i) is not None:
+            continue  # we already got this value, do not execute again
         state = _execute_instr(executor, state, i)
 
     return sd.doSubs(state)
