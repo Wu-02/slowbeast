@@ -6,7 +6,11 @@ from slowbeast.symexe.statedescription import (
 )
 from slowbeast.symexe.constraints import ConstraintsSet
 from slowbeast.symexe.executionstate import SEState
-from slowbeast.symexe.annotations import ExprAnnotation, AssertAnnotation, AssumeAnnotation
+from slowbeast.symexe.annotations import (
+    ExprAnnotation,
+    AssertAnnotation,
+    AssumeAnnotation,
+)
 from slowbeast.domains.symbolic import Expr
 
 from slowbeast.solvers.solver import getGlobalExprManager
@@ -26,9 +30,9 @@ class StatesSet:
 
     __slots__ = ["_state"]
 
-    def __init__(self, state : SEState):
+    def __init__(self, state: SEState):
         assert state is not None and isinstance(state, SEState)
-        #assert state.isfeasible(), "Infeasible state given"
+        # assert state.isfeasible(), "Infeasible state given"
         # NOTE: we want to be able to create infeasible states
         # (empty sets)
         self._state = state
@@ -51,13 +55,15 @@ class StatesSet:
 
     def as_assume_annotation(self):
         sd = state_to_description(self._state)
-        return AssumeAnnotation(sd.getExpr(), sd.getSubstitutions(),
-                                self._state.getExprManager())
+        return AssumeAnnotation(
+            sd.getExpr(), sd.getSubstitutions(), self._state.getExprManager()
+        )
 
     def as_assert_annotation(self):
         sd = state_to_description(self._state)
-        return AssertAnnotation(sd.getExpr(), sd.getSubstitutions(),
-                                self._state.getExprManager())
+        return AssertAnnotation(
+            sd.getExpr(), sd.getSubstitutions(), self._state.getExprManager()
+        )
 
     def reset_expr(self, expr):
         """ NOTE: use carefully, only when you know what you do... """
@@ -83,7 +89,7 @@ class StatesSet:
         else:
             # if newexpr is concrete, it must be True. And adding True is useless,
             # its the same as empty constraints
-            assert newexpr.getValue() is True # this is Or expr...
+            assert newexpr.getValue() is True  # this is Or expr...
         state.setConstraints(C)
 
     def add(self, s):
@@ -151,11 +157,13 @@ def to_states_descr(S) -> StateDescription:
 
     raise NotImplementedError(f"Unhandled states representation: {type(S)}")
 
+
 def union(S1, *Ss) -> StatesSet:
     X = S1.copy()
     for S in Ss:
         X.add(S)
     return X
+
 
 def intersection(S1, *Ss) -> StatesSet:
     X = S1.copy()
@@ -163,10 +171,12 @@ def intersection(S1, *Ss) -> StatesSet:
         X.intersect(S)
     return X
 
+
 def complement(S) -> StatesSet:
     X = S.copy()
     X.complement()
     return X
+
 
 #
 # class StatesSet:

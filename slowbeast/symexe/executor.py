@@ -71,7 +71,7 @@ class Executor(ConcreteExecutor):
         s.pushCall(None)
         return s
 
-    def createStatesSet(self, S = None):
+    def createStatesSet(self, S=None):
         ss = StatesSet(self.createCleanState())
         if S:
             ss.add(S)

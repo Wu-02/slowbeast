@@ -31,11 +31,13 @@ def overapproximations(s, unsafe):
     yield from get_safe_relations([s], unsafe)
     yield from get_safe_subexpressions(s, unsafe)
 
+
 def abstract(executor, state, unsafe):
     """
     unsafe - unsafe states from the last step
     """
     yield from overapproximations(state, unsafe)
+
 
 def _simplify_with_assumption(lhs, rhs):
     """
@@ -110,6 +112,7 @@ def _simplify_with_assumption(lhs, rhs):
 
     return newsingletons, singletons + newrhs, changed
 
+
 def simplify_with_assumption(lhs, rhs):
     lhs = list(lhs.to_cnf().children())
     rhs = list(rhs.to_cnf().children())
@@ -120,6 +123,7 @@ def simplify_with_assumption(lhs, rhs):
         lhs += singletons
 
     return getGlobalExprManager().conjunction(*rhs)
+
 
 # def strengthenIndFromBottom(executor, s, a, seq, L):
 #     """
@@ -187,6 +191,7 @@ def simplify_with_assumption(lhs, rhs):
 #     return a  # return the best we have
 #
 
+
 def strengthenSafe(executor, s, a, seq, errs0, L):
     # if the annotations intersect, remove errs0 from a
     EM = getGlobalExprManager()
@@ -218,6 +223,7 @@ def strengthenSafe(executor, s, a, seq, errs0, L):
     A1 = AssertAnnotation(states, subs, EM)
     A2 = AssertAnnotation(stren, subs, EM)
     return InductiveSequence.Frame(A1, A2)
+
 
 def check_inv(prog, L, inv):
     loc = L.loc
@@ -283,8 +289,9 @@ def get_initial_seq(unsafe):
 
     return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
 
+
 def check_paths(executor, paths, pre=None, post=None):
-    #print_stdout(f'Check paths with PRE={pre} and POST={post}', color="BLUE")
+    # print_stdout(f'Check paths with PRE={pre} and POST={post}', color="BLUE")
     result = PathExecutionResult()
     for path in paths:
         p = path.copy()
@@ -298,13 +305,15 @@ def check_paths(executor, paths, pre=None, post=None):
         r = executor.executePath(p)
         result.merge(r)
 
-    #print_stdout(str(result), color="ORANGE")
+    # print_stdout(str(result), color="ORANGE")
     return result
+
 
 def literals(c):
     if c.isOr():
         yield from c.children()
     yield c
+
 
 def get_predicate(l):
     EM = getGlobalExprManager()
@@ -322,7 +331,7 @@ def get_predicate(l):
 
 def overapprox_literal(l, S, unsafe, target, executor, L):
     assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
-    goodl = l # last good overapprox of l
+    goodl = l  # last good overapprox of l
 
     isnot = False
     if l.isNot():
@@ -389,6 +398,7 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
 
     return goodl
 
+
 def overapprox_clause(n, clauses, executor, L, unsafe, target):
     createSet = executor.getIndExecutor().createStatesSet
     S = createSet()
@@ -414,9 +424,11 @@ def overapprox_clause(n, clauses, executor, L, unsafe, target):
 def overapprox(executor, s, unsafeAnnot, seq, L):
 
     createSet = executor.getIndExecutor().createStatesSet
-    S = createSet(s) 
-    unsafe = createSet(unsafeAnnot) # safe strengthening
-    assert intersection(S, unsafe).is_empty(), "Whata? Unsafe states among one-step reachable safe states..."
+    S = createSet(s)
+    unsafe = createSet(unsafeAnnot)  # safe strengthening
+    assert intersection(
+        S, unsafe
+    ).is_empty(), "Whata? Unsafe states among one-step reachable safe states..."
 
     print_stdout(f"Overapproximating {S}", color="BROWN")
     print_stdout(f"  with unsafe states: {unsafe}", color="BROWN")
@@ -506,7 +518,6 @@ class KindSymbolicExecutor(BaseKindSE):
             E.append(tmp)
 
         return E
-       
 
     def execute_loop(self, loc, states):
         unsafe = []
@@ -544,7 +555,7 @@ class KindSymbolicExecutor(BaseKindSE):
                     assert r.errors is None, "seq is not inductive"
 
                 E += self.extend_seq(seq, errs0, L)
-                print(' -- extending DONE --')
+                print(" -- extending DONE --")
 
             if not E:
                 # seq not extended... it looks that there is no

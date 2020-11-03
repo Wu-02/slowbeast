@@ -169,6 +169,7 @@ def _execute_instr(executor, state, instr):
         Dummy class that returns self as the next instruction.
         Needed to execute the instructions from substitutions.
         """
+
         def getNextInstruction(self):
             return self
 

@@ -106,8 +106,9 @@ class InductiveSequence:
             "\n-----\n".join(map(str, self.frames))
         )
 
-    def check_on_paths(self, executor, paths, tmpframes=[],
-                       pre=None, post=None, self_as_pre=False):
+    def check_on_paths(
+        self, executor, paths, tmpframes=[], pre=None, post=None, self_as_pre=False
+    ):
         """
         Check whether when we execute paths, we get to one of the frames
         tmpframes are frames that should be appended to the self.frames
