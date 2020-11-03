@@ -13,6 +13,7 @@ if _use_z3:
     from z3 import Extract as BVExtract
     from z3 import LShR as BVLShR
     from z3 import is_bv, is_bv_value, is_bool, is_and, is_or, is_not
+    from z3 import is_app_of, Z3_OP_SLEQ, Z3_OP_SLT, Z3_OP_SGEQ, Z3_OP_SGT, Z3_OP_ULT, Z3_OP_ULEQ, Z3_OP_UGT, Z3_OP_UGEQ, Z3_OP_EQ
     from z3 import is_true, is_false
     from z3 import simplify, substitute
     from z3 import Goal, Tactic
@@ -158,6 +159,24 @@ class Expr(Value):
 
     def isOr(self):
         return is_or(self.unwrap())
+
+    def isNot(self):
+        return is_not(self.unwrap())
+
+    def isEq(self):
+        return is_app_of(self._expr, Z3_OP_EQ)
+
+    def isLe(self):
+        return is_app_of(self._expr, Z3_OP_SLEQ) or is_app_of(self._expr, Z3_OP_ULEQ)
+
+    def isGe(self):
+        return is_app_of(self._expr, Z3_OP_SGEQ) or is_app_of(self._expr, Z3_OP_UGEQ)
+
+    def isLt(self):
+        return is_app_of(self._expr, Z3_OP_SLT) or is_app_of(self._expr, Z3_OP_ULT)
+
+    def isGt(self):
+        return is_app_of(self._expr, Z3_OP_SGT) or is_app_of(self._expr, Z3_OP_UGT)
 
     def __hash__(self):
         return self._expr.__hash__()

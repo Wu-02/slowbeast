@@ -34,7 +34,7 @@ class InductiveSequence:
             )
             assert stren is None or (
                 states.getSubstitutions() == stren.getSubstitutions()
-            )
+            ), stren
 
         def toannot(self):
             EM = getGlobalExprManager()
@@ -106,9 +106,8 @@ class InductiveSequence:
             "\n-----\n".join(map(str, self.frames))
         )
 
-    def check_on_paths(
-        self, executor, paths, tmpframes=[], pre=[], post=[], self_as_pre=False
-    ):
+    def check_on_paths(self, executor, paths, tmpframes=[],
+                       pre=None, post=None, self_as_pre=False):
         """
         Check whether when we execute paths, we get to one of the frames
         tmpframes are frames that should be appended to the self.frames
@@ -123,24 +122,17 @@ class InductiveSequence:
             p = path.copy()
             # the post-condition is the whole frame
             p.addPostcondition(selfassert)
-            for e in post:
-                p.addPostcondition(e)
+            if post:
+                p.addPostcondition(post.as_assert_annotation())
 
             if self_as_pre:
                 p.addPrecondition(selfassert)
 
-            for e in pre:
-                p.addPrecondition(e)
+            if pre:
+                p.addPrecondition(pre.as_assume_annotation())
 
             r = executor.executePath(p)
             result.merge(r)
-
-        # if r.ready:
-        #    print_stdout(f"safe along {path}", color="GREEN")
-        # if r.errors:
-        #    print_stdout(f"unsafe along {path}", color="RED")
-        # if not r.ready and not r.errors and not r.other:
-        #    print_stdout(f"infeasible along {path}", color="DARK_GREEN")
 
         self.frames = oldframes
         return result

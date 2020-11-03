@@ -1,5 +1,6 @@
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 
+from slowbeast.core.executor import PathExecutionResult
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath, CFG
 from slowbeast.kindse.naive.naivekindse import (
@@ -16,7 +17,8 @@ from slowbeast.symexe.annotations import (
     and_annotations,
     unify_annotations,
 )
-from slowbeast.symexe.statesset import StatesSet
+
+from slowbeast.symexe.statesset import union, intersection, complement
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
 
 from .loops import SimpleLoop
@@ -29,87 +31,11 @@ def overapproximations(s, unsafe):
     yield from get_safe_relations([s], unsafe)
     yield from get_safe_subexpressions(s, unsafe)
 
-
-def strengthenIndFromTop(executor, s, a, seq, L):
+def abstract(executor, state, unsafe):
     """
-    Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
-    so that a \cup seq is inductive.
+    unsafe - unsafe states from the last step
     """
-    # print(f'Strengthening {a}')
-    EM = getGlobalExprManager()
-    solver = s.getSolver()
-
-    assert isinstance(a, InductiveSequence.Frame)
-
-    # execute {a} L {seq + a}
-    r = seq.check_on_paths(executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a])
-    if not r.errors:  # the abstraction is inductive w.r.t seq
-        return a
-
-    newframe = InductiveSequence.Frame(a.states, a.strengthening)
-    S = []  # strengthening
-    while r.errors:
-        for e in r.errors:
-            Schanged = False
-            m = e.model()
-            for (x, c) in m.items():
-                if c is None:
-                    continue
-                # Try extend the cex value such that it implies
-                # the original state (that's required to be
-                # a correct abstraction)
-                G = EM.Ge(x, c)
-                if s.is_sat(G, *S) is False:
-                    # x < c
-                    # try to push c as far as we can
-                    cp = EM.freshValue("c", c.getType().getBitWidth())
-                    cpval = s.concretize_with_assumptions(
-                        [*S, EM.Lt(cp, c), EM.Gt(x, cp)], cp
-                    )
-                    if cpval:
-                        expr = EM.Lt(x, cpval[0])
-                    else:
-                        expr = EM.Not(G)
-                    if solver.is_sat(expr, *S) is True:
-                        # append the expr but only if it does
-                        # not break the others...
-                        S.append(expr)
-                        Schanged = True
-
-                G = EM.Le(x, c)
-                if s.is_sat(G, *S) is False:
-                    cp = EM.freshValue("c", c.getType().getBitWidth())
-                    # x > c
-                    cpval = s.concretize_with_assumptions(
-                        [*S, EM.Gt(cp, c), EM.Lt(x, cp)], cp
-                    )
-                    if cpval:
-                        expr = EM.Gt(x, cpval[0])
-                    else:
-                        expr = EM.Not(G)
-
-                    expr = EM.Not(G)
-                    if solver.is_sat(expr, *S) is True:
-                        S.append(expr)
-                        Schanged = True
-
-        if not Schanged:
-            break
-        origstren = a.strengthening
-        stren = EM.conjunction(*S, origstren.getExpr())
-        newframe.strengthening = AssumeAnnotation(
-            stren, origstren.getSubstitutions(), EM
-        )
-        # check with the new frame
-        r = seq.check_on_paths(
-            executor, L.getPaths(), pre=[newframe.toassume()], tmpframes=[newframe]
-        )
-
-    if not r.errors:
-        return newframe
-    # we failed...
-    return InductiveSequence.Frame(state_to_annotation(s), None)
-
+    yield from overapproximations(state, unsafe)
 
 def _simplify_with_assumption(lhs, rhs):
     """
@@ -184,7 +110,6 @@ def _simplify_with_assumption(lhs, rhs):
 
     return newsingletons, singletons + newrhs, changed
 
-
 def simplify_with_assumption(lhs, rhs):
     lhs = list(lhs.to_cnf().children())
     rhs = list(rhs.to_cnf().children())
@@ -196,87 +121,71 @@ def simplify_with_assumption(lhs, rhs):
 
     return getGlobalExprManager().conjunction(*rhs)
 
-
-def strengthenInd(executor, s, a, seq, L):
-    """
-    Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
-    so that a \cup seq is inductive.
-    """
-    print(f"Strengthening {a}")
-    EM = getGlobalExprManager()
-    solver = s.getSolver()
-
-    assert isinstance(a, InductiveSequence.Frame)
-
-    subs = a.states.getSubstitutions()
-    abstraction = a.states.getExpr()
-    strengthening = a.strengthening.getExpr() if a.strengthening else None
-
-    constraints = s.getConstraintsObj().asFormula(EM)
-    strengthening = simplify_with_assumption(
-        abstraction,
-        EM.And(constraints, strengthening) if strengthening else constraints,
-    )
-
-    st = StatesSet(s)
-    print(st)
-    st.unite(a.states)
-    print(st)
-    st.intersect(a.strengthening)
-    print(st)
-    assert False
-
-    # execute {a} L {seq + a}
-    if __debug__:
-        a = InductiveSequence.Frame(
-            AssumeAnnotation(abstraction, subs, EM),
-            AssumeAnnotation(strengthening, subs, EM),
-        )
-
-        print("Decomposition: ", a)
-        r = seq.check_on_paths(
-            executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
-        )
-        assert r.errors is None, "The non-abstracted set of states is not inductive"
-
-    while True:  # the abstraction is inductive w.r.t seq
-        # try to drop whole clauses
-        for chld in strengthening.children():
-            tmp = EM.simplify(EM.substitute(strengthening, (chld, EM.getTrue())))
-
-            a = InductiveSequence.Frame(
-                AssumeAnnotation(abstraction, subs, EM), AssumeAnnotation(tmp, subs, EM)
-            )
-
-            r = seq.check_on_paths(
-                executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
-            )
-            if r.errors is None:
-                strengthening = tmp
-
-        break
-
-    a = InductiveSequence.Frame(
-        AssumeAnnotation(abstraction, subs, EM),
-        AssumeAnnotation(strengthening, subs, EM),
-    )
-
-    if __debug__:
-        r = seq.check_on_paths(
-            executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
-        )
-        assert r.errors is None, "The non-abstracted set of states is not inductive"
-
-    print(f"Strengthened to {a}")
-    return a  # return the best we have
-
-
-def abstract(executor, state, unsafe):
-    """
-    unsafe - unsafe states from the last step
-    """
-    yield from overapproximations(state, unsafe)
-
+# def strengthenIndFromBottom(executor, s, a, seq, L):
+#     """
+#     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
+#     so that a \cup seq is inductive.
+#     """
+#     print(f"Strengthening {a}")
+#     EM = getGlobalExprManager()
+#     solver = s.getSolver()
+#
+#     assert isinstance(a, InductiveSequence.Frame)
+#
+#     subs = a.states.getSubstitutions()
+#     abstraction = a.states.getExpr()
+#     strengthening = a.strengthening.getExpr() if a.strengthening else None
+#
+#     constraints = s.getConstraintsObj().asFormula(EM)
+#     strengthening = simplify_with_assumption(
+#         abstraction,
+#         EM.And(constraints, strengthening) if strengthening else constraints,
+#     )
+#
+#     # execute {a} L {seq + a}
+#     if __debug__:
+#         a = InductiveSequence.Frame(
+#             AssumeAnnotation(abstraction, subs, EM),
+#             AssumeAnnotation(strengthening, subs, EM),
+#         )
+#
+#         print("Decomposition: ", a)
+#         r = seq.check_on_paths(
+#             executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
+#         )
+#         assert r.errors is None, "The non-abstracted set of states is not inductive"
+#
+#     while True:  # the abstraction is inductive w.r.t seq
+#         # try to drop whole clauses
+#         for chld in strengthening.children():
+#             tmp = EM.simplify(EM.substitute(strengthening, (chld, EM.getTrue())))
+#
+#             a = InductiveSequence.Frame(
+#                 AssumeAnnotation(abstraction, subs, EM), AssumeAnnotation(tmp, subs, EM)
+#             )
+#
+#             r = seq.check_on_paths(
+#                 executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
+#             )
+#             if r.errors is None:
+#                 strengthening = tmp
+#
+#         break
+#
+#     a = InductiveSequence.Frame(
+#         AssumeAnnotation(abstraction, subs, EM),
+#         AssumeAnnotation(strengthening, subs, EM),
+#     )
+#
+#     if __debug__:
+#         r = seq.check_on_paths(
+#             executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
+#         )
+#         assert r.errors is None, "The non-abstracted set of states is not inductive"
+#
+#     print(f"Strengthened to {a}")
+#     return a  # return the best we have
+#
 
 def strengthenSafe(executor, s, a, seq, errs0, L):
     # if the annotations intersect, remove errs0 from a
@@ -309,7 +218,6 @@ def strengthenSafe(executor, s, a, seq, errs0, L):
     A1 = AssertAnnotation(states, subs, EM)
     A2 = AssertAnnotation(stren, subs, EM)
     return InductiveSequence.Frame(A1, A2)
-
 
 def check_inv(prog, L, inv):
     loc = L.loc
@@ -375,6 +283,166 @@ def get_initial_seq(unsafe):
 
     return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
 
+def check_paths(executor, paths, pre=None, post=None):
+    #print_stdout(f'Check paths with PRE={pre} and POST={post}', color="BLUE")
+    result = PathExecutionResult()
+    for path in paths:
+        p = path.copy()
+        # the post-condition is the whole frame
+        if post:
+            p.addPostcondition(post.as_assert_annotation())
+
+        if pre:
+            p.addPrecondition(pre.as_assume_annotation())
+
+        r = executor.executePath(p)
+        result.merge(r)
+
+    #print_stdout(str(result), color="ORANGE")
+    return result
+
+def literals(c):
+    if c.isOr():
+        yield from c.children()
+    yield c
+
+def get_predicate(l):
+    EM = getGlobalExprManager()
+    if l.isLe():
+        return EM.Le
+    if l.isGe():
+        return EM.Ge
+    if l.isLt():
+        return EM.Lt
+    if l.isGt():
+        return EM.Gt
+
+    raise NotImplementedError(f"Unhandled predicate in expr {l}")
+
+
+def overapprox_literal(l, S, unsafe, target, executor, L):
+    assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
+    goodl = l # last good overapprox of l
+
+    isnot = False
+    if l.isNot():
+        isnot = True
+        l = list(l.children())[0]
+
+    if l.isLt() or l.isLe():
+        addtoleft = False
+    elif l.isGt() or l.isGe():
+        addtoleft = True
+    else:
+        return goodl
+
+    if isnot:
+        addtoleft = not addtoleft
+
+    EM = getGlobalExprManager()
+    chld = list(l.children())
+    assert len(chld) == 2
+    left, P, right = chld[0], get_predicate(l), chld[1]
+    bw = left.getType().getBitWidth()
+    one = EM.Constant(1, bw)
+    num = one
+
+    # modify the literal for the first time
+    if addtoleft:
+        left = EM.Add(left, num)
+    else:
+        right = EM.Add(right, num)
+
+    def get_newl(left, P, right):
+        newl = P(left, right)
+        if isnot:
+            newl = EM.Not(newl)
+        return newl
+
+    l = get_newl(left, P, right)
+    X = intersection(S, l)
+    if not intersection(X, unsafe).is_empty():
+        return goodl
+    r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+    while r.errors is None:
+        if r.ready is None:
+            # we must be able to step into the
+            # the set, otherwise we cannot execute the loop...
+            break
+
+        goodl = l
+
+        num = EM.Add(num, num)
+        if addtoleft:
+            left = EM.Add(left, num)
+        else:
+            right = EM.Add(right, num)
+
+        # try pushing further
+        l = get_newl(left, P, right)
+        print(l)
+
+        X = intersection(S, l)
+        if not intersection(X, unsafe).is_empty():
+            break
+        r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+
+    return goodl
+
+def overapprox_clause(n, clauses, executor, L, unsafe, target):
+    createSet = executor.getIndExecutor().createStatesSet
+    S = createSet()
+    c = None
+    for i, x in enumerate(clauses):
+        if i == n:
+            c = x
+        else:
+            S.intersect(x)
+    assert c
+
+    newc = []
+    for l in literals(c):
+        newc.append(overapprox_literal(l, S, unsafe, target, executor, L))
+
+    if len(newc) == 1:
+        return newc[0]
+
+    EM = S.get_se_state().getExprManager()
+    return EM.disjunction(*newc)
+
+
+def overapprox(executor, s, unsafeAnnot, seq, L):
+
+    createSet = executor.getIndExecutor().createStatesSet
+    S = createSet(s) 
+    unsafe = createSet(unsafeAnnot) # safe strengthening
+    assert intersection(S, unsafe).is_empty(), "Whata? Unsafe states among one-step reachable safe states..."
+
+    print_stdout(f"Overapproximating {S}", color="BROWN")
+    print_stdout(f"  with unsafe states: {unsafe}", color="BROWN")
+    EM = s.getExprManager()
+    target = createSet(seq[-1].toassert())
+
+    expr = S.as_expr().to_cnf()
+
+    clauses = list(expr.children())
+    newclauses = []
+    for n in range(0, len(clauses)):
+        newclause = overapprox_clause(n, clauses, executor, L, unsafe, target)
+        if newclause:
+            newclauses.append(newclause)
+
+    clauses = newclauses
+
+    # FIXME: remove redundant clauses
+    S.reset_expr(EM.conjunction(*clauses))
+
+    sd = S.as_description()
+    A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)
+
+    a = InductiveSequence.Frame(S.as_assert_annotation(), None)
+    return a
+
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions(), genannot=False):
@@ -429,35 +497,16 @@ class KindSymbolicExecutor(BaseKindSE):
 
         EM = getGlobalExprManager()
         E = []
-        checked_abstractions = set()
-        for s in r.ready:
-            for a in abstract(self, s, r.errors):
-                if a in checked_abstractions:
-                    continue
-                checked_abstractions.add(a)
-                # dbg('Abstraction: ', a)
 
-                # strengthen S such that it is safe (does not
-                # intersect the errs0 states
-                F = InductiveSequence.Frame(a, None)
-                S = strengthenSafe(self, s, F, seq, errs0, L)
-                if S is None:
-                    print("Failed strengthening to safe states")
-                    continue
-                # inductively strengthen s
-                S = strengthenInd(self, s, S, seq, L)
-                # this does not work...
-                if S != seq[-1]:
-                    if S:
-                        tmp = seq.copy()
-                        tmp.append(S.states, S.strengthening)
-                        E.append(tmp)
-                        # we have one strengthened abstraction,
-                        # it is enough
-                        break
-                    # print('== extended to == ')
-                    # print(tmp)
+        for s in r.ready:
+            e = overapprox(self, s, errs0.toassert(), seq, L)
+            print_stdout(f"Overapproximated to: {e}", color="BLUE")
+            tmp = seq.copy()
+            tmp.append(e.states, e.strengthening)
+            E.append(tmp)
+
         return E
+       
 
     def execute_loop(self, loc, states):
         unsafe = []
@@ -495,12 +544,13 @@ class KindSymbolicExecutor(BaseKindSE):
                     assert r.errors is None, "seq is not inductive"
 
                 E += self.extend_seq(seq, errs0, L)
-                # print(' -- extending DONE --')
+                print(' -- extending DONE --')
 
             if not E:
                 # seq not extended... it looks that there is no
                 # safe invariant
                 # FIXME: could we use it for annotations?
+                print("No E")
                 return False  # fall-back to unwinding
 
             # FIXME: check that all the sequences together
