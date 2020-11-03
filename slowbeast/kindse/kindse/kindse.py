@@ -125,73 +125,6 @@ def simplify_with_assumption(lhs, rhs):
     return getGlobalExprManager().conjunction(*rhs)
 
 
-# def strengthenIndFromBottom(executor, s, a, seq, L):
-#     """
-#     Strengthen 'a' which is the abstraction of 's' w.r.t 'seq' and 'L'
-#     so that a \cup seq is inductive.
-#     """
-#     print(f"Strengthening {a}")
-#     EM = getGlobalExprManager()
-#     solver = s.getSolver()
-#
-#     assert isinstance(a, InductiveSequence.Frame)
-#
-#     subs = a.states.getSubstitutions()
-#     abstraction = a.states.getExpr()
-#     strengthening = a.strengthening.getExpr() if a.strengthening else None
-#
-#     constraints = s.getConstraintsObj().asFormula(EM)
-#     strengthening = simplify_with_assumption(
-#         abstraction,
-#         EM.And(constraints, strengthening) if strengthening else constraints,
-#     )
-#
-#     # execute {a} L {seq + a}
-#     if __debug__:
-#         a = InductiveSequence.Frame(
-#             AssumeAnnotation(abstraction, subs, EM),
-#             AssumeAnnotation(strengthening, subs, EM),
-#         )
-#
-#         print("Decomposition: ", a)
-#         r = seq.check_on_paths(
-#             executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
-#         )
-#         assert r.errors is None, "The non-abstracted set of states is not inductive"
-#
-#     while True:  # the abstraction is inductive w.r.t seq
-#         # try to drop whole clauses
-#         for chld in strengthening.children():
-#             tmp = EM.simplify(EM.substitute(strengthening, (chld, EM.getTrue())))
-#
-#             a = InductiveSequence.Frame(
-#                 AssumeAnnotation(abstraction, subs, EM), AssumeAnnotation(tmp, subs, EM)
-#             )
-#
-#             r = seq.check_on_paths(
-#                 executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
-#             )
-#             if r.errors is None:
-#                 strengthening = tmp
-#
-#         break
-#
-#     a = InductiveSequence.Frame(
-#         AssumeAnnotation(abstraction, subs, EM),
-#         AssumeAnnotation(strengthening, subs, EM),
-#     )
-#
-#     if __debug__:
-#         r = seq.check_on_paths(
-#             executor, L.getPaths(), pre=[a.toassume()], tmpframes=[a]
-#         )
-#         assert r.errors is None, "The non-abstracted set of states is not inductive"
-#
-#     print(f"Strengthened to {a}")
-#     return a  # return the best we have
-#
-
-
 def strengthenSafe(executor, s, a, seq, errs0, L):
     # if the annotations intersect, remove errs0 from a
     EM = getGlobalExprManager()
@@ -291,7 +224,7 @@ def get_initial_seq(unsafe):
 
 
 def check_paths(executor, paths, pre=None, post=None):
-    # print_stdout(f'Check paths with PRE={pre} and POST={post}', color="BLUE")
+    #print_stdout(f'Check paths with PRE={pre} and POST={post}', color="BLUE")
     result = PathExecutionResult()
     for path in paths:
         p = path.copy()
@@ -305,7 +238,7 @@ def check_paths(executor, paths, pre=None, post=None):
         r = executor.executePath(p)
         result.merge(r)
 
-    # print_stdout(str(result), color="ORANGE")
+    #print_stdout(str(result), color="ORANGE")
     return result
 
 
@@ -373,6 +306,7 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
     if not intersection(X, unsafe).is_empty():
         return goodl
     r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+
     while r.errors is None:
         if r.ready is None:
             # we must be able to step into the
@@ -410,6 +344,14 @@ def overapprox_clause(n, clauses, executor, L, unsafe, target):
             S.intersect(x)
     assert c
 
+    assert intersection(S, unsafe).is_empty()
+
+    # can we drop the clause completely?
+    r = check_paths(executor, L.getPaths(), pre=S, post=union(S, target))
+    if r.errors is None and r.ready:
+        return S.as_expr()
+
+
     newc = []
     for l in literals(c):
         newc.append(overapprox_literal(l, S, unsafe, target, executor, L))
@@ -418,7 +360,7 @@ def overapprox_clause(n, clauses, executor, L, unsafe, target):
         return newc[0]
 
     EM = S.get_se_state().getExprManager()
-    return EM.disjunction(*newc)
+    return EM.conjunction(*newc)
 
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
@@ -447,13 +389,14 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     clauses = newclauses
 
     # FIXME: remove redundant clauses
-    S.reset_expr(EM.conjunction(*clauses))
+    expr = EM.conjunction(*clauses)
+    if not expr.isConstant():
+        expr = simplify_with_assumption(EM.getTrue(), expr)
+    S.reset_expr(expr)
 
     sd = S.as_description()
     A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)
-
-    a = InductiveSequence.Frame(S.as_assert_annotation(), None)
-    return a
+    return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
 
 class KindSymbolicExecutor(BaseKindSE):
@@ -501,7 +444,8 @@ class KindSymbolicExecutor(BaseKindSE):
         return True
 
     def extend_seq(self, seq, errs0, L):
-        r = seq.check_last_frame(self, L.getPaths())
+        S = self.getIndExecutor().createStatesSet(seq[-1].toassert())
+        r = check_paths(self, L.getPaths(), post=S)
         if not r.ready:  # cannot step into this frame...
             # FIXME we can use it at least for annotations
             dbg("Infeasible frame...")

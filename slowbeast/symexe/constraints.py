@@ -18,7 +18,12 @@ class ConstraintsSet:
     def addConstraint(self, *C):
         constr = self.constraints
         for c in C:
-            assert not c.isConstant(), "Adding True or False, catch these cases atm"
+            #assert not c.isConstant(), "Adding True or False, catch these cases atm"
+            if c.isConstant():
+                if c.getValue() is False:
+                    self.constraints = [c]
+                    break
+                # we can ignore True...
             if c.isAnd():
                 constr.extend(c.children())
             else:
