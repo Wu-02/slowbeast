@@ -124,6 +124,44 @@ def simplify_with_assumption(lhs, rhs):
 
     return getGlobalExprManager().conjunction(*rhs)
 
+def remove_implied_literals(clauses, unsafe):
+    # split clauses to singleton clauses and the others
+    singletons = []
+    rest = []
+    for c in clauses:
+        if c.isOr():
+            rest.append(c)
+        else:  # the formula is in CNF, so this must be a singleton
+            singletons.append(c)
+
+    assumptions = []
+
+    solver = Solver()
+    Not = getGlobalExprManager().Not
+    i = 0
+    while True:
+        if i >= len(singletons):
+            break
+        tmp = [singletons[i]]
+        for j in range(0, len(singletons)):
+            if i == j:
+                continue
+            c = singletons[j]
+            assert c.isBool()
+            q = solver.is_sat(*tmp, Not(c))
+            if q is False:
+                # this literal is implied and we can drop it,
+                # but only if  it does not render the formula unsafe
+                assert intersection(unsafe, tmp).is_empty(), f"{unsafe} \cap {tmp}"
+            else:
+                # we know that the literal can be true
+                # or the solver failed, so keep the literal
+                tmp.append(c)
+        singletons = tmp
+        i += 1
+
+    return singletons + rest
+
 
 def strengthenSafe(executor, s, a, seq, errs0, L):
     # if the annotations intersect, remove errs0 from a
@@ -262,10 +300,7 @@ def get_predicate(l):
     raise NotImplementedError(f"Unhandled predicate in expr {l}")
 
 
-def overapprox_literal(l, S, unsafe, target, executor, L):
-    assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
-    goodl = l  # last good overapprox of l
-
+def decompose_literal(l):
     isnot = False
     if l.isNot():
         isnot = True
@@ -276,61 +311,90 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
     elif l.isGt() or l.isGe():
         addtoleft = True
     else:
-        return goodl
+        return None, None, None, None
 
-    if isnot:
-        addtoleft = not addtoleft
-
-    EM = getGlobalExprManager()
     chld = list(l.children())
     assert len(chld) == 2
     left, P, right = chld[0], get_predicate(l), chld[1]
-    bw = left.getType().getBitWidth()
-    one = EM.Constant(1, bw)
-    num = one
 
-    # modify the literal for the first time
-    if addtoleft:
-        left = EM.Add(left, num)
-    else:
-        right = EM.Add(right, num)
+    if isnot:
+        addtoleft = not addtoleft
+        EM = getGlobalExprManager()
+        binop = P
+        P = lambda a, b: EM.Not(binop(a, b))
 
-    def get_newl(left, P, right):
-        newl = P(left, right)
-        if isnot:
-            newl = EM.Not(newl)
-        return newl
+    return left, right, P, addtoleft
 
-    l = get_newl(left, P, right)
-    X = intersection(S, l)
-    if not intersection(X, unsafe).is_empty():
+def get_left_right(l):
+    if l.isNot():
+        l = list(l.children())[0]
+
+    chld = list(l.children())
+    assert len(chld) == 2, "Invalid literal (we assume binop or not(binop)"
+    return chld[0], chld[1]
+
+def overapprox_literal(l, S, unsafe, target, executor, L):
+    assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
+    goodl = l  # last good overapprox of l
+
+    left, right, P, addtoleft = decompose_literal(l)
+    if left is None:
+        assert right is None
         return goodl
-    r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
 
-    while r.errors is None:
-        if r.ready is None:
-            # we must be able to step into the
-            # the set, otherwise we cannot execute the loop...
-            break
+    EM = getGlobalExprManager()
 
-        goodl = l
+    def check_literal(lit):
+        if lit.isConstant():
+            return False
+        X = intersection(S, lit)
+        if not intersection(X, unsafe).is_empty():
+            return False
 
-        num = EM.Add(num, num)
+        r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+        return r.errors is None and r.ready is not None
+
+    def modify_literal(goodl, P, num):
+        # FIXME: wbt. overflow?
+        left, right = get_left_right(goodl)
         if addtoleft:
             left = EM.Add(left, num)
         else:
             right = EM.Add(right, num)
 
         # try pushing further
-        l = get_newl(left, P, right)
-        print(l)
+        l = P(left, right)
+        if l.isConstant():
+            return None
+        if l == goodl:  # got nothing new...
+            return None
+        return l
 
-        X = intersection(S, l)
-        if not intersection(X, unsafe).is_empty():
-            break
-        r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+    print("EXTENDING LITERAL: ", l, goodl)
 
-    return goodl
+    bw = left.getType().getBitWidth()
+    one = EM.Constant(1, bw)
+    two = EM.Constant(2, bw)
+    num = EM.Constant(2**(bw-1)-1, bw)
+
+    while True:
+        l = modify_literal(goodl, P, num)
+        if l is None:
+            return goodl
+
+        # push as far as we can with this num
+        while check_literal(l):
+            goodl = l
+
+            l = modify_literal(goodl, P, num)
+            if l is None:
+                break
+
+        if num.getValue() <= 1:
+            return goodl
+        num = EM.Div(num, two)
+
+    assert False, "Unreachable"
 
 
 def overapprox_clause(n, clauses, executor, L, unsafe, target):
@@ -344,17 +408,15 @@ def overapprox_clause(n, clauses, executor, L, unsafe, target):
             S.intersect(x)
     assert c
 
-    assert intersection(S, unsafe).is_empty()
+    assert intersection(S, unsafe).is_empty(), f"{S} \cap {unsafe}"
 
-    # can we drop the clause completely?
-    r = check_paths(executor, L.getPaths(), pre=S, post=union(S, target))
-    if r.errors is None and r.ready:
-        return S.as_expr()
-
+    print(f"Overapprox clause: {c}")
 
     newc = []
     for l in literals(c):
-        newc.append(overapprox_literal(l, S, unsafe, target, executor, L))
+        newl = overapprox_literal(l, S, unsafe, target, executor, L)
+        newc.append(newl)
+        print(f"  Overapproximated {l} ==> {newl}")
 
     if len(newc) == 1:
         return newc[0]
@@ -380,19 +442,25 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     expr = S.as_expr().to_cnf()
 
     clauses = list(expr.children())
+    newclauses = clauses.copy()
+
+    # can we drop a clause completely?
+   #for c in clauses:
+   #    X = createSet(newclauses)
+   #    r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+   #    if r.errors is None and r.ready:
+   #        newclauses.remove(c)
+   #        print(f"  dropped {c}...")
+
+    clauses = remove_implied_literals(newclauses, unsafe)
     newclauses = []
     for n in range(0, len(clauses)):
         newclause = overapprox_clause(n, clauses, executor, L, unsafe, target)
         if newclause:
             newclauses.append(newclause)
 
-    clauses = newclauses
-
-    # FIXME: remove redundant clauses
-    expr = EM.conjunction(*clauses)
-    if not expr.isConstant():
-        expr = simplify_with_assumption(EM.getTrue(), expr)
-    S.reset_expr(expr)
+    clauses = remove_implied_literals(newclauses, unsafe)
+    S.reset_expr(EM.conjunction(*clauses))
 
     sd = S.as_description()
     A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)

@@ -12,6 +12,7 @@ from slowbeast.symexe.annotations import (
     AssumeAnnotation,
 )
 from slowbeast.domains.symbolic import Expr
+from slowbeast.ir.value import Constant
 
 from slowbeast.solvers.solver import getGlobalExprManager
 
@@ -144,6 +145,8 @@ def to_states_descr(S) -> StateDescription:
         # and therefore can break things... For this reason, it would
         # be reasonable to have explicit method conserning adding Expr
         # so that the user is aware of this problem...
+        return StateDescription(S, {})
+    elif isinstance(S, Constant) and S.isBool():
         return StateDescription(S, {})
     elif hasattr(S, "__iter__"):
         R = None
