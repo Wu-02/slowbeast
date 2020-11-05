@@ -10,11 +10,7 @@ from slowbeast.kindse.naive.naivekindse import (
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.annotations import (
-    AssumeAnnotation,
     AssertAnnotation,
-    state_to_annotation,
-    states_to_annotation,
-    or_annotations,
     and_annotations,
     unify_annotations,
 )
@@ -26,19 +22,6 @@ from .loops import SimpleLoop
 from .relations import get_safe_relations, get_safe_subexpressions
 from .kindsebase import KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
-
-
-def overapproximations(s, unsafe):
-    yield from get_safe_relations([s], unsafe)
-    yield from get_safe_subexpressions(s, unsafe)
-
-
-def abstract(executor, state, unsafe):
-    """
-    unsafe - unsafe states from the last step
-    """
-    yield from overapproximations(state, unsafe)
-
 
 def _simplify_with_assumption(lhs, rhs):
     """
