@@ -125,6 +125,9 @@ def simplify_with_assumption(lhs, rhs):
     return getGlobalExprManager().conjunction(*rhs)
 
 def remove_implied_literals(clauses, unsafe):
+    # FIXME
+    return clauses
+
     # split clauses to singleton clauses and the others
     singletons = []
     rest = []
@@ -370,12 +373,11 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
             return None
         return l
 
-    print("EXTENDING LITERAL: ", l, goodl)
-
     bw = left.getType().getBitWidth()
-    one = EM.Constant(1, bw)
     two = EM.Constant(2, bw)
     num = EM.Constant(2**(bw-1)-1, bw)
+
+    # FIXME: add a fast path where we try several values from the bottom...
 
     while True:
         l = modify_literal(goodl, P, num)
@@ -399,6 +401,7 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
 
 def overapprox_clause(n, clauses, executor, L, unsafe, target):
     createSet = executor.getIndExecutor().createStatesSet
+
     S = createSet()
     c = None
     for i, x in enumerate(clauses):
@@ -408,21 +411,19 @@ def overapprox_clause(n, clauses, executor, L, unsafe, target):
             S.intersect(x)
     assert c
 
-    assert intersection(S, unsafe).is_empty(), f"{S} \cap {unsafe}"
-
-    print(f"Overapprox clause: {c}")
+    assert intersection(S, c, unsafe).is_empty(), f"{S} \cap {c} \cap {unsafe}"
 
     newc = []
     for l in literals(c):
         newl = overapprox_literal(l, S, unsafe, target, executor, L)
         newc.append(newl)
-        print(f"  Overapproximated {l} ==> {newl}")
+        dbg(f"  Overapproximated {l} ==> {newl}")
 
     if len(newc) == 1:
         return newc[0]
 
     EM = S.get_se_state().getExprManager()
-    return EM.conjunction(*newc)
+    return EM.disjunction(*newc)
 
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
@@ -434,23 +435,30 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
         S, unsafe
     ).is_empty(), "Whata? Unsafe states among one-step reachable safe states..."
 
-    print_stdout(f"Overapproximating {S}", color="BROWN")
-    print_stdout(f"  with unsafe states: {unsafe}", color="BROWN")
+   #print_stdout(f"Overapproximating {S}", color="BROWN")
+   #print_stdout(f"  with unsafe states: {unsafe}", color="BROWN")
     EM = s.getExprManager()
     target = createSet(seq[-1].toassert())
 
     expr = S.as_expr().to_cnf()
-
     clauses = list(expr.children())
     newclauses = clauses.copy()
 
     # can we drop a clause completely?
-   #for c in clauses:
-   #    X = createSet(newclauses)
-   #    r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
-   #    if r.errors is None and r.ready:
-   #        newclauses.remove(c)
-   #        print(f"  dropped {c}...")
+    for c in clauses:
+        tmp = newclauses.copy()
+        tmp.remove(c)
+
+        tmpexpr = EM.conjunction(*tmp)
+        if tmpexpr.isConstant():
+            continue # either False or True are bad for us
+        X = createSet(tmpexpr)
+        if not intersection(X, unsafe).is_empty():
+            continue # we can't...
+        r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+        if r.errors is None and r.ready:
+            newclauses = tmp
+            dbg(f"  dropped {c}...")
 
     clauses = remove_implied_literals(newclauses, unsafe)
     newclauses = []
@@ -461,6 +469,8 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
 
     clauses = remove_implied_literals(newclauses, unsafe)
     S.reset_expr(EM.conjunction(*clauses))
+
+    #print_stdout(f"Overapproximated to {S}", color="BROWN")
 
     sd = S.as_description()
     A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)
@@ -524,9 +534,17 @@ class KindSymbolicExecutor(BaseKindSE):
 
         for s in r.ready:
             e = overapprox(self, s, errs0.toassert(), seq, L)
-            print_stdout(f"Overapproximated to: {e}", color="BLUE")
+            if e == seq[-1]:
+                dbg("Did not extend with the same elem...")
+                continue
+            print_stdout(f"Extended with: {e}", color="BROWN")
             tmp = seq.copy()
             tmp.append(e.states, e.strengthening)
+
+            if __debug__:
+                r = tmp.check_ind_on_paths(self, L.getPaths())
+                assert r.errors is None, f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
+
             E.append(tmp)
 
         return E
@@ -560,20 +578,19 @@ class KindSymbolicExecutor(BaseKindSE):
                 color="GRAY",
             )
             for seq in sequences:
-                print_stdout(f"Processing sequence of len {len(seq)}")
-                print("Processing seq:\n", seq)
+                print_stdout(f"Processing sequence of len {len(seq)}:\n{seq}", color="dark_blue")
                 if __debug__:
                     r = seq.check_ind_on_paths(self, L.getPaths())
                     assert r.errors is None, "seq is not inductive"
 
                 E += self.extend_seq(seq, errs0, L)
-                print(" -- extending DONE --")
+                #print(" -- extending DONE --")
 
             if not E:
                 # seq not extended... it looks that there is no
                 # safe invariant
                 # FIXME: could we use it for annotations?
-                print("No E")
+                print_stdout("Failed extending any sequence", color="orange")
                 return False  # fall-back to unwinding
 
             # FIXME: check that all the sequences together
