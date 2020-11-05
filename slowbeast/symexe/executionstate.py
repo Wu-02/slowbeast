@@ -66,7 +66,7 @@ class SEState(ExecutionState):
         for x in e:
             if x.isConstant():
                 assert isinstance(x.getValue(), bool)
-                if x.getValue() == False:
+                if not x.getValue():
                     return False
                 else:
                     continue

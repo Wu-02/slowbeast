@@ -46,6 +46,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         self.reportfn = print_stdout
 
         self.have_problematic_path = False
+        # here we report error states
+        self.return_states = None
 
     def getIndExecutor(self):
         return self.indexecutor
@@ -53,6 +55,13 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def getCFG(self, F):
         assert self.cfgs.get(F), f"Have no CFG for function {F.getName()}"
         return self.cfgs.get(F)
+
+    def get_return_states(self):
+        """
+        The states that caused killing the execution,
+        i.e., error states or killed states
+        """
+        return self.return_states
 
     def executePath(self, path, fromInit=False):
         """
@@ -295,9 +304,11 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                 dbg("Induction step succeeded!", color="GREEN")
                 return 0
             elif r is Result.UNSAFE:
+                self.return_states = states
                 dbg("Error found.", color="RED")
                 return 1
             elif r is Result.UNKNOWN:
+                self.return_states = states
                 dbg("Hit a problem, giving up.", color="ORANGE")
                 return 1
             else:

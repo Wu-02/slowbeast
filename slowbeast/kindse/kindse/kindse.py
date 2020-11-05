@@ -125,45 +125,46 @@ def simplify_with_assumption(lhs, rhs):
     return getGlobalExprManager().conjunction(*rhs)
 
 def remove_implied_literals(clauses, unsafe):
-    # FIXME
+    # Atm ,we do not need to remove implied clauses...
     return clauses
 
-    # split clauses to singleton clauses and the others
-    singletons = []
-    rest = []
-    for c in clauses:
-        if c.isOr():
-            rest.append(c)
-        else:  # the formula is in CNF, so this must be a singleton
-            singletons.append(c)
+   # THIS CODE IS WRONG, WHEN x -> y, we want to remove x, not y...
+   ## split clauses to singleton clauses and the others
+   #singletons = []
+   #rest = []
+   #for c in clauses:
+   #    if c.isOr():
+   #        rest.append(c)
+   #    else:  # the formula is in CNF, so this must be a singleton
+   #        singletons.append(c)
 
-    assumptions = []
+   #assumptions = []
 
-    solver = Solver()
-    Not = getGlobalExprManager().Not
-    i = 0
-    while True:
-        if i >= len(singletons):
-            break
-        tmp = [singletons[i]]
-        for j in range(0, len(singletons)):
-            if i == j:
-                continue
-            c = singletons[j]
-            assert c.isBool()
-            q = solver.is_sat(*tmp, Not(c))
-            if q is False:
-                # this literal is implied and we can drop it,
-                # but only if  it does not render the formula unsafe
-                assert intersection(unsafe, tmp).is_empty(), f"{unsafe} \cap {tmp}"
-            else:
-                # we know that the literal can be true
-                # or the solver failed, so keep the literal
-                tmp.append(c)
-        singletons = tmp
-        i += 1
+   #solver = Solver()
+   #Not = getGlobalExprManager().Not
+   #i = 0
+   #while True:
+   #    if i >= len(singletons):
+   #        break
+   #    tmp = [singletons[i]]
+   #    for j in range(0, len(singletons)):
+   #        if i == j:
+   #            continue
+   #        c = singletons[j]
+   #        assert c.isBool()
+   #        q = solver.is_sat(*tmp, Not(c))
+   #        if q is False:
+   #            # this literal is implied and we can drop it,
+   #            # but only if  it does not render the formula unsafe
+   #            assert intersection(unsafe, tmp).is_empty(), f"{unsafe} \cap {tmp}"
+   #        else:
+   #            # we know that the literal can be true
+   #            # or the solver failed, so keep the literal
+   #            tmp.append(c)
+   #    singletons = tmp
+   #    i += 1
 
-    return singletons + rest
+   #return singletons + rest
 
 
 def strengthenSafe(executor, s, a, seq, errs0, L):

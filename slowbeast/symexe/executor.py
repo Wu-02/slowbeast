@@ -1,8 +1,6 @@
 from ..ir.instruction import *
-from ..ir.types import Type
 from ..ir.value import Value, ConstantBool, Pointer, Constant
 from ..core.executor import Executor as ConcreteExecutor
-from ..core.memory import MemoryObject
 from ..solvers.expressions import is_symbolic
 from ..util.debugging import dbgv
 from ..core.errors import AssertFailError
@@ -87,7 +85,7 @@ class Executor(ConcreteExecutor):
             assert cond.isBool(), "Invalid constant"
             if cond.getValue():
                 return state, None
-            elif cond.getValue() == False:
+            elif not cond.getValue():
                 return None, state
             else:
                 raise RuntimeError("Invalid condition: {0}".format(cond.getValue()))
@@ -428,7 +426,8 @@ class Executor(ConcreteExecutor):
         states = []
         assert v.isBool()
         if v.isConstant():
-            if v.getValue() != True:
+            assert isinstance(v.getValue(), bool)
+            if not v.getValue():
                 state.setError(AssertFailError(msg))
             states.append(state)
         else:
