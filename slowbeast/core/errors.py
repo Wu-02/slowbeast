@@ -39,21 +39,22 @@ class Error:
             detail = "error"
         else:
             raise RuntimeError("Invalid error type")
+        return detail
 
     def __str__(self):
         if self.descr:
-            return "{0}: {1}".format(self.__repr__(), self.descr)
+            return f"{self.__repr__()}: {self.descr}"
         return self.__repr__()
 
 
 class AssertFailError(Error):
     def __init__(self, descr=None):
-        super(AssertFailError, self).__init__(Error.ASSERTION_FAIL, descr)
+        super().__init__(Error.ASSERTION_FAIL, descr)
 
 
 class GenericError(Error):
     def __init__(self, descr=None):
-        super(GenericError, self).__init__(Error.GENERIC, descr)
+        super().__init__(Error.GENERIC, descr)
 
 
 class MemError(Error):
