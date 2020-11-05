@@ -171,3 +171,92 @@ class InductiveSequence:
 
     def check_ind_on_paths(self, executor, paths):
         return self.check_on_paths(executor, paths, self_as_pre=True)
+
+
+
+
+# can be used to split formula to abstraction and the rest
+# def _simplify_with_assumption(lhs, rhs):
+#     """
+#     Remove from 'rhs' (some) parts implied by the 'lhs'
+#     'rhs' is a list of Or expressions
+#     'lhs' is a list of Or expressions
+#     """
+#     # FIXME do this with an incremental solver
+#     assumptions = lhs.copy()
+#
+#     # split clauses to singleton clauses and the others
+#     singletons = []
+#     rest = []
+#     for c in rhs:
+#         if c.isOr():
+#             rest.append(c)
+#         else:  # the formula is in CNF, so this must be a singleton
+#             singletons.append(c)
+#
+#     assumptions += singletons
+#
+#     # remove the implied parts of the rest of clauses
+#     changed = False
+#     newrhs = []
+#     newsingletons = []
+#     solver = Solver()
+#     EM = getGlobalExprManager()
+#     Not = EM.Not
+#     for c in rest:
+#         newliterals = []
+#         for l in c.children():
+#             assert l.isBool()
+#             q = solver.is_sat(*assumptions, l)
+#             if q is not False:
+#                 q = solver.is_sat(*assumptions, Not(l))
+#                 if q is False:
+#                     # this literal is implied and thus the whole clause is true
+#                     changed = True
+#                     break
+#                 else:
+#                     # we know that the literal can be true
+#                     # or the solver failed, so keep the literal
+#                     newliterals.append(l)
+#             else:
+#                 # we dropped the literal
+#                 changed = True
+#
+#         assert len(newliterals) > 0, "Unsat clause..."
+#         if len(newliterals) == 1:
+#             # XXX: we could do this also for non-singletons,
+#             # but do we want to?
+#             assumptions.append(literals[0])
+#             newsingletons.append(literals[0])
+#         else:
+#             newrhs.append(newliterals)
+#
+#     # get rid of redundant singletons
+#     assumptions = lhs.copy()
+#     tmp = []
+#     for c in singletons:
+#         assert c.isBool()
+#         q = solver.is_sat(*assumptions, Not(c))
+#         if q is False:
+#             # this literal is implied and we can drop it
+#             changed = True
+#             continue
+#         else:
+#             # we know that the literal can be true
+#             # or the solver failed, so keep the literal
+#             tmp.append(c)
+#     singletons = tmp
+#
+#     return newsingletons, singletons + newrhs, changed
+#
+#
+# def simplify_with_assumption(lhs, rhs):
+#     lhs = list(lhs.to_cnf().children())
+#     rhs = list(rhs.to_cnf().children())
+#     changed = True
+#
+#     while changed:
+#         singletons, rhs, changed = _simplify_with_assumption(lhs, rhs)
+#         lhs += singletons
+#
+#     return getGlobalExprManager().conjunction(*rhs)

@@ -23,166 +23,11 @@ from .relations import get_safe_relations, get_safe_subexpressions
 from .kindsebase import KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 
-def _simplify_with_assumption(lhs, rhs):
-    """
-    Remove from 'rhs' (some) parts implied by the 'lhs'
-    'rhs' is a list of Or expressions
-    'lhs' is a list of Or expressions
-    """
-    # FIXME do this with an incremental solver
-    assumptions = lhs.copy()
-
-    # split clauses to singleton clauses and the others
-    singletons = []
-    rest = []
-    for c in rhs:
-        if c.isOr():
-            rest.append(c)
-        else:  # the formula is in CNF, so this must be a singleton
-            singletons.append(c)
-
-    assumptions += singletons
-
-    # remove the implied parts of the rest of clauses
-    changed = False
-    newrhs = []
-    newsingletons = []
-    solver = Solver()
-    EM = getGlobalExprManager()
-    Not = EM.Not
-    for c in rest:
-        newliterals = []
-        for l in c.children():
-            assert l.isBool()
-            q = solver.is_sat(*assumptions, l)
-            if q is not False:
-                q = solver.is_sat(*assumptions, Not(l))
-                if q is False:
-                    # this literal is implied and thus the whole clause is true
-                    changed = True
-                    break
-                else:
-                    # we know that the literal can be true
-                    # or the solver failed, so keep the literal
-                    newliterals.append(l)
-            else:
-                # we dropped the literal
-                changed = True
-
-        assert len(newliterals) > 0, "Unsat clause..."
-        if len(newliterals) == 1:
-            # XXX: we could do this also for non-singletons,
-            # but do we want to?
-            assumptions.append(literals[0])
-            newsingletons.append(literals[0])
-        else:
-            newrhs.append(newliterals)
-
-    # get rid of redundant singletons
-    assumptions = lhs.copy()
-    tmp = []
-    for c in singletons:
-        assert c.isBool()
-        q = solver.is_sat(*assumptions, Not(c))
-        if q is False:
-            # this literal is implied and we can drop it
-            changed = True
-            continue
-        else:
-            # we know that the literal can be true
-            # or the solver failed, so keep the literal
-            tmp.append(c)
-    singletons = tmp
-
-    return newsingletons, singletons + newrhs, changed
-
-
-def simplify_with_assumption(lhs, rhs):
-    lhs = list(lhs.to_cnf().children())
-    rhs = list(rhs.to_cnf().children())
-    changed = True
-
-    while changed:
-        singletons, rhs, changed = _simplify_with_assumption(lhs, rhs)
-        lhs += singletons
-
-    return getGlobalExprManager().conjunction(*rhs)
 
 def remove_implied_literals(clauses, unsafe):
-    # Atm ,we do not need to remove implied clauses...
+    # Atm ,we do not need to remove redundant clauses
+    # (the overapproximation does it for us...)
     return clauses
-
-   # THIS CODE IS WRONG, WHEN x -> y, we want to remove x, not y...
-   ## split clauses to singleton clauses and the others
-   #singletons = []
-   #rest = []
-   #for c in clauses:
-   #    if c.isOr():
-   #        rest.append(c)
-   #    else:  # the formula is in CNF, so this must be a singleton
-   #        singletons.append(c)
-
-   #assumptions = []
-
-   #solver = Solver()
-   #Not = getGlobalExprManager().Not
-   #i = 0
-   #while True:
-   #    if i >= len(singletons):
-   #        break
-   #    tmp = [singletons[i]]
-   #    for j in range(0, len(singletons)):
-   #        if i == j:
-   #            continue
-   #        c = singletons[j]
-   #        assert c.isBool()
-   #        q = solver.is_sat(*tmp, Not(c))
-   #        if q is False:
-   #            # this literal is implied and we can drop it,
-   #            # but only if  it does not render the formula unsafe
-   #            assert intersection(unsafe, tmp).is_empty(), f"{unsafe} \cap {tmp}"
-   #        else:
-   #            # we know that the literal can be true
-   #            # or the solver failed, so keep the literal
-   #            tmp.append(c)
-   #    singletons = tmp
-   #    i += 1
-
-   #return singletons + rest
-
-
-def strengthenSafe(executor, s, a, seq, errs0, L):
-    # if the annotations intersect, remove errs0 from a
-    EM = getGlobalExprManager()
-
-    # FIXME: proceed only when a intersects errs0
-
-    # NOTE: the strengthening is the loop-exit condition.
-    # It is sufficient to exclude the unsafe states
-    states, stren, subs, noterrstates = None, None, None, None
-    if errs0.strengthening:
-        if a.strengthening is None:
-            noterrstates = errs0.strengthening.Not(EM)
-        else:
-            noterrstates = and_annotations(
-                EM, True, a.strengthening, errs0.strengthening.Not(EM)
-            )
-    else:
-        # the error loc is inside a loop - we must use the whole error
-        # states decription
-        # FIXME: try use only a part of the condition (unsat core)
-        assert errs0.states
-        if a.strengthening is None:
-            noterrstates = errs0.states.Not(EM)
-        else:
-            noterrstates = and_annotations(
-                EM, True, a.strengthening, errs0.states.Not(EM)
-            )
-    states, stren, subs = unify_annotations(EM, a.states, noterrstates)
-    A1 = AssertAnnotation(states, subs, EM)
-    A2 = AssertAnnotation(stren, subs, EM)
-    return InductiveSequence.Frame(A1, A2)
-
 
 def check_inv(prog, L, inv):
     loc = L.loc
@@ -250,7 +95,6 @@ def get_initial_seq(unsafe):
 
 
 def check_paths(executor, paths, pre=None, post=None):
-    #print_stdout(f'Check paths with PRE={pre} and POST={post}', color="BLUE")
     result = PathExecutionResult()
     for path in paths:
         p = path.copy()
@@ -264,7 +108,6 @@ def check_paths(executor, paths, pre=None, post=None):
         r = executor.executePath(p)
         result.merge(r)
 
-    #print_stdout(str(result), color="ORANGE")
     return result
 
 
@@ -272,7 +115,6 @@ def literals(c):
     if c.isOr():
         yield from c.children()
     yield c
-
 
 def get_predicate(l):
     EM = getGlobalExprManager()
@@ -424,6 +266,7 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     createSet = executor.getIndExecutor().createStatesSet
     S = createSet(s)
     unsafe = createSet(unsafeAnnot)  # safe strengthening
+    assert not unsafe.is_empty(), "Empty error states"
     assert intersection(
         S, unsafe
     ).is_empty(), "Whata? Unsafe states among one-step reachable safe states..."
