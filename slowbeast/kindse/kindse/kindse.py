@@ -1,3 +1,4 @@
+from functools import partial
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 
 from slowbeast.core.executor import PathExecutionResult
@@ -292,14 +293,22 @@ def literals(c):
 
 def get_predicate(l):
     EM = getGlobalExprManager()
-    if l.isLe():
+    if l.isSLe():
         return EM.Le
-    if l.isGe():
+    if l.isSGe():
         return EM.Ge
-    if l.isLt():
+    if l.isSLt():
         return EM.Lt
-    if l.isGt():
+    if l.isSGt():
         return EM.Gt
+    if l.isULe():
+        return partial(EM.Le, unsigned=True)
+    if l.isUGe():
+        return partial(EM.Ge, unsigned=True)
+    if l.isULt():
+        return partial(EM.Lt, unsigned=True)
+    if l.isUGt():
+        return partial(EM.Gt, unsigned=True)
 
     raise NotImplementedError(f"Unhandled predicate in expr {l}")
 

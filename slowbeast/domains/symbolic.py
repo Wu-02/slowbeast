@@ -189,6 +189,31 @@ class Expr(Value):
     def isGt(self):
         return is_app_of(self._expr, Z3_OP_SGT) or is_app_of(self._expr, Z3_OP_UGT)
 
+    def isSLe(self):
+        return is_app_of(self._expr, Z3_OP_SLEQ)
+
+    def isSGe(self):
+        return is_app_of(self._expr, Z3_OP_SGEQ)
+
+    def isSLt(self):
+        return is_app_of(self._expr, Z3_OP_SLT)
+
+    def isSGt(self):
+        return is_app_of(self._expr, Z3_OP_SGT)
+
+    def isULe(self):
+        return is_app_of(self._expr, Z3_OP_ULEQ)
+
+    def isUGe(self):
+        return is_app_of(self._expr, Z3_OP_UGEQ)
+
+    def isULt(self):
+        return is_app_of(self._expr, Z3_OP_ULT)
+
+    def isUGt(self):
+        return is_app_of(self._expr, Z3_OP_UGT)
+
+
     def __hash__(self):
         return self._expr.__hash__()
 
