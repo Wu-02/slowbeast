@@ -1,4 +1,4 @@
-from slowbeast.util.debugging import dbg, dbgv, dbg_sec
+from slowbeast.util.debugging import dbgv
 from .executor import Executor as SExecutor
 from .constraints import ConstraintsSet
 from .annotations import execute_annotations
@@ -38,7 +38,7 @@ class Executor(SExecutor):
         return ready, nonready
 
     def executeAnnotatedLoc(self, states, loc, path=None):
-        dbg(f"vv ----- Loc {loc.getBBlock().getID()} ----- vv")
+        dbgv(f"vv ----- Loc {loc.getBBlock().getID()} ----- vv")
 
         # execute annotations before bblock
         ready, nonready = self.executeAnnotations(states, loc.annotationsBefore)
@@ -63,7 +63,7 @@ class Executor(SExecutor):
             ready, tu = self.executeAnnotations(ready, locannot)
             nonready += tu
 
-        dbg(f"^^ ----- Loc {loc.getBBlock().getID()} ----- ^^")
+        dbgv(f"^^ ----- Loc {loc.getBBlock().getID()} ----- ^^")
         return ready, nonready
 
     def executeAnnotatedPath(self, state, path, branch_on_last=False):

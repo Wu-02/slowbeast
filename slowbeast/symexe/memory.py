@@ -1,5 +1,5 @@
 from copy import copy
-from ..util.debugging import dbg, FIXME
+from ..util.debugging import dbgv
 from ..core.memory import Memory
 from ..core.memoryobject import MemoryObject
 from ..core.memorymodel import MemoryModel
@@ -35,7 +35,7 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
-        dbg("Lazily allocated {0}".format(op), color="WHITE")
+        dbgv("Lazily allocated {0}".format(op), color="WHITE")
         assert state.get(op), "Did not bind an allocated value"
 
     def write(self, state, valueOp, toOp):
@@ -43,7 +43,7 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         to = state.get(toOp)
         if to is None:
             self.lazyAllocate(state, toOp)
-            # FIXME("We're calling get() method but we could return the value...")
+            # FIXME "We're calling get() method but we could return the value..."
             to = state.get(toOp)
 
         assert isinstance(value, Value)
@@ -62,7 +62,7 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         return [state]
 
     def uninitializedRead(self, state, frm, ptr, bytesNum):
-        dbg("Reading nondet for uninitialized value: {0}".format(ptr), color="WHITE")
+        dbgv("Reading nondet for uninitialized value: {0}".format(ptr), color="WHITE")
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name

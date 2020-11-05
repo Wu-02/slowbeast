@@ -1,22 +1,22 @@
 import sys
 
 COLORS = {
-    "DARK_BLUE": "\033[0;34m",
-    "DARK_GREEN": "\033[0;32m",
-    "CYAN": "\033[0;36m",
-    "BLUE": "\033[1;34m",
-    "PURPLE": "\033[0;35m",
-    "RED": "\033[1;31m",
-    "WINE": "\033[0;31m",
-    "GREEN": "\033[1;32m",
-    "BROWN": "\033[0;33m",
-    "YELLOW": "\033[1;33m",
-    "WHITE": "\033[1;37m",
-    "GRAY": "\033[0;37m",
-    "DARK_GRAY": "\033[1;30m",
-    "DARK_GRAY_THIN": "\033[38;5;238m",
-    "ORANGE": "\033[38;5;214m",
-    "RESET": "\033[0m",
+    "dark_blue": "\033[0;34m",
+    "dark_green": "\033[0;32m",
+    "cyan": "\033[0;36m",
+    "blue": "\033[1;34m",
+    "purple": "\033[0;35m",
+    "red": "\033[1;31m",
+    "wine": "\033[0;31m",
+    "green": "\033[1;32m",
+    "brown": "\033[0;33m",
+    "yellow": "\033[1;33m",
+    "white": "\033[1;37m",
+    "gray": "\033[0;37m",
+    "dark_gray": "\033[1;30m",
+    "dark_gray_thin": "\033[38;5;238m",
+    "orange": "\033[38;5;214m",
+    "reset": "\033[0m",
 }
 
 
@@ -36,7 +36,7 @@ def print_stream(msg, stream, prefix=None, print_ws="\n", color=None):
         color = None
 
     if color is not None:
-        stream.write(COLORS[color])
+        stream.write(COLORS[color.lower()])
 
     if msg == "":
         return
@@ -46,7 +46,7 @@ def print_stream(msg, stream, prefix=None, print_ws="\n", color=None):
     stream.write(msg)
 
     if color is not None:
-        stream.write(COLORS["RESET"])
+        stream.write(COLORS["reset"])
 
     if print_ws:
         stream.write(print_ws)
@@ -79,9 +79,9 @@ _is_debugging = 0
 _debugging_prefix = ""
 
 
-def set_debugging(verbose=False):
+def set_debugging(verbose_lvl=1):
     global _is_debugging
-    _is_debugging = 2 if verbose else 1
+    _is_debugging = verbose_lvl
 
 
 def unset_debugging():
@@ -110,14 +110,6 @@ def dec_debugging_lvl():
         _debugging_prefix = _debugging_prefix[2:]
 
 
-def dbg_sec(msg=None, color="WHITE"):
-    if msg is None:
-        dec_debugging_lvl()
-    else:
-        dbg(msg, color=color)
-        inc_debugging_lvl()
-
-
 def dbg(msg, print_ws="\n", color="GRAY", fn=print_stderr):
     if _is_debugging < 1:
         return
@@ -125,11 +117,26 @@ def dbg(msg, print_ws="\n", color="GRAY", fn=print_stderr):
     fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
 
-def dbgv(msg, print_ws="\n", color="GRAY", fn=print_stderr):
-    if _is_debugging < 2:
+def dbgv(msg, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr):
+    if _is_debugging < verbose_lvl:
         return
 
     fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
+
+def dbg_sec(msg=None, color="WHITE"):
+    if msg is None:
+        dec_debugging_lvl()
+    else:
+        dbg(msg, color=color)
+        inc_debugging_lvl()
+
+def dbgv_sec(msg=None, verbose_lvl=2, color="WHITE"):
+    """ Exactly as dbg sec, but uses dbgv """
+    if msg is None:
+        dec_debugging_lvl()
+    else:
+        dbgv(msg, color=color)
+        inc_debugging_lvl()
 
 
 def warn(msg, print_ws="\n", color="BROWN"):

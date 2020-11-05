@@ -1,5 +1,5 @@
 import sys
-from ..util.debugging import dbg, dbg_sec, FIXME
+from ..util.debugging import dbgv, dbg_sec, FIXME
 from ..ir.instruction import *
 from ..ir.value import *
 from .errors import GenericError
@@ -367,7 +367,7 @@ class Executor:
             return [state]
 
         fun = instr.getCalledFunction()
-        dbg("-- CALL {0} --".format(fun.getName()))
+        dbgv("-- CALL {0} --".format(fun.getName()))
         if fun.isUndefined():
             state.setError(
                 GenericError("Called undefined function: {0}".format(fun.getName()))
@@ -416,7 +416,7 @@ class Executor:
         TODO: exceptional termination (like assert?)
         """
         # debug print
-        dbg(
+        dbgv(
             "({2}) {0}: {1}".format(
                 "--" if not instr.getBBlock() else instr.getFunction().getName(),
                 str(instr),

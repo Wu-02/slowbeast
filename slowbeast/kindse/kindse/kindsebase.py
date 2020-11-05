@@ -1,4 +1,4 @@
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbgv
 
 from slowbeast.kindse.annotatedcfg import CFG
 from slowbeast.analysis.callgraph import CallGraph
@@ -71,7 +71,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             states = self.states
             assert states
 
-            dbg(f"Executing (init) path: {path}", color="WHITE", fn=self.reportfn)
+            dbgv(f"Executing (init) path: {path}", color="WHITE", fn=self.reportfn)
         else:
             executor = self.getIndExecutor()
 
@@ -80,7 +80,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             s.pushCall(None, self.getProgram().getEntry())
             states = [s]
 
-            dbg(f"Executing path: {path}", color="WHITE", fn=self.reportfn)
+            dbgv(f"Executing path: {path}", color="WHITE", fn=self.reportfn)
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
