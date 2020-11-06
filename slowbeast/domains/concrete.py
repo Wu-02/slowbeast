@@ -10,6 +10,17 @@ def getUnsigned(a):
     return x + (1 << a.getBitWidth())
 
 
+def wrap_to_bw(x, bw):
+    m = 1 << bw
+    if x >= 0:
+        while x >= m:
+            x -= m
+    else:
+        m = m
+        while x <= -m:
+            x += m
+    return x
+
 class ConcreteDomain:
     """
     Takes care of handling concrete computations.
@@ -175,17 +186,20 @@ class ConcreteDomain:
     def Add(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType()
-        return Constant(a.getValue() + b.getValue(), a.getType())
+        bw = a.getType().getBitWidth()
+        return Constant(wrap_to_bw(a.getValue() + b.getValue(), bw), a.getType())
 
     def Sub(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType()
-        return Constant(a.getValue() - b.getValue(), a.getType())
+        bw = a.getType().getBitWidth()
+        return Constant(wrap_to_bw(a.getValue() - b.getValue(), bw), a.getType())
 
     def Mul(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType()
-        return Constant(a.getValue() * b.getValue(), a.getType())
+        bw = a.getType().getBitWidth()
+        return Constant(wrap_to_bw(a.getValue() * b.getValue(), bw), a.getType())
 
     def Div(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
@@ -194,4 +208,4 @@ class ConcreteDomain:
             return Constant(
                 getUnsigned(a.getValue()) / getUnsigned(b.getValue()), result_ty
             )
-        return Constant(int(a.getValue() / b.getValue()), result_ty)
+        return Constant(wrap_to_bw(int(a.getValue() / b.getValue()), result_ty.getBitWidth()), result_ty)
