@@ -22,9 +22,11 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
-        self.indexecutor = PathExecutor(self.getSolver(), opts, memorymodel)
+        indexecutor = PathExecutor(self.getSolver(), opts, memorymodel)
+        # add error funs and forbid defined calls...
         dbg("Forbidding calls in induction step for now with k-induction")
-        self.indexecutor.forbidCalls()
+        indexecutor.forbidCalls()
+        self.indexecutor = indexecutor
 
         # run only on reachable functions
         callgraph = CallGraph(prog)

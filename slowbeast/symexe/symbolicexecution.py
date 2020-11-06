@@ -12,10 +12,12 @@ class SEOptions(ExecutionOptions):
             self.concretize_nondets = opts.concretize_nondets
             self.uninit_is_nondet = opts.uninit_is_nondet
             self.exit_on_error = opts.exit_on_error
+            self.error_funs = opts.error_funs
         else:
             self.concretize_nondets = False
             self.uninit_is_nondet = False
             self.exit_on_error = False
+            self.error_funs = []
 
 
 class SEStats:

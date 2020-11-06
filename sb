@@ -37,6 +37,7 @@ def createArgParser():
                         help='Use nondet value for reads from uninitialized memory (instead of issuing an error).')
     parser.add_argument('-dump', action='store_true', default=False, help='dump the program after parsing')
     parser.add_argument('-parse-only', action='store_true', help='only parse program and dump it (for debugging)')
+    parser.add_argument('-error-fn', action='store', help='Error function (calling this function amounts to calling assert(false)')
     parser.add_argument('-kind', action='store_true', help='Use k-induction')
     parser.add_argument('-kind-noinv', action='store_true',
                         help='Use k-induction without (internal) invariant generation')
@@ -335,6 +336,10 @@ def main():
 
     opts.concretize_nondets = args.concretize_nondet
     opts.uninit_is_nondet = args.uninitialized_nondet
+
+    # user-defined error functions (issue error when called)
+    if args.error_fn:
+        opts.error_funs = args.error_fn.split(',')
 
     try:
         SE.run()

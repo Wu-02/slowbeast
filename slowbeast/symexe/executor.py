@@ -57,6 +57,14 @@ class Executor(ConcreteExecutor):
         self.solver = solver
         self.stats = SEStats()
 
+    def is_error_fn(self, fun):
+        if isinstance(fun, str):
+            return fun in self.getOptions().error_funs
+        return fun.getName() in self.getOptions().error_funs
+
+    def error_funs(self):
+        return self._error_funs
+
     def createState(self, pc=None, m=None):
         if m is None:
             m = self.getMemoryModel().createMemory()
@@ -272,6 +280,10 @@ class Executor(ConcreteExecutor):
     def execCall(self, state, instr):
         assert isinstance(instr, Call)
         fun = instr.getCalledFunction()
+        if self.is_error_fn(fun):
+            state.setError(AssertFailError(f"Called '{fun.getName()}'"))
+            return [state]
+
         if fun.isUndefined():
             return self.execUndefFun(state, instr, fun)
 
