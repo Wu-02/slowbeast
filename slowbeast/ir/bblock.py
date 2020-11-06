@@ -56,7 +56,7 @@ class BBlock(ProgramElement):
     def setFunction(self, f):
         self._function = f
 
-    def getFunction(self):
+    def fun(self):
         return self._function
 
     def as_value(self):

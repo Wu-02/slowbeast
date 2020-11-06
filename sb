@@ -279,7 +279,7 @@ def main():
     if args.dump:
         P.dump()
 
-    entry = P.getFunction(args.entry)
+    entry = P.fun(args.entry)
     if not entry:
         print("Entry function not found: {0}".format(args.entry))
         exit(1)

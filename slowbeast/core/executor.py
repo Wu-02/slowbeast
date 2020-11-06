@@ -418,7 +418,7 @@ class Executor:
         # debug print
         dbgv(
             "({2}) {0}: {1}".format(
-                "--" if not instr.getBBlock() else instr.getFunction().getName(),
+                "--" if not instr.getBBlock() else instr.fun().getName(),
                 str(instr),
                 state.getID(),
             )

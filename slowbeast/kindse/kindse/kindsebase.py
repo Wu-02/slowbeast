@@ -38,7 +38,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                 callgraph.dump(f)
 
         self.callgraph = callgraph
-        self.cfgs = {F: CFG(F) for F in callgraph.getFunctions() if not F.isUndefined()}
+        self.cfgs = {F: CFG(F) for F in callgraph.funs() if not F.isUndefined()}
 
         self.paths = []
         # as we run the executor in nested manners,
@@ -115,9 +115,9 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         self.have_problematic_path = True
         print_stdout("Killing a path that goes to caller")
         # start = path.first()
-        # cgnode = self.callgraph.getNode(start.getBBlock().getFunction())
+        # cgnode = self.callgraph.getNode(start.getBBlock().fun())
         # for callerfun, callsite in cgnode.getCallers():
-        #    print('caller', callerfun.getFun())
+        #    print('caller', callerfun.fun())
         #    print('cs', callsite)
         #    callsite.getBBlock()
         return []

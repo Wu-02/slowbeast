@@ -75,9 +75,9 @@ class Instruction(ProgramElement):
     def getBBlock(self):
         return self._bblock
 
-    def getFunction(self):
+    def fun(self):
         assert self._bblock
-        return self._bblock.getFunction()
+        return self._bblock.fun()
 
     def getBBlockIdx(self):
         return self._bblock_idx

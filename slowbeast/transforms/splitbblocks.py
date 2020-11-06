@@ -7,7 +7,7 @@ from slowbeast.ir.value import ConstantTrue
 # FIXME: not efficient, but let's fix that once
 # it is a problem
 def splitAfter(block, after):
-    B = BBlock(block.getFunction())
+    B = BBlock(block.fun())
     blocks = [block]
     last = block.last()
     instructions = block.getInstructions().copy()
@@ -15,7 +15,7 @@ def splitAfter(block, after):
         B.append(I)
         if after(I) and last != I:
             blocks.append(B)
-            B = BBlock(block.getFunction())
+            B = BBlock(block.fun())
 
     blocks.append(B)
     assert len(blocks) > 1
@@ -34,7 +34,7 @@ def splitAfter(block, after):
 
 
 def splitAround(block, P):
-    B = BBlock(block.getFunction())
+    B = BBlock(block.fun())
     blocks = [block]
     last = block.last()
     instructions = block.getInstructions().copy()
@@ -43,12 +43,12 @@ def splitAround(block, P):
             # end previous block if non-empty
             if B.size() > 0:
                 blocks.append(B)
-                B = BBlock(block.getFunction())
+                B = BBlock(block.fun())
             assert B.size() == 0
             B.append(I)
             blocks.append(B)
             if I != last:  # start new one
-                B = BBlock(block.getFunction())
+                B = BBlock(block.fun())
         else:
             B.append(I)
 

@@ -501,7 +501,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 points.append(end)
 
         if __debug__:
-            with self.new_output_file(f"{cfg.getFun().getName()}-dfs.dot") as f:
+            with self.new_output_file(f"{cfg.fun().getName()}-dfs.dot") as f:
                 DFSVisitor().dump(cfg, f)
 
         DFSVisitor().foreachedge(processedge, cfg.getEntry())
@@ -512,7 +512,7 @@ class KindSymbolicExecutor(BaseKindSE):
         paths = []
         # initialize the paths only in functions
         # that are reachable in the callgraph
-        for F in self.callgraph.getFunctions():
+        for F in self.callgraph.funs():
             if F.isUndefined():
                 continue
 

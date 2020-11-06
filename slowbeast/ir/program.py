@@ -15,17 +15,17 @@ class Program:
     def addFun(self, f):
         self._functions.append(f)
 
-    def getFunctions(self):
+    def funs(self):
         return self._functions
 
-    def getFunction(self, name):
+    def fun(self, name):
         for f in self._functions:
             if f.getName() == name:
                 return f
         return None
 
     def setEntry(self, e):
-        assert self.getFunction(e.getName())
+        assert self.fun(e.getName())
         self._entry = e
 
     def getEntry(self):

@@ -44,14 +44,14 @@ class CFG:
             return len(self.successors) > 1
 
     def __init__(self, F):
-        self.fun = F
+        self._fun = F
         self.entry = None
         self._nodes = {}
 
         self._build()
 
-    def getFun(self):
-        return self.fun
+    def fun(self):
+        return self._fun
 
     def createNode(self, *args):
         """Override this method in child classes
@@ -78,7 +78,7 @@ class CFG:
         self.entry = n
 
     def _build(self):
-        fun = self.fun
+        fun = self._fun
 
         for B in fun.getBBlocks():
             self._nodes[B] = self.createNode(B)

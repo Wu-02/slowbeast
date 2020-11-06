@@ -8,13 +8,13 @@ from copy import copy
 class CallGraph:
     class Node:
         def __init__(self, F):
-            __slots__ = ["fun", "callsites", "callers"]
-            self.fun = F
+            __slots__ = ["_fun", "callsites", "callers"]
+            self._fun = F
             self.callers = []
             self.callsites = {}
 
-        def getFun(self):
-            return self.fun
+        def fun(self):
+            return self._fun
 
         def getCallSites(self):
             return self.callsites
@@ -64,18 +64,18 @@ class CallGraph:
     def getNodes(self):
         return self._nodes.values()
 
-    def getFunctions(self):
-        return (f.getFun() for f in self._nodes.values())
+    def funs(self):
+        return (f.fun() for f in self._nodes.values())
 
     def _build(self):
-        for F in self.program.getFunctions():
+        for F in self.program.funs():
             self._nodes[F] = self.createNode(F)
 
-        for fun, node in self._nodes.items():
-            self._build_fun(fun, node)
+        for _fun, node in self._nodes.items():
+            self._build_fun(_fun, node)
 
-    def _build_fun(self, fun, node):
-        for block in fun.getBBlocks():
+    def _build_fun(self, _fun, node):
+        for block in _fun.getBBlocks():
             for I in block.getInstructions():
                 if not isinstance(I, Call):
                     continue
@@ -112,7 +112,7 @@ class CallGraph:
                 for n, cf in enumerate(funs):
                     if n == 0:
                         stream.write(
-                            "  {0} -> {1}\n".format(cs.getID(), cf.getFun().getName())
+                            "  {0} -> {1}\n".format(cs.getID(), cf.fun().getName())
                         )
                     else:
-                        stream.write("     -> {0}\n".format(cf.getFun().getName()))
+                        stream.write("     -> {0}\n".format(cf.fun().getName()))

@@ -97,8 +97,8 @@ class Parser:
     def getBBlock(self, llvmb):
         return self._bblocks[llvmb]
 
-    def getFun(self, fn):
-        return self.program.getFunction(fn)
+    def fun(self, fn):
+        return self.program.fun(fn)
 
     def _addMapping(self, llinst, sbinst):
         if "llvm" in self._metadata_opts:
@@ -295,7 +295,7 @@ class Parser:
                 for x in sop.split():
                     if x[0] == "@":
                         fun = x[1:]
-                        if self.getFun(fun):
+                        if self.fun(fun):
                             break
                         else:
                             fun = None
@@ -308,7 +308,7 @@ class Parser:
         if fun in special_functions:
             return self._createSpecialCall(inst, fun)
 
-        F = self.getFun(fun)
+        F = self.fun(fun)
         if not F:
             raise NotImplementedError("Unknown function: {0}".format(fun))
 
@@ -489,10 +489,10 @@ class Parser:
                 )
                 raise e
 
-        assert B.getFunction() is F
+        assert B.fun() is F
 
     def _parse_fun(self, f):
-        F = self.getFun(f.name)
+        F = self.fun(f.name)
 
         # add mapping to arguments of the function
         for n, a in enumerate(f.arguments):
