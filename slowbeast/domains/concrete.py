@@ -30,7 +30,7 @@ class ConcreteDomain:
         assert len(args) > 0
         for a in args:
             assert isinstance(a, Value), a
-            if not a.isConstant():
+            if not a.is_concrete():
                 return False
         return True
 
@@ -129,8 +129,8 @@ class ConcreteDomain:
 
     def Extract(a, start, end):
         assert ConcreteDomain.belongto(a)
-        assert start.isConstant()
-        assert end.isConstant()
+        assert start.is_concrete()
+        assert end.is_concrete()
         bitsnum = end.getValue() - start.getValue() + 1
         return Constant(
             (a.getValue() >> start.getValue()) & ((1 << (bitsnum)) - 1), Type(bitsnum)

@@ -260,7 +260,7 @@ class BVSymbolicDomain:
         if isinstance(v, Expr):
             return v
 
-        if v.isConstant():
+        if v.is_concrete():
             if v.isBool():
                 return Expr(BoolVal(v.getValue()), BoolType())
             return Expr(bv_const(v.getValue(), v.getType().getBitWidth()), v.getType())
@@ -374,7 +374,7 @@ class BVSymbolicDomain:
 
     def ZExt(a, b):
         assert BVSymbolicDomain.belongto(a)
-        assert b.isConstant()
+        assert b.is_concrete()
         assert a.getBitWidth() <= b.getValue(), "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
         return Expr(
@@ -383,7 +383,7 @@ class BVSymbolicDomain:
 
     def SExt(a, b):
         assert BVSymbolicDomain.belongto(a)
-        assert b.isConstant()
+        assert b.is_concrete()
         assert a.getBitWidth() <= b.getValue(), "Invalid sext argument"
         return Expr(
             BVSExt(b.getValue() - a.getBitWidth(), castToBV(a)), Type(b.getValue())
@@ -391,8 +391,8 @@ class BVSymbolicDomain:
 
     def Extract(a, start, end):
         assert BVSymbolicDomain.belongto(a)
-        assert start.isConstant()
-        assert end.isConstant()
+        assert start.is_concrete()
+        assert end.is_concrete()
         return Expr(
             BVExtract(end.getValue(), start.getValue(), a.unwrap()),
             Type(end.getValue() - start.getValue() + 1),

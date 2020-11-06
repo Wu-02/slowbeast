@@ -58,10 +58,10 @@ class MemoryObject:
         assert isinstance(x, Value)
         assert self._ro is False, "Writing read-only object (COW bug)"
 
-        if not off.isConstant():
+        if not off.is_concrete():
             raise NotImplementedError("Write to non-constant offset not supported")
 
-        if not self.getSize().isConstant():
+        if not self.getSize().is_concrete():
             raise NotImplementedError(
                 "Write to symbolic-sized objects not implemented yet"
             )
@@ -87,10 +87,10 @@ class MemoryObject:
         """
         assert isinstance(bts, int), "Read non-constant number of bytes"
 
-        if not off.isConstant():
+        if not off.is_concrete():
             raise NotImplementedError("Read from non-constant offset not supported")
 
-        if not self.getSize().isConstant():
+        if not self.getSize().is_concrete():
             raise NotImplementedError(
                 "Read from symbolic-sized objects not implemented yet"
             )

@@ -248,7 +248,7 @@ class Executor:
     def execBranch(self, state, instr):
         assert isinstance(instr, Branch)
         c = instr.getCondition()
-        assert isinstance(c, ValueInstruction) or c.isConstant()
+        assert isinstance(c, ValueInstruction) or c.is_concrete()
         cv = state.eval(instr.getCondition()).getValue()
 
         if cv:
@@ -287,7 +287,7 @@ class Executor:
         state.pc = state.pc.getNextInstruction()
         for o in instr.getOperands():
             v = state.eval(o)
-            assert v.isConstant()
+            assert v.is_concrete()
             assert v.isBool()
             if v.getValue() != True:
                 print("Assumption failed: {0} == {1} (!= True)".format(o, v))
@@ -395,7 +395,7 @@ class Executor:
             if ret.isPointer():
                 state.setError(GenericError("Returning a pointer from main function"))
                 return [state]
-            elif not ret.isConstant():
+            elif not ret.is_concrete():
                 state.addWarning(
                     "Returning a non-constant value from the main function"
                 )

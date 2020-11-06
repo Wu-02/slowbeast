@@ -187,7 +187,7 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
     EM = getGlobalExprManager()
 
     def check_literal(lit):
-        if lit.isConstant():
+        if lit.is_concrete():
             return False
         X = intersection(S, lit)
         if not intersection(X, unsafe).is_empty():
@@ -206,7 +206,7 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
 
         # try pushing further
         l = P(left, right)
-        if l.isConstant():
+        if l.is_concrete():
             return None
         if l == goodl:  # got nothing new...
             return None
@@ -290,7 +290,7 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
         tmp.remove(c)
 
         tmpexpr = EM.conjunction(*tmp)
-        if tmpexpr.isConstant():
+        if tmpexpr.is_concrete():
             continue  # either False or True are bad for us
         X = createSet(tmpexpr)
         if not intersection(X, unsafe).is_empty():

@@ -163,7 +163,7 @@ class Executor(SExecutor):
 #     # FIXME: we need to do that at once!
 #     for c in constr:
 #         expr = EM.substitute(c, (x, prex))
-#         if expr.isConstant():
+#         if expr.is_concrete():
 #             if expr.getValue() is False:
 #                 return None  # infeasible constraints
 #             elif expr.getValue() is not True:

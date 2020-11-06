@@ -85,7 +85,7 @@ class StatesSet:
         EM = state.getExprManager()
         C = ConstraintsSet()
         newexpr = EM.Or(expr, state.getConstraintsObj().asFormula(EM))
-        if not newexpr.isConstant():
+        if not newexpr.is_concrete():
             C.addConstraint(newexpr)
         else:
             # if newexpr is concrete, it must be True. And adding True is useless,

@@ -29,14 +29,14 @@ def addPointerWithConstant(E, op1, op2):
 
 
 def evalCond(state, cond):
-    assert isinstance(cond, ValueInstruction) or cond.isConstant()
+    assert isinstance(cond, ValueInstruction) or cond.is_concrete()
     E = state.getExprManager()
     c = state.eval(cond)
     assert isinstance(c, Value)
     # solvers make difference between bitvectors and booleans, so we must
     # take care of it here: if it is a bitvector, compare it to 0 (C
     # semantics)
-    if c.isConstant():
+    if c.is_concrete():
         cval = E.Ne(c, E.Constant(0, c.getType().getBitWidth()))
     else:
         assert is_symbolic(c)
@@ -81,7 +81,7 @@ class Executor(ConcreteExecutor):
         T, F = None, None
 
         # fast path + do not add True/False to constraints
-        if cond.isConstant():
+        if cond.is_concrete():
             assert cond.isBool(), "Invalid constant"
             if cond.getValue():
                 return state, None
@@ -128,7 +128,7 @@ class Executor(ConcreteExecutor):
         Return the state or None if that situation cannot happen
         (the assumption is inconsistent with the state).
         """
-        if cond.isConstant():
+        if cond.is_concrete():
             assert cond.isBool(), "Invalid constant"
             if cond.getValue():
                 return state
@@ -389,7 +389,7 @@ class Executor(ConcreteExecutor):
 
     def execAssumeExpr(self, state, v):
         assert v.isBool()
-        if v.isConstant():
+        if v.is_concrete():
             assert isinstance(v.getValue(), bool)
             isunsat = not v.getValue()
         else:
@@ -406,7 +406,7 @@ class Executor(ConcreteExecutor):
         for o in instr.getOperands():
             v = state.eval(o)
             assert v.isBool()
-            if v.isConstant():
+            if v.is_concrete():
                 assert isinstance(v.getValue(), bool)
                 isunsat = not v.getValue()
             else:
@@ -425,7 +425,7 @@ class Executor(ConcreteExecutor):
     def execAssertExpr(self, state, v, msg=""):
         states = []
         assert v.isBool()
-        if v.isConstant():
+        if v.is_concrete():
             assert isinstance(v.getValue(), bool)
             if not v.getValue():
                 state.setError(AssertFailError(msg))
@@ -450,7 +450,7 @@ class Executor(ConcreteExecutor):
         v = state.eval(o)
         states = []
         assert v.isBool()
-        if v.isConstant():
+        if v.is_concrete():
             if v.getValue() != True:
                 state.setError(AssertFailError(msg))
             else:
@@ -469,13 +469,13 @@ class Executor(ConcreteExecutor):
         return states
 
     def toUnique(self, state, val):
-        if val.isConstant():
+        if val.is_concrete():
             return val
 
         return state.getSolver().toUnique(val, *state.getConstraints())
 
     def concretize(self, state, val):
-        if val.isConstant():
+        if val.is_concrete():
             return val
 
         return state.getSolver().concretize(val, *state.getConstraints())

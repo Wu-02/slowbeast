@@ -168,15 +168,15 @@ class SymbolicSolver(SolverIntf):
         super(SymbolicSolver, self).__init__(em)
 
     def is_sat(self, *e):
-        if any(map(lambda x: x.isConstant() and x.getValue() is False, e)):
+        if any(map(lambda x: x.is_concrete() and x.getValue() is False, e)):
             return False
-        return is_sat(*(x.unwrap() for x in e if not x.isConstant()))
+        return is_sat(*(x.unwrap() for x in e if not x.is_concrete()))
 
     def concretize(self, assumpt, *e):
         assert all(
-            map(lambda x: not x.isConstant(), e)
+            map(lambda x: not x.is_concrete(), e)
         ), "Constant instead of symbolic value"
-        if any(map(lambda x: x.isConstant() and x.getValue() is False, assumpt)):
+        if any(map(lambda x: x.is_concrete() and x.getValue() is False, assumpt)):
             return None
         # m = smallmodels(assumpt, *e)
         m = models(assumpt, *e)
@@ -216,7 +216,7 @@ class SymbolicSolver(SolverIntf):
 #      concrete = []
 #      symbolic = []
 #      for x in e:
-#          if x.isConstant():
+#          if x.is_concrete():
 #              concrete.append(x)
 #          else:
 #              symbolic.append(x)

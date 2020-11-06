@@ -64,7 +64,7 @@ class SEState(ExecutionState):
         # XXX: check whether this kind of preprocessing is not too costly
         symb = []
         for x in e:
-            if x.isConstant():
+            if x.is_concrete():
                 assert isinstance(x.getValue(), bool)
                 if not x.getValue():
                     return False

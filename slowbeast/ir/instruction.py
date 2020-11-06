@@ -142,7 +142,7 @@ class ValueInstruction(Instruction):
     def __init__(self, ops=None):
         super().__init__(ops or [])
 
-    def isConstant(self):
+    def is_concrete(self):
         return False
 
     def asValue(self):
@@ -408,7 +408,7 @@ class UnaryOperation(ValueInstruction):
 
 class Extend(UnaryOperation):
     def __init__(self, op, a, bw):
-        assert bw.isConstant(), "Invalid bitwidth to extend"
+        assert bw.is_concrete(), "Invalid bitwidth to extend"
         super().__init__(op, a)
         self._bw = bw
 
@@ -438,8 +438,8 @@ class SExt(Extend):
 
 class ExtractBits(UnaryOperation):
     def __init__(self, val, start, end):
-        assert start.isConstant(), "Invalid bitwidth to extend"
-        assert end.isConstant(), "Invalid bitwidth to extend"
+        assert start.is_concrete(), "Invalid bitwidth to extend"
+        assert end.is_concrete(), "Invalid bitwidth to extend"
         super().__init__(UnaryOperation.EXTRACT, val)
         self._start = start
         self._end = end

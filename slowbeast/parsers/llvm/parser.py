@@ -361,7 +361,7 @@ class Parser:
         # just behave that there's no ZExt for now
         bits = getTypeSizeInBits(inst.type)
         op = self.getOperand(operands[0])
-        if op.isConstant():
+        if op.is_concrete():
             self._mapping[inst] = op
             return []
         elif isPointerTy(operands[0].type):

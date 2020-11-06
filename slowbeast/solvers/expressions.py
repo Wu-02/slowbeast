@@ -74,12 +74,12 @@ class ExprManager:
         return s
 
     def subexpressions(self, expr):
-        if expr.isConstant():
+        if expr.is_concrete():
             yield expr
         return SymbolicDomain.subexpressions(expr)
 
     def simplify(self, expr):
-        if expr.isConstant():
+        if expr.is_concrete():
             return expr
         return SymbolicExprOpt.optimize(expr)
 

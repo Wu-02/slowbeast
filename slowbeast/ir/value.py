@@ -28,7 +28,7 @@ class Value:
     def isBool(self):
         return self._type.isBool()
 
-    def isConstant(self):
+    def is_concrete(self):
         """
         Is integer constant or boolean constant?
         Overriden by the Constant class
@@ -60,7 +60,7 @@ class Constant(Value):
     def getValue(self):
         return self._value
 
-    def isConstant(self):
+    def is_concrete(self):
         return True
 
     def __repr__(self):
@@ -86,7 +86,7 @@ class Pointer(Value):
 
         assert self.isPointer(), "Incorrectly constructed pointer"
         assert not self.isBool(), "Incorrectly constructed pointer"
-        assert not self.isConstant(), "Incorrectly constructed pointer"
+        assert not self.is_concrete(), "Incorrectly constructed pointer"
 
     def __str__(self):
         return "({0}, {1})".format(self.object.asValue(), self.offset)
