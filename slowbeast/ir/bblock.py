@@ -41,14 +41,14 @@ class BBlock(ProgramElement):
     def empty(self):
         return len(self._instructions) == 0
 
-    def getInstructions(self):
+    def instructions(self):
         return self._instructions
 
-    def getInstruction(self, idx):
+    def instruction(self, idx):
         assert idx < len(self._instructions)
         return self._instructions[idx]
 
-    def getNextInstruction(self, idx):
+    def get_next_inst(self, idx):
         if idx + 1 < len(self._instructions):
             return self._instructions[idx + 1]
         return None

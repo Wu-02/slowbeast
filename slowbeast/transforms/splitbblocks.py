@@ -10,7 +10,7 @@ def splitAfter(block, after):
     B = BBlock(block.fun())
     blocks = [block]
     last = block.last()
-    instructions = block.getInstructions().copy()
+    instructions = block.instructions().copy()
     for I in instructions:
         B.append(I)
         if after(I) and last != I:
@@ -37,7 +37,7 @@ def splitAround(block, P):
     B = BBlock(block.fun())
     blocks = [block]
     last = block.last()
-    instructions = block.getInstructions().copy()
+    instructions = block.instructions().copy()
     for I in instructions:
         if P(I):
             # end previous block if non-empty

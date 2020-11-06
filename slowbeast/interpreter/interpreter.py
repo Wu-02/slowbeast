@@ -28,7 +28,7 @@ class ExecutionOptions:
 # dummy class used as a program counter during initialization
 # of global variables
 class GlobalInit:
-    def getNextInstruction(self):
+    def get_next_inst(self):
         return self
 
 

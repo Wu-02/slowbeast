@@ -175,7 +175,7 @@ class Executor:
 
         for s in states:
             if s.isReady():
-                s.pc = s.pc.getNextInstruction()
+                s.pc = s.pc.get_next_inst()
         return states
 
     def execLoad(self, state, instr):
@@ -187,14 +187,14 @@ class Executor:
 
         for s in states:
             if s.isReady():
-                s.pc = s.pc.getNextInstruction()
+                s.pc = s.pc.get_next_inst()
         return states
 
     def execAlloc(self, state, instr):
         states = self.memorymodel.allocate(state, instr)
         for s in states:
             if s.isReady():
-                s.pc = s.pc.getNextInstruction()
+                s.pc = s.pc.get_next_inst()
         return states
 
     def execCmp(self, state, instr):
@@ -227,7 +227,7 @@ class Executor:
             x = op1 != op2
 
         state.set(instr, Constant(x, 1))
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
 
         return [state]
 
@@ -241,7 +241,7 @@ class Executor:
         sys.stdout.write("\n")
         sys.stdout.flush()
 
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
 
         return [state]
 
@@ -260,7 +260,7 @@ class Executor:
 
         assert succ
         if not succ.empty():
-            state.pc = succ.getInstruction(0)
+            state.pc = succ.instruction(0)
         else:
             state.pc = None
 
@@ -279,12 +279,12 @@ class Executor:
                 )
                 return [state]
 
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
         return [state]
 
     def execAssume(self, state, instr):
         assert isinstance(instr, Assume)
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
         for o in instr.getOperands():
             v = state.eval(o)
             assert v.is_concrete()
@@ -356,7 +356,7 @@ class Executor:
             raise NotImplementedError("Binary operation: " + str(instr))
 
         state.set(instr, r)
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
         return [state]
 
     def execCall(self, state, instr):
@@ -406,7 +406,7 @@ class Executor:
         if ret:
             state.set(rs, ret)
 
-        state.pc = rs.getNextInstruction()
+        state.pc = rs.get_next_inst()
         return [state]
 
     def execute(self, state, instr):

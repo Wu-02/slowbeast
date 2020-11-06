@@ -113,7 +113,7 @@ class SimpleLoop:
         for p in self.paths:
             for loc in p:
                 for L in (
-                    l for l in loc.getBBlock().getInstructions() if isinstance(l, Load)
+                    l for l in loc.getBBlock().instructions() if isinstance(l, Load)
                 ):
                     op = L.getPointerOperand()
                     if isinstance(op, Alloc):

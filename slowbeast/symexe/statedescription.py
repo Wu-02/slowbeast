@@ -172,7 +172,7 @@ def _execute_instr(executor, state, instr):
         Needed to execute the instructions from substitutions.
         """
 
-        def getNextInstruction(self):
+        def get_next_inst(self):
             return self
 
     assert state.isReady()

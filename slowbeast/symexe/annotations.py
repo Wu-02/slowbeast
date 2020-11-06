@@ -43,7 +43,7 @@ class InstrsAnnotation(Annotation):
         super(InstrsAnnotation, self).__init__(Annotation.INSTRS)
         self.instrs = instrs
 
-    def getInstructions(self):
+    def instructions(self):
         return self.instrs
 
     def __iter__(self):

@@ -171,7 +171,7 @@ class Executor(ConcreteExecutor):
             return []
         else:
             assert succ
-            s.pc = succ.getInstruction(0)
+            s.pc = succ.instruction(0)
 
         return [s]
 
@@ -188,10 +188,10 @@ class Executor(ConcreteExecutor):
 
         states = []
         if trueBranch:
-            trueBranch.pc = instr.getTrueSuccessor().getInstruction(0)
+            trueBranch.pc = instr.getTrueSuccessor().instruction(0)
             states.append(trueBranch)
         if falseBranch:
-            falseBranch.pc = instr.getFalseSuccessor().getInstruction(0)
+            falseBranch.pc = instr.getFalseSuccessor().instruction(0)
             states.append(falseBranch)
 
         if trueBranch and falseBranch:
@@ -233,7 +233,7 @@ class Executor(ConcreteExecutor):
                     E, p, p1.offset(), p2.offset(), instr.isUnsigned()
                 ),
             )
-            state.pc = state.pc.getNextInstruction()
+            state.pc = state.pc.get_next_inst()
             return [state]
         else:
             if p != Cmp.EQ and p != Cmp.NE:
@@ -244,7 +244,7 @@ class Executor(ConcreteExecutor):
                 return [state]
             else:
                 state.set(instr, ConstantBool(p == Cmp.NE))
-                state.pc = state.pc.getNextInstruction()
+                state.pc = state.pc.get_next_inst()
                 return [state]
 
         raise RuntimeError("Invalid pointer comparison")
@@ -265,7 +265,7 @@ class Executor(ConcreteExecutor):
             state.getExprManager(), instr.getPredicate(), op1, op2, instr.isUnsigned()
         )
         state.set(instr, x)
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
 
         return [state]
 
@@ -304,7 +304,7 @@ class Executor(ConcreteExecutor):
                 val = state.getSolver().freshValue(name, retTy.bitwidth())
             state.addNondet(val)
             state.set(instr, val)
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
         return [state]
 
     def execBinaryOp(self, state, instr):
@@ -361,7 +361,7 @@ class Executor(ConcreteExecutor):
         assert r, "Bug in creating a binary op expression"
 
         state.set(instr, r)
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
         return [state]
 
     def execUnaryOp(self, state, instr):
@@ -384,7 +384,7 @@ class Executor(ConcreteExecutor):
             return [state]
 
         state.set(instr, r)
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
         return [state]
 
     def execAssumeExpr(self, state, v):
@@ -419,7 +419,7 @@ class Executor(ConcreteExecutor):
                 )
                 return [state]
 
-        state.pc = state.pc.getNextInstruction()
+        state.pc = state.pc.get_next_inst()
         return [state]
 
     def execAssertExpr(self, state, v, msg=""):
@@ -454,12 +454,12 @@ class Executor(ConcreteExecutor):
             if v.value() != True:
                 state.setError(AssertFailError(msg))
             else:
-                state.pc = state.pc.getNextInstruction()
+                state.pc = state.pc.get_next_inst()
             states.append(state)
         else:
             okBranch, errBranch = self.fork(state, v)
             if okBranch:
-                okBranch.pc = okBranch.pc.getNextInstruction()
+                okBranch.pc = okBranch.pc.get_next_inst()
                 states.append(okBranch)
             if errBranch:
                 errBranch.setError(AssertFailError(msg))

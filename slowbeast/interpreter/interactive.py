@@ -77,7 +77,7 @@ class InteractiveHandler:
                 n = 0
                 while i and n < 5:
                     i.dump()
-                    i = i.getNextInstruction()
+                    i = i.get_next_inst()
                     n += 1
             elif query[1] in ["b", "bblock", "block"]:
                 s.pc.getBBlock().dump()

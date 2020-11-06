@@ -76,7 +76,7 @@ class CallGraph:
 
     def _build_fun(self, _fun, node):
         for block in _fun.getBBlocks():
-            for I in block.getInstructions():
+            for I in block.instructions():
                 if not isinstance(I, Call):
                     continue
 

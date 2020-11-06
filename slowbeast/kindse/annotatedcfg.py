@@ -18,7 +18,7 @@ class CFG(PureCFG):
             super(CFG.AnnotatedNode, self).__init__(cfg, B)
             # find out whether this node has an assert
             self._has_assert = False
-            for i in B.getInstructions():
+            for i in B.instructions():
                 if isinstance(i, Assert):
                     self._has_assert = True
                     break

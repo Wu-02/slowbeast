@@ -116,11 +116,11 @@ class Instruction(ProgramElement):
         assert i.getBBlockIdx() is not None
         return i.getBBlock().insert(self, i.getBBlockIdx())
 
-    def getNextInstruction(self):
+    def get_next_inst(self):
         assert self.getBBlock() is not None
         assert self.getBBlockIdx() is not None
         assert isinstance(self.getBBlock(), BBlock)
-        return self.getBBlock().getNextInstruction(self.getBBlockIdx())
+        return self.getBBlock().get_next_inst(self.getBBlockIdx())
 
 
 # Defined in super class
