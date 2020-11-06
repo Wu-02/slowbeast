@@ -5,7 +5,7 @@ class Error:
     etc.)
     """
 
-    __slots__ = "type", "descr"
+    __slots__ = "_type", "_descr"
 
     UNKNOWN = 0
     ASSERTION_FAIL = 1
@@ -13,37 +13,38 @@ class Error:
     GENERIC = 3
 
     def __init__(self, t, d=None):
-        self.type = t
-        self.descr = d
+        self._type = t
+        self._descr = d
 
-    def getType(self):
-        return self.type
+    def type(self):
+        return self._type
 
     def getDescr(self):
-        return self.descr
+        return self._descr
 
     def isMemError(self):
-        return self.type == Error.MEM_ERROR
+        return self._type == Error.MEM_ERROR
 
     def isAssertionFail(self):
-        return self.type == Error.ASSERTION_FAIL
+        return self._type == Error.ASSERTION_FAIL
 
     def __repr__(self):
-        if self.type == Error.UNKNOWN:
+        ty = self._type
+        if ty == Error.UNKNOWN:
             detail = "unknown error"
-        elif self.type == Error.ASSERTION_FAIL:
+        elif ty == Error.ASSERTION_FAIL:
             detail = "assertion failure"
-        elif self.type == Error.MEM_ERROR:
+        elif ty == Error.MEM_ERROR:
             detail = "memory error"
-        elif self.type == Error.GENERIC:
+        elif ty == Error.GENERIC:
             detail = "error"
         else:
             raise RuntimeError("Invalid error type")
         return detail
 
     def __str__(self):
-        if self.descr:
-            return f"{self.__repr__()}: {self.descr}"
+        if self._descr:
+            return f"{self.__repr__()}: {self._descr}"
         return self.__repr__()
 
 
@@ -63,7 +64,7 @@ class MemError(Error):
     access to memory.
     """
 
-    __slots__ = "memerr"
+    __slots__ = "_memerr"
 
     OOB_ACCESS = 1
     UNINIT_READ = 2
@@ -71,24 +72,25 @@ class MemError(Error):
 
     def __init__(self, t, descr=None):
         super(MemError, self).__init__(Error.MEM_ERROR, descr)
-        self.memerr = t
+        self._memerr = t
 
     def isUninitRead(self):
-        return self.memerr == MemError.UNINIT_READ
+        return self._memerr == MemError.UNINIT_READ
 
     def isOobAccess(self):
-        return self.memerr == MemError.OOB_ACCESS
+        return self._memerr == MemError.OOB_ACCESS
 
     def isInvalidObj(self):
-        return self.memerr == MemError.INVALID_OBJ
+        return self._memerr == MemError.INVALID_OBJ
 
     def __repr__(self):
+        err = self._memerr
         assert self.isMemError()
-        if self.memerr == MemError.OOB_ACCESS:
+        if err == MemError.OOB_ACCESS:
             detail = "oob"
-        elif self.memerr == MemError.UNINIT_READ:
+        elif err == MemError.UNINIT_READ:
             detail = "uninitialized read"
-        elif self.memerr == MemError.INVALID_OBJ:
+        elif err == MemError.INVALID_OBJ:
             detail = "invalid object"
         else:
             raise RuntimeError("Invalid memory error type")

@@ -59,10 +59,10 @@ def getArrayTySize(ty):
     assert parts[1] == "x", "Invalid array type"
     assert parts[0].startswith("[")
     assert parts[-1].endswith("]")
-    return int(parts[0][1:]) * getTypeSizeInBits(" ".join(parts[2:])[:-1])
+    return int(parts[0][1:]) * type_size_in_bits(" ".join(parts[2:])[:-1])
 
 
-def getTypeSizeInBits(ty):
+def type_size_in_bits(ty):
     # FIXME: get rid of the magic constants and use the layout from the program
     if not isinstance(ty, str) and ty.is_pointer:
         return 64
@@ -82,8 +82,8 @@ def getTypeSizeInBits(ty):
         return _bitwidth(sty)
 
 
-def getTypeSize(ty):
-    ts = getTypeSizeInBits(ty)
+def type_size(ty):
+    ts = type_size_in_bits(ty)
     if ts is not None:
         if ts == 0:
             return 0

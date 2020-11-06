@@ -13,7 +13,7 @@ class Value:
     def __eq__(self, other):
         raise NotImplementedError("This must be overriden")
 
-    def getType(self):
+    def type(self):
         return self._type
 
     def bytewidth(self):
@@ -55,7 +55,7 @@ class Constant(Value):
         assert self.is_bool() or isinstance(c, int)
 
     def asValue(self):
-        return "{0}:{1}".format(str(self._value), self.getType())
+        return "{0}:{1}".format(str(self._value), self.type())
 
     def getValue(self):
         return self._value
@@ -64,14 +64,14 @@ class Constant(Value):
         return True
 
     def __repr__(self):
-        return f"{self._value}:{self.getType()}"
+        return f"{self._value}:{self.type()}"
 
     def __hash__(self):
         return self._value
 
     def __eq__(self, rhs):
         assert isinstance(rhs, Constant)
-        return self.getValue() == rhs.getValue() and self.getType() == rhs.getType()
+        return self.getValue() == rhs.getValue() and self.type() == rhs.type()
 
 
 class Pointer(Value):

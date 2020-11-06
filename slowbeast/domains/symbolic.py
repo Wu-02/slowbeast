@@ -163,7 +163,7 @@ class Expr(Value):
         """
         Get the expression in CNF form.
         """
-        return Expr(And(*to_cnf(self.unwrap())), self.getType())
+        return Expr(And(*to_cnf(self.unwrap())), self.type())
 
     def isAnd(self):
         return is_and(self.unwrap())
@@ -220,7 +220,7 @@ class Expr(Value):
         return self._expr == rhs._expr
 
     def __repr__(self):
-        return "<{0}:{1}>".format(self._expr, self.getType())
+        return "<{0}:{1}>".format(self._expr, self.type())
 
 
 class NondetLoad(Expr):
@@ -236,7 +236,7 @@ class NondetLoad(Expr):
 
     def fromExpr(expr, load, alloc):
         assert isinstance(expr, Expr)
-        return NondetLoad(expr.unwrap(), expr.getType(), load, alloc)
+        return NondetLoad(expr.unwrap(), expr.type(), load, alloc)
 
     def __repr__(self):
         return f"L({self.alloc.asValue()})={Expr.__repr__(self)}"
@@ -263,19 +263,19 @@ class BVSymbolicDomain:
         if v.is_concrete():
             if v.is_bool():
                 return Expr(BoolVal(v.getValue()), BoolType())
-            return Expr(bv_const(v.getValue(), v.getType().bitwidth()), v.getType())
+            return Expr(bv_const(v.getValue(), v.type().bitwidth()), v.type())
 
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
     def simplify(expr):
         return Expr(
-            simplify(expr.unwrap(), arith_ineq_lhs=True, sort_sums=True), expr.getType()
+            simplify(expr.unwrap(), arith_ineq_lhs=True, sort_sums=True), expr.type()
         )
 
     def substitute(expr, *what):
         return Expr(
             substitute(expr.unwrap(), *((a.unwrap(), b.unwrap()) for (a, b) in what)),
-            expr.getType(),
+            expr.type(),
         )
 
     def pythonConstant(expr):
@@ -340,37 +340,37 @@ class BVSymbolicDomain:
 
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType()
+        assert a.type() == b.type()
         if a.is_bool():
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(a.unwrap() & b.unwrap(), a.getType())
+            return Expr(a.unwrap() & b.unwrap(), a.type())
 
     def Or(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType()
+        assert a.type() == b.type()
         if a.is_bool():
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(a.unwrap() | b.unwrap(), a.getType())
+            return Expr(a.unwrap() | b.unwrap(), a.type())
 
     def Xor(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.getType() == b.getType()
+        assert a.type() == b.type()
         if a.is_bool():
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(a.unwrap() ^ b.unwrap(), a.getType())
+            return Expr(a.unwrap() ^ b.unwrap(), a.type())
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
         else:
-            return Expr(~a.unwrap(), a.getType())
+            return Expr(~a.unwrap(), a.type())
 
     def ZExt(a, b):
         assert BVSymbolicDomain.belongto(a)
@@ -400,15 +400,15 @@ class BVSymbolicDomain:
 
     def Shl(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a.unwrap() << b.unwrap(), a.getType())
+        return Expr(a.unwrap() << b.unwrap(), a.type())
 
     def AShr(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a.unwrap() >> b.unwrap(), a.getType())
+        return Expr(a.unwrap() >> b.unwrap(), a.type())
 
     def LShr(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(BVLShR(a.unwrap(), b.unwrap()), a.getType())
+        return Expr(BVLShR(a.unwrap(), b.unwrap()), a.type())
 
     def getTrue():
         return Expr(TRUE(), BoolType())
@@ -456,33 +456,33 @@ class BVSymbolicDomain:
     def Add(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert (
-            a.getType() == b.getType()
-        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
-        result_ty = a.getType()
+            a.type() == b.type()
+        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        result_ty = a.type()
         return Expr(a.unwrap() + b.unwrap(), result_ty)
 
     def Sub(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert (
-            a.getType() == b.getType()
-        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
-        result_ty = a.getType()
+            a.type() == b.type()
+        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        result_ty = a.type()
         return Expr(a.unwrap() - b.unwrap(), result_ty)
 
     def Mul(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert (
-            a.getType() == b.getType()
-        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
-        result_ty = a.getType()
+            a.type() == b.type()
+        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        result_ty = a.type()
         return Expr(a.unwrap() * b.unwrap(), result_ty)
 
     def Div(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         assert (
-            a.getType() == b.getType()
-        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
-        result_ty = a.getType()
+            a.type() == b.type()
+        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        result_ty = a.type()
         if unsigned:
             return Expr(UDiv(a.unwrap(), b.unwrap()), result_ty)
         return Expr(a.unwrap() / b.unwrap(), result_ty)
@@ -490,9 +490,9 @@ class BVSymbolicDomain:
     def Rem(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         assert (
-            a.getType() == b.getType()
-        ), "Operation on invalid types: {0} != {1}".format(a.getType(), b.getType())
-        result_ty = a.getType()
+            a.type() == b.type()
+        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        result_ty = a.type()
         if unsigned:
             return Expr(URem(a.unwrap(), b.unwrap()), result_ty)
         return Expr(SRem(a.unwrap(), b.unwrap()), result_ty)

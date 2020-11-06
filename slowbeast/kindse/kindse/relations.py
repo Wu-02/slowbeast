@@ -73,8 +73,8 @@ def get_all_relations(state):
     EM = state.getExprManager()
 
     for l1, l2 in iter_load_pairs(state):
-        l1bw = l1.getType().bitwidth()
-        l2bw = l2.getType().bitwidth()
+        l1bw = l1.type().bitwidth()
+        l2bw = l2.type().bitwidth()
 
         bw = max(l1bw, l2bw)
         if l1bw == bw:

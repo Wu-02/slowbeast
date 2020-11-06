@@ -32,7 +32,7 @@ class SymbolicExprOpt(ExprOptIntf):
         # if possible
         const = SymbolicDomain.pythonConstant(optexpr)
         if const is not None:
-            return Constant(const, optexpr.getType())
+            return Constant(const, optexpr.type())
         return optexpr
 
 
@@ -64,9 +64,9 @@ class ExprManager:
         names = self._names
         s = names.get(name)
         if s:
-            assert s.getType() == Type(
+            assert s.type() == Type(
                 bw
-            ), f"Creating the same value with different type: {s.getType()} != {Type(bw)}"
+            ), f"Creating the same value with different type: {s.type()} != {Type(bw)}"
         else:
             s = SymbolicDomain.Var(name, bw)
             names[name] = s

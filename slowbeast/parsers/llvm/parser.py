@@ -60,7 +60,7 @@ def parseFunctionRetTy(ty):
     if parts[0] == "void":
         return True, None
     else:
-        sz = getTypeSizeInBits(parts[0])
+        sz = type_size_in_bits(parts[0])
         if sz:
             return True, Type(sz)
     return False, None
@@ -110,13 +110,13 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Array allocations not supported yet"
 
-        tySize = getTypeSize(inst.type.element_type)
+        tySize = type_size(inst.type.element_type)
         assert tySize and tySize > 0, "Invalid type size"
         num = self.getOperand(operands[0])
 
         if isinstance(num, ValueInstruction):  # VLA
             retlist = []
-            bytewidth = getTypeSize(operands[0].type)
+            bytewidth = type_size(operands[0].type)
             if bytewidth != SizeType.bytewidth():
                 N = ZExt(num, Constant(SizeType.bitwidth(), SizeType))
                 retlist.append(N)
@@ -144,7 +144,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
 
-        bytesNum = getTypeSize(inst.type)
+        bytesNum = type_size(inst.type)
         assert bytesNum, "Could not get the size of type"
         L = Load(self.getOperand(operands[0]), bytesNum)
         self._addMapping(inst, L)
@@ -326,7 +326,7 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
             self.getOperand(operands[0]),
-            Constant(getTypeSizeInBits(inst.type), Type(32)),
+            Constant(type_size_in_bits(inst.type), Type(32)),
         )
         self._addMapping(inst, zext)
         return [zext]
@@ -337,7 +337,7 @@ class Parser:
         # just behave that there's no ZExt for now
         sext = SExt(
             self.getOperand(operands[0]),
-            Constant(getTypeSizeInBits(inst.type), Type(32)),
+            Constant(type_size_in_bits(inst.type), Type(32)),
         )
         self._addMapping(inst, sext)
         return [sext]
@@ -346,7 +346,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no ZExt for now
-        bits = getTypeSizeInBits(inst.type)
+        bits = type_size_in_bits(inst.type)
         ext = ExtractBits(
             self.getOperand(operands[0]),
             Constant(0, Type(32)),
@@ -359,7 +359,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no ZExt for now
-        bits = getTypeSizeInBits(inst.type)
+        bits = type_size_in_bits(inst.type)
         op = self.getOperand(operands[0])
         if op.is_concrete():
             self._mapping[inst] = op
@@ -374,7 +374,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert is_pointerTy(operands[0].type), "First type of GEP is not a pointer"
         ty = operands[0].type.element_type
-        elemSize = getTypeSize(ty)
+        elemSize = type_size(ty)
         shift = 0
         varIdx = []
         for idx in operands[1:]:
@@ -398,7 +398,7 @@ class Parser:
                 sty = str(ty)
                 # get the type of the element of array
                 ty = sty[sty.find("x ") + 2 : -1]
-            elemSize = getTypeSize(ty)
+            elemSize = type_size(ty)
 
         mem = self.getOperand(operands[0])
 
@@ -418,7 +418,7 @@ class Parser:
 
     def _handlePhi(self, inst):
         operands = getLLVMOperands(inst)
-        bnum = getTypeSize(inst.type)
+        bnum = type_size(inst.type)
         phivar = Alloc(Constant(bnum, SizeType))
         L = Load(phivar, bnum)
         self._addMapping(inst, L)
@@ -523,7 +523,7 @@ class Parser:
         for g in m.global_variables:
             assert g.type.is_pointer
             # FIXME: check and set whether it is a constant
-            ts = getTypeSize(g.type.element_type)
+            ts = type_size(g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
             G = GlobalVariable(Constant(ts, SizeType), g.name)
             c = getConstantInt(g.initializer)

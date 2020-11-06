@@ -27,7 +27,7 @@ if _use_z3:
                 c = (
                     BoolVal(False)
                     if a.is_bool()
-                    else BitVecVal(0, a.getType().bitwidth())
+                    else BitVecVal(0, a.type().bitwidth())
                 )
             vals.append(c)
 
@@ -187,7 +187,7 @@ class SymbolicSolver(SolverIntf):
             if m[n] is None:
                 ret.append(None)
             else:
-                ret.append(Constant(m[n].as_long(), v.getType()))
+                ret.append(Constant(m[n].as_long(), v.type()))
         return ret
 
 

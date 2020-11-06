@@ -1,7 +1,7 @@
 from slowbeast.ir.instruction import Assume, Assert, Cmp, Print
 from slowbeast.ir.value import ConstantFalse, ConstantTrue, Constant
 from slowbeast.ir.types import Type
-from .utils import getLLVMOperands, getTypeSizeInBits
+from .utils import getLLVMOperands, type_size_in_bits
 
 # FIXME: turn to a dict with separate handlers
 special_functions = [
@@ -34,7 +34,7 @@ def create_special_fun(parser, inst, fun):
     elif fun == "__VERIFIER_assume":
         operands = getLLVMOperands(inst)
         cond = parser.getOperand(operands[0])
-        C = Cmp(Cmp.NE, cond, Constant(0, Type(getTypeSizeInBits(operands[0].type))))
+        C = Cmp(Cmp.NE, cond, Constant(0, Type(type_size_in_bits(operands[0].type))))
         A = Assume(C)
         return A, [C, A]
     elif fun == "__VERIFIER_silent_exit":
@@ -43,7 +43,7 @@ def create_special_fun(parser, inst, fun):
     elif fun == "__VERIFIER_assert" or fun == "__INSTR_check_assume":
         operands = getLLVMOperands(inst)
         cond = parser.getOperand(operands[0])
-        C = Cmp(Cmp.NE, cond, Constant(0, Type(getTypeSizeInBits(operands[0].type))))
+        C = Cmp(Cmp.NE, cond, Constant(0, Type(type_size_in_bits(operands[0].type))))
         A = Assert(C)
         return A, [C, A]
     elif fun == "__INSTR_check_nontermination_header":

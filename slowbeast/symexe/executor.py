@@ -37,11 +37,11 @@ def evalCond(state, cond):
     # take care of it here: if it is a bitvector, compare it to 0 (C
     # semantics)
     if c.is_concrete():
-        cval = E.Ne(c, E.Constant(0, c.getType().bitwidth()))
+        cval = E.Ne(c, E.Constant(0, c.type().bitwidth()))
     else:
         assert is_symbolic(c)
-        if not c.getType().is_bool():
-            assert c.getType().bitwidth() == 1, "Invalid condition in branching"
+        if not c.type().is_bool():
+            assert c.type().bitwidth() == 1, "Invalid condition in branching"
             cval = E.Ne(c, E.Constant(0, 1))
         else:
             cval = c  # It already is a boolean expression
