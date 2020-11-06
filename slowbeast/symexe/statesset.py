@@ -72,7 +72,7 @@ class StatesSet:
         C.addConstraint(expr)
         self._state.setConstraints(C)
 
-    def unite(self, s):
+    def _unite(self, s):
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.getExecutor(), state, sd)
@@ -93,8 +93,12 @@ class StatesSet:
             assert newexpr.value() is True  # this is Or expr...
         state.setConstraints(C)
 
-    def add(self, s):
-        self.unite(s)
+    def unite(self, *S):
+        for s in S:
+            self._unite(s)
+
+    def add(self, *S):
+        self.unite(S)
 
     def intersect(self, s):
         state = self._state

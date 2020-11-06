@@ -77,10 +77,10 @@ class Executor(ConcreteExecutor):
         s.pushCall(None)
         return s
 
-    def createStatesSet(self, S=None):
+    def createStatesSet(self, *S):
         ss = StatesSet(self.createCleanState())
         if S:
-            ss.add(S)
+            ss.add(*S)
         return ss
 
     def fork(self, state, cond):

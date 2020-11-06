@@ -382,7 +382,7 @@ class KindSymbolicExecutor(BaseKindSE):
             tmp.append(e.states, e.strengthening)
 
             if __debug__:
-                r = tmp.check_ind_on_paths(self, L.getPaths())
+                r = tmp.check_ind_but_last(self, L.getPaths())
                 assert (
                     r.errors is None
                 ), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
@@ -402,13 +402,15 @@ class KindSymbolicExecutor(BaseKindSE):
         if L is None:
             return False  # fall-back to loop unwinding...
 
-        # FIXME: strengthen seq0
         seq0, errs0 = get_initial_seq(unsafe)
         sequences = [seq0]
 
         print_stdout(f"Executing loop {loc.getBBlockID()} with assumption")
         print_stdout(str(seq0[0]))
         print_stdout(f"and errors : {errs0}")
+
+        # NOTE: we do not require the initial (target) set to be inductive!,
+        # only the rest of the sequence is inductive and it implies the target set
 
         # print('--- starting building sequences  ---')
         EM = getGlobalExprManager()
@@ -424,7 +426,9 @@ class KindSymbolicExecutor(BaseKindSE):
                     f"Processing sequence of len {len(seq)}:\n{seq}", color="dark_blue"
                 )
                 if __debug__:
-                    r = seq.check_ind_on_paths(self, L.getPaths())
+                    # NOTE: we do not require the initial (target) set to be inductive!,
+                    # only the rest of the sequence is inductive and it implies the target set
+                    r = seq.check_ind_but_last(self, L.getPaths())
                     assert r.errors is None, "seq is not inductive"
 
                 E += self.extend_seq(seq, errs0, L)
