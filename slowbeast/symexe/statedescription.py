@@ -30,7 +30,7 @@ class StateDescription:
     __slots__ = ["_expr", "_subs"]
 
     def __init__(self, expr, subs):
-        assert expr.isBool()
+        assert expr.is_bool()
         assert expr is not None and isinstance(expr, (Expr, Constant))
         assert subs is not None and isinstance(subs, dict)
 

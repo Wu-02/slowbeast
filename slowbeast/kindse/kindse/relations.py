@@ -38,7 +38,7 @@ def get_safe_subexpressions(state, unsafe):
         # FIXME: do it somehow smarter than iterating over all...
 
         # get all boolean subexpressions of 'c'
-        for sub in (s for s in c.subexpressions() if s.isBool()):
+        for sub in (s for s in c.subexpressions() if s.is_bool()):
             # rule out subexpressions that are not "entire"
             if not (state.is_sat(sub) is True):
                 continue

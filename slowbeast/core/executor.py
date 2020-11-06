@@ -288,7 +288,7 @@ class Executor:
         for o in instr.getOperands():
             v = state.eval(o)
             assert v.is_concrete()
-            assert v.isBool()
+            assert v.is_bool()
             if v.getValue() != True:
                 print("Assumption failed: {0} == {1} (!= True)".format(o, v))
                 state.dump()

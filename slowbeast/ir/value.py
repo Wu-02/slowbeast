@@ -25,8 +25,8 @@ class Value:
     def isPointer(self):
         return self._type.isPointer()
 
-    def isBool(self):
-        return self._type.isBool()
+    def is_bool(self):
+        return self._type.is_bool()
 
     def is_concrete(self):
         """
@@ -51,8 +51,8 @@ class Constant(Value):
         self._value = c
 
         assert not self.isPointer(), "Incorrectly constructed pointer"
-        assert not self.isBool() or (c in (True, False)), "Invalid boolean constant"
-        assert self.isBool() or isinstance(c, int)
+        assert not self.is_bool() or (c in (True, False)), "Invalid boolean constant"
+        assert self.is_bool() or isinstance(c, int)
 
     def asValue(self):
         return "{0}:{1}".format(str(self._value), self.getType())
@@ -85,7 +85,7 @@ class Pointer(Value):
         self.offset = off
 
         assert self.isPointer(), "Incorrectly constructed pointer"
-        assert not self.isBool(), "Incorrectly constructed pointer"
+        assert not self.is_bool(), "Incorrectly constructed pointer"
         assert not self.is_concrete(), "Incorrectly constructed pointer"
 
     def __str__(self):

@@ -40,7 +40,7 @@ def evalCond(state, cond):
         cval = E.Ne(c, E.Constant(0, c.getType().getBitWidth()))
     else:
         assert is_symbolic(c)
-        if not c.getType().isBool():
+        if not c.getType().is_bool():
             assert c.getType().getBitWidth() == 1, "Invalid condition in branching"
             cval = E.Ne(c, E.Constant(0, 1))
         else:
@@ -82,7 +82,7 @@ class Executor(ConcreteExecutor):
 
         # fast path + do not add True/False to constraints
         if cond.is_concrete():
-            assert cond.isBool(), "Invalid constant"
+            assert cond.is_bool(), "Invalid constant"
             if cond.getValue():
                 return state, None
             elif not cond.getValue():
@@ -129,7 +129,7 @@ class Executor(ConcreteExecutor):
         (the assumption is inconsistent with the state).
         """
         if cond.is_concrete():
-            assert cond.isBool(), "Invalid constant"
+            assert cond.is_bool(), "Invalid constant"
             if cond.getValue():
                 return state
             else:
@@ -388,7 +388,7 @@ class Executor(ConcreteExecutor):
         return [state]
 
     def execAssumeExpr(self, state, v):
-        assert v.isBool()
+        assert v.is_bool()
         if v.is_concrete():
             assert isinstance(v.getValue(), bool)
             isunsat = not v.getValue()
@@ -405,7 +405,7 @@ class Executor(ConcreteExecutor):
         assert isinstance(instr, Assume)
         for o in instr.getOperands():
             v = state.eval(o)
-            assert v.isBool()
+            assert v.is_bool()
             if v.is_concrete():
                 assert isinstance(v.getValue(), bool)
                 isunsat = not v.getValue()
@@ -424,7 +424,7 @@ class Executor(ConcreteExecutor):
 
     def execAssertExpr(self, state, v, msg=""):
         states = []
-        assert v.isBool()
+        assert v.is_bool()
         if v.is_concrete():
             assert isinstance(v.getValue(), bool)
             if not v.getValue():
@@ -449,7 +449,7 @@ class Executor(ConcreteExecutor):
             msg = str(o)
         v = state.eval(o)
         states = []
-        assert v.isBool()
+        assert v.is_bool()
         if v.is_concrete():
             if v.getValue() != True:
                 state.setError(AssertFailError(msg))

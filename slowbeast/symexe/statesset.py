@@ -146,7 +146,7 @@ def to_states_descr(S) -> StateDescription:
         # be reasonable to have explicit method conserning adding Expr
         # so that the user is aware of this problem...
         return StateDescription(S, {})
-    elif isinstance(S, Constant) and S.isBool():
+    elif isinstance(S, Constant) and S.is_bool():
         return StateDescription(S, {})
     elif hasattr(S, "__iter__"):
         R = None

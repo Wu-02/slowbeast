@@ -11,7 +11,7 @@ if _use_z3:
     def models(assumpt, *args):
         s = Z3Solver()
         for a in assumpt:
-            assert a.isBool()
+            assert a.is_bool()
             s.add(a.unwrap())
         r = s.check()
         if r != sat:
@@ -26,7 +26,7 @@ if _use_z3:
                 # use 0
                 c = (
                     BoolVal(False)
-                    if a.isBool()
+                    if a.is_bool()
                     else BitVecVal(0, a.getType().getBitWidth())
                 )
             vals.append(c)
@@ -152,7 +152,7 @@ class ConcreteSolver(SolverIntf):
 
     def is_sat(self, *e):
         for x in e:
-            assert x.isBool()
+            assert x.is_bool()
             assert isinstance(x.getValue(), bool)
             if x.getValue() is False:
                 return False

@@ -151,7 +151,7 @@ class ExprManager:
         on the arguments.  This method is only logical and,
         but of multiple arguments
         """
-        assert all(map(lambda a: a.isBool(), args))
+        assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
             return ConcreteDomain.getTrue()
         if ConcreteDomain.belongto(*args):
@@ -166,7 +166,7 @@ class ExprManager:
         on the arguments.  This method is only logical or,
         but of multiple arguments.
         """
-        assert all(map(lambda a: a.isBool(), args))
+        assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
             return ConcreteDomain.getFalse()
         if ConcreteDomain.belongto(*args):

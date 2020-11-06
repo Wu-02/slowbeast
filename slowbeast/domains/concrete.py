@@ -53,7 +53,7 @@ class ConcreteDomain:
         on the arguments.  This method is only logical and,
         but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
-        assert all(map(lambda a: a.isBool(), args))
+        assert all(map(lambda a: a.is_bool(), args))
         return Constant(all(args), BoolType())
 
     def disjunction(*args):
@@ -63,13 +63,13 @@ class ConcreteDomain:
         on the arguments.  This method is only logical or,
         but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
-        assert all(map(lambda a: a.isBool(), args))
+        assert all(map(lambda a: a.is_bool(), args))
         return Constant(any(args), BoolType())
 
     def And(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType()
-        if a.isBool():
+        if a.is_bool():
             return Constant(a.getValue() and b.getValue(), BoolType())
         else:
             return Constant(a.getValue() & b.getValue(), a.getType())
@@ -77,7 +77,7 @@ class ConcreteDomain:
     def Or(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType()
-        if a.isBool():
+        if a.is_bool():
             return Constant(a.getValue() or b.getValue(), BoolType())
         else:
             return Constant(a.getValue() | b.getValue(), a.getType())
@@ -89,7 +89,7 @@ class ConcreteDomain:
 
     def Not(a):
         assert ConcreteDomain.belongto(a)
-        if a.isBool():
+        if a.is_bool():
             return Constant(not a.getValue(), BoolType())
         else:
             return Constant(~a.getValue(), a.getType())

@@ -21,19 +21,19 @@ class Type:
     def isPointer(self):
         return False
 
-    def isBool(self):
+    def is_bool(self):
         return False
 
     def __eq__(self, x):
 
         return (
-            self.isBool() == x.isBool()
+            self.is_bool() == x.is_bool()
             and self.isPointer() == x.isPointer()
             and self.getBitWidth() == x.getBitWidth()
         )
 
     def __str__(self):
-        if self.isBool():
+        if self.is_bool():
             return "bool"
         s = "{0}b".format(self._bitwidth)
         if self.isPointer():
@@ -62,7 +62,7 @@ class BoolType(Type):
     def __init__(self):
         Type.__init__(self, 1)
 
-    def isBool(self):
+    def is_bool(self):
         return True
 
 

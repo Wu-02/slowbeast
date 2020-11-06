@@ -204,7 +204,7 @@ class InductiveSequence:
 #     for c in rest:
 #         newliterals = []
 #         for l in c.children():
-#             assert l.isBool()
+#             assert l.is_bool()
 #             q = solver.is_sat(*assumptions, l)
 #             if q is not False:
 #                 q = solver.is_sat(*assumptions, Not(l))
@@ -233,7 +233,7 @@ class InductiveSequence:
 #     assumptions = lhs.copy()
 #     tmp = []
 #     for c in singletons:
-#         assert c.isBool()
+#         assert c.is_bool()
 #         q = solver.is_sat(*assumptions, Not(c))
 #         if q is False:
 #             # this literal is implied and we can drop it

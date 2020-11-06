@@ -61,12 +61,12 @@ if _use_z3:
         return BitVecVal(v, bw)
 
     def castToBV(b):
-        if not b.isBool():
+        if not b.is_bool():
             return b.unwrap()
         return If(b.unwrap(), bv_const(1, 1), bv_const(0, 1))
 
     def castToBool(b):
-        if b.isBool():
+        if b.is_bool():
             return b.unwrap()
         return If(b.unwrap() != bv_const(0, b.getBitWidth()), TRUE(), FALSE())
 
@@ -261,7 +261,7 @@ class BVSymbolicDomain:
             return v
 
         if v.is_concrete():
-            if v.isBool():
+            if v.is_bool():
                 return Expr(BoolVal(v.getValue()), BoolType())
             return Expr(bv_const(v.getValue(), v.getType().getBitWidth()), v.getType())
 
@@ -325,7 +325,7 @@ class BVSymbolicDomain:
         reading and simplifications), it is not needed, really.
         """
         assert BVSymbolicDomain.belongto(*args)
-        assert all(map(lambda x: x.isBool(), args))
+        assert all(map(lambda x: x.is_bool(), args))
         return Expr(And(*map(lambda x: x.unwrap(), args)), BoolType())
 
     def disjunction(*args):
@@ -335,13 +335,13 @@ class BVSymbolicDomain:
         reading and simplifications), it is not needed, really.
         """
         assert BVSymbolicDomain.belongto(*args)
-        assert all(map(lambda x: x.isBool(), args))
+        assert all(map(lambda x: x.is_bool(), args))
         return Expr(Or(*map(lambda x: x.unwrap(), args)), BoolType())
 
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.getType() == b.getType()
-        if a.isBool():
+        if a.is_bool():
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
@@ -350,7 +350,7 @@ class BVSymbolicDomain:
     def Or(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.getType() == b.getType()
-        if a.isBool():
+        if a.is_bool():
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
@@ -359,7 +359,7 @@ class BVSymbolicDomain:
     def Xor(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.getType() == b.getType()
-        if a.isBool():
+        if a.is_bool():
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
@@ -367,7 +367,7 @@ class BVSymbolicDomain:
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)
-        if a.isBool():
+        if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
         else:
             return Expr(~a.unwrap(), a.getType())
