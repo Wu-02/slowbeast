@@ -421,7 +421,7 @@ class ZExt(Extend):
         super().__init__(UnaryOperation.ZEXT, a, bw)
 
     def __str__(self):
-        return "x{0} = zext {1} to {2}b".format(
+        return "x{0} = zext {1} to {2}".format(
             self.getID(), self.getOperand(0).asValue(), self.getBitWidth()
         )
 
@@ -431,7 +431,7 @@ class SExt(Extend):
         super().__init__(UnaryOperation.SEXT, a, bw)
 
     def __str__(self):
-        return "x{0} = sext {1} to {2}b".format(
+        return "x{0} = sext {1} to {2}".format(
             self.getID(), self.getOperand(0).asValue(), self.getBitWidth()
         )
 
@@ -454,7 +454,7 @@ class ExtractBits(UnaryOperation):
         return self._end
 
     def __str__(self):
-        return "x{0} = extractbits {1}-{2} from {3}b".format(
+        return "x{0} = extractbits {1}-{2} from {3}".format(
             self.getID(), self.getStart(), self.getEnd(), self.getOperand(0).asValue()
         )
 
