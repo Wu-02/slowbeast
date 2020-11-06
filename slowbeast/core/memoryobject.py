@@ -125,7 +125,7 @@ class MemoryObject:
         s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
             self._id,
             self.name if self.name else "no name",
-            self.allocation.asValue() if self.allocation else "unknown",
+            self.allocation.as_value() if self.allocation else "unknown",
             self._ro,
             self.getSize(),
         )
@@ -133,7 +133,7 @@ class MemoryObject:
             s += "\n  {0} -> {1}".format(k, v)
         return s
 
-    def asValue(self):
+    def as_value(self):
         return "mo{0}".format(self._id)
 
     def dump(self, stream=stdout):

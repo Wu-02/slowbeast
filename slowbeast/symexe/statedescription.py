@@ -6,9 +6,9 @@ from slowbeast.ir.value import Constant
 def _createCannonical(expr, subs, EM):
     def get_cannonic_var(val, x):
         if isinstance(x, Load):
-            name = f"L({x.getOperand(0).asValue()})"
+            name = f"L({x.getOperand(0).as_value()})"
         else:
-            name = x.asValue()
+            name = x.as_value()
         return EM.Var(name, val.bitwidth())
 
     return EM.substitute(
@@ -79,7 +79,7 @@ class StateDescription:
         return "{0}[{1}]".format(
             self._expr,
             ", ".join(
-                f"{x.asValue()}->{val.unwrap()}" for (val, x) in self._subs.items()
+                f"{x.as_value()}->{val.unwrap()}" for (val, x) in self._subs.items()
             ),
         )
 
@@ -89,7 +89,7 @@ class StateDescription:
         print(
             "> substitutions: {0}".format(
                 ", ".join(
-                    f"{x.asValue()} -> {val.unwrap()}"
+                    f"{x.as_value()} -> {val.unwrap()}"
                     for (val, x) in self._subs.items()
                 )
             )

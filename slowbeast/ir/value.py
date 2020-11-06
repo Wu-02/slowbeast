@@ -54,7 +54,7 @@ class Constant(Value):
         assert not self.is_bool() or (c in (True, False)), "Invalid boolean constant"
         assert self.is_bool() or isinstance(c, int)
 
-    def asValue(self):
+    def as_value(self):
         return "{0}:{1}".format(str(self._value), self.type())
 
     def value(self):
@@ -89,7 +89,7 @@ class Pointer(Value):
         assert not self.is_concrete(), "Incorrectly constructed pointer"
 
     def __str__(self):
-        return "({0}, {1})".format(self.object.asValue(), self.offset)
+        return "({0}, {1})".format(self.object.as_value(), self.offset)
 
     def getObject(self):
         return self.object
@@ -97,7 +97,7 @@ class Pointer(Value):
     def getOffset(self):
         return self.offset
 
-    def asValue(self):
+    def as_value(self):
         return str(self)
 
     def __eq__(self, oth):

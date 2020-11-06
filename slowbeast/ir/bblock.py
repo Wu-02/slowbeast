@@ -59,7 +59,7 @@ class BBlock(ProgramElement):
     def getFunction(self):
         return self._function
 
-    def asValue(self):
+    def as_value(self):
         return "bblock {0}".format(self.getID())
 
     def size(self):

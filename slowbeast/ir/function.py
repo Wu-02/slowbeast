@@ -54,7 +54,7 @@ class Function(ProgramElement):
         super().dump(ind, stream, color)
         stream.write(
             "fun {0}({1})\n".format(
-                self._name, ", ".join(map(lambda x: x.asValue(), self._arguments))
+                self._name, ", ".join(map(lambda x: x.as_value(), self._arguments))
             )
         )
 
@@ -65,5 +65,5 @@ class Function(ProgramElement):
         if len(self._bblocks) > 0:
             stream.write("nuf\n")
 
-    def asValue(self):
+    def as_value(self):
         return self._name

@@ -8,5 +8,5 @@ class Argument(ProgramElement):
     def __str__(self):
         return "a{0}".format(self.getID())
 
-    def asValue(self):
+    def as_value(self):
         return "a{0}".format(self.getID())

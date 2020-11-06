@@ -205,7 +205,7 @@ class Memory:
             o.dump(stream)
         stream.write("-- Global bindings:\n")
         for g, v in self._glob_bindings.items():
-            stream.write("{0} -> {1}\n".format(g.asValue(), v.asValue()))
+            stream.write("{0} -> {1}\n".format(g.as_value(), v.as_value()))
         stream.write("-- Objects:\n")
         for o in self._objects.values():
             o.dump(stream)

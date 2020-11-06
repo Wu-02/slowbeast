@@ -50,7 +50,7 @@ class InstrsAnnotation(Annotation):
         return self.instrs.__iter__()
 
     def __repr__(self):
-        return "[{0}]".format(", ".join(map(lambda i: i.asValue(), self.instrs)))
+        return "[{0}]".format(", ".join(map(lambda i: i.as_value(), self.instrs)))
 
     def dump(self):
         print("InstrsAnnotation[")
@@ -105,7 +105,7 @@ class ExprAnnotation(Annotation):
         assert self.cannonical
         return f"{self.cannonical}"
         # return "{0}[{1}]".format(self._expr, ",
-        # ".join(f"{x.asValue()}/{val.unwrap()}" for (x, val) in
+        # ".join(f"{x.as_value()}/{val.unwrap()}" for (x, val) in
         # self.subs.items()))
 
     def dump(self):
@@ -119,7 +119,7 @@ class ExprAnnotation(Annotation):
         print(
             "> substitutions: {0}".format(
                 ", ".join(
-                    f"{x.asValue()}/{val.unwrap()}"
+                    f"{x.as_value()}/{val.unwrap()}"
                     for (val, x) in self.getSubstitutions().items()
                 )
             )

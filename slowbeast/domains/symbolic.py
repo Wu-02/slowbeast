@@ -128,7 +128,7 @@ class Expr(Value):
     def name(self):
         return str(self._expr)
 
-    def asValue(self):
+    def as_value(self):
         return str(self)
 
     def symbols(self):
@@ -239,7 +239,7 @@ class NondetLoad(Expr):
         return NondetLoad(expr.unwrap(), expr.type(), load, alloc)
 
     def __repr__(self):
-        return f"L({self.alloc.asValue()})={Expr.__repr__(self)}"
+        return f"L({self.alloc.as_value()})={Expr.__repr__(self)}"
 
 
 class BVSymbolicDomain:
