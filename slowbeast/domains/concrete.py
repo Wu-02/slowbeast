@@ -128,10 +128,8 @@ class ConcreteDomain:
     def Rem(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         assert b.getValue() != 0, "Invalid remainder"
-        if b.getValue() > a.getValue():
-            return a
         if unsigned:
-            return Constant(abs(a.getValue()) % abs(b.getValue()), a.getType())
+            return Constant(getUnsigned(a) % getUnsigned(b), a.getType())
         return Constant(a.getValue() % b.getValue(), a.getType())
 
     ##
