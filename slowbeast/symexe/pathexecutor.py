@@ -38,7 +38,7 @@ class Executor(SExecutor):
         return ready, nonready
 
     def executeAnnotatedLoc(self, states, loc, path=None):
-        dbgv(f"vv ----- Loc {loc.getBBlock().getID()} ----- vv")
+        dbgv(f"vv ----- Loc {loc.getBBlock().get_id()} ----- vv")
 
         # execute annotations before bblock
         ready, nonready = self.executeAnnotations(states, loc.annotationsBefore)
@@ -63,7 +63,7 @@ class Executor(SExecutor):
             ready, tu = self.executeAnnotations(ready, locannot)
             nonready += tu
 
-        dbgv(f"^^ ----- Loc {loc.getBBlock().getID()} ----- ^^")
+        dbgv(f"^^ ----- Loc {loc.getBBlock().get_id()} ----- ^^")
         return ready, nonready
 
     def executeAnnotatedPath(self, state, path, branch_on_last=False):

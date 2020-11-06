@@ -32,7 +32,7 @@ def remove_implied_literals(clauses, unsafe):
 
 def check_inv(prog, L, inv):
     loc = L.loc
-    dbg_sec(f"Checking if {inv} is invariant of loc {loc.getBBlock().getID()}")
+    dbg_sec(f"Checking if {inv} is invariant of loc {loc.getBBlock().get_id()}")
 
     def reportfn(msg, *args, **kwargs):
         print_stdout(f"> {msg}", *args, **kwargs)
@@ -442,7 +442,7 @@ class KindSymbolicExecutor(BaseKindSE):
             for s, S in ((s, s.toannotation(True)) for s in E):
                 if check_inv(self.getProgram(), L, S):
                     print_stdout(
-                        f"{S} is inductive on {loc.getBBlock().getID()}", color="BLUE"
+                        f"{S} is inductive on {loc.getBBlock().get_id()}", color="BLUE"
                     )
                     if self.genannot:
                         # maybe remember the ind set even without genannot

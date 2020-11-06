@@ -118,8 +118,8 @@ class DFSVisitor:
         def dumpdot(start, end, edgetype):
             print(
                 '  {0} -> {1} [label="{2}", color="{3}"]'.format(
-                    start.getBBlock().getID(),
-                    end.getBBlock().getID(),
+                    start.getBBlock().get_id(),
+                    end.getBBlock().get_id(),
                     DFSEdgeType.tostr(edgetype),
                     edgecol(edgetype),
                 ),
@@ -130,7 +130,7 @@ class DFSVisitor:
 
         # dump nodes
         for n in cfg.getNodes():
-            print("  {0}".format(n.getBBlock().getID()), file=out)
+            print("  {0}".format(n.getBBlock().get_id()), file=out)
 
         # dump edges
         print("", file=out)
@@ -140,7 +140,7 @@ class DFSVisitor:
         for n in cfg.getNodes():
             print(
                 '  {0} [label="{0}\\nin,out = {1}, {2}"]'.format(
-                    n.getBBlock().getID(),
+                    n.getBBlock().get_id(),
                     self._getdata(n).innum,
                     self._getdata(n).outnum,
                 ),

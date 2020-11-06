@@ -147,7 +147,7 @@ class TestCaseGenerator:
         if not self._alltests and state.exited():
             return
 
-        filename=str(state.getID())
+        filename=str(state.get_id())
         if state.hasError():
             filename+= ".err"
         elif state.wasKilled():

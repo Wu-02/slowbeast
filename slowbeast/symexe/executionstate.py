@@ -41,7 +41,7 @@ class SEState(ExecutionState):
         self._warnings = []
         self._warnings_ro = False
 
-    def getID(self):
+    def get_id(self):
         return self._id
 
     def __eq__(self, rhs):

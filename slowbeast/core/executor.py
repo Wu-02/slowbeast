@@ -104,16 +104,16 @@ class PathExecutionResult:
         msg = "PathExecutionResult: {"
         if self.ready:
             haveany = True
-            msg += f"\n  ready: {[x.getID() for x in self.ready]}"
+            msg += f"\n  ready: {[x.get_id() for x in self.ready]}"
         if self.errors:
             haveany = True
-            msg += f"\n  errors: {[x.getID() for x in self.errors]}"
+            msg += f"\n  errors: {[x.get_id() for x in self.errors]}"
         if self.early:
             haveany = True
-            msg += f"\n  early: {[x.getID() for x in self.early]}"
+            msg += f"\n  early: {[x.get_id() for x in self.early]}"
         if self.other:
             haveany = True
-            msg += f"\n  other: {[x.getID() for x in self.other]}"
+            msg += f"\n  other: {[x.get_id() for x in self.other]}"
         if haveany:
             msg += "\n}"
         else:
@@ -204,7 +204,7 @@ class Executor:
         if op1.is_pointer():
             if not op2.is_pointer():
                 raise RuntimeError("Comparison of pointer to a constant")
-            if op1.object.getID() != op2.object.getID():
+            if op1.object.get_id() != op2.object.get_id():
                 raise RuntimeError("Comparison of unrelated pointers")
             op1 = op1.offset
             op2 = op2.offset
@@ -420,7 +420,7 @@ class Executor:
             "({2}) {0}: {1}".format(
                 "--" if not instr.getBBlock() else instr.fun().getName(),
                 str(instr),
-                state.getID(),
+                state.get_id(),
             )
         )
 

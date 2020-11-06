@@ -110,10 +110,10 @@ class Memory:
         o = self._allocate(size, instr, nm, objid)
 
         self._objs_reown()
-        assert self._objects.get(o.getID()) is None
-        self._objects[o.getID()] = o
+        assert self._objects.get(o.get_id()) is None
+        self._objects[o.get_id()] = o
 
-        return Pointer(Constant(o.getID(), SizeType))
+        return Pointer(Constant(o.get_id(), SizeType))
 
     def allocateGlobal(self, G, objid=None):
         """ Allocate a new memory object and return a pointer to it """
@@ -124,13 +124,13 @@ class Memory:
         o = self._allocate(G.getSize(), G, G.getName(), objid)
 
         self._globs_reown()
-        assert self._glob_objects.get(o.getID()) is None
-        self._glob_objects[o.getID()] = o
+        assert self._glob_objects.get(o.get_id()) is None
+        self._glob_objects[o.get_id()] = o
 
         self._globs_bindings_reown()
         assert self._glob_bindings_ro is False
         assert self._glob_bindings.get(G) is None
-        ptr = Pointer(Constant(o.getID(), SizeType))
+        ptr = Pointer(Constant(o.get_id(), SizeType))
         self._glob_bindings[G] = ptr
 
         return ptr
@@ -160,9 +160,9 @@ class Memory:
             obj = obj.writableCopy()
             assert not obj._isRO()
             if isglob:
-                self._glob_objects[obj.getID()] = obj
+                self._glob_objects[obj.get_id()] = obj
             else:
-                self._objects[obj.getID()] = obj
+                self._objects[obj.get_id()] = obj
 
         return obj.write(x, ptr.offset())
 

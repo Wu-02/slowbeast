@@ -65,7 +65,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     found_err = True
                     dbg(
                         "Hit error state in induction check: {0}: {1}, {2}".format(
-                            ns.getID(), ns.pc, ns.getError()
+                            ns.get_id(), ns.pc, ns.getError()
                         ),
                         color="PURPLE",
                     )

@@ -226,7 +226,7 @@ class Executor(ConcreteExecutor):
 
         E = state.getExprManager()
         p = instr.getPredicate()
-        if mo1.getID() == mo2.getID():
+        if mo1.get_id() == mo2.get_id():
             state.set(
                 instr,
                 self.cmpValues(

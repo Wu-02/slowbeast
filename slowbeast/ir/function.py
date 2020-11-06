@@ -15,7 +15,7 @@ class Function(ProgramElement):
         self._retty = retty
 
     def __eq__(self, other):
-        assert self._name != other._name or self.getID() == other.getID()
+        assert self._name != other._name or self.get_id() == other.get_id()
         return self._name == other._name
 
     __hash__ = ProgramElement.__hash__

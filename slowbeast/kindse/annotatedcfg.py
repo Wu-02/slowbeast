@@ -46,7 +46,7 @@ class CFG(PureCFG):
             self.annotationsBefore.append(annot)
 
         def getBBlockID(self):
-            return self.getBBlock().getID()
+            return self.getBBlock().get_id()
 
     def __init__(self, F):
         super(CFG, self).__init__(F)
@@ -69,9 +69,9 @@ class CFGPath(PureCFGPath):
 
 def _get_loc_key(loc):
     if isinstance(loc, CFG.AnnotatedNode):
-        return loc.getBBlock().getID()
+        return loc.getBBlock().get_id()
     elif isinstance(loc, BBlock):
-        return loc.getID()
+        return loc.get_id()
     else:
         raise NotImplementedError(f"Unhandled key value: {loc}")
 
@@ -176,7 +176,7 @@ class AnnotatedCFGPath(CFGPath):
             blk = x.getBBlock()
             return "{0}{1}{2}".format(
                 "a" if self.getLocAnnotationsBefore(blk) else "",
-                blk.getID(),
+                blk.get_id(),
                 "a" if self.getLocAnnotationsAfter(blk) else "",
             )
 

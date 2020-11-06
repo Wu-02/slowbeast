@@ -80,7 +80,7 @@ class ProgramElement:
         """ Is visible everywhere in the program? """
         return False
 
-    def getID(self):
+    def get_id(self):
         return self._id
 
     def __eq__(self, rhs):

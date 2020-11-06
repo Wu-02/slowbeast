@@ -6,7 +6,7 @@ class Argument(ProgramElement):
     #    super().__init__()
 
     def __str__(self):
-        return "a{0}".format(self.getID())
+        return "a{0}".format(self.get_id())
 
     def as_value(self):
-        return "a{0}".format(self.getID())
+        return "a{0}".format(self.get_id())

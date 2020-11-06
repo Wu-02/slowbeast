@@ -37,7 +37,7 @@ class GlobalVariable(ProgramElement):
         self._init = I
 
     def as_value(self):
-        return "g{0}".format(self.getID())
+        return "g{0}".format(self.get_id())
 
     def __str__(self):
         return "{0} = global {1} of size {2}".format(
@@ -125,13 +125,13 @@ class Instruction(ProgramElement):
 
 # Defined in super class
 # def __eq__(self, other):
-#    return self.getID() == other.getID()
+#    return self.get_id() == other.get_id()
 
 # def __ne__(self, other):
 #    return not(self.__eq__(self, other))
 
 # def __hash__(self):
-#    return self.getID()
+#    return self.get_id()
 
 
 class ValueInstruction(Instruction):
@@ -146,7 +146,7 @@ class ValueInstruction(Instruction):
         return False
 
     def as_value(self):
-        return "x{0}".format(self.getID())
+        return "x{0}".format(self.get_id())
 
 
 class Store(Instruction):
@@ -185,7 +185,7 @@ class Load(ValueInstruction):
 
     def __str__(self):
         return "x{0} = load {1}:{2}B".format(
-            self.getID(), self.getPointerOperand().as_value(), self.bytes
+            self.get_id(), self.getPointerOperand().as_value(), self.bytes
         )
 
 
@@ -198,25 +198,25 @@ class Alloc(ValueInstruction):
         return self._size
 
     def __str__(self):
-        return "x{0} = alloc {1} bytes".format(self.getID(), self.getSize().as_value())
+        return "x{0} = alloc {1} bytes".format(self.get_id(), self.getSize().as_value())
 
     # the allocations return pointers, we need to compare them
     def __lt__(self, other):
-        return self.getID() < other.getID()
+        return self.get_id() < other.get_id()
 
     def __le__(self, other):
-        return self.getID() <= other.getID()
+        return self.get_id() <= other.get_id()
 
     def __gt__(self, other):
-        return self.getID() > other.getID()
+        return self.get_id() > other.get_id()
 
     def __ge__(self, other):
-        return self.getID() >= other.getID()
+        return self.get_id() >= other.get_id()
 
     # must override the hash since we defined the operators
     # defined in super class
     # def __hash__(self):
-    #    return self.getID()
+    #    return self.get_id()
 
 
 class Branch(Instruction):
@@ -255,7 +255,7 @@ class Call(ValueInstruction):
         # return self._function
 
     def __str__(self):
-        r = "x{0} = call {1}(".format(self.getID(), self.getCalledFunction().as_value())
+        r = "x{0} = call {1}(".format(self.get_id(), self.getCalledFunction().as_value())
         r += ", ".join(map(lambda x: x.as_value(), self.getOperands()))
         return r + ")"
 
@@ -422,7 +422,7 @@ class ZExt(Extend):
 
     def __str__(self):
         return "x{0} = zext {1} to {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.bitwidth()
+            self.get_id(), self.getOperand(0).as_value(), self.bitwidth()
         )
 
 
@@ -432,7 +432,7 @@ class SExt(Extend):
 
     def __str__(self):
         return "x{0} = sext {1} to {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.bitwidth()
+            self.get_id(), self.getOperand(0).as_value(), self.bitwidth()
         )
 
 
@@ -455,7 +455,7 @@ class ExtractBits(UnaryOperation):
 
     def __str__(self):
         return "x{0} = extractbits {1}-{2} from {3}".format(
-            self.getID(), self.getStart(), self.getEnd(), self.getOperand(0).as_value()
+            self.get_id(), self.getStart(), self.getEnd(), self.getOperand(0).as_value()
         )
 
 
@@ -495,7 +495,7 @@ class Add(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} + {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
 
 
@@ -505,7 +505,7 @@ class Sub(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} - {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
 
 
@@ -515,7 +515,7 @@ class Mul(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} * {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
 
 
@@ -529,7 +529,7 @@ class Div(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} /{3} {2}".format(
-            self.getID(),
+            self.get_id(),
             self.getOperand(0).as_value(),
             self.getOperand(1).as_value(),
             "u" if self.isUnsigned() else "",
@@ -546,7 +546,7 @@ class Rem(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} %{3} {2}".format(
-            self.getID(),
+            self.get_id(),
             self.getOperand(0).as_value(),
             self.getOperand(1).as_value(),
             "u" if self.isUnsigned() else "",
@@ -559,7 +559,7 @@ class Shl(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} << {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
 
 
@@ -569,7 +569,7 @@ class LShr(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} l>> {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
 
 
@@ -579,7 +579,7 @@ class AShr(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} >> {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
 
 
@@ -589,7 +589,7 @@ class And(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} & {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
 
 
@@ -599,7 +599,7 @@ class Or(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} | {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
 
 
@@ -609,5 +609,5 @@ class Xor(BinaryOperation):
 
     def __str__(self):
         return "x{0} = xor {1}, {2}".format(
-            self.getID(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )

@@ -212,7 +212,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         if n.hasError():
             if fn:
                 fn(
-                    "state {0}: {1}, {2}".format(n.getID(), n.pc, n.getError()),
+                    "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.getError()),
                     color="RED",
                 )
             self.stats.errors += 1

@@ -112,7 +112,7 @@ class CallGraph:
                 for n, cf in enumerate(funs):
                     if n == 0:
                         stream.write(
-                            "  {0} -> {1}\n".format(cs.getID(), cf.fun().getName())
+                            "  {0} -> {1}\n".format(cs.get_id(), cf.fun().getName())
                         )
                     else:
                         stream.write("     -> {0}\n".format(cf.fun().getName()))

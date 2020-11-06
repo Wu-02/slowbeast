@@ -60,7 +60,7 @@ class BBlock(ProgramElement):
         return self._function
 
     def as_value(self):
-        return "bblock {0}".format(self.getID())
+        return "bblock {0}".format(self.get_id())
 
     def size(self):
         return len(self._instructions)
@@ -73,6 +73,6 @@ class BBlock(ProgramElement):
 
     def dump(self, ind=0, stream=stdout, color=True):
         super().dump(ind, stream, color)
-        stream.write("{0}; [bblock {1}]\n".format(" " * ind, self.getID()))
+        stream.write("{0}; [bblock {1}]\n".format(" " * ind, self.get_id()))
         for i in self._instructions:
             i.dump(ind, stream)

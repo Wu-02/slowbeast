@@ -101,7 +101,7 @@ class CFG:
             for succ in node.getSuccessors():
                 stream.write(
                     "{0} -> {1}\n".format(
-                        node.getBBlock().getID(), succ.getBBlock().getID()
+                        node.getBBlock().get_id(), succ.getBBlock().get_id()
                     )
                 )
 
@@ -168,4 +168,4 @@ class CFGPath:
         stream.write("\n")
 
     def __repr__(self):
-        return " -> ".join(map(lambda x: str(x.getBBlock().getID()), self.locations))
+        return " -> ".join(map(lambda x: str(x.getBBlock().get_id()), self.locations))

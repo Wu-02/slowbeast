@@ -41,7 +41,7 @@ class MemoryObject:
     def __eq__(self, rhs):
         return self._id == rhs._id
 
-    def getID(self):
+    def get_id(self):
         return self._id
 
     def getSize(self):

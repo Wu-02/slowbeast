@@ -12,9 +12,9 @@ class InteractiveHandler:
     def _shouldSkip(self, s):
         if self._stop_next_time:
             return False
-        if s.getID() in self._break_pathid:
+        if s.get_id() in self._break_pathid:
             return False
-        if s.pc.getID() in self._break_inst:
+        if s.pc.get_id() in self._break_inst:
             return False
         return True
 
@@ -34,7 +34,7 @@ class InteractiveHandler:
 
         self._stop_next_time = False
 
-        print("Stopped before executing: ({0}) {1}".format(s.getID(), str(s.pc)))
+        print("Stopped before executing: ({0}) {1}".format(s.get_id(), str(s.pc)))
         q = input("> ")
         if q == "":
             q = self._last_query
@@ -88,7 +88,7 @@ class InteractiveHandler:
 
     def _getstate(self, i):
         for s in self.interpreter.getStates():
-            if s.getID() == i:
+            if s.get_id() == i:
                 return s
         return None
 
@@ -109,9 +109,9 @@ class InteractiveHandler:
         if not query:
             raise RuntimeError("Invalid arguments to print")
         if query[0] == "states":
-            print([x.getID() for x in self.interpreter.getStates()])
+            print([x.get_id() for x in self.interpreter.getStates()])
         elif query[0] in ["new", "newstates"]:
-            print([x.getID() for x in self.interpreter.getStates()])
+            print([x.get_id() for x in self.interpreter.getStates()])
         elif query[0] in ["s", "state"]:
             if len(query) == 1:
                 assert state, "No current state"

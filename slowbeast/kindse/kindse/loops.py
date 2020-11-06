@@ -131,7 +131,7 @@ class SimpleLoop:
 
         dbg_sec(
             f"Checking monotonicity of variables in simple loop"
-            f" over {self.loc.getBBlock().getID()}"
+            f" over {self.loc.getBBlock().get_id()}"
         )
         if self.vars is None:
             self.getVariables()

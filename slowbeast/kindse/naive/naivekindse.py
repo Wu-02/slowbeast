@@ -37,7 +37,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         for ns in states:
             if ns.hasError():
                 print_stderr(
-                    "{0}: {1}, {2}".format(ns.getID(), ns.pc, ns.getError()),
+                    "{0}: {1}, {2}".format(ns.get_id(), ns.pc, ns.getError()),
                     color="RED",
                 )
                 self.stats.errors += 1
@@ -77,7 +77,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
                 found_err = True
                 dbg(
                     "Hit error state while building IS assumptions: {0}: {1}, {2}".format(
-                        ns.getID(), ns.pc, ns.getError()
+                        ns.get_id(), ns.pc, ns.getError()
                     ),
                     color="PURPLE",
                 )
@@ -105,7 +105,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
                 has_error = True
                 dbg(
                     "Induction check hit error state: {0}: {1}, {2}".format(
-                        ns.getID(), ns.pc, ns.getError()
+                        ns.get_id(), ns.pc, ns.getError()
                     ),
                     color="PURPLE",
                 )
