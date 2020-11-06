@@ -38,7 +38,7 @@ class Function(ProgramElement):
 
     def addBBlock(self, bb):
         self._bblocks.append(bb)
-        bb.setFunction(self)
+        bb.set_fun(self)
 
     def getBBlock(self, idx):
         assert idx < len(self._bblocks)

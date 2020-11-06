@@ -53,7 +53,7 @@ class BBlock(ProgramElement):
             return self._instructions[idx + 1]
         return None
 
-    def setFunction(self, f):
+    def set_fun(self, f):
         self._function = f
 
     def fun(self):
