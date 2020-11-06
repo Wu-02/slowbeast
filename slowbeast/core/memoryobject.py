@@ -66,10 +66,10 @@ class MemoryObject:
                 "Write to symbolic-sized objects not implemented yet"
             )
 
-        offval = off.getValue()
+        offval = off.value()
         if offval != 0:
             FIXME("check that writes to MO do not overlap")
-        if x.bytewidth() > self.getSize().getValue() + offval:
+        if x.bytewidth() > self.getSize().value() + offval:
             return MemError(
                 MemError.OOB_ACCESS,
                 "Written value too big for the object. "
@@ -95,9 +95,9 @@ class MemoryObject:
                 "Read from symbolic-sized objects not implemented yet"
             )
 
-        offval = off.getValue()
+        offval = off.value()
 
-        if self.getSize().getValue() < bts:
+        if self.getSize().value() < bts:
             return None, MemError(
                 MemError.OOB_ACCESS,
                 "Read {0}B from object of size {1}B".format(bts, self.getSize()),

@@ -231,7 +231,7 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
             if l is None:
                 break
 
-        if num.getValue() <= 1:
+        if num.value() <= 1:
             return goodl
         num = EM.Div(num, two)
 

@@ -164,9 +164,9 @@ class Executor(SExecutor):
 #     for c in constr:
 #         expr = EM.substitute(c, (x, prex))
 #         if expr.is_concrete():
-#             if expr.getValue() is False:
+#             if expr.value() is False:
 #                 return None  # infeasible constraints
-#             elif expr.getValue() is not True:
+#             elif expr.value() is not True:
 #                 raise RuntimeError(f"Invalid constraint: {expr}")
 #         else:
 #             newC.append(expr)

@@ -262,8 +262,8 @@ class BVSymbolicDomain:
 
         if v.is_concrete():
             if v.is_bool():
-                return Expr(BoolVal(v.getValue()), BoolType())
-            return Expr(bv_const(v.getValue(), v.type().bitwidth()), v.type())
+                return Expr(BoolVal(v.value()), BoolType())
+            return Expr(bv_const(v.value(), v.type().bitwidth()), v.type())
 
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
@@ -375,18 +375,18 @@ class BVSymbolicDomain:
     def ZExt(a, b):
         assert BVSymbolicDomain.belongto(a)
         assert b.is_concrete()
-        assert a.bitwidth() <= b.getValue(), "Invalid zext argument"
+        assert a.bitwidth() <= b.value(), "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
         return Expr(
-            BVZExt(b.getValue() - a.bitwidth(), castToBV(a)), Type(b.getValue())
+            BVZExt(b.value() - a.bitwidth(), castToBV(a)), Type(b.value())
         )
 
     def SExt(a, b):
         assert BVSymbolicDomain.belongto(a)
         assert b.is_concrete()
-        assert a.bitwidth() <= b.getValue(), "Invalid sext argument"
+        assert a.bitwidth() <= b.value(), "Invalid sext argument"
         return Expr(
-            BVSExt(b.getValue() - a.bitwidth(), castToBV(a)), Type(b.getValue())
+            BVSExt(b.value() - a.bitwidth(), castToBV(a)), Type(b.value())
         )
 
     def Extract(a, start, end):
@@ -394,8 +394,8 @@ class BVSymbolicDomain:
         assert start.is_concrete()
         assert end.is_concrete()
         return Expr(
-            BVExtract(end.getValue(), start.getValue(), a.unwrap()),
-            Type(end.getValue() - start.getValue() + 1),
+            BVExtract(end.value(), start.value(), a.unwrap()),
+            Type(end.value() - start.value() + 1),
         )
 
     def Shl(a, b):

@@ -57,7 +57,7 @@ class Constant(Value):
     def asValue(self):
         return "{0}:{1}".format(str(self._value), self.type())
 
-    def getValue(self):
+    def value(self):
         return self._value
 
     def is_concrete(self):
@@ -71,7 +71,7 @@ class Constant(Value):
 
     def __eq__(self, rhs):
         assert isinstance(rhs, Constant)
-        return self.getValue() == rhs.getValue() and self.type() == rhs.type()
+        return self.value() == rhs.value() and self.type() == rhs.type()
 
 
 class Pointer(Value):

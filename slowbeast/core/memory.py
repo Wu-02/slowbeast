@@ -143,9 +143,9 @@ class Memory:
 
     def write(self, ptr, x):
         isglob = False
-        obj = self._objects.get(ptr.getObject().getValue())
+        obj = self._objects.get(ptr.getObject().value())
         if obj is None:
-            obj = self._glob_objects.get(ptr.getObject().getValue())
+            obj = self._glob_objects.get(ptr.getObject().value())
             isglob = True
 
         if obj is None:
@@ -167,9 +167,9 @@ class Memory:
         return obj.write(x, ptr.getOffset())
 
     def read(self, ptr, bytesNum):
-        obj = self._objects.get(ptr.getObject().getValue())
+        obj = self._objects.get(ptr.getObject().value())
         if obj is None:
-            obj = self._glob_objects.get(ptr.getObject().getValue())
+            obj = self._glob_objects.get(ptr.getObject().value())
 
         if obj is None:
             return None, MemError(MemError.INVALID_OBJ, str(ptr.getObject()))

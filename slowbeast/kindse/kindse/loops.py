@@ -171,7 +171,7 @@ class SimpleLoop:
                 assert n == r and n is not None and n != "?"
 
         V = self.vars.keys()
-        loads = [Load(v, v.getSize().getValue()) for v in V]
+        loads = [Load(v, v.getSize().value()) for v in V]
         for p in self.paths:
             path = p.copy()
             path.addLocAnnotationBefore(InstrsAnnotation(loads), self.loc)

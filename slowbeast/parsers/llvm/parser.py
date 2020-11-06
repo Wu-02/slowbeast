@@ -128,7 +128,7 @@ class Parser:
             retlist += [M, A]
             return retlist
         else:
-            A = Alloc(Constant(tySize * num.getValue(), Type(num.bitwidth())))
+            A = Alloc(Constant(tySize * num.value(), Type(num.bitwidth())))
             self._addMapping(inst, A)
             return [A]
 
@@ -390,7 +390,7 @@ class Parser:
                 if shift != 0:
                     varIdx.append(Add(M, Constant(shift, SizeType)))
             else:
-                shift += c.getValue() * elemSize
+                shift += c.value() * elemSize
 
             if is_pointerTy(ty):
                 ty = ty.element_type

@@ -83,12 +83,12 @@ class Executor(ConcreteExecutor):
         # fast path + do not add True/False to constraints
         if cond.is_concrete():
             assert cond.is_bool(), "Invalid constant"
-            if cond.getValue():
+            if cond.value():
                 return state, None
-            elif not cond.getValue():
+            elif not cond.value():
                 return None, state
             else:
-                raise RuntimeError("Invalid condition: {0}".format(cond.getValue()))
+                raise RuntimeError("Invalid condition: {0}".format(cond.value()))
 
         # check SAT of cond and its negation
         csat = state.is_sat(cond)
@@ -130,7 +130,7 @@ class Executor(ConcreteExecutor):
         """
         if cond.is_concrete():
             assert cond.is_bool(), "Invalid constant"
-            if cond.getValue():
+            if cond.value():
                 return state
             else:
                 return None
@@ -390,8 +390,8 @@ class Executor(ConcreteExecutor):
     def execAssumeExpr(self, state, v):
         assert v.is_bool()
         if v.is_concrete():
-            assert isinstance(v.getValue(), bool)
-            isunsat = not v.getValue()
+            assert isinstance(v.value(), bool)
+            isunsat = not v.value()
         else:
             tmp = self.assume(state, v)
             isunsat = tmp is None
@@ -407,8 +407,8 @@ class Executor(ConcreteExecutor):
             v = state.eval(o)
             assert v.is_bool()
             if v.is_concrete():
-                assert isinstance(v.getValue(), bool)
-                isunsat = not v.getValue()
+                assert isinstance(v.value(), bool)
+                isunsat = not v.value()
             else:
                 tmp = self.assume(state, v)
                 isunsat = tmp is None
@@ -426,8 +426,8 @@ class Executor(ConcreteExecutor):
         states = []
         assert v.is_bool()
         if v.is_concrete():
-            assert isinstance(v.getValue(), bool)
-            if not v.getValue():
+            assert isinstance(v.value(), bool)
+            if not v.value():
                 state.setError(AssertFailError(msg))
             states.append(state)
         else:
@@ -451,7 +451,7 @@ class Executor(ConcreteExecutor):
         states = []
         assert v.is_bool()
         if v.is_concrete():
-            if v.getValue() != True:
+            if v.value() != True:
                 state.setError(AssertFailError(msg))
             else:
                 state.pc = state.pc.getNextInstruction()

@@ -65,8 +65,8 @@ class SEState(ExecutionState):
         symb = []
         for x in e:
             if x.is_concrete():
-                assert isinstance(x.getValue(), bool)
-                if not x.getValue():
+                assert isinstance(x.value(), bool)
+                if not x.value():
                     return False
                 else:
                     continue

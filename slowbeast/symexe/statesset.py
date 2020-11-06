@@ -90,7 +90,7 @@ class StatesSet:
         else:
             # if newexpr is concrete, it must be True. And adding True is useless,
             # its the same as empty constraints
-            assert newexpr.getValue() is True  # this is Or expr...
+            assert newexpr.value() is True  # this is Or expr...
         state.setConstraints(C)
 
     def add(self, s):

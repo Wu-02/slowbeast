@@ -20,7 +20,7 @@ class ConstraintsSet:
         for c in C:
             # assert not c.is_concrete(), "Adding True or False, catch these cases atm"
             if c.is_concrete():
-                if c.getValue() is False:
+                if c.value() is False:
                     self.constraints = [c]
                     break
                 # we can ignore True...

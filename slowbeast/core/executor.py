@@ -209,8 +209,8 @@ class Executor:
             op1 = op1.offset
             op2 = op2.offset
         else:
-            op1 = op1.getValue()
-            op2 = op2.getValue()
+            op1 = op1.value()
+            op2 = op2.value()
         x = None
         p = instr.getPredicate()
         if p == Cmp.LE:
@@ -236,7 +236,7 @@ class Executor:
         for x in instr.getOperands():
             v = state.eval(x)
             if isinstance(v, Constant):
-                v = v.getValue()
+                v = v.value()
             sys.stdout.write(str(v))
         sys.stdout.write("\n")
         sys.stdout.flush()
@@ -249,7 +249,7 @@ class Executor:
         assert isinstance(instr, Branch)
         c = instr.getCondition()
         assert isinstance(c, ValueInstruction) or c.is_concrete()
-        cv = state.eval(instr.getCondition()).getValue()
+        cv = state.eval(instr.getCondition()).value()
 
         if cv:
             succ = instr.getTrueSuccessor()
@@ -271,7 +271,7 @@ class Executor:
         for o in instr.getOperands():
             v = state.eval(o)
             assert isinstance(v, Constant)
-            if v.getValue() != True:
+            if v.value() != True:
                 state.setError(
                     AssertFailError(
                         "Assertion failed: {0} is {1} (!= True)".format(o, v)
@@ -289,7 +289,7 @@ class Executor:
             v = state.eval(o)
             assert v.is_concrete()
             assert v.is_bool()
-            if v.getValue() != True:
+            if v.value() != True:
                 print("Assumption failed: {0} == {1} (!= True)".format(o, v))
                 state.dump()
                 break
@@ -313,16 +313,16 @@ class Executor:
                 assert isinstance(op2c, Constant)
                 # adding a constant -- create a pointer
                 # to the object with the right offset
-                op2c = Pointer(op1c.object, op2c.getValue())
+                op2c = Pointer(op1c.object, op2c.value())
         elif op2c.is_pointer():
             if not op1c.is_pointer():
                 assert isinstance(op1c, Constant)
                 # adding a constant -- create a pointer
                 # to the object with the right offset
-                op1c = Pointer(op2c.object, op1c.getValue())
+                op1c = Pointer(op2c.object, op1c.value())
         else:
-            op1 = op1c.getValue()
-            op2 = op2c.getValue()
+            op1 = op1c.value()
+            op2 = op2c.value()
 
         if op1c.is_pointer() and op1c.object != op2c.object:
             raise RuntimeError("Pointer arithmetic on unrelated pointers")

@@ -22,7 +22,7 @@ def get_subs(state):
     subs = {}
     for l in state.getNondetLoads():
         alloc = l.load.getPointerOperand()
-        load = cannonic_loads.setdefault(alloc, Load(alloc, alloc.getSize().getValue()))
+        load = cannonic_loads.setdefault(alloc, Load(alloc, alloc.getSize().value()))
         subs[l] = load
 
     return subs

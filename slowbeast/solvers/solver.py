@@ -153,8 +153,8 @@ class ConcreteSolver(SolverIntf):
     def is_sat(self, *e):
         for x in e:
             assert x.is_bool()
-            assert isinstance(x.getValue(), bool)
-            if x.getValue() is False:
+            assert isinstance(x.value(), bool)
+            if x.value() is False:
                 return False
         return True
 
@@ -168,7 +168,7 @@ class SymbolicSolver(SolverIntf):
         super(SymbolicSolver, self).__init__(em)
 
     def is_sat(self, *e):
-        if any(map(lambda x: x.is_concrete() and x.getValue() is False, e)):
+        if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
             return False
         return is_sat(*(x.unwrap() for x in e if not x.is_concrete()))
 
@@ -176,7 +176,7 @@ class SymbolicSolver(SolverIntf):
         assert all(
             map(lambda x: not x.is_concrete(), e)
         ), "Constant instead of symbolic value"
-        if any(map(lambda x: x.is_concrete() and x.getValue() is False, assumpt)):
+        if any(map(lambda x: x.is_concrete() and x.value() is False, assumpt)):
             return None
         # m = smallmodels(assumpt, *e)
         m = models(assumpt, *e)
