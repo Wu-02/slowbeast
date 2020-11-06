@@ -71,7 +71,9 @@ class StateDescription:
         subs = ((v, get(x)) for (v, x) in self._subs.items())
 
         # we must do all the substitution at once!
-        return EM.simplify(EM.substitute(expr, *((val, curval) for (val, curval) in subs if curval)))
+        return EM.simplify(
+            EM.substitute(expr, *((val, curval) for (val, curval) in subs if curval))
+        )
 
     def __repr__(self):
         return "{0}[{1}]".format(

@@ -213,7 +213,6 @@ class Expr(Value):
     def isUGt(self):
         return is_app_of(self._expr, Z3_OP_UGT)
 
-
     def __hash__(self):
         return self._expr.__hash__()
 

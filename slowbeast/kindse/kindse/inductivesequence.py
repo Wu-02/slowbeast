@@ -173,8 +173,6 @@ class InductiveSequence:
         return self.check_on_paths(executor, paths, self_as_pre=True)
 
 
-
-
 # can be used to split formula to abstraction and the rest
 # def _simplify_with_assumption(lhs, rhs):
 #     """

@@ -89,7 +89,9 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
             dbgv(f"Executing path: {path}", color="WHITE", fn=self.reportfn)
 
-        assert all(map(lambda s: not s.getConstraints(), states)), "The state is not clean"
+        assert all(
+            map(lambda s: not s.getConstraints(), states)
+        ), "The state is not clean"
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path

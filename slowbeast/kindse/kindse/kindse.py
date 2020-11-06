@@ -29,6 +29,7 @@ def remove_implied_literals(clauses, unsafe):
     # (the overapproximation does it for us...)
     return clauses
 
+
 def check_inv(prog, L, inv):
     loc = L.loc
     dbg_sec(f"Checking if {inv} is invariant of loc {loc.getBBlock().getID()}")
@@ -116,6 +117,7 @@ def literals(c):
         yield from c.children()
     yield c
 
+
 def get_predicate(l):
     EM = getGlobalExprManager()
     if l.isSLe():
@@ -163,6 +165,7 @@ def decompose_literal(l):
 
     return left, right, P, addtoleft
 
+
 def get_left_right(l):
     if l.isNot():
         l = list(l.children())[0]
@@ -170,6 +173,7 @@ def get_left_right(l):
     chld = list(l.children())
     assert len(chld) == 2, "Invalid literal (we assume binop or not(binop)"
     return chld[0], chld[1]
+
 
 def overapprox_literal(l, S, unsafe, target, executor, L):
     assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
@@ -210,7 +214,7 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
 
     bw = left.getType().getBitWidth()
     two = EM.Constant(2, bw)
-    num = EM.Constant(2**(bw-1)-1, bw)
+    num = EM.Constant(2 ** (bw - 1) - 1, bw)
 
     # FIXME: add a fast path where we try several values from the bottom...
 
@@ -271,8 +275,8 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
         S, unsafe
     ).is_empty(), "Whata? Unsafe states among one-step reachable safe states..."
 
-   #print_stdout(f"Overapproximating {S}", color="BROWN")
-   #print_stdout(f"  with unsafe states: {unsafe}", color="BROWN")
+    # print_stdout(f"Overapproximating {S}", color="BROWN")
+    # print_stdout(f"  with unsafe states: {unsafe}", color="BROWN")
     EM = s.getExprManager()
     target = createSet(seq[-1].toassert())
 
@@ -287,10 +291,10 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
 
         tmpexpr = EM.conjunction(*tmp)
         if tmpexpr.isConstant():
-            continue # either False or True are bad for us
+            continue  # either False or True are bad for us
         X = createSet(tmpexpr)
         if not intersection(X, unsafe).is_empty():
-            continue # we can't...
+            continue  # we can't...
         r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
         if r.errors is None and r.ready:
             newclauses = tmp
@@ -306,7 +310,7 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     clauses = remove_implied_literals(newclauses, unsafe)
     S.reset_expr(EM.conjunction(*clauses))
 
-    #print_stdout(f"Overapproximated to {S}", color="BROWN")
+    # print_stdout(f"Overapproximated to {S}", color="BROWN")
 
     sd = S.as_description()
     A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)
@@ -379,7 +383,9 @@ class KindSymbolicExecutor(BaseKindSE):
 
             if __debug__:
                 r = tmp.check_ind_on_paths(self, L.getPaths())
-                assert r.errors is None, f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
+                assert (
+                    r.errors is None
+                ), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
 
             E.append(tmp)
 
@@ -414,13 +420,15 @@ class KindSymbolicExecutor(BaseKindSE):
                 color="GRAY",
             )
             for seq in sequences:
-                print_stdout(f"Processing sequence of len {len(seq)}:\n{seq}", color="dark_blue")
+                print_stdout(
+                    f"Processing sequence of len {len(seq)}:\n{seq}", color="dark_blue"
+                )
                 if __debug__:
                     r = seq.check_ind_on_paths(self, L.getPaths())
                     assert r.errors is None, "seq is not inductive"
 
                 E += self.extend_seq(seq, errs0, L)
-                #print(" -- extending DONE --")
+                # print(" -- extending DONE --")
 
             if not E:
                 # seq not extended... it looks that there is no

@@ -123,12 +123,14 @@ def dbgv(msg, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr):
 
     fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
+
 def dbg_sec(msg=None, color="WHITE"):
     if msg is None:
         dec_debugging_lvl()
     else:
         dbg(msg, color=color)
         inc_debugging_lvl()
+
 
 def dbgv_sec(msg=None, verbose_lvl=2, color="WHITE"):
     """ Exactly as dbg sec, but uses dbgv """
