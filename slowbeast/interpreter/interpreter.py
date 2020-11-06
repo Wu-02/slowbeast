@@ -107,7 +107,7 @@ class Interpreter:
         for s in states:
             s.pc = ginit
 
-        globs = self._program.getGlobals()
+        globs = self._program.globals()
         for G in globs:
             # bind the global to the state
             for s in states:
@@ -139,7 +139,7 @@ class Interpreter:
 
         # push call to main to call stack
         for s in self.states:
-            s.pushCall(None, self.getProgram().getEntry())
+            s.pushCall(None, self.getProgram().entry())
 
         # self.states_num += len(self.states)
 

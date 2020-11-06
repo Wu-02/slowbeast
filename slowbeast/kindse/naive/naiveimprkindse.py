@@ -97,7 +97,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return safe
 
     def initializeInduction(self):
-        cfg = self.getCFG(self.getProgram().getEntry())
+        cfg = self.getCFG(self.getProgram().entry())
         ind, done = super(KindSymbolicExecutor, self).initializeInduction()
         if done:
             return [], True

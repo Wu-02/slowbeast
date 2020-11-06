@@ -540,7 +540,7 @@ class Parser:
                 print_stderr(
                     "Unsupported initializer: {0}".format(g.initializer), color="YELLOW"
                 )
-            self.program.addGlobal(G)
+            self.program.add_global(G)
             self._addMapping(g, G)
 
     def _parse_module(self, m):

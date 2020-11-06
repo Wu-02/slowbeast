@@ -24,17 +24,17 @@ class Program:
                 return f
         return None
 
-    def setEntry(self, e):
+    def set_entry(self, e):
         assert self.fun(e.getName())
         self._entry = e
 
-    def getEntry(self):
+    def entry(self):
         return self._entry
 
-    def addGlobal(self, g):
+    def add_global(self, g):
         self._globals.append(g)
 
-    def getGlobals(self):
+    def globals(self):
         return self._globals
 
     def __iter__(self):

@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
 
     P.addFun(F)
-    P.setEntry(F)
+    P.set_entry(F)
 
     I = Interpreter(P)
     I.run()

@@ -120,9 +120,9 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
     def initializeInduction(self):
         ind = []
-        bblocks = self.getProgram().getEntry().getBBlocks()
+        bblocks = self.getProgram().entry().getBBlocks()
         executor = self.indexecutor
-        entry = self.getProgram().getEntry()
+        entry = self.getProgram().entry()
         append = ind.append
         for b in bblocks:
             s = executor.createState()

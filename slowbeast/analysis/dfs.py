@@ -134,7 +134,7 @@ class DFSVisitor:
 
         # dump edges
         print("", file=out)
-        self.foreachedge(dumpdot, cfg.getEntry())
+        self.foreachedge(dumpdot, cfg.entry())
 
         # dump the in/out counters
         for n in cfg.getNodes():

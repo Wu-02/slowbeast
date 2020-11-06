@@ -100,9 +100,9 @@ class ExecutionState:
         """
         return self.memory.get(v)
 
-    def getGlobalsList(self):
+    def globalsList(self):
         """ Return the list of globals in this state """
-        return self.memory.getGlobalsList()
+        return self.memory.globalsList()
 
     def getValuesList(self):
         return self.memory.getValuesList()

@@ -504,7 +504,7 @@ class KindSymbolicExecutor(BaseKindSE):
             with self.new_output_file(f"{cfg.fun().getName()}-dfs.dot") as f:
                 DFSVisitor().dump(cfg, f)
 
-        DFSVisitor().foreachedge(processedge, cfg.getEntry())
+        DFSVisitor().foreachedge(processedge, cfg.entry())
 
         return points
 

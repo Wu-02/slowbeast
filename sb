@@ -302,7 +302,7 @@ def main():
     ohandler = OutputsHandler(testgen,
                               None if args.no_output else args.out_dir)
 
-    P.setEntry(entry)
+    P.set_entry(entry)
 
     assert args.se, "We only support symbolic execution now"
 

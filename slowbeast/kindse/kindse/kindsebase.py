@@ -32,7 +32,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             with self.new_output_file("callgraph-full.txt") as f:
                 callgraph.dump(f)
 
-        callgraph.pruneUnreachable(prog.getEntry())
+        callgraph.pruneUnreachable(prog.entry())
         if __debug__:
             with self.new_output_file("callgraph.txt") as f:
                 callgraph.dump(f)
@@ -109,7 +109,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         return r
 
     def _is_init(self, loc):
-        return loc.getBBlock() is self.getProgram().getEntry().getBBlock(0)
+        return loc.getBBlock() is self.getProgram().entry().getBBlock(0)
 
     def extendToCaller(self, path, states):
         self.have_problematic_path = True

@@ -33,7 +33,7 @@ if __name__ == "__main__":
     B0.append(Return(Constant(0, 4)))
 
     P.addFun(F)
-    P.setEntry(F)
+    P.set_entry(F)
     #P.dump()
 
     I = Interpreter(P)
