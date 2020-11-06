@@ -37,11 +37,11 @@ def evalCond(state, cond):
     # take care of it here: if it is a bitvector, compare it to 0 (C
     # semantics)
     if c.is_concrete():
-        cval = E.Ne(c, E.Constant(0, c.getType().getBitWidth()))
+        cval = E.Ne(c, E.Constant(0, c.getType().bitwidth()))
     else:
         assert is_symbolic(c)
         if not c.getType().is_bool():
-            assert c.getType().getBitWidth() == 1, "Invalid condition in branching"
+            assert c.getType().bitwidth() == 1, "Invalid condition in branching"
             cval = E.Ne(c, E.Constant(0, 1))
         else:
             cval = c  # It already is a boolean expression
@@ -301,7 +301,7 @@ class Executor(ConcreteExecutor):
             if self.getOptions().concretize_nondets:
                 val = Constant(getrandbits(32), retTy)
             else:
-                val = state.getSolver().freshValue(name, retTy.getBitWidth())
+                val = state.getSolver().freshValue(name, retTy.bitwidth())
             state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.getNextInstruction()
@@ -369,10 +369,10 @@ class Executor(ConcreteExecutor):
         op1 = state.eval(instr.getOperand(0))
         E = state.getExprManager()
         if instr.getOperation() == UnaryOperation.ZEXT:
-            bw = instr.getBitWidth()
+            bw = instr.bitwidth()
             r = E.ZExt(op1, bw)
         elif instr.getOperation() == UnaryOperation.SEXT:
-            bw = instr.getBitWidth()
+            bw = instr.bitwidth()
             r = E.SExt(op1, bw)
         elif instr.getOperation() == UnaryOperation.EXTRACT:
             start, end = instr.getRange()

@@ -305,7 +305,7 @@ class Executor:
         op2c = state.eval(instr.getOperand(1))
         op1 = None
         op2 = None
-        bw = max(op1c.getByteWidth(), op2c.getByteWidth())
+        bw = max(op1c.bytewidth(), op2c.bytewidth())
         # if one of the operands is a pointer,
         # lift the other to pointer too
         if op1c.is_pointer():

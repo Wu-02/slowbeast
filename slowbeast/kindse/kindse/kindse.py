@@ -212,7 +212,7 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
             return None
         return l
 
-    bw = left.getType().getBitWidth()
+    bw = left.getType().bitwidth()
     two = EM.Constant(2, bw)
     num = EM.Constant(2 ** (bw - 1) - 1, bw)
 

@@ -27,7 +27,7 @@ if _use_z3:
                 c = (
                     BoolVal(False)
                     if a.is_bool()
-                    else BitVecVal(0, a.getType().getBitWidth())
+                    else BitVecVal(0, a.getType().bitwidth())
                 )
             vals.append(c)
 

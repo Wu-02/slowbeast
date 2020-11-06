@@ -9,7 +9,7 @@ def _createCannonical(expr, subs, EM):
             name = f"L({x.getOperand(0).asValue()})"
         else:
             name = x.asValue()
-        return EM.Var(name, val.getBitWidth())
+        return EM.Var(name, val.bitwidth())
 
     return EM.substitute(
         expr, *((val, get_cannonic_var(val, x)) for (val, x) in subs.items())
@@ -125,7 +125,7 @@ def unify_state_descriptions(EM, sd1, sd2):
         instr2 = subs2.get(val)
         if instr2 and instr2 != instr:
             # collision
-            freshval = EM.freshValue(val.name(), bw=val.getType().getBitWidth())
+            freshval = EM.freshValue(val.name(), bw=val.getType().bitwidth())
             expr2 = EM.substitute(expr2, (val, freshval))
             subs[freshval] = instr2
 

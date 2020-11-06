@@ -69,12 +69,12 @@ class MemoryObject:
         offval = off.getValue()
         if offval != 0:
             FIXME("check that writes to MO do not overlap")
-        if x.getByteWidth() > self.getSize().getValue() + offval:
+        if x.bytewidth() > self.getSize().getValue() + offval:
             return MemError(
                 MemError.OOB_ACCESS,
                 "Written value too big for the object. "
                 "Writing {0}B to offset {1} of {2}B object".format(
-                    x.getByteWidth(), off, self.getSize()
+                    x.bytewidth(), off, self.getSize()
                 ),
             )
         self.values[offval] = x

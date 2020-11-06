@@ -7,7 +7,7 @@ def getUnsigned(a):
     x = a.getValue()
     if x >= 0:
         return x
-    return x + (1 << a.getBitWidth())
+    return x + (1 << a.bitwidth())
 
 
 def wrap_to_bw(x, bw):
@@ -96,34 +96,34 @@ class ConcreteDomain:
 
     def ZExt(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.getBitWidth() < b.getValue(), "Invalid zext argument"
+        assert a.bitwidth() < b.getValue(), "Invalid zext argument"
         return Constant(getUnsigned(a), Type(b.getValue()))
 
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.getBitWidth() <= b.getValue(), "Invalid sext argument"
+        assert a.bitwidth() <= b.getValue(), "Invalid sext argument"
         sb = 1 << (b.getValue() - 1)
         val = (a.getValue() & (sb - 1)) - (a.getValue() & sb)
         return Constant(val, Type(b.getValue()))
 
     def Shl(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert b.getValue() < a.getBitWidth(), "Invalid shift"
+        assert b.getValue() < a.bitwidth(), "Invalid shift"
         return Constant(a.getValue() << b.getValue(), a.getType())
 
     def AShr(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert b.getValue() < a.getBitWidth(), "Invalid shift"
+        assert b.getValue() < a.bitwidth(), "Invalid shift"
         return Constant(a.getValue() >> b.getValue(), a.getType())
 
     def LShr(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert b.getValue() < a.getBitWidth(), "Invalid shift"
+        assert b.getValue() < a.bitwidth(), "Invalid shift"
         val = a.getValue()
         return Constant(
             a.getValue() >> b.getValue()
             if val >= 0
-            else (val + (1 << a.getBitWidth())) >> b.getValue(),
+            else (val + (1 << a.bitwidth())) >> b.getValue(),
             a.getType(),
         )
 
@@ -186,19 +186,19 @@ class ConcreteDomain:
     def Add(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType(), f"{a.getType()} != {b.getType()}"
-        bw = a.getType().getBitWidth()
+        bw = a.getType().bitwidth()
         return Constant(wrap_to_bw(a.getValue() + b.getValue(), bw), a.getType())
 
     def Sub(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType(), f"{a.getType()} != {b.getType()}"
-        bw = a.getType().getBitWidth()
+        bw = a.getType().bitwidth()
         return Constant(wrap_to_bw(a.getValue() - b.getValue(), bw), a.getType())
 
     def Mul(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.getType() == b.getType(), f"{a.getType()} != {b.getType()}"
-        bw = a.getType().getBitWidth()
+        bw = a.getType().bitwidth()
         return Constant(wrap_to_bw(a.getValue() * b.getValue(), bw), a.getType())
 
     def Div(a, b, unsigned=False):
@@ -208,4 +208,4 @@ class ConcreteDomain:
             return Constant(
                 getUnsigned(a.getValue()) / getUnsigned(b.getValue()), result_ty
             )
-        return Constant(wrap_to_bw(int(a.getValue() / b.getValue()), result_ty.getBitWidth()), result_ty)
+        return Constant(wrap_to_bw(int(a.getValue() / b.getValue()), result_ty.bitwidth()), result_ty)

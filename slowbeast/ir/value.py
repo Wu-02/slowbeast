@@ -16,11 +16,11 @@ class Value:
     def getType(self):
         return self._type
 
-    def getByteWidth(self):
-        return self._type.getByteWidth()
+    def bytewidth(self):
+        return self._type.bytewidth()
 
-    def getBitWidth(self):
-        return self._type.getBitWidth()
+    def bitwidth(self):
+        return self._type.bitwidth()
 
     def is_pointer(self):
         return self._type.is_pointer()

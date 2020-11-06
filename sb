@@ -136,7 +136,8 @@ class TestCaseGenerator:
         for var, val in zip(state.getNondets(), inpvec):
             # dump as unsigned and signed
             fl.write("  {0} -> {1} ({2})\n".format(var, val,
-                                                   (val.getValue() - (1 << val.getBitWidth()))))
+                                                   (val.getValue() - (1 <<
+                                                                      val.bitwidth()))))
         fl.write('\n')
         state.dump(stream=fl)
 

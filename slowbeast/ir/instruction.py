@@ -412,7 +412,7 @@ class Extend(UnaryOperation):
         super().__init__(op, a)
         self._bw = bw
 
-    def getBitWidth(self):
+    def bitwidth(self):
         return self._bw
 
 
@@ -422,7 +422,7 @@ class ZExt(Extend):
 
     def __str__(self):
         return "x{0} = zext {1} to {2}".format(
-            self.getID(), self.getOperand(0).asValue(), self.getBitWidth()
+            self.getID(), self.getOperand(0).asValue(), self.bitwidth()
         )
 
 
@@ -432,7 +432,7 @@ class SExt(Extend):
 
     def __str__(self):
         return "x{0} = sext {1} to {2}".format(
-            self.getID(), self.getOperand(0).asValue(), self.getBitWidth()
+            self.getID(), self.getOperand(0).asValue(), self.bitwidth()
         )
 
 

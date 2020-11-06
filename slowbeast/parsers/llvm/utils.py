@@ -19,7 +19,7 @@ def _getInt(s):
         return None
 
 
-def _getBitWidth(ty):
+def _bitwidth(ty):
     if len(ty) < 2:
         return None
     if ty[0] == "i":
@@ -79,7 +79,7 @@ def getTypeSizeInBits(ty):
         return 32
     else:
         assert "*" not in sty, "Unsupported type: {0}".format(sty)
-        return _getBitWidth(sty)
+        return _bitwidth(sty)
 
 
 def getTypeSize(ty):
@@ -103,7 +103,7 @@ def getConstantInt(val):
     if len(parts) != 2:
         return None
 
-    bw = _getBitWidth(parts[0])
+    bw = _bitwidth(parts[0])
     if not bw:
         return None
 

@@ -12,10 +12,10 @@ class Type:
         assert isinstance(bw, int)
         self._bitwidth = bw
 
-    def getByteWidth(self):
+    def bytewidth(self):
         return int(max(self._bitwidth / 8, 1))
 
-    def getBitWidth(self):
+    def bitwidth(self):
         return self._bitwidth
 
     def is_pointer(self):
@@ -29,7 +29,7 @@ class Type:
         return (
             self.is_bool() == x.is_bool()
             and self.is_pointer() == x.is_pointer()
-            and self.getBitWidth() == x.getBitWidth()
+            and self.bitwidth() == x.bitwidth()
         )
 
     def __str__(self):

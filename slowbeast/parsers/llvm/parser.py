@@ -117,8 +117,8 @@ class Parser:
         if isinstance(num, ValueInstruction):  # VLA
             retlist = []
             bytewidth = getTypeSize(operands[0].type)
-            if bytewidth != SizeType.getByteWidth():
-                N = ZExt(num, Constant(SizeType.getBitWidth(), SizeType))
+            if bytewidth != SizeType.bytewidth():
+                N = ZExt(num, Constant(SizeType.bitwidth(), SizeType))
                 retlist.append(N)
             else:
                 N = num
@@ -128,7 +128,7 @@ class Parser:
             retlist += [M, A]
             return retlist
         else:
-            A = Alloc(Constant(tySize * num.getValue(), Type(num.getBitWidth())))
+            A = Alloc(Constant(tySize * num.getValue(), Type(num.bitwidth())))
             self._addMapping(inst, A)
             return [A]
 
