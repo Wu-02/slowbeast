@@ -33,27 +33,27 @@ def _bitwidth(ty):
         return None
 
 
-def is_pointerTy(ty):
+def is_pointer_ty(ty):
     if isinstance(ty, str):
         return ty[-1] == "*"
 
-    assert ty.is_pointer == is_pointerTy(str(ty))
+    assert ty.is_pointer == is_pointer_ty(str(ty))
     return ty.is_pointer
 
 
-def isArrayTy(ty):
-    sty = str(ty)
-    if len(sty) < 2:
-        return False
-    return sty[0] == "[" and sty[-1] == "]"
-
+def is_array_ty(ty):
+    if isinstance(ty, str):
+        if len(ty) < 2:
+            return False
+        return ty[0] == "[" and ty[-1] == "]"
+    assert ty.is_array == is_array_ty(str(ty))
+    return ty.is_array
 
 def parseArrayTyByParts(ty):
     print(parts)
 
-
 def getArrayTySize(ty):
-    assert isArrayTy(ty)
+    assert is_array_ty(ty)
     sty = str(ty)
     parts = sty.split()
     assert parts[1] == "x", "Invalid array type"
@@ -68,10 +68,10 @@ def type_size_in_bits(ty):
         return 64
 
     sty = str(ty)
-    if isArrayTy(ty):
+    if is_array_ty(ty):
         s = getArrayTySize(ty)
         return s
-    elif is_pointerTy(ty):
+    elif is_pointer_ty(ty):
         return 64
     elif sty == "double":
         return 64

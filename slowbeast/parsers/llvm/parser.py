@@ -364,7 +364,7 @@ class Parser:
         if op.is_concrete():
             self._mapping[inst] = op
             return []
-        elif is_pointerTy(operands[0].type):
+        elif is_pointer_ty(operands[0].type):
             self._addMapping(inst, self.getOperand(operands[0]))
             return []
         else:
@@ -372,7 +372,7 @@ class Parser:
 
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
-        assert is_pointerTy(operands[0].type), "First type of GEP is not a pointer"
+        assert is_pointer_ty(operands[0].type), "First type of GEP is not a pointer"
         ty = operands[0].type.element_type
         elemSize = type_size(ty)
         shift = 0
@@ -392,12 +392,8 @@ class Parser:
             else:
                 shift += c.value() * elemSize
 
-            if is_pointerTy(ty):
+            if is_pointer_ty(ty) or is_array_ty(ty):
                 ty = ty.element_type
-            elif isArrayTy(ty):
-                sty = str(ty)
-                # get the type of the element of array
-                ty = sty[sty.find("x ") + 2 : -1]
             elemSize = type_size(ty)
 
         mem = self.getOperand(operands[0])
@@ -530,7 +526,7 @@ class Parser:
             if c:
                 # FIXME: add composed instruction
                 G.setInit([Store(c, G)])
-            # elif isArrayTy(g.initializer.type):
+            # elif is_array_ty(g.initializer.type):
             #    parts=str(g.initializer.type).split()
             #    assert parts[1] == 'x'
             #    if parts[2].startswith('i'):
