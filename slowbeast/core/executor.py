@@ -201,8 +201,8 @@ class Executor:
         assert isinstance(instr, Cmp)
         op1 = state.eval(instr.getOperand(0))
         op2 = state.eval(instr.getOperand(1))
-        if op1.isPointer():
-            if not op2.isPointer():
+        if op1.is_pointer():
+            if not op2.is_pointer():
                 raise RuntimeError("Comparison of pointer to a constant")
             if op1.object.getID() != op2.object.getID():
                 raise RuntimeError("Comparison of unrelated pointers")
@@ -308,14 +308,14 @@ class Executor:
         bw = max(op1c.getByteWidth(), op2c.getByteWidth())
         # if one of the operands is a pointer,
         # lift the other to pointer too
-        if op1c.isPointer():
-            if not op2c.isPointer():
+        if op1c.is_pointer():
+            if not op2c.is_pointer():
                 assert isinstance(op2c, Constant)
                 # adding a constant -- create a pointer
                 # to the object with the right offset
                 op2c = Pointer(op1c.object, op2c.getValue())
-        elif op2c.isPointer():
-            if not op1c.isPointer():
+        elif op2c.is_pointer():
+            if not op1c.is_pointer():
                 assert isinstance(op1c, Constant)
                 # adding a constant -- create a pointer
                 # to the object with the right offset
@@ -324,13 +324,13 @@ class Executor:
             op1 = op1c.getValue()
             op2 = op2c.getValue()
 
-        if op1c.isPointer() and op1c.object != op2c.object:
+        if op1c.is_pointer() and op1c.object != op2c.object:
             raise RuntimeError("Pointer arithmetic on unrelated pointers")
 
         r = None
         if instr.getOperation() == BinaryOperation.ADD:
-            if op1c.isPointer():
-                assert op2c.isPointer()
+            if op1c.is_pointer():
+                assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset + op2c.offset)
             else:
                 r = Constant(op1 + op2, bw)
@@ -341,14 +341,14 @@ class Executor:
             else:
                 r = Constant(op1 - op2)
         elif instr.getOperation() == BinaryOperation.MUL:
-            if op1c.isPointer():
-                assert op2c.isPointer()
+            if op1c.is_pointer():
+                assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset * op2c.offset)
             else:
                 r = Constant(op1 * op2)
         elif instr.getOperation() == BinaryOperation.DIV:
-            if op1c.isPointer():
-                assert op2c.isPointer()
+            if op1c.is_pointer():
+                assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset / op2c.offset)
             else:
                 r = Constant(op1 / op2)
@@ -392,7 +392,7 @@ class Executor:
         # pop the call frame and get the return site
         rs = state.popCall()
         if rs is None:  # popped the last frame
-            if ret.isPointer():
+            if ret.is_pointer():
                 state.setError(GenericError("Returning a pointer from main function"))
                 return [state]
             elif not ret.is_concrete():

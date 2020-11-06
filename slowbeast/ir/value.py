@@ -22,8 +22,8 @@ class Value:
     def getBitWidth(self):
         return self._type.getBitWidth()
 
-    def isPointer(self):
-        return self._type.isPointer()
+    def is_pointer(self):
+        return self._type.is_pointer()
 
     def is_bool(self):
         return self._type.is_bool()
@@ -50,7 +50,7 @@ class Constant(Value):
         super().__init__(ty)
         self._value = c
 
-        assert not self.isPointer(), "Incorrectly constructed pointer"
+        assert not self.is_pointer(), "Incorrectly constructed pointer"
         assert not self.is_bool() or (c in (True, False)), "Invalid boolean constant"
         assert self.is_bool() or isinstance(c, int)
 
@@ -84,7 +84,7 @@ class Pointer(Value):
         self.object = obj
         self.offset = off
 
-        assert self.isPointer(), "Incorrectly constructed pointer"
+        assert self.is_pointer(), "Incorrectly constructed pointer"
         assert not self.is_bool(), "Incorrectly constructed pointer"
         assert not self.is_concrete(), "Incorrectly constructed pointer"
 

@@ -47,7 +47,7 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
             to = state.get(toOp)
 
         assert isinstance(value, Value)
-        assert to.isPointer()
+        assert to.is_pointer()
         if not to.getOffset().is_concrete():
             # FIXME: move this check to memory.write() object
             state.setKilled("Write with non-constant offset not supported yet")
@@ -82,7 +82,7 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
             self.lazyAllocate(state, fromOp)
             frm = state.get(fromOp)
 
-        assert frm.isPointer()
+        assert frm.is_pointer()
         if not frm.getOffset().is_concrete():
             state.setKilled("Read with non-constant offset not supported yet")
             return [state]

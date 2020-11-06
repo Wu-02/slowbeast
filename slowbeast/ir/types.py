@@ -18,7 +18,7 @@ class Type:
     def getBitWidth(self):
         return self._bitwidth
 
-    def isPointer(self):
+    def is_pointer(self):
         return False
 
     def is_bool(self):
@@ -28,7 +28,7 @@ class Type:
 
         return (
             self.is_bool() == x.is_bool()
-            and self.isPointer() == x.isPointer()
+            and self.is_pointer() == x.is_pointer()
             and self.getBitWidth() == x.getBitWidth()
         )
 
@@ -36,7 +36,7 @@ class Type:
         if self.is_bool():
             return "bool"
         s = "{0}b".format(self._bitwidth)
-        if self.isPointer():
+        if self.is_pointer():
             s += "*"
         return s
 
@@ -54,7 +54,7 @@ class PointerType(Type):
     def __init__(self):
         Type.__init__(self, POINTER_BIT_WIDTH)
 
-    def isPointer(self):
+    def is_pointer(self):
         return True
 
 

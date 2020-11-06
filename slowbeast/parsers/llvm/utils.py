@@ -33,11 +33,11 @@ def _getBitWidth(ty):
         return None
 
 
-def isPointerTy(ty):
+def is_pointerTy(ty):
     if isinstance(ty, str):
         return ty[-1] == "*"
 
-    assert ty.is_pointer == isPointerTy(str(ty))
+    assert ty.is_pointer == is_pointerTy(str(ty))
     return ty.is_pointer
 
 
@@ -71,7 +71,7 @@ def getTypeSizeInBits(ty):
     if isArrayTy(ty):
         s = getArrayTySize(ty)
         return s
-    elif isPointerTy(ty):
+    elif is_pointerTy(ty):
         return 64
     elif sty == "double":
         return 64

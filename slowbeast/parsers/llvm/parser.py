@@ -364,7 +364,7 @@ class Parser:
         if op.is_concrete():
             self._mapping[inst] = op
             return []
-        elif isPointerTy(operands[0].type):
+        elif is_pointerTy(operands[0].type):
             self._addMapping(inst, self.getOperand(operands[0]))
             return []
         else:
@@ -372,7 +372,7 @@ class Parser:
 
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
-        assert isPointerTy(operands[0].type), "First type of GEP is not a pointer"
+        assert is_pointerTy(operands[0].type), "First type of GEP is not a pointer"
         ty = operands[0].type.element_type
         elemSize = getTypeSize(ty)
         shift = 0
@@ -392,7 +392,7 @@ class Parser:
             else:
                 shift += c.getValue() * elemSize
 
-            if isPointerTy(ty):
+            if is_pointerTy(ty):
                 ty = ty.element_type
             elif isArrayTy(ty):
                 sty = str(ty)

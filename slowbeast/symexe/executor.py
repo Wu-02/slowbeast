@@ -254,8 +254,8 @@ class Executor(ConcreteExecutor):
         op1 = state.eval(instr.getOperand(0))
         op2 = state.eval(instr.getOperand(1))
 
-        if op1.isPointer() or op2.isPointer():
-            if op1.isPointer() and op2.isPointer():
+        if op1.is_pointer() or op2.is_pointer():
+            if op1.is_pointer() and op2.is_pointer():
                 return self.cmpPointers(state, instr, op1, op2)
             else:
                 state.setKilled("Comparison of pointer to a constant not implemented")
@@ -315,16 +315,16 @@ class Executor(ConcreteExecutor):
         # lift the other to pointer too
         r = None
         E = state.getExprManager()
-        if op1.isPointer():
-            if not op2.isPointer():
+        if op1.is_pointer():
+            if not op2.is_pointer():
                 r = addPointerWithConstant(E, op1, op2)
             else:
                 state.setKilled(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
                 )
                 return [state]
-        elif op2.isPointer():
-            if not op1.isPointer():
+        elif op2.is_pointer():
+            if not op1.is_pointer():
                 r = addPointerWithConstant(E, op2, op1)
             else:
                 state.setKilled(
