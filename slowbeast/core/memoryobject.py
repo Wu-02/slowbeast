@@ -114,7 +114,7 @@ class MemoryObject:
 
         return val, None
 
-    def getOffsets(self):
+    def offsets(self):
         """ Get offsets on which something is written """
         return self.values.keys()
 

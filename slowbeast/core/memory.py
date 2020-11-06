@@ -143,13 +143,13 @@ class Memory:
 
     def write(self, ptr, x):
         isglob = False
-        obj = self._objects.get(ptr.getObject().value())
+        obj = self._objects.get(ptr.object().value())
         if obj is None:
-            obj = self._glob_objects.get(ptr.getObject().value())
+            obj = self._glob_objects.get(ptr.object().value())
             isglob = True
 
         if obj is None:
-            return None, MemError(MemError.INVALID_OBJ, str(ptr.getObject()))
+            return None, MemError(MemError.INVALID_OBJ, str(ptr.object()))
 
         if isglob:
             self._globs_reown()
@@ -164,17 +164,17 @@ class Memory:
             else:
                 self._objects[obj.getID()] = obj
 
-        return obj.write(x, ptr.getOffset())
+        return obj.write(x, ptr.offset())
 
     def read(self, ptr, bytesNum):
-        obj = self._objects.get(ptr.getObject().value())
+        obj = self._objects.get(ptr.object().value())
         if obj is None:
-            obj = self._glob_objects.get(ptr.getObject().value())
+            obj = self._glob_objects.get(ptr.object().value())
 
         if obj is None:
-            return None, MemError(MemError.INVALID_OBJ, str(ptr.getObject()))
+            return None, MemError(MemError.INVALID_OBJ, str(ptr.object()))
 
-        return obj.read(bytesNum, ptr.getOffset())
+        return obj.read(bytesNum, ptr.offset())
 
     def set(self, what, v):
         self._cs.set(what, v)

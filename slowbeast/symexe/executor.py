@@ -25,7 +25,7 @@ class SEStats:
 
 
 def addPointerWithConstant(E, op1, op2):
-    return Pointer(op1.getObject(), E.Add(op1.getOffset(), op2))
+    return Pointer(op1.object(), E.Add(op1.offset(), op2))
 
 
 def evalCond(state, cond):
@@ -216,8 +216,8 @@ class Executor(ConcreteExecutor):
             raise RuntimeError("Invalid comparison")
 
     def cmpPointers(self, state, instr, p1, p2):
-        mo1 = p1.getObject()
-        mo2 = p2.getObject()
+        mo1 = p1.object()
+        mo2 = p2.object()
         if is_symbolic(mo1) or is_symbolic(mo2):
             state.setKilled(
                 "Comparison of symbolic pointers unimplemented: {0}".format(instr)
@@ -230,7 +230,7 @@ class Executor(ConcreteExecutor):
             state.set(
                 instr,
                 self.cmpValues(
-                    E, p, p1.getOffset(), p2.getOffset(), instr.isUnsigned()
+                    E, p, p1.offset(), p2.offset(), instr.isUnsigned()
                 ),
             )
             state.pc = state.pc.getNextInstruction()

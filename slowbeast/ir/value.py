@@ -76,32 +76,32 @@ class Constant(Value):
 
 class Pointer(Value):
 
-    __slots__ = ["object", "offset"]
+    __slots__ = ["_object", "_offset"]
 
     def __init__(self, obj, off=Constant(0, Type(POINTER_BIT_WIDTH))):
         assert isinstance(off, Value)
         super().__init__(PointerType())
-        self.object = obj
-        self.offset = off
+        self._object = obj
+        self._offset = off
 
         assert self.is_pointer(), "Incorrectly constructed pointer"
         assert not self.is_bool(), "Incorrectly constructed pointer"
         assert not self.is_concrete(), "Incorrectly constructed pointer"
 
     def __str__(self):
-        return "({0}, {1})".format(self.object.as_value(), self.offset)
+        return "({0}, {1})".format(self._object.as_value(), self._offset)
 
-    def getObject(self):
-        return self.object
+    def object(self):
+        return self._object
 
-    def getOffset(self):
-        return self.offset
+    def offset(self):
+        return self._offset
 
     def as_value(self):
         return str(self)
 
     def __eq__(self, oth):
-        return self.object == oth.object and self.offset == oth.offset
+        return self._object == oth._object and self._offset == oth._offset
 
     def dump(self):
         print(self)
