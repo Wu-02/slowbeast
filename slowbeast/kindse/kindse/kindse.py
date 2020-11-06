@@ -24,10 +24,51 @@ from .kindsebase import KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 
 
-def remove_implied_literals(clauses, unsafe):
-    # Atm ,we do not need to remove redundant clauses
-    # (the overapproximation does it for us...)
-    return clauses
+def remove_implied_literals(clauses):
+    """
+    Returns an equivalent but possibly smaller formula
+    """
+
+    # split clauses to singleton clauses and the others
+    singletons = []
+    rest = []
+    for c in clauses:
+        if c.isOr():
+            rest.append(c)
+        else:  # the formula is in CNF, so this must be a singleton
+            singletons.append(c)
+
+    EM = getGlobalExprManager()
+    Not = EM.Not
+    solver = Solver()
+    newclauses = []
+    #NOTE: we could do this until a fixpoint, but...
+    for r in rest:
+        changed = False
+        drop = False
+        newc = []
+        for l in r.children():
+            if solver.is_sat(*singletons, l) is False:
+                dbg(f"Dropping {l}, it's False")
+                changed = True
+            elif solver.is_sat(*singletons, Not(l)) is False:
+                # XXX: is it worth querying the solver for this one?
+                drop = True
+                break
+            else:
+                newc.append(l)
+        if drop:
+            dbg(f"Dropping {r}, it's True")
+            continue
+        elif changed:
+            if len(newc) == 1:
+                singletons.append(newc[0])
+            else:
+                newclauses.append(EM.disjunction(*newc))
+        else:
+            newclauses.append(r)
+
+    return singletons + newclauses
 
 
 def check_inv(prog, L, inv):
@@ -66,7 +107,7 @@ def get_initial_seq(unsafe):
     # negation of loop condition.
 
     S = None  # safe states
-    E = None  # safe states
+    E = None  # unsafe states
     H = None  # loop exit condition
 
     EM = getGlobalExprManager()
@@ -86,6 +127,14 @@ def get_initial_seq(unsafe):
 
         # loop exit condition
         H = EM.Or(H, uconstr[0]) if H else uconstr[0]
+
+    # simplify the formulas
+    if not S.is_concrete():
+        S = EM.conjunction(*remove_implied_literals(list(S.to_cnf().children())))
+    if not E.is_concrete():
+        E = EM.conjunction(*remove_implied_literals(list(E.to_cnf().children())))
+    if not H.is_concrete():
+        H = EM.conjunction(*remove_implied_literals(list(H.to_cnf().children())))
 
     subs = {l: l.load for l in unsafe[0].getNondetLoads()}
     Sh = AssertAnnotation(H, subs, EM)
@@ -273,7 +322,7 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     assert not unsafe.is_empty(), "Empty error states"
     assert intersection(
         S, unsafe
-    ).is_empty(), "Whata? Unsafe states among one-step reachable safe states..."
+    ).is_empty(), f"Whata? Unsafe states among one-step reachable safe states:\nS = {S},\nunsafe = {unsafe}"
 
     # print_stdout(f"Overapproximating {S}", color="BROWN")
     # print_stdout(f"  with unsafe states: {unsafe}", color="BROWN")
@@ -300,14 +349,14 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
             newclauses = tmp
             dbg(f"  dropped {c}...")
 
-    clauses = remove_implied_literals(newclauses, unsafe)
+    clauses = remove_implied_literals(newclauses)
     newclauses = []
     for n in range(0, len(clauses)):
         newclause = overapprox_clause(n, clauses, executor, L, unsafe, target)
         if newclause:
             newclauses.append(newclause)
 
-    clauses = remove_implied_literals(newclauses, unsafe)
+    clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses))
 
     # print_stdout(f"Overapproximated to {S}", color="BROWN")
