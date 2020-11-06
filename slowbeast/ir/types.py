@@ -41,8 +41,13 @@ class Type:
         return s
 
 
-# TODO: make this configurable
+
 POINTER_BIT_WIDTH = 64
+
+def sb_set_pointer_width(width):
+    global POINTER_BIT_WIDTH
+    assert width % 8 == 0
+    POINTER_BIT_WIDTH = 64
 
 
 class PointerType(Type):

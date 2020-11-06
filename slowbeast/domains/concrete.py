@@ -185,19 +185,19 @@ class ConcreteDomain:
     # Arithmetic operations
     def Add(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.getType() == b.getType()
+        assert a.getType() == b.getType(), f"{a.getType()} != {b.getType()}"
         bw = a.getType().getBitWidth()
         return Constant(wrap_to_bw(a.getValue() + b.getValue(), bw), a.getType())
 
     def Sub(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.getType() == b.getType()
+        assert a.getType() == b.getType(), f"{a.getType()} != {b.getType()}"
         bw = a.getType().getBitWidth()
         return Constant(wrap_to_bw(a.getValue() - b.getValue(), bw), a.getType())
 
     def Mul(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.getType() == b.getType()
+        assert a.getType() == b.getType(), f"{a.getType()} != {b.getType()}"
         bw = a.getType().getBitWidth()
         return Constant(wrap_to_bw(a.getValue() * b.getValue(), bw), a.getType())
 

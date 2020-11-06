@@ -30,6 +30,7 @@ def createArgParser():
                         default=2, help='The level of verbose output (the higher, the more verbose)')
     parser.add_argument('-no-tests', action='store_true', help='Genereate no test files')
     parser.add_argument('-all-tests', action='store_true', default=False, help='Genereate tests for all paths (not only the erroneous)')
+    parser.add_argument('-pointer-bitwidth', action='store', type=int, help='Set the bitwidth of pointers')
     parser.add_argument('-concretize-nondet', action='store_true', default=False,
                         help='Use random value for nondet values, thus follow one random path during execution.')
     parser.add_argument('-uninitialized-nondet', action='store_true', default=False,
@@ -253,6 +254,12 @@ def main():
             set_debugging(args.verbose_lvl)
         else:
             set_debugging(1)
+
+    if args.pointer_bitwidth:
+        dbg(f"Setting pointer bitwidth to {args.pointer_bitwidth}")
+        # NOTE: we must do this before building the IR
+        from slowbeast.ir.types import sb_set_pointer_width
+        sb_set_pointer_width(args.pointer_bitwidth)
 
     llvmparser = LLVMParser()
     bitcode = compile_and_link(args.prog, args.out_dir)
