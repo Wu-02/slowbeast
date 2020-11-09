@@ -128,7 +128,7 @@ class ExprAnnotation(Annotation):
 
 class AssertAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
-        super(AssertAnnotation, self).__init__(Annotation.ASSERT, expr, subs, EM)
+        super().__init__(Annotation.ASSERT, expr, subs, EM)
 
     def toAssume(self, EM):
         return AssumeAnnotation(self.getExpr(), self.getSubstitutions(), EM)
@@ -139,7 +139,7 @@ class AssertAnnotation(ExprAnnotation):
 
 class AssumeAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
-        super(AssumeAnnotation, self).__init__(Annotation.ASSUME, expr, subs, EM)
+        super().__init__(Annotation.ASSUME, expr, subs, EM)
 
     def __repr__(self):
         return f"assume {ExprAnnotation.__repr__(self)}"
@@ -236,7 +236,7 @@ def execute_annotations(executor, s, annots):
 def _join_annotations(EM, Ctor, op, annots):
     assert len(annots) > 0
     if len(annots) == 1:
-        return annots[0]
+        return Ctor(annots[0].getExpr(), annots[0].getSubstitutions(), EM)
 
     simplify = EM.simplify
     subs = {}

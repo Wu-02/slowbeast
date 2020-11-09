@@ -96,7 +96,10 @@ class InductiveSequence:
 
     def toannotation(self, toassert=True):
         EM = getGlobalExprManager()
-        return or_annotations(EM, toassert, *map(lambda f: f.toassume(), self.frames))
+        A = or_annotations(EM, toassert, *map(lambda f: f.toassume(), self.frames))
+        assert toassert or A.isAssume()
+        assert not toassert or A.isAssert()
+        return A
 
     def __getitem__(self, idx):
         return self.frames[idx]
