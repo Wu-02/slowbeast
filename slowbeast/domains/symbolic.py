@@ -131,13 +131,6 @@ class Expr(Value):
     def as_value(self):
         return str(self)
 
-    def symbols(self):
-        """
-        Traverse the expression and return symbols
-        from this expression (constants are not symbols)
-        """
-        return [Expr(e, Type(bv_size(e))) for e in exprsymbols(self._expr)]
-
     def subexpressions(self):
         """ Traverse the expression and return its all subexpressions """
         return (

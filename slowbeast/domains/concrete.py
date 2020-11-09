@@ -36,7 +36,7 @@ class ConcreteDomain:
 
     def Constant(c, bw):
         if isinstance(c, bool):
-            assertbw == 1
+            assert bw == 1
             return Constant(c, BoolType())
         return Constant(c, Type(bw))
 
@@ -54,7 +54,7 @@ class ConcreteDomain:
         but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.is_bool(), args))
-        return Constant(all(args), BoolType())
+        return Constant(all(map(lambda x: x.value() is True, args)), BoolType())
 
     def disjunction(*args):
         """
@@ -64,7 +64,7 @@ class ConcreteDomain:
         but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.is_bool(), args))
-        return Constant(any(args), BoolType())
+        return Constant(any(map(lambda x: x.value() is True, args)), BoolType())
 
     def And(a, b):
         assert ConcreteDomain.belongto(a, b)
