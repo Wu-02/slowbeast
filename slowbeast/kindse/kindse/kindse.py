@@ -141,6 +141,24 @@ def get_initial_seq(unsafe):
     Sa = AssertAnnotation(S, subs, EM)
     Se = AssertAnnotation(E, subs, EM)
 
+    solver = Solver()
+    if solver.is_sat(S, E) is False:
+        # if safe states themselves do not intersect the error states,
+        # we can use them without the loop-exit condition
+        # FIXME: we could also drop some clauses...
+        clauses = list(S.to_cnf().children())
+        changed = False
+        for c in S.to_cnf().children():
+            # XXX: we could do this until a fixpoint
+            tmp = clauses.copy()
+            tmp.remove(c)
+            if solver.is_sat(E, EM.conjunction(*tmp)) is False:
+                changed = True
+                clauses = tmp
+        if changed:
+            Sa = AssertAnnotation(EM.conjunction(*clauses), subs, EM)
+        return InductiveSequence(Sa), InductiveSequence.Frame(Se, Sh)
+
     return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
 
 
