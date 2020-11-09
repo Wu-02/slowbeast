@@ -72,7 +72,7 @@ def remove_implied_literals(clauses):
     return singletons + newclauses
 
 
-def check_inv(prog, L, inv):
+def check_base(prog, L, inv):
     loc = L.loc
     dbg_sec(f"Checking if {inv} is invariant of loc {loc.getBBlock().get_id()}")
 
@@ -503,7 +503,7 @@ class KindSymbolicExecutor(BaseKindSE):
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
             for s, S in ((s, s.toannotation(True)) for s in sequences):
                 print(S)
-                if check_inv(self.getProgram(), L, S):
+                if check_base(self.getProgram(), L, S):
                     print_stdout(
                         f"{S} is inductive on {loc.getBBlock().get_id()}", color="BLUE"
                     )
@@ -519,8 +519,6 @@ class KindSymbolicExecutor(BaseKindSE):
                     f"Processing sequence of len {len(seq)}:\n{seq}", color="dark_blue"
                 )
                 if __debug__:
-                    # NOTE: we do not require the initial (target) set to be inductive!,
-                    # only the rest of the sequence is inductive and it implies the target set
                     r = seq.check_ind_on_paths(self, L.getPaths())
                     assert r.errors is None, "seq is not inductive"
 
