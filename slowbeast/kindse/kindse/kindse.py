@@ -17,6 +17,7 @@ from slowbeast.symexe.annotations import (
 
 from slowbeast.symexe.statesset import union, intersection, complement
 from slowbeast.solvers.solver import getGlobalExprManager, Solver
+from slowbeast.solvers.expressions import em_optimize_expressions
 
 from .loops import SimpleLoop
 from .relations import get_safe_relations, get_safe_subexpressions
@@ -243,6 +244,7 @@ def get_left_right(l):
 
 
 def overapprox_literal(l, S, unsafe, target, executor, L):
+    assert not l.isAnd() and not l.isOr(), f"Input is not a literal: {l}"
     assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
     goodl = l  # last good overapprox of l
 
@@ -264,6 +266,7 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
         return r.errors is None and r.ready is not None
 
     def modify_literal(goodl, P, num):
+        assert not goodl.isAnd() and not goodl.isOr(), f"Input is not a literal: {goodl}"
         # FIXME: wbt. overflow?
         left, right = get_left_right(goodl)
         if addtoleft:
@@ -279,30 +282,37 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
             return None
         return l
 
-    bw = left.type().bitwidth()
-    two = EM.Constant(2, bw)
-    num = EM.Constant(2 ** (bw - 1) - 1, bw)
 
     # FIXME: add a fast path where we try several values from the bottom...
 
-    while True:
-        l = modify_literal(goodl, P, num)
-        if l is None:
-            return goodl
+    def extend_literal(goodl):
+        bw = left.type().bitwidth()
+        two = EM.Constant(2, bw)
+        num = EM.Constant(2 ** (bw - 1) - 1, bw)
 
-        # push as far as we can with this num
-        while check_literal(l):
-            goodl = l
-
+        while True:
             l = modify_literal(goodl, P, num)
             if l is None:
-                break
+                return goodl
 
-        if num.value() <= 1:
-            return goodl
-        num = EM.Div(num, two)
+            # push as far as we can with this num
+            while check_literal(l):
+                goodl = l
 
-    assert False, "Unreachable"
+                l = modify_literal(goodl, P, num)
+                if l is None:
+                    break
+
+            if num.value() <= 1:
+                return goodl
+            num = EM.Div(num, two)
+
+    em_optimize_expressions(False)
+    # the optimizer could make And or Or from the literal, we do not want that...
+    goodl = extend_literal(goodl)
+    em_optimize_expressions(True)
+
+    return goodl
 
 
 def overapprox_clause(n, clauses, executor, L, unsafe, target):

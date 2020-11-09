@@ -27,6 +27,9 @@ class ExprOptIntf:
 
 class SymbolicExprOpt(ExprOptIntf):
     def optimize(expr, *assumptions):
+        if not optimize_exprs:
+            return expr
+
         optexpr = SymbolicDomain.simplify(expr, *assumptions)
         # lower the symbolic expression into a concrete value
         # if possible
@@ -35,13 +38,11 @@ class SymbolicExprOpt(ExprOptIntf):
             return Constant(const, optexpr.type())
         return optexpr
 
+def em_optimize_expressions(b = True):
+    global optimize_exprs
+    optimize_exprs = b
 
-if optimize_exprs:
-    opt = SymbolicExprOpt.optimize
-else:
-
-    def opt(x):
-        return x
+opt = SymbolicExprOpt.optimize
 
 
 class ExprManager:
