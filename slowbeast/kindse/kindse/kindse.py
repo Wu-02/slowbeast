@@ -96,7 +96,7 @@ def check_base(prog, L, inv):
     return res == 0
 
 
-def get_initial_seq(unsafe):
+def get_initial_seq2(unsafe):
     """
     Return two annotations, one that is the initial safe sequence
     and one that represents the error states
@@ -161,6 +161,46 @@ def get_initial_seq(unsafe):
     #    return InductiveSequence(Sa), InductiveSequence.Frame(Se, Sh)
 
     return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
+
+def get_initial_seq(unsafe):
+    """
+    Return two annotations, one that is the initial safe sequence
+    and one that represents the error states
+    """
+    # NOTE: Only safe states that reach the assert are not inductive on the
+    # loop header -- what we need is to have safe states that already left
+    # the loop and safely pass assertion or avoid it.
+    # These are the complement of error states intersected with the
+    # negation of loop condition.
+
+    S = None  # safe states
+    E = None  # unsafe states
+
+    EM = getGlobalExprManager()
+    Not = EM.Not
+    for u in unsafe:
+        # add constraints without loop exit condition
+        # (we'll add the loop condition later)
+        uconstr = u.getConstraints()
+        # all constr. apart from the last one
+        pc = EM.conjunction(*uconstr[:-1])
+        # last constraint is the failed assertion
+        S = EM.conjunction(pc, Not(uconstr[-1]), S) if S else EM.And(pc, Not(uconstr[-1]))
+        # unsafe states
+        su = EM.conjunction(*(c for (n, c) in enumerate(uconstr) if n > 0))
+        E = EM.Or(EM.conjunction(*uconstr), E) if E else EM.conjunction(*uconstr)
+
+    # simplify the formulas
+    if not S.is_concrete():
+        S = EM.conjunction(*remove_implied_literals(list(S.to_cnf().children())))
+    if not E.is_concrete():
+        E = EM.conjunction(*remove_implied_literals(list(E.to_cnf().children())))
+
+    subs = {l: l.load for l in unsafe[0].getNondetLoads()}
+    Sa = AssertAnnotation(S, subs, EM)
+    Se = AssertAnnotation(E, subs, EM)
+
+    return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
 
 
 def check_paths(executor, paths, pre=None, post=None):
@@ -343,6 +383,27 @@ def overapprox_clause(n, clauses, executor, L, unsafe, target):
     EM = S.get_se_state().getExprManager()
     return EM.disjunction(*newc)
 
+def break_eq_ne(expr):
+    EM = getGlobalExprManager()
+    clauses = []
+    # break equalities and inequalities, so that we can generalize them
+    for c in expr.children():
+        if c.isEq():
+            l, r = c.children()
+            clauses.append(EM.Le(l, r))
+            clauses.append(EM.Le(r, l))
+        elif c.isNot():
+            d, = c.children()
+            if d.isEq():
+                l, r = d.children()
+                clauses.append(EM.Lt(l, r))
+                clauses.append(EM.Gt(l, r))
+            else:
+                clauses.append(c)
+        else:
+            clauses.append(c)
+
+    return clauses
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
 
@@ -360,12 +421,13 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     target = createSet(seq[-1].toassert())
 
     expr = S.as_expr().to_cnf()
+    #clauses = break_eq_ne(expr)
     clauses = list(expr.children())
-    newclauses = clauses.copy()
 
     # can we drop a clause completely?
-    for c in expr.children():
-        tmp = clauses.copy()
+    newclauses = clauses.copy()
+    for c in clauses:
+        tmp = newclauses.copy()
         tmp.remove(c)
 
         tmpexpr = EM.conjunction(*tmp)
@@ -377,10 +439,10 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
             continue  # we can't...
         r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
         if r.errors is None and r.ready:
-            clauses = tmp
+            newclauses = tmp
             dbg(f"  dropped {c}...")
 
-    clauses = remove_implied_literals(clauses)
+    clauses = remove_implied_literals(newclauses)
     newclauses = []
     for n in range(0, len(clauses)):
         newclause = overapprox_clause(n, clauses, executor, L, unsafe, target)
@@ -485,7 +547,7 @@ class KindSymbolicExecutor(BaseKindSE):
         seq0, errs0 = get_initial_seq(unsafe)
         if __debug__:
             r = seq0.check_ind_on_paths(self, L.getPaths())
-            assert r.errors is None, "Initial seq is not inductive"
+            assert r.errors is None, f"Initial seq is not inductive: {seq0}"
         sequences = [seq0]
 
         print_stdout(f"Executing loop {loc.getBBlockID()} with assumption")
