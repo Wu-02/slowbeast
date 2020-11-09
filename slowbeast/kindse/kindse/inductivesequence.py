@@ -27,14 +27,17 @@ class InductiveSequence:
             self.states = states
             self.strengthening = strengthening
 
-            states = self.states
-            stren = self.strengthening
-            assert stren is None or (
-                states.getSubstitutions() and stren.getSubstitutions()
+            if strengthening:
+                e = strengthening.getExpr()
+                if e.is_concrete() and e.value() is True:
+                    self.strengthening = None
+
+            assert strengthening is None or (
+                states.getSubstitutions() and strengthening.getSubstitutions()
             )
-            assert stren is None or (
-                states.getSubstitutions() == stren.getSubstitutions()
-            ), stren
+            assert strengthening is None or (
+                states.getSubstitutions() == strengthening.getSubstitutions()
+            ), strengthening
 
         def toannot(self):
             EM = getGlobalExprManager()
