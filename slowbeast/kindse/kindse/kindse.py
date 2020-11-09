@@ -465,11 +465,26 @@ class KindSymbolicExecutor(BaseKindSE):
         EM = getGlobalExprManager()
         while True:
             print("--- iter ---")
-            E = []
             print_stdout(
                 f"Got {len(sequences)} abstract paths of loop " f"{loc.getBBlockID()}",
                 color="GRAY",
             )
+
+            # FIXME: check that all the sequences together cover the input paths
+            # FIXME: rule out the sequences that are irrelevant here? How to find that out?
+            for s, S in ((s, s.toannotation(True)) for s in sequences):
+                print(S)
+                if check_inv(self.getProgram(), L, S):
+                    print_stdout(
+                        f"{S} is inductive on {loc.getBBlock().get_id()}", color="BLUE"
+                    )
+                    if self.genannot:
+                        # maybe remember the ind set even without genannot
+                        # and use it just for another 'execute_loop'?
+                        loc.addAnnotationBefore(s.toannotation().Not(EM))
+                    return True
+
+            extended = []
             for seq in sequences:
                 print_stdout(
                     f"Processing sequence of len {len(seq)}:\n{seq}", color="dark_blue"
@@ -480,29 +495,17 @@ class KindSymbolicExecutor(BaseKindSE):
                     r = seq.check_ind_but_last(self, L.getPaths())
                     assert r.errors is None, "seq is not inductive"
 
-                E += self.extend_seq(seq, errs0, L)
+                extended += self.extend_seq(seq, errs0, L)
                 # print(" -- extending DONE --")
 
-            if not E:
+            if not extended:
                 # seq not extended... it looks that there is no
                 # safe invariant
                 # FIXME: could we use it for annotations?
                 print_stdout("Failed extending any sequence", color="orange")
                 return False  # fall-back to unwinding
 
-            # FIXME: check that all the sequences together
-            # cover the input paths
-            for s, S in ((s, s.toannotation(True)) for s in E):
-                if check_inv(self.getProgram(), L, S):
-                    print_stdout(
-                        f"{S} is inductive on {loc.getBBlock().get_id()}", color="BLUE"
-                    )
-                    if self.genannot:
-                        # maybe remember the ind set even without genannot
-                        # and use it just for another 'execute_loop'?
-                        loc.addAnnotationBefore(s.toannotation().Not(EM))
-                    return True
-            sequences = E
+            sequences = extended
 
     def check_path(self, path):
         first_loc = path.first()
