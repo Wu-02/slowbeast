@@ -11,8 +11,7 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
-    and_annotations,
-    unify_annotations,
+    or_annotations,
 )
 
 from slowbeast.symexe.statesset import union, intersection, complement
@@ -88,7 +87,7 @@ def check_base(prog, L, inv):
         apath.addLocAnnotationBefore(inv, loc)
         newpaths.append(apath)
 
-    maxk = 5
+    maxk = max(map(len, L.getPaths())) + 1
     dbg_sec("Running nested KindSE")
     res = kindse.run(newpaths, maxk=maxk)
     dbg_sec()
@@ -484,7 +483,7 @@ class KindSymbolicExecutor(BaseKindSE):
         # first try to unroll it in the case the loop
         # is easy to verify
         kindse = BaseKindSE(self.getProgram())
-        maxk = 5
+        maxk = 15
         dbg_sec("Running nested KindSE")
         res = kindse.run([path.copy()], maxk=maxk)
         dbg_sec()
@@ -533,6 +532,46 @@ class KindSymbolicExecutor(BaseKindSE):
 
         return E
 
+    def abstract_seq(self, seq, errs0, L):
+        # don't try with short sequences
+        if len(seq) < 5:
+            return seq
+
+        # try to merge last two frames
+        assert len(seq) >= 2
+        A1 = seq[-1].toassume()
+        A2 = seq[-2].toassume()
+        e1 = A1.getExpr().to_cnf()
+        e2 = A2.getExpr().to_cnf()
+
+        C1 = set(e1.children())
+        C = set()
+        N1 = set()
+        N2 = set()
+        for c in e2.children():
+            if c in C1:
+                C.add(c)
+            else:
+                N2.add(c)
+        for c in C1:
+            if c not in C:
+                N1.add(c)
+
+        if not C:
+            return seq
+
+        # replace last two frames with one merged frame
+        EM = getGlobalExprManager()
+        seq.pop()
+
+        seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.getSubstitutions(), EM)
+        S1 = AssertAnnotation(EM.conjunction(*N1), A1.getSubstitutions(), EM)
+        S2 = AssertAnnotation(EM.conjunction(*N2), A2.getSubstitutions(), EM)
+        seq[-1].strengthening = or_annotations(EM, True, S1, S2)
+
+        # FIXME: we are still precies, use abstraction here...
+        return seq
+
     def execute_loop(self, loc, states):
         unsafe = []
         for r in states:
@@ -545,9 +584,13 @@ class KindSymbolicExecutor(BaseKindSE):
             return False  # fall-back to loop unwinding...
 
         seq0, errs0 = get_initial_seq(unsafe)
-        if __debug__:
-            r = seq0.check_ind_on_paths(self, L.getPaths())
-            assert r.errors is None, f"Initial seq is not inductive: {seq0}"
+        r = seq0.check_ind_on_paths(self, L.getPaths())
+        # catch it in debug mode so that we can improve...
+        assert r.errors is None, f"Initial seq is not inductive: {seq0}"
+        if r.errors:
+            # initial sequence is not inductive
+            return False
+
         sequences = [seq0]
 
         print_stdout(f"Executing loop {loc.getBBlockID()} with assumption")
@@ -569,7 +612,6 @@ class KindSymbolicExecutor(BaseKindSE):
             # FIXME: check that all the sequences together cover the input paths
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
             for s, S in ((s, s.toannotation(True)) for s in sequences):
-                print(S)
                 if check_base(self.getProgram(), L, S):
                     print_stdout(
                         f"{S} is inductive on {loc.getBBlock().get_id()}", color="BLUE"
@@ -589,7 +631,8 @@ class KindSymbolicExecutor(BaseKindSE):
                     r = seq.check_ind_on_paths(self, L.getPaths())
                     assert r.errors is None, "seq is not inductive"
 
-                extended += self.extend_seq(seq, errs0, L)
+                for e in self.extend_seq(seq, errs0, L):
+                    extended.append(self.abstract_seq(e, errs0, L))
                 # print(" -- extending DONE --")
 
             if not extended:

@@ -90,6 +90,9 @@ class InductiveSequence:
         assert states
         self.frames.append(InductiveSequence.Frame(states, strength))
 
+    def pop(self):
+        return self.frames.pop()
+
     def strengthen(self, annot, idx):
         assert idx < len(self.frames)
         self.frames[idx].strengthen(annot)
