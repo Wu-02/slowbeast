@@ -41,8 +41,8 @@ class Type:
         return s
 
 
-
 POINTER_BIT_WIDTH = 64
+
 
 def sb_set_pointer_width(width):
     global POINTER_BIT_WIDTH

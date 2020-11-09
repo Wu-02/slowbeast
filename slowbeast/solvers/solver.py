@@ -24,11 +24,7 @@ if _use_z3:
             if c is None:
                 # m does not have a value for this variable
                 # use 0
-                c = (
-                    BoolVal(False)
-                    if a.is_bool()
-                    else BitVecVal(0, a.type().bitwidth())
-                )
+                c = BoolVal(False) if a.is_bool() else BitVecVal(0, a.type().bitwidth())
             vals.append(c)
 
         return vals

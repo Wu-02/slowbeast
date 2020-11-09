@@ -49,8 +49,10 @@ def is_array_ty(ty):
     assert ty.is_array == is_array_ty(str(ty))
     return ty.is_array
 
+
 def parseArrayTyByParts(ty):
     print(parts)
+
 
 def getArrayTySize(ty):
     assert is_array_ty(ty)

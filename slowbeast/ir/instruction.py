@@ -255,7 +255,9 @@ class Call(ValueInstruction):
         # return self._function
 
     def __str__(self):
-        r = "x{0} = call {1}(".format(self.get_id(), self.getCalledFunction().as_value())
+        r = "x{0} = call {1}(".format(
+            self.get_id(), self.getCalledFunction().as_value()
+        )
         r += ", ".join(map(lambda x: x.as_value(), self.getOperands()))
         return r + ")"
 

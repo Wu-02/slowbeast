@@ -370,17 +370,13 @@ class BVSymbolicDomain:
         assert b.is_concrete()
         assert a.bitwidth() <= b.value(), "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
-        return Expr(
-            BVZExt(b.value() - a.bitwidth(), castToBV(a)), Type(b.value())
-        )
+        return Expr(BVZExt(b.value() - a.bitwidth(), castToBV(a)), Type(b.value()))
 
     def SExt(a, b):
         assert BVSymbolicDomain.belongto(a)
         assert b.is_concrete()
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        return Expr(
-            BVSExt(b.value() - a.bitwidth(), castToBV(a)), Type(b.value())
-        )
+        return Expr(BVSExt(b.value() - a.bitwidth(), castToBV(a)), Type(b.value()))
 
     def Extract(a, start, end):
         assert BVSymbolicDomain.belongto(a)
@@ -448,33 +444,33 @@ class BVSymbolicDomain:
     # Arithmetic operations
     def Add(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert (
-            a.type() == b.type()
-        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
+            a.type(), b.type()
+        )
         result_ty = a.type()
         return Expr(a.unwrap() + b.unwrap(), result_ty)
 
     def Sub(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert (
-            a.type() == b.type()
-        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
+            a.type(), b.type()
+        )
         result_ty = a.type()
         return Expr(a.unwrap() - b.unwrap(), result_ty)
 
     def Mul(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert (
-            a.type() == b.type()
-        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
+            a.type(), b.type()
+        )
         result_ty = a.type()
         return Expr(a.unwrap() * b.unwrap(), result_ty)
 
     def Div(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
-        assert (
-            a.type() == b.type()
-        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
+            a.type(), b.type()
+        )
         result_ty = a.type()
         if unsigned:
             return Expr(UDiv(a.unwrap(), b.unwrap()), result_ty)
@@ -482,9 +478,9 @@ class BVSymbolicDomain:
 
     def Rem(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
-        assert (
-            a.type() == b.type()
-        ), "Operation on invalid types: {0} != {1}".format(a.type(), b.type())
+        assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
+            a.type(), b.type()
+        )
         result_ty = a.type()
         if unsigned:
             return Expr(URem(a.unwrap(), b.unwrap()), result_ty)

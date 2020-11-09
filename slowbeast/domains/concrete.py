@@ -21,6 +21,7 @@ def wrap_to_bw(x, bw):
             x += m
     return x
 
+
 class ConcreteDomain:
     """
     Takes care of handling concrete computations.
@@ -205,7 +206,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         result_ty = a.type()
         if unsigned:
-            return Constant(
-                getUnsigned(a.value()) / getUnsigned(b.value()), result_ty
-            )
-        return Constant(wrap_to_bw(int(a.value() / b.value()), result_ty.bitwidth()), result_ty)
+            return Constant(getUnsigned(a.value()) / getUnsigned(b.value()), result_ty)
+        return Constant(
+            wrap_to_bw(int(a.value() / b.value()), result_ty.bitwidth()), result_ty
+        )

@@ -43,7 +43,7 @@ def remove_implied_literals(clauses):
     Not = EM.Not
     solver = Solver()
     newclauses = []
-    #NOTE: we could do this until a fixpoint, but...
+    # NOTE: we could do this until a fixpoint, but...
     for r in rest:
         changed = False
         drop = False
@@ -142,23 +142,23 @@ def get_initial_seq(unsafe):
     Sa = AssertAnnotation(S, subs, EM)
     Se = AssertAnnotation(E, subs, EM)
 
-   #solver = Solver()
-   #if solver.is_sat(S, E) is False:
-   #    # if safe states themselves do not intersect the error states,
-   #    # we can use them without the loop-exit condition
-   #    # FIXME: we could also drop some clauses...
-   #    clauses = list(S.to_cnf().children())
-   #    changed = False
-   #    for c in S.to_cnf().children():
-   #        # XXX: we could do this until a fixpoint
-   #        tmp = clauses.copy()
-   #        tmp.remove(c)
-   #        if solver.is_sat(E, EM.conjunction(*tmp)) is False:
-   #            changed = True
-   #            clauses = tmp
-   #    if changed:
-   #        Sa = AssertAnnotation(EM.conjunction(*clauses), subs, EM)
-   #    return InductiveSequence(Sa), InductiveSequence.Frame(Se, Sh)
+    # solver = Solver()
+    # if solver.is_sat(S, E) is False:
+    #    # if safe states themselves do not intersect the error states,
+    #    # we can use them without the loop-exit condition
+    #    # FIXME: we could also drop some clauses...
+    #    clauses = list(S.to_cnf().children())
+    #    changed = False
+    #    for c in S.to_cnf().children():
+    #        # XXX: we could do this until a fixpoint
+    #        tmp = clauses.copy()
+    #        tmp.remove(c)
+    #        if solver.is_sat(E, EM.conjunction(*tmp)) is False:
+    #            changed = True
+    #            clauses = tmp
+    #    if changed:
+    #        Sa = AssertAnnotation(EM.conjunction(*clauses), subs, EM)
+    #    return InductiveSequence(Sa), InductiveSequence.Frame(Se, Sh)
 
     return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
 
@@ -267,7 +267,9 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
         return r.errors is None and r.ready is not None
 
     def modify_literal(goodl, P, num):
-        assert not goodl.isAnd() and not goodl.isOr(), f"Input is not a literal: {goodl}"
+        assert (
+            not goodl.isAnd() and not goodl.isOr()
+        ), f"Input is not a literal: {goodl}"
         # FIXME: wbt. overflow?
         left, right = get_left_right(goodl)
         if addtoleft:
@@ -282,7 +284,6 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
         if l == goodl:  # got nothing new...
             return None
         return l
-
 
     # FIXME: add a fast path where we try several values from the bottom...
 
@@ -363,8 +364,8 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     newclauses = clauses.copy()
 
     # can we drop a clause completely?
-    for c in clauses:
-        tmp = newclauses.copy()
+    for c in expr.children():
+        tmp = clauses.copy()
         tmp.remove(c)
 
         tmpexpr = EM.conjunction(*tmp)
@@ -376,10 +377,10 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
             continue  # we can't...
         r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
         if r.errors is None and r.ready:
-            newclauses = tmp
+            clauses = tmp
             dbg(f"  dropped {c}...")
 
-    clauses = remove_implied_literals(newclauses)
+    clauses = remove_implied_literals(clauses)
     newclauses = []
     for n in range(0, len(clauses)):
         newclause = overapprox_clause(n, clauses, executor, L, unsafe, target)
@@ -482,6 +483,9 @@ class KindSymbolicExecutor(BaseKindSE):
             return False  # fall-back to loop unwinding...
 
         seq0, errs0 = get_initial_seq(unsafe)
+        if __debug__:
+            r = seq0.check_ind_on_paths(self, L.getPaths())
+            assert r.errors is None, "Initial seq is not inductive"
         sequences = [seq0]
 
         print_stdout(f"Executing loop {loc.getBBlockID()} with assumption")

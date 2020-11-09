@@ -38,9 +38,11 @@ class SymbolicExprOpt(ExprOptIntf):
             return Constant(const, optexpr.type())
         return optexpr
 
-def em_optimize_expressions(b = True):
+
+def em_optimize_expressions(b=True):
     global optimize_exprs
     optimize_exprs = b
+
 
 opt = SymbolicExprOpt.optimize
 
