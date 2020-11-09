@@ -32,6 +32,8 @@ class StatesSet:
     __slots__ = ["_state"]
 
     def __init__(self, state: SEState):
+        """ Create new states set from the given states """
+
         assert state is not None and isinstance(state, SEState)
         # assert state.isfeasible(), "Infeasible state given"
         # NOTE: we want to be able to create infeasible states
