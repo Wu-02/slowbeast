@@ -369,7 +369,8 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
         tmpexpr = EM.conjunction(*tmp)
         if tmpexpr.is_concrete():
             continue  # either False or True are bad for us
-        X = createSet(tmpexpr)
+        X = S.copy()
+        X.reset_expr(tmpexpr)
         if not intersection(X, unsafe).is_empty():
             continue  # we can't...
         r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
@@ -459,7 +460,7 @@ class KindSymbolicExecutor(BaseKindSE):
             tmp.append(e.states, e.strengthening)
 
             if __debug__:
-                r = tmp.check_ind_but_last(self, L.getPaths())
+                r = tmp.check_ind_on_paths(self, L.getPaths())
                 assert (
                     r.errors is None
                 ), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
@@ -520,7 +521,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 if __debug__:
                     # NOTE: we do not require the initial (target) set to be inductive!,
                     # only the rest of the sequence is inductive and it implies the target set
-                    r = seq.check_ind_but_last(self, L.getPaths())
+                    r = seq.check_ind_on_paths(self, L.getPaths())
                     assert r.errors is None, "seq is not inductive"
 
                 extended += self.extend_seq(seq, errs0, L)

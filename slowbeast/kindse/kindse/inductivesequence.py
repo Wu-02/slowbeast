@@ -178,15 +178,6 @@ class InductiveSequence:
     def check_ind_on_paths(self, executor, paths):
         return self.check_on_paths(executor, paths, self_as_pre=True)
 
-    def check_ind_but_last(self, executor, paths):
-        EM = getGlobalExprManager()
-        if len(self.frames) <= 1:
-            return PathExecutionResult()
-
-        pre = executor.getIndExecutor().createStatesSet(*map(lambda f: f.toassume(), self.frames[1:]))
-        return self.check_on_paths(executor, paths, pre=pre)
-
-
 # can be used to split formula to abstraction and the rest
 # def _simplify_with_assumption(lhs, rhs):
 #     """
