@@ -183,7 +183,8 @@ def check_paths(executor, paths, pre=None, post=None):
 def literals(c):
     if c.isOr():
         yield from c.children()
-    yield c
+    else:
+        yield c
 
 
 def get_predicate(l):
