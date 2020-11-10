@@ -59,6 +59,17 @@ class ConcreteVal(Value):
         assert isinstance(rhs, ConcreteVal)
         return self.value() == rhs.value() and self.type() == rhs.type()
 
+class ConcreteBool(ConcreteVal):
+    def __init__(self, b):
+        assert isinstance(b, bool), b
+        super().__init__(b, BoolType())
+
+class ConcreteInt(ConcreteVal):
+    def __init__(self, n, bw):
+        assert isinstance(n, int), n
+        assert isinstance(bw, int), bw
+        super().__init__(n, IntType(bw))
+
 class ConcreteDomain:
     """
     Takes care of handling concrete computations.
@@ -75,14 +86,14 @@ class ConcreteDomain:
     def Value(c, bw):
         if isinstance(c, bool):
             assert bw == 1
-            return ConcreteVal(c, BoolType())
-        return ConcreteVal(c, IntType(bw))
+            return ConcreteBool(c)
+        return ConcreteInt(c, bw)
 
     def getTrue():
-        return ConcreteVal(True, BoolType())
+        return ConcreteBool(True)
 
     def getFalse():
-        return ConcreteVal(False, BoolType())
+        return ConcreteBool(False)
 
     def conjunction(*args):
         """
@@ -92,7 +103,7 @@ class ConcreteDomain:
         but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.is_bool(), args))
-        return ConcreteVal(all(map(lambda x: x.value() is True, args)), BoolType())
+        return ConcreteBool(all(map(lambda x: x.value() is True, args)))
 
     def disjunction(*args):
         """
@@ -102,13 +113,13 @@ class ConcreteDomain:
         but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.is_bool(), args))
-        return ConcreteVal(any(map(lambda x: x.value() is True, args)), BoolType())
+        return ConcreteBool(any(map(lambda x: x.value() is True, args)))
 
     def And(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type()
         if a.is_bool():
-            return ConcreteVal(a.value() and b.value(), BoolType())
+            return ConcreteBool(a.value() and b.value())
         else:
             return ConcreteVal(a.value() & b.value(), a.type())
 
@@ -116,7 +127,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type()
         if a.is_bool():
-            return ConcreteVal(a.value() or b.value(), BoolType())
+            return ConcreteBool(a.value() or b.value())
         else:
             return ConcreteVal(a.value() | b.value(), a.type())
 
@@ -128,21 +139,21 @@ class ConcreteDomain:
     def Not(a):
         assert ConcreteDomain.belongto(a)
         if a.is_bool():
-            return ConcreteVal(not a.value(), BoolType())
+            return ConcreteBool(not a.value())
         else:
             return ConcreteVal(~a.value(), a.type())
 
     def ZExt(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
-        return ConcreteVal(getUnsigned(a), IntType(b.value()))
+        return ConcreteInt(getUnsigned(a), b.value())
 
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         sb = 1 << (b.value() - 1)
         val = (a.value() & (sb - 1)) - (a.value() & sb)
-        return ConcreteVal(val, IntType(b.value()))
+        return ConcreteInt(val, b.value())
 
     def Shl(a, b):
         assert ConcreteDomain.belongto(a, b)
@@ -170,8 +181,8 @@ class ConcreteDomain:
         assert start.is_concrete()
         assert end.is_concrete()
         bitsnum = end.value() - start.value() + 1
-        return ConcreteVal(
-            (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), IntType(bitsnum)
+        return ConcreteInt(
+            (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
         )
 
     def Rem(a, b, unsigned=False):
@@ -186,38 +197,38 @@ class ConcreteDomain:
     def Le(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return ConcreteVal(getUnsigned(a) <= getUnsigned(b), BoolType())
-        return ConcreteVal(a.value() <= b.value(), BoolType())
+            return ConcreteBool(getUnsigned(a) <= getUnsigned(b))
+        return ConcreteBool(a.value() <= b.value())
 
     def Lt(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return ConcreteVal(getUnsigned(a) < getUnsigned(b), BoolType())
-        return ConcreteVal(a.value() < b.value(), BoolType())
+            return ConcreteBool(getUnsigned(a) < getUnsigned(b))
+        return ConcreteBool(a.value() < b.value())
 
     def Ge(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return ConcreteVal(getUnsigned(a) >= getUnsigned(b), BoolType())
-        return ConcreteVal(a.value() >= b.value(), BoolType())
+            return ConcreteBool(getUnsigned(a) >= getUnsigned(b))
+        return ConcreteBool(a.value() >= b.value())
 
     def Gt(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return ConcreteVal(getUnsigned(a) > getUnsigned(b), BoolType())
-        return ConcreteVal(a.value() > b.value(), BoolType())
+            return ConcreteBool(getUnsigned(a) > getUnsigned(b))
+        return ConcreteBool(a.value() > b.value())
 
     def Eq(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return ConcreteVal(getUnsigned(a) == getUnsigned(b), BoolType())
-        return ConcreteVal(a.value() == b.value(), BoolType())
+            return ConcreteBool(getUnsigned(a) == getUnsigned(b))
+        return ConcreteBool(a.value() == b.value())
 
     def Ne(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return ConcreteVal(getUnsigned(a) != getUnsigned(b), BoolType())
-        return ConcreteVal(a.value() != b.value(), BoolType())
+            return ConcreteBool(getUnsigned(a) != getUnsigned(b))
+        return ConcreteBool(a.value() != b.value())
 
     ##
     # Arithmetic operations

@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.types import IntType, POINTER_BIT_WIDTH, PointerType
 from slowbeast.ir.value import Value
 
@@ -7,8 +7,7 @@ class Pointer(Value):
 
     __slots__ = ["_object", "_offset"]
 
-    def __init__(self, obj,
-                 off=ConcreteVal(0, IntType(POINTER_BIT_WIDTH))):
+    def __init__(self, obj, off=ConcreteInt(0, POINTER_BIT_WIDTH)):
         assert isinstance(off, Value)
         super().__init__(PointerType())
         self._object = obj

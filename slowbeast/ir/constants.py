@@ -1,10 +1,4 @@
-from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.ir.types import BoolType
+from slowbeast.domains.concrete import ConcreteBool
 
-
-def ConstantBool(c):
-    return ConcreteVal(c, BoolType())
-
-
-ConstantTrue = ConstantBool(True)
-ConstantFalse = ConstantBool(False)
+ConstantTrue = ConcreteBool(True)
+ConstantFalse = ConcreteBool(False)

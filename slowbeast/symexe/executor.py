@@ -1,7 +1,6 @@
-import slowbeast.domains.concrete
 from ..ir.instruction import *
 from ..ir.value import Value
-from ..ir.constants import ConstantBool
+from ..ir.constants import ConcreteBool
 from ..ir.pointer import Pointer
 from ..core.executor import Executor as ConcreteExecutor
 from ..solvers.expressions import is_symbolic
@@ -254,7 +253,7 @@ class Executor(ConcreteExecutor):
                 )
                 return [state]
             else:
-                state.set(instr, ConstantBool(p == Cmp.NE))
+                state.set(instr, ConcreteBool(p == Cmp.NE))
                 state.pc = state.pc.get_next_inst()
                 return [state]
 

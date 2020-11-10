@@ -5,7 +5,7 @@ from slowbeast.util.debugging import dbgv
 from slowbeast.ir.instruction import *
 from slowbeast.ir.value import *
 from slowbeast.ir.types import IntType
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete import ConcreteInt
 from .errors import GenericError
 from .memorymodel import MemoryModel
 from .executionstate import ExecutionState
@@ -230,7 +230,7 @@ class Executor:
         elif p == Cmp.NE:
             x = op1 != op2
 
-        state.set(instr, ConcreteVal(x, IntType(1)))
+        state.set(instr, ConcreteInt(x, 1))
         state.pc = state.pc.get_next_inst()
 
         return [state]
@@ -239,7 +239,7 @@ class Executor:
         assert isinstance(instr, Print)
         for x in instr.getOperands():
             v = state.eval(x)
-            if isinstance(v, ConcreteVal):
+            if v.is_concrete():
                 v = v.value()
             sys.stdout.write(str(v))
         sys.stdout.write("\n")
@@ -274,7 +274,7 @@ class Executor:
         assert isinstance(instr, Assert)
         for o in instr.getOperands():
             v = state.eval(o)
-            assert isinstance(v, ConcreteVal)
+            assert v.is_concrete()
             if v.value() != True:
                 state.setError(
                     AssertFailError(
@@ -314,13 +314,13 @@ class Executor:
         # lift the other to pointer too
         if op1c.is_pointer():
             if not op2c.is_pointer():
-                assert isinstance(op2c, ConcreteVal)
+                assert op2c.is_concrete()
                 # adding a constant -- create a pointer
                 # to the object with the right offset
                 op2c = Pointer(op1c.object, op2c.value())
         elif op2c.is_pointer():
             if not op1c.is_pointer():
-                assert isinstance(op1c, ConcreteVal)
+                assert op1c.is_concrete()
                 # adding a constant -- create a pointer
                 # to the object with the right offset
                 op1c = Pointer(op2c.object, op1c.value())
@@ -337,25 +337,25 @@ class Executor:
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset + op2c.offset)
             else:
-                r = ConcreteVal(op1 + op2, bw)
+                r = ConcreteInt(op1 + op2, bw)
         elif instr.getOperation() == BinaryOperation.SUB:
             if isinstance(op1c, Pointer):
                 assert isinstance(op2c, Pointer)
                 r = Pointer(op1c.object, op1c.offset - op2c.offset)
             else:
-                r = ConcreteVal(op1 - op2)
+                r = ConcreteInt(op1 - op2, bw)
         elif instr.getOperation() == BinaryOperation.MUL:
             if op1c.is_pointer():
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset * op2c.offset)
             else:
-                r = ConcreteVal(op1 * op2)
+                r = ConcreteInt(op1 * op2, bw)
         elif instr.getOperation() == BinaryOperation.DIV:
             if op1c.is_pointer():
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset / op2c.offset)
             else:
-                r = ConcreteVal(op1 / op2)
+                r = ConcreteInt(op1 / op2, bw)
         else:
             raise NotImplementedError("Binary operation: " + str(instr))
 

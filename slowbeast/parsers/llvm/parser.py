@@ -1,3 +1,4 @@
+from slowbeast.domains.concrete import ConcreteVal, ConcreteInt
 from slowbeast.ir.program import Program
 from slowbeast.ir.function import Function
 
@@ -126,7 +127,7 @@ class Parser:
             retlist += [M, A]
             return retlist
         else:
-            A = Alloc(ConcreteVal(tySize * num.value(), IntType(num.bitwidth())))
+            A = Alloc(ConcreteInt(tySize * num.value(), num.bitwidth()))
             self._addMapping(inst, A)
             return [A]
 
@@ -324,7 +325,7 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
             self.getOperand(operands[0]),
-            ConcreteVal(type_size_in_bits(inst.type), IntType(32)),
+            ConcreteInt(type_size_in_bits(inst.type), 32),
         )
         self._addMapping(inst, zext)
         return [zext]
@@ -335,7 +336,7 @@ class Parser:
         # just behave that there's no ZExt for now
         sext = SExt(
             self.getOperand(operands[0]),
-            ConcreteVal(type_size_in_bits(inst.type), IntType(32)),
+            ConcreteInt(type_size_in_bits(inst.type), 32),
         )
         self._addMapping(inst, sext)
         return [sext]
@@ -347,8 +348,8 @@ class Parser:
         bits = type_size_in_bits(inst.type)
         ext = ExtractBits(
             self.getOperand(operands[0]),
-            ConcreteVal(0, IntType(32)),
-            ConcreteVal(bits - 1, IntType(32)),
+            ConcreteInt(0, 32),
+            ConcreteInt(bits - 1, 32),
         )
         self._addMapping(inst, ext)
         return [ext]

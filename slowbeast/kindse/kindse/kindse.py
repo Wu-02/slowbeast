@@ -1,6 +1,6 @@
 from functools import partial
 
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.types import IntType
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 
@@ -331,8 +331,8 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
 
     def extend_literal(goodl):
         bw = left.type().bitwidth()
-        two = ConcreteVal(2, IntType(bw))
-        num = ConcreteVal(2 ** (bw - 1) - 1, IntType(bw))
+        two = ConcreteInt(2, bw)
+        num = ConcreteInt(2 ** (bw - 1) - 1, bw)
 
         while True:
             l = modify_literal(goodl, P, num)
