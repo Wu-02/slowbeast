@@ -425,7 +425,6 @@ class Parser:
         varIdx = []
         for idx in operands[1:]:
             c = getConstant(idx)
-            assert c.is_int(), f"Invalid GEP index: {c}"
             if not c:
                 var = self.getOperand(idx)
                 assert var, "Unsupported GEP instruction"
@@ -443,6 +442,7 @@ class Parser:
                 if shift != 0:
                     varIdx.append(Add(M, ConcreteVal(shift, SizeType)))
             else:
+                assert c.is_int(), f"Invalid GEP index: {c}"
                 shift += c.value() * elemSize
 
             if is_pointer_ty(ty) or is_array_ty(ty):
