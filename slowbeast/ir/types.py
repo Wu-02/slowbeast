@@ -40,14 +40,24 @@ class Type:
             s += "*"
         return s
 
+#  FIXME: add type manager that will manage the types,
+#  mainly, we will not create a new object for every value,
+#  but the types will be share (and thus we can also modify them
+#  easily)
 
 POINTER_BIT_WIDTH = 64
-
+SizeType = Type(POINTER_BIT_WIDTH)
+OffsetType = SizeType
 
 def sb_set_pointer_width(width):
     global POINTER_BIT_WIDTH
     assert width % 8 == 0
-    POINTER_BIT_WIDTH = 64
+    POINTER_BIT_WIDTH = width
+    # we must reset the types that use POINTER_BIT_WIDTH
+    global SizeType
+    global OffsetType
+    SizeType = Type(POINTER_BIT_WIDTH)
+    OffsetType = SizeType
 
 
 class PointerType(Type):
@@ -65,6 +75,3 @@ class BoolType(Type):
     def is_bool(self):
         return True
 
-
-SizeType = Type(POINTER_BIT_WIDTH)
-OffsetType = SizeType
