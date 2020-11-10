@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-from .types import Type, PointerType, BoolType, POINTER_BIT_WIDTH
-
+from .types import IntType, Type, PointerType, BoolType, POINTER_BIT_WIDTH
 
 class Value:
     __slots__ = ["_type"]
@@ -78,7 +77,8 @@ class Pointer(Value):
 
     __slots__ = ["_object", "_offset"]
 
-    def __init__(self, obj, off=Constant(0, Type(POINTER_BIT_WIDTH))):
+    def __init__(self, obj,
+                 off=Constant(0, IntType(POINTER_BIT_WIDTH))):
         assert isinstance(off, Value)
         super().__init__(PointerType())
         self._object = obj

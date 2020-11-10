@@ -1,4 +1,4 @@
-from ..ir.types import Type
+from slowbeast.ir.types import IntType
 from ..ir.value import Value
 from ..domains.concrete import ConcreteDomain
 from ..domains.symbolic import *
@@ -67,9 +67,9 @@ class ExprManager:
         names = self._names
         s = names.get(name)
         if s:
-            assert s.type() == Type(
+            assert s.type() == IntType(
                 bw
-            ), f"Creating the same value with different type: {s.type()} != {Type(bw)}"
+            ), f"Creating the same value with different type: {s.type()} != {IntType(bw)}"
         else:
             s = SymbolicDomain.Var(name, bw)
             names[name] = s

@@ -1,6 +1,6 @@
 from slowbeast.interpreter.memory import Memory
 from slowbeast.ir.value import Constant
-from slowbeast.ir.types import Type
+from slowbeast.ir.types import IntType
 
 #################################
 # test 1
@@ -24,7 +24,7 @@ assert N._objects_ro is True, "Wrongly set RO flag after copy()"
 # test 2
 #################################
 M = Memory()
-ptr = M.allocate(Constant(4, Type(32)), "dummy")
+ptr = M.allocate(Constant(4, IntType(32)), "dummy")
 assert not M._objects[ptr.object().value()]._isRO(), "New object is RO"
 assert len(M._objects) == 1, "New object not stored in memory"
 assert M._objects_ro is False, "Wrongly set RO flag"
@@ -38,7 +38,7 @@ assert N._objects_ro is True, "Wrongly set RO flag after copy()"
 assert N.hasObject(ptr.object().value())
 assert M.hasObject(ptr.object().value())
 
-err = N.write(ptr, Constant(0, Type(32)))
+err = N.write(ptr, Constant(0, IntType(32)))
 assert not N._objects[ptr.object().value()]._isRO(), "Object was not properly copied"
 assert M._objects[ptr.object().value()]._isRO(), "Object still should be RO"
 assert err is None, "Failed writing to object"
@@ -46,7 +46,7 @@ assert M._objects is not N._objects, "References to objects not changed"
 assert M._objects_ro is True, "Wrongly set RO flag after write()"
 assert N._objects_ro is False, "Wrongly set RO flag after write()"
 
-err = M.write(ptr, Constant(0, Type(32)))
+err = M.write(ptr, Constant(0, IntType(32)))
 assert not M._objects[ptr.object().value()]._isRO(), "Object was not properly copied"
 assert err is None, "Failed writing to object"
 assert M._objects is not N._objects, "References to objects not changed"

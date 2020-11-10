@@ -1,5 +1,5 @@
-from ..ir.value import Value, Constant
-from ..ir.types import Type, BoolType
+from slowbeast.ir.value import Value, Constant
+from slowbeast.ir.types import Type, IntType, BoolType
 
 _use_z3 = True
 if _use_z3:
@@ -87,7 +87,7 @@ if _use_z3:
 
     def solver_to_sb_type(s):
         if is_bv(s):
-            return Type(s.sort().size())
+            return IntType(s.sort().size())
         assert is_bool(s), "Unhandled expression"
         return BoolType()
 
@@ -114,8 +114,8 @@ class Expr(Value):
     __slots__ = ["_expr"]
 
     def __init__(self, e, t):
-        assert not isinstance(e, int)
-        assert isinstance(t, Type)
+        assert not isinstance(e, int), e
+        assert isinstance(t, Type), t
         Value.__init__(self, t)
         self._expr = e
 
@@ -127,6 +127,9 @@ class Expr(Value):
 
     def name(self):
         return str(self._expr)
+
+    def is_concrete(self):
+        return False
 
     def as_value(self):
         return str(self)
@@ -292,7 +295,7 @@ class BVSymbolicDomain:
     ##
     # variables
     def Var(name, bw=64):
-        return Expr(bv(name, bw), Type(bw))
+        return Expr(bv(name, bw), IntType(bw))
 
     def Int1(name):
         return BVSymbolicDomain.Var(name, 1)
@@ -370,13 +373,13 @@ class BVSymbolicDomain:
         assert b.is_concrete()
         assert a.bitwidth() <= b.value(), "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
-        return Expr(BVZExt(b.value() - a.bitwidth(), castToBV(a)), Type(b.value()))
+        return Expr(BVZExt(b.value() - a.bitwidth(), castToBV(a)), IntType(b.value()))
 
     def SExt(a, b):
         assert BVSymbolicDomain.belongto(a)
         assert b.is_concrete()
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        return Expr(BVSExt(b.value() - a.bitwidth(), castToBV(a)), Type(b.value()))
+        return Expr(BVSExt(b.value() - a.bitwidth(), castToBV(a)), IntType(b.value()))
 
     def Extract(a, start, end):
         assert BVSymbolicDomain.belongto(a)
@@ -384,7 +387,7 @@ class BVSymbolicDomain:
         assert end.is_concrete()
         return Expr(
             BVExtract(end.value(), start.value(), a.unwrap()),
-            Type(end.value() - start.value() + 1),
+            IntType(end.value() - start.value() + 1),
         )
 
     def Shl(a, b):

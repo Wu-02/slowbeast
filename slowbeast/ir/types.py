@@ -21,6 +21,9 @@ class Type:
     def is_pointer(self):
         return False
 
+    def is_int(self):
+        return False
+
     def is_bool(self):
         return False
 
@@ -45,8 +48,30 @@ class Type:
 #  but the types will be share (and thus we can also modify them
 #  easily)
 
+
+class PointerType(Type):
+    def __init__(self):
+        Type.__init__(self, POINTER_BIT_WIDTH)
+
+    def is_pointer(self):
+        return True
+
+class IntType(Type):
+    def __init__(self, bw):
+        Type.__init__(self, bw)
+
+    def is_int(self):
+        return True
+
+class BoolType(Type):
+    def __init__(self):
+        Type.__init__(self, 1)
+
+    def is_bool(self):
+        return True
+
 POINTER_BIT_WIDTH = 64
-SizeType = Type(POINTER_BIT_WIDTH)
+SizeType = IntType(POINTER_BIT_WIDTH)
 OffsetType = SizeType
 
 def sb_set_pointer_width(width):
@@ -56,22 +81,6 @@ def sb_set_pointer_width(width):
     # we must reset the types that use POINTER_BIT_WIDTH
     global SizeType
     global OffsetType
-    SizeType = Type(POINTER_BIT_WIDTH)
+    SizeType = IntType(POINTER_BIT_WIDTH)
     OffsetType = SizeType
-
-
-class PointerType(Type):
-    def __init__(self):
-        Type.__init__(self, POINTER_BIT_WIDTH)
-
-    def is_pointer(self):
-        return True
-
-
-class BoolType(Type):
-    def __init__(self):
-        Type.__init__(self, 1)
-
-    def is_bool(self):
-        return True
 

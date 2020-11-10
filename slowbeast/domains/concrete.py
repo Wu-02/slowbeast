@@ -1,4 +1,4 @@
-from ..ir.types import Type, BoolType
+from slowbeast.ir.types import IntType, BoolType
 from ..ir.value import Value, Constant
 
 
@@ -39,7 +39,7 @@ class ConcreteDomain:
         if isinstance(c, bool):
             assert bw == 1
             return Constant(c, BoolType())
-        return Constant(c, Type(bw))
+        return Constant(c, IntType(bw))
 
     def getTrue():
         return Constant(True, BoolType())
@@ -98,14 +98,14 @@ class ConcreteDomain:
     def ZExt(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
-        return Constant(getUnsigned(a), Type(b.value()))
+        return Constant(getUnsigned(a), IntType(b.value()))
 
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         sb = 1 << (b.value() - 1)
         val = (a.value() & (sb - 1)) - (a.value() & sb)
-        return Constant(val, Type(b.value()))
+        return Constant(val, IntType(b.value()))
 
     def Shl(a, b):
         assert ConcreteDomain.belongto(a, b)
@@ -134,7 +134,7 @@ class ConcreteDomain:
         assert end.is_concrete()
         bitsnum = end.value() - start.value() + 1
         return Constant(
-            (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), Type(bitsnum)
+            (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), IntType(bitsnum)
         )
 
     def Rem(a, b, unsigned=False):

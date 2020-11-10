@@ -62,7 +62,7 @@ def parseFunctionRetTy(ty):
     else:
         sz = type_size_in_bits(parts[0])
         if sz:
-            return True, Type(sz)
+            return True, IntType(sz)
     return False, None
 
 
@@ -128,7 +128,7 @@ class Parser:
             retlist += [M, A]
             return retlist
         else:
-            A = Alloc(Constant(tySize * num.value(), Type(num.bitwidth())))
+            A = Alloc(Constant(tySize * num.value(), IntType(num.bitwidth())))
             self._addMapping(inst, A)
             return [A]
 
@@ -326,7 +326,7 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
             self.getOperand(operands[0]),
-            Constant(type_size_in_bits(inst.type), Type(32)),
+            Constant(type_size_in_bits(inst.type), IntType(32)),
         )
         self._addMapping(inst, zext)
         return [zext]
@@ -337,7 +337,7 @@ class Parser:
         # just behave that there's no ZExt for now
         sext = SExt(
             self.getOperand(operands[0]),
-            Constant(type_size_in_bits(inst.type), Type(32)),
+            Constant(type_size_in_bits(inst.type), IntType(32)),
         )
         self._addMapping(inst, sext)
         return [sext]
@@ -349,8 +349,8 @@ class Parser:
         bits = type_size_in_bits(inst.type)
         ext = ExtractBits(
             self.getOperand(operands[0]),
-            Constant(0, Type(32)),
-            Constant(bits - 1, Type(32)),
+            Constant(0, IntType(32)),
+            Constant(bits - 1, IntType(32)),
         )
         self._addMapping(inst, ext)
         return [ext]
