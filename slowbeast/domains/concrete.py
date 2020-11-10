@@ -206,7 +206,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         result_ty = a.type()
         if unsigned:
-            return Constant(getUnsigned(a.value()) / getUnsigned(b.value()), result_ty)
+            return Constant(getUnsigned(a) / getUnsigned(b), result_ty)
         return Constant(
             wrap_to_bw(int(a.value() / b.value()), result_ty.bitwidth()), result_ty
         )
