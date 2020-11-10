@@ -1,6 +1,5 @@
 from slowbeast.util.debugging import warn
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
-from slowbeast.ir.pointer import Pointer
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.types import IntType
 
@@ -129,8 +128,7 @@ def getConstantPtr(val):
     if not val.type.is_pointer:
         return None
 
-    if str(val).endswith("null"):
-        return Pointer(0)
+    # FIXME
     return None
 
 

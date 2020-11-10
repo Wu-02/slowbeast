@@ -1,6 +1,6 @@
 import sys
 
-from slowbeast.ir.pointer import Pointer
+from slowbeast.domains.pointer import Pointer
 from slowbeast.util.debugging import dbgv
 from slowbeast.ir.instruction import *
 from slowbeast.domains.concrete import ConcreteInt

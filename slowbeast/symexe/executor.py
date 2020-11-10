@@ -1,7 +1,7 @@
 from ..ir.instruction import *
 from slowbeast.domains.value import Value
 from slowbeast.domains.constants import ConcreteBool
-from ..ir.pointer import Pointer
+from slowbeast.domains.pointer import Pointer
 from ..core.executor import Executor as ConcreteExecutor
 from ..solvers.expressions import is_symbolic
 from ..util.debugging import dbgv
