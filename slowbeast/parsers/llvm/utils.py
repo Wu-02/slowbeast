@@ -1,5 +1,5 @@
 from slowbeast.util.debugging import warn
-from slowbeast.ir.constants import ConstantTrue, ConstantFalse
+from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from slowbeast.ir.pointer import Pointer
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.types import IntType

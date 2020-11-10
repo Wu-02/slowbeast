@@ -1,6 +1,5 @@
 from .expressions import ExprManager
 from ..domains.symbolic import _use_z3
-from ..ir.constants import ConstantFalse
 from ..domains.concrete import ConcreteVal
 from ..util.debugging import FIXME
 
