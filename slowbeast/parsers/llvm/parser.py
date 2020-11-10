@@ -22,34 +22,72 @@ def _get_llvm_module(path):
             return llvm.parse_bitcode(f.read())
 
 
+def parseFCmp(inst):
+    parts = str(inst).split()
+    if parts[1] != "=":
+        return None, False
+
+    if parts[2] != "fcmp":
+        return None, False
+
+    print('PARSE FCMP')
+    if parts[3] == "oeq":
+        return Cmp.EQ, False
+    if parts[3] == "one":
+      return Cmp.NE, False
+    if parts[3] == "ole":
+      return Cmp.LE, False
+    if parts[3] == "oge":
+      return Cmp.GE, False
+    if parts[3] == "olt":
+      return Cmp.LT, False
+    if parts[3] == "ogt":
+      return Cmp.GT, False
+    if parts[3] == "ule":
+      return Cmp.LE, True
+    if parts[3] == "uge":
+      return Cmp.GE, True
+    if parts[3] == "ult":
+      return Cmp.LT, True
+    if parts[3] == "ugt":
+      return Cmp.GT, True
+    if parts[3] == "ueq":
+      return Cmp.EQ, True
+    if parts[3] == "une":
+        return Cmp.NE, True
+
+    return None, False
+
 def parseCmp(inst):
     parts = str(inst).split()
-    if parts[1] != "=" and parts[2] != "icmp":
+    if parts[1] != "=":
+        return None, False
+
+    if parts[2] != "icmp":
         return None, False
 
     if parts[3] == "eq":
         return Cmp.EQ, False
-    elif parts[3] == "ne":
-        return Cmp.NE, False
-    elif parts[3] == "le" or parts[3] == "sle":
-        return Cmp.LE, False
-    elif parts[3] == "ge" or parts[3] == "sge":
-        return Cmp.GE, False
-    elif parts[3] == "lt" or parts[3] == "slt":
-        return Cmp.LT, False
-    elif parts[3] == "gt" or parts[3] == "sgt":
-        return Cmp.GT, False
-    elif parts[3] == "ule":
-        return Cmp.LE, True
-    elif parts[3] == "uge":
-        return Cmp.GE, True
-    elif parts[3] == "ult":
-        return Cmp.LT, True
-    elif parts[3] == "ugt":
+    if parts[3] == "ne":
+      return Cmp.NE, False
+    if parts[3] == "le" or parts[3] == "sle":
+      return Cmp.LE, False
+    if parts[3] == "ge" or parts[3] == "sge":
+      return Cmp.GE, False
+    if parts[3] == "lt" or parts[3] == "slt":
+      return Cmp.LT, False
+    if parts[3] == "gt" or parts[3] == "sgt":
+      return Cmp.GT, False
+    if parts[3] == "ule":
+      return Cmp.LE, True
+    if parts[3] == "uge":
+      return Cmp.GE, True
+    if parts[3] == "ult":
+      return Cmp.LT, True
+    if parts[3] == "ugt":
         return Cmp.GT, True
 
-    else:
-        return None, False
+    return None, False
 
 
 def parseFunctionRetTy(ty):
@@ -245,16 +283,26 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createCmp(self, inst):
+    def _createCmp(self, inst, isfloat=False):
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
-        P, is_unsigned = parseCmp(inst)
-        if not P:
-            raise NotImplementedError("Unsupported cmp instruction: {0}".format(inst))
+        if isfloat:
+            P, is_unordered = parseFCmp(inst)
+            if not P:
+                raise NotImplementedError("Unsupported cmp instruction: {0}".format(inst))
+            C = Cmp(
+                P, self.getOperand(operands[0]), self.getOperand(operands[1]),
+                is_unordered
+            )
+        else:
+            P, is_unsigned = parseCmp(inst)
+            if not P:
+                raise NotImplementedError("Unsupported cmp instruction: {0}".format(inst))
+            C = Cmp(
+                P, self.getOperand(operands[0]), self.getOperand(operands[1]),
+                is_unsigned
+            )
 
-        C = Cmp(
-            P, self.getOperand(operands[0]), self.getOperand(operands[1]), is_unsigned
-        )
         self._addMapping(inst, C)
         return [C]
 
@@ -437,6 +485,8 @@ class Parser:
             return self._createRet(inst)
         elif inst.opcode == "icmp":
             return self._createCmp(inst)
+        elif inst.opcode == "fcmp":
+            return self._createCmp(inst, isfloat=True)
         elif inst.opcode == "br":
             return self._createBranch(inst)
         elif inst.opcode == "call":
