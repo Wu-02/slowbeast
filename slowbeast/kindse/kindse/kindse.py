@@ -664,7 +664,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 killed2 = (
                     (s for s in states.early if s.wasKilled()) if states.early else ()
                 )
-                for s in killed:
+                for s in join_iter(killed1, killed2):
                     self.report(s)
                 self.reportfn(f"Inconclusive (init) path: {path}")
                 self.have_problematic_path = True
