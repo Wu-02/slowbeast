@@ -123,7 +123,7 @@ class Parser:
     def getOperand(self, op):
         ret = self._mapping.get(op)
         if not ret:
-            ret = getConstantInt(op)
+            ret = getConstant(op)
         if not ret:
             ret = getConstantPtr(op)
 
@@ -424,7 +424,8 @@ class Parser:
         shift = 0
         varIdx = []
         for idx in operands[1:]:
-            c = getConstantInt(idx)
+            c = getConstant(idx)
+            assert c.is_int(), f"Invalid GEP index: {c}"
             if not c:
                 var = self.getOperand(idx)
                 assert var, "Unsupported GEP instruction"
@@ -577,7 +578,7 @@ class Parser:
             ts = type_size(g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
             G = GlobalVariable(ConcreteVal(ts, SizeType), g.name)
-            c = getConstantInt(g.initializer)
+            c = getConstant(g.initializer)
             if c:
                 # FIXME: add composed instruction
                 G.setInit([Store(c, G)])

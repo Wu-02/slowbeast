@@ -1,7 +1,7 @@
 from slowbeast.util.debugging import warn
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.ir.types import IntType
+from slowbeast.ir.types import IntType, FloatType
 
 
 def _getInt(s):
@@ -16,6 +16,15 @@ def _getInt(s):
                 return int(float(s))
             else:
                 return int(s)
+    except ValueError:
+        return None
+
+def _get_float(s):
+    try:
+        if s.startswith("0x"):
+            return int(s, 16)
+        else:
+            return float(s)
     except ValueError:
         return None
 
@@ -94,7 +103,7 @@ def type_size(ty):
     return None
 
 
-def getConstantInt(val):
+def getConstant(val):
     # good, this is so ugly. But llvmlite does
     # not provide any other way...
     if val.type.is_pointer:
@@ -106,11 +115,15 @@ def getConstantInt(val):
     if len(parts) != 2:
         return None
 
+    isfloat = parts[0] in ("float", "double")
     bw = _bitwidth(parts[0])
     if not bw:
         return None
 
-    c = _getInt(parts[1])
+    if isfloat:
+        c = _get_float(parts[1])
+    else:
+        c = _getInt(parts[1])
     if c is None:
         if bw == 1:
             if parts[1] == "true":
@@ -119,7 +132,7 @@ def getConstantInt(val):
                 return ConstantFalse
         return None
 
-    return ConcreteVal(c, IntType(bw))
+    return ConcreteVal(c, FloatType(bw) if isfloat else IntType(bw))
 
 
 def getConstantPtr(val):
@@ -130,6 +143,10 @@ def getConstantPtr(val):
 
     # FIXME
     return None
+
+def get_constant(val):
+    if val.type.is_pointer:
+        return getConstantPtr(val)
 
 
 def getLLVMOperands(inst):
