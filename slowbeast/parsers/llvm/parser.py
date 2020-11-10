@@ -385,6 +385,12 @@ class Parser:
                 assert (
                     idx is operands[-1]
                 ), "Variable in the middle of GEP is unsupported now"
+                mulbw = type_size_in_bits(idx.type)
+                assert 0 < mulbw <= 64, "Invalid type size: {mulbw}"
+                if mulbw != SizeType.bitwidth():
+                    C = ZExt(var, Constant(SizeType.bitwidth(), SizeType))
+                    varIdx.append(C)
+                    var = C
                 M = Mul(var, Constant(elemSize, SizeType))
                 varIdx.append(M)
                 if shift != 0:
