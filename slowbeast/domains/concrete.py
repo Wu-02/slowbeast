@@ -30,7 +30,7 @@ class ConcreteVal(Value):
     __slots__ = ["_value"]
 
     def __init__(self, c, ty):
-        assert isinstance(c, (int, bool)), f"Invalid constant: {c} {type(c)}"
+        assert isinstance(c, (int, bool, float)), f"Invalid constant: {c} {type(c)}"
         assert isinstance(ty, Type), f"Invalid type: {ty}"
         assert not isinstance(ty, PointerType), f"Invalid type: {ty}"
         super().__init__(ty)
@@ -38,7 +38,7 @@ class ConcreteVal(Value):
 
         assert not self.is_pointer(), "Incorrectly constructed pointer"
         assert not self.is_bool() or (c in (True, False)), "Invalid boolean constant"
-        assert self.is_bool() or isinstance(c, int)
+        assert self.is_bool() or isinstance(c, (int, float))
 
     def as_value(self):
         return "{0}:{1}".format(str(self._value), self.type())

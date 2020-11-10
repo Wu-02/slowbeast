@@ -24,6 +24,9 @@ class Type:
     def is_int(self):
         return False
 
+    def is_float(self):
+        return False
+
     def is_bool(self):
         return False
 
@@ -38,7 +41,10 @@ class Type:
     def __str__(self):
         if self.is_bool():
             return "bool"
-        s = "{0}b".format(self._bitwidth)
+        if self.is_float():
+            s = "f{0}b".format(self._bitwidth)
+        else:
+            s = "{0}b".format(self._bitwidth)
         if self.is_pointer():
             s += "*"
         return s
@@ -61,6 +67,13 @@ class IntType(Type):
         Type.__init__(self, bw)
 
     def is_int(self):
+        return True
+
+class FloatType(Type):
+    def __init__(self, bw):
+        Type.__init__(self, bw)
+
+    def is_float(self):
         return True
 
 class BoolType(Type):
