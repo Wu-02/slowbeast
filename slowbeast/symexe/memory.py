@@ -1,11 +1,6 @@
-from copy import copy
 from ..util.debugging import dbgv
-from ..core.memory import Memory
-from ..core.memoryobject import MemoryObject
 from ..core.memorymodel import MemoryModel
-from ..ir.types import OffsetType
-from ..ir.value import Value
-from ..domains.concrete import ConcreteVal
+from slowbeast.domains.value import Value
 from ..ir.instruction import Alloc, GlobalVariable, Load
 
 from slowbeast.domains.symbolic import NondetLoad

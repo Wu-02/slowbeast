@@ -3,8 +3,6 @@ import sys
 from slowbeast.ir.pointer import Pointer
 from slowbeast.util.debugging import dbgv
 from slowbeast.ir.instruction import *
-from slowbeast.ir.value import *
-from slowbeast.ir.types import IntType
 from slowbeast.domains.concrete import ConcreteInt
 from .errors import GenericError
 from .memorymodel import MemoryModel

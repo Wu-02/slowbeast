@@ -1,4 +1,4 @@
-from slowbeast.ir.value import Value
+from slowbeast.domains.value import Value
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.types import Type, IntType, BoolType
 
@@ -96,7 +96,6 @@ if _use_z3:
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
     from pysmt.shortcuts import BVULT, BVULE, BVUGT, BVUGE
-    from pysmt.shortcuts import BVZext, BVSext
     from pysmt.typing import BVType
 
     def bv(name, bw):

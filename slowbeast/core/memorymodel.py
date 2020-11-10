@@ -1,6 +1,5 @@
-from ..util.debugging import dbg, FIXME
 from ..ir.instruction import Alloc, GlobalVariable
-from ..ir.value import Value
+from slowbeast.domains.value import Value
 from .memory import Memory
 
 

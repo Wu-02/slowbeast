@@ -1,8 +1,8 @@
 from sys import stdout
-from copy import deepcopy, copy
+from copy import copy
 from ..util.debugging import FIXME
 
-from ..ir.value import Value
+from slowbeast.domains.value import Value
 from ..domains.concrete import ConcreteVal
 from ..ir.types import OffsetType
 from ..core.errors import MemError

@@ -1,5 +1,5 @@
 from slowbeast.ir.types import IntType, BoolType, Type, PointerType
-from slowbeast.ir.value import Value
+from slowbeast.domains.value import Value
 
 
 def getUnsigned(a):

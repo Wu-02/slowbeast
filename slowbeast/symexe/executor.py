@@ -1,5 +1,5 @@
 from ..ir.instruction import *
-from ..ir.value import Value
+from slowbeast.domains.value import Value
 from ..ir.constants import ConcreteBool
 from ..ir.pointer import Pointer
 from ..core.executor import Executor as ConcreteExecutor

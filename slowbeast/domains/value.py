@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from .types import Type
+from slowbeast.ir.types import Type
 
 
 class Value:

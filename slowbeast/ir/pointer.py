@@ -1,6 +1,6 @@
 from slowbeast.domains.concrete import ConcreteInt
-from slowbeast.ir.types import IntType, POINTER_BIT_WIDTH, PointerType
-from slowbeast.ir.value import Value
+from slowbeast.ir.types import POINTER_BIT_WIDTH, PointerType
+from slowbeast.domains.value import Value
 
 
 class Pointer(Value):
