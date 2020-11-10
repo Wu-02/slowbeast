@@ -1,0 +1,26 @@
+#include <assert.h>
+
+// for now it is unsupported
+// UNSUPPORTED: kind
+// RUN: clang %s -emit-llvm -g -c -o %t.bc
+// RUN: rm -rf %t-out
+// RUN: sb -out-dir=%t-out %opts %t.bc &>%t.log
+// RUN: cat %t.log | FileCheck %s
+
+#define N 5
+#define M 2
+
+int x = 0;
+void foo(void) {
+        int i;
+        for (i = 0; i < N; ++i) {
+                ++x;
+        }
+        assert (x == i);
+	// CHECK-NOT: assertion failed!
+	// CHECK: Found errors: 0
+}
+
+int main(void) {
+        foo();
+}
