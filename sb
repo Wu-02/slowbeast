@@ -249,6 +249,10 @@ def compile_and_link(files, outd):
     return bitcode
 
 def main():
+    # we do not use threads...
+    from sys import setswitchinterval
+    setswitchinterval(100)
+
     args = parseArgs()
 
     if args.dbg:
