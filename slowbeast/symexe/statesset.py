@@ -12,7 +12,7 @@ from slowbeast.symexe.annotations import (
     AssumeAnnotation,
 )
 from slowbeast.domains.symbolic import Expr
-from slowbeast.ir.value import Constant
+from slowbeast.ir.value import ConcreteVal
 
 from slowbeast.solvers.solver import getGlobalExprManager
 
@@ -152,7 +152,7 @@ def to_states_descr(S) -> StateDescription:
         # be reasonable to have explicit method conserning adding Expr
         # so that the user is aware of this problem...
         return StateDescription(S, {})
-    elif isinstance(S, Constant) and S.is_bool():
+    elif isinstance(S, ConcreteVal) and S.is_bool():
         return StateDescription(S, {})
     elif hasattr(S, "__iter__"):
         R = None

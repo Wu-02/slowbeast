@@ -153,7 +153,7 @@ class Store(Instruction):
     def __init__(self, val, to):
         super().__init__([val, to])
 
-    # assert isinstance(val, Constant) or\
+    # assert isinstance(val, ConcreteVal) or\
     #       isinstance(val, ValueInstruction) or\
     #       isinstance(val, Argument)
     # assert isinstance(to, ValueInstruction)

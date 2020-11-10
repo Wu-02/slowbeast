@@ -1,5 +1,5 @@
 from slowbeast.util.debugging import warn
-from slowbeast.ir.value import Constant, ConstantTrue, ConstantFalse, Pointer
+from slowbeast.ir.value import ConcreteVal, ConstantTrue, ConstantFalse, Pointer
 from slowbeast.ir.types import IntType
 
 
@@ -118,7 +118,7 @@ def getConstantInt(val):
                 return ConstantFalse
         return None
 
-    return Constant(c, IntType(bw))
+    return ConcreteVal(c, IntType(bw))
 
 
 def getConstantPtr(val):

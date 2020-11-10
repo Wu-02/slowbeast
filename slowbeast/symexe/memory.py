@@ -4,7 +4,7 @@ from ..core.memory import Memory
 from ..core.memoryobject import MemoryObject
 from ..core.memorymodel import MemoryModel
 from ..ir.types import OffsetType
-from ..ir.value import Constant, Value
+from ..ir.value import ConcreteVal, Value
 from ..ir.instruction import Alloc, GlobalVariable, Load
 
 from slowbeast.domains.symbolic import NondetLoad

@@ -3,7 +3,7 @@ from copy import copy
 
 from ..core.callstack import CallStack
 from ..core.errors import MemError
-from ..ir.value import Pointer, Constant
+from ..ir.value import Pointer, ConcreteVal
 from ..ir.types import SizeType
 
 from .memoryobject import MemoryObject
@@ -113,7 +113,7 @@ class Memory:
         assert self._objects.get(o.get_id()) is None
         self._objects[o.get_id()] = o
 
-        return Pointer(Constant(o.get_id(), SizeType))
+        return Pointer(ConcreteVal(o.get_id(), SizeType))
 
     def allocateGlobal(self, G, objid=None):
         """ Allocate a new memory object and return a pointer to it """
@@ -130,7 +130,7 @@ class Memory:
         self._globs_bindings_reown()
         assert self._glob_bindings_ro is False
         assert self._glob_bindings.get(G) is None
-        ptr = Pointer(Constant(o.get_id(), SizeType))
+        ptr = Pointer(ConcreteVal(o.get_id(), SizeType))
         self._glob_bindings[G] = ptr
 
         return ptr

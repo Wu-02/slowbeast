@@ -226,7 +226,7 @@ class Executor:
         elif p == Cmp.NE:
             x = op1 != op2
 
-        state.set(instr, Constant(x, 1))
+        state.set(instr, ConcreteVal(x, 1))
         state.pc = state.pc.get_next_inst()
 
         return [state]
@@ -235,7 +235,7 @@ class Executor:
         assert isinstance(instr, Print)
         for x in instr.getOperands():
             v = state.eval(x)
-            if isinstance(v, Constant):
+            if isinstance(v, ConcreteVal):
                 v = v.value()
             sys.stdout.write(str(v))
         sys.stdout.write("\n")
@@ -270,7 +270,7 @@ class Executor:
         assert isinstance(instr, Assert)
         for o in instr.getOperands():
             v = state.eval(o)
-            assert isinstance(v, Constant)
+            assert isinstance(v, ConcreteVal)
             if v.value() != True:
                 state.setError(
                     AssertFailError(
@@ -310,13 +310,13 @@ class Executor:
         # lift the other to pointer too
         if op1c.is_pointer():
             if not op2c.is_pointer():
-                assert isinstance(op2c, Constant)
+                assert isinstance(op2c, ConcreteVal)
                 # adding a constant -- create a pointer
                 # to the object with the right offset
                 op2c = Pointer(op1c.object, op2c.value())
         elif op2c.is_pointer():
             if not op1c.is_pointer():
-                assert isinstance(op1c, Constant)
+                assert isinstance(op1c, ConcreteVal)
                 # adding a constant -- create a pointer
                 # to the object with the right offset
                 op1c = Pointer(op2c.object, op1c.value())
@@ -333,25 +333,25 @@ class Executor:
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset + op2c.offset)
             else:
-                r = Constant(op1 + op2, bw)
+                r = ConcreteVal(op1 + op2, bw)
         elif instr.getOperation() == BinaryOperation.SUB:
             if isinstance(op1c, Pointer):
                 assert isinstance(op2c, Pointer)
                 r = Pointer(op1c.object, op1c.offset - op2c.offset)
             else:
-                r = Constant(op1 - op2)
+                r = ConcreteVal(op1 - op2)
         elif instr.getOperation() == BinaryOperation.MUL:
             if op1c.is_pointer():
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset * op2c.offset)
             else:
-                r = Constant(op1 * op2)
+                r = ConcreteVal(op1 * op2)
         elif instr.getOperation() == BinaryOperation.DIV:
             if op1c.is_pointer():
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset / op2c.offset)
             else:
-                r = Constant(op1 / op2)
+                r = ConcreteVal(op1 / op2)
         else:
             raise NotImplementedError("Binary operation: " + str(instr))
 

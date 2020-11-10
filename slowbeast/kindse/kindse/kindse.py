@@ -328,8 +328,8 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
 
     def extend_literal(goodl):
         bw = left.type().bitwidth()
-        two = EM.Constant(2, bw)
-        num = EM.Constant(2 ** (bw - 1) - 1, bw)
+        two = EM.ConcreteVal(2, bw)
+        num = EM.ConcreteVal(2 ** (bw - 1) - 1, bw)
 
         while True:
             l = modify_literal(goodl, P, num)

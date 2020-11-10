@@ -1,4 +1,4 @@
-from ..ir.value import Constant
+from ..ir.value import ConcreteVal
 from ..core.executionstatus import ExecutionStatus
 from sys import stdout
 
@@ -80,7 +80,7 @@ class ExecutionState:
         return self.status.isReady()
 
     def eval(self, v):
-        if isinstance(v, Constant):
+        if isinstance(v, ConcreteVal):
             return v
         value = self.get(v)
         if value is None:

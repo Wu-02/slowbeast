@@ -1,6 +1,6 @@
 from .expressions import ExprManager
 from ..domains.symbolic import _use_z3
-from ..ir.value import Constant, ConstantFalse
+from ..ir.value import ConcreteVal, ConstantFalse
 from ..util.debugging import FIXME
 
 if _use_z3:
@@ -171,7 +171,7 @@ class SymbolicSolver(SolverIntf):
     def concretize(self, assumpt, *e):
         assert all(
             map(lambda x: not x.is_concrete(), e)
-        ), "Constant instead of symbolic value"
+        ), "ConcreteVal instead of symbolic value"
         if any(map(lambda x: x.is_concrete() and x.value() is False, assumpt)):
             return None
         # m = smallmodels(assumpt, *e)
@@ -183,7 +183,7 @@ class SymbolicSolver(SolverIntf):
             if m[n] is None:
                 ret.append(None)
             else:
-                ret.append(Constant(m[n].as_long(), v.type()))
+                ret.append(ConcreteVal(m[n].as_long(), v.type()))
         return ret
 
 

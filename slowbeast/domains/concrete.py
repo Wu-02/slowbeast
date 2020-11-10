@@ -1,5 +1,5 @@
 from slowbeast.ir.types import IntType, BoolType
-from ..ir.value import Value, Constant
+from ..ir.value import Value, ConcreteVal
 
 
 def getUnsigned(a):
@@ -35,17 +35,17 @@ class ConcreteDomain:
                 return False
         return True
 
-    def Constant(c, bw):
+    def Value(c, bw):
         if isinstance(c, bool):
             assert bw == 1
-            return Constant(c, BoolType())
-        return Constant(c, IntType(bw))
+            return ConcreteVal(c, BoolType())
+        return ConcreteVal(c, IntType(bw))
 
     def getTrue():
-        return Constant(True, BoolType())
+        return ConcreteVal(True, BoolType())
 
     def getFalse():
-        return Constant(False, BoolType())
+        return ConcreteVal(False, BoolType())
 
     def conjunction(*args):
         """
@@ -55,7 +55,7 @@ class ConcreteDomain:
         but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.is_bool(), args))
-        return Constant(all(map(lambda x: x.value() is True, args)), BoolType())
+        return ConcreteVal(all(map(lambda x: x.value() is True, args)), BoolType())
 
     def disjunction(*args):
         """
@@ -65,63 +65,63 @@ class ConcreteDomain:
         but of multiple arguments"""
         assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.is_bool(), args))
-        return Constant(any(map(lambda x: x.value() is True, args)), BoolType())
+        return ConcreteVal(any(map(lambda x: x.value() is True, args)), BoolType())
 
     def And(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type()
         if a.is_bool():
-            return Constant(a.value() and b.value(), BoolType())
+            return ConcreteVal(a.value() and b.value(), BoolType())
         else:
-            return Constant(a.value() & b.value(), a.type())
+            return ConcreteVal(a.value() & b.value(), a.type())
 
     def Or(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type()
         if a.is_bool():
-            return Constant(a.value() or b.value(), BoolType())
+            return ConcreteVal(a.value() or b.value(), BoolType())
         else:
-            return Constant(a.value() | b.value(), a.type())
+            return ConcreteVal(a.value() | b.value(), a.type())
 
     def Xor(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type()
-        return Constant(a.value() ^ b.value(), a.type())
+        return ConcreteVal(a.value() ^ b.value(), a.type())
 
     def Not(a):
         assert ConcreteDomain.belongto(a)
         if a.is_bool():
-            return Constant(not a.value(), BoolType())
+            return ConcreteVal(not a.value(), BoolType())
         else:
-            return Constant(~a.value(), a.type())
+            return ConcreteVal(~a.value(), a.type())
 
     def ZExt(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
-        return Constant(getUnsigned(a), IntType(b.value()))
+        return ConcreteVal(getUnsigned(a), IntType(b.value()))
 
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         sb = 1 << (b.value() - 1)
         val = (a.value() & (sb - 1)) - (a.value() & sb)
-        return Constant(val, IntType(b.value()))
+        return ConcreteVal(val, IntType(b.value()))
 
     def Shl(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
-        return Constant(a.value() << b.value(), a.type())
+        return ConcreteVal(a.value() << b.value(), a.type())
 
     def AShr(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
-        return Constant(a.value() >> b.value(), a.type())
+        return ConcreteVal(a.value() >> b.value(), a.type())
 
     def LShr(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
         val = a.value()
-        return Constant(
+        return ConcreteVal(
             a.value() >> b.value()
             if val >= 0
             else (val + (1 << a.bitwidth())) >> b.value(),
@@ -133,7 +133,7 @@ class ConcreteDomain:
         assert start.is_concrete()
         assert end.is_concrete()
         bitsnum = end.value() - start.value() + 1
-        return Constant(
+        return ConcreteVal(
             (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), IntType(bitsnum)
         )
 
@@ -141,46 +141,46 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert b.value() != 0, "Invalid remainder"
         if unsigned:
-            return Constant(getUnsigned(a) % getUnsigned(b), a.type())
-        return Constant(a.value() % b.value(), a.type())
+            return ConcreteVal(getUnsigned(a) % getUnsigned(b), a.type())
+        return ConcreteVal(a.value() % b.value(), a.type())
 
     ##
     # Relational operators
     def Le(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return Constant(getUnsigned(a) <= getUnsigned(b), BoolType())
-        return Constant(a.value() <= b.value(), BoolType())
+            return ConcreteVal(getUnsigned(a) <= getUnsigned(b), BoolType())
+        return ConcreteVal(a.value() <= b.value(), BoolType())
 
     def Lt(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return Constant(getUnsigned(a) < getUnsigned(b), BoolType())
-        return Constant(a.value() < b.value(), BoolType())
+            return ConcreteVal(getUnsigned(a) < getUnsigned(b), BoolType())
+        return ConcreteVal(a.value() < b.value(), BoolType())
 
     def Ge(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return Constant(getUnsigned(a) >= getUnsigned(b), BoolType())
-        return Constant(a.value() >= b.value(), BoolType())
+            return ConcreteVal(getUnsigned(a) >= getUnsigned(b), BoolType())
+        return ConcreteVal(a.value() >= b.value(), BoolType())
 
     def Gt(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return Constant(getUnsigned(a) > getUnsigned(b), BoolType())
-        return Constant(a.value() > b.value(), BoolType())
+            return ConcreteVal(getUnsigned(a) > getUnsigned(b), BoolType())
+        return ConcreteVal(a.value() > b.value(), BoolType())
 
     def Eq(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return Constant(getUnsigned(a) == getUnsigned(b), BoolType())
-        return Constant(a.value() == b.value(), BoolType())
+            return ConcreteVal(getUnsigned(a) == getUnsigned(b), BoolType())
+        return ConcreteVal(a.value() == b.value(), BoolType())
 
     def Ne(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         if unsigned:
-            return Constant(getUnsigned(a) != getUnsigned(b), BoolType())
-        return Constant(a.value() != b.value(), BoolType())
+            return ConcreteVal(getUnsigned(a) != getUnsigned(b), BoolType())
+        return ConcreteVal(a.value() != b.value(), BoolType())
 
     ##
     # Arithmetic operations
@@ -188,25 +188,25 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.type().bitwidth()
-        return Constant(wrap_to_bw(a.value() + b.value(), bw), a.type())
+        return ConcreteVal(wrap_to_bw(a.value() + b.value(), bw), a.type())
 
     def Sub(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.type().bitwidth()
-        return Constant(wrap_to_bw(a.value() - b.value(), bw), a.type())
+        return ConcreteVal(wrap_to_bw(a.value() - b.value(), bw), a.type())
 
     def Mul(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.type().bitwidth()
-        return Constant(wrap_to_bw(a.value() * b.value(), bw), a.type())
+        return ConcreteVal(wrap_to_bw(a.value() * b.value(), bw), a.type())
 
     def Div(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         result_ty = a.type()
         if unsigned:
-            return Constant(getUnsigned(a) / getUnsigned(b), result_ty)
-        return Constant(
+            return ConcreteVal(getUnsigned(a) / getUnsigned(b), result_ty)
+        return ConcreteVal(
             wrap_to_bw(int(a.value() / b.value()), result_ty.bitwidth()), result_ty
         )

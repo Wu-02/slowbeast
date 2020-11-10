@@ -30,12 +30,11 @@ class Value:
     def is_concrete(self):
         """
         Is integer constant or boolean constant?
-        Overriden by the Constant class
+        Overriden by the ConcreteVal class
         """
         return False
 
-
-class Constant(Value):
+class ConcreteVal(Value):
     """
     Integer constant or boolean
     """
@@ -69,7 +68,7 @@ class Constant(Value):
         return self._value
 
     def __eq__(self, rhs):
-        assert isinstance(rhs, Constant)
+        assert isinstance(rhs, ConcreteVal)
         return self.value() == rhs.value() and self.type() == rhs.type()
 
 
@@ -78,7 +77,7 @@ class Pointer(Value):
     __slots__ = ["_object", "_offset"]
 
     def __init__(self, obj,
-                 off=Constant(0, IntType(POINTER_BIT_WIDTH))):
+                 off=ConcreteVal(0, IntType(POINTER_BIT_WIDTH))):
         assert isinstance(off, Value)
         super().__init__(PointerType())
         self._object = obj
@@ -108,7 +107,7 @@ class Pointer(Value):
 
 
 def ConstantBool(c):
-    return Constant(c, BoolType())
+    return ConcreteVal(c, BoolType())
 
 
 ConstantTrue = ConstantBool(True)

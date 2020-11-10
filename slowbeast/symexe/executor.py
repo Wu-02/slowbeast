@@ -1,5 +1,5 @@
 from ..ir.instruction import *
-from ..ir.value import Value, ConstantBool, Pointer, Constant
+from ..ir.value import Value, ConstantBool, Pointer, ConcreteVal
 from ..core.executor import Executor as ConcreteExecutor
 from ..solvers.expressions import is_symbolic
 from ..util.debugging import dbgv
@@ -37,12 +37,12 @@ def evalCond(state, cond):
     # take care of it here: if it is a bitvector, compare it to 0 (C
     # semantics)
     if c.is_concrete():
-        cval = E.Ne(c, E.Constant(0, c.type().bitwidth()))
+        cval = E.Ne(c, E.ConcreteVal(0, c.type().bitwidth()))
     else:
         assert is_symbolic(c)
         if not c.type().is_bool():
             assert c.type().bitwidth() == 1, "Invalid condition in branching"
-            cval = E.Ne(c, E.Constant(0, 1))
+            cval = E.Ne(c, E.ConcreteVal(0, 1))
         else:
             cval = c  # It already is a boolean expression
 
@@ -310,7 +310,7 @@ class Executor(ConcreteExecutor):
         retTy = fun.getReturnType()
         if retTy:
             if self.getOptions().concretize_nondets:
-                val = Constant(getrandbits(32), retTy)
+                val = ConcreteVal(getrandbits(32), retTy)
             else:
                 val = state.getSolver().freshValue(name, retTy.bitwidth())
             state.addNondet(val)

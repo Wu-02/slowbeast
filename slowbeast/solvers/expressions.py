@@ -35,7 +35,7 @@ class SymbolicExprOpt(ExprOptIntf):
         # if possible
         const = SymbolicDomain.pythonConstant(optexpr)
         if const is not None:
-            return Constant(const, optexpr.type())
+            return ConcreteVal(const, optexpr.type())
         return optexpr
 
 
@@ -59,8 +59,8 @@ class ExprManager:
     def __init__(self):
         self._names = {}
 
-    def Constant(self, c, bw):
-        return ConcreteDomain.Constant(c, bw)
+    def ConcreteVal(self, c, bw):
+        return ConcreteDomain.Value(c, bw)
 
     def Var(self, name, bw=64):
         assert isinstance(name, str)

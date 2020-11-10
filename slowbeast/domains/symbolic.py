@@ -1,4 +1,4 @@
-from slowbeast.ir.value import Value, Constant
+from slowbeast.ir.value import Value, ConcreteVal
 from slowbeast.ir.types import Type, IntType, BoolType
 
 _use_z3 = True
@@ -137,7 +137,7 @@ class Expr(Value):
     def subexpressions(self):
         """ Traverse the expression and return its all subexpressions """
         return (
-            Constant(s.as_long(), solver_to_sb_type(s))
+            ConcreteVal(s.as_long(), solver_to_sb_type(s))
             if is_bv_value(s)
             else Expr(s, solver_to_sb_type(s))
             for s in subexpressions(self.unwrap())
@@ -149,7 +149,7 @@ class Expr(Value):
         E.g. for And(a, b) this method returns [a, b].
         """
         return (
-            Constant(s.as_long(), solver_to_sb_type(s))
+            ConcreteVal(s.as_long(), solver_to_sb_type(s))
             if is_bv_value(s)
             else Expr(s, solver_to_sb_type(s))
             for s in self.unwrap().children()

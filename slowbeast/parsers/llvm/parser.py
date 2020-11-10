@@ -118,17 +118,17 @@ class Parser:
             retlist = []
             bytewidth = type_size(operands[0].type)
             if bytewidth != SizeType.bytewidth():
-                N = ZExt(num, Constant(SizeType.bitwidth(), SizeType))
+                N = ZExt(num, ConcreteVal(SizeType.bitwidth(), SizeType))
                 retlist.append(N)
             else:
                 N = num
-            M = Mul(Constant(tySize, SizeType), N)
+            M = Mul(ConcreteVal(tySize, SizeType), N)
             A = Alloc(M)
             self._addMapping(inst, A)
             retlist += [M, A]
             return retlist
         else:
-            A = Alloc(Constant(tySize * num.value(), IntType(num.bitwidth())))
+            A = Alloc(ConcreteVal(tySize * num.value(), IntType(num.bitwidth())))
             self._addMapping(inst, A)
             return [A]
 
@@ -326,7 +326,7 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
             self.getOperand(operands[0]),
-            Constant(type_size_in_bits(inst.type), IntType(32)),
+            ConcreteVal(type_size_in_bits(inst.type), IntType(32)),
         )
         self._addMapping(inst, zext)
         return [zext]
@@ -337,7 +337,7 @@ class Parser:
         # just behave that there's no ZExt for now
         sext = SExt(
             self.getOperand(operands[0]),
-            Constant(type_size_in_bits(inst.type), IntType(32)),
+            ConcreteVal(type_size_in_bits(inst.type), IntType(32)),
         )
         self._addMapping(inst, sext)
         return [sext]
@@ -349,8 +349,8 @@ class Parser:
         bits = type_size_in_bits(inst.type)
         ext = ExtractBits(
             self.getOperand(operands[0]),
-            Constant(0, IntType(32)),
-            Constant(bits - 1, IntType(32)),
+            ConcreteVal(0, IntType(32)),
+            ConcreteVal(bits - 1, IntType(32)),
         )
         self._addMapping(inst, ext)
         return [ext]
@@ -388,13 +388,13 @@ class Parser:
                 mulbw = type_size_in_bits(idx.type)
                 assert 0 < mulbw <= 64, "Invalid type size: {mulbw}"
                 if mulbw != SizeType.bitwidth():
-                    C = ZExt(var, Constant(SizeType.bitwidth(), SizeType))
+                    C = ZExt(var, ConcreteVal(SizeType.bitwidth(), SizeType))
                     varIdx.append(C)
                     var = C
-                M = Mul(var, Constant(elemSize, SizeType))
+                M = Mul(var, ConcreteVal(elemSize, SizeType))
                 varIdx.append(M)
                 if shift != 0:
-                    varIdx.append(Add(M, Constant(shift, SizeType)))
+                    varIdx.append(Add(M, ConcreteVal(shift, SizeType)))
             else:
                 shift += c.value() * elemSize
 
@@ -414,14 +414,14 @@ class Parser:
                 self._addMapping(inst, mem)
                 return []
             else:
-                A = Add(mem, Constant(shift, SizeType))
+                A = Add(mem, ConcreteVal(shift, SizeType))
                 self._addMapping(inst, A)
         return [A]
 
     def _handlePhi(self, inst):
         operands = getLLVMOperands(inst)
         bnum = type_size(inst.type)
-        phivar = Alloc(Constant(bnum, SizeType))
+        phivar = Alloc(ConcreteVal(bnum, SizeType))
         L = Load(phivar, bnum)
         self._addMapping(inst, L)
         self.phis.append((inst, phivar, L))
@@ -527,7 +527,7 @@ class Parser:
             # FIXME: check and set whether it is a constant
             ts = type_size(g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
-            G = GlobalVariable(Constant(ts, SizeType), g.name)
+            G = GlobalVariable(ConcreteVal(ts, SizeType), g.name)
             c = getConstantInt(g.initializer)
             if c:
                 # FIXME: add composed instruction

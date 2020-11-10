@@ -2,7 +2,7 @@ from sys import stdout
 from copy import deepcopy, copy
 from ..util.debugging import FIXME
 
-from ..ir.value import Constant, Value
+from ..ir.value import ConcreteVal, Value
 from ..ir.types import OffsetType
 from ..core.errors import MemError
 
@@ -50,7 +50,7 @@ class MemoryObject:
     def setAllocation(self, a):
         self.allocation = a
 
-    def write(self, x, off=Constant(0, OffsetType)):
+    def write(self, x, off=ConcreteVal(0, OffsetType)):
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
@@ -80,7 +80,7 @@ class MemoryObject:
         self.values[offval] = x
         return None
 
-    def read(self, bts, off=Constant(0, OffsetType)):
+    def read(self, bts, off=ConcreteVal(0, OffsetType)):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)

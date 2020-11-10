@@ -1,6 +1,6 @@
 from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Instruction, Load
-from slowbeast.ir.value import Constant
+from slowbeast.ir.value import ConcreteVal
 
 
 def _createCannonical(expr, subs, EM):
@@ -31,7 +31,7 @@ class StateDescription:
 
     def __init__(self, expr, subs):
         assert expr.is_bool()
-        assert expr is not None and isinstance(expr, (Expr, Constant))
+        assert expr is not None and isinstance(expr, (Expr, ConcreteVal))
         assert subs is not None and isinstance(subs, dict)
 
         # the expression to evaluate
