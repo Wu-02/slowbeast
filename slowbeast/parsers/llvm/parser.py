@@ -30,7 +30,6 @@ def parseFCmp(inst):
     if parts[2] != "fcmp":
         return None, False
 
-    print('PARSE FCMP')
     if parts[3] == "oeq":
         return Cmp.EQ, False
     if parts[3] == "one":
@@ -205,13 +204,13 @@ class Parser:
 
         op1 = self.getOperand(operands[0])
         op2 = self.getOperand(operands[1])
-        if opcode == "add":
+        if opcode in ("add", "fadd"):
             I = Add(op1, op2)
-        elif opcode == "sub":
+        elif opcode in ("sub", "fsub"):
             I = Sub(op1, op2)
-        elif opcode == "mul":
+        elif opcode in ("mul", "fmul"):
             I = Mul(op1, op2)
-        elif opcode == "sdiv":
+        elif opcode in ("sdiv", "fdiv"):
             I = Div(op1, op2)
         elif opcode == "udiv":
             I = Div(op1, op2, unsigned=True)
@@ -503,7 +502,8 @@ class Parser:
             return self._createGep(inst)
         elif inst.opcode == "bitcast":
             return self._createCast(inst)
-        elif inst.opcode in ["add", "sub", "sdiv", "mul", "udiv"]:
+        elif inst.opcode in ["add", "sub", "sdiv", "mul", "udiv",
+                             "fadd", "fsub", "fdiv", "fmul"]:
             return self._createArith(inst, inst.opcode)
         elif inst.opcode in ["shl", "lshr", "ashr"]:
             return self._createShift(inst)
