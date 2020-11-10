@@ -1,5 +1,5 @@
 from slowbeast.interpreter.memory import Memory
-from slowbeast.ir.value import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.types import IntType
 
 #################################

@@ -1,6 +1,6 @@
 from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Instruction, Load
-from slowbeast.ir.value import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal
 
 
 def _createCannonical(expr, subs, EM):

@@ -1,5 +1,3 @@
-from slowbeast.ir.types import IntType
-from ..ir.value import Value
 from ..domains.concrete import ConcreteDomain
 from ..domains.symbolic import *
 

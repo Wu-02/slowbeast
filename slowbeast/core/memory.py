@@ -3,7 +3,8 @@ from copy import copy
 
 from ..core.callstack import CallStack
 from ..core.errors import MemError
-from ..ir.value import Pointer, ConcreteVal
+from ..ir.pointer import Pointer
+from ..domains.concrete import ConcreteVal
 from ..ir.types import SizeType
 
 from .memoryobject import MemoryObject

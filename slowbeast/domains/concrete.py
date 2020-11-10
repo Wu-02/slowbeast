@@ -1,5 +1,5 @@
-from slowbeast.ir.types import IntType, BoolType
-from ..ir.value import Value, ConcreteVal
+from slowbeast.ir.types import IntType, BoolType, Type, PointerType
+from slowbeast.ir.value import Value
 
 
 def getUnsigned(a):
@@ -21,6 +21,43 @@ def wrap_to_bw(x, bw):
             x += m
     return x
 
+
+class ConcreteVal(Value):
+    """
+    Integer constant or boolean
+    """
+
+    __slots__ = ["_value"]
+
+    def __init__(self, c, ty):
+        assert isinstance(c, (int, bool)), f"Invalid constant: {c} {type(c)}"
+        assert isinstance(ty, Type), f"Invalid type: {ty}"
+        assert not isinstance(ty, PointerType), f"Invalid type: {ty}"
+        super().__init__(ty)
+        self._value = c
+
+        assert not self.is_pointer(), "Incorrectly constructed pointer"
+        assert not self.is_bool() or (c in (True, False)), "Invalid boolean constant"
+        assert self.is_bool() or isinstance(c, int)
+
+    def as_value(self):
+        return "{0}:{1}".format(str(self._value), self.type())
+
+    def value(self):
+        return self._value
+
+    def is_concrete(self):
+        return True
+
+    def __repr__(self):
+        return f"{self._value}:{self.type()}"
+
+    def __hash__(self):
+        return self._value
+
+    def __eq__(self, rhs):
+        assert isinstance(rhs, ConcreteVal)
+        return self.value() == rhs.value() and self.type() == rhs.type()
 
 class ConcreteDomain:
     """

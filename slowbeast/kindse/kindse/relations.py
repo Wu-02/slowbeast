@@ -1,3 +1,5 @@
+from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.ir.types import IntType
 from slowbeast.ir.instruction import Load
 from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.core.executor import PathExecutionResult
@@ -78,9 +80,9 @@ def get_all_relations(state):
 
         bw = max(l1bw, l2bw)
         if l1bw == bw:
-            l1 = EM.SExt(l1, EM.ConcreteVal(bw, bw))
+            l1 = EM.SExt(l1, ConcreteVal(bw, IntType(bw)))
         if l2bw != bw:
-            l2 = EM.SExt(l2, EM.ConcreteVal(bw, bw))
+            l2 = EM.SExt(l2, ConcreteVal(bw, IntType(bw)))
 
         c = EM.Var("c_coef", bw)
         expr = EM.Eq(EM.Sub(l2, l1), c)

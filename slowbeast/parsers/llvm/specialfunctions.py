@@ -1,5 +1,6 @@
 from slowbeast.ir.instruction import Assume, Assert, Cmp, Print
-from slowbeast.ir.value import ConstantFalse, ConstantTrue, ConcreteVal
+from ...ir.constants import ConstantTrue, ConstantFalse
+from ...domains.concrete import ConcreteVal
 from slowbeast.ir.types import IntType
 from .utils import getLLVMOperands, type_size_in_bits
 

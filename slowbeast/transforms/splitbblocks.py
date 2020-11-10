@@ -1,7 +1,7 @@
 from slowbeast.ir.function import Function
 from slowbeast.ir.bblock import BBlock
 from slowbeast.ir.instruction import Call, Branch
-from slowbeast.ir.value import ConstantTrue
+from slowbeast.ir.constants import ConstantTrue
 
 
 # FIXME: not efficient, but let's fix that once

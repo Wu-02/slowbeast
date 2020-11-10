@@ -1,4 +1,5 @@
-from slowbeast.ir.value import Value, ConcreteVal
+from slowbeast.ir.value import Value
+from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.types import Type, IntType, BoolType
 
 _use_z3 = True

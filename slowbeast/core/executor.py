@@ -1,7 +1,11 @@
 import sys
-from ..util.debugging import dbgv, dbg_sec, FIXME
-from ..ir.instruction import *
-from ..ir.value import *
+
+from slowbeast.ir.pointer import Pointer
+from slowbeast.util.debugging import dbgv
+from slowbeast.ir.instruction import *
+from slowbeast.ir.value import *
+from slowbeast.ir.types import IntType
+from slowbeast.domains.concrete import ConcreteVal
 from .errors import GenericError
 from .memorymodel import MemoryModel
 from .executionstate import ExecutionState
@@ -226,7 +230,7 @@ class Executor:
         elif p == Cmp.NE:
             x = op1 != op2
 
-        state.set(instr, ConcreteVal(x, 1))
+        state.set(instr, ConcreteVal(x, IntType(1)))
         state.pc = state.pc.get_next_inst()
 
         return [state]

@@ -1,4 +1,4 @@
-from ..ir.value import ConcreteVal
+from ..domains.concrete import ConcreteVal
 from ..core.executionstatus import ExecutionStatus
 from sys import stdout
 

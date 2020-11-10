@@ -1,12 +1,10 @@
 from slowbeast.ir.program import Program
 from slowbeast.ir.function import Function
-from slowbeast.ir.bblock import BBlock
 
-from slowbeast.ir.value import *
 from slowbeast.ir.types import *
 from slowbeast.ir.instruction import *
 
-from slowbeast.util.debugging import print_stderr, warn
+from slowbeast.util.debugging import print_stderr
 
 from .specialfunctions import special_functions, create_special_fun
 from .utils import *

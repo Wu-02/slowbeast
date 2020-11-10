@@ -2,7 +2,8 @@ from sys import stdout
 from copy import deepcopy, copy
 from ..util.debugging import FIXME
 
-from ..ir.value import ConcreteVal, Value
+from ..ir.value import Value
+from ..domains.concrete import ConcreteVal
 from ..ir.types import OffsetType
 from ..core.errors import MemError
 

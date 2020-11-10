@@ -12,7 +12,7 @@ from slowbeast.symexe.annotations import (
     AssumeAnnotation,
 )
 from slowbeast.domains.symbolic import Expr
-from slowbeast.ir.value import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal
 
 from slowbeast.solvers.solver import getGlobalExprManager
 
