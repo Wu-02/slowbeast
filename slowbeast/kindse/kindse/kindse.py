@@ -457,6 +457,9 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)
     return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
+def join_iter(i1, i2):
+    yield from i1
+    yield from i2
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions(), genannot=False):
@@ -655,8 +658,11 @@ class KindSymbolicExecutor(BaseKindSE):
                 self.reportfn(f"Safe (init) path: {path}", color="DARK_GREEN")
                 return None, states  # this path is safe
             elif r is Result.UNKNOWN:
-                killed = (
+                killed1 = (
                     (s for s in states.other if s.wasKilled()) if states.other else ()
+                )
+                killed2 = (
+                    (s for s in states.early if s.wasKilled()) if states.early else ()
                 )
                 for s in killed:
                     self.report(s)
@@ -673,14 +679,20 @@ class KindSymbolicExecutor(BaseKindSE):
 
         r = self.executePath(path)
 
-        killed = (s for s in r.other if s.wasKilled()) if r.other else ()
-        for s in killed:
+        killed1 = (s for s in r.other if s.wasKilled()) if r.other else ()
+        killed2 = (s for s in r.early if s.wasKilled()) if r.early else ()
+        problem = False
+        for s in join_iter(killed1, killed2):
+            problem = True
             self.report(s)
             self.reportfn(f"Killed states when executing {path}")
             self.have_problematic_path = True
 
+
         if r.errors:
             self.reportfn(f"Possibly error path: {path}", color="ORANGE")
+        elif problem:
+            self.reportfn(f"Problem path: {path}", color="PURPLE")
         else:
             self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
 
