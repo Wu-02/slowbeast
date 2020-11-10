@@ -235,24 +235,37 @@ class ConcreteDomain:
     def Add(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.is_int() or a.is_float()
+        # FIXME: add self-standing float domain?
+        if a.is_float():
+            return ConcreteVal(a.value() + b.value(), a.type())
         bw = a.type().bitwidth()
-        return ConcreteVal(wrap_to_bw(a.value() + b.value(), bw), a.type())
+        return  ConcreteVal(wrap_to_bw(a.value() + b.value(), bw), a.type())
 
     def Sub(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.is_int() or a.is_float()
+        if a.is_float():
+            return ConcreteVal(a.value() - b.value(), a.type())
         bw = a.type().bitwidth()
         return ConcreteVal(wrap_to_bw(a.value() - b.value(), bw), a.type())
 
     def Mul(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.is_int() or a.is_float()
+        if a.is_float():
+            return ConcreteVal(a.value() - b.value(), a.type())
         bw = a.type().bitwidth()
         return ConcreteVal(wrap_to_bw(a.value() * b.value(), bw), a.type())
 
     def Div(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
+        assert a.is_int() or a.is_float()
         result_ty = a.type()
+        if a.is_float():
+            return ConcreteVal(a.value() - b.value(), result_ty)
         if unsigned:
             return ConcreteVal(getUnsigned(a) / getUnsigned(b), result_ty)
         return ConcreteVal(

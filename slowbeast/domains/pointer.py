@@ -29,6 +29,9 @@ class Pointer(Value):
     def as_value(self):
         return str(self)
 
+    def is_concrete(self):
+        return False
+
     def __eq__(self, oth):
         return self._object == oth._object and self._offset == oth._offset
 
