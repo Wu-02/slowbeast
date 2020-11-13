@@ -24,7 +24,7 @@ class ConstraintsSet:
                     self.constraints = [c]
                     break
                 # we can ignore True...
-            if c.isAnd():
+            elif c.isAnd():
                 constr.extend(c.children())
             else:
                 constr.append(c)
