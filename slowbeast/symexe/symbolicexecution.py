@@ -51,45 +51,52 @@ class SymbolicExecutor(Interpreter):
         return self.solver
 
     def getNextState(self):
-        if not self.states:
+        states = self.states
+        if not states:
             return None
 
         # DFS for now
-        return self.states.pop()
+        return states.pop()
+
 
     def handleNewStates(self, newstates):
-        testgen = self.ohandler.testgen if self.ohandler else None
+        hs = self.handleNewState
         for s in newstates:
-            if s.isReady():
-                self.states.append(s)
-            elif s.hasError():
-                print_stderr(
-                    "{0}: {1}, {2}".format(s.get_id(), s.pc, s.getError()), color="RED"
-                )
-                self.stats.errors += 1
-                self.stats.paths += 1
-                if testgen:
-                    testgen.processState(s)
-                if self.getOptions().exit_on_error:
-                    dbg("Found an error, terminating the search.")
-                    self.states = []
-                    return
-            elif s.isTerminated():
-                print_stderr(s.getError(), color="BROWN")
-                self.stats.paths += 1
-                self.stats.terminated_paths += 1
-                if testgen:
-                    testgen.processState(s)
-            elif s.wasKilled():
-                self.stats.paths += 1
-                self.stats.killed_paths += 1
-                print_stderr(s.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
-                if testgen:
-                    testgen.processState(s)
-            else:
-                assert s.exited()
-                dbg("state exited with exitcode {0}".format(s.getExitCode()))
-                self.stats.paths += 1
-                self.stats.exited_paths += 1
-                if testgen:
-                    testgen.processState(s)
+            hs(s)
+
+    def handleNewState(self, s):
+        testgen = self.ohandler.testgen if self.ohandler else None
+        stats = self.stats
+        if s.isReady():
+            self.states.append(s)
+        elif s.hasError():
+            print_stderr(
+                "{0}: {1}, {2}".format(s.get_id(), s.pc, s.getError()), color="RED"
+            )
+            stats.errors += 1
+            stats.paths += 1
+            if testgen:
+                testgen.processState(s)
+            if self.getOptions().exit_on_error:
+                dbg("Found an error, terminating the search.")
+                self.states = []
+                return
+        elif s.isTerminated():
+            print_stderr(s.getError(), color="BROWN")
+            stats.paths += 1
+            stats.terminated_paths += 1
+            if testgen:
+                testgen.processState(s)
+        elif s.wasKilled():
+            stats.paths += 1
+            stats.killed_paths += 1
+            print_stderr(s.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
+            if testgen:
+                testgen.processState(s)
+        else:
+            assert s.exited()
+            dbg("state exited with exitcode {0}".format(s.getExitCode()))
+            stats.paths += 1
+            stats.exited_paths += 1
+            if testgen:
+                testgen.processState(s)

@@ -49,6 +49,8 @@ def createArgParser():
                         help='Set the step for k-induction, positive number is a number of basic blocks by which to extend in each iteration, 0 is extend the paths until a join, -1 is extend the paths until a branch (default)', default=-1)
     parser.add_argument('-se', action='store_true', default=True,
                         help='Perform symbolic execution.')
+    parser.add_argument('-stateful-se', action='store_true', default=False,
+                        help='Perform stateful symbolic execution.')
     parser.add_argument('-se-step', default='instr',
                         help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
     parser.add_argument('-se-exit-on-error', action='store_true',
@@ -335,7 +337,10 @@ def main():
         if args.se_step == 'block':
             opts.setBlockStep()
 
-        from slowbeast.symexe.symbolicexecution import SymbolicExecutor
+        if args.stateful_se:
+            from slowbeast.symexe.statefulsymbolicexecution import StatefulSymbolicExecutor as SymbolicExecutor
+        else:
+            from slowbeast.symexe.symbolicexecution import SymbolicExecutor
         SE = SymbolicExecutor(P, ohandler, opts)
 
     opts.concretize_nondets = args.concretize_nondet

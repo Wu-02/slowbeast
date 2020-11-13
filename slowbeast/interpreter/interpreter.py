@@ -71,10 +71,7 @@ class Interpreter:
         assert len(self.states) == 0
         return s
 
-    def handleNewStates(self, newstates):
-        assert len(newstates) == 1, "Concrete execution returned more than one state"
-
-        state = newstates[0]
+    def handleNewState(self, state):
         if state.isReady():
             assert len(self.states) == 0
             self.states.append(state)
@@ -91,6 +88,10 @@ class Interpreter:
             dbg(f"state exited with exitcode {state.getExitCode()}")
 
         raise RuntimeError("This line should be unreachable")
+
+    def handleNewStates(self, newstates):
+        assert len(newstates) == 1, "Concrete execution returned more than one state"
+        self.handleNewState(newstates[0])
 
     def interact_if_needed(self, s):
         if self._interactive is None:
