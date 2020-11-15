@@ -412,19 +412,21 @@ class Parser:
         return [cast]
 
     def _createPtrToInt(self, inst):
-        operands = getLLVMOperands(inst)
-        assert len(operands) == 1, "Invalid number of operands for cast"
-        cast = Cast(self.getOperand(operands[0]),
-                    IntType(type_size_in_bits(inst.type)))
-        self._addMapping(inst, cast)
-        return [cast]
+        return self._createCast(inst)
+       #operands = getLLVMOperands(inst)
+       #assert len(operands) == 1, "Invalid number of operands for cast"
+       #cast = Cast(self.getOperand(operands[0]),
+       #            IntType(type_size_in_bits(inst.type)))
+       #self._addMapping(inst, cast)
+       #return [cast]
 
     def _createIntToPtr(self, inst):
-        operands = getLLVMOperands(inst)
-        assert len(operands) == 1, "Invalid number of operands for cast"
-        cast = Cast(self.getOperand(operands[0]), PointerType())
-        self._addMapping(inst, cast)
-        return [cast]
+        return self._createCast(inst)
+       #operands = getLLVMOperands(inst)
+       #assert len(operands) == 1, "Invalid number of operands for cast"
+       #cast = Cast(self.getOperand(operands[0]), PointerType())
+       #self._addMapping(inst, cast)
+       #return [cast]
 
     def _createTrunc(self, inst):
         operands = getLLVMOperands(inst)
@@ -441,18 +443,10 @@ class Parser:
 
     def _createCast(self, inst):
         operands = getLLVMOperands(inst)
-        assert len(operands) == 1, "Invalid number of operands for load"
-        # just behave that there's no ZExt for now
-        bits = type_size_in_bits(inst.type)
+        assert len(operands) == 1, "Invalid number of operands for cast"
         op = self.getOperand(operands[0])
-        if op.is_concrete():
-            self._mapping[inst] = op
-            return []
-        elif is_pointer_ty(operands[0].type):
-            self._addMapping(inst, self.getOperand(operands[0]))
-            return []
-        else:
-            raise NotImplementedError("Unhandled cast: {0}".format(inst))
+        self._mapping[inst] = op
+        return []
 
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
@@ -576,7 +570,8 @@ class Parser:
             try:
                 instrs = self._parse_instruction(inst)
                 assert (
-                    inst.opcode in ["bitcast", "call", "getelementptr"] or instrs
+                    inst.opcode in ("bitcast", "call", "getelementptr",
+                                    "ptrtoint", "inttoptr") or instrs
                 ), "No instruction was created"
                 for I in instrs:
                     B.append(I)
