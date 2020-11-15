@@ -21,7 +21,6 @@ def _get_llvm_module(path):
         with open(path, "rb") as f:
             return llvm.parse_bitcode(f.read())
 
-
 def parseFCmp(inst):
     parts = str(inst).split()
     if parts[1] != "=":
@@ -89,14 +88,14 @@ def parseCmp(inst):
     return None, False
 
 
-def parseFunctionRetTy(ty):
+def parseFunctionRetTy(m, ty):
     parts = str(ty).split()
     if len(parts) < 2:
         return False, None
     if parts[0] == "void":
         return True, None
     else:
-        sz = type_size_in_bits(parts[0])
+        sz = type_size_in_bits(m, parts[0])
         if sz:
             return True, IntType(sz)
     return False, None
@@ -112,6 +111,7 @@ def countSyms(s, sym):
 
 class Parser:
     def __init__(self):
+        self.llvmmodule = None
         self.program = Program()
         self._bblocks = {}
         self._mapping = {}
@@ -146,13 +146,13 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Array allocations not supported yet"
 
-        tySize = type_size(inst.type.element_type)
+        tySize = type_size(self.llvmmodule, inst.type.element_type)
         assert tySize and tySize > 0, "Invalid type size"
         num = self.getOperand(operands[0])
 
         if isinstance(num, ValueInstruction):  # VLA
             retlist = []
-            bytewidth = type_size(operands[0].type)
+            bytewidth = type_size(self.llvmmodule, operands[0].type)
             if bytewidth != SizeType.bytewidth():
                 N = ZExt(num, ConcreteVal(SizeType.bitwidth(), SizeType))
                 retlist.append(N)
@@ -180,7 +180,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
 
-        bytesNum = type_size(inst.type)
+        bytesNum = type_size(self.llvmmodule, inst.type)
         assert bytesNum, "Could not get the size of type"
         L = Load(self.getOperand(operands[0]), bytesNum)
         self._addMapping(inst, L)
@@ -372,7 +372,7 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
             self.getOperand(operands[0]),
-            ConcreteInt(type_size_in_bits(inst.type), 32),
+            ConcreteInt(type_size_in_bits(self.llvmmodule, inst.type), 32),
         )
         self._addMapping(inst, zext)
         return [zext]
@@ -383,7 +383,7 @@ class Parser:
         # just behave that there's no ZExt for now
         sext = SExt(
             self.getOperand(operands[0]),
-            ConcreteInt(type_size_in_bits(inst.type), 32),
+            ConcreteInt(type_size_in_bits(self.llvmmodule, inst.type), 32),
         )
         self._addMapping(inst, sext)
         return [sext]
@@ -416,7 +416,7 @@ class Parser:
        #operands = getLLVMOperands(inst)
        #assert len(operands) == 1, "Invalid number of operands for cast"
        #cast = Cast(self.getOperand(operands[0]),
-       #            IntType(type_size_in_bits(inst.type)))
+       #            IntType(type_size_in_bits(self.llvmmodule, inst.type)))
        #self._addMapping(inst, cast)
        #return [cast]
 
@@ -432,7 +432,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no ZExt for now
-        bits = type_size_in_bits(inst.type)
+        bits = type_size_in_bits(self.llvmmodule, inst.type)
         ext = ExtractBits(
             self.getOperand(operands[0]),
             ConcreteInt(0, 32),
@@ -452,7 +452,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert is_pointer_ty(operands[0].type), "First type of GEP is not a pointer"
         ty = operands[0].type.element_type
-        elemSize = type_size(ty)
+        elemSize = type_size(self.llvmmodule, ty)
         shift = 0
         varIdx = []
         for idx in operands[1:]:
@@ -463,7 +463,7 @@ class Parser:
                 assert (
                     idx is operands[-1]
                 ), "Variable in the middle of GEP is unsupported now"
-                mulbw = type_size_in_bits(idx.type)
+                mulbw = type_size_in_bits(self.llvmmodule, idx.type)
                 assert 0 < mulbw <= 64, "Invalid type size: {mulbw}"
                 if mulbw != SizeType.bitwidth():
                     C = ZExt(var, ConcreteVal(SizeType.bitwidth(), SizeType))
@@ -479,7 +479,7 @@ class Parser:
 
             if is_pointer_ty(ty) or is_array_ty(ty):
                 ty = ty.element_type
-            elemSize = type_size(ty)
+            elemSize = type_size(self.llvmmodule, ty)
 
         mem = self.getOperand(operands[0])
 
@@ -499,7 +499,7 @@ class Parser:
 
     def _handlePhi(self, inst):
         operands = getLLVMOperands(inst)
-        bnum = type_size(inst.type)
+        bnum = type_size(self.llvmmodule, inst.type)
         phivar = Alloc(ConcreteVal(bnum, SizeType))
         L = Load(phivar, bnum)
         self._addMapping(inst, L)
@@ -615,7 +615,7 @@ class Parser:
         for g in m.global_variables:
             assert g.type.is_pointer
             # FIXME: check and set whether it is a constant
-            ts = type_size(g.type.element_type)
+            ts = type_size(self.llvmmodule, g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
             G = GlobalVariable(ConcreteVal(ts, SizeType), g.name)
             c = getConstant(g.initializer)
@@ -642,7 +642,7 @@ class Parser:
         # because they may be operands of calls
         for f in m.functions:
             assert f.type.is_pointer, "Function pointer type is not a pointer"
-            succ, retty = parseFunctionRetTy(f.type.element_type)
+            succ, retty = parseFunctionRetTy(self.llvmmodule, f.type.element_type)
             if not succ:
                 raise NotImplementedError(
                     "Cannot parse function return type: {0}".format(f.type.element_type)
@@ -659,6 +659,7 @@ class Parser:
 
     def _parse(self, path):
         m = _get_llvm_module(path)
+        self.llvmmodule = m
         self._parse_module(m)
 
         # FIXME: set entry here?

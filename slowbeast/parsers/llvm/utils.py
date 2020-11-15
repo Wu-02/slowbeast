@@ -64,27 +64,34 @@ def parseArrayTyByParts(ty):
     print(parts)
 
 
-def getArrayTySize(ty):
+def getArrayTySize(m, ty):
     assert is_array_ty(ty)
     sty = str(ty)
     parts = sty.split()
     assert parts[1] == "x", "Invalid array type"
     assert parts[0].startswith("[")
     assert parts[-1].endswith("]")
-    return int(parts[0][1:]) * type_size_in_bits(" ".join(parts[2:])[:-1])
+    return int(parts[0][1:]) * type_size_in_bits(m, " ".join(parts[2:])[:-1])
 
 
-def type_size_in_bits(ty):
+def type_size_in_bits(m, ty):
+    if not isinstance(ty, str) and hasattr(m, 'get_type_size'):
+        return m.get_type_size(ty)
+
+    # FIXME: get rid of parsing str
     # FIXME: get rid of the magic constants and use the layout from the program
-    if not isinstance(ty, str) and ty.is_pointer:
-        return 64
+    POINTER_SIZE=64
+    if not isinstance(ty, str):
+        if ty.is_pointer:
+            return POINTER_SIZE
+        if ty.is_struct:
+            return None # unsupported
 
     sty = str(ty)
     if is_array_ty(ty):
-        s = getArrayTySize(ty)
-        return s
+        return getArrayTySize(m, ty)
     elif is_pointer_ty(ty):
-        return 64
+        return POINTER_SIZE
     elif sty == "double":
         return 64
     elif sty == "float":
@@ -92,10 +99,11 @@ def type_size_in_bits(ty):
     else:
         assert "*" not in sty, "Unsupported type: {0}".format(sty)
         return _bitwidth(sty)
+    return None
 
 
-def type_size(ty):
-    ts = type_size_in_bits(ty)
+def type_size(m, ty):
+    ts = type_size_in_bits(m, ty)
     if ts is not None:
         if ts == 0:
             return 0
