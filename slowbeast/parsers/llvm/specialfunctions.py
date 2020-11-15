@@ -26,6 +26,7 @@ def create_special_fun(parser, inst, fun):
     used for mapping of instructions and S is the sequence
     of instructions created
     """
+    module = parser.llvmmodule
     if fun == "__assert_fail":
         A = Assert(ConstantFalse, "assertion failed!")
         return A, [A]
@@ -35,7 +36,7 @@ def create_special_fun(parser, inst, fun):
     elif fun == "__VERIFIER_assume":
         operands = getLLVMOperands(inst)
         cond = parser.getOperand(operands[0])
-        C = Cmp(Cmp.NE, cond, ConcreteVal(0, IntType(type_size_in_bits(operands[0].type))))
+        C = Cmp(Cmp.NE, cond, ConcreteVal(0, IntType(type_size_in_bits(module, operands[0].type))))
         A = Assume(C)
         return A, [C, A]
     elif fun == "__VERIFIER_silent_exit":
@@ -44,7 +45,7 @@ def create_special_fun(parser, inst, fun):
     elif fun == "__VERIFIER_assert" or fun == "__INSTR_check_assume":
         operands = getLLVMOperands(inst)
         cond = parser.getOperand(operands[0])
-        C = Cmp(Cmp.NE, cond, ConcreteVal(0, IntType(type_size_in_bits(operands[0].type))))
+        C = Cmp(Cmp.NE, cond, ConcreteVal(0, IntType(type_size_in_bits(module, operands[0].type))))
         A = Assert(C)
         return A, [C, A]
     elif fun == "__INSTR_check_nontermination_header":
