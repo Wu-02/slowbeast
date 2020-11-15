@@ -160,17 +160,17 @@ class ConcreteDomain:
         Reinterpret cast
         """
         assert ConcreteDomain.belongto(a)
-        v = a.value()
-        if isinstance(v, int):
+        if a.is_int():
             if ty.is_float():
-                return ConcreteVal(float(v), ty)
+                return ConcreteVal(float(vavalue()), ty)
             elif ty.is_int():
-                return ConcreteVal(v, ty)
-        elif isinstance(v, float):
+                return ConcreteVal(a.value(), ty)
+        elif a.is_float():
             if ty.is_float():
-                return ConcreteVal(v, ty)
-            elif ty.is_int():
-                return ConcreteVal(int(v), ty)
+                return ConcreteVal(a.value(), ty)
+           # unsupported yet
+           #elif ty.is_int():
+           #    return ConcreteVal(int(v), ty)
         return None # unsupported conversion
 
     def Shl(a, b):
