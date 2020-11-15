@@ -498,46 +498,47 @@ class Parser:
         return [L]
 
     def _parse_instruction(self, inst):
-        if inst.opcode == "alloca":
+        opcode = inst.opcode
+        if opcode == "alloca":
             return self._createAlloca(inst)
-        elif inst.opcode == "store":
+        elif opcode == "store":
             return self._createStore(inst)
-        elif inst.opcode == "load":
+        elif opcode == "load":
             return self._createLoad(inst)
-        elif inst.opcode == "ret":
+        elif opcode == "ret":
             return self._createRet(inst)
-        elif inst.opcode == "icmp":
+        elif opcode == "icmp":
             return self._createCmp(inst)
-        elif inst.opcode == "fcmp":
+        elif opcode == "fcmp":
             return self._createCmp(inst, isfloat=True)
-        elif inst.opcode == "br":
+        elif opcode == "br":
             return self._createBranch(inst)
-        elif inst.opcode == "call":
+        elif opcode == "call":
             return self._createCall(inst)
-        elif inst.opcode == "unreachable":
+        elif opcode == "unreachable":
             return self._createUnreachable(inst)
-        elif inst.opcode == "zext":
+        elif opcode == "zext":
             return self._createZExt(inst)
-        elif inst.opcode == "sext":
+        elif opcode == "sext":
             return self._createSExt(inst)
-        elif inst.opcode in ("uitofp", "sitofp", "fptosi", "fptoui"):
+        elif opcode in ("uitofp", "sitofp", "fptosi", "fptoui"):
             return self._createReinterpCast(inst)
-        elif inst.opcode == "trunc":
+        elif opcode == "trunc":
             return self._createTrunc(inst)
-        elif inst.opcode == "getelementptr":
+        elif opcode == "getelementptr":
             return self._createGep(inst)
-        elif inst.opcode == "bitcast":
+        elif opcode == "bitcast":
             return self._createCast(inst)
-        elif inst.opcode in ["add", "sub", "sdiv", "mul", "udiv",
+        elif opcode in ["add", "sub", "sdiv", "mul", "udiv",
                              "fadd", "fsub", "fdiv", "fmul"]:
-            return self._createArith(inst, inst.opcode)
-        elif inst.opcode in ["shl", "lshr", "ashr"]:
+            return self._createArith(inst, opcode)
+        elif opcode in ["shl", "lshr", "ashr"]:
             return self._createShift(inst)
-        elif inst.opcode in ["and", "or", "xor"]:
+        elif opcode in ["and", "or", "xor"]:
             return self._createLogicOp(inst)
-        elif inst.opcode in ["srem", "urem"]:
+        elif opcode in ["srem", "urem"]:
             return self._createRem(inst)
-        elif inst.opcode == "phi":
+        elif opcode == "phi":
             return self._handlePhi(inst)
         else:
             raise NotImplementedError("Unsupported instruction: {0}".format(inst))
