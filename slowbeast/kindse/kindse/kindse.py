@@ -578,6 +578,16 @@ class KindSymbolicExecutor(BaseKindSE):
         # FIXME: we are still precies, use abstraction here...
         return seq
 
+    def strengthenInitialSeq(self, seq0, errs0, L):
+        r = seq0.check_ind_on_paths(self, L.getPaths())
+        # catch it in debug mode so that we can improve...
+        #assert r.errors is None, f"Initial seq is not inductive: {seq0}"
+        if r.errors is None:
+            # initial sequence is not inductive
+            return seq0
+
+        return None
+
     def execute_loop(self, loc, states):
         unsafe = []
         for r in states:
@@ -590,12 +600,11 @@ class KindSymbolicExecutor(BaseKindSE):
             return False  # fall-back to loop unwinding...
 
         seq0, errs0 = get_initial_seq(unsafe)
-        r = seq0.check_ind_on_paths(self, L.getPaths())
-        # catch it in debug mode so that we can improve...
-        assert r.errors is None, f"Initial seq is not inductive: {seq0}"
-        if r.errors:
-            # initial sequence is not inductive
-            return False
+        # the initial sequence may not be inductive (usually when the assertion
+        # is inside the loop, so we must strenghten it
+        seq0 = self.strengthenInitialSeq(seq0, errs0, L)
+        if seq0 is None:
+            return False # we failed...
 
         sequences = [seq0]
 
