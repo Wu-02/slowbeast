@@ -162,7 +162,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a)
         if a.is_int():
             if ty.is_float():
-                return ConcreteVal(float(vavalue()), ty)
+                return ConcreteVal(float(a.value()), ty)
             elif ty.is_int():
                 return ConcreteVal(a.value(), ty)
         elif a.is_float():
