@@ -211,6 +211,10 @@ class ExprManager:
 
     def Cast(self, a : Value, ty : Type):
         assert isinstance(ty, Type)
+        if a.is_pointer():
+            # pointer to int or int to pointer (where the int is actually
+            # a pointer as we do not change its value)
+            return a
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.Cast(a, ty)
         return SymbolicDomain.Cast(a, ty)

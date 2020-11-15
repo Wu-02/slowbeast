@@ -411,6 +411,21 @@ class Parser:
         self._addMapping(inst, cast)
         return [cast]
 
+    def _createPtrToInt(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 1, "Invalid number of operands for cast"
+        cast = Cast(self.getOperand(operands[0]),
+                    IntType(type_size_in_bits(inst.type)))
+        self._addMapping(inst, cast)
+        return [cast]
+
+    def _createIntToPtr(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 1, "Invalid number of operands for cast"
+        cast = Cast(self.getOperand(operands[0]), PointerType())
+        self._addMapping(inst, cast)
+        return [cast]
+
     def _createTrunc(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
@@ -523,6 +538,10 @@ class Parser:
             return self._createSExt(inst)
         elif opcode in ("uitofp", "sitofp", "fptosi", "fptoui"):
             return self._createReinterpCast(inst)
+        elif opcode == "ptrtoint":
+            return self._createPtrToInt(inst)
+        elif opcode == "inttoptr":
+            return self._createIntToPtr(inst)
         elif opcode == "trunc":
             return self._createTrunc(inst)
         elif opcode == "getelementptr":
