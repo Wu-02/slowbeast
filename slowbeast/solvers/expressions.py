@@ -1,5 +1,7 @@
-from ..domains.concrete import ConcreteDomain
-from ..domains.symbolic import *
+from slowbeast.domains.concrete import ConcreteDomain
+from slowbeast.domains.symbolic import *
+from slowbeast.ir.types import Type
+from slowbeast.domains.value import Value
 
 optimize_exprs = True
 
@@ -206,6 +208,12 @@ class ExprManager:
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.SExt(a, b)
         return opt(SymbolicDomain.SExt(a, b))
+
+    def Cast(self, a : Value, ty : Type):
+        assert isinstance(ty, Type)
+        if ConcreteDomain.belongto(a):
+            return ConcreteDomain.Cast(a, ty)
+        return SymbolicDomain.Cast(a, ty)
 
     def Extract(self, a, start, end):
         assert ConcreteDomain.belongto(start, end), "Invalid sext argument"

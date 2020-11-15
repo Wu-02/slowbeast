@@ -388,6 +388,11 @@ class Executor(ConcreteExecutor):
         elif instr.getOperation() == UnaryOperation.SEXT:
             bw = instr.bitwidth()
             r = E.SExt(op1, bw)
+        elif instr.getOperation() == UnaryOperation.CAST:
+            r = E.Cast(op1, instr.casttype())
+            if r is None:
+                state.setKilled("Unsupported/invalid cast: {0}".format(instr))
+                return [state]
         elif instr.getOperation() == UnaryOperation.EXTRACT:
             start, end = instr.getRange()
             r = E.Extract(op1, start, end)

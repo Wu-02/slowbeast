@@ -388,6 +388,29 @@ class Parser:
         self._addMapping(inst, sext)
         return [sext]
 
+    def _createReinterpCast(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 1, "Invalid number of operands for cast"
+        insttype = inst.type
+        ty = None
+        # FIXME: hardcoded bitwidth
+        #FIXME: parsing string...
+        stype = str(insttype)
+        if stype == 'float':
+            ty = FloatType(32)
+        elif stype == 'double':
+            ty = FloatType(64)
+        elif stype == 'i32':
+            ty = IntType(32)
+        elif stype == 'i64':
+            ty = IntType(64)
+        else:
+            raise NotImplementedError(f"Unimplemented cast: {inst}")
+        # just behave that there's no ZExt for now
+        cast = Cast( self.getOperand(operands[0]), ty)
+        self._addMapping(inst, cast)
+        return [cast]
+
     def _createTrunc(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
@@ -497,6 +520,8 @@ class Parser:
             return self._createZExt(inst)
         elif inst.opcode == "sext":
             return self._createSExt(inst)
+        elif inst.opcode in ("uitofp", "sitofp", "fptosi", "fptoui"):
+            return self._createReinterpCast(inst)
         elif inst.opcode == "trunc":
             return self._createTrunc(inst)
         elif inst.opcode == "getelementptr":

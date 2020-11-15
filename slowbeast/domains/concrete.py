@@ -155,6 +155,24 @@ class ConcreteDomain:
         val = (a.value() & (sb - 1)) - (a.value() & sb)
         return ConcreteInt(val, b.value())
 
+    def Cast(a : ConcreteVal, ty : Type):
+        """
+        Reinterpret cast
+        """
+        assert ConcreteDomain.belongto(a)
+        v = a.value()
+        if isinstance(v, int):
+            if ty.is_float():
+                return ConcreteVal(float(v), ty)
+            elif ty.is_int():
+                return ConcreteVal(v, ty)
+        elif isinstance(v, float):
+            if ty.is_float():
+                return ConcreteVal(v, ty)
+            elif ty.is_int():
+                return ConcreteVal(int(v), ty)
+        return None # unsupported conversion
+
     def Shl(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"

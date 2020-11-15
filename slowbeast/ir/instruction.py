@@ -1,5 +1,6 @@
 from sys import stdout
 
+from .types import Type  # due to assertions
 from .bblock import BBlock  # due to assertions
 from .program import ProgramElement
 
@@ -99,6 +100,7 @@ class Instruction(ProgramElement):
                     "ret": "WINE",
                     "cmp": "WINE",
                     "alloc": "WINE",
+                    "cast": "WINE",
                     "bblock": "GREEN",
                 },
                 " " * ind,
@@ -395,9 +397,11 @@ class UnaryOperation(ValueInstruction):
     ZEXT = 2
     SEXT = 3
     EXTRACT = 4
+    CAST = 5 # reinterpret cast
+    # TODO make SEXT and ZEXT also reinterpret cast?
 
     def __check(op):
-        assert UnaryOperation.NEG <= op <= UnaryOperation.EXTRACT
+        assert UnaryOperation.NEG <= op <= UnaryOperation.CAST
 
     def __init__(self, op, a):
         super().__init__([a])
@@ -437,6 +441,19 @@ class SExt(Extend):
             self.get_id(), self.getOperand(0).as_value(), self.bitwidth()
         )
 
+class Cast(UnaryOperation):
+    def __init__(self, a, ty):
+        assert isinstance(ty, Type)
+        super().__init__(UnaryOperation.CAST, a)
+        self._ty = ty
+
+    def casttype(self):
+        return self._ty
+
+    def __str__(self):
+        return "x{0} = cast {1} to {2}".format(
+            self.get_id(), self.getOperand(0).as_value(), self.casttype()
+        )
 
 class ExtractBits(UnaryOperation):
     def __init__(self, val, start, end):
