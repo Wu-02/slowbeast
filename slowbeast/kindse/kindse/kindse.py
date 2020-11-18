@@ -36,6 +36,8 @@ def remove_implied_literals(clauses):
     singletons = []
     rest = []
     for c in clauses:
+        if c.is_concrete() and c.value() is True:
+                continue
         if c.isOr():
             rest.append(c)
         else:  # the formula is in CNF, so this must be a singleton
