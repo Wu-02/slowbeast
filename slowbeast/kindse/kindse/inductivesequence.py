@@ -44,9 +44,9 @@ class InductiveSequence:
             states = self.states
             stren = self.strengthening
 
-            assert states and states.getSubstitutions()
+            assert states and states.getSubstitutions() is not None
             assert (
-                stren is None or states.getSubstitutions() == stren.getSubstitutions()
+                stren is None or states.getSubstitutions() == stren.getSubstitutions(), stren
             )
             expr = (
                 EM.And(states.getExpr(), stren.getExpr()) if stren else states.getExpr()
