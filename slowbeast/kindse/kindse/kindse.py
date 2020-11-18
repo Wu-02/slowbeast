@@ -1,15 +1,11 @@
 from functools import partial
 
 from slowbeast.domains.concrete import ConcreteInt
-from slowbeast.ir.types import IntType
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
 
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath, CFG
-from slowbeast.kindse.naive.naivekindse import (
-    KindSymbolicExecutor as BasicKindSymbolicExecutor,
-)
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.symexe.annotations import (
@@ -22,7 +18,6 @@ from slowbeast.solvers.solver import getGlobalExprManager, Solver
 from slowbeast.solvers.expressions import em_optimize_expressions
 
 from .loops import SimpleLoop
-from .relations import get_safe_relations, get_safe_subexpressions
 from .kindsebase import KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 
@@ -627,6 +622,7 @@ class KindSymbolicExecutor(BaseKindSE):
             # initial sequence is not inductive
             return seq0
 
+        dbg("Initial sequence is not inductive", color="wine")
         return None
 
     def execute_loop(self, loc, states):
