@@ -288,7 +288,7 @@ def get_left_right(l):
     return chld[0], chld[1]
 
 
-def overapprox_literal(l, S, unsafe, target, executor, L):
+def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     assert not l.isAnd() and not l.isOr(), f"Input is not a literal: {l}"
     assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
     goodl = l  # last good overapprox of l
@@ -299,11 +299,12 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
         return goodl
 
     EM = getGlobalExprManager()
+    disjunction = EM.disjunction
 
     def check_literal(lit):
         if lit.is_concrete():
             return False
-        X = intersection(S, lit)
+        X = intersection(S, disjunction(lit, *rl))
         if not intersection(X, unsafe).is_empty():
             return False
 
@@ -388,6 +389,15 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
 
     return goodl
 
+def split_nth_item(items, n):
+    item = None
+    rest = []
+    for i, x in enumerate(items):
+        if i == n:
+            item = x
+        else:
+            rest.append(x)
+    return item, rest
 
 def overapprox_clause(n, clauses, executor, L, unsafe, target):
     createSet = executor.getIndExecutor().createStatesSet
@@ -404,8 +414,9 @@ def overapprox_clause(n, clauses, executor, L, unsafe, target):
     assert intersection(S, c, unsafe).is_empty(), f"{S} \cap {c} \cap {unsafe}"
 
     newc = []
-    for l in literals(c):
-        newl = overapprox_literal(l, S, unsafe, target, executor, L)
+    lits = list(literals(c))
+    for l in lits:
+        newl = overapprox_literal(l, lits, S, unsafe, target, executor, L)
         newc.append(newl)
         dbg(f"  Overapproximated {l} ==> {newl}")
 
