@@ -334,7 +334,8 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
     def extend_literal(goodl):
         bw = left.type().bitwidth()
         two = ConcreteInt(2, bw)
-        num = ConcreteInt(1, bw)
+        maxnum = 2 ** bw - 1
+        accnum = 1
 
         # a fast path where we try shift just by one.
         # If we cant, we can give up
@@ -358,6 +359,12 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
             if l is None:
                 return goodl
 
+            numval = num.value()
+            accnum += numval
+            # do not try to shift the number by more than 2^bw
+            if accnum > maxnum:
+                return goodl
+
             # push as far as we can with this num
             while check_literal(l):
                 goodl = l
@@ -366,7 +373,11 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
                 if l is None:
                     break
 
-            if num.value() <= 1:
+                accnum += numval
+                if accnum > maxnum:
+                    return goodl
+
+            if numval <= 1:
                 return goodl
             num = EM.Div(num, two)
 
