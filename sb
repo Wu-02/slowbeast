@@ -38,7 +38,7 @@ def createArgParser():
     parser.add_argument('-dump', action='store_true', default=False, help='dump the program after parsing')
     parser.add_argument('-parse-only', action='store_true', help='only parse program and dump it (for debugging)')
     parser.add_argument('-error-fn', action='store', help='Error function (calling this function amounts to calling assert(false)')
-    parser.add_argument('-kind', action='store_true', help='Use k-induction')
+    parser.add_argument('-kind', action='store_true', help='Use k-induction in SE (implies SE)')
     parser.add_argument('-kind-noinv', action='store_true',
                         help='Use k-induction without (internal) invariant generation')
     parser.add_argument('-kind-naive', action='store_true',
@@ -47,7 +47,7 @@ def createArgParser():
                         help='Use improved naive k-induction')
     parser.add_argument('-kind-step', type=int,
                         help='Set the step for k-induction, positive number is a number of basic blocks by which to extend in each iteration, 0 is extend the paths until a join, -1 is extend the paths until a branch (default)', default=-1)
-    parser.add_argument('-se', action='store_true', default=True,
+    parser.add_argument('-se', action='store_true', default=False,
                         help='Perform symbolic execution.')
     parser.add_argument('-stateful-se', action='store_true', default=False,
                         help='Perform stateful symbolic execution.')
@@ -55,6 +55,10 @@ def createArgParser():
                         help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
     parser.add_argument('-se-exit-on-error', action='store_true',
                         help='Terminate symbolic execution after hitting the first error.')
+    parser.add_argument('-ai', action='store_true', default=False,
+                        help='Perform abstract interpretation.')
+   #parser.add_argument('-ai-domain', action='store', default=True,
+   #                    help='Perform abstract interpretation.')
     #parser.add_argument('-bmc', action='store_true', help='Perform bounded model checking.')
 
     return parser
@@ -311,9 +315,19 @@ def main():
 
     P.set_entry(entry)
 
-    assert args.se, "We only support symbolic execution now"
+    if args.kind: # kind implies se
+        args.se = True
 
-    if args.kind:
+    if args.ai and args.se:
+        err("Can run only one technique")
+    if not (args.ai or args.se):
+        args.se = True # no argument means SE
+
+    if args.ai:
+        opts = SEOptions() # FIXME
+        from slowbeast.ai.abstractinterpreter import AbstractInterpreter
+        interpreter = AbstractInterpreter(P, ohandler)
+    elif args.kind:
         from slowbeast.kindse.naive.naivekindse import KindSeOptions
         opts = KindSeOptions()
 
@@ -327,8 +341,8 @@ def main():
             from slowbeast.kindse.legacy.noinvkindse import KindSymbolicExecutor
         else:
             from slowbeast.kindse.kindse.kindse import KindSymbolicExecutor
-        SE = KindSymbolicExecutor(P, ohandler, opts)
-    else:
+        interpreter = KindSymbolicExecutor(P, ohandler, opts)
+    elif args.se:
         opts = SEOptions()
 
         opts.exit_on_error = args.se_exit_on_error
@@ -341,7 +355,7 @@ def main():
             from slowbeast.symexe.statefulsymbolicexecution import StatefulSymbolicExecutor as SymbolicExecutor
         else:
             from slowbeast.symexe.symbolicexecution import SymbolicExecutor
-        SE = SymbolicExecutor(P, ohandler, opts)
+        interpreter = SymbolicExecutor(P, ohandler, opts)
 
     opts.concretize_nondets = args.concretize_nondet
     opts.uninit_is_nondet = args.uninitialized_nondet
@@ -351,11 +365,11 @@ def main():
         opts.error_funs = args.error_fn.split(',')
 
     try:
-        SE.run()
-        print_stats(SE)
+        interpreter.run()
+        print_stats(interpreter)
     except KeyboardInterrupt:
         print_stdout("Interrupted...")
-        print_stats(SE)
+        print_stats(interpreter)
 
     exit(0)
 

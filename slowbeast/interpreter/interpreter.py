@@ -144,6 +144,9 @@ class Interpreter:
 
         # self.states_num += len(self.states)
 
+    def report(self):
+        pass
+
     def run(self):
         self.prepare()
 
@@ -172,5 +175,7 @@ class Interpreter:
             )
             state.dump()
             raise e
+
+        self.report()
 
         return 0

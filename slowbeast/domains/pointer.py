@@ -5,7 +5,7 @@ from slowbeast.domains.value import Value
 
 class Pointer(Value):
 
-    __slots__ = ["_object", "_offset"]
+    __slots__ = "_object", "_offset"
 
     def __init__(self, obj, off=ConcreteInt(0, POINTER_BIT_WIDTH)):
         assert isinstance(off, Value)
@@ -34,6 +34,9 @@ class Pointer(Value):
 
     def __eq__(self, oth):
         return self._object == oth._object and self._offset == oth._offset
+
+    def __hash__(self, oth):
+        return hash(self._object) ^ hash(self._offset)
 
     def dump(self):
         print(self)

@@ -114,12 +114,17 @@ else:
     def bv_const(v, bw):
         return BV(v, bw)
 
+def dom_is_symbolic(v):
+    return v.KIND == 2
 
 class Expr(Value):
     """
     Wrapper around a formula that carries
     metadata like a type (and hash in the future, etc.)
     """
+
+    #FIXME: get rid of the magic constant
+    KIND = 2
 
     __slots__ = ["_expr"]
 
@@ -257,7 +262,7 @@ class BVSymbolicDomain:
     def belongto(*args):
         assert len(args) > 0
         for a in args:
-            if not isinstance(a, Expr):
+            if a.KIND != 2:
                 return False
         return True
 

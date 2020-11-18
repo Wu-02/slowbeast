@@ -21,11 +21,15 @@ def wrap_to_bw(x, bw):
             x += m
     return x
 
+def dom_is_concrete(v):
+    return v.KIND == 1
 
 class ConcreteVal(Value):
     """
     Integer constant or boolean
     """
+
+    KIND = 1
 
     __slots__ = ["_value"]
 
@@ -82,7 +86,7 @@ class ConcreteDomain:
         assert len(args) > 0
         for a in args:
             assert isinstance(a, Value), a
-            if not a.is_concrete():
+            if a.KIND != 1:
                 return False
         return True
 

@@ -1,5 +1,7 @@
 from copy import copy
 from sys import stdout
+from functools import reduce
+from operator import xor
 
 
 class CallStack:
@@ -16,6 +18,11 @@ class CallStack:
                 and self.values == rhs.values
                 and self.returnsite == rhs.returnsite
             )
+
+        def __hash__(self):
+            r = reduce(xor, map(hash, self.values), 0) ^ hash(self.function)
+            rets = self.returnsite
+            return r ^ hash(rets) if rets else r
 
         def _setRO(self):
             self._ro = True
@@ -71,6 +78,15 @@ class CallStack:
 
     def __eq__(self, rhs):
         return self._cs == rhs._cs
+
+    def __hash__(self):
+        # FIXME: make more efficient
+        if not self._cs:
+            return 0
+        ret = 0
+        for c in self._cs:
+            ret ^= c.__hash__()
+        return ret
 
     def frame(self, idx=-1):
         return self._cs[idx]
