@@ -334,6 +334,23 @@ def overapprox_literal(l, S, unsafe, target, executor, L):
     def extend_literal(goodl):
         bw = left.type().bitwidth()
         two = ConcreteInt(2, bw)
+        num = ConcreteInt(1, bw)
+
+        # a fast path where we try shift just by one.
+        # If we cant, we can give up
+        num = ConcreteInt(1, bw)
+        l = modify_literal(goodl, P, num)
+        if l is None:
+            return goodl
+
+        if check_literal(l):
+            goodl = l
+        else:
+            return goodl
+
+        # FIXME: try more low values (e.g., to 10)
+
+        # generic case
         num = ConcreteInt(2 ** (bw - 1) - 1, bw)
 
         while True:
