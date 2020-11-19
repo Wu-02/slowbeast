@@ -142,6 +142,15 @@ class Memory:
     def hasObject(self, moid):
         return self._objects.get(moid) is not None or self.hasGlobalObject(moid)
 
+    def get_obj(self, moid):
+        if isinstance(moid, ConcreteVal):
+            moid = moid.value()
+        assert isinstance(moid, int), f"Invalid MO ID: {moid}"
+        obj = self._objects.get(moid)
+        if obj is None:
+            return self._glob_objects.get(moid)
+        return obj
+
     def write(self, ptr, x):
         isglob = False
         obj = self._objects.get(ptr.object().value())
