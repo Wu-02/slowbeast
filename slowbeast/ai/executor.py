@@ -6,7 +6,8 @@ from ..core.executor import Executor as ConcreteExecutor
 from ..util.debugging import dbgv
 from ..core.errors import AssertFailError
 from slowbeast.domains.concrete import ConcreteDomain, ConcreteInt
-from slowbeast.domains.sign import ZOValue, ZODomain
+#from slowbeast.domains.sign import ZODomain
+from slowbeast.domains.signul import SignULDomain as Domain
 
 from .memory import AIMemoryModel
 from .executionstate import AbstractState
@@ -21,8 +22,6 @@ class AIStats:
         self.fork_calls = 0
         # number of times when the call to fork() forked the execution
         self.forks = 0
-
-Domain = ZODomain
 
 def addPointerWithConstant(E, op1, op2):
     return Pointer(op1.object(), Domain.Add(op1.offset(), op2))
