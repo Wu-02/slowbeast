@@ -293,10 +293,7 @@ class Executor(ConcreteExecutor):
 
         retTy = fun.getReturnType()
         if retTy:
-            if self.getOptions().concretize_nondets:
-                val = ZOValue(ZOValue.ZERO, retTy)
-            else:
-                val = ZOValue(ZOValue.ANY, retTy)
+            val = Domain.Var(retTy)
             #state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()

@@ -1,9 +1,12 @@
 from slowbeast.core.executionstate import ExecutionState
-from slowbeast.domains.sign import ZODomain, ZOValue
+from slowbeast.domains.sign import ZODomain
 from slowbeast.domains.concrete import dom_is_concrete, ConcreteVal
+
+Domain = ZODomain
 
 class AbstractState(ExecutionState):
     """ State of abstract interpretation """
+
 
     # XXX do not store warnings in the state but keep them in a map in the interpreter or so?
     # FIXME: move this to the super class?
@@ -22,11 +25,11 @@ class AbstractState(ExecutionState):
         return self._id
 
     def is_sat(self, *e):
-        return ZOValue.may_be_nonzero(ZODomain.conjunction(*e))
+        return Domain.may_be_true(Domain.conjunction(*e))
 
     def eval(self, v):
         if isinstance(v, ConcreteVal):
-            return ZODomain.lift(v)
+            return Domain.lift(v)
         value = self.get(v)
         if value is None:
             raise RuntimeError("Use of uninitialized/unknown variable {0}".format(v))
@@ -47,7 +50,7 @@ class AbstractState(ExecutionState):
         return new
 
     def concretize(self, *e):
-        return (ZODomain.concretize(x) for x in e)
+        return (Domain.concretize(x) for x in e)
 
     def getNondets(self):
         return ()
