@@ -7,7 +7,7 @@ from slowbeast.symexe.symbolicexecution import (
     SEOptions,
 )
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
-from slowbeast.symexe.memory import LazySymbolicMemoryModel
+from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
 from slowbeast.transforms.splitbblocks import splitProgAroundCalls
@@ -21,7 +21,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         )
 
         # the executor for induction checks -- we need lazy memory access
-        memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
+        memorymodel = LazySymbolicMemoryModel(opts)
         indexecutor = PathExecutor(self.getSolver(), opts, memorymodel)
         # add error funs and forbid defined calls...
         dbg("Forbidding calls in induction step for now with k-induction")

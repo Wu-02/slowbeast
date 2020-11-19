@@ -8,7 +8,7 @@ from ..util.debugging import dbgv
 from ..core.errors import AssertFailError
 from slowbeast.domains.concrete import ConcreteVal
 
-from .memory import SymbolicMemoryModel
+from .memorymodel import SymbolicMemoryModel
 from .executionstate import SEState
 from .statesset import StatesSet
 
@@ -55,7 +55,7 @@ def evalCond(state, cond):
 class Executor(ConcreteExecutor):
     def __init__(self, solver, opts, memorymodel=None):
         if memorymodel is None:
-            memorymodel = SymbolicMemoryModel(opts, solver)
+            memorymodel = SymbolicMemoryModel(opts)
         super(Executor, self).__init__(opts, memorymodel)
         self.solver = solver
         self.stats = SEStats()

@@ -1,6 +1,6 @@
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions
 from slowbeast.symexe.executor import Executor as SExecutor
-from slowbeast.symexe.memory import LazySymbolicMemoryModel
+from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 
@@ -23,7 +23,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         super(KindSymbolicExecutor, self).__init__(P=prog, ohandler=ohandler, opts=opts)
 
         # the executor for induction checks -- we need lazy memory access
-        memorymodel = LazySymbolicMemoryModel(opts, self.getSolver())
+        memorymodel = LazySymbolicMemoryModel(opts)
         self.indexecutor = SExecutor(self.getSolver(), opts, memorymodel)
         dbg("Forbidding calls in induction step for now with k-induction")
         self.indexecutor.forbidCalls()

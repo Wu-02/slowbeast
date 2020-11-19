@@ -1,6 +1,6 @@
 from ..interpreter.interpreter import Interpreter, ExecutionOptions
 from .executor import Executor as SExecutor
-from .memory import SymbolicMemoryModel
+from .memorymodel import SymbolicMemoryModel
 from ..solvers.solver import Solver
 from ..util.debugging import print_stderr, print_stdout, dbg
 
