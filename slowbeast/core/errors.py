@@ -69,6 +69,7 @@ class MemError(Error):
     OOB_ACCESS = 1
     UNINIT_READ = 2
     INVALID_OBJ = 3
+    UNSUPPORTED = 4
 
     def __init__(self, t, descr=None):
         super(MemError, self).__init__(Error.MEM_ERROR, descr)
@@ -92,6 +93,8 @@ class MemError(Error):
             detail = "uninitialized read"
         elif err == MemError.INVALID_OBJ:
             detail = "invalid object"
+        elif err == MemError.UNSUPPORTED:
+            detail = "unsupported operation"
         else:
             raise RuntimeError("Invalid memory error type")
 

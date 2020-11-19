@@ -87,6 +87,11 @@ class ExecutionState:
             raise RuntimeError("Use of uninitialized/unknown variable {0}".format(v))
         return value
 
+    def try_eval(self, v):
+        if isinstance(v, ConcreteVal):
+            return v
+        return self.get(v)
+
     def set(self, what, v):
         """ Associate a value to a register (in the current stack frame) """
         if __debug__:
