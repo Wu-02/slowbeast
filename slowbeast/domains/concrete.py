@@ -59,16 +59,19 @@ class ConcreteVal(Value):
         assert isinstance(rhs, ConcreteVal)
         return self.value() == rhs.value() and self.type() == rhs.type()
 
+
 class ConcreteBool(ConcreteVal):
     def __init__(self, b):
         assert isinstance(b, bool), b
         super().__init__(b, BoolType())
+
 
 class ConcreteInt(ConcreteVal):
     def __init__(self, n, bw):
         assert isinstance(n, int), n
         assert isinstance(bw, int), bw
         super().__init__(n, IntType(bw))
+
 
 class ConcreteDomain:
     """
@@ -155,7 +158,7 @@ class ConcreteDomain:
         val = (a.value() & (sb - 1)) - (a.value() & sb)
         return ConcreteInt(val, b.value())
 
-    def Cast(a : ConcreteVal, ty : Type):
+    def Cast(a: ConcreteVal, ty: Type):
         """
         Reinterpret cast
         """
@@ -168,10 +171,10 @@ class ConcreteDomain:
         elif a.is_float():
             if ty.is_float():
                 return ConcreteVal(a.value(), ty)
-           # unsupported yet
-           #elif ty.is_int():
-           #    return ConcreteVal(int(v), ty)
-        return None # unsupported conversion
+        # unsupported yet
+        # elif ty.is_int():
+        #    return ConcreteVal(int(v), ty)
+        return None  # unsupported conversion
 
     def Shl(a, b):
         assert ConcreteDomain.belongto(a, b)
@@ -258,7 +261,7 @@ class ConcreteDomain:
         if a.is_float():
             return ConcreteVal(a.value() + b.value(), a.type())
         bw = a.type().bitwidth()
-        return  ConcreteVal(wrap_to_bw(a.value() + b.value(), bw), a.type())
+        return ConcreteVal(wrap_to_bw(a.value() + b.value(), bw), a.type())
 
     def Sub(a, b):
         assert ConcreteDomain.belongto(a, b)

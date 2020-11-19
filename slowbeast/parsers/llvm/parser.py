@@ -21,6 +21,7 @@ def _get_llvm_module(path):
         with open(path, "rb") as f:
             return llvm.parse_bitcode(f.read())
 
+
 def parseFCmp(inst):
     parts = str(inst).split()
     if parts[1] != "=":
@@ -32,29 +33,30 @@ def parseFCmp(inst):
     if parts[3] == "oeq":
         return Cmp.EQ, False
     if parts[3] == "one":
-      return Cmp.NE, False
+        return Cmp.NE, False
     if parts[3] == "ole":
-      return Cmp.LE, False
+        return Cmp.LE, False
     if parts[3] == "oge":
-      return Cmp.GE, False
+        return Cmp.GE, False
     if parts[3] == "olt":
-      return Cmp.LT, False
+        return Cmp.LT, False
     if parts[3] == "ogt":
-      return Cmp.GT, False
+        return Cmp.GT, False
     if parts[3] == "ule":
-      return Cmp.LE, True
+        return Cmp.LE, True
     if parts[3] == "uge":
-      return Cmp.GE, True
+        return Cmp.GE, True
     if parts[3] == "ult":
-      return Cmp.LT, True
+        return Cmp.LT, True
     if parts[3] == "ugt":
-      return Cmp.GT, True
+        return Cmp.GT, True
     if parts[3] == "ueq":
-      return Cmp.EQ, True
+        return Cmp.EQ, True
     if parts[3] == "une":
         return Cmp.NE, True
 
     return None, False
+
 
 def parseCmp(inst):
     parts = str(inst).split()
@@ -67,21 +69,21 @@ def parseCmp(inst):
     if parts[3] == "eq":
         return Cmp.EQ, False
     if parts[3] == "ne":
-      return Cmp.NE, False
+        return Cmp.NE, False
     if parts[3] == "le" or parts[3] == "sle":
-      return Cmp.LE, False
+        return Cmp.LE, False
     if parts[3] == "ge" or parts[3] == "sge":
-      return Cmp.GE, False
+        return Cmp.GE, False
     if parts[3] == "lt" or parts[3] == "slt":
-      return Cmp.LT, False
+        return Cmp.LT, False
     if parts[3] == "gt" or parts[3] == "sgt":
-      return Cmp.GT, False
+        return Cmp.GT, False
     if parts[3] == "ule":
-      return Cmp.LE, True
+        return Cmp.LE, True
     if parts[3] == "uge":
-      return Cmp.GE, True
+        return Cmp.GE, True
     if parts[3] == "ult":
-      return Cmp.LT, True
+        return Cmp.LT, True
     if parts[3] == "ugt":
         return Cmp.GT, True
 
@@ -288,18 +290,26 @@ class Parser:
         if isfloat:
             P, is_unordered = parseFCmp(inst)
             if not P:
-                raise NotImplementedError("Unsupported cmp instruction: {0}".format(inst))
+                raise NotImplementedError(
+                    "Unsupported cmp instruction: {0}".format(inst)
+                )
             C = Cmp(
-                P, self.getOperand(operands[0]), self.getOperand(operands[1]),
-                is_unordered
+                P,
+                self.getOperand(operands[0]),
+                self.getOperand(operands[1]),
+                is_unordered,
             )
         else:
             P, is_unsigned = parseCmp(inst)
             if not P:
-                raise NotImplementedError("Unsupported cmp instruction: {0}".format(inst))
+                raise NotImplementedError(
+                    "Unsupported cmp instruction: {0}".format(inst)
+                )
             C = Cmp(
-                P, self.getOperand(operands[0]), self.getOperand(operands[1]),
-                is_unsigned
+                P,
+                self.getOperand(operands[0]),
+                self.getOperand(operands[1]),
+                is_unsigned,
             )
 
         self._addMapping(inst, C)
@@ -394,39 +404,41 @@ class Parser:
         insttype = inst.type
         ty = None
         # FIXME: hardcoded bitwidth
-        #FIXME: parsing string...
+        # FIXME: parsing string...
         stype = str(insttype)
-        if stype == 'float':
+        if stype == "float":
             ty = FloatType(32)
-        elif stype == 'double':
+        elif stype == "double":
             ty = FloatType(64)
-        elif stype == 'i32':
+        elif stype == "i32":
             ty = IntType(32)
-        elif stype == 'i64':
+        elif stype == "i64":
             ty = IntType(64)
         else:
             raise NotImplementedError(f"Unimplemented cast: {inst}")
         # just behave that there's no ZExt for now
-        cast = Cast( self.getOperand(operands[0]), ty)
+        cast = Cast(self.getOperand(operands[0]), ty)
         self._addMapping(inst, cast)
         return [cast]
 
     def _createPtrToInt(self, inst):
         return self._createCast(inst)
-       #operands = getLLVMOperands(inst)
-       #assert len(operands) == 1, "Invalid number of operands for cast"
-       #cast = Cast(self.getOperand(operands[0]),
-       #            IntType(type_size_in_bits(self.llvmmodule, inst.type)))
-       #self._addMapping(inst, cast)
-       #return [cast]
+
+    # operands = getLLVMOperands(inst)
+    # assert len(operands) == 1, "Invalid number of operands for cast"
+    # cast = Cast(self.getOperand(operands[0]),
+    #            IntType(type_size_in_bits(self.llvmmodule, inst.type)))
+    # self._addMapping(inst, cast)
+    # return [cast]
 
     def _createIntToPtr(self, inst):
         return self._createCast(inst)
-       #operands = getLLVMOperands(inst)
-       #assert len(operands) == 1, "Invalid number of operands for cast"
-       #cast = Cast(self.getOperand(operands[0]), PointerType())
-       #self._addMapping(inst, cast)
-       #return [cast]
+
+    # operands = getLLVMOperands(inst)
+    # assert len(operands) == 1, "Invalid number of operands for cast"
+    # cast = Cast(self.getOperand(operands[0]), PointerType())
+    # self._addMapping(inst, cast)
+    # return [cast]
 
     def _createTrunc(self, inst):
         operands = getLLVMOperands(inst)
@@ -542,8 +554,17 @@ class Parser:
             return self._createGep(inst)
         elif opcode == "bitcast":
             return self._createCast(inst)
-        elif opcode in ["add", "sub", "sdiv", "mul", "udiv",
-                             "fadd", "fsub", "fdiv", "fmul"]:
+        elif opcode in [
+            "add",
+            "sub",
+            "sdiv",
+            "mul",
+            "udiv",
+            "fadd",
+            "fsub",
+            "fdiv",
+            "fmul",
+        ]:
             return self._createArith(inst, opcode)
         elif opcode in ["shl", "lshr", "ashr"]:
             return self._createShift(inst)
@@ -570,8 +591,9 @@ class Parser:
             try:
                 instrs = self._parse_instruction(inst)
                 assert (
-                    inst.opcode in ("bitcast", "call", "getelementptr",
-                                    "ptrtoint", "inttoptr") or instrs
+                    inst.opcode
+                    in ("bitcast", "call", "getelementptr", "ptrtoint", "inttoptr")
+                    or instrs
                 ), "No instruction was created"
                 for I in instrs:
                     B.append(I)

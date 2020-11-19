@@ -46,6 +46,7 @@ def em_optimize_expressions(b=True):
 
 opt = SymbolicExprOpt.optimize
 
+
 class ExprManager:
     """
     Takes care of creating (caching and optimizing) expressions.
@@ -209,7 +210,7 @@ class ExprManager:
             return ConcreteDomain.SExt(a, b)
         return opt(SymbolicDomain.SExt(a, b))
 
-    def Cast(self, a : Value, ty : Type):
+    def Cast(self, a: Value, ty: Type):
         assert isinstance(ty, Type)
         if a.is_pointer():
             # pointer to int or int to pointer (where the int is actually

@@ -2,11 +2,13 @@ from slowbeast.ir.types import FloatType
 from slowbeast.domains.value import Value
 from slowbeast.domains.concrete import ConcreteVal
 
+
 class ConcreteFloat(ConcreteVal):
     def __init__(self, n, bw):
         assert isinstance(n, float), n
         assert isinstance(bw, int), bw
         super().__init__(n, FloatType(bw))
+
 
 class ConcreteFloatsDomain:
     """
@@ -86,4 +88,3 @@ class ConcreteFloatsDomain:
     def Div(a, b, unordered=False):
         assert ConcreteFloatsDomain.belongto(a, b)
         return ConcreteFloat(a.value() / b.value(), bw)
-

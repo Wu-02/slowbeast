@@ -19,6 +19,7 @@ def _getInt(s):
     except ValueError:
         return None
 
+
 def _get_float(s):
     try:
         if s.startswith("0x"):
@@ -75,17 +76,17 @@ def getArrayTySize(m, ty):
 
 
 def type_size_in_bits(m, ty):
-    if not isinstance(ty, str) and hasattr(m, 'get_type_size'):
+    if not isinstance(ty, str) and hasattr(m, "get_type_size"):
         return m.get_type_size(ty)
 
     # FIXME: get rid of parsing str
     # FIXME: get rid of the magic constants and use the layout from the program
-    POINTER_SIZE=64
+    POINTER_SIZE = 64
     if not isinstance(ty, str):
         if ty.is_pointer:
             return POINTER_SIZE
         if ty.is_struct:
-            return None # unsupported
+            return None  # unsupported
 
     sty = str(ty)
     if is_array_ty(ty):
@@ -151,6 +152,7 @@ def getConstantPtr(val):
 
     # FIXME
     return None
+
 
 def get_constant(val):
     if val.type.is_pointer:

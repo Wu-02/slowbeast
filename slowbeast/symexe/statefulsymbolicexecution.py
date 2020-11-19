@@ -1,7 +1,7 @@
 from .executor import Executor as SExecutor
 from ..util.debugging import print_stderr, print_stdout, dbg
 
-from . symbolicexecution import SEOptions, SymbolicExecutor
+from .symbolicexecution import SEOptions, SymbolicExecutor
 
 
 class StatefulSymbolicExecutor(SymbolicExecutor):
@@ -9,7 +9,11 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
         self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=SExecutor
     ):
         super().__init__(
-            P, ohandler, opts, executor, ExecutorClass,
+            P,
+            ohandler,
+            opts,
+            executor,
+            ExecutorClass,
         )
         self._seen_states = []
 

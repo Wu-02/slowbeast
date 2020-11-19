@@ -29,11 +29,16 @@ if _use_z3:
     from z3 import is_true, is_false
     from z3 import simplify, substitute
     from z3 import Goal, Tactic
+
     try:
         from z3 import asIEEEBV, fromIEEEBV
     except ImportError:
-        def asIEEEBV(x): return None
-        def fromIEEEBV(x): return None
+
+        def asIEEEBV(x):
+            return None
+
+        def fromIEEEBV(x):
+            return None
 
     def eliminate_common_subexpr(expr):
         # XXX: not efficient, it is rather
@@ -386,7 +391,7 @@ class BVSymbolicDomain:
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         return Expr(BVSExt(b.value() - a.bitwidth(), castToBV(a)), IntType(b.value()))
 
-    def Cast(a : Value, ty : Type):
+    def Cast(a: Value, ty: Type):
         """ Reinterpret cast """
         assert BVSymbolicDomain.belongto(a)
         v = a.unwrap()
@@ -398,7 +403,7 @@ class BVSymbolicDomain:
             e = fromIEEEBV(v)
             if e:
                 return Expr(e, ty)
-        return None # unsupported conversion
+        return None  # unsupported conversion
 
     def Extract(a, start, end):
         assert BVSymbolicDomain.belongto(a)

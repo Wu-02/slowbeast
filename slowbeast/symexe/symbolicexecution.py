@@ -58,7 +58,6 @@ class SymbolicExecutor(Interpreter):
         # DFS for now
         return states.pop()
 
-
     def handleNewStates(self, newstates):
         hs = self.handleNewState
         for s in newstates:

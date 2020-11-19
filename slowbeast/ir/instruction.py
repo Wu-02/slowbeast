@@ -192,7 +192,7 @@ class Load(ValueInstruction):
 
 
 class Alloc(ValueInstruction):
-    def __init__(self, size, on_heap : bool = False):
+    def __init__(self, size, on_heap: bool = False):
         assert isinstance(on_heap, bool), on_heap
         super().__init__()
         self._size = size
@@ -202,9 +202,11 @@ class Alloc(ValueInstruction):
         return self._size
 
     def __str__(self):
-        return "x{0} = alloc {1} bytes{2}"\
-            .format(self.get_id(), self.getSize().as_value(),
-                    " on heap" if self._is_heap else "")
+        return "x{0} = alloc {1} bytes{2}".format(
+            self.get_id(),
+            self.getSize().as_value(),
+            " on heap" if self._is_heap else "",
+        )
 
     # the allocations return pointers, we need to compare them
     def __lt__(self, other):
@@ -401,7 +403,7 @@ class UnaryOperation(ValueInstruction):
     ZEXT = 2
     SEXT = 3
     EXTRACT = 4
-    CAST = 5 # reinterpret cast
+    CAST = 5  # reinterpret cast
     # TODO make SEXT and ZEXT also reinterpret cast?
 
     def __check(op):
@@ -445,6 +447,7 @@ class SExt(Extend):
             self.get_id(), self.getOperand(0).as_value(), self.bitwidth()
         )
 
+
 class Cast(UnaryOperation):
     def __init__(self, a, ty):
         assert isinstance(ty, Type)
@@ -458,6 +461,7 @@ class Cast(UnaryOperation):
         return "x{0} = cast {1} to {2}".format(
             self.get_id(), self.getOperand(0).as_value(), self.casttype()
         )
+
 
 class ExtractBits(UnaryOperation):
     def __init__(self, val, start, end):

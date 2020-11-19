@@ -32,7 +32,7 @@ def remove_implied_literals(clauses):
     rest = []
     for c in clauses:
         if c.is_concrete() and c.value() is True:
-                continue
+            continue
         if c.isOr():
             rest.append(c)
         else:  # the formula is in CNF, so this must be a singleton
@@ -161,6 +161,7 @@ def get_initial_seq2(unsafe):
 
     return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
 
+
 def get_initial_seq(unsafe):
     """
     Return two annotations, one that is the initial safe sequence
@@ -184,7 +185,11 @@ def get_initial_seq(unsafe):
         # all constr. apart from the last one
         pc = EM.conjunction(*uconstr[:-1])
         # last constraint is the failed assertion
-        S = EM.conjunction(pc, Not(uconstr[-1]), S) if S else EM.And(pc, Not(uconstr[-1]))
+        S = (
+            EM.conjunction(pc, Not(uconstr[-1]), S)
+            if S
+            else EM.And(pc, Not(uconstr[-1]))
+        )
         # unsafe states
         su = EM.conjunction(*(c for (n, c) in enumerate(uconstr) if n > 0))
         E = EM.Or(EM.conjunction(*uconstr), E) if E else EM.conjunction(*uconstr)
@@ -384,6 +389,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     return goodl
 
+
 def split_nth_item(items, n):
     item = None
     rest = []
@@ -393,6 +399,7 @@ def split_nth_item(items, n):
         else:
             rest.append(x)
     return item, rest
+
 
 def overapprox_clause(n, clauses, executor, L, unsafe, target):
     createSet = executor.getIndExecutor().createStatesSet
@@ -421,6 +428,7 @@ def overapprox_clause(n, clauses, executor, L, unsafe, target):
     EM = S.get_se_state().getExprManager()
     return EM.disjunction(*newc)
 
+
 def break_eq_ne(expr):
     EM = getGlobalExprManager()
     clauses = []
@@ -431,7 +439,7 @@ def break_eq_ne(expr):
             clauses.append(EM.Le(l, r))
             clauses.append(EM.Le(r, l))
         elif c.isNot():
-            d, = c.children()
+            (d,) = c.children()
             if d.isEq():
                 l, r = d.children()
                 clauses.append(EM.Lt(l, r))
@@ -442,6 +450,7 @@ def break_eq_ne(expr):
             clauses.append(c)
 
     return clauses
+
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
 
@@ -459,7 +468,7 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     target = createSet(seq[-1].toassert())
 
     expr = S.as_expr().to_cnf()
-    #clauses = break_eq_ne(expr)
+    # clauses = break_eq_ne(expr)
     clauses = list(expr.children())
 
     # can we drop a clause completely?
@@ -496,9 +505,11 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)
     return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
+
 def join_iter(i1, i2):
     yield from i1
     yield from i2
+
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions(), genannot=False):
@@ -617,7 +628,7 @@ class KindSymbolicExecutor(BaseKindSE):
     def strengthenInitialSeq(self, seq0, errs0, L):
         r = seq0.check_ind_on_paths(self, L.getPaths())
         # catch it in debug mode so that we can improve...
-        #assert r.errors is None, f"Initial seq is not inductive: {seq0}"
+        # assert r.errors is None, f"Initial seq is not inductive: {seq0}"
         if r.errors is None:
             # initial sequence is not inductive
             return seq0
@@ -641,7 +652,7 @@ class KindSymbolicExecutor(BaseKindSE):
         # is inside the loop, so we must strenghten it
         seq0 = self.strengthenInitialSeq(seq0, errs0, L)
         if seq0 is None:
-            return False # we failed...
+            return False  # we failed...
 
         sequences = [seq0]
 
@@ -736,7 +747,6 @@ class KindSymbolicExecutor(BaseKindSE):
             self.report(s)
             self.reportfn(f"Killed states when executing {path}")
             self.have_problematic_path = True
-
 
         if r.errors:
             self.reportfn(f"Possibly error path: {path}", color="ORANGE")

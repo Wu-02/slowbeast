@@ -40,5 +40,3 @@ class Value:
         Overriden by the ConcreteVal class
         """
         raise NotImplementedError("Must be overriden")
-
-

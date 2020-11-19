@@ -49,6 +49,7 @@ class Type:
             s += "*"
         return s
 
+
 #  FIXME: add type manager that will manage the types,
 #  mainly, we will not create a new object for every value,
 #  but the types will be share (and thus we can also modify them
@@ -62,12 +63,14 @@ class PointerType(Type):
     def is_pointer(self):
         return True
 
+
 class IntType(Type):
     def __init__(self, bw):
         Type.__init__(self, bw)
 
     def is_int(self):
         return True
+
 
 class FloatType(Type):
     def __init__(self, bw):
@@ -76,6 +79,7 @@ class FloatType(Type):
     def is_float(self):
         return True
 
+
 class BoolType(Type):
     def __init__(self):
         Type.__init__(self, 1)
@@ -83,9 +87,11 @@ class BoolType(Type):
     def is_bool(self):
         return True
 
+
 POINTER_BIT_WIDTH = 64
 SizeType = IntType(POINTER_BIT_WIDTH)
 OffsetType = SizeType
+
 
 def sb_set_pointer_width(width):
     global POINTER_BIT_WIDTH
@@ -96,4 +102,3 @@ def sb_set_pointer_width(width):
     global OffsetType
     SizeType = IntType(POINTER_BIT_WIDTH)
     OffsetType = SizeType
-
