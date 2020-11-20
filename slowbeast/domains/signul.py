@@ -3,7 +3,7 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, IntType, BoolType
 
 def dom_is_signul(*v):
-    return all(map(lambda x: x.KIND == 3, v))
+    return all(map(lambda x: x.KIND == 4, v))
 
 def abstract(v):
     if v < 0:
@@ -44,14 +44,17 @@ class SignULValue(Value):
         if x == SignULValue.ANY:
             return "*"
 
-    __slots__ = "_value"
+    __slots__ = "_value", "_lower", "_upper"
 
-    def __init__(self, v, t):
+    def __init__(self, v, t, l=None, u=None):
         assert isinstance(v, (int, bool, float)), f"Invalid constant: {v} {type(v)}"
         assert isinstance(t, Type), f"Invalid type: {t}"
         assert SignULValue.LT0 <= v <= SignULValue.ANY
         super().__init__(t)
         self._value = v
+        # lower and upper bound put on this value due to branching
+        self._lower = l
+        self._upper = u
 
         assert not self.is_pointer(), "Incorrectly constructed pointer"
 
@@ -61,8 +64,14 @@ class SignULValue(Value):
     def value(self):
         return self._value
 
+    def lower(self):
+        return self._lower
+
+    def upper(self):
+        return self._upper
+
     def as_value(self):
-        return SignULValue.val_to_str(self.value())
+        return self.__repr__()
 
     def __hash__(self):
         return self.value()
@@ -71,8 +80,10 @@ class SignULValue(Value):
         return self.value() == rhs.value()
 
     def __repr__(self):
-        return "<{0}:{1}>".format(SignULValue.val_to_str(self.value()), self.type())
-
+        return "<{0}[{1},{2}]:{3}>".format(SignULValue.val_to_str(self.value()),
+                                           u'-\u221e' if self._lower is None else self._lower,
+                                           u'\u221e' if self._upper is None else self._upper,
+                                           self.type())
 
 def get_unsigned(v):
     if v == SignULValue.LT0:
@@ -93,15 +104,19 @@ class SignULDomain:
     def belongto(*args):
         assert len(args) > 0
         for a in args:
-            if a.KIND != 3:
+            if a.KIND != 4:
                 return False
         return True
 
     def lift(v):
-        if v.KIND == 2:
+        if v.KIND == 4:
             return v
+
+        val = v.value()
+        if v.KIND == 3:
+            return SignULValue(abstract(val), v.type())
         if v.KIND == 1:
-            return SignULValue(abstract(v.value()), v.type())
+            return SignULValue(abstract(val), v.type(), val, val)
 
         raise NotImplementedError(f"Invalid value for lifting: {v}")
 
@@ -274,7 +289,11 @@ class SignULDomain:
         # FIXME FIXME FIXME
         assert dom_is_signul(a, b)
         assert a.type() == b.type()
-        return SignULValue(SignULValue.ANY, BoolType())
+        print(a, b)
+        l, u = None, None
+        if b._upper:
+            u = b._upper
+        return SignULValue(SignULValue.ANY, BoolType(), l, u)
         # if unsigned:
         #     return ConcreteBool(getUnsigned(a) < getUnsigned(b))
         # return ConcreteBool(a.value() < b.value())

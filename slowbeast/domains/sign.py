@@ -98,7 +98,7 @@ class ZODomain:
         return True
 
     def lift(v):
-        if v.KIND == 2:
+        if v.KIND == 3:
             return v
         if v.KIND == 1:
             return ZOValue(abstract(v.value()), v.type())
