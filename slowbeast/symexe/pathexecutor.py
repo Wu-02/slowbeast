@@ -144,6 +144,8 @@ class Executor(SExecutor):
                 assert not result.errors, "Have unsafe states before the last location"
                 result.errors, result.other = split_nonready_states(nonready)
             states = newstates
+            if not states:
+                break
 
         # execute the postcondition of the path
         post = path.getPostcondition()
