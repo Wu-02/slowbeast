@@ -698,9 +698,17 @@ class KindSymbolicExecutor(BaseKindSE):
         return seq
 
     def overapprox_init_seq(self, seq0, errs0, L):
+        if __debug__:
+            r = seq0.check_ind_on_paths(self, L.getPaths())
+            assert r.errors is None, "seq is not inductive"
         S = self.getIndExecutor().createStatesSet(seq0.toannotation(True))
         EM = getGlobalExprManager()
-        return InductiveSequence(overapprox_set(self, EM, S, errs0.toassert(), seq0, L).toassert())
+        seq = InductiveSequence(overapprox_set(self, EM, S, errs0.toassert(), seq0, L).toassert())
+        r = seq.check_ind_on_paths(self, L.getPaths())
+        # Why could this happen?
+        if r.errors is None and r.ready:
+            return seq
+        return seq0
 
     def strengthen_initial_seq(self, seq0, errs0, path, L : SimpleLoop):
         # NOTE: if we would pass states here we would safe some work.. be it would be less generic
