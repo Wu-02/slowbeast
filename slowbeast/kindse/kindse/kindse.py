@@ -28,6 +28,8 @@ def remove_implied_literals(clauses):
     Returns an equivalent but possibly smaller formula
     """
 
+    solver = IncrementalSolver()
+
     # split clauses to singleton clauses and the others
     singletons = []
     rest = []
@@ -38,10 +40,10 @@ def remove_implied_literals(clauses):
             rest.append(c)
         else:  # the formula is in CNF, so this must be a singleton
             singletons.append(c)
+            solver.add(c)
 
     EM = getGlobalExprManager()
     Not = EM.Not
-    solver = Solver()
     newclauses = []
     # NOTE: we could do this until a fixpoint, but...
     for r in rest:
@@ -49,10 +51,10 @@ def remove_implied_literals(clauses):
         drop = False
         newc = []
         for l in r.children():
-            if solver.is_sat(*singletons, l) is False:
+            if solver.is_sat(l) is False:
                 # dbg(f"Dropping {l}, it's False")
                 changed = True
-            elif solver.is_sat(*singletons, Not(l)) is False:
+            elif solver.is_sat(Not(l)) is False:
                 # XXX: is it worth querying the solver for this one?
                 drop = True
                 break
@@ -64,6 +66,7 @@ def remove_implied_literals(clauses):
         elif changed:
             if len(newc) == 1:
                 singletons.append(newc[0])
+                solver.add(newc[0])
             else:
                 newclauses.append(EM.disjunction(*newc))
         else:
@@ -565,6 +568,8 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
 
     clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses))
+
+    # FIXME: drop clauses once more?
 
     dbg(f"Overapproximated to {S}", color="dark_blue")
 
