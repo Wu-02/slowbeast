@@ -332,8 +332,11 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         have_feasible = False
         for feasible, inductive in formulas:
             #feasability check
+            solver.push()
             pathcond = EM.substitute(feasible, (litrep, lit))
-            if solver.is_sat(pathcond) is not True:
+            solver.add(pathcond)
+            if solver.is_sat() is not True:
+                solver.pop()
                 continue
             # feasible means ok, but we want at least one feasible path
             # FIXME: do we?
@@ -341,8 +344,11 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
             #inductivity check
             hascti = EM.substitute(inductive, (litrep, lit))
-            if solver.is_sat(EM.And(pathcond, EM.Not(hascti))) is True: # there exist CTI
+            # we have got pathcond in solver already
+            if solver.is_sat(EM.Not(hascti)) is True: # there exist CTI
+                solver.pop()
                 return False
+            solver.pop()
         return have_feasible
 
     # # NOTE: the check above should be equivalent to this code but should be faster as we do not re-execute
