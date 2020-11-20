@@ -490,17 +490,20 @@ def break_eq_ne(expr):
 
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
+    S = executor.getIndExecutor().createStatesSet(s)
+    EM = s.getExprManager()
+    return overapprox_set(executor, EM, S, unsafeAnnot, seq, L)
 
+def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     createSet = executor.getIndExecutor().createStatesSet
-    S = createSet(s)
     unsafe = createSet(unsafeAnnot)  # safe strengthening
     assert intersection(
         S, unsafe
     ).is_empty(), f"Whata? Unsafe states among one-step reachable safe states:\nS = {S},\nunsafe = {unsafe}"
 
-    # print_stdout(f"Overapproximating {S}", color="BROWN")
-    # print_stdout(f"  with unsafe states: {unsafe}", color="BROWN")
-    EM = s.getExprManager()
+    dbg(f"Overapproximating {S}", color="dark_blue")
+    dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
+    # FIXME: move target one level up
     target = createSet(seq[-1].toassert())
 
     expr = S.as_expr().to_cnf()
@@ -535,7 +538,7 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses))
 
-    # print_stdout(f"Overapproximated to {S}", color="BROWN")
+    dbg(f"Overapproximated to {S}", color="dark_blue")
 
     sd = S.as_description()
     A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)
@@ -658,6 +661,11 @@ class KindSymbolicExecutor(BaseKindSE):
         # FIXME: we are still precies, use abstraction here...
         return seq
 
+    def overapprox_init_seq(self, seq0, errs0, L):
+        S = self.getIndExecutor().createStatesSet(seq0.toannotation(True))
+        EM = getGlobalExprManager()
+        return InductiveSequence(overapprox_set(self, EM, S, errs0.toassert(), seq0, L).toassert())
+
     def strengthen_initial_seq(self, seq0, errs0, path, L : SimpleLoop):
         r = seq0.check_ind_on_paths(self, L.getPaths())
         # catch it in debug mode so that we can improve...
@@ -776,6 +784,9 @@ class KindSymbolicExecutor(BaseKindSE):
         seq0 = self.strengthen_initial_seq(seq0, errs0, path, L)
         if seq0 is None:
             return False  # we failed...
+
+        seq0 = self.overapprox_init_seq(seq0, errs0, L)
+        assert seq0
 
         sequences = [seq0]
 
