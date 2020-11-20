@@ -15,7 +15,7 @@ from slowbeast.symexe.annotations import (
 )
 
 from slowbeast.symexe.statesset import union, intersection, complement
-from slowbeast.solvers.solver import getGlobalExprManager, Solver
+from slowbeast.solvers.solver import getGlobalExprManager, Solver, IncrementalSolver
 from slowbeast.solvers.expressions import em_optimize_expressions
 
 from .loops import SimpleLoop
@@ -314,7 +314,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         # formulas for checking 1) feasibility, 2) existence of CTI
         formulas.append((sexpr, expr))
 
-    solver = Solver()
+    solver = IncrementalSolver()
 
     def check_literal(lit):
         if lit.is_concrete():
