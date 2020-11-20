@@ -446,16 +446,16 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     return goodl
 
-
-def split_nth_item(items, n):
-    item = None
-    rest = []
-    for i, x in enumerate(items):
-        if i == n:
-            item = x
-        else:
-            rest.append(x)
-    return item, rest
+#
+# def split_nth_item(items, n):
+#     item = None
+#     rest = []
+#     for i, x in enumerate(items):
+#         if i == n:
+#             item = x
+#         else:
+#             rest.append(x)
+#     return item, rest
 
 
 def overapprox_clause(c, S, executor, L, unsafe, target):
