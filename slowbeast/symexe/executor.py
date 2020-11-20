@@ -1,11 +1,11 @@
-from ..ir.instruction import *
+from slowbeast.ir.instruction import *
 from slowbeast.domains.value import Value
 from slowbeast.domains.constants import ConcreteBool
 from slowbeast.domains.pointer import Pointer
-from ..core.executor import Executor as ConcreteExecutor
-from ..solvers.expressions import is_symbolic
-from ..util.debugging import dbgv
-from ..core.errors import AssertFailError
+from slowbeast.core.executor import Executor as ConcreteExecutor
+from slowbeast.solvers.expressions import is_symbolic
+from slowbeast.util.debugging import dbgv
+from slowbeast.core.errors import AssertFailError
 from slowbeast.domains.concrete import ConcreteVal
 
 from .memorymodel import SymbolicMemoryModel

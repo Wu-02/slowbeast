@@ -142,6 +142,9 @@ class Expr(Value):
     def isNondetLoad(self):
         return False
 
+    def is_future(self):
+        return False
+
     def name(self):
         return str(self._expr)
 
@@ -254,6 +257,33 @@ class NondetLoad(Expr):
     def __repr__(self):
         return f"L({self.alloc.as_value()})={Expr.__repr__(self)}"
 
+
+class Future(Expr):
+    """
+    Represents a value of non-executed operation (instruction)
+    (that is going to be executed as a feedback to the developement of the search
+    """
+    __slots__ = "_instr", "_state"
+
+    def __init__(self, e, t, instr, state):
+        super().__init__(e, t)
+        # to which instr we assigned the nondet value
+        self._instr = instr
+        # stored state
+        self._state = state
+
+    def is_future(self):
+        return True
+
+    def state(self):
+        return self._state
+
+    def from_expr(expr, instr, state):
+        assert isinstance(expr, Expr)
+        return Future(expr.unwrap(), expr.type(), instr)
+
+    def __repr__(self):
+        return f"future({self._instr.as_value()})={super().__repr__()}"
 
 class BVSymbolicDomain:
     """

@@ -51,6 +51,8 @@ def createArgParser():
                         help='Perform symbolic execution.')
     parser.add_argument('-stateful-se', action='store_true', default=False,
                         help='Perform stateful symbolic execution.')
+    parser.add_argument('-future-se', action='store_true', default=False,
+                        help='Perform symbolic execution with on-demand subprograms search.')
     parser.add_argument('-se-step', default='instr',
                         help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
     parser.add_argument('-se-exit-on-error', action='store_true',
@@ -352,7 +354,11 @@ def main():
             opts.setBlockStep()
 
         if args.stateful_se:
+            assert not args.future_se, "Not compatible at this moment"
             from slowbeast.symexe.statefulsymbolicexecution import StatefulSymbolicExecutor as SymbolicExecutor
+        elif args.future_se:
+            assert not args.stateful_se, "Not compatible at this moment"
+            from slowbeast.symexe.futuresymbolicexecution import FutureSymbolicExecutor as SymbolicExecutor
         else:
             from slowbeast.symexe.symbolicexecution import SymbolicExecutor
         interpreter = SymbolicExecutor(P, ohandler, opts)
