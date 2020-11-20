@@ -297,41 +297,60 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     EM = getGlobalExprManager()
     disjunction = EM.disjunction
-
-    # create a fresh literal that we use as a symbol for our literal during extending
-    litrep = EM.Bool("litext")
-    X = intersection(S, disjunction(litrep, *rl))
-    post = postimage(executor, L.getPaths(), pre=X, post=complement(union(target, X)))
-    formulas = [EM.conjunction(*s.getConstraints()) for s in post]
-
-    solver = Solver()
-
-    def check_literal(lit):
-        if lit.is_concrete():
-            return False
-        # safety check
-        X = intersection(S, disjunction(lit, *rl))
-        if not intersection(X, unsafe).is_empty():
-            return False
-
-        for F in formulas:
-            #inductivity check
-            expr = EM.substitute(F, (litrep, lit))
-            if solver.is_sat(expr) is True:
-                return False
-        return True
-
-    # NOTE: the check above should be equivalent to this code but should be faster as we do not re-execute
-    # the paths all the time
-    # def check_literal(lit):
+    #
+    # # create a fresh literal that we use as a symbol for our literal during extending
+    # litrep = EM.Bool("litext")
+    # X = intersection(S, disjunction(litrep, *rl))
+    # post = postimage(executor, L.getPaths(), pre=X, post=union(target, X))
+    # feasformulas = [EM.conjunction(*s.getConstraints()) for s in post]
+    # post = postimage(executor, L.getPaths(), pre=X, post=complement(union(target, X)))
+    # indformulas = [EM.conjunction(*s.getConstraints()) for s in post]
+    #
+    # solver = Solver()
+    #
+    # def check_literal_new(lit):
     #     if lit.is_concrete():
     #         return False
+    #     # safety check
     #     X = intersection(S, disjunction(lit, *rl))
     #     if not intersection(X, unsafe).is_empty():
     #         return False
     #
-    #     r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
-    #     return r.errors is None and r.ready is not None
+    #     feasible = False
+    #     for F in feasformulas:
+    #         #feasability check
+    #         # TODO: do we need it?
+    #         expr = EM.substitute(F, (litrep, lit))
+    #         if solver.is_sat(expr) is True:
+    #             feasible = True
+    #             break
+    #     if not feasible:
+    #         return False
+    #
+    #     for F in indformulas:
+    #         #inductivity check
+    #         expr = EM.substitute(F, (litrep, lit))
+    #         print(expr)
+    #         if solver.is_sat(expr) is True:
+    #             return False
+    #     return True
+
+    # NOTE: the check above should be equivalent to this code but should be faster as we do not re-execute
+    # the paths all the time
+    def check_literal(lit):
+        if lit.is_concrete():
+            return False
+        X = intersection(S, disjunction(lit, *rl))
+        if not intersection(X, unsafe).is_empty():
+            return False
+
+        r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+        return r.errors is None and r.ready is not None
+
+    #def check_literal(lit):
+        # r = check_literal_new(lit)
+        # assert r == check_literal_old(lit), r
+        # return r
 
     def modify_literal(goodl, P, num):
         assert (
