@@ -524,6 +524,9 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     # clauses = break_eq_ne(expr)
     clauses = list(expr.children())
 
+    safesolver = IncrementalSolver()
+    safesolver.add(unsafe.as_expr())
+
     # can we drop a clause completely?
     newclauses = clauses.copy()
     for c in clauses:
@@ -533,10 +536,10 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
         tmpexpr = EM.conjunction(*tmp)
         if tmpexpr.is_concrete():
             continue  # either False or True are bad for us
+        if safesolver.is_sat(tmpexpr) is not False:
+            continue # unsafe overapprox
         X = S.copy()
         X.reset_expr(tmpexpr)
-        if not intersection(X, unsafe).is_empty():
-            continue  # we can't...
         r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
         if r.errors is None and r.ready:
             newclauses = tmp
