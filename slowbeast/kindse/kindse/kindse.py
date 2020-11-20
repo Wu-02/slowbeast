@@ -161,7 +161,7 @@ def get_initial_seq2(unsafe):
 
     return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
 
-def get_initial_seq2(unsafe):
+def get_initial_seq(unsafe, path, L):
     """
     Return two annotations, one that is the initial safe sequence
     and one that represents the error states
@@ -196,7 +196,7 @@ def get_initial_seq2(unsafe):
     return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
 
 
-def get_initial_seq(unsafe, path, L):
+def get_initial_seq3(unsafe, path, L):
     """
     Return two annotations, one that is the initial safe sequence
     and one that represents the error states
@@ -667,6 +667,7 @@ class KindSymbolicExecutor(BaseKindSE):
         return InductiveSequence(overapprox_set(self, EM, S, errs0.toassert(), seq0, L).toassert())
 
     def strengthen_initial_seq(self, seq0, errs0, path, L : SimpleLoop):
+        # NOTE: if we would pass states here we would safe some work.. be it would be less generic
         r = seq0.check_ind_on_paths(self, L.getPaths())
         # catch it in debug mode so that we can improve...
         # assert r.errors is None, f"Initial seq is not inductive: {seq0}"
@@ -674,6 +675,7 @@ class KindSymbolicExecutor(BaseKindSE):
             dbg("Initial sequence is inductive", color="dark_green")
             return seq0
 
+        dbg("Initial sequence is NOT inductive, trying to fix it", color="wine")
         # is the assertion inside the loop or after the loop?
         EM = getGlobalExprManager()
         assert path[0] == L._header
@@ -700,22 +702,28 @@ class KindSymbolicExecutor(BaseKindSE):
                 tmp.reset_expr(expr)
                 print(tmp)
                 R.add(tmp)
-            #R.intersect(errs0.toassume().Not(EM))
             seq0 = InductiveSequence(R.as_assert_annotation())
-            print(seq0)
             r = seq0.check_ind_on_paths(self, L.getPaths())
-            print(r)
             assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
         else:
-            raise NotImplementedError("Not implemented yet")
-            #assertion is outside
-            pass
-        dbg("Initial sequence is NOT inductive", color="red")
+            print(seq0)
+            print(errs0)
+            r = check_paths(self, [AnnotatedCFGPath([path[0]])])
+            if r.ready is None:
+                return None
+            R = createSet()
+            ready =  [s for s in r.ready if s.pc is path[1].getBBlock().first()]
+            for r in ready:
+                R.add(r)
+            R.intersect(seq0.toannotation(True))
+            seq0 = InductiveSequence(R.as_assert_annotation())
+            r = seq0.check_ind_on_paths(self, L.getPaths())
+            assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
+
         r = seq0.check_ind_on_paths(self, L.getPaths())
         if r.errors is None:
             dbg("Initial sequence made inductive", color="dark_green")
             return seq0
-
         return None
 
         #
