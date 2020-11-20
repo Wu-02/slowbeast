@@ -76,6 +76,9 @@ class CallStack:
             self._cs = copy(self._cs)
             self._cs_ro = False
 
+    def __len__(self):
+        return len(self._cs)
+
     def __eq__(self, rhs):
         return self._cs == rhs._cs
 

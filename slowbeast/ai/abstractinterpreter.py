@@ -17,7 +17,6 @@ class AIStats:
         self.terminated_paths = 0
         self.errors = 0
 
-
 class AbstractInterpreter(Interpreter):
     def __init__(
         self, P, ohandler=None, opts=AIOptions(), executor=None, ExecutorClass=AIExecutor
@@ -48,7 +47,8 @@ class AbstractInterpreter(Interpreter):
             hs(s)
 
     def handleNewState(self, s):
-        if s in self.explored_states.setdefault(s.pc, set()):
+        pc = s.pc
+        if s in self.explored_states.setdefault(pc, set()):
             dbg("Already have this state")
            #if s.hasError():
            #    s.dump()
@@ -57,7 +57,7 @@ class AbstractInterpreter(Interpreter):
            #        if x == s:
            #            x.dump()
             return
-        self.explored_states[s.pc].add(s)
+        self.explored_states[pc].add(s)
 
         testgen = self.ohandler.testgen if self.ohandler else None
         stats = self.stats
