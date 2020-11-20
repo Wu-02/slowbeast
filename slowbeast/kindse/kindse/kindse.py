@@ -94,74 +94,7 @@ def check_base(prog, L, inv):
     dbg_sec()
     return res == 0
 
-
-def get_initial_seq2(unsafe):
-    """
-    Return two annotations, one that is the initial safe sequence
-    and one that represents the error states
-    """
-    # NOTE: Only safe states that reach the assert are not inductive on the
-    # loop header -- what we need is to have safe states that already left
-    # the loop and safely pass assertion or avoid it.
-    # These are the complement of error states intersected with the
-    # negation of loop condition.
-
-    S = None  # safe states
-    E = None  # unsafe states
-    H = None  # loop exit condition
-
-    EM = getGlobalExprManager()
-    Not = EM.Not
-    for u in unsafe:
-        # add constraints without loop exit condition
-        # (we'll add the loop condition later)
-        uconstr = u.getConstraints()
-        # same as uconstr[1:], but via generators
-        uconstrnh = (c for (n, c) in enumerate(uconstr) if n > 0)
-        # safe states
-        notu = EM.disjunction(*map(Not, uconstrnh))
-        S = EM.And(notu, S) if S else notu  # use conjunction too?
-        # unsafe states
-        su = EM.conjunction(*(c for (n, c) in enumerate(uconstr) if n > 0))
-        E = EM.Or(su, E) if E else su
-
-        # loop exit condition
-        H = EM.Or(H, uconstr[0]) if H else uconstr[0]
-
-    # simplify the formulas
-    if not S.is_concrete():
-        S = EM.conjunction(*remove_implied_literals(S.to_cnf().children()))
-    if not E.is_concrete():
-        E = EM.conjunction(*remove_implied_literals(E.to_cnf().children()))
-    if not H.is_concrete():
-        H = EM.conjunction(*remove_implied_literals(H.to_cnf().children()))
-
-    subs = {l: l.load for l in unsafe[0].getNondetLoads()}
-    Sh = AssertAnnotation(H, subs, EM)
-    Sa = AssertAnnotation(S, subs, EM)
-    Se = AssertAnnotation(E, subs, EM)
-
-    # solver = Solver()
-    # if solver.is_sat(S, E) is False:
-    #    # if safe states themselves do not intersect the error states,
-    #    # we can use them without the loop-exit condition
-    #    # FIXME: we could also drop some clauses...
-    #    clauses = list(S.to_cnf().children())
-    #    changed = False
-    #    for c in S.to_cnf().children():
-    #        # XXX: we could do this until a fixpoint
-    #        tmp = clauses.copy()
-    #        tmp.remove(c)
-    #        if solver.is_sat(E, EM.conjunction(*tmp)) is False:
-    #            changed = True
-    #            clauses = tmp
-    #    if changed:
-    #        Sa = AssertAnnotation(EM.conjunction(*clauses), subs, EM)
-    #    return InductiveSequence(Sa), InductiveSequence.Frame(Se, Sh)
-
-    return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
-
-def get_initial_seq(unsafe, path, L):
+def get_initial_seq2(unsafe, path, L):
     """
     Return two annotations, one that is the initial safe sequence
     and one that represents the error states
@@ -196,10 +129,13 @@ def get_initial_seq(unsafe, path, L):
     return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
 
 
-def get_initial_seq3(unsafe, path, L):
+def get_initial_seq(unsafe, path, L):
     """
     Return two annotations, one that is the initial safe sequence
-    and one that represents the error states
+    and one that represents the error states.
+    This implementation returns not the weakest sets, but stronger sets
+    that should be easier to prove (and then we can prove the remaining
+    states safe in another iteration).
     """
 
     # NOTE: Only safe states that reach the assert are not inductive on the
@@ -679,7 +615,6 @@ class KindSymbolicExecutor(BaseKindSE):
         # is the assertion inside the loop or after the loop?
         EM = getGlobalExprManager()
         assert path[0] == L._header
-        print(path)
         createSet = self.getIndExecutor().createStatesSet
         if (path[0], path[1]) in L.get_inedges():
             # FIXME: we actually do not use the concrete assertion at all right now...
@@ -692,6 +627,7 @@ class KindSymbolicExecutor(BaseKindSE):
             if not ready:
                 return None
             R = createSet()
+            # FIXME: we can use only a subset of the states, wouldn't that be better?
             for r in ready:
                 # do not use the first constraint -- it is the inedge condition that we want to ignore,
                 # because we want to jump out of the loop (otherwise we will not get inductive set)
@@ -700,14 +636,11 @@ class KindSymbolicExecutor(BaseKindSE):
                 expr = EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
                 tmp = createSet(r)
                 tmp.reset_expr(expr)
-                print(tmp)
                 R.add(tmp)
             seq0 = InductiveSequence(R.as_assert_annotation())
             r = seq0.check_ind_on_paths(self, L.getPaths())
             assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
         else:
-            print(seq0)
-            print(errs0)
             r = check_paths(self, [AnnotatedCFGPath([path[0]])])
             if r.ready is None:
                 return None
