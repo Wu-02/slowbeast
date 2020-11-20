@@ -312,7 +312,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         expr = I.doSubs(s)
         # to simulate forking, we need both the condition and its assertion
         # formulas for checking 1) feasibility, 2) existence of CTI
-        formulas.append((sexpr, EM.And(sexpr, EM.Not(expr))))
+        formulas.append((sexpr, expr))
 
     solver = Solver()
 
@@ -327,16 +327,16 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         have_feasible = False
         for feasible, inductive in formulas:
             #feasability check
-            fexpr = EM.substitute(feasible, (litrep, lit))
-            if solver.is_sat(fexpr) is not True:
+            pathcond = EM.substitute(feasible, (litrep, lit))
+            if solver.is_sat(pathcond) is not True:
                 continue
             # feasible means ok, but we want at least one feasible path
             # FIXME: do we?
             have_feasible = True
 
             #inductivity check
-            iexpr = EM.substitute(inductive, (litrep, lit))
-            if solver.is_sat(iexpr) is True: # there exist CTI
+            hascti = EM.substitute(inductive, (litrep, lit))
+            if solver.is_sat(EM.And(pathcond, EM.Not(hascti))) is True: # there exist CTI
                 return False
         return have_feasible
 
