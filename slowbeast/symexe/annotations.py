@@ -1,8 +1,6 @@
-from slowbeast.util.debugging import dbgv, dbgv_sec
+from slowbeast.util.debugging import dbgv_sec
 from slowbeast.core.executor import split_ready_states
-from slowbeast.domains.symbolic import NondetLoad
 from .statedescription import StateDescription, unify_state_descriptions
-
 from copy import copy
 
 
@@ -184,13 +182,11 @@ def _execute_expr_annotation(executor, states, annot):
     for s in ready:
         expr = annot.doSubs(s)
         if isassume:
-            dbgv(f"assume {expr}")
             s = executor.assume(s, expr)
             if s:
                 states.append(s)
         else:
             assert annot.isAssert()
-            dbgv(f"assert {expr}")
             tr, tu = split_ready_states(executor.execAssertExpr(s, expr))
             states += tr
             nonready += tu
@@ -204,7 +200,7 @@ def execute_annotation(executor, states, annot):
     assert isinstance(annot, Annotation), annot
     assert all(map(lambda s: s.isReady(), states))
 
-    dbgv_sec(f"executing annotation:\n{annot}")
+    #dbgv_sec(f"executing annotation:\n{annot}")
 
     if annot.isInstrs():
         states, nonready = _execute_instr_annotation(executor, states, annot)
@@ -212,7 +208,7 @@ def execute_annotation(executor, states, annot):
         assert annot.isAssume() or annot.isAssert()
         states, nonready = _execute_expr_annotation(executor, states, annot)
 
-    dbgv_sec()
+    #dbgv_sec()
     return states, nonready
 
 
