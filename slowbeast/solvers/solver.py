@@ -196,7 +196,7 @@ class IncrementalSolver(SymbolicSolver):
         self._solver = Z3Solver()
 
     def add(self, *e):
-        self._solver.add(*e)
+        self._solver.add(*(x.unwrap() for x in e))
 
     def push(self):
         self._solver.push()
@@ -211,6 +211,9 @@ class IncrementalSolver(SymbolicSolver):
 
     def concretize(self, assumpt, *e):
         raise NotImplementedError("Not implemented yet")
+
+    def __repr__(self):
+        return f"IncrementalSolver: {self._solver}"
 
 
 Solver = SymbolicSolver

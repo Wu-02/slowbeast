@@ -314,14 +314,19 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         # formulas for checking 1) feasibility, 2) existence of CTI
         formulas.append((sexpr, expr))
 
+    # we always check S && unsafe && new_clause, so we can keep S  and unsafe
+    # in the solver all the time
+    safety_solver = IncrementalSolver()
+    safety_solver.add(S.as_expr())
+    safety_solver.add(unsafe.as_expr())
+
     solver = IncrementalSolver()
 
     def check_literal(lit):
         if lit.is_concrete():
             return False
         # safety check
-        X = intersection(S, disjunction(lit, *rl))
-        if not intersection(X, unsafe).is_empty():
+        if not safety_solver.is_sat(disjunction(lit, *rl)) is False:
             return False
 
         have_feasible = False
