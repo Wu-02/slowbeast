@@ -11,6 +11,7 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
     or_annotations,
+    execute_annotation_substitutions
 )
 
 from slowbeast.symexe.statesset import union, intersection, complement
@@ -214,10 +215,6 @@ def postimage(executor, paths, pre=None, post=None):
     assert result.errors is None and result.ready, result
 
     ready = result.ready
-    A = post.as_assume_annotation()
-    for s in ready:
-        expr = A.doSubs(s)
-        s.addConstraint(expr)
     return ready
 
 
@@ -297,60 +294,68 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     EM = getGlobalExprManager()
     disjunction = EM.disjunction
-    #
-    # # create a fresh literal that we use as a symbol for our literal during extending
-    # litrep = EM.Bool("litext")
-    # X = intersection(S, disjunction(litrep, *rl))
-    # post = postimage(executor, L.getPaths(), pre=X, post=union(target, X))
-    # feasformulas = [EM.conjunction(*s.getConstraints()) for s in post]
-    # post = postimage(executor, L.getPaths(), pre=X, post=complement(union(target, X)))
-    # indformulas = [EM.conjunction(*s.getConstraints()) for s in post]
-    #
-    # solver = Solver()
-    #
-    # def check_literal_new(lit):
-    #     if lit.is_concrete():
-    #         return False
-    #     # safety check
-    #     X = intersection(S, disjunction(lit, *rl))
-    #     if not intersection(X, unsafe).is_empty():
-    #         return False
-    #
-    #     feasible = False
-    #     for F in feasformulas:
-    #         #feasability check
-    #         # TODO: do we need it?
-    #         expr = EM.substitute(F, (litrep, lit))
-    #         if solver.is_sat(expr) is True:
-    #             feasible = True
-    #             break
-    #     if not feasible:
-    #         return False
-    #
-    #     for F in indformulas:
-    #         #inductivity check
-    #         expr = EM.substitute(F, (litrep, lit))
-    #         print(expr)
-    #         if solver.is_sat(expr) is True:
-    #             return False
-    #     return True
 
-    # NOTE: the check above should be equivalent to this code but should be faster as we do not re-execute
-    # the paths all the time
+    # create a fresh literal that we use as a symbol for our literal during extending
+    litrep = EM.Bool("litext")
+    X = intersection(S, disjunction(litrep, *rl))
+    assert not X.is_empty()
+    post = postimage(executor, L.getPaths(), pre=X)
+    assert post
+    formulas = []
+    U = union(target, X)
+    I = U.as_assume_annotation()
+    # execute the instructions from annotations, so that the substitutions have up-to-date value
+    post, nonr = execute_annotation_substitutions(executor.getIndExecutor(), post, I)
+    assert not nonr, f"Got errors while processing annotations: {nonr}"
+    for s in post:
+        sexpr = s.getConstraintsObj().asFormula(EM)
+        expr = I.doSubs(s)
+        # to simulate forking, we need both the condition and its assertion
+        # formulas for checking 1) feasibility, 2) existence of CTI
+        formulas.append((sexpr, EM.And(sexpr, EM.Not(expr))))
+
+    solver = Solver()
+
     def check_literal(lit):
         if lit.is_concrete():
             return False
+        # safety check
         X = intersection(S, disjunction(lit, *rl))
         if not intersection(X, unsafe).is_empty():
             return False
 
-        r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
-        return r.errors is None and r.ready is not None
+        have_feasible = False
+        for feasible, inductive in formulas:
+            #feasability check
+            fexpr = EM.substitute(feasible, (litrep, lit))
+            if solver.is_sat(fexpr) is not True:
+                continue
+            # feasible means ok, but we want at least one feasible path
+            # FIXME: do we?
+            have_feasible = True
 
-    #def check_literal(lit):
-        # r = check_literal_new(lit)
-        # assert r == check_literal_old(lit), r
-        # return r
+            #inductivity check
+            iexpr = EM.substitute(inductive, (litrep, lit))
+            if solver.is_sat(iexpr) is True: # there exist CTI
+                return False
+        return have_feasible
+
+    # # NOTE: the check above should be equivalent to this code but should be faster as we do not re-execute
+    # # the paths all the time
+    # def check_literal_old(lit):
+    #     if lit.is_concrete():
+    #         return False
+    #     X = intersection(S, disjunction(lit, *rl))
+    #     if not intersection(X, unsafe).is_empty():
+    #         return False
+    #
+    #     r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+    #     return r.errors is None and r.ready is not None
+    #
+    # def check_literal(lit):
+    #     r = check_literal_new(lit)
+    #     assert r == check_literal_old(lit), r
+    #     return r
 
     def modify_literal(goodl, P, num):
         assert (
@@ -442,19 +447,10 @@ def split_nth_item(items, n):
     return item, rest
 
 
-def overapprox_clause(n, clauses, executor, L, unsafe, target):
-    createSet = executor.getIndExecutor().createStatesSet
-
-    S = createSet()
-    c = None
-    for i, x in enumerate(clauses):
-        if i == n:
-            c = x
-        else:
-            S.intersect(x)
-    assert c
-
+def overapprox_clause(c, S, executor, L, unsafe, target):
     assert intersection(S, c, unsafe).is_empty(), f"{S} \cap {c} \cap {unsafe}"
+
+    createSet = executor.getIndExecutor().createStatesSet
 
     newc = []
     lits = list(literals(c))
@@ -537,8 +533,19 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
 
     clauses = remove_implied_literals(newclauses)
     newclauses = []
+
     for n in range(0, len(clauses)):
-        newclause = overapprox_clause(n, clauses, executor, L, unsafe, target)
+        tmp = createSet()
+        c = None
+        for i, x in enumerate(clauses):
+            if i == n:
+                c = x
+            else:
+                tmp.intersect(x)
+        assert c
+        R = S.copy()
+        R.reset_expr(tmp.as_expr())
+        newclause = overapprox_clause(c, R, executor, L, unsafe, target)
         if newclause:
             newclauses.append(newclause)
 

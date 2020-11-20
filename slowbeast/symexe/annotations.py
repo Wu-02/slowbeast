@@ -1,4 +1,4 @@
-from slowbeast.util.debugging import dbgv_sec
+from slowbeast.util.debugging import dbgv_sec, dbgv
 from slowbeast.core.executor import split_ready_states
 from .statedescription import StateDescription, unify_state_descriptions
 from copy import copy
@@ -167,13 +167,19 @@ def _execute_instr_annotation(executor, states, annot):
     return states, nonready
 
 
-def _execute_expr_annotation(executor, states, annot):
-    nonready = []
-
+def execute_annotation_substitutions(executor, states, annot):
+    """
+    Execute instructions from substitutions of an annotation
+    """
     subs = annot.getSubstitutions()
+    nonready = []
     for i in set(subs.values()):
         states, nr = _execute_instr(executor, states, i)
         nonready += nr
+    return states, nonready
+
+def _execute_expr_annotation(executor, states, annot):
+    states, nonready = execute_annotation_substitutions(executor, states, annot)
 
     isassume = annot.isAssume()
     expr = annot.getExpr()
@@ -181,6 +187,7 @@ def _execute_expr_annotation(executor, states, annot):
     states = []
     for s in ready:
         expr = annot.doSubs(s)
+        #dbgv(f"Executing annotation\n{annot}\n==>\n{expr}")
         if isassume:
             s = executor.assume(s, expr)
             if s:
