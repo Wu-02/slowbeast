@@ -49,7 +49,7 @@ def remove_implied_literals(clauses):
         newc = []
         for l in r.children():
             if solver.is_sat(*singletons, l) is False:
-                #dbg(f"Dropping {l}, it's False")
+                # dbg(f"Dropping {l}, it's False")
                 changed = True
             elif solver.is_sat(*singletons, Not(l)) is False:
                 # XXX: is it worth querying the solver for this one?
@@ -58,7 +58,7 @@ def remove_implied_literals(clauses):
             else:
                 newc.append(l)
         if drop:
-            #dbg(f"Dropping {r}, it's True")
+            # dbg(f"Dropping {r}, it's True")
             continue
         elif changed:
             if len(newc) == 1:
@@ -205,6 +205,7 @@ def get_initial_seq3(unsafe):
     Se = AssertAnnotation(E, subs, EM)
 
     return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
+
 
 def get_initial_seq(unsafe):
     """
@@ -454,7 +455,10 @@ def overapprox_clause(n, clauses, executor, L, unsafe, target):
     for l in lits:
         newl = overapprox_literal(l, lits, S, unsafe, target, executor, L)
         newc.append(newl)
-        dbg(f"  Overapproximated {l} ==> {getGlobalExprManager().simplify(newl)}", color="gray")
+        dbg(
+            f"  Overapproximated {l} ==> {getGlobalExprManager().simplify(newl)}",
+            color="gray",
+        )
 
     if len(newc) == 1:
         return newc[0]
@@ -520,7 +524,7 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
         r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
         if r.errors is None and r.ready:
             newclauses = tmp
-            #dbg(f"  dropped {c}...")
+            # dbg(f"  dropped {c}...")
 
     clauses = remove_implied_literals(newclauses)
     newclauses = []
@@ -568,16 +572,16 @@ class KindSymbolicExecutor(BaseKindSE):
 
         # first try to unroll it in the case the loop
         # is easy to verify
-       #kindse = BaseKindSE(self.getProgram())
-       #maxk = 15
-       #dbg_sec("Running nested KindSE")
-       #res = kindse.run([path.copy()], maxk=maxk)
-       #dbg_sec()
-       #if res == 0:
-       #    print_stdout(
-       #        f"Loop {loc.getBBlockID()} proved by the basic KindSE", color="GREEN"
-       #    )
-       #    return True
+        # kindse = BaseKindSE(self.getProgram())
+        # maxk = 15
+        # dbg_sec("Running nested KindSE")
+        # res = kindse.run([path.copy()], maxk=maxk)
+        # dbg_sec()
+        # if res == 0:
+        #    print_stdout(
+        #        f"Loop {loc.getBBlockID()} proved by the basic KindSE", color="GREEN"
+        #    )
+        #    return True
 
         assert self.loops.get(loc.getBBlockID())
         if not self.execute_loop(loc, self.loops.get(loc.getBBlockID())):
@@ -667,16 +671,18 @@ class KindSymbolicExecutor(BaseKindSE):
             return seq0
 
         dbg("Initial sequence is not inductive", color="wine")
-        print('Safe: ', seq0)
-        print('Errors: ', errs0)
-        print('-------------------------------------')
+        print("Safe: ", seq0)
+        print("Errors: ", errs0)
+        print("-------------------------------------")
 
         createSet = self.getIndExecutor().createStatesSet
         safeannot = seq0.toannotation(True)
         EM = getGlobalExprManager()
         conjunction = EM.conjunction
         errsan = errs0.toassert()
-        constraints = InductiveSequence.Frame(AssertAnnotation(EM.getFalse(), {}, EM), None)
+        constraints = InductiveSequence.Frame(
+            AssertAnnotation(EM.getFalse(), {}, EM), None
+        )
         sequences = [InductiveSequence(errsan)]
         while True:
             extended = []
@@ -686,13 +692,15 @@ class KindSymbolicExecutor(BaseKindSE):
                 S1.intersect(safeannot)
                 expr = S1.as_expr()
                 if not expr.is_concrete():
-                    S1.reset_expr(conjunction(*remove_implied_literals(expr.to_cnf().children())))
+                    S1.reset_expr(
+                        conjunction(*remove_implied_literals(expr.to_cnf().children()))
+                    )
                     expr = S1.as_expr()
 
                 if not expr.is_concrete():
-                    print('Strengthen set', S1)
+                    print("Strengthen set", S1)
                     tmp = InductiveSequence(S1.as_assert_annotation())
-                    print_stdout(f'Trying {tmp}', color='dark_blue')
+                    print_stdout(f"Trying {tmp}", color="dark_blue")
                     r = tmp.check_ind_on_paths(self, L.getPaths())
                     if r.errors is None:
                         dbg("Initial sequence has been made inductive!", color="green")

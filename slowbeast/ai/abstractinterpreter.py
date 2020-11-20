@@ -7,6 +7,7 @@ from ..util.debugging import print_stderr, dbg
 class AIOptions(SEOptions):
     pass
 
+
 class AIStats:
     def __init__(self):
         # all paths (including ones that hit an error or terminated early)
@@ -17,13 +18,17 @@ class AIStats:
         self.terminated_paths = 0
         self.errors = 0
 
+
 class AbstractInterpreter(Interpreter):
     def __init__(
-        self, P, ohandler=None, opts=AIOptions(), executor=None, ExecutorClass=AIExecutor
+        self,
+        P,
+        ohandler=None,
+        opts=AIOptions(),
+        executor=None,
+        ExecutorClass=AIExecutor,
     ):
-        super().__init__(
-            P, opts, executor or ExecutorClass(opts)
-        )
+        super().__init__(P, opts, executor or ExecutorClass(opts))
         self.stats = AIStats()
         # outputs handler
         self.ohandler = ohandler
@@ -50,12 +55,12 @@ class AbstractInterpreter(Interpreter):
         pc = s.pc
         if s in self.explored_states.setdefault(pc, set()):
             dbg("Already have this state")
-           #if s.hasError():
-           #    s.dump()
-           #    print('---- HAVE ----')
-           #    for x in self.explored_states[s.pc]:
-           #        if x == s:
-           #            x.dump()
+            # if s.hasError():
+            #    s.dump()
+            #    print('---- HAVE ----')
+            #    for x in self.explored_states[s.pc]:
+            #        if x == s:
+            #            x.dump()
             return
         self.explored_states[pc].add(s)
 
@@ -97,10 +102,11 @@ class AbstractInterpreter(Interpreter):
 
     def report(self):
         pass
-       #expl = self.explored_states
-       #for pc, S in expl.items():
-       #    pc.dump()
-       #    print(' --- states ---')
-       #    for s in S:
-       #        s.dump()
-       #    print(' --- all states ---')
+
+    # expl = self.explored_states
+    # for pc, S in expl.items():
+    #    pc.dump()
+    #    print(' --- states ---')
+    #    for s in S:
+    #        s.dump()
+    #    print(' --- all states ---')

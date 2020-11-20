@@ -3,6 +3,7 @@ from ..util.debugging import print_stderr, print_stdout, dbg
 
 from .symbolicexecution import SEOptions, SymbolicExecutor
 
+
 def subsumed_memory(s, state):
     # every value in the state must be included in the corresponding value of s
     # FIXME: accessing protected attrs
@@ -21,6 +22,7 @@ def subsumed_memory(s, state):
         for lval in lo.values().items():
             s.is_sat()
     return True
+
 
 class StatefulSymbolicExecutor(SymbolicExecutor):
     def __init__(
@@ -49,7 +51,7 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
         """
         pc = state.pc
         # FIXME use approximate hasing to get a small set of states for subsumption checking
-        #for s in self.explored_states.setdefault(pc, set()):
+        # for s in self.explored_states.setdefault(pc, set()):
         EM = state.getExprManager()
         for s in self.explored_states.setdefault(pc, []):
             # FIXME: will not work with incremental solving, there may be a symbol collision
@@ -60,11 +62,9 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
             if subsumed_memory(s, state):
                 return True
 
-
-
-           #if s.is_sat(EM.Not(state.getConstraintsObj().asFormula(EM))) is False:
-           #    dbg(f"Subsumed {state.getConstraints()} by {s.getConstraints()} at {pc}", color="white")
-           #    return True
-        #self.explored_states[pc].add(state)
+        # if s.is_sat(EM.Not(state.getConstraintsObj().asFormula(EM))) is False:
+        #    dbg(f"Subsumed {state.getConstraints()} by {s.getConstraints()} at {pc}", color="white")
+        #    return True
+        # self.explored_states[pc].add(state)
         self.explored_states[pc].append(state)
         return False

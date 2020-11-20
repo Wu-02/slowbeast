@@ -2,8 +2,10 @@ from slowbeast.domains.concrete import ConcreteVal, dom_is_concrete
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, IntType, BoolType
 
+
 def dom_is_signul(*v):
     return all(map(lambda x: x.KIND == 4, v))
+
 
 def abstract(v):
     if v < 0:
@@ -11,6 +13,7 @@ def abstract(v):
     else:
         v = SignULValue.GT0 if v > 0 else SignULValue.ZERO
     return v
+
 
 class SignULValue(Value):
     """
@@ -80,10 +83,13 @@ class SignULValue(Value):
         return self.value() == rhs.value()
 
     def __repr__(self):
-        return "<{0}[{1},{2}]:{3}>".format(SignULValue.val_to_str(self.value()),
-                                           u'-\u221e' if self._lower is None else self._lower,
-                                           u'\u221e' if self._upper is None else self._upper,
-                                           self.type())
+        return "<{0}[{1},{2}]:{3}>".format(
+            SignULValue.val_to_str(self.value()),
+            "-\u221e" if self._lower is None else self._lower,
+            "\u221e" if self._upper is None else self._upper,
+            self.type(),
+        )
+
 
 def get_unsigned(v):
     if v == SignULValue.LT0:
@@ -95,6 +101,7 @@ def get_unsigned(v):
     if v == SignULValue.ANY:
         return SignULValue.GE0
     return v
+
 
 class SignULDomain:
     """
@@ -126,7 +133,7 @@ class SignULDomain:
         return x.value()
 
     def Constant(v, bw):
-       return SignULValue(abstract(v), IntType(bw))
+        return SignULValue(abstract(v), IntType(bw))
 
     def Var(ty):
         return SignULValue(SignULValue.ANY, ty)
@@ -159,33 +166,33 @@ class SignULDomain:
         assert all(map(lambda a: a.is_bool(), args))
         return SignULValue(any(map(lambda x: x.value() != 0, args)), BoolType)
 
-   #def And(a, b):
-   #    assert dom_is_signul(a, b)
-   #    assert a.type() == b.type()
-   #    if a.is_bool():
-   #        return SignULDomain(1 if (a.value() != 0 and b.value() != 0) else 0)
+    # def And(a, b):
+    #    assert dom_is_signul(a, b)
+    #    assert a.type() == b.type()
+    #    if a.is_bool():
+    #        return SignULDomain(1 if (a.value() != 0 and b.value() != 0) else 0)
 
-   #    aval = a.value()
-   #    bval = b.value()
-   #    # if aval != bval:
-   #    #    # aval & bval >= 0
-   #    #    return SignULDomain(SignULDomain.
-   #    # if aval >= 0 and bval >= 0:
-   #    #    return SignULDomain(0, a.type())
-   #    return SignULDomain(a.value() & b.value(), a.type())
+    #    aval = a.value()
+    #    bval = b.value()
+    #    # if aval != bval:
+    #    #    # aval & bval >= 0
+    #    #    return SignULDomain(SignULDomain.
+    #    # if aval >= 0 and bval >= 0:
+    #    #    return SignULDomain(0, a.type())
+    #    return SignULDomain(a.value() & b.value(), a.type())
 
-   #def Or(a, b):
-   #    assert dom_is_signul(a, b)
-   #    assert a.type() == b.type()
-   #    if a.is_bool():
-   #        return ConcreteBool(a.value() or b.value())
-   #    else:
-   #        return ConcreteVal(a.value() | b.value(), a.type())
+    # def Or(a, b):
+    #    assert dom_is_signul(a, b)
+    #    assert a.type() == b.type()
+    #    if a.is_bool():
+    #        return ConcreteBool(a.value() or b.value())
+    #    else:
+    #        return ConcreteVal(a.value() | b.value(), a.type())
 
-   #def Xor(a, b):
-   #    assert dom_is_signul(a, b)
-   #    assert a.type() == b.type()
-   #    return ConcreteVal(a.value() ^ b.value(), a.type())
+    # def Xor(a, b):
+    #    assert dom_is_signul(a, b)
+    #    assert a.type() == b.type()
+    #    return ConcreteVal(a.value() ^ b.value(), a.type())
 
     def Not(a):
         assert dom_is_signul(a)
@@ -209,33 +216,34 @@ class SignULDomain:
         assert dom_is_signul(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
-        return SignULValue(SignULValue.ANY, IntType(b.value())) # FIXME
+        return SignULValue(SignULValue.ANY, IntType(b.value()))  # FIXME
 
     def SExt(a, b):
         assert dom_is_signul(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        return SignULValue(SignULValue.ANY, IntType(b.value())) # FIXME
+        return SignULValue(SignULValue.ANY, IntType(b.value()))  # FIXME
 
     def Cast(a: ConcreteVal, ty: Type):
         assert dom_is_signul(a, b)
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
-#    """
-   #    Reinterpret cast
-   #    """
-   #    assert dom_is_signul(a)
-   #    if a.is_int():
-   #        if ty.is_float():
-   #            return ConcreteVal(float(a.value()), ty)
-   #        elif ty.is_int():
-   #            return ConcreteVal(a.value(), ty)
-   #    elif a.is_float():
-   #        if ty.is_float():
-   #            return ConcreteVal(a.value(), ty)
-   #    # unsupported yet
-   #    # elif ty.is_int():
-   #    #    return ConcreteVal(int(v), ty)
-   #    return None  # unsupported conversion
+
+    #    """
+    #    Reinterpret cast
+    #    """
+    #    assert dom_is_signul(a)
+    #    if a.is_int():
+    #        if ty.is_float():
+    #            return ConcreteVal(float(a.value()), ty)
+    #        elif ty.is_int():
+    #            return ConcreteVal(a.value(), ty)
+    #    elif a.is_float():
+    #        if ty.is_float():
+    #            return ConcreteVal(a.value(), ty)
+    #    # unsupported yet
+    #    # elif ty.is_int():
+    #    #    return ConcreteVal(int(v), ty)
+    #    return None  # unsupported conversion
 
     def Shl(a, b):
         assert dom_is_signul(a, b)
@@ -251,31 +259,34 @@ class SignULDomain:
         assert dom_is_signul(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
-#    val = a.value()
-   #    return ConcreteVal(
-   #        a.value() >> b.value()
-   #        if val >= 0
-   #        else (val + (1 << a.bitwidth())) >> b.value(),
-   #        a.type(),
-   #    )
+
+    #    val = a.value()
+    #    return ConcreteVal(
+    #        a.value() >> b.value()
+    #        if val >= 0
+    #        else (val + (1 << a.bitwidth())) >> b.value(),
+    #        a.type(),
+    #    )
 
     def Extract(a, start, end):
         assert dom_is_signul(a)
         assert dom_is_concrete(start), start
         assert dom_is_concrete(end), end
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
-#    bitsnum = end.value() - start.value() + 1
-   #    return ConcreteInt(
-   #        (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
-   #    )
+
+    #    bitsnum = end.value() - start.value() + 1
+    #    return ConcreteInt(
+    #        (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
+    #    )
 
     def Rem(a, b, unsigned=False):
         assert dom_is_signul(a, b)
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
-#    assert b.value() != 0, "Invalid remainder"
-#    if unsigned:
-   #        return ConcreteVal(getUnsigned(a) % getUnsigned(b), a.type())
-   #    return ConcreteVal(a.value() % b.value(), a.type())
+
+    #    assert b.value() != 0, "Invalid remainder"
+    #    if unsigned:
+    #        return ConcreteVal(getUnsigned(a) % getUnsigned(b), a.type())
+    #    return ConcreteVal(a.value() % b.value(), a.type())
 
     ##
     # Relational operators
@@ -337,16 +348,18 @@ class SignULDomain:
             bval = get_unsigned(bval)
 
         # the only case when we know they are equal
-        if aval == SignULValue.ZERO and bval == SignULValue.ZERO: # both are ZERO
+        if aval == SignULValue.ZERO and bval == SignULValue.ZERO:  # both are ZERO
             return SignULValue(abstract(0), BoolType())
 
         # when they are surly non-equal?
-        noneq = ((SignULValue.LT0, SignULValue.ZERO),
-                 (SignULValue.LT0, SignULValue.GE0),
-                 (SignULValue.LT0, SignULValue.GT0),
-                 (SignULValue.LE0, SignULValue.GT0),
-                 (SignULValue.ZERO, SignULValue.NONZERO),
-                 (SignULValue.GT0, SignULValue.ZERO))
+        noneq = (
+            (SignULValue.LT0, SignULValue.ZERO),
+            (SignULValue.LT0, SignULValue.GE0),
+            (SignULValue.LT0, SignULValue.GT0),
+            (SignULValue.LE0, SignULValue.GT0),
+            (SignULValue.ZERO, SignULValue.NONZERO),
+            (SignULValue.GT0, SignULValue.ZERO),
+        )
         if (aval, bval) in noneq or (bval, aval) in noneq:
             return SignULValue(abstract(1), BoolType())
 
@@ -361,10 +374,14 @@ class SignULDomain:
         assert a.is_int() or a.is_float()
         if a.is_float():
             # FIXME
-            return SignULValue(SignULValue.ANY, a.type()) #ConcreteVal(a.value() + b.value(), a.type())
+            return SignULValue(
+                SignULValue.ANY, a.type()
+            )  # ConcreteVal(a.value() + b.value(), a.type())
         # bw = a.type().bitwidth()
         # FIXME
-        return SignULValue(SignULValue.ANY, a.type())  # ConcreteVal(a.value() + b.value(), a.type())
+        return SignULValue(
+            SignULValue.ANY, a.type()
+        )  # ConcreteVal(a.value() + b.value(), a.type())
 
     def Sub(a, b):
         assert dom_is_signul(a, b)

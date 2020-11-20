@@ -46,7 +46,8 @@ class InductiveSequence:
 
             assert states and states.getSubstitutions() is not None
             assert (
-                stren is None or states.getSubstitutions() == stren.getSubstitutions(), stren
+                stren is None or states.getSubstitutions() == stren.getSubstitutions(),
+                stren,
             )
             expr = (
                 EM.And(states.getExpr(), stren.getExpr()) if stren else states.getExpr()

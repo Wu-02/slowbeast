@@ -23,7 +23,7 @@ class ExecutionStatus:
         return self.value == rhs.value and self.detail == rhs.detail
 
     def __hash__(self):
-        return hash(self.detail) ^ hash(self.value)\
+        return hash(self.detail) ^ hash(self.value)
 
     def getStatus(self):
         return self.value

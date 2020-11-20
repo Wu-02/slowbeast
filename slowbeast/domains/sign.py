@@ -2,8 +2,10 @@ from slowbeast.domains.concrete import ConcreteVal, dom_is_concrete
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, IntType, BoolType
 
+
 def dom_is_sign(*v):
     return all(map(lambda x: x.KIND == 3, v))
+
 
 def abstract(v):
     if v < 0:
@@ -11,6 +13,7 @@ def abstract(v):
     else:
         v = ZOValue.GT0 if v > 0 else ZOValue.ZERO
     return v
+
 
 class ZOValue(Value):
     """
@@ -85,6 +88,7 @@ def get_unsigned(v):
         return ZOValue.GE0
     return v
 
+
 class ZODomain:
     """
     Takes care of handling symbolic computations
@@ -144,33 +148,33 @@ class ZODomain:
         assert all(map(lambda a: a.is_bool(), args))
         return ZOValue(any(map(lambda x: x.value() != 0, args)), BoolType)
 
-   #def And(a, b):
-   #    assert dom_is_sign(a, b)
-   #    assert a.type() == b.type()
-   #    if a.is_bool():
-   #        return ZODomain(1 if (a.value() != 0 and b.value() != 0) else 0)
+    # def And(a, b):
+    #    assert dom_is_sign(a, b)
+    #    assert a.type() == b.type()
+    #    if a.is_bool():
+    #        return ZODomain(1 if (a.value() != 0 and b.value() != 0) else 0)
 
-   #    aval = a.value()
-   #    bval = b.value()
-   #    # if aval != bval:
-   #    #    # aval & bval >= 0
-   #    #    return ZODomain(ZODomain.
-   #    # if aval >= 0 and bval >= 0:
-   #    #    return ZODomain(0, a.type())
-   #    return ZODomain(a.value() & b.value(), a.type())
+    #    aval = a.value()
+    #    bval = b.value()
+    #    # if aval != bval:
+    #    #    # aval & bval >= 0
+    #    #    return ZODomain(ZODomain.
+    #    # if aval >= 0 and bval >= 0:
+    #    #    return ZODomain(0, a.type())
+    #    return ZODomain(a.value() & b.value(), a.type())
 
-   #def Or(a, b):
-   #    assert dom_is_sign(a, b)
-   #    assert a.type() == b.type()
-   #    if a.is_bool():
-   #        return ConcreteBool(a.value() or b.value())
-   #    else:
-   #        return ConcreteVal(a.value() | b.value(), a.type())
+    # def Or(a, b):
+    #    assert dom_is_sign(a, b)
+    #    assert a.type() == b.type()
+    #    if a.is_bool():
+    #        return ConcreteBool(a.value() or b.value())
+    #    else:
+    #        return ConcreteVal(a.value() | b.value(), a.type())
 
-   #def Xor(a, b):
-   #    assert dom_is_sign(a, b)
-   #    assert a.type() == b.type()
-   #    return ConcreteVal(a.value() ^ b.value(), a.type())
+    # def Xor(a, b):
+    #    assert dom_is_sign(a, b)
+    #    assert a.type() == b.type()
+    #    return ConcreteVal(a.value() ^ b.value(), a.type())
 
     def Not(a):
         assert dom_is_sign(a)
@@ -194,33 +198,34 @@ class ZODomain:
         assert dom_is_sign(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
-        return ZOValue(ZOValue.ANY, IntType(b.value())) # FIXME
+        return ZOValue(ZOValue.ANY, IntType(b.value()))  # FIXME
 
     def SExt(a, b):
         assert dom_is_sign(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        return ZOValue(ZOValue.ANY, IntType(b.value())) # FIXME
+        return ZOValue(ZOValue.ANY, IntType(b.value()))  # FIXME
 
     def Cast(a: ConcreteVal, ty: Type):
         assert dom_is_sign(a, b)
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
-#    """
-   #    Reinterpret cast
-   #    """
-   #    assert dom_is_sign(a)
-   #    if a.is_int():
-   #        if ty.is_float():
-   #            return ConcreteVal(float(a.value()), ty)
-   #        elif ty.is_int():
-   #            return ConcreteVal(a.value(), ty)
-   #    elif a.is_float():
-   #        if ty.is_float():
-   #            return ConcreteVal(a.value(), ty)
-   #    # unsupported yet
-   #    # elif ty.is_int():
-   #    #    return ConcreteVal(int(v), ty)
-   #    return None  # unsupported conversion
+
+    #    """
+    #    Reinterpret cast
+    #    """
+    #    assert dom_is_sign(a)
+    #    if a.is_int():
+    #        if ty.is_float():
+    #            return ConcreteVal(float(a.value()), ty)
+    #        elif ty.is_int():
+    #            return ConcreteVal(a.value(), ty)
+    #    elif a.is_float():
+    #        if ty.is_float():
+    #            return ConcreteVal(a.value(), ty)
+    #    # unsupported yet
+    #    # elif ty.is_int():
+    #    #    return ConcreteVal(int(v), ty)
+    #    return None  # unsupported conversion
 
     def Shl(a, b):
         assert dom_is_sign(a, b)
@@ -236,31 +241,34 @@ class ZODomain:
         assert dom_is_sign(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
-#    val = a.value()
-   #    return ConcreteVal(
-   #        a.value() >> b.value()
-   #        if val >= 0
-   #        else (val + (1 << a.bitwidth())) >> b.value(),
-   #        a.type(),
-   #    )
+
+    #    val = a.value()
+    #    return ConcreteVal(
+    #        a.value() >> b.value()
+    #        if val >= 0
+    #        else (val + (1 << a.bitwidth())) >> b.value(),
+    #        a.type(),
+    #    )
 
     def Extract(a, start, end):
         assert dom_is_sign(a)
         assert dom_is_concrete(start), start
         assert dom_is_concrete(end), end
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
-#    bitsnum = end.value() - start.value() + 1
-   #    return ConcreteInt(
-   #        (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
-   #    )
+
+    #    bitsnum = end.value() - start.value() + 1
+    #    return ConcreteInt(
+    #        (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
+    #    )
 
     def Rem(a, b, unsigned=False):
         assert dom_is_sign(a, b)
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
-#    assert b.value() != 0, "Invalid remainder"
-#    if unsigned:
-   #        return ConcreteVal(getUnsigned(a) % getUnsigned(b), a.type())
-   #    return ConcreteVal(a.value() % b.value(), a.type())
+
+    #    assert b.value() != 0, "Invalid remainder"
+    #    if unsigned:
+    #        return ConcreteVal(getUnsigned(a) % getUnsigned(b), a.type())
+    #    return ConcreteVal(a.value() % b.value(), a.type())
 
     ##
     # Relational operators
@@ -318,16 +326,18 @@ class ZODomain:
             bval = get_unsigned(bval)
 
         # the only case when we know they are equal
-        if aval == ZOValue.ZERO and bval == ZOValue.ZERO: # both are ZERO
+        if aval == ZOValue.ZERO and bval == ZOValue.ZERO:  # both are ZERO
             return ZOValue(abstract(0), BoolType())
 
         # when they are surly non-equal?
-        noneq = ((ZOValue.LT0, ZOValue.ZERO),
-                 (ZOValue.LT0, ZOValue.GE0),
-                 (ZOValue.LT0, ZOValue.GT0),
-                 (ZOValue.LE0, ZOValue.GT0),
-                 (ZOValue.ZERO, ZOValue.NONZERO),
-                 (ZOValue.GT0, ZOValue.ZERO))
+        noneq = (
+            (ZOValue.LT0, ZOValue.ZERO),
+            (ZOValue.LT0, ZOValue.GE0),
+            (ZOValue.LT0, ZOValue.GT0),
+            (ZOValue.LE0, ZOValue.GT0),
+            (ZOValue.ZERO, ZOValue.NONZERO),
+            (ZOValue.GT0, ZOValue.ZERO),
+        )
         if (aval, bval) in noneq or (bval, aval) in noneq:
             return ZOValue(abstract(1), BoolType())
 
@@ -342,10 +352,14 @@ class ZODomain:
         assert a.is_int() or a.is_float()
         if a.is_float():
             # FIXME
-            return ZOValue(ZOValue.ANY, a.type()) #ConcreteVal(a.value() + b.value(), a.type())
+            return ZOValue(
+                ZOValue.ANY, a.type()
+            )  # ConcreteVal(a.value() + b.value(), a.type())
         # bw = a.type().bitwidth()
         # FIXME
-        return ZOValue(ZOValue.ANY, a.type())  # ConcreteVal(a.value() + b.value(), a.type())
+        return ZOValue(
+            ZOValue.ANY, a.type()
+        )  # ConcreteVal(a.value() + b.value(), a.type())
 
     def Sub(a, b):
         assert dom_is_sign(a, b)

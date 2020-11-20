@@ -397,10 +397,10 @@ class Executor:
             if ret.is_pointer():
                 state.setError(GenericError("Returning a pointer from main function"))
                 return [state]
-           #elif not ret.is_concrete():
-           #    state.addWarning(
-           #        "Returning a non-constant value from the main function"
-           #    )
+            # elif not ret.is_concrete():
+            #    state.addWarning(
+            #        "Returning a non-constant value from the main function"
+            #    )
 
             state.setExited(ret)
             return [state]

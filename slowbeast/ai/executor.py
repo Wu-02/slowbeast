@@ -6,11 +6,13 @@ from ..core.executor import Executor as ConcreteExecutor
 from ..util.debugging import dbgv
 from ..core.errors import AssertFailError
 from slowbeast.domains.concrete import ConcreteDomain, ConcreteInt
-#from slowbeast.domains.sign import ZODomain
+
+# from slowbeast.domains.sign import ZODomain
 from slowbeast.domains.signul import SignULDomain as Domain
 
 from .memory import AIMemoryModel
 from .executionstate import AbstractState
+
 
 class AIStats:
     def __init__(self):
@@ -22,6 +24,7 @@ class AIStats:
         self.fork_calls = 0
         # number of times when the call to fork() forked the execution
         self.forks = 0
+
 
 def addPointerWithConstant(E, op1, op2):
     return Pointer(op1.object(), Domain.Add(op1.offset(), op2))
@@ -36,13 +39,13 @@ def evalCond(state, cond):
     # semantics)
     ty = c.type()
     if not ty.is_bool():
-        assert ty.bitwidth() == 1,\
-               f"Invalid condition in branching: {c} {(type(c))}"
+        assert ty.bitwidth() == 1, f"Invalid condition in branching: {c} {(type(c))}"
         cval = Domain.Ne(c, Domain.lift(ConcreteInt(0, 1)))
     else:
         cval = c  # It already is a boolean expression
 
     return cval
+
 
 class Executor(ConcreteExecutor):
     def __init__(self, opts, memorymodel=None):
@@ -251,9 +254,7 @@ class Executor(ConcreteExecutor):
                 state.setKilled("Comparison of pointer to a constant not implemented")
                 return state
 
-        x = self.cmpValues(
-            Domain, instr.getPredicate(), op1, op2, instr.isUnsigned()
-        )
+        x = self.cmpValues(Domain, instr.getPredicate(), op1, op2, instr.isUnsigned())
         state.set(instr, x)
         state.pc = state.pc.get_next_inst()
 
@@ -293,7 +294,7 @@ class Executor(ConcreteExecutor):
         retTy = fun.getReturnType()
         if retTy:
             val = Domain.Var(retTy)
-            #state.addNondet(val)
+            # state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
         return [state]

@@ -14,6 +14,7 @@ from slowbeast.ir.types import OffsetType
 
 from slowbeast.domains.symbolic import NondetLoad
 
+
 class AIMemoryObject:
     __slots__ = "_id", "_values", "_size", "_name", "_allocation", "_ro"
     ids = 0
@@ -61,7 +62,7 @@ class AIMemoryObject:
         assert self._ro is False, "Writing read-only object (COW bug)"
 
         offval = off.value()
-        #self._values.setdefault(offval, set()).add(x)
+        # self._values.setdefault(offval, set()).add(x)
         self._values[offval] = x
         return None
 
@@ -106,8 +107,7 @@ class AIMemoryObject:
         return self._id == rhs._id
 
     def __hash__(self):
-        return self._id # FIXME: is this a good hashing method for comparing states?
-
+        return self._id  # FIXME: is this a good hashing method for comparing states?
 
 
 class AIMemory(CoreMemory):
@@ -120,17 +120,21 @@ class AIMemory(CoreMemory):
         return AIMemoryObject(size, nm, objid)
 
     def __eq__(self, rhs):
-        return self._objects == rhs._objects and\
-               self._glob_objects == rhs._glob_objects and\
-               self._cs == rhs._cs
+        return (
+            self._objects == rhs._objects
+            and self._glob_objects == rhs._glob_objects
+            and self._cs == rhs._cs
+        )
 
     def __hash__(self):
-        return reduce(xor, map(hash, self._objects.items()), 0) ^ \
-               reduce(lambda a, b: a ^ b, map(hash, self._glob_objects.items()), 0) ^ \
-                self._cs.__hash__()
+        return (
+            reduce(xor, map(hash, self._objects.items()), 0)
+            ^ reduce(lambda a, b: a ^ b, map(hash, self._glob_objects.items()), 0)
+            ^ self._cs.__hash__()
+        )
+
 
 class AIMemoryModel(MemoryModel):
-
     def __init__(self, opts, solver):
         super().__init__(opts)
 

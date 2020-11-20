@@ -5,14 +5,15 @@ from slowbeast.domains.symbolic import NondetLoad
 from slowbeast.symexe.memory import Memory
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
 
-class SymbolicMemoryModel(CoreMM):
 
+class SymbolicMemoryModel(CoreMM):
     def __init__(self, opts):
         super().__init__(opts)
 
     def createMemory(self):
         """ Create a memory object that is going to be a part of a state. """
         return Memory()
+
 
 class LazySymbolicMemoryModel(SymbolicMemoryModel):
     def __init__(self, opts):

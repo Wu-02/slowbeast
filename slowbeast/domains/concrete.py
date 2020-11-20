@@ -21,8 +21,10 @@ def wrap_to_bw(x, bw):
             x += m
     return x
 
+
 def dom_is_concrete(v):
     return v.KIND == 1
+
 
 class ConcreteVal(Value):
     """

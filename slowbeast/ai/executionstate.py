@@ -1,5 +1,6 @@
 from slowbeast.core.executionstate import ExecutionState
-#from slowbeast.domains.sign import ZODomain
+
+# from slowbeast.domains.sign import ZODomain
 from slowbeast.domains.signul import SignULDomain as Domain
 from slowbeast.domains.concrete import ConcreteVal
 
@@ -7,10 +8,12 @@ from slowbeast.domains.concrete import ConcreteVal
 class AbstractState(ExecutionState):
     """ State of abstract interpretation """
 
-
     # XXX do not store warnings in the state but keep them in a map in the interpreter or so?
     # FIXME: move this to the super class?
-    __slots__ = "_executor", "_id",
+    __slots__ = (
+        "_executor",
+        "_id",
+    )
     _statesCounter = 0
 
     def __init__(self, executor, pc, m):
@@ -57,4 +60,3 @@ class AbstractState(ExecutionState):
 
     def __hash__(self):
         return self.memory.__hash__() ^ hash(self.pc) ^ hash(self.status)
-
