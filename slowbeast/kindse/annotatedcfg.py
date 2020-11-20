@@ -23,10 +23,16 @@ class CFG(PureCFG):
                     self._has_assert = True
                     break
 
-            # after loc execution
+            # after _header execution
             self.annotationsAfter = []
-            # before loc execution
+            # before _header execution
             self.annotationsBefore = []
+
+        def __repr__(self):
+            return "{0}{1}{2}{3}".format('a' if self.annotationsBefore else '',
+                                           self.getBBlockID(),
+                                           'a' if self.annotationsAfter else '',
+                                           '!' if self._has_assert else '')
 
         def hasAssert(self):
             return self._has_assert

@@ -1,4 +1,4 @@
-from slowbeast.analysis.dfs import DFSVisitor
+from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.symexe.annotations import InstrsAnnotation
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
 from slowbeast.util.debugging import dbg_sec
@@ -52,65 +52,122 @@ def get_rel(s, x, curval):
 
 class SimpleLoop:
     """
-    Represents a set of paths loc --> loc
-    such that all these paths are acyclic
+    Represents a set of _paths _header --> _header
+    such that all these _paths are acyclic
     """
 
-    def __init__(self, loc, paths, exits):
-        self.loc = loc
-        self.paths = paths
-        self.exits = exits
-        self.entries = set(b for b in loc.getPredecessors())
-        for p in self.paths:
-            self.entries.discard(p[-2])
+    def __init__(self, loc, paths, locs, entries, exits, inedges, backedges):
+        self._header = loc
+        # header-header _paths
+        self._paths = paths
+        # _paths inside the loop that do not return to the header
+        # the last edge from each path is also an exit (but one that does
+        # not go through the loop header)
+        self._locs = locs
+        self._exits = exits         # edges leaving the loop
+        self._entries = entries     # edges from outside to loop header
+        self._inedges = inedges     # edges from header into loop
+        self._backedges = backedges # edges from loop into header
 
         # the state after executing the given path
         self.states = None
-
         self.vars = None
 
+    def header(self):
+        return self._header
+
+    def locs(self):
+        return self._locs
+
+    def has_loc(self, l):
+        return l in self._locs
+
+    def __contains__(self, item):
+        return item in self._locs
+
     def getPaths(self):
-        return self.paths
+        return self._paths
 
     def getExits(self):
-        return self.exits
+        return self._exits
 
     def getEntries(self):
-        return self.entries
+        return self._entries
 
     def construct(loc):
         """
-        Construct the SimpleLoop obj for loc.
+        Construct the SimpleLoop obj for _header.
         Returns None if that cannot be done
         """
-        workbag = [[loc]]
-        paths = []
-        exits = set()
-        while workbag:
-            newworkbag = []
-            for p in workbag:
-                succs = p[-1].getSuccessors()
-                if len(succs) == 0:
-                    exits.add((p[1]))
-                else:
-                    for s in succs:
-                        if s == loc:
-                            p.append(s)
-                            paths.append(AnnotatedCFGPath(p))
-                        elif s in p:  # FIXME: not very efficient
-                            if reachable(p[-1], loc):
-                                return None  # cyclic path
-                            else:
-                                exits.add((p[1]))
-                        else:
-                            newworkbag.append(p + [s])
-            workbag = newworkbag
 
-        return SimpleLoop(loc, paths, [AnnotatedCFGPath([loc, e]) for e in exits])
+        backedges = set()
+        locs = set()
+        locs.add(loc)
+
+        def processedge(start, end, dfstype):
+            if dfstype == DFSEdgeType.BACK:
+                if end == loc:
+                    backedges.add((start, end))
+                else:
+                    raise ValueError("Nested loop")
+            if dfstype != DFSEdgeType.TREE and end in locs:
+                # backtrack is not called for non-tree edges...
+                locs.add(start)
+
+        def backtrack(start, end):
+            if start is not None and end in locs:
+                locs.add(start)
+
+        try:
+            DFSVisitor().foreachedge(loc, processedge, backtrack)
+        except ValueError: # nested loop
+            return None
+
+        entries = set()
+        inedges = set()
+        exits = set()
+        for succ in loc.getSuccessors():
+            if succ in locs:
+                inedges.add((loc, succ))
+            else:
+                exits.add((loc, succ))
+        for pred in loc.getPredecessors():
+            if pred not in locs:
+                entries.add((pred, loc))
+
+        # fixme: not efficient at all...
+        paths = []
+        partialpaths = []
+        queue = [[l, e] for l, e in entries]
+        while queue:
+            newqueue = []
+            for path in queue:
+                for succ in path[-1].getSuccessors():
+                    if succ not in locs:
+                        exits.add((path[-1], succ))
+                        continue
+                    np = path + [succ]
+                    if succ != loc:
+                        newqueue.append(np)
+                    else:
+                        paths.append(np)
+            queue = newqueue
+
+        print(backedges)
+        print(inedges)
+        print(entries)
+        print(exits)
+        print(locs)
+        print(paths)
+
+        return SimpleLoop(loc,
+                          [AnnotatedCFGPath(p) for p in paths],
+                          locs, entries, exits, inedges, backedges)
+
 
     def getVariables(self):
         V = set()
-        for p in self.paths:
+        for p in self._paths:
             for loc in p:
                 for L in (
                     l for l in loc.getBBlock().instructions() if isinstance(l, Load)
@@ -131,7 +188,7 @@ class SimpleLoop:
 
         dbg_sec(
             f"Checking monotonicity of variables in simple loop"
-            f" over {self.loc.getBBlock().get_id()}"
+            f" over {self._header.getBBlock().get_id()}"
         )
         if self.vars is None:
             self.getVariables()
@@ -172,9 +229,9 @@ class SimpleLoop:
 
         V = self.vars.keys()
         loads = [Load(v, v.getSize().value()) for v in V]
-        for p in self.paths:
+        for p in self._paths:
             path = p.copy()
-            path.addLocAnnotationBefore(InstrsAnnotation(loads), self.loc)
+            path.addLocAnnotationBefore(InstrsAnnotation(loads), self._header)
             r = executor.executePath(path)
             assert r.errors is None
             assert r.other is None

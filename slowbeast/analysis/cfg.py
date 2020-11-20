@@ -109,6 +109,8 @@ class CFG:
 class CFGPath:
     def __init__(self, locs=None):
         if locs:
+            assert isinstance(locs, list)
+            assert all(map(lambda x: isinstance(x, CFG.Node), locs))
             self.locations = locs
         else:
             self.locations = []

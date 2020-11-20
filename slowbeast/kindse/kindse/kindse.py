@@ -72,7 +72,7 @@ def remove_implied_literals(clauses):
 
 
 def check_base(prog, L, inv):
-    loc = L.loc
+    loc = L.header()
     dbg_sec(f"Checking if {inv} is invariant of loc {loc.getBBlock().get_id()}")
 
     def reportfn(msg, *args, **kwargs):
@@ -82,7 +82,7 @@ def check_base(prog, L, inv):
     kindse.reportfn = reportfn
 
     newpaths = []
-    for p in L.getEntries():
+    for p, _ in L.getEntries():
         apath = AnnotatedCFGPath([p, loc])
         apath.addLocAnnotationBefore(inv, loc)
         newpaths.append(apath)
@@ -161,12 +161,47 @@ def get_initial_seq2(unsafe):
 
     return InductiveSequence(Sa, Sh), InductiveSequence.Frame(Se, Sh)
 
-
-def get_initial_seq3(unsafe):
+def get_initial_seq2(unsafe):
     """
     Return two annotations, one that is the initial safe sequence
     and one that represents the error states
     """
+    # NOTE: Only safe states that reach the assert are not inductive on the
+    # loop header -- what we need is to have safe states that already left
+    # the loop and safely pass assertion or avoid it.
+    # These are the complement of error states intersected with the
+    # negation of loop condition.
+
+    S = None  # safe states
+    E = None  # unsafe states
+
+    EM = getGlobalExprManager()
+    Or, conjunction = EM.Or, EM.conjunction
+    for u in unsafe:
+        uconstr = u.getConstraints()
+        E = Or(conjunction(*uconstr), E) if E else conjunction(*uconstr)
+
+    S = EM.Not(E)
+
+    # simplify the formulas
+    if not S.is_concrete():
+        S = conjunction(*remove_implied_literals(list(S.to_cnf().children())))
+    if not E.is_concrete():
+        E = conjunction(*remove_implied_literals(list(E.to_cnf().children())))
+
+    subs = {l: l.load for l in unsafe[0].getNondetLoads()}
+    Sa = AssertAnnotation(S, subs, EM)
+    Se = AssertAnnotation(E, subs, EM)
+
+    return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
+
+
+def get_initial_seq(unsafe, path, L):
+    """
+    Return two annotations, one that is the initial safe sequence
+    and one that represents the error states
+    """
+
     # NOTE: Only safe states that reach the assert are not inductive on the
     # loop header -- what we need is to have safe states that already left
     # the loop and safely pass assertion or avoid it.
@@ -205,42 +240,6 @@ def get_initial_seq3(unsafe):
     Se = AssertAnnotation(E, subs, EM)
 
     return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
-
-
-def get_initial_seq(unsafe):
-    """
-    Return two annotations, one that is the initial safe sequence
-    and one that represents the error states
-    """
-    # NOTE: Only safe states that reach the assert are not inductive on the
-    # loop header -- what we need is to have safe states that already left
-    # the loop and safely pass assertion or avoid it.
-    # These are the complement of error states intersected with the
-    # negation of loop condition.
-
-    S = None  # safe states
-    E = None  # unsafe states
-
-    EM = getGlobalExprManager()
-    Or, conjunction = EM.Or, EM.conjunction
-    for u in unsafe:
-        uconstr = u.getConstraints()
-        E = Or(conjunction(*uconstr), E) if E else conjunction(*uconstr)
-
-    S = EM.Not(E)
-
-    # simplify the formulas
-    if not S.is_concrete():
-        S = conjunction(*remove_implied_literals(list(S.to_cnf().children())))
-    if not E.is_concrete():
-        E = conjunction(*remove_implied_literals(list(E.to_cnf().children())))
-
-    subs = {l: l.load for l in unsafe[0].getNondetLoads()}
-    Sa = AssertAnnotation(S, subs, EM)
-    Se = AssertAnnotation(E, subs, EM)
-
-    return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
-
 
 def check_paths(executor, paths, pre=None, post=None):
     result = PathExecutionResult()
@@ -564,8 +563,6 @@ class KindSymbolicExecutor(BaseKindSE):
         self.sum_loops = {}
 
     def handle_loop(self, loc, path, states):
-        self.loops.setdefault(loc.getBBlockID(), []).append(states)
-
         assert (
             loc in self.sum_loops[loc.getCFG()]
         ), "Handling a loop that should not be handled"
@@ -583,8 +580,7 @@ class KindSymbolicExecutor(BaseKindSE):
         #    )
         #    return True
 
-        assert self.loops.get(loc.getBBlockID())
-        if not self.execute_loop(loc, self.loops.get(loc.getBBlockID())):
+        if not self.execute_loop(path, loc, states):
             self.sum_loops[loc.getCFG()].remove(loc)
             print_stdout(
                 f"Falling back to unwinding loop {loc.getBBlockID()}", color="BROWN"
@@ -662,79 +658,100 @@ class KindSymbolicExecutor(BaseKindSE):
         # FIXME: we are still precies, use abstraction here...
         return seq
 
-    def strengthenInitialSeq(self, seq0, errs0, L):
+    def strengthenInitialSeq(self, seq0, errs0, path, L : SimpleLoop):
         r = seq0.check_ind_on_paths(self, L.getPaths())
         # catch it in debug mode so that we can improve...
         # assert r.errors is None, f"Initial seq is not inductive: {seq0}"
         if r.errors is None:
-            # initial sequence is inductive
+            dbg("Initial sequence is inductive", color="dark_green")
             return seq0
 
-        dbg("Initial sequence is not inductive", color="wine")
-        print("Safe: ", seq0)
-        print("Errors: ", errs0)
-        print("-------------------------------------")
-
-        createSet = self.getIndExecutor().createStatesSet
-        safeannot = seq0.toannotation(True)
-        EM = getGlobalExprManager()
-        conjunction = EM.conjunction
-        errsan = errs0.toassert()
-        constraints = InductiveSequence.Frame(
-            AssertAnnotation(EM.getFalse(), {}, EM), None
-        )
-        sequences = [InductiveSequence(errsan)]
-        while True:
-            extended = []
-            for seq in sequences:
-                S1 = createSet(seq.toannotation())
-                S1.complement()
-                S1.intersect(safeannot)
-                expr = S1.as_expr()
-                if not expr.is_concrete():
-                    S1.reset_expr(
-                        conjunction(*remove_implied_literals(expr.to_cnf().children()))
-                    )
-                    expr = S1.as_expr()
-
-                if not expr.is_concrete():
-                    print("Strengthen set", S1)
-                    tmp = InductiveSequence(S1.as_assert_annotation())
-                    print_stdout(f"Trying {tmp}", color="dark_blue")
-                    r = tmp.check_ind_on_paths(self, L.getPaths())
-                    if r.errors is None:
-                        dbg("Initial sequence has been made inductive!", color="green")
-                        return tmp
-
-                    for e in self.extend_seq(seq, constraints, L):
-                        extended.append(self.abstract_seq(e, constraints, L))
-
-            if not extended:
-                # seq not extended... it looks that there is no
-                # safe invariant
-                # FIXME: could we use it for annotations?
-                print_stdout("Failed extending any sequence", color="orange")
-                return None  # fall-back to unwinding
-
-            sequences = extended
+        # is the assertion inside the loop or after the loop?
+        assert path[0] == L._header
+        print(path)
+        for e in L.getExits():
+            print(e)
+        assert False
+        if (path[-1], path[-2]) in L.getExits():
+            # assertion is inside, evaluate the jump-out instruction
+            for e in L.getExits():
+                print(e)
+            assert False
+        else:
+            #assertion is outside
+            pass
+        dbg("Initial sequence is NOT inductive", color="red")
+        r = seq0.check_ind_on_paths(self, L.getPaths())
+        if r.errors is None:
+            dbg("Initial sequence made inductive", color="dark_green")
+            return seq0
 
         return None
 
-    def execute_loop(self, loc, states):
-        unsafe = []
-        for r in states:
-            unsafe += r.errors
+        #
+        # dbg("Initial sequence is not inductive", color="wine")
+        # print("Safe: ", seq0)
+        # print("Errors: ", errs0)
+        # print("-------------------------------------")
+        #
+        # createSet = self.getIndExecutor().createStatesSet
+        # safeannot = seq0.toannotation(True)
+        # EM = getGlobalExprManager()
+        # conjunction = EM.conjunction
+        # errsan = errs0.toassert()
+        # constraints = InductiveSequence.Frame(
+        #     AssertAnnotation(EM.getFalse(), {}, EM), None
+        # )
+        # sequences = [InductiveSequence(errsan)]
+        # while True:
+        #     extended = []
+        #     for seq in sequences:
+        #         S1 = createSet(seq.toannotation())
+        #         S1.complement()
+        #         S1.intersect(safeannot)
+        #         expr = S1.as_expr()
+        #         if not expr.is_concrete():
+        #             S1.reset_expr(
+        #                 conjunction(*remove_implied_literals(expr.to_cnf().children()))
+        #             )
+        #             expr = S1.as_expr()
+        #
+        #         if not expr.is_concrete():
+        #             print("Strengthen set", S1)
+        #             tmp = InductiveSequence(S1.as_assert_annotation())
+        #             print_stdout(f"Trying {tmp}", color="dark_blue")
+        #             r = tmp.check_ind_on_paths(self, L.getPaths())
+        #             if r.errors is None:
+        #                 dbg("Initial sequence has been made inductive!", color="green")
+        #                 return tmp
+        #
+        #             FIXME: we must extend forward, not backward!
+        #             for e in self.extend_seq(seq, constraints, L):
+        #                 extended.append(self.abstract_seq(e, constraints, L))
+        #
+        #     if not extended:
+        #         # seq not extended... it looks that there is no
+        #         # safe invariant
+        #         # FIXME: could we use it for annotations?
+        #         print_stdout("Failed extending any sequence", color="orange")
+        #         return None  # fall-back to unwinding
+        #
+        #     sequences = extended
+        #
+        # return None
 
+    def execute_loop(self, path, loc, states):
+        unsafe = states.errors
         assert unsafe, "No unsafe states, we should not get here at all"
 
         L = SimpleLoop.construct(loc)
         if L is None:
             return False  # fall-back to loop unwinding...
 
-        seq0, errs0 = get_initial_seq(unsafe)
+        seq0, errs0 = get_initial_seq(unsafe, path, L)
         # the initial sequence may not be inductive (usually when the assertion
         # is inside the loop, so we must strenghten it
-        seq0 = self.strengthenInitialSeq(seq0, errs0, L)
+        seq0 = self.strengthenInitialSeq(seq0, errs0, path, L)
         if seq0 is None:
             return False  # we failed...
 
