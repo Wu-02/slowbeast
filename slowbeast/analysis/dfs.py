@@ -43,23 +43,23 @@ class DFSVisitor:
     def _getdata(self, node):
         return self._data.setdefault(node, DFSData())
 
-    def foreach(self, fun, node=None):
-        getdata = self._getdata
+    # def foreach(self, fun, node=None):
+    #     getdata = self._getdata
+    #
+    #     nddata = getdata(node)
+    #     nddata.visited = True
+    #
+    #     fun(succ)
+    #
+    #     for succ in node.getSuccessors():
+    #         if not getdata(succ).visited:
+    #             self.foreach(fun, succ)
 
-        nddata = getdata(node)
-        nddata.visited = True
-
-        fun(succ)
-
-        for succ in node.getSuccessors():
-            if not getdata(succ).visited:
-                self.foreach(fun, succ)
-
-    def foreachedge(self, fun, startnode):
+    def foreachedge(self, startnode, fun, backtrackfun=None):
         counter = DFSCounter()
-        self._foreachedge(fun, startnode, counter)
+        self._foreachedge(fun, backtrackfun, None, startnode, counter)
 
-    def _foreachedge(self, fun, node, counter):
+    def _foreachedge(self, fun, backtrackfun, prevnode, node, counter):
         getdata = self._getdata
         counter.counter += 1
 
@@ -84,10 +84,12 @@ class DFSVisitor:
                     fun(node, succ, DFSEdgeType.FORWARD)
             else:
                 fun(node, succ, DFSEdgeType.TREE)
-                self._foreachedge(fun, succ, counter)
+                self._foreachedge(fun, backtrackfun, node, succ, counter)
 
         counter.counter += 1
         nddata.outnum = counter.counter
+        if backtrackfun:
+            backtrackfun(prevnode, node)
 
     def dump(self, cfg, outfl=None):
         out = None
@@ -134,7 +136,7 @@ class DFSVisitor:
 
         # dump edges
         print("", file=out)
-        self.foreachedge(dumpdot, cfg.entry())
+        self.foreachedge(cfg.entry(), dumpdot)
 
         # dump the in/out counters
         for n in cfg.getNodes():
