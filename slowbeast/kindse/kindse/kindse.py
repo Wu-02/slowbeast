@@ -197,7 +197,7 @@ def check_paths(executor, paths, pre=None, post=None):
 
     return result
 
-def postimage(executor, paths, pre=None, post=None):
+def postimage(executor, paths, pre=None):
     """
     Return states after executing paths with precondition 'pre'
     extended by the postcondition 'post'. We do not evaluate the
@@ -215,7 +215,9 @@ def postimage(executor, paths, pre=None, post=None):
         r = executor.executePath(p)
         result.merge(r)
 
-    assert result.errors is None and result.ready, result
+    assert result.errors is None
+    if not result.ready:
+        return None
 
     ready = result.ready
     return ready
@@ -303,7 +305,8 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     X = intersection(S, disjunction(litrep, *rl))
     assert not X.is_empty()
     post = postimage(executor, L.getPaths(), pre=X)
-    assert post
+    if not post:
+        return goodl
     formulas = []
     U = union(target, X)
     I = U.as_assume_annotation()
