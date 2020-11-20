@@ -508,16 +508,16 @@ class KindSymbolicExecutor(BaseKindSE):
 
         # first try to unroll it in the case the loop
         # is easy to verify
-        # kindse = BaseKindSE(self.getProgram())
-        # maxk = 15
-        # dbg_sec("Running nested KindSE")
-        # res = kindse.run([path.copy()], maxk=maxk)
-        # dbg_sec()
-        # if res == 0:
-        #    print_stdout(
-        #        f"Loop {loc.getBBlockID()} proved by the basic KindSE", color="GREEN"
-        #    )
-        #    return True
+        kindse = BaseKindSE(self.getProgram())
+        maxk = 15
+        dbg_sec("Running nested KindSE")
+        res = kindse.run([path.copy()], maxk=maxk)
+        dbg_sec()
+        if res == 0:
+           print_stdout(
+               f"Loop {loc.getBBlockID()} proved by the basic KindSE", color="GREEN"
+           )
+           return True
 
         if not self.execute_loop(path, loc, states):
             self.sum_loops[loc.getCFG()].remove(loc)
@@ -659,58 +659,6 @@ class KindSymbolicExecutor(BaseKindSE):
             return seq0
         return None
 
-        #
-        # dbg("Initial sequence is not inductive", color="wine")
-        # print("Safe: ", seq0)
-        # print("Errors: ", errs0)
-        # print("-------------------------------------")
-        #
-        # createSet = self.getIndExecutor().createStatesSet
-        # safeannot = seq0.toannotation(True)
-        # EM = getGlobalExprManager()
-        # conjunction = EM.conjunction
-        # errsan = errs0.toassert()
-        # constraints = InductiveSequence.Frame(
-        #     AssertAnnotation(EM.getFalse(), {}, EM), None
-        # )
-        # sequences = [InductiveSequence(errsan)]
-        # while True:
-        #     extended = []
-        #     for seq in sequences:
-        #         S1 = createSet(seq.toannotation())
-        #         S1.complement()
-        #         S1.intersect(safeannot)
-        #         expr = S1.as_expr()
-        #         if not expr.is_concrete():
-        #             S1.reset_expr(
-        #                 conjunction(*remove_implied_literals(expr.to_cnf().children()))
-        #             )
-        #             expr = S1.as_expr()
-        #
-        #         if not expr.is_concrete():
-        #             print("Strengthen set", S1)
-        #             tmp = InductiveSequence(S1.as_assert_annotation())
-        #             print_stdout(f"Trying {tmp}", color="dark_blue")
-        #             r = tmp.check_ind_on_paths(self, L.getPaths())
-        #             if r.errors is None:
-        #                 dbg("Initial sequence has been made inductive!", color="green")
-        #                 return tmp
-        #
-        #             FIXME: we must extend forward, not backward!
-        #             for e in self.extend_seq(seq, constraints, L):
-        #                 extended.append(self.abstract_seq(e, constraints, L))
-        #
-        #     if not extended:
-        #         # seq not extended... it looks that there is no
-        #         # safe invariant
-        #         # FIXME: could we use it for annotations?
-        #         print_stdout("Failed extending any sequence", color="orange")
-        #         return None  # fall-back to unwinding
-        #
-        #     sequences = extended
-        #
-        # return None
-
     def execute_loop(self, path, loc, states):
         unsafe = states.errors
         assert unsafe, "No unsafe states, we should not get here at all"
@@ -741,7 +689,7 @@ class KindSymbolicExecutor(BaseKindSE):
         # print('--- starting building sequences  ---')
         EM = getGlobalExprManager()
         while True:
-            print("--- iter ---")
+            print("--- extending sequences ---")
             print_stdout(
                 f"Got {len(sequences)} abstract paths of loop " f"{loc.getBBlockID()}",
                 color="GRAY",
