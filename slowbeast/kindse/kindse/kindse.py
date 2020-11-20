@@ -193,6 +193,33 @@ def check_paths(executor, paths, pre=None, post=None):
 
     return result
 
+def postimage(executor, paths, pre=None, post=None):
+    """
+    Return states after executing paths with precondition 'pre'
+    extended by the postcondition 'post'. We do not evaluate the
+    validity of the postcondition, so that we can get the path condition
+    and manipulate with it (it can be unsat and evaluating it could
+    simplify it to false, which is undesired here
+    """
+    result = PathExecutionResult()
+    for path in paths:
+        p = path.copy()
+        # the post-condition is the whole frame
+        if pre:
+            p.addPrecondition(pre.as_assume_annotation())
+
+        r = executor.executePath(p)
+        result.merge(r)
+
+    assert result.errors is None and result.ready, result
+
+    ready = result.ready
+    A = post.as_assume_annotation()
+    for s in ready:
+        expr = A.doSubs(s)
+        s.addConstraint(expr)
+    return ready
+
 
 def literals(c):
     if c.isOr():
@@ -271,15 +298,40 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     EM = getGlobalExprManager()
     disjunction = EM.disjunction
 
+    # create a fresh literal that we use as a symbol for our literal during extending
+    litrep = EM.Bool("litext")
+    X = intersection(S, disjunction(litrep, *rl))
+    post = postimage(executor, L.getPaths(), pre=X, post=complement(union(target, X)))
+    formulas = [EM.conjunction(*s.getConstraints()) for s in post]
+
+    solver = Solver()
+
     def check_literal(lit):
         if lit.is_concrete():
             return False
+        # safety check
         X = intersection(S, disjunction(lit, *rl))
         if not intersection(X, unsafe).is_empty():
             return False
 
-        r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
-        return r.errors is None and r.ready is not None
+        for F in formulas:
+            #inductivity check
+            expr = EM.substitute(F, (litrep, lit))
+            if solver.is_sat(expr) is True:
+                return False
+        return True
+
+    # NOTE: the check above should be equivalent to this code but should be faster as we do not re-execute
+    # the paths all the time
+    # def check_literal(lit):
+    #     if lit.is_concrete():
+    #         return False
+    #     X = intersection(S, disjunction(lit, *rl))
+    #     if not intersection(X, unsafe).is_empty():
+    #         return False
+    #
+    #     r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+    #     return r.errors is None and r.ready is not None
 
     def modify_literal(goodl, P, num):
         assert (

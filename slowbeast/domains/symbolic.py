@@ -4,7 +4,7 @@ from slowbeast.ir.types import Type, IntType, BoolType
 
 _use_z3 = True
 if _use_z3:
-    from z3 import If, Or, And, Xor, Not, BoolVal, BitVec, BitVecVal, URem, SRem, UDiv
+    from z3 import If, Or, And, Xor, Not, Bool, BoolVal, BitVec, BitVecVal, URem, SRem, UDiv
     from z3 import ULT as BVULT
     from z3 import ULE as BVULE
     from z3 import UGT as BVUGT
@@ -343,6 +343,9 @@ class BVSymbolicDomain:
     # variables
     def Var(name, bw=64):
         return Expr(bv(name, bw), IntType(bw))
+
+    def Bool(name):
+        return Expr(Bool(name), BoolType())
 
     def Int1(name):
         return BVSymbolicDomain.Var(name, 1)

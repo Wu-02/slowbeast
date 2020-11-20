@@ -62,6 +62,15 @@ class ExprManager:
     def ConcreteVal(self, c, bw):
         return ConcreteDomain.Value(c, bw)
 
+    def Bool(self, name):
+        assert isinstance(name, str)
+        names = self._names
+        s = names.get(name)
+        if s is None:
+            s = SymbolicDomain.Bool(name)
+            names[name] = s
+        return s
+
     def Var(self, name, bw=64):
         assert isinstance(name, str)
         names = self._names
