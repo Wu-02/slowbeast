@@ -79,15 +79,16 @@ if _use_z3:
 
         return vals
 
-    def is_sat(*args):
-        s = Z3Solver()
-        r = s.check(*args)
+    def _is_sat(solver, *args):
+        if solver is None:
+            solver = Z3Solver()
+        r = solver.check(*args)
         if r == sat:
             return True
         elif r == unsat:
             return False
         elif r == unknown:
-            reason = s.reason_unknown()
+            reason = solver.reason_unknown()
             if reason == "canceled" or reason == "interrupted from keyboard":
                 # If the user interrupted the computation,
                 # re-raise the interrupt if it was consumed
@@ -97,6 +98,9 @@ if _use_z3:
             return reason
 
         return None
+
+    def is_sat(*args):
+        return _is_sat(Z3Solver(), *args)
 
 
 else:
@@ -161,7 +165,7 @@ class SymbolicSolver(SolverIntf):
     """
 
     def __init__(self, em=global_expr_manager):
-        super(SymbolicSolver, self).__init__(em)
+        super().__init__(em)
 
     def is_sat(self, *e):
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
@@ -186,39 +190,27 @@ class SymbolicSolver(SolverIntf):
                 ret.append(ConcreteVal(m[n].as_long(), v.type()))
         return ret
 
+class IncrementalSolver(SymbolicSolver):
+    def __init__(self, em=global_expr_manager):
+        super().__init__(em)
+        self._solver = Z3Solver()
 
-# def getUnique(self, val, *e):
-#     v = self.concretize(val, *e)
-#     if self.is_sat(self.exprmanager.Ne(val, v)):
-#         return None
-#     return v
+    def add(self, *e):
+        self._solver.add(*e)
 
-# For efficiency, we solve the True/False case incrementally
-# in the state.is_sat(). Keep this code if needed for the future
-# class Solver(SolverIntf):
-#   """ Basic solver that calls either concrete or (some) symbolic
-#       solver based on the given values
-#   """
-#
-#   def __init__(self, em=ExprManager()):
-#       super(Solver, self).__init__(em)
-#       self.symbolic = SymbolicSolver(em)
-#       self.concrete = ConcreteSolver(em)
-#
-#   def is_sat(self, *e):
-#      # FIXME: check whether this part consumes a lot of time...
-#      # Since concrete are True or False, we can solve them
-#      # independently without any effect on the result
-#      concrete = []
-#      symbolic = []
-#      for x in e:
-#          if x.is_concrete():
-#              concrete.append(x)
-#          else:
-#              symbolic.append(x)
-#
-# return self.concrete.is_sat(*concrete) and
-# self.symbolic.is_sat(*symbolic)
+    def push(self):
+        self._solver.push()
+
+    def pop(self, num : int = 1):
+        self._solver.pop(num)
+
+    def is_sat(self, *e):
+        if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
+            return False
+        return _is_sat(self._solver, *(x.unwrap() for x in e if not x.is_concrete()))
+
+    def concretize(self, assumpt, *e):
+        raise NotImplementedError("Not implemented yet")
 
 
 Solver = SymbolicSolver
