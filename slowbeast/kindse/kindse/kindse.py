@@ -130,11 +130,11 @@ def get_initial_seq2(unsafe):
 
     # simplify the formulas
     if not S.is_concrete():
-        S = EM.conjunction(*remove_implied_literals(list(S.to_cnf().children())))
+        S = EM.conjunction(*remove_implied_literals(S.to_cnf().children()))
     if not E.is_concrete():
-        E = EM.conjunction(*remove_implied_literals(list(E.to_cnf().children())))
+        E = EM.conjunction(*remove_implied_literals(E.to_cnf().children()))
     if not H.is_concrete():
-        H = EM.conjunction(*remove_implied_literals(list(H.to_cnf().children())))
+        H = EM.conjunction(*remove_implied_literals(H.to_cnf().children()))
 
     subs = {l: l.load for l in unsafe[0].getNondetLoads()}
     Sh = AssertAnnotation(H, subs, EM)
@@ -185,9 +185,9 @@ def get_initial_seq2(unsafe):
 
     # simplify the formulas
     if not S.is_concrete():
-        S = conjunction(*remove_implied_literals(list(S.to_cnf().children())))
+        S = conjunction(*remove_implied_literals(S.to_cnf().children()))
     if not E.is_concrete():
-        E = conjunction(*remove_implied_literals(list(E.to_cnf().children())))
+        E = conjunction(*remove_implied_literals(E.to_cnf().children()))
 
     subs = {l: l.load for l in unsafe[0].getNondetLoads()}
     Sa = AssertAnnotation(S, subs, EM)
@@ -231,9 +231,9 @@ def get_initial_seq(unsafe, path, L):
 
     # simplify the formulas
     if not S.is_concrete():
-        S = EM.conjunction(*remove_implied_literals(list(S.to_cnf().children())))
+        S = EM.conjunction(*remove_implied_literals(S.to_cnf().children()))
     if not E.is_concrete():
-        E = EM.conjunction(*remove_implied_literals(list(E.to_cnf().children())))
+        E = EM.conjunction(*remove_implied_literals(E.to_cnf().children()))
 
     subs = {l: l.load for l in unsafe[0].getNondetLoads()}
     Sa = AssertAnnotation(S, subs, EM)
@@ -658,7 +658,7 @@ class KindSymbolicExecutor(BaseKindSE):
         # FIXME: we are still precies, use abstraction here...
         return seq
 
-    def strengthenInitialSeq(self, seq0, errs0, path, L : SimpleLoop):
+    def strengthen_initial_seq(self, seq0, errs0, path, L : SimpleLoop):
         r = seq0.check_ind_on_paths(self, L.getPaths())
         # catch it in debug mode so that we can improve...
         # assert r.errors is None, f"Initial seq is not inductive: {seq0}"
@@ -667,17 +667,39 @@ class KindSymbolicExecutor(BaseKindSE):
             return seq0
 
         # is the assertion inside the loop or after the loop?
+        EM = getGlobalExprManager()
         assert path[0] == L._header
         print(path)
-        for e in L.getExits():
-            print(e)
-        assert False
-        if (path[-1], path[-2]) in L.getExits():
+        createSet = self.getIndExecutor().createStatesSet
+        if (path[0], path[1]) in L.get_inedges():
+            # FIXME: we actually do not use the concrete assertion at all right now...
             # assertion is inside, evaluate the jump-out instruction
-            for e in L.getExits():
-                print(e)
-            assert False
+            # get the safe states that jump out of the loop after one iteration
+            r = check_paths(self, L.getPaths())
+            if not r.ready:
+                return None
+            ready =  [s for s in r.ready if s.pc in (e[1].getBBlock().first() for e in L.getExits())]
+            if not ready:
+                return None
+            R = createSet()
+            for r in ready:
+                # do not use the first constraint -- it is the inedge condition that we want to ignore,
+                # because we want to jump out of the loop (otherwise we will not get inductive set)
+                C = r.getConstraints()[1:]
+                expr = EM.conjunction(*C).to_cnf()
+                expr = EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
+                tmp = createSet(r)
+                tmp.reset_expr(expr)
+                print(tmp)
+                R.add(tmp)
+            #R.intersect(errs0.toassume().Not(EM))
+            seq0 = InductiveSequence(R.as_assert_annotation())
+            print(seq0)
+            r = seq0.check_ind_on_paths(self, L.getPaths())
+            print(r)
+            assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
         else:
+            raise NotImplementedError("Not implemented yet")
             #assertion is outside
             pass
         dbg("Initial sequence is NOT inductive", color="red")
@@ -751,7 +773,7 @@ class KindSymbolicExecutor(BaseKindSE):
         seq0, errs0 = get_initial_seq(unsafe, path, L)
         # the initial sequence may not be inductive (usually when the assertion
         # is inside the loop, so we must strenghten it
-        seq0 = self.strengthenInitialSeq(seq0, errs0, path, L)
+        seq0 = self.strengthen_initial_seq(seq0, errs0, path, L)
         if seq0 is None:
             return False  # we failed...
 

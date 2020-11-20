@@ -82,14 +82,14 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             states = [s.copy() for s in self.states]
             assert states
 
-            dbgv(f"Executing (init) path: {path}", color="WHITE", fn=self.reportfn)
+            dbg(f"Executing (init) path: {path}", fn=self.reportfn)
         else:
             executor = self.getIndExecutor()
 
             s = executor.createCleanState()
             states = [s]
 
-            dbgv(f"Executing path: {path}", color="WHITE", fn=self.reportfn)
+            dbg(f"Executing path: {path}", fn=self.reportfn)
 
         assert all(
             map(lambda s: not s.getConstraints(), states)
@@ -257,6 +257,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         paths = self.paths
         for path in paths:
+            print(path)
             first_loc = path.first()
             if self._is_init(first_loc):
                 r, states = self.checkInitialPath(path)

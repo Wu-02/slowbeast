@@ -94,6 +94,9 @@ class SimpleLoop:
     def getEntries(self):
         return self._entries
 
+    def get_inedges(self):
+        return self._inedges
+
     def construct(loc):
         """
         Construct the SimpleLoop obj for _header.
@@ -126,6 +129,7 @@ class SimpleLoop:
         entries = set()
         inedges = set()
         exits = set()
+        # FIXME: do not store this, just return generators from getters (except for exits, thos need to be precomputed)
         for succ in loc.getSuccessors():
             if succ in locs:
                 inedges.add((loc, succ))
@@ -137,8 +141,7 @@ class SimpleLoop:
 
         # fixme: not efficient at all...
         paths = []
-        partialpaths = []
-        queue = [[l, e] for l, e in entries]
+        queue = [[l, e] for l, e in inedges]
         while queue:
             newqueue = []
             for path in queue:
@@ -152,13 +155,6 @@ class SimpleLoop:
                     else:
                         paths.append(np)
             queue = newqueue
-
-        print(backedges)
-        print(inedges)
-        print(entries)
-        print(exits)
-        print(locs)
-        print(paths)
 
         return SimpleLoop(loc,
                           [AnnotatedCFGPath(p) for p in paths],
