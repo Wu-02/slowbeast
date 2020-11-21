@@ -90,62 +90,51 @@ class CFA:
             self._locs.extend(cfa._locs)
             self._edges.extend(cfa._edges)
 
+    def create_loc(self, elem=None):
+        loc = CFA.Location(elem)
+        self._locs.append(loc)
+        return loc
+
     def build_from_function(self, fun: Function):
         assert isinstance(fun, Function)
         locs = {}
         # create locations
         for B in fun.getBBlocks():
-            edges = []
+            loc1, loc2 = self.create_loc(B), self.create_loc(B)
 
-            # FIXME: break on calls
-            e = None
+            e = CFA.Edge(CFA.Edge.REGULAR, loc1, loc2, B)
             for i in B.instructions()[:-1]:
                 # break on calls
                 if isinstance(i, Call):
-                    if e:
-                        edges.append(e)
-                        tmp = CFA.Location(i)
-                        e = CFA.Edge(CFA.Edge.CALL, e.target(), tmp, i)
+                    if e.is_noop():
+                        e._type = CFA.Edge.CALL
                     else:
-                        if len(edges) > 0:
-                            loc1 = edges[-1].target()
-                        else:
-                            loc1 = CFA.Location(B)
-                            self._locs.append(loc1)
-                        loc2 = CFA.Location(B)
-                        self._locs.append(loc2)
-
-                        e = CFA.Edge(CFA.Edge.CALL, loc1, loc2, i)
+                        self._edges.append(e)
+                        assert not e.is_noop()
+                        # create the call edge
+                        tmp = self.create_loc(B)
+                        e = CFA.Edge(CFA.Edge.CALL, loc2, tmp, i)
+                        loc2 = tmp
+                    # populate the call edge
                     e.add_elem(i)
                     self._edges.append(e)
-                    e = None
+                    assert not e.is_noop()
+
+                    # create a new edge
+                    tmp = self.create_loc(B)
+                    e = CFA.Edge(CFA.Edge.REGULAR, loc2, tmp, B)
+                    loc2 = tmp
                 else:
-                    if e is None:
-                        if len(edges) > 0:
-                            loc1 = edges[-1].target()
-                        else:
-                            loc1 = CFA.Location(B)
-                            self._locs.append(loc1)
-                        loc2 = CFA.Location(B)
-                        self._locs.append(loc2)
-
-                        e = CFA.Edge(CFA.Edge.REGULAR, loc1, loc2, B)
                     e.add_elem(i)
-            # do not add noop edges
-            if e:
-                edges.append(e)
-
-            self._edges.extend(edges)
-            if edges:
-                locs[B] = (edges[0].source(), edges[-1].target())
+            self._edges.append(e)
+            locs[B] = (loc1, loc2)
 
         # create CFG edges
-        FIXME: we may have no edges now
         for B in fun.getBBlocks():
-            l = locs[B]
             br = B.last()
+            l = locs.get(B)
             if not isinstance(br, Branch):
-                e = CFA.Edge(CFA.Edge.REGULAR, l[1], CFA.Location(br), br)
+                e = CFA.Edge(CFA.Edge.REGULAR, l[1], self.create_loc(br), br)
                 e.add_elem(br)
                 self._edges.append(e)
                 continue
@@ -172,6 +161,11 @@ class CFA:
             label =  '\\l'.join(map(lambda s: str(s).replace('"', '\\"'), e._elems))
             if e.is_assume() and label:
                 label = f"{'!' if e.assume_false() else ''}[{label}]"
-            style="color=blue" if e.is_call() else ""
+            if e.is_call():
+                style="color=blue"
+            elif e.is_assume():
+                style = "color=orange"
+            else:
+                style=""
             print(e, f' [label="{label}", {style}]', file=stream)
         print("}", file=stream)
