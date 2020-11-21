@@ -1,6 +1,7 @@
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbgv
 
 from slowbeast.kindse.annotatedcfg import CFG
+from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.callgraph import CallGraph
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
@@ -41,6 +42,12 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         self.callgraph = callgraph
         self.cfgs = {F: CFG(F) for F in callgraph.funs() if not F.isUndefined()}
+        cfa = CFA(self.getProgram())
+        if __debug__:
+            with self.new_output_file("cfa.txt") as f:
+                cfa.dump(f)
+
+        assert False
 
         self.paths = []
         # as we run the executor in nested manners,
