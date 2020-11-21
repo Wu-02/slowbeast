@@ -593,6 +593,9 @@ def join_iter(i1, i2):
     yield from i2
 
 
+def simplify_expr(expr, EM):
+    return EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
+
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions(), genannot=False):
         super(KindSymbolicExecutor, self).__init__(
