@@ -77,6 +77,10 @@ class ExprAnnotation(Annotation):
     def getExpr(self):
         return self._sd.getExpr()
 
+    # NOTE: use carefully...
+    def set_expr(self, expr):
+        return self._sd.set_expr(expr)
+
     def getSubstitutions(self):
         return self._sd.getSubstitutions()
 

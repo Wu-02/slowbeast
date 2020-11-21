@@ -42,12 +42,10 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         self.callgraph = callgraph
         self.cfgs = {F: CFG(F) for F in callgraph.funs() if not F.isUndefined()}
-        cfa = CFA(self.getProgram())
-        if __debug__:
-            with self.new_output_file("cfa.txt") as f:
-                cfa.dump(f)
-
-        assert False
+       #cfa = CFA(self.getProgram())
+       #if __debug__:
+       #    with self.new_output_file("cfa.txt") as f:
+       #        cfa.dump(f)
 
         self.paths = []
         # as we run the executor in nested manners,

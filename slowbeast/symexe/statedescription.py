@@ -52,7 +52,7 @@ class StateDescription:
     def getExpr(self):
         return self._expr
 
-    def setExpr(self, expr):
+    def set_expr(self, expr):
         """ Set expression in this states decriptior. Use responsibly!"""
         self._expr = expr
 

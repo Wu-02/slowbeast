@@ -7,41 +7,41 @@ from copy import copy
 
 class CFG:
     class Node:
-        __slots__ = ["cfg", "block", "successors", "predecessors"]
+        __slots__ = ["_cfg", "_block", "_successors", "_predecessors"]
 
         def __init__(self, cfg, B):
-            self.cfg = cfg
-            self.block = B
-            self.successors = []
-            self.predecessors = []
+            self._cfg = cfg
+            self._block = B
+            self._successors = []
+            self._predecessors = []
 
         def getBBlock(self):
-            return self.block
+            return self._block
 
         def getSuccessors(self):
-            return self.successors
+            return self._successors
 
         def getPredecessors(self):
-            return self.predecessors
+            return self._predecessors
 
         def addSuccessor(self, succ):
-            for s in self.successors:
+            for s in self._successors:
                 if s == succ:
                     return
 
-            self.successors.append(succ)
-            succ.predecessors.append(self)
+            self._successors.append(succ)
+            succ._predecessors.append(self)
 
         def getCFG(self):
-            return self.cfg
+            return self._cfg
 
         def isJoin(self):
             "This bblock Has several predecessors"
-            return len(self.predecessors) > 1
+            return len(self._predecessors) > 1
 
         def isBranch(self):
             "This bblock Has several successors"
-            return len(self.successors) > 1
+            return len(self._successors) > 1
 
     def __init__(self, F):
         self._fun = F
