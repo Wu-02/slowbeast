@@ -198,7 +198,6 @@ class IncrementalSolver(SymbolicSolver):
     def add(self, *e):
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
             self._solver.add(BoolVal(False))
-        print(e)
         self._solver.add(*(x.unwrap() for x in e if not x.is_concrete()))
 
     def push(self):
