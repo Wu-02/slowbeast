@@ -261,11 +261,15 @@ class Executor(ConcreteExecutor):
 
     def execCmp(self, state, instr):
         assert isinstance(instr, Cmp)
-        op1 = state.eval(instr.getOperand(0))
-        op2 = state.eval(instr.getOperand(1))
+        seval = state.eval
+        getop = instr.getOperand
+        op1 = seval(getop(0))
+        op2 = seval(getop(1))
 
-        if op1.is_pointer() or op2.is_pointer():
-            if op1.is_pointer() and op2.is_pointer():
+        op1isptr = op1.is_pointer()
+        op2isptr = op2.is_pointer()
+        if op1isptr or op2isptr:
+            if op1isptr and op2isptr:
                 return self.cmpPointers(state, instr, op1, op2)
             else:
                 state.setKilled("Comparison of pointer to a constant not implemented")
@@ -323,22 +327,26 @@ class Executor(ConcreteExecutor):
 
     def execBinaryOp(self, state, instr):
         assert isinstance(instr, BinaryOperation)
-        op1 = state.eval(instr.getOperand(0))
-        op2 = state.eval(instr.getOperand(1))
+        seval = state.eval
+        getop = instr.getOperand
+        op1 = seval(getop(0))
+        op2 = seval(getop(1))
         # if one of the operands is a pointer,
         # lift the other to pointer too
         r = None
         E = state.getExprManager()
-        if op1.is_pointer():
-            if not op2.is_pointer():
+        op1ptr = op1.is_pointer()
+        op2ptr = op2.is_pointer()
+        if op1ptr:
+            if not op2ptr:
                 r = addPointerWithConstant(E, op1, op2)
             else:
                 state.setKilled(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
                 )
                 return [state]
-        elif op2.is_pointer():
-            if not op1.is_pointer():
+        elif op2ptr:
+            if not op1ptr:
                 r = addPointerWithConstant(E, op2, op1)
             else:
                 state.setKilled(
@@ -346,27 +354,28 @@ class Executor(ConcreteExecutor):
                 )
                 return [state]
         else:
-            if instr.getOperation() == BinaryOperation.ADD:
+            opcode = instr.getOperation()
+            if opcode == BinaryOperation.ADD:
                 r = E.Add(op1, op2)
-            elif instr.getOperation() == BinaryOperation.SUB:
+            elif opcode == BinaryOperation.SUB:
                 r = E.Sub(op1, op2)
-            elif instr.getOperation() == BinaryOperation.MUL:
+            elif opcode == BinaryOperation.MUL:
                 r = E.Mul(op1, op2)
-            elif instr.getOperation() == BinaryOperation.DIV:
+            elif opcode == BinaryOperation.DIV:
                 r = E.Div(op1, op2, instr.isUnsigned())
-            elif instr.getOperation() == BinaryOperation.SHL:
+            elif opcode == BinaryOperation.SHL:
                 r = E.Shl(op1, op2)
-            elif instr.getOperation() == BinaryOperation.LSHR:
+            elif opcode == BinaryOperation.LSHR:
                 r = E.LShr(op1, op2)
-            elif instr.getOperation() == BinaryOperation.ASHR:
+            elif opcode == BinaryOperation.ASHR:
                 r = E.AShr(op1, op2)
-            elif instr.getOperation() == BinaryOperation.REM:
+            elif opcode == BinaryOperation.REM:
                 r = E.Rem(op1, op2, instr.isUnsigned())
-            elif instr.getOperation() == BinaryOperation.AND:
+            elif opcode == BinaryOperation.AND:
                 r = E.And(op1, op2)
-            elif instr.getOperation() == BinaryOperation.OR:
+            elif opcode == BinaryOperation.OR:
                 r = E.Or(op1, op2)
-            elif instr.getOperation() == BinaryOperation.XOR:
+            elif opcode == BinaryOperation.XOR:
                 r = E.Xor(op1, op2)
             else:
                 state.setKilled("Not implemented binary operation: {0}".format(instr))
@@ -381,22 +390,23 @@ class Executor(ConcreteExecutor):
     def execUnaryOp(self, state, instr):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.getOperand(0))
+        opcode = instr.getOperation()
         E = state.getExprManager()
-        if instr.getOperation() == UnaryOperation.ZEXT:
+        if opcode == UnaryOperation.ZEXT:
             bw = instr.bitwidth()
             r = E.ZExt(op1, bw)
-        elif instr.getOperation() == UnaryOperation.SEXT:
+        elif opcode == UnaryOperation.SEXT:
             bw = instr.bitwidth()
             r = E.SExt(op1, bw)
-        elif instr.getOperation() == UnaryOperation.CAST:
+        elif opcode == UnaryOperation.CAST:
             r = E.Cast(op1, instr.casttype())
             if r is None:
                 state.setKilled("Unsupported/invalid cast: {0}".format(instr))
                 return [state]
-        elif instr.getOperation() == UnaryOperation.EXTRACT:
+        elif opcode == UnaryOperation.EXTRACT:
             start, end = instr.getRange()
             r = E.Extract(op1, start, end)
-        elif instr.getOperation() == UnaryOperation.NOT:
+        elif opcode == UnaryOperation.NOT:
             r = E.Not(op1)
         else:
             state.setKilled("Unary instruction not implemented: {0}".format(instr))
