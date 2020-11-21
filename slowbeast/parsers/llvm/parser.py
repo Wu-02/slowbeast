@@ -99,7 +99,10 @@ def parseFunctionRetTy(m, ty):
     else:
         sz = type_size_in_bits(m, parts[0])
         if sz:
-            return True, IntType(sz)
+            if parts[0] in ("float", "double"):
+                return True, FloatType(sz)
+            else:
+                return True, IntType(sz)
     return False, None
 
 
