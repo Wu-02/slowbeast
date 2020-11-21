@@ -1,6 +1,6 @@
 from slowbeast.ir.program import Program
 from slowbeast.ir.function import Function
-from slowbeast.ir.instruction import Instruction, Branch
+from slowbeast.ir.instruction import Branch, Call
 
 class CFA:
     """ Control flow automaton """
@@ -49,7 +49,7 @@ class CFA:
         def add_elem(self, e):
             self._elems.append(e)
 
-        def is_noop(self, e):
+        def is_noop(self):
             return len(self._elems) == 0
 
         def __repr__(self):
@@ -95,23 +95,59 @@ class CFA:
         locs = {}
         # create locations
         for B in fun.getBBlocks():
-            loc1 = CFA.Location(B) # before B
-            loc2 = CFA.Location(B) # after B
-            self._locs.append(loc1)
-            self._locs.append(loc2)
-            locs[B] = (loc1, loc2)
+            edges = []
 
             # FIXME: break on calls
-            e = CFA.Edge(CFA.Edge.REGULAR, loc1, loc2, B)
+            e = None
             for i in B.instructions()[:-1]:
-                e.add_elem(i)
-            self._edges.append(e)
+                # break on calls
+                if isinstance(i, Call):
+                    if e:
+                        edges.append(e)
+                        tmp = CFA.Location(i)
+                        e = CFA.Edge(CFA.Edge.CALL, e.target(), tmp, i)
+                    else:
+                        if len(edges) > 0:
+                            loc1 = edges[-1].target()
+                        else:
+                            loc1 = CFA.Location(B)
+                            self._locs.append(loc1)
+                        loc2 = CFA.Location(B)
+                        self._locs.append(loc2)
 
-        # create edges
+                        e = CFA.Edge(CFA.Edge.CALL, loc1, loc2, i)
+                    e.add_elem(i)
+                    self._edges.append(e)
+                    e = None
+                else:
+                    if e is None:
+                        if len(edges) > 0:
+                            loc1 = edges[-1].target()
+                        else:
+                            loc1 = CFA.Location(B)
+                            self._locs.append(loc1)
+                        loc2 = CFA.Location(B)
+                        self._locs.append(loc2)
+
+                        e = CFA.Edge(CFA.Edge.REGULAR, loc1, loc2, B)
+                    e.add_elem(i)
+            # do not add noop edges
+            if e:
+                edges.append(e)
+
+            self._edges.extend(edges)
+            if edges:
+                locs[B] = (edges[0].source(), edges[-1].target())
+
+        # create CFG edges
+        FIXME: we may have no edges now
         for B in fun.getBBlocks():
             l = locs[B]
             br = B.last()
             if not isinstance(br, Branch):
+                e = CFA.Edge(CFA.Edge.REGULAR, l[1], CFA.Location(br), br)
+                e.add_elem(br)
+                self._edges.append(e)
                 continue
 
             tsucc = locs[br.getTrueSuccessor()][0]
@@ -136,5 +172,6 @@ class CFA:
             label =  '\\l'.join(map(lambda s: str(s).replace('"', '\\"'), e._elems))
             if e.is_assume() and label:
                 label = f"{'!' if e.assume_false() else ''}[{label}]"
-            print(e, f' [label="{label}"]', file=stream)
+            style="color=blue" if e.is_call() else ""
+            print(e, f' [label="{label}", {style}]', file=stream)
         print("}", file=stream)
