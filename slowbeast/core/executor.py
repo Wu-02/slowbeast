@@ -476,26 +476,30 @@ class Executor:
         else:
             readystates = [state]
 
+        execute = self.execute
+        finalstatesappend = finalstates.append
         while readystates:
             newst = []
+            newstappend = newst.append
             for s in readystates:
+                pc = s.pc
                 # remember that it is a branch now,
                 # because execute() will change pc
-                isbranch = isinstance(s.pc, Branch)
+                isbranch = isinstance(pc, Branch)
                 if stopBefore and isbranch:
-                    finalstates.append(s)
+                    finalstatesappend(s)
                     continue
 
-                nxt = self.execute(s, s.pc)
+                nxt = execute(s, pc)
                 if isbranch:
                     # we stop here
                     finalstates += nxt
                 else:
                     for n in nxt:
                         if n.isReady():
-                            newst.append(n)
+                            newstappend(n)
                         else:
-                            finalstates.append(n)
+                            finalstatesappend(n)
 
             readystates = newst
 
