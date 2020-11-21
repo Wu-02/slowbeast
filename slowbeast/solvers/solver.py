@@ -196,7 +196,10 @@ class IncrementalSolver(SymbolicSolver):
         self._solver = Z3Solver()
 
     def add(self, *e):
-        self._solver.add(*(x.unwrap() for x in e))
+        if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
+            self._solver.add(BoolVal(False))
+        print(e)
+        self._solver.add(*(x.unwrap() for x in e if not x.is_concrete()))
 
     def push(self):
         self._solver.push()
