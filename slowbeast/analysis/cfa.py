@@ -6,12 +6,20 @@ class CFA:
     """ Control flow automaton """
     class Location:
         _counter = 0
-        __slots__ = "_id", "_elem"
+        __slots__ = "_id", "_elem", "_successors", "_predecessors"
 
         def __init__(self, elem=None):
             CFA.Location._counter += 1
             self._id = CFA.Location._counter
             self._elem = elem
+            self._successors = []
+            self._predecessors = []
+
+        def successors(self):
+            return self._successors
+
+        def predecessors(self):
+            return self._predecessors
 
         def __repr__(self):
             return f"l{self._id}"
@@ -95,6 +103,12 @@ class CFA:
         self._locs.append(loc)
         return loc
 
+    def add_edge(self, e : Edge):
+        e._target._predecessors.append(e)
+        e._source._successors.append(e)
+        # do we need this?
+        self._edges.append(e)
+
     def build_from_function(self, fun: Function):
         assert isinstance(fun, Function)
         locs = {}
@@ -109,7 +123,7 @@ class CFA:
                     if e.is_noop():
                         e._type = CFA.Edge.CALL
                     else:
-                        self._edges.append(e)
+                        self.add_edge(e)
                         assert not e.is_noop()
                         # create the call edge
                         tmp = self.create_loc(B)
@@ -117,7 +131,7 @@ class CFA:
                         loc2 = tmp
                     # populate the call edge
                     e.add_elem(i)
-                    self._edges.append(e)
+                    self.add_edge(e)
                     assert not e.is_noop()
 
                     # create a new edge
@@ -126,7 +140,7 @@ class CFA:
                     loc2 = tmp
                 else:
                     e.add_elem(i)
-            self._edges.append(e)
+            self.add_edge(e)
             locs[B] = (loc1, loc2)
 
         # create CFG edges
@@ -136,22 +150,22 @@ class CFA:
             if not isinstance(br, Branch):
                 e = CFA.Edge(CFA.Edge.REGULAR, l[1], self.create_loc(br), br)
                 e.add_elem(br)
-                self._edges.append(e)
+                self.add_edge(e)
                 continue
 
             tsucc = locs[br.getTrueSuccessor()][0]
             fsucc = locs[br.getFalseSuccessor()][0]
             if tsucc is fsucc:
-                self._edges.append(CFA.AssumeEdge(l[1], tsucc, br, True))
+                self.add_edge(CFA.AssumeEdge(l[1], tsucc, br, True))
             else:
                 # FIXME: assume True/False
                 cond = br.getCondition()
                 e = CFA.AssumeEdge(l[1], tsucc, br, True)
                 e.add_elem(cond)
-                self._edges.append(e)
+                self.add_edge(e)
                 e = CFA.AssumeEdge(l[1], fsucc, br, False)
                 e.add_elem(cond)
-                self._edges.append(e)
+                self.add_edge(e)
 
     def dump(self, stream):
         print("digraph CFA {", file=stream)
