@@ -14,8 +14,8 @@ from slowbeast.symexe.annotations import (
     execute_annotation_substitutions
 )
 
-from slowbeast.symexe.statesset import union, intersection, complement
-from slowbeast.solvers.solver import getGlobalExprManager, Solver, IncrementalSolver
+from slowbeast.symexe.statesset import union, intersection
+from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 from slowbeast.solvers.expressions import em_optimize_expressions
 
 from .loops import SimpleLoop
@@ -152,28 +152,31 @@ def get_initial_seq(unsafe, path, L):
     E = None  # unsafe states
 
     EM = getGlobalExprManager()
-    Not = EM.Not
+    Not, conjunction = EM.Not, EM.conjunction
     for u in unsafe:
         # add constraints without loop exit condition
         # (we'll add the loop condition later)
         uconstr = u.getConstraints()
+        if not uconstr:
+            S = EM.getFalse()
+            E = EM.getTrue()
+            break # nothing we can do...
         # all constr. apart from the last one
-        pc = EM.conjunction(*uconstr[:-1])
+        pc = conjunction(*uconstr[:-1])
         # last constraint is the failed assertion
         S = (
-            EM.conjunction(pc, Not(uconstr[-1]), S)
+            conjunction(pc, Not(uconstr[-1]), S)
             if S
             else EM.And(pc, Not(uconstr[-1]))
         )
         # unsafe states
-        su = EM.conjunction(*(c for (n, c) in enumerate(uconstr) if n > 0))
-        E = EM.Or(EM.conjunction(*uconstr), E) if E else EM.conjunction(*uconstr)
+        E = EM.Or(conjunction(*uconstr), E) if E else conjunction(*uconstr)
 
     # simplify the formulas
     if not S.is_concrete():
-        S = EM.conjunction(*remove_implied_literals(S.to_cnf().children()))
+        S = conjunction(*remove_implied_literals(S.to_cnf().children()))
     if not E.is_concrete():
-        E = EM.conjunction(*remove_implied_literals(E.to_cnf().children()))
+        E = conjunction(*remove_implied_literals(E.to_cnf().children()))
 
     subs = {l: l.load for l in unsafe[0].getNondetLoads()}
     Sa = AssertAnnotation(S, subs, EM)
@@ -526,7 +529,11 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     # FIXME: move target one level up
     target = createSet(seq[-1].toassert())
 
-    expr = S.as_expr().to_cnf()
+    expr = S.as_expr()
+    if expr.is_concrete():
+        return InductiveSequence.Frame(S.as_assert_annotation(), None)
+
+    expr = expr.to_cnf()
     # clauses = break_eq_ne(expr)
     clauses = list(expr.children())
 
