@@ -750,7 +750,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 # do not use the first constraint -- it is the inedge condition that we want to ignore,
                 # because we want to jump out of the loop (otherwise we will not get inductive set)
                 C = r.getConstraints()[1:]
-                expr = EM.conjunction(*C).to_cnf()
+                expr = EM.conjunction(*C)
                 expr = EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
                 tmp = createSet(r)
                 tmp.reset_expr(expr)
