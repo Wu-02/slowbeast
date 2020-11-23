@@ -283,7 +283,7 @@ def and_annotations(EM, toassert, *annots):
 def state_to_annotation(state):
     EM = state.getExprManager()
     return AssumeAnnotation(
-        state.getConstraintsObj().asFormula(EM),
+        state.getConstraintsObj().as_formula(EM),
         {l: l.load for l in state.getNondetLoads()},
         EM,
     )

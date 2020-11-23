@@ -147,7 +147,7 @@ def unify_state_descriptions(EM, sd1, sd2):
 def state_to_description(state):
     EM = state.getExprManager()
     return StateDescription(
-        state.getConstraintsObj().asFormula(EM),
+        state.getConstraintsObj().as_formula(EM),
         {l: l.load for l in state.getNondetLoads()},
     )
 

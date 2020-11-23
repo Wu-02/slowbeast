@@ -54,7 +54,7 @@ class StatesSet:
 
     def as_expr(self):
         """ NOTE: use carefully, only when you know what you do... """
-        return self._state.getConstraintsObj().asFormula(self.getExprManager())
+        return self._state.getConstraintsObj().as_formula(self.getExprManager())
 
     def as_assume_annotation(self):
         sd = state_to_description(self._state)
@@ -71,7 +71,7 @@ class StatesSet:
     def reset_expr(self, expr):
         """ NOTE: use carefully, only when you know what you do... """
         C = ConstraintsSet()
-        C.addConstraint(expr)
+        C.add(expr)
         self._state.setConstraints(C)
 
     def _unite(self, s):
@@ -86,9 +86,9 @@ class StatesSet:
 
         EM = state.getExprManager()
         C = ConstraintsSet()
-        newexpr = EM.Or(expr, state.getConstraintsObj().asFormula(EM))
+        newexpr = EM.Or(expr, state.getConstraintsObj().as_formula(EM))
         if not newexpr.is_concrete():
-            C.addConstraint(newexpr)
+            C.add(newexpr)
         else:
             # if newexpr is concrete, it must be True. And adding True is useless,
             # its the same as empty constraints
@@ -111,9 +111,9 @@ class StatesSet:
     def complement(self):
         state = self._state
         EM = state.getExprManager()
-        expr = EM.Not(state.getConstraintsObj().asFormula(EM))
+        expr = EM.Not(state.getConstraintsObj().as_formula(EM))
         C = ConstraintsSet()
-        C.addConstraint(expr)
+        C.add(expr)
         state.setConstraints(C)
 
     def minus(self, s):

@@ -1,27 +1,26 @@
 from copy import copy
 
-
 class ConstraintsSet:
-    __slots__ = ["constraints"]
+    __slots__ = "_constraints"
 
     def __init__(self, C=None):
-        self.constraints = []
+        self._constraints = []
         if C:
-            self.addConstraint(*C)
+            self.add(*C)
 
     def copy(self):
-        return ConstraintsSet(self.constraints.copy())
+        return ConstraintsSet(self._constraints.copy())
 
     def __eq__(self, rhs):
-        return self.constraints == rhs.constraints
+        return self._constraints == rhs._constraints
 
-    def addConstraint(self, *C):
-        constr = self.constraints
+    def add(self, *C):
+        constr = self._constraints
         for c in C:
             # assert not c.is_concrete(), "Adding True or False, catch these cases atm"
             if c.is_concrete():
                 if c.value() is False:
-                    self.constraints = [c]
+                    self._constraints = [c]
                     break
                 # we can ignore True...
             elif c.isAnd():
@@ -29,11 +28,11 @@ class ConstraintsSet:
             else:
                 constr.append(c)
 
-    def asFormula(self, EM):
-        return EM.conjunction(*self.constraints)
+    def as_formula(self, EM):
+        return EM.conjunction(*self._constraints)
 
     def get(self):
-        return self.constraints
+        return self._constraints
 
     def __repr__(self):
-        return self.constraints.__repr__()
+        return self._constraints.__repr__()

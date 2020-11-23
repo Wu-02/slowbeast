@@ -121,7 +121,7 @@ class SEState(ExecutionState):
         return self._constraints
 
     def path_condition(self):
-        return self._constraints.asFormula(self._solver.getExprManager())
+        return self._constraints.as_formula(self._solver.getExprManager())
 
     def addConstraint(self, *C):
         if self._constraints_ro:
@@ -129,7 +129,7 @@ class SEState(ExecutionState):
             self._constraints_ro = False
 
         for c in C:
-            self._constraints.addConstraint(c)
+            self._constraints.add(c)
 
     def setConstraints(self, C):
         self._constraints = C
