@@ -404,10 +404,12 @@ class UnaryOperation(ValueInstruction):
     SEXT = 3
     EXTRACT = 4
     CAST = 5  # reinterpret cast
+    ABS = 6
+    LAST_UNARY_OP = 6
     # TODO make SEXT and ZEXT also reinterpret cast?
 
     def __check(op):
-        assert UnaryOperation.NEG <= op <= UnaryOperation.CAST
+        assert UnaryOperation.NEG <= op <= UnaryOperation.LAST_UNARY_OP
 
     def __init__(self, op, a):
         super().__init__([a])
@@ -427,6 +429,13 @@ class Extend(UnaryOperation):
     def bitwidth(self):
         return self._bw
 
+class Abs(UnaryOperation):
+    """ Absolute value """
+    def __init__(self, val):
+        super().__init__(UnaryOperation.ABS, val)
+
+    def __str__(self):
+        return "x{0} = abs({1})".format(self.get_id(), self.getOperand(0).as_value())
 
 class ZExt(Extend):
     def __init__(self, a, bw):
@@ -436,7 +445,6 @@ class ZExt(Extend):
         return "x{0} = zext {1} to {2}".format(
             self.get_id(), self.getOperand(0).as_value(), self.bitwidth()
         )
-
 
 class SExt(Extend):
     def __init__(self, a, bw):

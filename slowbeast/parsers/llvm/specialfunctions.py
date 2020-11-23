@@ -1,4 +1,4 @@
-from slowbeast.ir.instruction import Alloc, Assume, Assert, Cmp, Print
+from slowbeast.ir.instruction import Alloc, Assume, Assert, Cmp, Print, Abs
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from ...domains.concrete import ConcreteVal
 from slowbeast.ir.types import IntType
@@ -6,6 +6,8 @@ from .utils import getLLVMOperands, type_size_in_bits
 
 # FIXME: turn to a dict with separate handlers
 special_functions = [
+    "llvm.fabs.f32",
+    "llvm.fabs.f64",
     "malloc",
     "__assert_fail",
     "__VERIFIER_error",
@@ -75,6 +77,11 @@ def create_special_fun(parser, inst, fun):
         ), "Invalid malloc"  # (call has +1 operand for the function)
         size = parser.getOperand(operands[0])
         A = Alloc(size, on_heap=True)
+        return A, [A]
+    elif fun.startswith("llvm.fabs."):
+        operands = getLLVMOperands(inst)
+        val = parser.getOperand(operands[0])
+        A = Abs(val)
         return A, [A]
     elif fun == "__slowbeast_print":
         P = Print(*[parser.getOperand(x) for x in getLLVMOperands(inst)[:-1]])

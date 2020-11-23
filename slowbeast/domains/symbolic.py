@@ -42,7 +42,7 @@ if _use_z3:
     from z3 import is_true, is_false
     from z3 import simplify, substitute
     from z3 import Goal, Tactic
-    from z3 import FP, Float32, Float64, Float128, FPVal
+    from z3 import FP, Float32, Float64, Float128, FPVal, fpAbs
 
     from z3 import fpToFP, fpToIEEEBV
 
@@ -590,6 +590,13 @@ class BVSymbolicDomain:
         if unsigned:
             return Expr(URem(a.unwrap(), b.unwrap()), result_ty)
         return Expr(SRem(a.unwrap(), b.unwrap()), result_ty)
+
+    def Abs(a):
+        assert BVSymbolicDomain.belongto(a)
+        if a.is_float():
+            return Expr(fpAbs(a.unwrap()), a.type())
+        expr = a.unwrap()
+        return Expr(If(expr < 0, -expr, expr), a.type()) 
 
 
 # The default symbolic domain are bitvectors

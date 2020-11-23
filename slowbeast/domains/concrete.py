@@ -219,6 +219,10 @@ class ConcreteDomain:
             return ConcreteVal(getUnsigned(a) % getUnsigned(b), a.type())
         return ConcreteVal(a.value() % b.value(), a.type())
 
+    def Abs(a):
+        assert ConcreteDomain.belongto(a)
+        return ConcreteVal(abs(a.value()), a.type())
+
     ##
     # Relational operators
     def Le(a, b, unsigned=False):
