@@ -96,6 +96,9 @@ class ExprAnnotation(Annotation):
     def doSubs(self, state):
         return self._sd.doSubs(state)
 
+    def eval_subs(self, state):
+        return self._sd.eval_subs(state)
+
     def __eq__(self, rhs):
         return self.cannonical == rhs.cannonical
 

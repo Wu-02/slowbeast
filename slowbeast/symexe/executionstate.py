@@ -120,6 +120,9 @@ class SEState(ExecutionState):
     def getConstraintsObj(self):
         return self._constraints
 
+    def path_condition(self):
+        return self._constraints.asFormula(self._solver.getExprManager())
+
     def addConstraint(self, *C):
         if self._constraints_ro:
             self._constraints = self._constraints.copy()

@@ -59,6 +59,10 @@ class StateDescription:
     def getSubstitutions(self):
         return self._subs
 
+    def eval_subs(self, state):
+        get = state.get
+        return ((v, get(x)) for (v, x) in self._subs.items())
+
     def doSubs(self, state):
         """
         Return the expression after substitutions

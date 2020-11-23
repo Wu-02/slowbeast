@@ -215,6 +215,7 @@ def postimage(executor, paths, pre=None):
         if pre:
             p.addPrecondition(pre.as_assume_annotation())
 
+        # FIXME do not branch on last here, its add useless states
         r = executor.executePath(p)
         result.merge(r)
 
@@ -313,15 +314,10 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     formulas = []
     U = union(target, X)
     I = U.as_assume_annotation()
+    step = I.getExpr()
     # execute the instructions from annotations, so that the substitutions have up-to-date value
-    post, nonr = execute_annotation_substitutions(executor.getIndExecutor(), post, I)
+    poststates, nonr = execute_annotation_substitutions(executor.getIndExecutor(), post, I)
     assert not nonr, f"Got errors while processing annotations: {nonr}"
-    for s in post:
-        sexpr = s.getConstraintsObj().asFormula(EM)
-        expr = I.doSubs(s)
-        # to simulate forking, we need both the condition and its assertion
-        # formulas for checking 1) feasibility, 2) existence of CTI
-        formulas.append((sexpr, expr))
 
     # we always check S && unsafe && new_clause, so we can keep S  and unsafe
     # in the solver all the time
@@ -331,18 +327,16 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     solver = IncrementalSolver()
 
-    def check_literal(lit):
-        if lit.is_concrete():
-            return False
+    def _check_literal(lit):
         # safety check
         if not safety_solver.is_sat(disjunction(lit, *rl)) is False:
             return False
 
         have_feasible = False
-        for feasible, inductive in formulas:
+        for s in poststates:
             #feasability check
             solver.push()
-            pathcond = EM.substitute(feasible, (litrep, lit))
+            pathcond = EM.substitute(s.path_condition(), (litrep, lit))
             solver.add(pathcond)
             if solver.is_sat() is not True:
                 solver.pop()
@@ -352,14 +346,21 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
             have_feasible = True
 
             #inductivity check
-            hascti = EM.substitute(inductive, (litrep, lit))
+            A = AssertAnnotation(EM.substitute(I.getExpr(), (litrep, lit)),
+                                 I.getSubstitutions(), EM)
+            hasnocti = A.doSubs(s)
             # we have got pathcond in solver already
-            if solver.is_sat(EM.Not(hascti)) is True: # there exist CTI
+            if solver.is_sat(EM.Not(hasnocti)) is not False: # there exist CTI
                 solver.pop()
                 return False
             solver.pop()
         return have_feasible
 
+    def check_literal(lit):
+        if lit.is_concrete():
+            return False
+        return _check_literal(lit)
+    #
     # # NOTE: the check above should be equivalent to this code but should be faster as we do not re-execute
     # # the paths all the time
     # def check_literal_old(lit):
@@ -374,7 +375,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     #
     # def check_literal(lit):
     #     r = check_literal_new(lit)
-    #     assert r == check_literal_old(lit), r
+    #     assert r == check_literal_old(lit), f"{lit} : {r}"
     #     return r
 
     def modify_literal(goodl, P, num):
@@ -404,6 +405,10 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         maxnum = 2 ** bw - 1
         accnum = 1
 
+        # check if we can drop the literal completely
+        if _check_literal(EM.getTrue()):
+            return EM.getTrue()
+
         # a fast path where we try shift just by one.
         # If we cant, we can give up
         num = ConcreteInt(1, bw)
@@ -422,27 +427,28 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         num = ConcreteInt(2 ** (bw - 1) - 1, bw)
 
         while True:
+            numval = num.value()
+            # do not try to shift the number by more than 2^bw
+            if accnum + numval > maxnum:
+                return goodl
+
+            accnum += numval
             l = modify_literal(goodl, P, num)
             if l is None:
                 return goodl
 
-            numval = num.value()
-            accnum += numval
-            # do not try to shift the number by more than 2^bw
-            if accnum > maxnum:
-                return goodl
-
             # push as far as we can with this num
             while check_literal(l):
+                assert accnum <= maxnum
                 goodl = l
 
-                l = modify_literal(goodl, P, num)
-                if l is None:
+                if accnum + numval > maxnum:
                     break
 
                 accnum += numval
-                if accnum > maxnum:
-                    return goodl
+                l = modify_literal(goodl, P, num)
+                if l is None:
+                    break
 
             if numval <= 1:
                 return goodl
@@ -757,7 +763,8 @@ class KindSymbolicExecutor(BaseKindSE):
                 R.add(tmp)
             seq0 = InductiveSequence(R.as_assert_annotation())
             r = seq0.check_ind_on_paths(self, L.getPaths())
-            assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
+            # this may mean that the assertion in fact does not hold
+            #assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
         else:
             r = check_paths(self, [AnnotatedCFGPath([path[0]])])
             if r.ready is None:
@@ -769,7 +776,8 @@ class KindSymbolicExecutor(BaseKindSE):
             R.intersect(seq0.toannotation(True))
             seq0 = InductiveSequence(R.as_assert_annotation())
             r = seq0.check_ind_on_paths(self, L.getPaths())
-            assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
+            # this may mean that the assertion in fact does not hold
+            # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
 
         r = seq0.check_ind_on_paths(self, L.getPaths())
         if r.errors is None:
@@ -797,8 +805,8 @@ class KindSymbolicExecutor(BaseKindSE):
 
         sequences = [seq0]
 
-        print_stdout(f"Executing loop {loc.getBBlockID()} with assumption")
-        print_stdout(str(seq0[0]))
+        print_stdout(f"Executing loop {loc.getBBlockID()} with assumption", color="white")
+        print_stdout(str(seq0[0]), color="white")
         print_stdout(f"and errors : {errs0}")
 
         # NOTE: we do not require the initial (target) set to be inductive!,
