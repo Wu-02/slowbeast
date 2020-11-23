@@ -47,6 +47,12 @@ if _use_z3:
 
     from z3 import fpToFP, fpToIEEEBV
 
+    def fpToBV(x):
+        if x.is_float():
+            return fpToIEEEBV(x.unwrap())
+
+        return x.unwrap()
+
     def eliminate_common_subexpr(expr):
         # XXX: not efficient, it is rather
         # to prettify expressions while debugging
@@ -430,7 +436,7 @@ class BVSymbolicDomain:
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(a.unwrap() & b.unwrap(), a.type())
+            return Expr(fpToBV(a) & fpToBV(b), a.type())
 
     def Or(a, b):
         assert BVSymbolicDomain.belongto(a, b)
@@ -439,7 +445,7 @@ class BVSymbolicDomain:
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(a.unwrap() | b.unwrap(), a.type())
+            return Expr(fpToBV(a) | fpToBV(b), a.type())
 
     def Xor(a, b):
         assert BVSymbolicDomain.belongto(a, b)
@@ -448,14 +454,14 @@ class BVSymbolicDomain:
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(a.unwrap() ^ b.unwrap(), a.type())
+            return Expr(fpToBV(a) ^ fpToBV(b), a.type())
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
         else:
-            return Expr(~a.unwrap(), a.type())
+            return Expr(~fpToBV(a), a.type())
 
     def ZExt(a, b):
         assert BVSymbolicDomain.belongto(a)

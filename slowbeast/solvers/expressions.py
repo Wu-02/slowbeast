@@ -187,7 +187,8 @@ class ExprManager:
     def And(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.And(a, b)
-        return opt(SymbolicDomain.And(self.lift(a), self.lift(b)))
+        lift = self.lift
+        return opt(SymbolicDomain.And(lift(a), lift(b)))
 
     def Or(self, a, b):
         if ConcreteDomain.belongto(a, b):
@@ -198,7 +199,8 @@ class ExprManager:
     def Xor(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Xor(a, b)
-        return opt(SymbolicDomain.Xor(self.lift(a), self.lift(b)))
+        lift = self.lift
+        return opt(SymbolicDomain.Xor(lift(a), lift(b)))
 
     def Not(self, a):
         if ConcreteDomain.belongto(a):
@@ -213,8 +215,7 @@ class ExprManager:
     def FpOp(self, op, val):
         if ConcreteDomain.belongto(val):
             return ConcreteDomain.FpOp(op, val)
-        lift = self.lift
-        return opt(SymbolicDomain.FpOp(op, lift(val)))
+        return opt(SymbolicDomain.FpOp(op, self.lift(val)))
 
     def ZExt(self, a, b):
         assert ConcreteDomain.belongto(b), "Invalid zext argument"
