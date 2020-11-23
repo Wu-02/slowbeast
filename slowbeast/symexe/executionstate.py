@@ -1,6 +1,6 @@
 from ..core.executionstate import ExecutionState
 from ..util.debugging import warn, FIXME
-from .constraints import ConstraintsSet
+from .constraints import ConstraintsSet, IncrementalConstraintsSet
 from copy import copy
 from sys import stdout
 
@@ -9,23 +9,11 @@ class SEState(ExecutionState):
     """ Execution state of symbolic execution """
 
     # XXX do not store warnings in the state but keep them in a map in the interpreter or so?
-    __slots__ = [
-        "_executor",
-        "_solver",
-        "_constraints",
-        "_constraints_ro",
-        "_id",
-        "_warnings",
-        "_warnings_ro",
-        "_nondets",
-        "_nondets_ro",
-    ]
+    __slots__ = "_executor", "_solver", "_constraints", "_constraints_ro", "_id", "_warnings", "_warnings_ro", "_nondets", "_nondets_ro",
     statesCounter = 0
 
     def __init__(self, executor, pc, m, solver, constraints=None):
-        C = ConstraintsSet()
-        assert not C.get(), C.get()
-        ExecutionState.__init__(self, pc, m)
+        super().__init__(pc, m)
 
         SEState.statesCounter += 1
         self._id = SEState.statesCounter
@@ -180,3 +168,10 @@ class SEState(ExecutionState):
         write(" -- constraints --\n")
         write(str(self.getConstraintsObj()))
         write("\n")
+
+
+class IncrementalSEState(SEState):
+
+    def __init__(self, executor, pc, m):
+        C = IncrementalConstraintsSet()
+        super().__init__(executor, pc, m, C.solver(), C)

@@ -1,4 +1,4 @@
-from copy import copy
+from slowbeast.solvers.solver import IncrementalSolver
 
 class ConstraintsSet:
     __slots__ = "_constraints"
@@ -9,7 +9,9 @@ class ConstraintsSet:
             self.add(*C)
 
     def copy(self):
-        return ConstraintsSet(self._constraints.copy())
+        n = ConstraintsSet()
+        n._constraints  = self._constraints.copy()
+        return n
 
     def __eq__(self, rhs):
         return self._constraints == rhs._constraints
@@ -36,3 +38,32 @@ class ConstraintsSet:
 
     def __repr__(self):
         return self._constraints.__repr__()
+
+
+class IncrementalConstraintsSet(ConstraintsSet):
+    __slots__ = "_solver", "_solver_ro"
+
+    def __init__(self, C=None):
+        self._solver = IncrementalSolver()
+        self._solver_ro = False
+        super().__init__(C)
+
+    def solver(self):
+        return self._solver
+
+    def copy(self):
+        n = IncrementalConstraintsSet()
+        n._constraints = self._constraints
+        self._solver_ro = True
+        n._solver_ro = True
+        n._solver = self._solver
+        return n
+
+    def add(self, *C):
+        if self._solver_ro:
+            self._constraints = self._constraints.copy()
+            self._solver = self._solver.copy()
+            self._solver_ro = False
+
+        self._solver.add(*C)
+        super().add(*C)

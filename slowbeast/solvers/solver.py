@@ -4,7 +4,7 @@ from ..domains.concrete import ConcreteVal
 from ..util.debugging import FIXME
 
 if _use_z3:
-    from z3 import Solver as Z3Solver
+    from z3 import Solver as Z3Solver, Context as Z3Context
     from z3 import sat, unsat, unknown
     from z3 import BitVecVal, BoolVal
 
@@ -192,6 +192,7 @@ class SymbolicSolver(SolverIntf):
 
 class IncrementalSolver(SymbolicSolver):
     def __init__(self, em=global_expr_manager):
+        # FIXME: add local expr manager
         super().__init__(em)
         self._solver = Z3Solver()
 
@@ -210,6 +211,11 @@ class IncrementalSolver(SymbolicSolver):
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
             return False
         return _is_sat(self._solver, *(x.unwrap() for x in e if not x.is_concrete()))
+
+    def copy(self):
+        s = IncrementalSolver()
+        s._solver = self._solver.translate(Z3Context())
+        return s
 
     def concretize(self, assumpt, *e):
         raise NotImplementedError("Not implemented yet")
