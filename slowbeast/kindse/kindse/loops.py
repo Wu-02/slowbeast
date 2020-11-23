@@ -64,10 +64,10 @@ class SimpleLoop:
         # the last edge from each path is also an exit (but one that does
         # not go through the loop header)
         self._locs = locs
-        self._exits = exits         # edges leaving the loop
-        self._entries = entries     # edges from outside to loop header
-        self._inedges = inedges     # edges from header into loop
-        self._backedges = backedges # edges from loop into header
+        self._exits = exits  # edges leaving the loop
+        self._entries = entries  # edges from outside to loop header
+        self._inedges = inedges  # edges from header into loop
+        self._backedges = backedges  # edges from loop into header
 
         # the state after executing the given path
         self.states = None
@@ -123,7 +123,7 @@ class SimpleLoop:
 
         try:
             DFSVisitor().foreachedge(loc, processedge, backtrack)
-        except ValueError: # nested loop
+        except ValueError:  # nested loop
             return None
 
         entries = set()
@@ -156,10 +156,15 @@ class SimpleLoop:
                         paths.append(np)
             queue = newqueue
 
-        return SimpleLoop(loc,
-                          [AnnotatedCFGPath(p) for p in paths],
-                          locs, entries, exits, inedges, backedges)
-
+        return SimpleLoop(
+            loc,
+            [AnnotatedCFGPath(p) for p in paths],
+            locs,
+            entries,
+            exits,
+            inedges,
+            backedges,
+        )
 
     def getVariables(self):
         V = set()

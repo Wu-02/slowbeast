@@ -185,6 +185,7 @@ def execute_annotation_substitutions(executor, states, annot):
         nonready += nr
     return states, nonready
 
+
 def _execute_expr_annotation(executor, states, annot):
     states, nonready = execute_annotation_substitutions(executor, states, annot)
 
@@ -194,7 +195,7 @@ def _execute_expr_annotation(executor, states, annot):
     states = []
     for s in ready:
         expr = annot.doSubs(s)
-        #dbgv(f"Executing annotation\n{annot}\n==>\n{expr}")
+        # dbgv(f"Executing annotation\n{annot}\n==>\n{expr}")
         if isassume:
             s = executor.assume(s, expr)
             if s:
@@ -214,7 +215,7 @@ def execute_annotation(executor, states, annot):
     assert isinstance(annot, Annotation), annot
     assert all(map(lambda s: s.isReady(), states))
 
-    #dbgv_sec(f"executing annotation:\n{annot}")
+    # dbgv_sec(f"executing annotation:\n{annot}")
 
     if annot.isInstrs():
         states, nonready = _execute_instr_annotation(executor, states, annot)
@@ -222,7 +223,7 @@ def execute_annotation(executor, states, annot):
         assert annot.isAssume() or annot.isAssert()
         states, nonready = _execute_expr_annotation(executor, states, annot)
 
-    #dbgv_sec()
+    # dbgv_sec()
     return states, nonready
 
 

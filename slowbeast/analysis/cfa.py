@@ -2,8 +2,10 @@ from slowbeast.ir.program import Program
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import Branch, Call
 
+
 class CFA:
     """ Control flow automaton """
+
     class Location:
         _counter = 0
         __slots__ = "_id", "_elem", "_successors", "_predecessors"
@@ -65,6 +67,7 @@ class CFA:
 
     class AssumeEdge(Edge):
         __slots__ = "_is_true"
+
         def __init__(self, s, t, elem, istrue):
             super().__init__(CFA.Edge.ASSUME, s, t, elem)
             self._is_true = istrue
@@ -86,11 +89,11 @@ class CFA:
             self.build_from_program(prog)
         elif isinstance(prog, Function):
             self.build_from_function(prog)
-       #elif isinstance(prog, CFG):
-       #    build_from_cfg(prog)
+        # elif isinstance(prog, CFG):
+        #    build_from_cfg(prog)
         return NotImplementedError(f"Invalid input to build(): {type(prog)}")
 
-    def build_from_program(self, prog : Program):
+    def build_from_program(self, prog: Program):
         assert isinstance(prog, Program)
         # build a CFA for each function and then connect them with call edges
         for F in prog.funs():
@@ -103,7 +106,7 @@ class CFA:
         self._locs.append(loc)
         return loc
 
-    def add_edge(self, e : Edge):
+    def add_edge(self, e: Edge):
         e._target._predecessors.append(e)
         e._source._successors.append(e)
         # do we need this?
@@ -172,14 +175,14 @@ class CFA:
         for l in self._locs:
             print(l, file=stream)
         for e in self._edges:
-            label =  '\\l'.join(map(lambda s: str(s).replace('"', '\\"'), e._elems))
+            label = "\\l".join(map(lambda s: str(s).replace('"', '\\"'), e._elems))
             if e.is_assume() and label:
                 label = f"{'!' if e.assume_false() else ''}[{label}]"
             if e.is_call():
-                style="color=blue"
+                style = "color=blue"
             elif e.is_assume():
                 style = "color=orange"
             else:
-                style=""
+                style = ""
             print(e, f' [label="{label}", {style}]', file=stream)
         print("}", file=stream)

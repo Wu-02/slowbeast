@@ -190,6 +190,7 @@ class SymbolicSolver(SolverIntf):
                 ret.append(ConcreteVal(m[n].as_long(), v.type()))
         return ret
 
+
 class IncrementalSolver(SymbolicSolver):
     def __init__(self, em=global_expr_manager):
         # FIXME: add local expr manager
@@ -204,7 +205,7 @@ class IncrementalSolver(SymbolicSolver):
     def push(self):
         self._solver.push()
 
-    def pop(self, num : int = 1):
+    def pop(self, num: int = 1):
         self._solver.pop(num)
 
     def is_sat(self, *e):

@@ -9,7 +9,17 @@ class SEState(ExecutionState):
     """ Execution state of symbolic execution """
 
     # XXX do not store warnings in the state but keep them in a map in the interpreter or so?
-    __slots__ = "_executor", "_solver", "_constraints", "_constraints_ro", "_id", "_warnings", "_warnings_ro", "_nondets", "_nondets_ro",
+    __slots__ = (
+        "_executor",
+        "_solver",
+        "_constraints",
+        "_constraints_ro",
+        "_id",
+        "_warnings",
+        "_warnings_ro",
+        "_nondets",
+        "_nondets_ro",
+    )
     statesCounter = 0
 
     def __init__(self, executor, pc, m, solver, constraints=None):
@@ -171,7 +181,6 @@ class SEState(ExecutionState):
 
 
 class IncrementalSEState(SEState):
-
     def __init__(self, executor, pc, m):
         C = IncrementalConstraintsSet()
         super().__init__(executor, pc, m, C.solver(), C)

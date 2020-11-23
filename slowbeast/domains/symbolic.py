@@ -4,7 +4,20 @@ from slowbeast.ir.types import Type, IntType, BoolType
 
 _use_z3 = True
 if _use_z3:
-    from z3 import If, Or, And, Xor, Not, Bool, BoolVal, BitVec, BitVecVal, URem, SRem, UDiv
+    from z3 import (
+        If,
+        Or,
+        And,
+        Xor,
+        Not,
+        Bool,
+        BoolVal,
+        BitVec,
+        BitVecVal,
+        URem,
+        SRem,
+        UDiv,
+    )
     from z3 import ULT as BVULT
     from z3 import ULE as BVULE
     from z3 import UGT as BVUGT
@@ -263,6 +276,7 @@ class Future(Expr):
     Represents a value of non-executed operation (instruction)
     (that is going to be executed as a feedback to the developement of the search
     """
+
     __slots__ = "_instr", "_state"
 
     def __init__(self, e, t, instr, state):
@@ -284,6 +298,7 @@ class Future(Expr):
 
     def __repr__(self):
         return f"future({self._instr.as_value()})={super().__repr__()}"
+
 
 class BVSymbolicDomain:
     """

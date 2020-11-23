@@ -1,5 +1,6 @@
 from slowbeast.solvers.solver import IncrementalSolver
 
+
 class ConstraintsSet:
     __slots__ = "_constraints"
 
@@ -10,7 +11,7 @@ class ConstraintsSet:
 
     def copy(self):
         n = ConstraintsSet()
-        n._constraints  = self._constraints.copy()
+        n._constraints = self._constraints.copy()
         return n
 
     def __eq__(self, rhs):

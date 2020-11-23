@@ -11,7 +11,7 @@ from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
     or_annotations,
-    execute_annotation_substitutions
+    execute_annotation_substitutions,
 )
 
 from slowbeast.symexe.statesset import union, intersection
@@ -98,6 +98,7 @@ def check_base(prog, L, inv):
     dbg_sec()
     return res == 0
 
+
 def get_initial_seq2(unsafe, path, L):
     """
     Return two annotations, one that is the initial safe sequence
@@ -160,15 +161,11 @@ def get_initial_seq(unsafe, path, L):
         if not uconstr:
             S = EM.getFalse()
             E = EM.getTrue()
-            break # nothing we can do...
+            break  # nothing we can do...
         # all constr. apart from the last one
         pc = conjunction(*uconstr[:-1])
         # last constraint is the failed assertion
-        S = (
-            conjunction(pc, Not(uconstr[-1]), S)
-            if S
-            else EM.And(pc, Not(uconstr[-1]))
-        )
+        S = conjunction(pc, Not(uconstr[-1]), S) if S else EM.And(pc, Not(uconstr[-1]))
         # unsafe states
         E = EM.Or(conjunction(*uconstr), E) if E else conjunction(*uconstr)
 
@@ -183,6 +180,7 @@ def get_initial_seq(unsafe, path, L):
     Se = AssertAnnotation(E, subs, EM)
 
     return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
+
 
 def check_paths(executor, paths, pre=None, post=None):
     result = PathExecutionResult()
@@ -199,6 +197,7 @@ def check_paths(executor, paths, pre=None, post=None):
         result.merge(r)
 
     return result
+
 
 def postimage(executor, paths, pre=None):
     """
@@ -316,7 +315,9 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     I = U.as_assume_annotation()
     step = I.getExpr()
     # execute the instructions from annotations, so that the substitutions have up-to-date value
-    poststates, nonr = execute_annotation_substitutions(executor.getIndExecutor(), post, I)
+    poststates, nonr = execute_annotation_substitutions(
+        executor.getIndExecutor(), post, I
+    )
     assert not nonr, f"Got errors while processing annotations: {nonr}"
 
     # we always check S && unsafe && new_clause, so we can keep S  and unsafe
@@ -334,7 +335,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
         have_feasible = False
         for s in poststates:
-            #feasability check
+            # feasability check
             solver.push()
             pathcond = EM.substitute(s.path_condition(), (litrep, lit))
             solver.add(pathcond)
@@ -345,12 +346,13 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
             # FIXME: do we?
             have_feasible = True
 
-            #inductivity check
-            A = AssertAnnotation(EM.substitute(I.getExpr(), (litrep, lit)),
-                                 I.getSubstitutions(), EM)
+            # inductivity check
+            A = AssertAnnotation(
+                EM.substitute(I.getExpr(), (litrep, lit)), I.getSubstitutions(), EM
+            )
             hasnocti = A.doSubs(s)
             # we have got pathcond in solver already
-            if solver.is_sat(EM.Not(hasnocti)) is not False: # there exist CTI
+            if solver.is_sat(EM.Not(hasnocti)) is not False:  # there exist CTI
                 solver.pop()
                 return False
             solver.pop()
@@ -360,6 +362,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         if lit.is_concrete():
             return False
         return _check_literal(lit)
+
     #
     # # NOTE: the check above should be equivalent to this code but should be faster as we do not re-execute
     # # the paths all the time
@@ -461,6 +464,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     return goodl
 
+
 #
 # def split_nth_item(items, n):
 #     item = None
@@ -523,6 +527,7 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     EM = s.getExprManager()
     return overapprox_set(executor, EM, S, unsafeAnnot, seq, L)
 
+
 def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     createSet = executor.getIndExecutor().createStatesSet
     unsafe = createSet(unsafeAnnot)  # safe strengthening
@@ -556,7 +561,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
         if tmpexpr.is_concrete():
             continue  # either False or True are bad for us
         if safesolver.is_sat(tmpexpr) is not False:
-            continue # unsafe overapprox
+            continue  # unsafe overapprox
         X = S.copy()
         X.reset_expr(tmpexpr)
         r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
@@ -602,6 +607,7 @@ def join_iter(i1, i2):
 def simplify_expr(expr, EM):
     return EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
 
+
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions(), genannot=False):
         super(KindSymbolicExecutor, self).__init__(
@@ -630,10 +636,10 @@ class KindSymbolicExecutor(BaseKindSE):
         res = kindse.run([path.copy()], maxk=maxk)
         dbg_sec()
         if res == 0:
-           print_stdout(
-               f"Loop {loc.getBBlockID()} proved by the basic KindSE", color="GREEN"
-           )
-           return True
+            print_stdout(
+                f"Loop {loc.getBBlockID()} proved by the basic KindSE", color="GREEN"
+            )
+            return True
 
         if not self.execute_loop(path, loc, states):
             self.sum_loops[loc.getCFG()].remove(loc)
@@ -719,14 +725,16 @@ class KindSymbolicExecutor(BaseKindSE):
             assert r.errors is None, "seq is not inductive"
         S = self.getIndExecutor().createStatesSet(seq0.toannotation(True))
         EM = getGlobalExprManager()
-        seq = InductiveSequence(overapprox_set(self, EM, S, errs0.toassert(), seq0, L).toassert())
+        seq = InductiveSequence(
+            overapprox_set(self, EM, S, errs0.toassert(), seq0, L).toassert()
+        )
         r = seq.check_ind_on_paths(self, L.getPaths())
         # Why could this happen?
         if r.errors is None and r.ready:
             return seq
         return seq0
 
-    def strengthen_initial_seq(self, seq0, errs0, path, L : SimpleLoop):
+    def strengthen_initial_seq(self, seq0, errs0, path, L: SimpleLoop):
         # NOTE: if we would pass states here we would safe some work.. be it would be less generic
         r = seq0.check_ind_on_paths(self, L.getPaths())
         # catch it in debug mode so that we can improve...
@@ -747,7 +755,11 @@ class KindSymbolicExecutor(BaseKindSE):
             r = check_paths(self, L.getPaths())
             if not r.ready:
                 return None
-            ready =  [s for s in r.ready if s.pc in (e[1].getBBlock().first() for e in L.getExits())]
+            ready = [
+                s
+                for s in r.ready
+                if s.pc in (e[1].getBBlock().first() for e in L.getExits())
+            ]
             if not ready:
                 return None
             R = createSet()
@@ -757,20 +769,22 @@ class KindSymbolicExecutor(BaseKindSE):
                 # because we want to jump out of the loop (otherwise we will not get inductive set)
                 C = r.getConstraints()[1:]
                 expr = EM.conjunction(*C)
-                expr = EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
+                expr = EM.conjunction(
+                    *remove_implied_literals(expr.to_cnf().children())
+                )
                 tmp = createSet(r)
                 tmp.reset_expr(expr)
                 R.add(tmp)
             seq0 = InductiveSequence(R.as_assert_annotation())
             r = seq0.check_ind_on_paths(self, L.getPaths())
             # this may mean that the assertion in fact does not hold
-            #assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
+            # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
         else:
             r = check_paths(self, [AnnotatedCFGPath([path[0]])])
             if r.ready is None:
                 return None
             R = createSet()
-            ready =  [s for s in r.ready if s.pc is path[1].getBBlock().first()]
+            ready = [s for s in r.ready if s.pc is path[1].getBBlock().first()]
             for r in ready:
                 R.add(r)
             R.intersect(seq0.toannotation(True))
@@ -805,7 +819,9 @@ class KindSymbolicExecutor(BaseKindSE):
 
         sequences = [seq0]
 
-        print_stdout(f"Executing loop {loc.getBBlockID()} with assumption", color="white")
+        print_stdout(
+            f"Executing loop {loc.getBBlockID()} with assumption", color="white"
+        )
         print_stdout(str(seq0[0]), color="white")
         print_stdout(f"and errors : {errs0}")
 

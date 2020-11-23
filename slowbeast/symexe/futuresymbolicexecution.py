@@ -7,6 +7,7 @@ from slowbeast.ir.instruction import Call
 
 from .executor import Executor as SExecutor
 
+
 class FutureExecutor(SExecutor):
     def execCall(self, state, instr):
         assert isinstance(instr, Call)
@@ -31,7 +32,8 @@ class FutureExecutor(SExecutor):
             # map values to arguments
             assert len(instr.getOperands()) == len(fun.getArguments())
             mapping = {
-                x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.getOperands())
+                x: state.eval(y)
+                for (x, y) in zip(fun.getArguments(), instr.getOperands())
             }
             state.pushCall(instr, fun, mapping)
             return [state]
@@ -42,11 +44,10 @@ class FutureExecutor(SExecutor):
             newstate = state.copy()
             newstate.set(instr, future)
             newstate.addNondet(future)
-            newstate.pc = nexti # continue executing the next instruction
+            newstate.pc = nexti  # continue executing the next instruction
             newstate.dump()
             # FIXME: clear the state (the function may modify globals)
             return [newstate]
-
 
 
 class SEOptions(ExecutionOptions):
@@ -77,12 +78,15 @@ class SEStats:
 
 class FutureSymbolicExecutor(Interpreter):
     def __init__(
-        self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=FutureExecutor
+        self,
+        P,
+        ohandler=None,
+        opts=SEOptions(),
+        executor=None,
+        ExecutorClass=FutureExecutor,
     ):
         self.solver = Solver()
-        super().__init__(
-            P, opts, executor or ExecutorClass(self.solver, opts)
-        )
+        super().__init__(P, opts, executor or ExecutorClass(self.solver, opts))
         self.stats = SEStats()
         # outputs handler
         self.ohandler = ohandler
