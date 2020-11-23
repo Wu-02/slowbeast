@@ -300,7 +300,7 @@ class ConcreteDomain:
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
         if a.is_float():
-            return ConcreteVal(a.value() - b.value(), a.type())
+            return ConcreteVal(a.value() * b.value(), a.type())
         bw = a.type().bitwidth()
         return ConcreteVal(wrap_to_bw(a.value() * b.value(), bw), a.type())
 
@@ -309,7 +309,7 @@ class ConcreteDomain:
         assert a.is_int() or a.is_float()
         result_ty = a.type()
         if a.is_float():
-            return ConcreteVal(a.value() - b.value(), result_ty)
+            return ConcreteVal(a.value() / b.value(), result_ty)
         if unsigned:
             return ConcreteVal(getUnsigned(a) / getUnsigned(b), result_ty)
         return ConcreteVal(
