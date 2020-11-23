@@ -39,7 +39,7 @@ class FutureExecutor(SExecutor):
             return [state]
         else:
             retTy = fun.getReturnType()
-            futureval = state.getExprManager().freshValue("future", retTy.bitwidth())
+            futureval = state.getExprManager().freshValue("future", retTy)
             future = Future(futureval.unwrap(), futureval.type(), instr, state)
             newstate = state.copy()
             newstate.set(instr, future)

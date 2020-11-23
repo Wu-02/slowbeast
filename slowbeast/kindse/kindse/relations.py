@@ -84,7 +84,7 @@ def get_all_relations(state):
         if l2bw != bw:
             l2 = EM.SExt(l2, ConcreteInt(bw, bw))
 
-        c = EM.Var("c_coef", bw)
+        c = EM.Var("c_coef", IntType(bw))
         expr = EM.Eq(EM.Sub(l2, l1), c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:

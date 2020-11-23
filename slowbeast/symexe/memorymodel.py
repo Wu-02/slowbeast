@@ -1,6 +1,7 @@
 from slowbeast.util.debugging import dbgv
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
+from slowbeast.ir.types import IntType
 from slowbeast.domains.symbolic import NondetLoad
 from slowbeast.symexe.memory import Memory
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
@@ -55,7 +56,7 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
         # val = self.getSolver().freshValue(f"uninit_{frm.as_value()}", 8 * bytesNum)
-        val = state.getSolver().Var(f"uninit_{frm.as_value()}", 8 * bytesNum)
+        val = state.getSolver().Var(f"uninit_{frm.as_value()}", IntType(8 * bytesNum))
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up

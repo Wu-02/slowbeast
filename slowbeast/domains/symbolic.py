@@ -42,6 +42,7 @@ if _use_z3:
     from z3 import is_true, is_false
     from z3 import simplify, substitute
     from z3 import Goal, Tactic
+    from z3 import FP, Float32, Float64, Float128
 
     try:
         from z3 import asIEEEBV, fromIEEEBV
@@ -356,26 +357,42 @@ class BVSymbolicDomain:
 
     ##
     # variables
-    def Var(name, bw=64):
+    def Var(name, ty):
+        if ty.is_float():
+            z3ty, bw = None, ty.bitwidth()
+            if bw == 32:
+                z3ty = Float32()
+            elif bw == 64:
+                z3ty = Float64()
+            elif bw == 128:
+                z3ty = Float128()
+            else:
+                raise NotImplementedError("Invalid FP type")
+            return Expr(FP(name, z3ty), ty)
+        else:
+            assert ty.is_int(), ty
+            return Expr(bv(name, ty.bitwidth()), ty)
+
+    def BVVar(name, bw):
         return Expr(bv(name, bw), IntType(bw))
 
     def Bool(name):
         return Expr(Bool(name), BoolType())
 
-    def Int1(name):
-        return BVSymbolicDomain.Var(name, 1)
+    def Int1(name, ty):
+        return BVSymbolicDomain.BVVar(name, 1)
 
     def Int8(name):
-        return BVSymbolicDomain.Var(name, 8)
+        return BVSymbolicDomain.BVVar(name, 8)
 
     def Int16(name):
-        return BVSymbolicDomain.Var(name, 16)
+        return BVSymbolicDomain.BVVar(name, 16)
 
     def Int32(name):
-        return BVSymbolicDomain.Var(name, 32)
+        return BVSymbolicDomain.BVVar(name, 32)
 
     def Int64(name):
-        return BVSymbolicDomain.Var(name, 64)
+        return BVSymbolicDomain.BVVar(name, 64)
 
     ##
     # Logic operators

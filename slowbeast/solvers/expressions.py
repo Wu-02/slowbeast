@@ -1,6 +1,6 @@
 from slowbeast.domains.concrete import ConcreteDomain
 from slowbeast.domains.symbolic import *
-from slowbeast.ir.types import Type
+from slowbeast.ir.types import Type, IntType
 from slowbeast.domains.value import Value
 
 optimize_exprs = True
@@ -71,16 +71,14 @@ class ExprManager:
             names[name] = s
         return s
 
-    def Var(self, name, bw=64):
+    def Var(self, name, ty):
         assert isinstance(name, str)
         names = self._names
         s = names.get(name)
         if s:
-            assert s.type() == IntType(
-                bw
-            ), f"Creating the same value with different type: {s.type()} != {IntType(bw)}"
+            assert s.type() == ty, f"Creating the same value with different type: {s.type()} != {ty}"
         else:
-            s = SymbolicDomain.Var(name, bw)
+            s = SymbolicDomain.Var(name, ty)
             names[name] = s
         assert s, "No var was created"
         return s
@@ -95,7 +93,7 @@ class ExprManager:
             return expr
         return SymbolicExprOpt.optimize(expr)
 
-    def freshValue(self, name, bw=64):
+    def freshValue(self, name, ty):
         assert isinstance(name, str)
         names = self._names
         origname = name
@@ -110,7 +108,7 @@ class ExprManager:
             name = "{0}_{1}".format(origname, cnt)
             s = names.get(name)
 
-        s = SymbolicDomain.Var(name, bw)
+        s = SymbolicDomain.Var(name, ty)
         names[name] = s
         return s
 
@@ -133,19 +131,19 @@ class ExprManager:
         self._names.pop(name)
 
     def Int1(self, name):
-        return self.Var(name, 1)
+        return self.Var(name, IntType(1))
 
     def Int8(self, name):
-        return self.Var(name, 8)
+        return self.Var(name, IntType(8))
 
     def Int16(self, name):
-        return self.Var(name, 16)
+        return self.Var(name, IntType(16))
 
     def Int32(self, name):
-        return self.Var(name, 32)
+        return self.Var(name, IntType(32))
 
     def Int64(self, name):
-        return self.Var(name, 64)
+        return self.Var(name, IntType(64))
 
     def lift(self, v):
         return SymbolicDomain.lift(v)

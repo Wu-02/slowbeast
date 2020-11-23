@@ -1,5 +1,6 @@
 from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Instruction, Load
+from slowbeast.ir.types import IntType
 from slowbeast.domains.concrete import ConcreteVal
 
 
@@ -9,7 +10,7 @@ def _createCannonical(expr, subs, EM):
             name = f"L({x.getOperand(0).as_value()})"
         else:
             name = x.as_value()
-        return EM.Var(name, val.bitwidth())
+        return EM.Var(name, IntType(val.bitwidth()))
 
     return EM.substitute(
         expr, *((val, get_cannonic_var(val, x)) for (val, x) in subs.items())
@@ -129,7 +130,7 @@ def unify_state_descriptions(EM, sd1, sd2):
         instr2 = subs2.get(val)
         if instr2 and instr2 != instr:
             # collision
-            freshval = EM.freshValue(val.name(), bw=val.type().bitwidth())
+            freshval = EM.freshValue(val.name(), val.type())
             expr2 = EM.substitute(expr2, (val, freshval))
             subs[freshval] = instr2
 

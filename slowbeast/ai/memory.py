@@ -10,7 +10,7 @@ from slowbeast.core.errors import MemError
 from slowbeast.domains.value import Value
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
-from slowbeast.ir.types import OffsetType
+from slowbeast.ir.types import OffsetType, IntType
 
 from slowbeast.domains.symbolic import NondetLoad
 
@@ -184,8 +184,7 @@ class AIMemoryModel(MemoryModel):
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
-        # val = self.getSolver().freshValue(f"uninit_{frm.as_value()}", 8 * bytesNum)
-        val = self.getSolver().Var(f"uninit_{frm.as_value()}", 8 * bytesNum)
+        val = self.getSolver().Var(f"uninit_{frm.as_value()}", IntType(8 * bytesNum))
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up

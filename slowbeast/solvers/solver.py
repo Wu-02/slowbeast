@@ -132,13 +132,13 @@ class SolverIntf:
     def is_sat(self, *e):
         raise NotImplementedError("Must be overriden")
 
-    def freshValue(self, name, bw=64):
-        """ bw = bitwidth """
-        return self._exprmanager.freshValue(name, bw)
+    def freshValue(self, name, ty):
+        """ ty = type """
+        return self._exprmanager.freshValue(name, ty)
 
-    def Var(self, name, bw=64):
-        """ bw = bitwidth """
-        return self._exprmanager.Var(name, bw)
+    def Var(self, name, ty):
+        """ ty = type """
+        return self._exprmanager.Var(name, ty)
 
 
 class ConcreteSolver(SolverIntf):

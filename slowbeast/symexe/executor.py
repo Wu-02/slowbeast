@@ -319,7 +319,7 @@ class Executor(ConcreteExecutor):
             if self.getOptions().concretize_nondets:
                 val = ConcreteVal(getrandbits(32), retTy)
             else:
-                val = state.getSolver().freshValue(name, retTy.bitwidth())
+                val = state.getSolver().freshValue(name, retTy)
             state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
