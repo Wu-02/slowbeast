@@ -7,6 +7,7 @@ if _use_z3:
     from z3 import Solver as Z3Solver, Context as Z3Context
     from z3 import sat, unsat, unknown
     from z3 import BitVecVal, BoolVal
+    from z3 import fpToIEEEBV, simplify
 
     def models(assumpt, *args):
         s = Z3Solver()
@@ -187,7 +188,12 @@ class SymbolicSolver(SolverIntf):
             if m[n] is None:
                 ret.append(None)
             else:
-                ret.append(ConcreteVal(m[n].as_long(), v.type()))
+                if v.is_float():
+                    # FIXME: does not work always
+                    val = simplify(fpToIEEEBV(m[n]))
+                    ret.append(ConcreteVal(val.as_long(), v.type()))
+                else:
+                    ret.append(ConcreteVal(m[n].as_long(), v.type()))
         return ret
 
 

@@ -42,17 +42,9 @@ if _use_z3:
     from z3 import is_true, is_false
     from z3 import simplify, substitute
     from z3 import Goal, Tactic
-    from z3 import FP, Float32, Float64, Float128
+    from z3 import FP, Float32, Float64, Float128, FPVal
 
-    try:
-        from z3 import asIEEEBV, fromIEEEBV
-    except ImportError:
-
-        def asIEEEBV(x):
-            return None
-
-        def fromIEEEBV(x):
-            return None
+    from z3 import fpToFP, fpToIEEEBV
 
     def eliminate_common_subexpr(expr):
         # XXX: not efficient, it is rather
@@ -90,6 +82,11 @@ if _use_z3:
             return b.unwrap()
         return If(b.unwrap(), bv_const(1, 1), bv_const(0, 1))
 
+    def castToFP(b):
+        if not b.is_bool():
+            return b.unwrap()
+        return If(b.unwrap(), bv_const(1, 1), bv_const(0, 1))
+
     def castToBool(b):
         if b.is_bool():
             return b.unwrap()
@@ -115,6 +112,15 @@ if _use_z3:
             return IntType(s.sort().size())
         assert is_bool(s), "Unhandled expression"
         return BoolType()
+
+    def get_fp_sort(bw):
+        if bw == 32:
+            return Float32()
+        if bw == 64:
+            return Float64()
+        elif bw == 128:
+            return Float128()
+        raise NotImplementedError("Invalid FP type")
 
 
 else:
@@ -322,7 +328,10 @@ class BVSymbolicDomain:
         if v.is_concrete():
             if v.is_bool():
                 return Expr(BoolVal(v.value()), BoolType())
-            return Expr(bv_const(v.value(), v.type().bitwidth()), v.type())
+            ty = v.type()
+            if v.is_float():
+                return Expr(FPVal(v.value(), get_fp_sort(ty.bitwidth())), ty)
+            return Expr(bv_const(v.value(), ty.bitwidth()), ty)
 
         raise NotImplementedError("Invalid value for lifting: {0}".format(v))
 
@@ -352,23 +361,20 @@ class BVSymbolicDomain:
 
         return None
 
-    def Constant(c, bw):
-        return bv_const(c, bw)
+    def Constant(c, ty):
+        bw = ty.bitwidth()
+        if ty.is_float():
+           return Expr(FPVal(c, fps=get_fp_sort(bw)), ty)
+        elif ty.is_int():
+            return Expr(bv_const(c, bw), ty)
+        else:
+            raise NotImplementedError(f"Invalid type: {ty}")
 
     ##
     # variables
     def Var(name, ty):
         if ty.is_float():
-            z3ty, bw = None, ty.bitwidth()
-            if bw == 32:
-                z3ty = Float32()
-            elif bw == 64:
-                z3ty = Float64()
-            elif bw == 128:
-                z3ty = Float128()
-            else:
-                raise NotImplementedError("Invalid FP type")
-            return Expr(FP(name, z3ty), ty)
+            return Expr(FP(name, get_fp_sort(ty.bitwidth())), ty)
         else:
             assert ty.is_int(), ty
             return Expr(bv(name, ty.bitwidth()), ty)
@@ -468,11 +474,11 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a)
         v = a.unwrap()
         if a.is_int() and ty.is_float():
-            e = asIEEEBV(v)
+            e = fpToFP(v)
             if e:
                 return Expr(e, ty)
         elif a.is_float() and ty.is_int():
-            e = fromIEEEBV(v)
+            e = fpToIEEEBV(v)
             if e:
                 return Expr(e, ty)
         return None  # unsupported conversion
