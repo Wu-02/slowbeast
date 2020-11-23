@@ -1,5 +1,7 @@
 from slowbeast.ir.types import IntType, BoolType, Type, PointerType
 from slowbeast.domains.value import Value
+from slowbeast.ir.instruction import FpOp
+from math import isinf, isnan
 
 
 def getUnsigned(a):
@@ -222,6 +224,17 @@ class ConcreteDomain:
     def Abs(a):
         assert ConcreteDomain.belongto(a)
         return ConcreteVal(abs(a.value()), a.type())
+
+    def FpOp(op, val):
+        assert ConcreteDomain.belongto(val)
+        # FIXME: do not use the enum from instruction
+        assert val.is_float(), val
+
+        if op == FpOp.IS_INF:
+            return ConcreteBool(isinf(val.value()))
+        if op == FpOp.IS_NAN:
+            return ConcreteBool(isnan(val.value()))
+        raise NotImplementedError("Invalid FP operation")
 
     ##
     # Relational operators

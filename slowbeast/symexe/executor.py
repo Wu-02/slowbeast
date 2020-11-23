@@ -410,6 +410,8 @@ class Executor(ConcreteExecutor):
             r = E.Not(op1)
         elif opcode == UnaryOperation.ABS:
             r = E.Abs(op1)
+        elif opcode == UnaryOperation.FP_OP:
+            r = E.FpOp(instr.fp_operation(), op1)
         else:
             state.setKilled("Unary instruction not implemented: {0}".format(instr))
             return [state]

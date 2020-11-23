@@ -210,6 +210,12 @@ class ExprManager:
             return ConcreteDomain.Abs(a)
         return opt(SymbolicDomain.Abs(self.lift(a)))
 
+    def FpOp(self, op, val):
+        if ConcreteDomain.belongto(val):
+            return ConcreteDomain.FpOp(op, val)
+        lift = self.lift
+        return opt(SymbolicDomain.FpOp(op, lift(val)))
+
     def ZExt(self, a, b):
         assert ConcreteDomain.belongto(b), "Invalid zext argument"
         if ConcreteDomain.belongto(a):

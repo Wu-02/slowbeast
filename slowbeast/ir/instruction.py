@@ -405,7 +405,8 @@ class UnaryOperation(ValueInstruction):
     EXTRACT = 4
     CAST = 5  # reinterpret cast
     ABS = 6
-    LAST_UNARY_OP = 6
+    FP_OP = 7 # floating-point operation
+    LAST_UNARY_OP = 7
     # TODO make SEXT and ZEXT also reinterpret cast?
 
     def __check(op):
@@ -492,6 +493,36 @@ class ExtractBits(UnaryOperation):
         return "x{0} = extractbits {1}-{2} from {3}".format(
             self.get_id(), self.getStart(), self.getEnd(), self.getOperand(0).as_value()
         )
+
+
+class FpOp(UnaryOperation):
+    """ Floating-point special operations """
+    IS_INF = 1
+    IS_NAN = 2
+
+    def op_to_str(op):
+        if op == FpOp.IS_INF:
+            return "isinf"
+        if op == FpOp.IS_NAN:
+            return "isnan"
+        return "uknwn"
+
+    def __init__(self, fp_op, val):
+        assert FpOp.IS_INF <= fp_op <= FpOp.IS_NAN
+        super().__init__(UnaryOperation.FP_OP, val)
+        self._fp_op = fp_op
+
+    def fp_operation(self):
+        return self._fp_op
+
+    def isInf(self):
+        return self._fp_op == FpOp.IS_INF
+
+    def isNan(self):
+        return self._fp_op == FpOp.IS_NAN
+
+    def __str__(self):
+        return "x{0} = fp {1} {2}".format(self.get_id(), FpOp.op_to_str(self._fp_op), self.getOperand(0).as_value())
 
 
 class BinaryOperation(ValueInstruction):

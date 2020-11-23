@@ -1,4 +1,4 @@
-from slowbeast.ir.instruction import Alloc, Assume, Assert, Cmp, Print, Abs
+from slowbeast.ir.instruction import Alloc, Assume, Assert, Cmp, Print, Abs, FpOp
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from ...domains.concrete import ConcreteVal
 from slowbeast.ir.types import IntType
@@ -8,6 +8,8 @@ from .utils import getLLVMOperands, type_size_in_bits
 special_functions = [
     "llvm.fabs.f32",
     "llvm.fabs.f64",
+    "__isnan",
+    "__isinf",
     "malloc",
     "__assert_fail",
     "__VERIFIER_error",
@@ -83,6 +85,14 @@ def create_special_fun(parser, inst, fun):
         val = parser.getOperand(operands[0])
         A = Abs(val)
         return A, [A]
+    elif fun == "__isinf":
+        val = parser.getOperand(getLLVMOperands(inst)[0])
+        O = FpOp(FpOp.IS_INF, val)
+        return O, [O]
+    elif fun == "__isnan":
+        val = parser.getOperand(getLLVMOperands(inst)[0])
+        O = FpOp(FpOp.IS_NAN, val)
+        return O, [O]
     elif fun == "__slowbeast_print":
         P = Print(*[parser.getOperand(x) for x in getLLVMOperands(inst)[:-1]])
         return P, [P]

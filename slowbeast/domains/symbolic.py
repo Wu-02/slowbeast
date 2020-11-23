@@ -1,6 +1,7 @@
 from slowbeast.domains.value import Value
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.types import Type, IntType, BoolType
+from slowbeast.ir.instruction import FpOp
 
 _use_z3 = True
 if _use_z3:
@@ -42,7 +43,7 @@ if _use_z3:
     from z3 import is_true, is_false
     from z3 import simplify, substitute
     from z3 import Goal, Tactic
-    from z3 import FP, Float32, Float64, Float128, FPVal, fpAbs
+    from z3 import FP, Float32, Float64, Float128, FPVal, fpAbs, fpIsInf, fpIsNaN
 
     from z3 import fpToFP, fpToIEEEBV
 
@@ -596,7 +597,19 @@ class BVSymbolicDomain:
         if a.is_float():
             return Expr(fpAbs(a.unwrap()), a.type())
         expr = a.unwrap()
-        return Expr(If(expr < 0, -expr, expr), a.type()) 
+        return Expr(If(expr < 0, -expr, expr), a.type())
+
+    def FpOp(op, val):
+        assert BVSymbolicDomain.belongto(val)
+        # FIXME: do not use the enum from instruction
+        assert val.is_float()
+
+        if op == FpOp.IS_INF:
+            return Expr(fpIsInf(val.unwrap()), BoolType())
+        if op == FpOp.IS_NAN:
+            return Expr(fpIsNaN(val.unwrap()), BoolType())
+        raise NotImplementedError("Invalid FP operation")
+
 
 
 # The default symbolic domain are bitvectors
