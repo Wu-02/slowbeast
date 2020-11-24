@@ -18,15 +18,15 @@ if _use_z3:
         URem,
         SRem,
         UDiv,
+        ULT as BVULT,
+        ULE as BVULE,
+        UGT as BVUGT,
+        UGE as BVUGE,
+        ZeroExt as BVZExt,
+        SignExt as BVSExt,
+        Extract as BVExtract,
+        LShR as BVLShR
     )
-    from z3 import ULT as BVULT
-    from z3 import ULE as BVULE
-    from z3 import UGT as BVUGT
-    from z3 import UGE as BVUGE
-    from z3 import ZeroExt as BVZExt
-    from z3 import SignExt as BVSExt
-    from z3 import Extract as BVExtract
-    from z3 import LShR as BVLShR
     from z3 import is_bv, is_bv_value, is_bool, is_and, is_or, is_not
     from z3 import (
         is_app_of,
@@ -40,12 +40,9 @@ if _use_z3:
         Z3_OP_UGEQ,
         Z3_OP_EQ,
     )
-    from z3 import is_true, is_false
-    from z3 import simplify, substitute
+    from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic
-    from z3 import FP, Float32, Float64, Float128, FPVal, fpAbs, fpIsInf, fpIsNaN
-
-    from z3 import fpToFP, fpToIEEEBV
+    from z3 import FP, Float32, Float64, Float128, FPVal, fpAbs, fpIsInf, fpIsNaN, fpToFP, fpToIEEEBV, fpEQ, fpNEQ, fpGEQ, fpGT, fpLEQ, fpLT
 
     def fpToBV(x):
         if x.is_float():
@@ -90,9 +87,9 @@ if _use_z3:
         return If(b.unwrap(), bv_const(1, 1), bv_const(0, 1))
 
     def castToFP(b):
-        if not b.is_bool():
+        if b.is_float():
             return b.unwrap()
-        return If(b.unwrap(), bv_const(1, 1), bv_const(0, 1))
+        return fpToFP(b.unwrap(), get_fp_sort(b.type().bitwidth()))
 
     def castToBool(b):
         if b.is_bool():
@@ -436,7 +433,7 @@ class BVSymbolicDomain:
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(fpToBV(a) & fpToBV(b), a.type())
+            return Expr(fpToBV(a) & fpToBV(b), IntType(a.type().bitwidth()))
 
     def Or(a, b):
         assert BVSymbolicDomain.belongto(a, b)
@@ -445,7 +442,7 @@ class BVSymbolicDomain:
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(fpToBV(a) | fpToBV(b), a.type())
+            return Expr(fpToBV(a) | fpToBV(b),  IntType(a.type().bitwidth()))
 
     def Xor(a, b):
         assert BVSymbolicDomain.belongto(a, b)
@@ -454,14 +451,14 @@ class BVSymbolicDomain:
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(fpToBV(a) ^ fpToBV(b), a.type())
+            return Expr(fpToBV(a) ^ fpToBV(b),  IntType(a.type().bitwidth()))
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
         else:
-            return Expr(~fpToBV(a), a.type())
+            return Expr(~fpToBV(a),  IntType(a.type().bitwidth()))
 
     def ZExt(a, b):
         assert BVSymbolicDomain.belongto(a)
@@ -481,13 +478,9 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a)
         v = a.unwrap()
         if a.is_int() and ty.is_float():
-            e = fpToFP(v)
-            if e:
-                return Expr(e, ty)
+            return Expr(fpToFP(a.unwrap(), ty))
         elif a.is_float() and ty.is_int():
-            e = fpToIEEEBV(v)
-            if e:
-                return Expr(e, ty)
+            return Expr(fpToBV(a), ty)
         return None  # unsupported conversion
 
     def Extract(a, start, end):
@@ -546,10 +539,14 @@ class BVSymbolicDomain:
 
     def Eq(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
+        if a.is_float() or b.is_float():
+            return Expr(fpEQ(castToFP(a), castToFP(b)), BoolType())
         return Expr(a.unwrap() == b.unwrap(), BoolType())
 
     def Ne(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
+        if a.is_float() or b.is_float():
+            return Expr(fpNEQ(castToFP(a), castToFP(b)), BoolType())
         return Expr(a.unwrap() != b.unwrap(), BoolType())
 
     ##
