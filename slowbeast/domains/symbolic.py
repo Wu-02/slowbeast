@@ -25,7 +25,7 @@ if _use_z3:
         ZeroExt as BVZExt,
         SignExt as BVSExt,
         Extract as BVExtract,
-        LShR as BVLShR
+        LShR as BVLShR,
     )
     from z3 import is_bv, is_bv_value, is_bool, is_and, is_or, is_not
     from z3 import (
@@ -42,7 +42,24 @@ if _use_z3:
     )
     from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic
-    from z3 import FP, Float32, Float64, Float128, FPVal, fpAbs, fpIsInf, fpIsNaN, fpToFP, fpToIEEEBV, fpEQ, fpNEQ, fpGEQ, fpGT, fpLEQ, fpLT
+    from z3 import (
+        FP,
+        Float32,
+        Float64,
+        Float128,
+        FPVal,
+        fpAbs,
+        fpIsInf,
+        fpIsNaN,
+        fpToFP,
+        fpToIEEEBV,
+        fpEQ,
+        fpNEQ,
+        fpGEQ,
+        fpGT,
+        fpLEQ,
+        fpLT,
+    )
 
     def fpToBV(x):
         if x.is_float():
@@ -368,7 +385,7 @@ class BVSymbolicDomain:
     def Constant(c, ty):
         bw = ty.bitwidth()
         if ty.is_float():
-           return Expr(FPVal(c, fps=get_fp_sort(bw)), ty)
+            return Expr(FPVal(c, fps=get_fp_sort(bw)), ty)
         elif ty.is_int():
             return Expr(bv_const(c, bw), ty)
         else:
@@ -442,7 +459,7 @@ class BVSymbolicDomain:
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(fpToBV(a) | fpToBV(b),  IntType(a.type().bitwidth()))
+            return Expr(fpToBV(a) | fpToBV(b), IntType(a.type().bitwidth()))
 
     def Xor(a, b):
         assert BVSymbolicDomain.belongto(a, b)
@@ -451,14 +468,14 @@ class BVSymbolicDomain:
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(fpToBV(a) ^ fpToBV(b),  IntType(a.type().bitwidth()))
+            return Expr(fpToBV(a) ^ fpToBV(b), IntType(a.type().bitwidth()))
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
         else:
-            return Expr(~fpToBV(a),  IntType(a.type().bitwidth()))
+            return Expr(~fpToBV(a), IntType(a.type().bitwidth()))
 
     def ZExt(a, b):
         assert BVSymbolicDomain.belongto(a)
@@ -612,7 +629,6 @@ class BVSymbolicDomain:
         if op == FpOp.IS_NAN:
             return Expr(fpIsNaN(val.unwrap()), BoolType())
         raise NotImplementedError("Invalid FP operation")
-
 
 
 # The default symbolic domain are bitvectors

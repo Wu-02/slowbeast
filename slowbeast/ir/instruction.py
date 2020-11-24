@@ -405,7 +405,7 @@ class UnaryOperation(ValueInstruction):
     EXTRACT = 4
     CAST = 5  # reinterpret cast
     ABS = 6
-    FP_OP = 7 # floating-point operation
+    FP_OP = 7  # floating-point operation
     LAST_UNARY_OP = 7
     # TODO make SEXT and ZEXT also reinterpret cast?
 
@@ -430,13 +430,16 @@ class Extend(UnaryOperation):
     def bitwidth(self):
         return self._bw
 
+
 class Abs(UnaryOperation):
     """ Absolute value """
+
     def __init__(self, val):
         super().__init__(UnaryOperation.ABS, val)
 
     def __str__(self):
         return "x{0} = abs({1})".format(self.get_id(), self.getOperand(0).as_value())
+
 
 class ZExt(Extend):
     def __init__(self, a, bw):
@@ -446,6 +449,7 @@ class ZExt(Extend):
         return "x{0} = zext {1} to {2}".format(
             self.get_id(), self.getOperand(0).as_value(), self.bitwidth()
         )
+
 
 class SExt(Extend):
     def __init__(self, a, bw):
@@ -497,6 +501,7 @@ class ExtractBits(UnaryOperation):
 
 class FpOp(UnaryOperation):
     """ Floating-point special operations """
+
     IS_INF = 1
     IS_NAN = 2
 
@@ -522,7 +527,9 @@ class FpOp(UnaryOperation):
         return self._fp_op == FpOp.IS_NAN
 
     def __str__(self):
-        return "x{0} = fp {1} {2}".format(self.get_id(), FpOp.op_to_str(self._fp_op), self.getOperand(0).as_value())
+        return "x{0} = fp {1} {2}".format(
+            self.get_id(), FpOp.op_to_str(self._fp_op), self.getOperand(0).as_value()
+        )
 
 
 class BinaryOperation(ValueInstruction):

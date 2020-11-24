@@ -26,7 +26,7 @@ def _get_float(s):
     try:
         if s.startswith("0x"):
             # llvm writes the constants as double (even when it is 32 bit)
-            return unpack('>d', int(s, 16).to_bytes(8, 'big'))[0]
+            return unpack(">d", int(s, 16).to_bytes(8, "big"))[0]
         else:
             return float(s)
     except ValueError:

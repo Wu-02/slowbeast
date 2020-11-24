@@ -76,7 +76,9 @@ class ExprManager:
         names = self._names
         s = names.get(name)
         if s:
-            assert s.type() == ty, f"Creating the same value with different type: {s.type()} != {ty}"
+            assert (
+                s.type() == ty
+            ), f"Creating the same value with different type: {s.type()} != {ty}"
         else:
             s = SymbolicDomain.Var(name, ty)
             names[name] = s
