@@ -1,6 +1,6 @@
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
+from itertools import chain
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv
 
-from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath, CFG
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from .kindsebase import check_paths
@@ -10,7 +10,9 @@ from slowbeast.symexe.annotations import (
     or_annotations,
 )
 
-from slowbeast.solvers.solver import getGlobalExprManager
+from slowbeast.symexe.statesset import union, intersection
+from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
+from slowbeast.kindse.kindse.relations import get_subs
 
 from .loops import SimpleLoop
 from .kindsebase import KindSymbolicExecutor as BaseKindSE
@@ -100,56 +102,77 @@ def get_initial_seq(unsafe, path, L):
 
     return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
 
-
-def join_iter(i1, i2):
-    yield from i1
-    yield from i2
-
 def overapprox(executor, s, unsafeAnnot, seq, L):
     S = executor.getIndExecutor().createStatesSet(s)
     EM = s.getExprManager()
     return overapprox_set(executor, EM, S, unsafeAnnot, seq, L)
 
+def simplify_expr(expr, EM):
+    return EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
 
-class KindSymbolicExecutor(BaseKindSE):
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions(), programstructure=None):
-        super().__init__(
-            prog=prog, ohandler=ohandler, opts=opts, programstructure=programstructure
-        )
+
+class KindSEChecker(BaseKindSE):
+    """
+    An executor that recursively checks the validity of a one particular assertion.
+    It inherits from BaseKindSE to have the capabilities to execute paths.
+    """
+
+    def __init__(self, toplevel_executor, loc, A):
+        super().__init__(toplevel_executor.getProgram(),
+                         ohandler=None,
+                         opts=toplevel_executor.getOptions(),
+                         programstructure=toplevel_executor.programstructure)
+        self.location = loc
+        self.assertion = A
+        self.toplevel_executor = toplevel_executor
 
         self.readypaths = []
         self.stalepaths = []
 
-        self.invpoints = {}
+        cfg = loc.getCFG()
+        self.no_sum_loops = set()
 
-        self.genannot = False
-        self.sum_loops = {}
+    def check_loop_precondition(self, L, A):
+        loc = L.header()
+        dbg_sec(f"Checking if {A} holds on loc {loc.getBBlock().get_id()}")
+
+       # def reportfn(msg, *args, **kwargs):
+       #     print_stdout(f"> {msg}", *args, **kwargs)
+
+        checker = KindSEChecker(self.toplevel_executor, loc, A)
+        result, states = checker.check()
+        dbg_sec()
+        return result, states
+
 
     def handle_loop(self, loc, path, states):
         assert (
-            loc in self.sum_loops[loc.getCFG()]
+            loc not in self.no_sum_loops
         ), "Handling a loop that should not be handled"
 
-        # first try to unroll it in the case the loop
-        # is easy to verify
-        kindse = BaseKindSE(self.getProgram())
-        maxk = 15
-        dbg_sec("Running nested KindSE")
-        res = kindse.run([path.copy()], maxk=maxk)
-        dbg_sec()
-        if res == 0:
-            print_stdout(
-                f"Loop {loc.getBBlockID()} proved by the basic KindSE", color="GREEN"
-            )
-            return True
+        # first try to unroll it in the case the loop is easy to verify
+       #kindse = BaseKindSE(self.getProgram())
+       #maxk = 15
+       #dbg_sec("Running nested KindSE")
+       #res = kindse.run([path.copy()], maxk=maxk)
+       #dbg_sec()
+       #if res is Result.SAFE:
+       #    print_stdout(
+       #        f"Loop {loc.getBBlockID()} proved by unwinding", color="GREEN"
+       #    )
+       #    return res
+       #FIXME: uncomment and return the states
+       #elif res is Result.UNSAFE:
+       #    return res # found an error
 
-        if not self.execute_loop(path, loc, states):
-            self.sum_loops[loc.getCFG()].remove(loc)
-            print_stdout(
-                f"Falling back to unwinding loop {loc.getBBlockID()}", color="BROWN"
-            )
-            return False
-        return True
+        if self.execute_loop(path, loc, states):
+            return Result.SAFE
+
+        self.no_sum_loops.add(loc)
+        print_stdout(
+            f"Falling back to unwinding loop {loc.getBBlockID()}", color="BROWN"
+        )
+        return Result.UNKNOWN
 
     def extend_seq(self, seq, errs0, L):
         S = self.getIndExecutor().createStatesSet(seq[-1].toassert())
@@ -165,7 +188,7 @@ class KindSymbolicExecutor(BaseKindSE):
         for s in r.ready:
             e = overapprox(self, s, errs0.toassert(), seq, L)
             if e == seq[-1]:
-                dbg("Did not extend with the same elem...")
+                dbg("Did not extend (got the same elem...)")
                 continue
             print_stdout(f"Extended with: {e}", color="BROWN")
             tmp = seq.copy()
@@ -302,6 +325,7 @@ class KindSymbolicExecutor(BaseKindSE):
         return None
 
     def execute_loop(self, path, loc, states):
+        dbgv(f"========== Executing loop {loc.getBBlockID()} ===========")
         unsafe = states.errors
         assert unsafe, "No unsafe states, we should not get here at all"
 
@@ -309,13 +333,16 @@ class KindSymbolicExecutor(BaseKindSE):
         if L is None:
             return False  # fall-back to loop unwinding...
 
+        dbgv(f"Getting initial sequence for loop {loc.getBBlockID()}")
         seq0, errs0 = get_initial_seq(unsafe, path, L)
         # the initial sequence may not be inductive (usually when the assertion
         # is inside the loop, so we must strenghten it
+        dbgv(f"Strengthening the initial sequence")
         seq0 = self.strengthen_initial_seq(seq0, errs0, path, L)
         if seq0 is None:
             return False  # we failed...
 
+        dbgv(f"Overapproximating the initial sequence")
         seq0 = self.overapprox_init_seq(seq0, errs0, L)
         assert seq0
 
@@ -335,21 +362,22 @@ class KindSymbolicExecutor(BaseKindSE):
         while True:
             print("--- extending sequences ---")
             print_stdout(
-                f"Got {len(sequences)} abstract paths of loop " f"{loc.getBBlockID()}",
+                f"Got {len(sequences)} abstract path(s) of loop " f"{loc.getBBlockID()}",
                 color="GRAY",
             )
 
             # FIXME: check that all the sequences together cover the input paths
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
             for s, S in ((s, s.toannotation(True)) for s in sequences):
-                if self.check_base(L, S):
+                res, _ = self.check_loop_precondition(L, S)
+                if res is Result.SAFE:
                     print_stdout(
-                        f"{S} is inductive on {loc.getBBlock().get_id()}", color="BLUE"
+                        f"{S} holds on {loc.getBBlock().get_id()}", color="BLUE"
                     )
-                    if self.genannot:
-                        # maybe remember the ind set even without genannot
-                        # and use it just for another 'execute_loop'?
-                        loc.addAnnotationBefore(s.toannotation().Not(EM))
+                   #if self.genannot:
+                   #    # maybe remember the ind set even without genannot
+                   #    # and use it just for another 'execute_loop'?
+                   #    loc.addAnnotationBefore(s.toannotation().Not(EM))
                     return True
 
             extended = []
@@ -374,31 +402,6 @@ class KindSymbolicExecutor(BaseKindSE):
 
             sequences = extended
 
-    def check_base(self, L, inv):
-        loc = L.header()
-        dbg_sec(f"Checking if {inv} holds at loc {loc.getBBlock().get_id()}")
-
-        def reportfn(msg, *args, **kwargs):
-            dbg(f"> {msg}", *args, **kwargs)
-
-        kindse = KindSymbolicExecutor(self.getProgram(), programstructure=self.programstructure)
-        kindse.invpoints = self.invpoints
-        kindse.sum_loops = self.invpoints
-        kindse.reportfn = reportfn
-
-        newpaths = []
-        for p, _ in L.getEntries():
-            apath = AnnotatedCFGPath([p, loc])
-            apath.addLocAnnotationBefore(inv, loc)
-            newpaths.append(apath)
-
-        maxk = max(map(len, L.getPaths())) + 1
-        dbg_sec("Running nested KindSE")
-        res = kindse.run(newpaths, maxk=maxk, reportfn=reportfn)
-        dbg_sec()
-        dbg_sec()
-        return res == 0
-
     def check_path(self, path):
         first_loc = path.first()
         if self._is_init(first_loc):
@@ -416,7 +419,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 killed2 = (
                     (s for s in states.early if s.wasKilled()) if states.early else ()
                 )
-                for s in join_iter(killed1, killed2):
+                for s in chain(killed1, killed2):
                     self.report(s, self.reportfn)
                 self.reportfn(f"Inconclusive (init) path: {path}")
                 self.have_problematic_path = True
@@ -435,7 +438,7 @@ class KindSymbolicExecutor(BaseKindSE):
         killed2 = (s for s in r.early if s.wasKilled() or (s.hasError() and
                                                            s.getError().isMemError())) if r.early else ()
         problem = False
-        for s in join_iter(killed1, killed2):
+        for s in chain(killed1, killed2):
             problem = True
             self.report(s, fn=self.reportfn)
             self.reportfn(f"Killed states when executing {path}")
@@ -450,36 +453,6 @@ class KindSymbolicExecutor(BaseKindSE):
 
         return None, r
 
-    def initializePaths(self, k=1):
-        paths = []
-        # initialize the paths only in functions
-        # that are reachable in the callgraph
-        PS = self.programstructure
-        for F in PS.callgraph.funs():
-            if F.isUndefined():
-                continue
-
-            cfg = self.getCFG(F)
-            invpoints = PS.get_loop_headers(cfg)
-            self.invpoints[cfg] = invpoints
-            self.sum_loops[cfg] = invpoints
-
-            nodes = cfg.getNodes()
-            npaths = [AnnotatedCFGPath([n]) for n in nodes if n.hasAssert()]
-            step = self.getOptions().step
-            while k > 0:
-                npaths = [
-                    np
-                    for p in npaths
-                    for np in self.extendPath(
-                        p, None, steps=step, atmost=True, stoppoints=invpoints
-                    )
-                ]
-                k -= 1
-            paths += npaths
-
-        return paths
-
     def get_path_to_run(self):
         ready = self.readypaths
         if not ready:
@@ -493,74 +466,122 @@ class KindSymbolicExecutor(BaseKindSE):
             return ready.pop()
         return None
 
-    def is_inv_loc(self, loc):
+    def is_loop_header(self, loc):
         assert isinstance(loc, CFG.AnnotatedNode), loc
-        return loc in self.invpoints[loc.getCFG()]
+        return loc in self.programstructure.get_loop_headers(loc.getCFG())
 
     def queue_paths(self, paths):
-        is_inv_loc = self.is_inv_loc
+        is_loop_header = self.is_loop_header
         for p in paths:
-            if is_inv_loc(p.first()):
+            if is_loop_header(p.first()):
                 self.stalepaths.append(p)
             else:
                 self.readypaths.append(p)
 
     def extend_and_queue_paths(self, path, states):
         step = self.getOptions().step
+        invpoints = self.programstructure.get_loop_headers(path[0].getCFG())
         newpaths = self.extendPath(
             path,
             states,
             steps=step,
             atmost=step != 1,
-            stoppoints=self.invpoints[path[0].getCFG()],
+            stoppoints=invpoints,
         )
+
         self.queue_paths(newpaths)
 
-    def run(self, paths=None, maxk=None, reportfn=print_stdout):
-        k = 1
+    def check(self):
+        # the initial error path that we check
+        loc = self.location
+        path = AnnotatedCFGPath([loc])
+        path.addLocAnnotationBefore(self.assertion, loc)
+        self.extend_and_queue_paths(path, states=None)
 
-        if paths is None:
-            paths = self.initializePaths()
-        self.queue_paths(paths)
-
+        problem_states = []
         while True:
-            dbg(
-                f"Got {len(self.readypaths)} paths ready and {len(self.stalepaths)} waiting"
-            )
-
             path = self.get_path_to_run()
             if path is None:
-                if self.have_problematic_path:
-                    reportfn(
-                        "Enumerating paths finished, but a problem was met.",
-                        color="ORANGE",
-                    )
-                    return 1
-
-                reportfn("Enumerating paths done!", color="GREEN")
-                return 0
+                return Result.UNKNOWN if problem_states else Result.SAFE, problem_states
 
             r, states = self.check_path(path)
             if r is Result.UNSAFE:
-                for s in states.errors:
-                    self.report(s, reportfn)
-                reportfn("Error found.", color="RED")
-                return 1
+                return r, states
             elif states.errors:  # got error states that may not be real
                 assert r is None
                 fl = path.first()
-                if self.is_inv_loc(fl) and fl in self.sum_loops[fl.getCFG()]:
-                    if not self.handle_loop(fl, path, states):
+                if fl not in self.no_sum_loops and self.is_loop_header(fl):
+                    res = self.handle_loop(fl, path, states)
+                    if res is Result.UNSAFE:
+                        raise NotImplementedError("We do not return the states here...")
+                        return res, None
+                    elif res is Result.UNKNOWN:
                         # falled-back to unwinding
                         # XXX: could we try again later?
                         self.extend_and_queue_paths(path, states)
+                    else:
+                        assert res is Result.SAFE
+                        dbg(f"Path with loop {fl.getBBlockID()} proved safe", color="dark_green")
                 else:
                     # normal path or a loop that we cannot summarize
                     self.extend_and_queue_paths(path, states)
+            else:
+                dbg(f"Safe path: {path}")
 
-            k += 1
-            if maxk and maxk <= k:
-                reportfn(
-                    "Hit the maximal number of iterations, giving up.", color="ORANGE"
-                )
-                return 1
+        raise RuntimeError("Unreachable")
+
+
+class KindSymbolicExecutor(BaseKindSE):
+    """
+    The main class for KindSE that divides and conquers the tasks.
+    It inherits from BaseKindSE to have program structure and such,
+    TODO but we should change that, build program structure here,
+    and keep BaseKindSE a class that just takes care for executing paths.
+    """
+
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions(), genannot=False):
+        super().__init__(
+            prog=prog, ohandler=ohandler, opts=opts
+        )
+
+    def _get_error_paths(self):
+        paths = []
+        # initialize the paths only in functions
+        # that are reachable in the callgraph
+        for F in self.programstructure.callgraph.funs():
+            if F.isUndefined():
+                continue
+
+            cfg = self.getCFG(F)
+            nodes = cfg.getNodes()
+            paths.extend(AnnotatedCFGPath([n]) for n in nodes if n.hasAssert())
+
+        return paths
+
+    def _get_possible_errors(self):
+        for err in self._get_error_paths():
+            assert len(err) == 1
+            r = check_paths(self, [err])
+            assert r.errors, "The error path has no errors"
+            for e in r.errors:
+                yield err[0], AssertAnnotation(e.path_condition(), get_subs(e), e.getExprManager())
+
+    def run(self):
+        has_unknown = False
+        for loc, A in self._get_possible_errors():
+            dbg(f"Checking possible error: {A.getExpr()} @ {loc}")
+            checker = KindSEChecker(self, loc, A)
+            result, states = checker.check()
+            if result is Result.UNSAFE:
+                assert states.errors, "No errors in unsafe result"
+                for s in states.errors:
+                    self.report(s)
+                print_stdout("Error found.", color="red")
+                return result
+            elif result is Result.SAFE:
+                print_stdout(f"Error condition {A.getExpr()} at {loc.getBBlockID()} is safe!.", color="green")
+            elif result is Result.UNKNOWN:
+                print_stdout(f"Checking assert {A} at {loc.getBBlockID()} was unsuccessful.", color="orange")
+                has_unknown = True
+
+        return Result.UNKNOWN if has_unknown else Result.SAFE

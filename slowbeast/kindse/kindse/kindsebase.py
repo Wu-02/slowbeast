@@ -150,7 +150,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
-        r = executor.executeAnnotatedPath(states, path, branch_on_last=True)
+        r = executor.executeAnnotatedPath(states, path, branch_on_last=False)
         self.stats.paths += 1
 
         earl = r.early
@@ -359,19 +359,19 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             if r is Result.SAFE:
                 dbg("All possible error paths ruled out!", color="GREEN")
                 dbg("Induction step succeeded!", color="GREEN")
-                return 0
+                return r
             elif r is Result.UNSAFE:
                 self.return_states = states
                 dbg("Error found.", color="RED")
-                return 1
+                return r
             elif r is Result.UNKNOWN:
                 self.return_states = states
                 dbg("Hit a problem, giving up.", color="ORANGE")
-                return 1
+                return r
             else:
                 assert r is None
 
             k += 1
             if maxk and maxk <= k:
                 dbg("Hit the maximal number of iterations, giving up.", color="ORANGE")
-                return 1
+                return Result.UNKNOWN
