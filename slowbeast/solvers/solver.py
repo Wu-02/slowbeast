@@ -6,7 +6,7 @@ from ..util.debugging import FIXME
 if _use_z3:
     from z3 import Solver as Z3Solver, Context as Z3Context
     from z3 import sat, unsat, unknown
-    from z3 import BitVecVal, BoolVal
+    from z3 import BitVecVal, BoolVal, is_bv_value
     from z3 import fpIsNaN, simplify, fpToIEEEBV
 
     def models(assumpt, *args):
@@ -191,7 +191,9 @@ class SymbolicSolver(SolverIntf):
                 if v.is_float():
                     # FIXME: does not work always
                     val = m[n]
-                    if simplify(fpIsNaN(val)):
+                    if is_bv_value(val):
+                        f = val.as_long()
+                    elif simplify(fpIsNaN(val)):
                         f = float("NaN")
                     else:
                         f = simplify(fpToIEEEBV(m[n])).as_long()

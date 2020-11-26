@@ -24,6 +24,11 @@ def _getInt(s):
 def trunc_to_float(x):
     return unpack("f", pack("f", x))[0]
 
+def to_float_ty(val):
+    if isinstance(val, ConcreteVal) and not val.is_float():
+        return ConcreteVal(float(val.value()), FloatType(val.bitwidth()))
+    return val
+
 def _get_float(s):
     try:
         if s.startswith("0x"):

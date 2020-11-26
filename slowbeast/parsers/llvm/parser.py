@@ -146,11 +146,6 @@ def countSyms(s, sym):
             cnt += 1
     return cnt
 
-def to_float_ty(val):
-    if isinstance(val, ConcreteVal) and not val.is_float():
-        return ConcreteVal(float(val.value()), FloatType(val.bitwidth()))
-    return val
-
 class Parser:
     def __init__(self):
         self.llvmmodule = None
