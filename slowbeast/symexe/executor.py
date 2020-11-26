@@ -363,16 +363,20 @@ class Executor(ConcreteExecutor):
             elif opcode == BinaryOperation.MUL:
                 r = E.Mul(op1, op2)
             elif opcode == BinaryOperation.DIV:
-                good, bad = self.fork(state,
-                                      E.Ne(op2, ConcreteVal(0, op2.type())))
-                if good:
-                    state = good
+                if op2.is_float():
+                    # compilers allow division by FP 0
                     r = E.Div(op1, op2, instr.isUnsigned())
-                if bad:
-                    bad.setKilled("Division by 0")
-                    states.append(bad)
-                    if good is None:
-                        return states
+                else:
+                    good, bad = self.fork(state,
+                                          E.Ne(op2, ConcreteVal(0, op2.type())))
+                    if good:
+                        state = good
+                        r = E.Div(op1, op2, instr.isUnsigned())
+                    if bad:
+                        bad.setKilled("Division by 0")
+                        states.append(bad)
+                        if good is None:
+                            return states
             elif opcode == BinaryOperation.SHL:
                 r = E.Shl(op1, op2)
             elif opcode == BinaryOperation.LSHR:

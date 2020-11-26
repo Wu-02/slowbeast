@@ -35,6 +35,7 @@ class Type:
         return (
             self.is_bool() == x.is_bool()
             and self.is_pointer() == x.is_pointer()
+            and self.is_float() == x.is_float()
             and self.bitwidth() == x.bitwidth()
         )
 

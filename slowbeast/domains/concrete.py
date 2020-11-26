@@ -373,7 +373,18 @@ class ConcreteDomain:
         assert a.is_int() or a.is_float()
         result_ty = a.type()
         if a.is_float():
-            return ConcreteVal(trunc_to_float(a.value() / b.value(), ty), result_ty)
+            if b.value() == 0:
+                aval = a.value()
+                if aval > 0:
+                    return ConcreteVal(trunc_to_float(float("inf"), result_ty), result_ty)
+                if aval < 0:
+                    return ConcreteVal(trunc_to_float(float("-inf"),
+                                                      result_ty), result_ty)
+                else:
+                    return ConcreteVal(trunc_to_float(float("NaN"), result_ty),
+                                       result_ty)
+            return ConcreteVal(trunc_to_float(a.value() / b.value(), result_ty),
+                               result_ty)
         if unsigned:
             return ConcreteVal(getUnsigned(a) / getUnsigned(b), result_ty)
         return ConcreteVal(
