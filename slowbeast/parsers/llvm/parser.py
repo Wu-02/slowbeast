@@ -449,6 +449,10 @@ class Parser:
             ty = FloatType(32)
         elif stype == "double":
             ty = FloatType(64)
+        elif stype == "i8":
+            ty = IntType(8)
+        elif stype == "i16":
+            ty = IntType(16)
         elif stype == "i32":
             ty = IntType(32)
         elif stype == "i64":
