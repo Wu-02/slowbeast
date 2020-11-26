@@ -514,16 +514,22 @@ class FpOp(UnaryOperation):
 
     IS_INF = 1
     IS_NAN = 2
+    FPCLASSIFY = 3
+    SIGNBIT = 4
 
     def op_to_str(op):
         if op == FpOp.IS_INF:
             return "isinf"
         if op == FpOp.IS_NAN:
             return "isnan"
+        if op == FpOp.FPCLASSIFY:
+            return "fpclassify"
+        if op == FpOp.SIGNBIT:
+            return "signbit"
         return "uknwn"
 
     def __init__(self, fp_op, val):
-        assert FpOp.IS_INF <= fp_op <= FpOp.IS_NAN
+        assert FpOp.IS_INF <= fp_op <= FpOp.SIGNBIT
         super().__init__(UnaryOperation.FP_OP, val)
         self._fp_op = fp_op
 
@@ -535,6 +541,12 @@ class FpOp(UnaryOperation):
 
     def isNan(self):
         return self._fp_op == FpOp.IS_NAN
+
+    def fpclassify(self):
+        return self._fp_op == FpOp.SIGNBIT
+
+    def signbit(self):
+        return self._fp_op == FpOp.SIGNBIT
 
     def __str__(self):
         return "x{0} = fp {1} {2}".format(

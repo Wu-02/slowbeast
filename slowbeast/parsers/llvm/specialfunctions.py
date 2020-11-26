@@ -16,6 +16,13 @@ special_functions = [
     "__isinf",
     "__isinff",
     "__isinfl",
+    #NOTE: do we want to implement these as instructions? Probably not...
+    "__fpclassify",
+    "__fpclassifyf",
+    "__fpclassifyl",
+    "__signbit",
+    "__signbitf",
+    "__signbitl",
     "malloc",
     "__assert_fail",
     "__VERIFIER_error",
@@ -107,6 +114,16 @@ def create_special_fun(parser, inst, fun):
         P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type),
                                 SizeType))
         return P, [O, P]
+    elif fun in ("__fpclassify", "__fpclassifyf", "__fpclassifyl"):
+        val = to_float_ty(parser.getOperand(getLLVMOperands(inst)[0]))
+        O = FpOp(FpOp.FPCLASSIFY, val)
+        # the functions return int
+        return O, [O]
+    elif fun in ("__signbit", "__signbitf", "__signbitl"):
+        val = to_float_ty(parser.getOperand(getLLVMOperands(inst)[0]))
+        O = FpOp(FpOp.SIGNBIT, val)
+        # the functions return int
+        return O, [O]
     elif fun == "fesetround":
         raise NotImplementedError("fesetround is not supported yet")
     elif fun == "__slowbeast_print":

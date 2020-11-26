@@ -1,7 +1,8 @@
 from slowbeast.ir.types import IntType, BoolType, Type, PointerType
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
-from math import isinf, isnan
+from slowbeast.util.debugging import FIXME
+from math import isinf, isnan, isfinite
 
 from struct import pack, unpack
 
@@ -253,7 +254,18 @@ class ConcreteDomain:
             return ConcreteBool(isinf(val.value()))
         if op == FpOp.IS_NAN:
             return ConcreteBool(isnan(val.value()))
-        raise NotImplementedError("Invalid FP operation")
+        if op == FpOp.FPCLASSIFY:
+            FIXME("Using implementation dependent constants")
+            v = val.value()
+            if isnan(v): return ConcreteInt(0, 32)
+            if isinf(v): return ConcreteInt(1, 32)
+            if v >= 0 and v <= 0: return ConcreteInt(2, 32)
+            if isfinite(v): return ConcreteInt(4, 32)
+            return ConcreteInt(3, 32) # subnormal
+        if op == FpOp.SIGNBIT:
+            # FIXME! gosh this is ugly...
+            return ConcreteInt(1 if str(val.value())[0] == '-' else 0, 32)
+        raise NotImplementedError("Invalid/unsupported FP operation")
 
     ##
     # Relational operators
