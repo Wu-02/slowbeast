@@ -84,6 +84,9 @@ class SEState(ExecutionState):
     def concretize(self, *e):
         return self._solver.concretize(self.getConstraints(), *e)
 
+    def input_vector(self):
+        return self.concretize(*self.getNondets())
+
     def model(self):
         return {
             x: c

@@ -57,6 +57,8 @@ def createArgParser():
                         help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
     parser.add_argument('-se-exit-on-error', action='store_true',
                         help='Terminate symbolic execution after hitting the first error.')
+    parser.add_argument('-se-replay-errors', action='store_true',
+                        help='Confirm errors by replaying them without symbolic values')
     parser.add_argument('-ai', action='store_true', default=False,
                         help='Perform abstract interpretation.')
    #parser.add_argument('-ai-domain', action='store', default=True,
@@ -347,6 +349,7 @@ def main():
     elif args.se:
         opts = SEOptions()
 
+        opts.replay_errors = args.se_replay_errors
         opts.exit_on_error = args.se_exit_on_error
         opts.interactive = args.interactive
 

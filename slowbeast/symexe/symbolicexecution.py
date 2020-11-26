@@ -1,19 +1,20 @@
-from ..interpreter.interpreter import Interpreter, ExecutionOptions
+from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
+from slowbeast.solvers.solver import Solver
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from .executor import Executor as SExecutor
-from .memorymodel import SymbolicMemoryModel
-from ..solvers.solver import Solver
-from ..util.debugging import print_stderr, print_stdout, dbg
 
 
 class SEOptions(ExecutionOptions):
     def __init__(self, opts=None):
         super(SEOptions, self).__init__(opts)
         if opts:
+            self.replay_errors = opts.replay_errors
             self.concretize_nondets = opts.concretize_nondets
             self.uninit_is_nondet = opts.uninit_is_nondet
             self.exit_on_error = opts.exit_on_error
             self.error_funs = opts.error_funs
         else:
+            self.replay_errors = False
             self.concretize_nondets = False
             self.uninit_is_nondet = False
             self.exit_on_error = False
@@ -36,12 +37,16 @@ class SymbolicExecutor(Interpreter):
         self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=SExecutor
     ):
         self.solver = Solver()
-        super(SymbolicExecutor, self).__init__(
+        super().__init__(
             P, opts, executor or ExecutorClass(self.solver, opts)
         )
         self.stats = SEStats()
         # outputs handler
         self.ohandler = ohandler
+        self._input_vector = None
+
+    def set_input_vector(self, ivec):
+        self._executor.set_input_vector(ivec)
 
     def new_output_file(self, name):
         odir = self.ohandler.outdir if self.ohandler else None
@@ -65,7 +70,15 @@ class SymbolicExecutor(Interpreter):
 
     def handleNewState(self, s):
         testgen = self.ohandler.testgen if self.ohandler else None
+        opts = self.getOptions()
         stats = self.stats
+        if opts.replay_errors and s.hasError():
+            print_stdout("Found an error, trying to replay it", color="white")
+            repls = self.replay_state(s)
+            if not repls or not repls.hasError():
+                print_stderr("Failed replaying error", color="orange")
+                s.setKilled("Failed replaying error")
+
         if s.isReady():
             self.states.append(s)
         elif s.hasError():
@@ -76,7 +89,7 @@ class SymbolicExecutor(Interpreter):
             stats.paths += 1
             if testgen:
                 testgen.processState(s)
-            if self.getOptions().exit_on_error:
+            if opts.exit_on_error:
                 dbg("Found an error, terminating the search.")
                 self.states = []
                 return
@@ -99,3 +112,32 @@ class SymbolicExecutor(Interpreter):
             stats.exited_paths += 1
             if testgen:
                 testgen.processState(s)
+
+    def replay_state(self, state):
+        ivec = state.input_vector()
+        dbg(f"Input vector: {ivec}")
+
+        class GatherStates:
+            class Handler:
+                def __init__(self):
+                    self.states = []
+
+                def processState(self, s):
+                    self.states.append(s)
+
+            def __init__(self):
+                self.testgen = GatherStates.Handler()
+                self.states = self.testgen.states
+
+        opts = SEOptions(self.getOptions())
+        opts.replay_errors = False
+        handler = GatherStates()
+        SE = SymbolicExecutor(self.getProgram(),
+                              handler,
+                              opts)
+        SE.set_input_vector(ivec)
+        SE.run()
+        if len(handler.states) != 1:
+            return None
+        return handler.states[0]
+

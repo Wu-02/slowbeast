@@ -59,6 +59,8 @@ class Executor(ConcreteExecutor):
         super(Executor, self).__init__(opts, memorymodel)
         self.solver = solver
         self.stats = SEStats()
+        # use these values in place of nondet values
+        self._input_vector = None
 
     def is_error_fn(self, fun):
         if isinstance(fun, str):
@@ -67,6 +69,11 @@ class Executor(ConcreteExecutor):
 
     def error_funs(self):
         return self._error_funs
+
+    def set_input_vector(self, ivec):
+        self._input_vector = ivec.copy()
+        # reverse the vector so thawe can pop from it
+        self._input_vector.reverse()
 
     def createState(self, pc=None, m=None):
         if m is None:
@@ -318,9 +325,13 @@ class Executor(ConcreteExecutor):
         if retTy:
             if self.getOptions().concretize_nondets:
                 val = ConcreteVal(getrandbits(32), retTy)
+            elif self._input_vector:
+                val = self._input_vector.pop()
+                dbgv("Using value from input vector: {val}")
+                assert val.type() == retTy
             else:
                 val = state.getSolver().freshValue(name, retTy)
-            state.addNondet(val)
+                state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
         return [state]
