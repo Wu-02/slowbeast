@@ -342,7 +342,7 @@ class Parser:
                 raise NotImplementedError(
                     "Unsupported cmp instruction: {0}".format(inst)
                 )
-            C = Cmp(P, op1, op2, is_unordered)
+            C = Cmp(P, op1, op2, is_unsigned)
 
         self._addMapping(inst, C)
         return [C]
