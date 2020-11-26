@@ -476,6 +476,16 @@ class Cast(UnaryOperation):
         )
 
 
+class Neg(UnaryOperation):
+    """ Negate the number (return the same number with opposite sign) """
+
+    def __init__(self, val):
+        super().__init__(UnaryOperation.NEG, val)
+
+    def __str__(self):
+        return "x{0} = -({1})".format(self.get_id(), self.getOperand(0).as_value())
+
+
 class ExtractBits(UnaryOperation):
     def __init__(self, val, start, end):
         assert start.is_concrete(), "Invalid bitwidth to extend"

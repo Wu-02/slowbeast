@@ -292,15 +292,13 @@ class SignULDomain:
     # Relational operators
     def Le(a, b, unsigned=False):
         assert dom_is_signul(a, b)
-        if unsigned:
-            return ConcreteBool(getUnsigned(a) <= getUnsigned(b))
-        return ConcreteBool(a.value() <= b.value())
+        l, u = None, None
+        return SignULValue(SignULValue.ANY, BoolType(), l, u)
 
     def Lt(a, b, unsigned=False):
         # FIXME FIXME FIXME
         assert dom_is_signul(a, b)
         assert a.type() == b.type()
-        print(a, b)
         l, u = None, None
         if b._upper:
             u = b._upper

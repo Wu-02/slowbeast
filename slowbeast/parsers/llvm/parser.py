@@ -320,6 +320,13 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
+    def _createFNeg(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 1, "Invalid number of operands for fneg"
+        I = Neg(self.getOperand(operands[0]))
+        self._addMapping(inst, I)
+        return [I]
+
     def _createCmp(self, inst, isfloat=False):
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
@@ -564,6 +571,8 @@ class Parser:
             return self._createCmp(inst)
         elif opcode == "fcmp":
             return self._createCmp(inst, isfloat=True)
+        elif opcode == "fneg":
+            return self._createFNeg(inst)
         elif opcode == "br":
             return self._createBranch(inst)
         elif opcode == "call":

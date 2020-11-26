@@ -372,8 +372,8 @@ class Executor(ConcreteExecutor):
         elif instr.getOperation() == UnaryOperation.EXTRACT:
             start, end = instr.getRange()
             r = Domain.Extract(op1, start, end)
-        elif instr.getOperation() == UnaryOperation.NOT:
-            r = Domain.Not(op1)
+        elif instr.getOperation() == UnaryOperation.NEG:
+            r = Domain.Neg(op1)
         else:
             state.setKilled("Unary instruction not implemented: {0}".format(instr))
             return [state]

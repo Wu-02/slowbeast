@@ -49,6 +49,7 @@ if _use_z3:
         Float128,
         FPVal,
         fpAbs,
+        fpNeg,
         fpIsInf,
         fpIsNaN,
         fpToFP,
@@ -618,6 +619,15 @@ class BVSymbolicDomain:
             return Expr(fpAbs(a.unwrap()), a.type())
         expr = a.unwrap()
         return Expr(If(expr < 0, -expr, expr), a.type())
+
+    def Neg(self, a):
+        """ Return the negated number """
+        assert BVSymbolicDomain.belongto(a)
+        if a.is_float():
+            return Expr(fpNeg(a.unwrap()), a.type())
+        expr = a.unwrap()
+        return Expr(-expr, a.type())
+
 
     def FpOp(op, val):
         assert BVSymbolicDomain.belongto(val)

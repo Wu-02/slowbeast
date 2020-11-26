@@ -221,6 +221,14 @@ class ConcreteDomain:
             return ConcreteVal(getUnsigned(a) % getUnsigned(b), a.type())
         return ConcreteVal(a.value() % b.value(), a.type())
 
+    def Neg(self, a):
+        """ Return the negated number """
+        assert ConcreteDomain.belongto(a, b)
+        ty = a.type()
+        if a.is_float():
+            return ConcreteVal(-a.value(), ty)
+        return ConcreteVal(wrap_to_bw(-a.value(), ty.bitwidth()), ty)
+
     def Abs(a):
         assert ConcreteDomain.belongto(a)
         return ConcreteVal(abs(a.value()), a.type())
