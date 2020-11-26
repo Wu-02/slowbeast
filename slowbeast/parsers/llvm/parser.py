@@ -146,6 +146,10 @@ def countSyms(s, sym):
             cnt += 1
     return cnt
 
+def to_float_ty(val):
+    if isinstance(val, ConcreteVal) and not val.is_float():
+        return ConcreteVal(float(val.value()), FloatType(val.bitwidth()))
+    return val
 
 class Parser:
     def __init__(self):
@@ -167,6 +171,7 @@ class Parser:
 
         assert ret, "Do not have an operand: {0}".format(op)
         return ret
+
 
     def getBBlock(self, llvmb):
         return self._bblocks[llvmb]
@@ -242,6 +247,9 @@ class Parser:
 
         op1 = self.getOperand(operands[0])
         op2 = self.getOperand(operands[1])
+        if opcode.startswith("f"):
+            op1 = to_float_ty(op1)
+            op2 = to_float_ty(op2)
         if opcode in ("add", "fadd"):
             I = Add(op1, op2)
         elif opcode in ("sub", "fsub"):
@@ -323,7 +331,7 @@ class Parser:
     def _createFNeg(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for fneg"
-        I = Neg(self.getOperand(operands[0]))
+        I = Neg(to_float_ty(self.getOperand(operands[0])))
         self._addMapping(inst, I)
         return [I]
 
@@ -334,6 +342,8 @@ class Parser:
         op2 = self.getOperand(operands[1])
         if isfloat:
             P, is_unordered = parseFCmp(inst)
+            op1 = to_float_ty(op1)
+            op2 = to_float_ty(op2)
             if not P:
                 seq = parseSpecialFCmp(inst, op1, op2)
                 if seq:
@@ -600,7 +610,7 @@ class Parser:
             return self._createGep(inst)
         elif opcode == "bitcast":
             return self._createCast(inst)
-        elif opcode in [
+        elif opcode in (
             "add",
             "sub",
             "sdiv",
@@ -610,7 +620,7 @@ class Parser:
             "fsub",
             "fdiv",
             "fmul",
-        ]:
+        ):
             return self._createArith(inst, opcode)
         elif opcode in ["shl", "lshr", "ashr"]:
             return self._createShift(inst)

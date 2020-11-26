@@ -1,4 +1,4 @@
-from struct import unpack
+from struct import unpack, pack
 
 from slowbeast.util.debugging import warn
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
@@ -21,12 +21,26 @@ def _getInt(s):
     except ValueError:
         return None
 
+def trunc_to_float(x):
+    return unpack("f", pack("f", x))[0]
 
 def _get_float(s):
     try:
         if s.startswith("0x"):
+            # llvm writes the constants as double 
+            # FIXME: get the byte order from module
+            return  trunc_to_float(unpack(">d",
+                                          int(s, 16).to_bytes(8, "big"))[0])
+        else:
+            return float(s)
+    except ValueError:
+        return None
+
+def _get_double(s):
+    try:
+        if s.startswith("0x"):
             # llvm writes the constants as double (even when it is 32 bit)
-            return unpack(">d", int(s, 16).to_bytes(8, "big"))[0]
+            return  unpack(">d", int(s, 16).to_bytes(8, "big"))[0]
         else:
             return float(s)
     except ValueError:
@@ -115,6 +129,11 @@ def type_size(m, ty):
     return None
 
 
+def getFloatConstant(sval, isdouble=True):
+    if isdouble:
+        return _get_double(sval)
+    return _get_float(sval)
+
 def getConstant(val):
     # good, this is so ugly. But llvmlite does
     # not provide any other way...
@@ -127,13 +146,14 @@ def getConstant(val):
     if len(parts) != 2:
         return None
 
-    isfloat = parts[0] in ("float", "double")
     bw = _bitwidth(parts[0])
     if not bw:
         return None
+    isfloat = parts[0] == "float"
+    isdouble = parts[0] == "double"
 
-    if isfloat:
-        c = _get_float(parts[1])
+    if isfloat or isdouble:
+        c = getFloatConstant(parts[1], isdouble)
     else:
         c = _getInt(parts[1])
     if c is None:
