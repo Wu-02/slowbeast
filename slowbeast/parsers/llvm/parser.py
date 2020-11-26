@@ -583,7 +583,8 @@ class Parser:
             return self._createZExt(inst)
         elif opcode == "sext":
             return self._createSExt(inst)
-        elif opcode in ("uitofp", "sitofp", "fptosi", "fptoui"):
+        elif opcode in ("uitofp", "sitofp", "fptosi", "fptoui",
+                        "fpext", "fptrunc"):
             return self._createReinterpCast(inst)
         elif opcode == "ptrtoint":
             return self._createPtrToInt(inst)

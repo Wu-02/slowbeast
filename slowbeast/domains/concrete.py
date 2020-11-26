@@ -171,6 +171,8 @@ class ConcreteDomain:
         Reinterpret cast
         """
         assert ConcreteDomain.belongto(a)
+        if a.bitwidth() > ty.bitwidth():
+            return None # truncation not supported yet
         if a.is_int():
             if ty.is_float():
                 return ConcreteVal(float(a.value()), ty)

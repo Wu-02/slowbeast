@@ -53,6 +53,8 @@ if _use_z3:
         fpIsInf,
         fpIsNaN,
         fpToFP,
+        fpFPToFP,
+        RNE,
         fpToIEEEBV,
         fpEQ,
         fpNEQ,
@@ -495,8 +497,13 @@ class BVSymbolicDomain:
         """ Reinterpret cast """
         assert BVSymbolicDomain.belongto(a)
         v = a.unwrap()
-        if a.is_int() and ty.is_float():
-            return Expr(fpToFP(a.unwrap(), ty))
+        if ty.is_float():
+            if a.is_int():
+                return Expr(fpToFP(a.unwrap(), get_fp_sort(ty.bitwidth())), ty)
+            elif a.is_float():
+                return Expr(fpFPToFP(RNE(), a.unwrap(),
+                                     get_fp_sort(ty.bitwidth())),
+                            ty)
         elif a.is_float() and ty.is_int():
             return Expr(fpToBV(a), ty)
         return None  # unsupported conversion
@@ -569,12 +576,14 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a, b)
         if a.is_float() or b.is_float():
             return Expr(fpEQ(castToFP(a), castToFP(b)), BoolType())
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return Expr(a.unwrap() == b.unwrap(), BoolType())
 
     def Ne(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if a.is_float() or b.is_float():
             return Expr(fpNEQ(castToFP(a), castToFP(b)), BoolType())
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return Expr(a.unwrap() != b.unwrap(), BoolType())
 
     ##

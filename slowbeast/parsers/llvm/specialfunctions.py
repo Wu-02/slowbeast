@@ -1,7 +1,7 @@
-from slowbeast.ir.instruction import Alloc, Assume, Assert, Cmp, Print, Abs, FpOp
+from slowbeast.ir.instruction import Alloc, Assume, Assert, Cmp, Print, Abs, FpOp, ZExt
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from ...domains.concrete import ConcreteVal
-from slowbeast.ir.types import IntType
+from slowbeast.ir.types import IntType, SizeType
 from .utils import getLLVMOperands, type_size_in_bits
 
 # FIXME: turn to a dict with separate handlers
@@ -10,7 +10,11 @@ special_functions = [
     "llvm.fabs.f64",
     "fesetround",
     "__isnan",
+    "__isnanf",
+    "__isnanl",
     "__isinf",
+    "__isinff",
+    "__isinfl",
     "malloc",
     "__assert_fail",
     "__VERIFIER_error",
@@ -86,14 +90,19 @@ def create_special_fun(parser, inst, fun):
         val = parser.getOperand(operands[0])
         A = Abs(val)
         return A, [A]
-    elif fun == "__isinf":
+    elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = parser.getOperand(getLLVMOperands(inst)[0])
         O = FpOp(FpOp.IS_INF, val)
-        return O, [O]
-    elif fun == "__isnan":
+        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type),
+                                SizeType))
+        return P, [O, P]
+    elif fun in ("__isnan", "__isnanf", "__isnanfl"):
         val = parser.getOperand(getLLVMOperands(inst)[0])
         O = FpOp(FpOp.IS_NAN, val)
-        return O, [O]
+        # the functions return int
+        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type),
+                                SizeType))
+        return P, [O, P]
     elif fun == "fesetround":
         raise NotImplementedError("fesetround is not supported yet")
     elif fun == "__slowbeast_print":
