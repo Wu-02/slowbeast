@@ -331,6 +331,7 @@ class Executor(ConcreteExecutor):
         getop = instr.getOperand
         op1 = seval(getop(0))
         op2 = seval(getop(1))
+        states = []
         # if one of the operands is a pointer,
         # lift the other to pointer too
         r = None
@@ -362,7 +363,16 @@ class Executor(ConcreteExecutor):
             elif opcode == BinaryOperation.MUL:
                 r = E.Mul(op1, op2)
             elif opcode == BinaryOperation.DIV:
-                r = E.Div(op1, op2, instr.isUnsigned())
+                good, bad = self.fork(state,
+                                      E.Ne(op2, ConcreteVal(0, op2.type())))
+                if good:
+                    state = good
+                    r = E.Div(op1, op2, instr.isUnsigned())
+                if bad:
+                    bad.setKilled("Division by 0")
+                    states.append(bad)
+                    if good is None:
+                        return states
             elif opcode == BinaryOperation.SHL:
                 r = E.Shl(op1, op2)
             elif opcode == BinaryOperation.LSHR:
@@ -385,7 +395,8 @@ class Executor(ConcreteExecutor):
 
         state.set(instr, r)
         state.pc = state.pc.get_next_inst()
-        return [state]
+        states.append(state)
+        return states
 
     def execUnaryOp(self, state, instr):
         assert isinstance(instr, UnaryOperation)
