@@ -327,7 +327,7 @@ class Executor(ConcreteExecutor):
                 val = ConcreteVal(getrandbits(32), retTy)
             elif self._input_vector:
                 val = self._input_vector.pop()
-                dbgv("Using value from input vector: {val}")
+                dbgv(f"Using value from input vector: {val}")
                 assert val.type() == retTy
             else:
                 val = state.getSolver().freshValue(name, retTy)
