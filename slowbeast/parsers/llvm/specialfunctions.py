@@ -1,7 +1,7 @@
-from slowbeast.ir.instruction import Alloc, Assume, Assert, Cmp, Print, Abs, FpOp, ZExt
+from slowbeast.ir.instruction import Alloc, Assume, Assert, Cmp, Print, Abs, FpOp, ZExt, Cast
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from ...domains.concrete import ConcreteVal
-from slowbeast.ir.types import IntType, SizeType
+from slowbeast.ir.types import FloatType, IntType, SizeType
 from .utils import getLLVMOperands, type_size_in_bits
 
 # FIXME: turn to a dict with separate handlers
@@ -9,6 +9,7 @@ special_functions = [
     "llvm.fabs.f32",
     "llvm.fabs.f64",
     "fesetround",
+    "nan",
     "__isnan",
     "__isnanf",
     "__isnanl",
@@ -96,6 +97,9 @@ def create_special_fun(parser, inst, fun):
         P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type),
                                 SizeType))
         return P, [O, P]
+    elif fun in "nan":
+        I = Cast(ConcreteVal(float("NaN"), FloatType(64)),  FloatType(64))
+        return I, [I]
     elif fun in ("__isnan", "__isnanf", "__isnanfl"):
         val = parser.getOperand(getLLVMOperands(inst)[0])
         O = FpOp(FpOp.IS_NAN, val)

@@ -189,9 +189,7 @@ class ConcreteDomain:
                 return ConcreteVal(a.value(), ty)
         elif a.is_float():
             if ty.is_float():
-                if a.bitwidth() > ty.bitwidth():
-                    return None # truncation not supported yet
-                return ConcreteVal(a.value(), ty)
+                return ConcreteVal(trunc_to_float(a.value(), ty), ty)
         # unsupported yet
         # elif ty.is_int():
         #    return ConcreteVal(int(v), ty)

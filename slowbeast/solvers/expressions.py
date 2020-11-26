@@ -239,6 +239,8 @@ class ExprManager:
 
     def Cast(self, a: Value, ty: Type):
         assert isinstance(ty, Type)
+        if a.type() == ty:
+            return a
         if a.is_pointer():
             # pointer to int or int to pointer (where the int is actually
             # a pointer as we do not change its value)
