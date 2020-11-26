@@ -113,6 +113,16 @@ class MemoryObject:
                 f"{self.values}",
             )
 
+        # we would need to obtain overlapping offsets
+        if val.bytewidth() != bts:
+            return None, MemError(
+                MemError.UNSUPPORTED,
+                f"Reading bytes from object defined by parts is unsupported atm: "
+                f"reading {bts} bytes from off {offval} where is value with "
+                f"{val.bytewidth()} bytes"
+            )
+
+        # FIXME: make me return Bytes objects (a sequence of bytes)
         return val, None
 
     def offsets(self):
