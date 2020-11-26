@@ -22,6 +22,39 @@ def _get_llvm_module(path):
             return llvm.parse_bitcode(f.read())
 
 
+def parseSpecialFCmp(inst, op1, op2):
+    seq = []
+    parts = str(inst).split()
+    if parts[1] != "=":
+        return None, False
+
+    if parts[2] != "fcmp":
+        return None, False
+
+    if parts[3] == "uno":
+        if op1 == op2:
+            # equivalent to isnan
+            return [FpOp(FpOp.IS_NAN, op1)]
+        seq.append(FpOp(FpOp.IS_NAN, op1))
+        seq.append(FpOp(FpOp.IS_NAN, op2))
+        seq.append(And(*seq))
+        return seq
+    if parts[3] == "ord":
+        if op1 == op2:
+            # equivalent to not isnan
+            seq.append(FpOp(FpOp.IS_NAN, op1))
+            seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse))
+        else:
+            seq.append(FpOp(FpOp.IS_NAN, op1))
+            seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse))
+            seq.append(FpOp(FpOp.IS_NAN, op2))
+            seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse))
+            seq.append(And(seq[1], seq[-1]))
+        return seq
+    return None
+
+
+
 def parseFCmp(inst):
     parts = str(inst).split()
     if parts[1] != "=":
@@ -290,30 +323,26 @@ class Parser:
     def _createCmp(self, inst, isfloat=False):
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
+        op1 = self.getOperand(operands[0])
+        op2 = self.getOperand(operands[1])
         if isfloat:
             P, is_unordered = parseFCmp(inst)
             if not P:
+                seq = parseSpecialFCmp(inst, op1, op2)
+                if seq:
+                    self._addMapping(inst, seq[-1])
+                    return seq
                 raise NotImplementedError(
-                    "Unsupported cmp instruction: {0}".format(inst)
+                    "Unsupported fcmp instruction: {0}".format(inst)
                 )
-            C = Cmp(
-                P,
-                self.getOperand(operands[0]),
-                self.getOperand(operands[1]),
-                is_unordered,
-            )
+            C = Cmp(P, op1, op2, is_unordered)
         else:
             P, is_unsigned = parseCmp(inst)
             if not P:
                 raise NotImplementedError(
                     "Unsupported cmp instruction: {0}".format(inst)
                 )
-            C = Cmp(
-                P,
-                self.getOperand(operands[0]),
-                self.getOperand(operands[1]),
-                is_unsigned,
-            )
+            C = Cmp(P, op1, op2, is_unordered)
 
         self._addMapping(inst, C)
         return [C]
