@@ -543,7 +543,12 @@ class BVSymbolicDomain:
         # we need this explicit float cast for the cases when a or b are
         # nondet loads (in which case they are bitvectors)
         if a.is_float() or b.is_float():
-            return Expr(fpLEQ(castToFP(a), castToFP(b)), BoolType())
+            a, b = castToFP(a), castToFP(b)
+            expr = fpLEQ(a, b)
+            if not unsigned:
+                expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
+            return Expr(expr, BoolType())
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         if unsigned:
             return Expr(BVULE(a.unwrap(), b.unwrap()), BoolType())
         return Expr(a.unwrap() <= b.unwrap(), BoolType())
@@ -551,7 +556,12 @@ class BVSymbolicDomain:
     def Lt(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if a.is_float() or b.is_float():
-            return Expr(fpLT(castToFP(a), castToFP(b)), BoolType())
+            a, b = castToFP(a), castToFP(b)
+            expr = fpLT(a, b)
+            if not unsigned:
+                expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
+            return Expr(expr, BoolType())
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         if unsigned:
             return Expr(BVULT(a.unwrap(), b.unwrap()), BoolType())
         return Expr(a.unwrap() < b.unwrap(), BoolType())
@@ -559,7 +569,12 @@ class BVSymbolicDomain:
     def Ge(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if a.is_float() or b.is_float():
-            return Expr(fpGEQ(castToFP(a), castToFP(b)), BoolType())
+            a, b = castToFP(a), castToFP(b)
+            expr = fpGEQ(a, b)
+            if not unsigned:
+                expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
+            return Expr(expr, BoolType())
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         if unsigned:
             return Expr(BVUGE(a.unwrap(), b.unwrap()), BoolType())
         return Expr(a.unwrap() >= b.unwrap(), BoolType())
@@ -567,7 +582,12 @@ class BVSymbolicDomain:
     def Gt(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if a.is_float() or b.is_float():
-            return Expr(fpGT(castToFP(a), castToFP(b)), BoolType())
+            a, b = castToFP(a), castToFP(b)
+            expr = fpGT(a, b)
+            if not unsigned:
+                expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
+            return Expr(expr, BoolType())
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         if unsigned:
             return Expr(BVUGT(a.unwrap(), b.unwrap()), BoolType())
         return Expr(a.unwrap() > b.unwrap(), BoolType())
@@ -575,14 +595,22 @@ class BVSymbolicDomain:
     def Eq(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if a.is_float() or b.is_float():
-            return Expr(fpEQ(castToFP(a), castToFP(b)), BoolType())
+            a, b = castToFP(a), castToFP(b)
+            expr = fpEQ(a, b)
+            if not unsigned:
+                expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
+            return Expr(expr, BoolType())
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return Expr(a.unwrap() == b.unwrap(), BoolType())
 
     def Ne(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
         if a.is_float() or b.is_float():
-            return Expr(fpNEQ(castToFP(a), castToFP(b)), BoolType())
+            a, b = castToFP(a), castToFP(b)
+            expr = fpNEQ(a, b)
+            if not unsigned:
+                expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
+            return Expr(expr, BoolType())
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return Expr(a.unwrap() != b.unwrap(), BoolType())
 
