@@ -8,6 +8,7 @@ from .utils import getLLVMOperands, type_size_in_bits
 special_functions = [
     "llvm.fabs.f32",
     "llvm.fabs.f64",
+    "fesetround",
     "__isnan",
     "__isinf",
     "malloc",
@@ -93,6 +94,8 @@ def create_special_fun(parser, inst, fun):
         val = parser.getOperand(getLLVMOperands(inst)[0])
         O = FpOp(FpOp.IS_NAN, val)
         return O, [O]
+    elif fun == "fesetround":
+        raise NotImplementedError("fesetround is not supported yet")
     elif fun == "__slowbeast_print":
         P = Print(*[parser.getOperand(x) for x in getLLVMOperands(inst)[:-1]])
         return P, [P]
