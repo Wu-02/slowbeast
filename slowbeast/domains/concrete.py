@@ -156,39 +156,44 @@ class ConcreteDomain:
 
     def And(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.type() == b.type()
+        assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool():
             return ConcreteBool(a.value() and b.value())
         else:
-            return ConcreteVal(a.value() & b.value(), a.type())
+            return ConcreteVal(float_to_bv(a) & float_to_bv(b),
+                               IntType(a.bitwidth()))
 
     def Or(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.type() == b.type()
+        assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool():
             return ConcreteBool(a.value() or b.value())
         else:
-            return ConcreteVal(a.value() | b.value(), a.type())
+            return ConcreteVal(float_to_bv(a) | float_to_bv(b),
+                               IntType(a.bitwidth()))
 
     def Xor(a, b):
-        assert ConcreteDomain.belongto(a, b)
+        assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         assert a.type() == b.type()
-        return ConcreteVal(a.value() ^ b.value(), a.type())
+        return ConcreteVal(float_to_bv(a) ^ float_to_bv(b),
+                           IntType(a.bitwidth()))
 
     def Not(a):
         assert ConcreteDomain.belongto(a)
         if a.is_bool():
             return ConcreteBool(not a.value())
         else:
-            return ConcreteVal(~a.value(), a.type())
+            return ConcreteVal(~float_to_bv(a), a.type())
 
     def ZExt(a, b):
         assert ConcreteDomain.belongto(a, b)
+        assert a.is_int() or a.is_bool(), a
         assert a.bitwidth() < b.value(), "Invalid zext argument"
         return ConcreteInt(to_unsigned(a.value(), a.bitwidth()), b.value())
 
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
+        assert a.is_int(), a
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         sb = 1 << (b.value() - 1)
         val = (a.value() & (sb - 1)) - (a.value() & sb)

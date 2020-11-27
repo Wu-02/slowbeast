@@ -491,37 +491,37 @@ class BVSymbolicDomain:
 
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.type() == b.type()
+        assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool():
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(floatToBV(a) & floatToBV(b), IntType(a.type().bitwidth()))
+            return Expr(floatToBV(a) & floatToBV(b), IntType(a.bitwidth()))
 
     def Or(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.type() == b.type()
+        assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool():
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(floatToBV(a) | floatToBV(b), IntType(a.type().bitwidth()))
+            return Expr(floatToBV(a) | floatToBV(b), IntType(a.bitwidth()))
 
     def Xor(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.type() == b.type()
+        assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool():
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(floatToBV(a) ^ floatToBV(b), IntType(a.type().bitwidth()))
+            return Expr(floatToBV(a) ^ floatToBV(b), IntType(a.bitwidth()))
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
         else:
-            return Expr(~floatToBV(a), IntType(a.type().bitwidth()))
+            return Expr(~floatToBV(a), IntType(a.bitwidth()))
 
     def ZExt(a, b):
         assert BVSymbolicDomain.belongto(a)
