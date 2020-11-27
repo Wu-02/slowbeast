@@ -56,6 +56,7 @@ if _use_z3:
         fpToFP,
         fpFPToFP,
         fpBVToFP,
+        fpToIEEEBV,
         RNE,
         fpToUBV,
         fpToSBV,
@@ -75,6 +76,12 @@ if _use_z3:
         if x.bitwidth() == 64:
             return x._expr
         return simplify(fpFPToFP(RNE(), x._expr, Float64()))
+
+    def floatToBV(x):
+        if x.is_float():
+            return simplify(fpToIEEEBV(x._expr))
+
+        return x.unwrap()
 
     def floatToUBV(x, ty=None):
         if x.is_float():
@@ -489,7 +496,7 @@ class BVSymbolicDomain:
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(floatToUBV(a) & floatToUBV(b), IntType(a.type().bitwidth()))
+            return Expr(floatToBV(a) & floatToBV(b), IntType(a.type().bitwidth()))
 
     def Or(a, b):
         assert BVSymbolicDomain.belongto(a, b)
@@ -498,7 +505,7 @@ class BVSymbolicDomain:
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(floatToUBV(a) | floatToUBV(b), IntType(a.type().bitwidth()))
+            return Expr(floatToBV(a) | floatToBV(b), IntType(a.type().bitwidth()))
 
     def Xor(a, b):
         assert BVSymbolicDomain.belongto(a, b)
@@ -507,14 +514,14 @@ class BVSymbolicDomain:
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(floatToUBV(a) ^ floatToUBV(b), IntType(a.type().bitwidth()))
+            return Expr(floatToBV(a) ^ floatToBV(b), IntType(a.type().bitwidth()))
 
     def Not(a):
         assert BVSymbolicDomain.belongto(a)
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
         else:
-            return Expr(~floatToUBV(a), IntType(a.type().bitwidth()))
+            return Expr(~floatToBV(a), IntType(a.type().bitwidth()))
 
     def ZExt(a, b):
         assert BVSymbolicDomain.belongto(a)
@@ -601,8 +608,8 @@ class BVSymbolicDomain:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
         if unsigned:
-            return Expr(BVULE(floatToUBV(a), floatToUBV(b)), BoolType())
-        return Expr(floatToUBV(a) <= floatToUBV(b), BoolType())
+            return Expr(BVULE(floatToBV(a), floatToBV(b)), BoolType())
+        return Expr(floatToBV(a) <= floatToBV(b), BoolType())
 
     def Lt(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
@@ -614,8 +621,8 @@ class BVSymbolicDomain:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
         if unsigned:
-            return Expr(BVULT(floatToUBV(a), floatToUBV(b)), BoolType())
-        return Expr(floatToUBV(a) < floatToUBV(b), BoolType())
+            return Expr(BVULT(floatToBV(a), floatToBV(b)), BoolType())
+        return Expr(floatToBV(a) < floatToBV(b), BoolType())
 
     def Ge(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
@@ -627,8 +634,8 @@ class BVSymbolicDomain:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
         if unsigned:
-            return Expr(BVUGE(floatToUBV(a), floatToUBV(b)), BoolType())
-        return Expr(floatToUBV(a) >= floatToUBV(b), BoolType())
+            return Expr(BVUGE(floatToBV(a), floatToBV(b)), BoolType())
+        return Expr(floatToBV(a) >= floatToBV(b), BoolType())
 
     def Gt(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
@@ -640,8 +647,8 @@ class BVSymbolicDomain:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
         if unsigned:
-            return Expr(BVUGT(floatToUBV(a), floatToUBV(b)), BoolType())
-        return Expr(floatToUBV(a) > floatToUBV(b), BoolType())
+            return Expr(BVUGT(floatToBV(a), floatToBV(b)), BoolType())
+        return Expr(floatToBV(a) > floatToBV(b), BoolType())
 
 
     def Eq(a, b, unsigned=False, floats=False):
@@ -653,7 +660,7 @@ class BVSymbolicDomain:
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
-        return Expr(floatToUBV(a) == floatToUBV(b), BoolType())
+        return Expr(floatToBV(a) == floatToBV(b), BoolType())
 
 
     def Ne(a, b, unsigned=False, floats=False):
@@ -665,7 +672,7 @@ class BVSymbolicDomain:
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
-        return Expr(floatToUBV(a) != floatToUBV(b), BoolType())
+        return Expr(floatToBV(a) != floatToBV(b), BoolType())
 
     ##
     # Arithmetic operations
