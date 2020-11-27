@@ -552,7 +552,10 @@ class BVSymbolicDomain:
                         else zext_expr(a, tybw)
                 else:
                     e = a._expr
-                expr = fpBVToFP(e, get_fp_sort(tybw))
+                if signed:
+                    expr = fpToFP(RNE(), e, get_fp_sort(tybw))
+                else:
+                    expr = fpToFP(e, get_fp_sort(tybw))
                 return Expr(expr, ty)
             elif a.is_float():
                 return Expr(fpFPToFP(RNE(), a.unwrap(),
