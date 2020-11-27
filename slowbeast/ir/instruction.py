@@ -471,17 +471,23 @@ class SExt(Extend):
 
 
 class Cast(UnaryOperation):
-    def __init__(self, a, ty):
+    def __init__(self, a, ty, sgn=True):
         assert isinstance(ty, Type)
         super().__init__(UnaryOperation.CAST, a)
         self._ty = ty
+        self._signed = sgn
 
     def casttype(self):
         return self._ty
 
+    def signed(self):
+        return self._signed
+
     def __str__(self):
-        return "x{0} = cast {1} to {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.casttype()
+        return "x{0} = cast {1} to {2}{3}".format(
+            self.get_id(), self.getOperand(0).as_value(),
+            "signed " if self._signed else "",
+            self.casttype()
         )
 
 

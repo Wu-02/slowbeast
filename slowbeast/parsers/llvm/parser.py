@@ -442,7 +442,7 @@ class Parser:
         self._addMapping(inst, sext)
         return [sext]
 
-    def _createReinterpCast(self, inst):
+    def _createReinterpCast(self, inst, sgn):
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for cast"
         insttype = inst.type
@@ -465,7 +465,7 @@ class Parser:
         else:
             raise NotImplementedError(f"Unimplemented cast: {inst}")
         # just behave that there's no ZExt for now
-        cast = Cast(self.getOperand(operands[0]), ty)
+        cast = Cast(self.getOperand(operands[0]), ty, sgn)
         self._addMapping(inst, cast)
         return [cast]
 
@@ -594,7 +594,8 @@ class Parser:
             return self._createSExt(inst)
         elif opcode in ("uitofp", "sitofp", "fptosi", "fptoui",
                         "fpext", "fptrunc"):
-            return self._createReinterpCast(inst)
+            return self._createReinterpCast(inst, opcode in ("uitofp",
+                                                             "fptoui"))
         elif opcode == "ptrtoint":
             return self._createPtrToInt(inst)
         elif opcode == "inttoptr":
