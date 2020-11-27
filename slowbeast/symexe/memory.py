@@ -73,11 +73,16 @@ class MemoryObject(CoreMO):
                 if valbw > bts:
                     # truncate the value
                     EM = getGlobalExprManager()
-                    extr = EM.Extract(EM.Cast(val, IntType(val.bitwidth())),
-                                      ConcreteVal(0, OffsetType),
-                                      ConcreteVal(8 * (offval + bts) - 1, OffsetType))
-                    assert extr.bytewidth() == bts, extr
-                    return extr, None
+                    cast = EM.Cast(val, IntType(val.bitwidth()))
+                    if cast:
+                        extr = EM.Extract(cast,
+                                          ConcreteVal(0, OffsetType),
+                                          ConcreteVal(8 * (offval + bts) - 1, OffsetType))
+                        assert extr.bytewidth() == bts, extr
+                        return extr, None
+                    else:
+                        dbg(f"Unsupported conversion from {val.type()} to i{val.bitwidth()}")
+                        # fall-thourgh
                 else:
                     # join two consequiteve values if possible
                     nxtval = values.get(offval + valbw)

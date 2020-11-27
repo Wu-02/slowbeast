@@ -69,7 +69,13 @@ class MemoryObject:
 
         offval = off.value()
         if offval != 0:
-            FIXME("check that writes to MO do not overlap")
+            # FIXME: not efficient...
+            bw = x.bytewidth()
+            for o, val in self.values.items():
+                if offval < o + val.bytewidth() and offval + bw > o:
+                    return MemError(
+                        MemError.UNSUPPORTED, "Writing overlapping values to an object is not supported yet"
+                    )
         if x.bytewidth() > self.getSize().value() + offval:
             return MemError(
                 MemError.OOB_ACCESS,

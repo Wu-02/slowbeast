@@ -563,11 +563,12 @@ class BVSymbolicDomain:
                                      get_fp_sort(tybw)),
                             ty)
         elif a.is_float() and ty.is_int():
-            if signed:
-                ae = floatToSBV(a, ty)
-            else:
-                ae = floatToUBV(a, ty)
-            return Expr(ae, ty)
+           #if signed:
+           #    ae = floatToSBV(a, ty)
+           #else:
+           #    ae = floatToUBV(a, ty)
+           ae = fpToIEEEBV(a._expr)
+           return Expr(ae, ty)
         return None  # unsupported conversion
 
     def Extract(a, start, end):
