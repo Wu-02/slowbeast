@@ -21,11 +21,11 @@ def float_to_bv(x):
         return x.value()
     bw = x.bitwidth()
     if bw == 32:
-        return unpack("I", pack("f", x.value()))[0]
+        d = unpack("I", pack("f", x.value()))[0]
     else:
         assert bw == 64, f"{x}, bw: {bw}"
-        return unpack("L", pack("f", x.value()))[0]
-    return None
+        d =  unpack("L", pack("f", x.value()))[0]
+    return d
 
 def to_unsigned(x, bw):
     """ Get unsigned value for signed in 2's complement """

@@ -78,6 +78,8 @@ class SymbolicExecutor(Interpreter):
             if not repls or not repls.hasError():
                 print_stderr("Failed replaying error", color="orange")
                 s.setKilled("Failed replaying error")
+            else:
+                dbg("The replay succeeded.")
 
         if s.isReady():
             self.states.append(s)
