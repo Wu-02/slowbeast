@@ -329,25 +329,27 @@ class ExprManager:
 
     ##
     # Artihmetic operations
-    def Add(self, a, b):
+    def Add(self, a, b, isfloat=False):
         if ConcreteDomain.belongto(a):
             if a.value() == 0:
                 return b
             if ConcreteDomain.belongto(b):
                 if b.value() == 0:
                     return a
-                return ConcreteDomain.Add(a, b)
-        return opt(SymbolicDomain.Add(self.lift(a), self.lift(b)))
+                return ConcreteDomain.Add(a, b, isfloat)
+        lift = self.lift
+        return opt(SymbolicDomain.Add(lift(a), lift(b), isfloat))
 
-    def Sub(self, a, b):
+    def Sub(self, a, b, isfloat=False):
         if ConcreteDomain.belongto(b):
             if b.value() == 0:
                 return a
             if ConcreteDomain.belongto(a):
-                return ConcreteDomain.Sub(a, b)
-        return opt(SymbolicDomain.Sub(self.lift(a), self.lift(b)))
+                return ConcreteDomain.Sub(a, b, isfloat)
+        lift = self.lift
+        return opt(SymbolicDomain.Sub(lift(a), lift(b), isfloat))
 
-    def Mul(self, a, b):
+    def Mul(self, a, b, isfloat=False):
         if ConcreteDomain.belongto(a):
             if a.value() == 0:
                 return a
@@ -358,21 +360,24 @@ class ExprManager:
                     return b
                 if b.value() == 1:
                     return a
-                return ConcreteDomain.Mul(a, b)
+                return ConcreteDomain.Mul(a, b, isfloat)
         elif ConcreteDomain.belongto(b):
             if b.value() == 1:
                 return a
-        return opt(SymbolicDomain.Mul(self.lift(a), self.lift(b)))
+        lift = self.lift
+        return opt(SymbolicDomain.Mul(lift(a), lift(b), isfloat))
 
-    def Div(self, a, b, unsigned=False):
+    def Div(self, a, b, unsigned=False, isfloat=False):
         if ConcreteDomain.belongto(a):
             if a.value() == 0:
                 return a
             if ConcreteDomain.belongto(b):
                 return ConcreteDomain.Div(a, b, unsigned)
-        return opt(SymbolicDomain.Div(self.lift(a), self.lift(b), unsigned))
+        lift = self.lift
+        return opt(SymbolicDomain.Div(lift(a), lift(b), unsigned, isfloat))
 
     def Rem(self, a, b, unsigned=False):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Rem(a, b, unsigned)
-        return opt(SymbolicDomain.Rem(self.lift(a), self.lift(b), unsigned))
+        lift = self.lift
+        return opt(SymbolicDomain.Rem(lift(a), lift(b), unsigned))

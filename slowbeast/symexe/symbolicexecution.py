@@ -39,9 +39,7 @@ class SymbolicExecutor(Interpreter):
         self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=SExecutor
     ):
         self.solver = Solver()
-        super().__init__(
-            P, opts, executor or ExecutorClass(self.solver, opts)
-        )
+        super().__init__(P, opts, executor or ExecutorClass(self.solver, opts))
         self.stats = SEStats()
         # outputs handler
         self.ohandler = ohandler
@@ -136,12 +134,9 @@ class SymbolicExecutor(Interpreter):
         opts = SEOptions(self.getOptions())
         opts.replay_errors = False
         handler = GatherStates()
-        SE = SymbolicExecutor(self.getProgram(),
-                              handler,
-                              opts)
+        SE = SymbolicExecutor(self.getProgram(), handler, opts)
         SE.set_input_vector(ivec)
         SE.run()
         if len(handler.states) != 1:
             return None
         return handler.states[0]
-

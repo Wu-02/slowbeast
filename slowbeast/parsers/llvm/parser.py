@@ -54,7 +54,6 @@ def parseSpecialFCmp(inst, op1, op2):
     return None
 
 
-
 def parseFCmp(inst):
     parts = str(inst).split()
     if parts[1] != "=":
@@ -159,6 +158,7 @@ def offset_of_struct_elem(llvmmodule, ty, cval):
 
     return off
 
+
 class Parser:
     def __init__(self):
         self.llvmmodule = None
@@ -179,7 +179,6 @@ class Parser:
 
         assert ret, "Do not have an operand: {0}".format(op)
         return ret
-
 
     def getBBlock(self, llvmb):
         return self._bblocks[llvmb]
@@ -255,19 +254,21 @@ class Parser:
 
         op1 = self.getOperand(operands[0])
         op2 = self.getOperand(operands[1])
+        isfloat = False
         if opcode.startswith("f"):
             op1 = to_float_ty(op1)
             op2 = to_float_ty(op2)
+            isfloat = True
         if opcode in ("add", "fadd"):
-            I = Add(op1, op2)
+            I = Add(op1, op2, isfloat)
         elif opcode in ("sub", "fsub"):
-            I = Sub(op1, op2)
+            I = Sub(op1, op2, isfloat)
         elif opcode in ("mul", "fmul"):
-            I = Mul(op1, op2)
+            I = Mul(op1, op2, isfloat)
         elif opcode in ("sdiv", "fdiv"):
-            I = Div(op1, op2)
+            I = Div(op1, op2, isfloat)
         elif opcode == "udiv":
-            I = Div(op1, op2, unsigned=True)
+            I = Div(op1, op2, unsigned=True, fp=isfloat)
         else:
             raise NotImplementedError(
                 "Artihmetic operation unsupported: {0}".format(inst)
@@ -327,7 +328,6 @@ class Parser:
         I = Ite(cond, op1, op2)
         self._addMapping(inst, I)
         return [I]
-
 
     def _createRem(self, inst):
         operands = getLLVMOperands(inst)
@@ -546,7 +546,9 @@ class Parser:
                 var = self.getOperand(idx)
                 assert var, "Unsupported GEP instruction"
                 if idx is not operands[-1]:
-                    raise NotImplementedError("Variable in the middle of GEP is unsupported now")
+                    raise NotImplementedError(
+                        "Variable in the middle of GEP is unsupported now"
+                    )
 
                 mulbw = type_size_in_bits(self.llvmmodule, idx.type)
                 assert 0 < mulbw <= 64, "Invalid type size: {mulbw}"
@@ -559,7 +561,7 @@ class Parser:
                 assert ty.is_pointer or ty.is_array
                 ty = ty.element_type
                 elemSize = type_size(self.llvmmodule, ty)
- 
+
                 M = Mul(var, ConcreteVal(elemSize, SizeType))
                 varIdx.append(M)
                 if shift != 0:
@@ -628,10 +630,8 @@ class Parser:
             return self._createZExt(inst)
         elif opcode == "sext":
             return self._createSExt(inst)
-        elif opcode in ("uitofp", "sitofp", "fptosi", "fptoui",
-                        "fpext", "fptrunc"):
-            return self._createReinterpCast(inst, opcode in ("uitofp",
-                                                             "fptoui"))
+        elif opcode in ("uitofp", "sitofp", "fptosi", "fptoui", "fpext", "fptrunc"):
+            return self._createReinterpCast(inst, opcode in ("uitofp", "fptoui"))
         elif opcode == "ptrtoint":
             return self._createPtrToInt(inst)
         elif opcode == "inttoptr":

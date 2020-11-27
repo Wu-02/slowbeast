@@ -185,7 +185,7 @@ class SEState(ExecutionState):
 
 class IncrementalSEState(SEState):
     def __init__(self, executor, pc, m, solver=None):
-        if solver: #copy ctor
+        if solver:  # copy ctor
             super().__init__(executor, pc, m, None, None)
         else:
             C = IncrementalConstraintsSet()
@@ -209,5 +209,3 @@ class IncrementalSEState(SEState):
         self._nondets_ro = True
 
         return new
-
-

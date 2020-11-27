@@ -405,8 +405,9 @@ class Cmp(ValueInstruction):
             self.getOperand(0).as_value(),
             Cmp.predicateStr(self.getPredicate(), self.isUnsigned()),
             self.getOperand(1).as_value(),
-            "f" if self._fp else ""
+            "f" if self._fp else "",
         )
+
 
 class UnaryOperation(ValueInstruction):
     NEG = 1
@@ -486,9 +487,10 @@ class Cast(UnaryOperation):
 
     def __str__(self):
         return "x{0} = cast {1} to {2}{3}".format(
-            self.get_id(), self.getOperand(0).as_value(),
+            self.get_id(),
+            self.getOperand(0).as_value(),
             "signed " if self._signed else "",
-            self.casttype()
+            self.casttype(),
         )
 
 
@@ -601,49 +603,75 @@ class BinaryOperation(ValueInstruction):
 
 
 class Add(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b, fp=False):
         super().__init__(BinaryOperation.ADD, a, b)
+        self._fp = fp
+
+    def is_fp(self):
+        return self._fp
 
     def __str__(self):
-        return "x{0} = {1} + {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+        return "x{0} = {1} +{3} {2}".format(
+            self.get_id(),
+            self.getOperand(0).as_value(),
+            self.getOperand(1).as_value(),
+            "." if self._fp else "",
         )
 
 
 class Sub(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b, fp=False):
         super().__init__(BinaryOperation.SUB, a, b)
+        self._fp = fp
+
+    def is_fp(self):
+        return self._fp
 
     def __str__(self):
-        return "x{0} = {1} - {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+        return "x{0} = {1} -{3} {2}".format(
+            self.get_id(),
+            self.getOperand(0).as_value(),
+            self.getOperand(1).as_value(),
+            "." if self._fp else "",
         )
 
 
 class Mul(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b, fp=False):
         super().__init__(BinaryOperation.MUL, a, b)
+        self._fp = fp
+
+    def is_fp(self):
+        return self._fp
 
     def __str__(self):
-        return "x{0} = {1} * {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+        return "x{0} = {1} *{3} {2}".format(
+            self.get_id(),
+            self.getOperand(0).as_value(),
+            self.getOperand(1).as_value(),
+            "." if self._fp else "",
         )
 
 
 class Div(BinaryOperation):
-    def __init__(self, a, b, unsigned=False):
+    def __init__(self, a, b, unsigned=False, fp=False):
         super().__init__(BinaryOperation.DIV, a, b)
         self._unsigned = unsigned
+        self._fp = fp
+
+    def is_fp(self):
+        return self._fp
 
     def isUnsigned(self):
         return self._unsigned
 
     def __str__(self):
-        return "x{0} = {1} /{3} {2}".format(
+        return "x{0} = {1} /{3}{4} {2}".format(
             self.get_id(),
             self.getOperand(0).as_value(),
             self.getOperand(1).as_value(),
             "u" if self.isUnsigned() else "",
+            "." if self._fp else "",
         )
 
 
@@ -723,6 +751,7 @@ class Xor(BinaryOperation):
             self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
 
+
 # TODO: do we want this instruction? (can we replace it somehow without
 # creating an artificial braching?).
 class Ite(ValueInstruction):
@@ -736,7 +765,7 @@ class Ite(ValueInstruction):
         return self._cond
 
     def __repr__(self):
-        return f"{self.as_value()} = if {self._cond.as_value()} then "\
-               f"{self.getOperand(0).as_value()} else {self.getOperand(1).as_value()}"
-
-
+        return (
+            f"{self.as_value()} = if {self._cond.as_value()} then "
+            f"{self.getOperand(0).as_value()} else {self.getOperand(1).as_value()}"
+        )

@@ -57,8 +57,9 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
         # val = self.getSolver().freshValue(f"uninit_{frm.as_value()}", 8 * bytesNum)
-        expr = state.getSolver().Var(f"{to.as_value()}_load_of_{frm.as_value()}",
-                                     IntType(8 * bytesNum))
+        expr = state.getSolver().Var(
+            f"{to.as_value()}_load_of_{frm.as_value()}", IntType(8 * bytesNum)
+        )
         val = NondetLoad.fromExpr(expr, to, frm)
         state.addNondet(val)
         # write the fresh value into memory, so that
@@ -84,7 +85,9 @@ class LazySymbolicMemoryModel(SymbolicMemoryModel):
             if err:
                 assert err.isMemError()
                 if err.isUninitRead():
-                    val, err = self.uninitializedRead(state, toOp, fromOp, frm, bytesNum)
+                    val, err = self.uninitializedRead(
+                        state, toOp, fromOp, frm, bytesNum
+                    )
 
         except NotImplementedError as e:
             state.setKilled(str(e))

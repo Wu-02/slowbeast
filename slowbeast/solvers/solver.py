@@ -53,8 +53,6 @@ if _use_z3:
         solver.pop()
         return vals
 
-
-
     def smallmodels(assumpt, *args):
         s = Z3Solver()
         for a in assumpt:
@@ -236,6 +234,7 @@ class SymbolicSolver(SolverIntf):
         m = models(assumpt, *e)
         return map_model(m, e)
 
+
 class IncrementalSolver(SymbolicSolver):
     def __init__(self, em=global_expr_manager):
         # FIXME: add local expr manager
@@ -271,7 +270,6 @@ class IncrementalSolver(SymbolicSolver):
             return None
         m = models_inc(self._solver, assumpt, *e)
         return map_model(m, e)
-
 
     def __repr__(self):
         return f"IncrementalSolver: {self._solver}"

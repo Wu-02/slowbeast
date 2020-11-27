@@ -8,7 +8,6 @@ from slowbeast.solvers.solver import getGlobalExprManager
 
 
 class MemoryObject(CoreMO):
-
     def read(self, bts, off=ConcreteVal(0, OffsetType)):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
@@ -48,13 +47,17 @@ class MemoryObject(CoreMO):
                         startb = offval - o
                         cast = EM.Cast(predval, IntType(predval.bitwidth()))
                         if cast:
-                            extr = EM.Extract(cast,
-                                              ConcreteVal(8*startb, OffsetType),
-                                              ConcreteVal(8*(offval + bts)-1, OffsetType))
+                            extr = EM.Extract(
+                                cast,
+                                ConcreteVal(8 * startb, OffsetType),
+                                ConcreteVal(8 * (offval + bts) - 1, OffsetType),
+                            )
                             assert extr.bytewidth() == bts, extr
                             return extr, None
                         else:
-                            dbg(f"Unsupported conversion from {predval.type()} to i{predval.bitwidth()}")
+                            dbg(
+                                f"Unsupported conversion from {predval.type()} to i{predval.bitwidth()}"
+                            )
                             break
                     break
                 o = o - 4
@@ -69,30 +72,38 @@ class MemoryObject(CoreMO):
         valbw = val.bytewidth()
         if valbw != bts:
             # HACK!
-            if offval == 0: # for != 0 we do not know if it has been overwritten
+            if offval == 0:  # for != 0 we do not know if it has been overwritten
                 if valbw > bts:
                     # truncate the value
                     EM = getGlobalExprManager()
                     cast = EM.Cast(val, IntType(val.bitwidth()))
                     if cast:
-                        extr = EM.Extract(cast,
-                                          ConcreteVal(0, OffsetType),
-                                          ConcreteVal(8 * (offval + bts) - 1, OffsetType))
+                        extr = EM.Extract(
+                            cast,
+                            ConcreteVal(0, OffsetType),
+                            ConcreteVal(8 * (offval + bts) - 1, OffsetType),
+                        )
                         assert extr.bytewidth() == bts, extr
                         return extr, None
                     else:
-                        dbg(f"Unsupported conversion from {val.type()} to i{val.bitwidth()}")
+                        dbg(
+                            f"Unsupported conversion from {val.type()} to i{val.bitwidth()}"
+                        )
                         # fall-thourgh
                 else:
                     # join two consequiteve values if possible
                     nxtval = values.get(offval + valbw)
                     if nxtval and valbw + nxtval.bytewidth() >= bts:
                         EM = getGlobalExprManager()
-                        extr = EM.Extract(EM.Cast(nxtval, IntType(val.bitwidth())),
-                                          ConcreteVal(0, OffsetType),
-                                          ConcreteVal(8 * (bts - valbw) - 1, OffsetType))
+                        extr = EM.Extract(
+                            EM.Cast(nxtval, IntType(val.bitwidth())),
+                            ConcreteVal(0, OffsetType),
+                            ConcreteVal(8 * (bts - valbw) - 1, OffsetType),
+                        )
                         assert valbw + extr.bytewidth() == bts, extr
-                        expr = EM.Concat(extr, val) # the values are store in little endian
+                        expr = EM.Concat(
+                            extr, val
+                        )  # the values are store in little endian
                         assert expr.bytewidth() == bts, expr
                         return expr, None
 
@@ -100,7 +111,7 @@ class MemoryObject(CoreMO):
                 MemError.UNSUPPORTED,
                 f"Reading bytes from object defined by parts is unsupported atm: "
                 f"reading {bts} bytes from off {offval} where is value with "
-                f"{val.bytewidth()} bytes"
+                f"{val.bytewidth()} bytes",
             )
 
         # FIXME: make me return Bytes objects (a sequence of bytes)

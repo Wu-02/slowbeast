@@ -1,4 +1,14 @@
-from slowbeast.ir.instruction import Alloc, Assume, Assert, Cmp, Print, Abs, FpOp, ZExt, Cast
+from slowbeast.ir.instruction import (
+    Alloc,
+    Assume,
+    Assert,
+    Cmp,
+    Print,
+    Abs,
+    FpOp,
+    ZExt,
+    Cast,
+)
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from ...domains.concrete import ConcreteVal
 from slowbeast.ir.types import FloatType, IntType, SizeType
@@ -16,7 +26,7 @@ special_functions = [
     "__isinf",
     "__isinff",
     "__isinfl",
-    #NOTE: do we want to implement these as instructions? Probably not...
+    # NOTE: do we want to implement these as instructions? Probably not...
     "__fpclassify",
     "__fpclassifyf",
     "__fpclassifyl",
@@ -101,18 +111,16 @@ def create_special_fun(parser, inst, fun):
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.getOperand(getLLVMOperands(inst)[0]))
         O = FpOp(FpOp.IS_INF, val)
-        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type),
-                                SizeType))
+        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type), SizeType))
         return P, [O, P]
     elif fun in "nan":
-        I = Cast(ConcreteVal(float("NaN"), FloatType(64)),  FloatType(64))
+        I = Cast(ConcreteVal(float("NaN"), FloatType(64)), FloatType(64))
         return I, [I]
     elif fun in ("__isnan", "__isnanf", "__isnanfl"):
         val = to_float_ty(parser.getOperand(getLLVMOperands(inst)[0]))
         O = FpOp(FpOp.IS_NAN, val)
         # the functions return int
-        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type),
-                                SizeType))
+        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type), SizeType))
         return P, [O, P]
     elif fun in ("__fpclassify", "__fpclassifyf", "__fpclassifyl"):
         val = to_float_ty(parser.getOperand(getLLVMOperands(inst)[0]))

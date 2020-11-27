@@ -141,6 +141,7 @@ class Executor(ConcreteExecutor):
                 F.addConstraint(ncond)
 
             if T and F:
+                print("--- FORK ----")
                 self.stats.forks += 1
 
         return T, F
@@ -287,8 +288,12 @@ class Executor(ConcreteExecutor):
                 return state
 
         x = self.cmpValues(
-            state.getExprManager(), instr.getPredicate(), op1, op2,
-            instr.isUnsigned(), instr.isFloat()
+            state.getExprManager(),
+            instr.getPredicate(),
+            op1,
+            op2,
+            instr.isUnsigned(),
+            instr.isFloat(),
         )
         state.set(instr, x)
         state.pc = state.pc.get_next_inst()
@@ -373,20 +378,20 @@ class Executor(ConcreteExecutor):
         else:
             opcode = instr.getOperation()
             if opcode == BinaryOperation.ADD:
-                r = E.Add(op1, op2)
+                r = E.Add(op1, op2, instr.is_fp())
             elif opcode == BinaryOperation.SUB:
-                r = E.Sub(op1, op2)
+                r = E.Sub(op1, op2, instr.is_fp())
             elif opcode == BinaryOperation.MUL:
-                r = E.Mul(op1, op2)
+                r = E.Mul(op1, op2, instr.is_fp())
             elif opcode == BinaryOperation.DIV:
-                if op2.is_float():
+                if instr.is_fp():
                     # compilers allow division by FP 0
-                    r = E.Div(op1, op2, instr.isUnsigned())
+                    r = E.Div(op1, op2, instr.isUnsigned(), fp=True)
                 else:
-                    good, bad = self.fork(state,
-                                          E.Ne(op2, ConcreteVal(0, op2.type())))
+                    good, bad = self.fork(state, E.Ne(op2, ConcreteVal(0, op2.type())))
                     if good:
                         state = good
+                        assert not instr.is_fp()
                         r = E.Div(op1, op2, instr.isUnsigned())
                     if bad:
                         bad.setKilled("Division by 0")

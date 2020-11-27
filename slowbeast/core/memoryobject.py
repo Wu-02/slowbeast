@@ -74,7 +74,8 @@ class MemoryObject:
             for o, val in self.values.items():
                 if offval < o + val.bytewidth() and offval + bw > o:
                     return MemError(
-                        MemError.UNSUPPORTED, "Writing overlapping values to an object is not supported yet"
+                        MemError.UNSUPPORTED,
+                        "Writing overlapping values to an object is not supported yet",
                     )
         if x.bytewidth() > self.getSize().value() + offval:
             return MemError(
@@ -125,7 +126,7 @@ class MemoryObject:
                 MemError.UNSUPPORTED,
                 f"Reading bytes from object defined by parts is unsupported atm: "
                 f"reading {bts} bytes from off {offval} where is value with "
-                f"{val.bytewidth()} bytes"
+                f"{val.bytewidth()} bytes",
             )
 
         # FIXME: make me return Bytes objects (a sequence of bytes)

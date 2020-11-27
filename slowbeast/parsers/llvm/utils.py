@@ -21,32 +21,46 @@ def _getInt(s):
     except ValueError:
         return None
 
+
 def trunc_to_float(x):
     return unpack("f", pack("f", x))[0]
+
 
 def to_float_ty(val):
     if isinstance(val, ConcreteVal) and not val.is_float():
         return ConcreteVal(float(val.value()), FloatType(val.bitwidth()))
     return val
 
+
 def _get_float(s):
-    from z3 import FPVal, fpToFP, fpFPToFP, simplify, BitVecVal, Float32, Float64, RNE, fpToIEEEBV
+    from z3 import (
+        FPVal,
+        fpToFP,
+        fpFPToFP,
+        simplify,
+        BitVecVal,
+        Float32,
+        Float64,
+        RNE,
+        fpToIEEEBV,
+    )
+
     try:
         if s.startswith("0x"):
-            # llvm writes the constants as double 
+            # llvm writes the constants as double
             # FIXME: get the byte order from module
-            return trunc_to_float(unpack(">d",
-                                         int(s, 16).to_bytes(8, "big"))[0])
+            return trunc_to_float(unpack(">d", int(s, 16).to_bytes(8, "big"))[0])
         else:
             return float(s)
     except ValueError:
         return None
 
+
 def _get_double(s):
     try:
         if s.startswith("0x"):
             # llvm writes the constants as double (even when it is 32 bit)
-            return  unpack(">d", int(s, 16).to_bytes(8, "big"))[0]
+            return unpack(">d", int(s, 16).to_bytes(8, "big"))[0]
         else:
             return float(s)
     except ValueError:
@@ -139,6 +153,7 @@ def getFloatConstant(sval, isdouble=True):
     if isdouble:
         return _get_double(sval)
     return _get_float(sval)
+
 
 def getConstant(val):
     # good, this is so ugly. But llvmlite does

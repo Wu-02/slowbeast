@@ -1,4 +1,4 @@
-from slowbeast.ir.types import IntType, BoolType, Type, PointerType
+from slowbeast.ir.types import IntType, BoolType, Type, PointerType, FloatType
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
 from slowbeast.util.debugging import FIXME
@@ -7,25 +7,55 @@ from math import isinf, isnan, isfinite
 from struct import pack, unpack
 
 
-def trunc_to_float(x, ty):
+def trunc_to_float(x, bw):
     # isnt there a more efficient way? Probably just to use numpy.float32
     # (but it seem to use a different rounding mode), or write the float
     # handling directly in C (there must be a library with Python bindings
     # for that)
-    if ty.bitwidth() == 32:
+    if bw == 32:
         return unpack("f", pack("f", x))[0]
     return x
+
 
 def float_to_bv(x, unsigned=True):
     if not x.is_float():
         return x.value()
     bw = x.bitwidth()
     if bw == 32:
-        d = (unpack("I", pack("f", x.value())) if unsigned else unpack("i", pack("f", x.value())))[0]
+        d = (
+            unpack("I", pack("f", x.value()))
+            if unsigned
+            else unpack("i", pack("f", x.value()))
+        )[0]
     else:
         assert bw == 64, f"{x}, bw: {bw}"
-        d = (unpack("L", pack("d", x.value())) if unsigned else unpack("l", pack("d", x.value())))[0]
+        d = (
+            unpack("L", pack("d", x.value()))
+            if unsigned
+            else unpack("l", pack("d", x.value()))
+        )[0]
     return d
+
+
+def bv_to_float(x, unsigned=False):
+    val = x.value()
+    if x.is_float():
+        return val
+
+    if unsigned:
+        r = (
+            unpack("f", pack("I", val))
+            if x.bitwidth() == 32
+            else unpack("d", pack("L", val))
+        )
+    else:
+        r = (
+            unpack("f", pack("i", val))
+            if x.bitwidth() == 32
+            else unpack("d", pack("l", val))
+        )
+    return r[0]
+
 
 def to_unsigned(x, bw):
     """ Get unsigned value for signed in 2's complement """
@@ -160,8 +190,7 @@ class ConcreteDomain:
         if a.is_bool():
             return ConcreteBool(a.value() and b.value())
         else:
-            return ConcreteVal(float_to_bv(a) & float_to_bv(b),
-                               IntType(a.bitwidth()))
+            return ConcreteVal(float_to_bv(a) & float_to_bv(b), IntType(a.bitwidth()))
 
     def Or(a, b):
         assert ConcreteDomain.belongto(a, b)
@@ -169,14 +198,12 @@ class ConcreteDomain:
         if a.is_bool():
             return ConcreteBool(a.value() or b.value())
         else:
-            return ConcreteVal(float_to_bv(a) | float_to_bv(b),
-                               IntType(a.bitwidth()))
+            return ConcreteVal(float_to_bv(a) | float_to_bv(b), IntType(a.bitwidth()))
 
     def Xor(a, b):
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         assert a.type() == b.type()
-        return ConcreteVal(float_to_bv(a) ^ float_to_bv(b),
-                           IntType(a.bitwidth()))
+        return ConcreteVal(float_to_bv(a) ^ float_to_bv(b), IntType(a.bitwidth()))
 
     def Not(a):
         assert ConcreteDomain.belongto(a)
@@ -206,14 +233,16 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a)
         if a.is_int():
             if ty.is_float():
-                return ConcreteVal(trunc_to_float(float(a.value()), ty), ty)
+                return ConcreteVal(trunc_to_float(float(a.value()),
+                                                  ty.bitwidth()), ty)
             elif ty.is_int():
                 return ConcreteVal(a.value(), ty)
         elif a.is_float():
             if ty.is_float():
-                return ConcreteVal(trunc_to_float(a.value(), ty), ty)
+                return ConcreteVal(trunc_to_float(a.value(),
+                                                  ty.bitwidth()), ty)
             elif ty.is_int():
-               return ConcreteVal(float_to_bv(a), ty)
+                return ConcreteVal(float_to_bv(a), ty)
         return None  # unsupported conversion
 
     def Shl(a, b):
@@ -250,16 +279,19 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         bw = b.bitwidth()
         return ConcreteInt(
-            ((a.value() << bw) | b.value()), a.bitwidth() + bw,
+            ((a.value() << bw) | b.value()),
+            a.bitwidth() + bw,
         )
-
 
     def Rem(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         assert b.value() != 0, "Invalid remainder"
         if unsigned:
-            return ConcreteVal(to_unsigned(a.value(), a.bitwidth()) %
-                               to_unsigned(b.value(), b.bitwidth()), a.type())
+            return ConcreteVal(
+                to_unsigned(a.value(), a.bitwidth())
+                % to_unsigned(b.value(), b.bitwidth()),
+                a.type(),
+            )
         return ConcreteVal(a.value() % b.value(), a.type())
 
     def Neg(a):
@@ -267,7 +299,8 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a)
         ty = a.type()
         if a.is_float():
-            return ConcreteVal(trunc_to_float(-a.value(), ty), ty)
+            return ConcreteVal(trunc_to_float(-a.value(),
+                                              ty.bitwidth()), ty)
         return ConcreteVal(wrap_to_bw(-a.value(), ty.bitwidth()), ty)
 
     def Abs(a):
@@ -286,14 +319,18 @@ class ConcreteDomain:
         if op == FpOp.FPCLASSIFY:
             FIXME("Using implementation dependent constants")
             v = val.value()
-            if isnan(v): return ConcreteInt(0, 32)
-            if isinf(v): return ConcreteInt(1, 32)
-            if v >= 0 and v <= 0: return ConcreteInt(2, 32)
-            if isfinite(v): return ConcreteInt(4, 32)
-            return ConcreteInt(3, 32) # subnormal
+            if isnan(v):
+                return ConcreteInt(0, 32)
+            if isinf(v):
+                return ConcreteInt(1, 32)
+            if v >= 0 and v <= 0:
+                return ConcreteInt(2, 32)
+            if isfinite(v):
+                return ConcreteInt(4, 32)
+            return ConcreteInt(3, 32)  # subnormal
         if op == FpOp.SIGNBIT:
             # FIXME! gosh this is ugly...
-            return ConcreteInt(1 if str(val.value())[0] == '-' else 0, 32)
+            return ConcreteInt(1 if str(val.value())[0] == "-" else 0, 32)
         raise NotImplementedError("Invalid/unsupported FP operation")
 
     ##
@@ -303,7 +340,7 @@ class ConcreteDomain:
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
             aval, bval = float(a.value()), float(b.value())
-            if unsigned: # means unordered for floats
+            if unsigned:  # means unordered for floats
                 return ConcreteBool(aval <= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval <= bval)
 
@@ -318,7 +355,7 @@ class ConcreteDomain:
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
             aval, bval = float(a.value()), float(b.value())
-            if unsigned: # means unordered for floats
+            if unsigned:  # means unordered for floats
                 return ConcreteBool(aval < bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval < bval)
 
@@ -333,7 +370,7 @@ class ConcreteDomain:
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
             aval, bval = float(a.value()), float(b.value())
-            if unsigned: # means unordered for floats
+            if unsigned:  # means unordered for floats
                 return ConcreteBool(aval >= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval >= bval)
 
@@ -348,7 +385,7 @@ class ConcreteDomain:
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
             aval, bval = float(a.value()), float(b.value())
-            if unsigned: # means unordered for floats
+            if unsigned:  # means unordered for floats
                 return ConcreteBool(aval > bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval > bval)
 
@@ -358,13 +395,12 @@ class ConcreteDomain:
             return ConcreteBool(to_unsigned(aval, bw) > to_unsigned(bval, bw))
         return ConcreteBool(aval > bval)
 
-
     def Eq(a, b, unsigned=False, floats=False):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
             aval, bval = float(a.value()), float(b.value())
-            if unsigned: # means unordered for floats
+            if unsigned:  # means unordered for floats
                 return ConcreteBool(aval == bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval == bval)
 
@@ -379,7 +415,7 @@ class ConcreteDomain:
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
             aval, bval = float(a.value()), float(b.value())
-            if unsigned: # means unordered for floats
+            if unsigned:  # means unordered for floats
                 return ConcreteBool(aval != bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval != bval)
 
@@ -389,63 +425,72 @@ class ConcreteDomain:
             return ConcreteBool(to_unsigned(aval, bw) != to_unsigned(bval, bw))
         return ConcreteBool(aval != bval)
 
-
-
     ##
     # Arithmetic operations
-    def Add(a, b):
+    def Add(a, b, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
-        # FIXME: add self-standing float domain?
-        ty = a.type()
-        if a.is_float():
-            return ConcreteVal(trunc_to_float(a.value() + b.value(), ty), ty)
-        bw = a.type().bitwidth()
-        return ConcreteVal(wrap_to_bw(a.value() + b.value(), bw), ty)
+        # FIXME: add self-standing float domain
+        bw = a.bitwidth()
+        if isfloat:
+            return ConcreteVal(trunc_to_float(bv_to_float(a) + bv_to_float(b),
+                                              bw),
+                               FloatType(bw))
+        return ConcreteVal(wrap_to_bw(a.value() + b.value(), bw), IntType(bw))
 
-    def Sub(a, b):
+    def Sub(a, b, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
-        ty = a.type()
-        if a.is_float():
-            return ConcreteVal(trunc_to_float(a.value() - b.value(), ty), ty)
-        bw = a.type().bitwidth()
-        return ConcreteVal(wrap_to_bw(a.value() - b.value(), bw), ty)
+        bw = a.bitwidth()
+        if isfloat:
+            return ConcreteVal(trunc_to_float(bv_to_float(a) - bv_to_float(b),
+                                              bw), FloatType(bw))
+        return ConcreteVal(wrap_to_bw(a.value() - b.value(), bw), IntType(bw))
 
-    def Mul(a, b):
+    def Mul(a, b, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
-        ty = a.type()
-        if a.is_float():
-            return ConcreteVal(trunc_to_float(a.value() * b.value(), ty), ty)
-        bw = a.type().bitwidth()
-        return ConcreteVal(wrap_to_bw(a.value() * b.value(), bw), ty)
+        bw = a.bitwidth()
+        if isfloat:
+            return ConcreteVal(trunc_to_float(bv_to_float(a) * bv_to_float(b),
+                                              bw), FloatType(bw))
+        return ConcreteVal(wrap_to_bw(a.value() * b.value(), bw), IntType(bw))
 
-    def Div(a, b, unsigned=False):
+    def Div(a, b, unsigned=False, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a}, {b}"
         assert a.is_int() or a.is_float()
-        result_ty = a.type()
-        if a.is_float():
+        bw = a.bitwidth()
+        if isfloat:
+            result_ty = FloatType(bw)
             if b.value() == 0:
                 aval = a.value()
                 if aval > 0:
-                    return ConcreteVal(trunc_to_float(float("inf"), result_ty), result_ty)
+                    return ConcreteVal(
+                        trunc_to_float(float("inf"), bw), result_ty
+                    )
                 if aval < 0:
-                    return ConcreteVal(trunc_to_float(float("-inf"),
-                                                      result_ty), result_ty)
+                    return ConcreteVal(
+                        trunc_to_float(float("-inf"), bw), result_ty
+                    )
                 else:
-                    return ConcreteVal(trunc_to_float(float("NaN"), result_ty),
-                                       result_ty)
-            return ConcreteVal(trunc_to_float(a.value() / b.value(), result_ty),
-                               result_ty)
+                    return ConcreteVal(
+                        trunc_to_float(float("NaN"), bw), result_ty
+                    )
+            return ConcreteVal(
+                trunc_to_float(
+                    bv_to_float(a, unsigned) / bv_to_float(b, unsigned), bw
+                ),
+                result_ty,
+            )
+        result_ty = IntType(bw)
         if unsigned:
-            bw = a.bitwidth()
-            return ConcreteVal(to_unsigned(a.value(), bw) /
-                               to_unsigned(b.value(), bw), result_ty)
+            return ConcreteVal(
+                to_unsigned(a.value(), bw) / to_unsigned(b.value(), bw), result_ty
+            )
         return ConcreteVal(
             wrap_to_bw(int(a.value() / b.value()), result_ty.bitwidth()), result_ty
         )
