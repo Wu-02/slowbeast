@@ -55,6 +55,7 @@ if _use_z3:
         fpIsNaN,
         fpToFP,
         fpFPToFP,
+        fpBVToFP,
         RNE,
         fpToUBV,
         fpEQ,
@@ -72,11 +73,11 @@ if _use_z3:
     def to_double(x):
         if x.bitwidth() == 64:
             return x._expr
-        return fpFPToFP(RNE(), x._expr, Float64())
+        return simplify(fpFPToFP(RNE(), x._expr, Float64()))
 
     def fpToBV(x):
         if x.is_float():
-            return fpToUBV(RNE(), x._expr, BitVecSort(x.bitwidth()))
+            return simplify(fpToUBV(RNE(), x._expr, BitVecSort(x.bitwidth())))
 
         return x.unwrap()
 
