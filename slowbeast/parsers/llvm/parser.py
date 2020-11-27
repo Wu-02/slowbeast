@@ -146,6 +146,19 @@ def countSyms(s, sym):
             cnt += 1
     return cnt
 
+
+def offset_of_struct_elem(llvmmodule, ty, cval):
+    assert ty.is_struct, ty
+    assert cval < ty.struct_num_elements
+    off = 0
+    for i in range(0, cval):
+        elemty = ty.struct_element_type(i)
+        tysize = type_size(llvmmodule, elemty)
+        assert tysize > 0, f"Invalid type size: {tysize}"
+        off += tysize
+
+    return off
+
 class Parser:
     def __init__(self):
         self.llvmmodule = None
@@ -524,8 +537,7 @@ class Parser:
     def _createGep(self, inst):
         operands = getLLVMOperands(inst)
         assert is_pointer_ty(operands[0].type), "First type of GEP is not a pointer"
-        ty = operands[0].type.element_type
-        elemSize = type_size(self.llvmmodule, ty)
+        ty = operands[0].type
         shift = 0
         varIdx = []
         for idx in operands[1:]:
@@ -533,26 +545,37 @@ class Parser:
             if not c:
                 var = self.getOperand(idx)
                 assert var, "Unsupported GEP instruction"
-                assert (
-                    idx is operands[-1]
-                ), "Variable in the middle of GEP is unsupported now"
+                if idx is not operands[-1]:
+                    raise NotImplementedError("Variable in the middle of GEP is unsupported now")
+
                 mulbw = type_size_in_bits(self.llvmmodule, idx.type)
                 assert 0 < mulbw <= 64, "Invalid type size: {mulbw}"
                 if mulbw != SizeType.bitwidth():
                     C = ZExt(var, ConcreteVal(SizeType.bitwidth(), SizeType))
                     varIdx.append(C)
                     var = C
+
+                # structs are always accessed by constant indices
+                assert ty.is_pointer or ty.is_array
+                ty = ty.element_type
+                elemSize = type_size(self.llvmmodule, ty)
+ 
                 M = Mul(var, ConcreteVal(elemSize, SizeType))
                 varIdx.append(M)
                 if shift != 0:
                     varIdx.append(Add(M, ConcreteVal(shift, SizeType)))
             else:
                 assert c.is_int(), f"Invalid GEP index: {c}"
-                shift += c.value() * elemSize
-
-            if is_pointer_ty(ty) or is_array_ty(ty):
-                ty = ty.element_type
-            elemSize = type_size(self.llvmmodule, ty)
+                cval = c.value()
+                if ty.is_pointer or ty.is_array:
+                    ty = ty.element_type
+                    elemSize = type_size(self.llvmmodule, ty)
+                    shift += cval * elemSize
+                elif ty.is_struct:
+                    shift += offset_of_struct_elem(self.llvmmodule, ty, cval)
+                    ty = ty.struct_element_type(cval)
+                else:
+                    raise NotImplementedError(f"Invalid GEP type: {ty}")
 
         mem = self.getOperand(operands[0])
 
