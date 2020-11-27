@@ -155,10 +155,10 @@ def getConstant(val):
     bw = _bitwidth(parts[0])
     if not bw:
         return None
-    isfloat = parts[0] == "float"
     isdouble = parts[0] == "double"
+    isfloating = parts[0] == "float" or isdouble
 
-    if isfloat or isdouble:
+    if isfloating:
         c = getFloatConstant(parts[1], isdouble)
     else:
         c = _getInt(parts[1])
@@ -170,7 +170,7 @@ def getConstant(val):
                 return ConstantFalse
         return None
 
-    return ConcreteVal(c, FloatType(bw) if isfloat else IntType(bw))
+    return ConcreteVal(c, FloatType(bw) if isfloating else IntType(bw))
 
 
 def getConstantPtr(val):

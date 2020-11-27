@@ -408,7 +408,7 @@ class ConcreteDomain:
 
     def Div(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.type() == b.type(), f"{a}, {b}"
         assert a.is_int() or a.is_float()
         result_ty = a.type()
         if a.is_float():
