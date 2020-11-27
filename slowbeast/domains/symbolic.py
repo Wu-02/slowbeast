@@ -131,7 +131,7 @@ if _use_z3:
     def bv_const(v, bw):
         return BitVecVal(v, bw)
 
-    def castToBV(b):
+    def boolToBV(b):
         if not b.is_bool():
             return b.unwrap()
         return If(b.unwrap(), bv_const(1, 1), bv_const(0, 1))
@@ -362,10 +362,10 @@ class Future(Expr):
 
 
 def zext_expr(a, bw):
-    return BVZExt(bw - a.bitwidth(), castToBV(a))
+    return BVZExt(bw - a.bitwidth(), boolToBV(a))
 
 def sext_expr(a, bw):
-    return BVSExt(bw - a.bitwidth(), castToBV(a))
+    return BVSExt(bw - a.bitwidth(), boolToBV(a))
 
 
 
@@ -530,16 +530,18 @@ class BVSymbolicDomain:
         bw = b.value()
         assert a.bitwidth() <= bw, "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
-        return Expr(zext_expr(a, bw), IntType(bw))
+        ae = floatToBV(a) if a.is_float() else boolToBV(a)
+        return Expr(BVZExt(bw - a.bitwidth(), ae), IntType(bw))
 
     def SExt(a, b):
         assert BVSymbolicDomain.belongto(a), a
         assert b.is_concrete(), b
-        assert a.is_int(), a
         assert b.is_int(), b
         bw = b.value()
         assert a.bitwidth() <= bw, "Invalid sext argument"
-        return Expr(sext_expr(a, bw), IntType(bw))
+
+        ae = floatToBV(a) if a.is_float() else boolToBV(a)
+        return Expr(BVSExt(bw - a.bitwidth(), ae), IntType(bw))
 
     def Cast(a: Value, ty: Type, signed : bool =True):
         """ Reinterpret cast """

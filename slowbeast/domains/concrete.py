@@ -187,16 +187,16 @@ class ConcreteDomain:
 
     def ZExt(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.is_int() or a.is_bool(), a
         assert a.bitwidth() < b.value(), "Invalid zext argument"
-        return ConcreteInt(to_unsigned(a.value(), a.bitwidth()), b.value())
+        aval = float_to_bv(a, unsigned=True)
+        return ConcreteInt(to_unsigned(aval, a.bitwidth()), b.value())
 
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert a.is_int(), a
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         sb = 1 << (b.value() - 1)
-        val = (a.value() & (sb - 1)) - (a.value() & sb)
+        aval = float_to_bv(a, unsigned=False)
+        val = (aval & (sb - 1)) - (aval & sb)
         return ConcreteInt(val, b.value())
 
     def Cast(a: ConcreteVal, ty: Type):
@@ -264,7 +264,7 @@ class ConcreteDomain:
 
     def Neg(a):
         """ Return the negated number """
-        assert ConcreteDomain.belongto(a, b)
+        assert ConcreteDomain.belongto(a)
         ty = a.type()
         if a.is_float():
             return ConcreteVal(trunc_to_float(-a.value(), ty), ty)
