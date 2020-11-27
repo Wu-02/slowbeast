@@ -580,7 +580,7 @@ class BVSymbolicDomain:
         )
 
     def Concat(a, b):
-        assert BVSymbolicDomain.belongto(a, b)
+        assert BVSymbolicDomain.belongto(a, b), (a, b)
         return Expr(
             BVConcat(a.unwrap(), b.unwrap()),
             IntType(a.bitwidth() + b.bitwidth()),

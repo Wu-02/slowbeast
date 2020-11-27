@@ -16,15 +16,15 @@ def trunc_to_float(x, ty):
         return unpack("f", pack("f", x))[0]
     return x
 
-def float_to_bv(x):
+def float_to_bv(x, unsigned=True):
     if not x.is_float():
         return x.value()
     bw = x.bitwidth()
     if bw == 32:
-        d = unpack("I", pack("f", x.value()))[0]
+        d = (unpack("I", pack("f", x.value())) if unsigned else unpack("i", pack("f", x.value())))[0]
     else:
         assert bw == 64, f"{x}, bw: {bw}"
-        d =  unpack("L", pack("f", x.value()))[0]
+        d = (unpack("L", pack("f", x.value())) if unsigned else unpack("l", pack("f", x.value())))[0]
     return d
 
 def to_unsigned(x, bw):
@@ -308,7 +308,7 @@ class ConcreteDomain:
                 return ConcreteBool(aval <= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval <= bval)
 
-        aval, bval = float_to_bv(a), float_to_bv(b)
+        aval, bval = float_to_bv(a, unsigned), float_to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
             return ConcreteBool(to_unsigned(aval, bw) <= to_unsigned(bval, bw))
@@ -323,7 +323,7 @@ class ConcreteDomain:
                 return ConcreteBool(aval < bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval < bval)
 
-        aval, bval = float_to_bv(a), float_to_bv(b)
+        aval, bval = float_to_bv(a, unsigned), float_to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
             return ConcreteBool(to_unsigned(aval, bw) < to_unsigned(bval, bw))
@@ -338,7 +338,7 @@ class ConcreteDomain:
                 return ConcreteBool(aval >= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval >= bval)
 
-        aval, bval = float_to_bv(a), float_to_bv(b)
+        aval, bval = float_to_bv(a, unsigned), float_to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
             return ConcreteBool(to_unsigned(aval, bw) >= to_unsigned(bval, bw))
@@ -353,7 +353,7 @@ class ConcreteDomain:
                 return ConcreteBool(aval > bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval > bval)
 
-        aval, bval = float_to_bv(a), float_to_bv(b)
+        aval, bval = float_to_bv(a, unsigned), float_to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
             return ConcreteBool(to_unsigned(aval, bw) > to_unsigned(bval, bw))
@@ -369,7 +369,7 @@ class ConcreteDomain:
                 return ConcreteBool(aval == bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval == bval)
 
-        aval, bval = float_to_bv(a), float_to_bv(b)
+        aval, bval = float_to_bv(a, unsigned), float_to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
             return ConcreteBool(to_unsigned(aval, bw) == to_unsigned(bval, bw))
@@ -384,7 +384,7 @@ class ConcreteDomain:
                 return ConcreteBool(aval != bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval != bval)
 
-        aval, bval = float_to_bv(a), float_to_bv(b)
+        aval, bval = float_to_bv(a, unsigned), float_to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
             return ConcreteBool(to_unsigned(aval, bw) != to_unsigned(bval, bw))

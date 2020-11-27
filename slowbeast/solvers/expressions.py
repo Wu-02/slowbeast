@@ -270,7 +270,8 @@ class ExprManager:
     def Concat(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Concat(a, b)
-        return opt(SymbolicDomain.Concat(a, b))
+        lift = self.lift
+        return opt(SymbolicDomain.Concat(lift(a), lift(b)))
 
     def Shl(self, a, b):
         if ConcreteDomain.belongto(a, b):
