@@ -583,7 +583,7 @@ class BVSymbolicDomain:
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
             a, b = castToFP(a), castToFP(b)
-            expr = fpGE(a, b)
+            expr = fpGEQ(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
