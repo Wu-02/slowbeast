@@ -247,6 +247,14 @@ class ConcreteDomain:
             (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
         )
 
+    def Concat(a, b):
+        assert ConcreteDomain.belongto(a, b)
+        bw = b.bitwidth()
+        return ConcreteInt(
+            ((a.value() << bw) | b.value()), a.bitwidth() + bw,
+        )
+
+
     def Rem(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
         assert b.value() != 0, "Invalid remainder"

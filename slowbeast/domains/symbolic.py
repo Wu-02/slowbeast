@@ -26,6 +26,7 @@ if _use_z3:
         ZeroExt as BVZExt,
         SignExt as BVSExt,
         Extract as BVExtract,
+        Concat as BVConcat,
         LShR as BVLShR,
     )
     from z3 import is_bv, is_bv_value, is_bool, is_and, is_or, is_not
@@ -573,10 +574,16 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a)
         assert start.is_concrete()
         assert end.is_concrete()
-        print(a, start, end)
         return Expr(
             BVExtract(end.value(), start.value(), a.unwrap()),
             IntType(end.value() - start.value() + 1),
+        )
+
+    def Concat(a, b):
+        assert BVSymbolicDomain.belongto(a, b)
+        return Expr(
+            BVConcat(a.unwrap(), b.unwrap()),
+            IntType(a.bitwidth() + b.bitwidth()),
         )
 
     def Shl(a, b):

@@ -267,6 +267,11 @@ class ExprManager:
             return ConcreteDomain.Extract(a, start, end)
         return opt(SymbolicDomain.Extract(a, start, end))
 
+    def Concat(self, a, b):
+        if ConcreteDomain.belongto(a, b):
+            return ConcreteDomain.Concat(a, b)
+        return opt(SymbolicDomain.Concat(a, b))
+
     def Shl(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.Shl(a, b)

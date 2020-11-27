@@ -40,7 +40,6 @@ class MemoryObject(CoreMO):
             while o >= 0:
                 predval = values.get(o)
                 if predval:
-                    print(predval)
                     if predval.bytewidth() + o >= offval + bts - 1:
                         # the value on immediately lower offset perfectly overlaps with our read,
                         # extract the value from it
@@ -61,15 +60,30 @@ class MemoryObject(CoreMO):
                 f"{self.values}",
             )
 
-        # we would need to obtain overlapping offsets
-        if val.bytewidth() != bts:
+        valbw = val.bytewidth()
+        if valbw != bts:
+            # HACK!
             if offval == 0: # for != 0 we do not know if it has been overwritten
-                EM = getGlobalExprManager()
-                extr = EM.Extract(EM.Cast(val, IntType(val.bitwidth())),
-                                  ConcreteVal(0, OffsetType),
-                                  ConcreteVal(8 * (offval + bts) - 1, OffsetType))
-                assert extr.bytewidth() == bts, extr
-                return extr, None
+                if valbw > bts:
+                    # truncate the value
+                    EM = getGlobalExprManager()
+                    extr = EM.Extract(EM.Cast(val, IntType(val.bitwidth())),
+                                      ConcreteVal(0, OffsetType),
+                                      ConcreteVal(8 * (offval + bts) - 1, OffsetType))
+                    assert extr.bytewidth() == bts, extr
+                    return extr, None
+                else:
+                    # join two consequiteve values if possible
+                    nxtval = values.get(offval + valbw)
+                    if nxtval and valbw + nxtval.bytewidth() >= bts:
+                        EM = getGlobalExprManager()
+                        extr = EM.Extract(EM.Cast(nxtval, IntType(val.bitwidth())),
+                                          ConcreteVal(0, OffsetType),
+                                          ConcreteVal(8 * (bts - valbw) - 1, OffsetType))
+                        assert valbw + extr.bytewidth() == bts, extr
+                        expr = EM.Concat(extr, val) # the values are store in little endian
+                        assert expr.bytewidth() == bts, expr
+                        return expr, None
 
             return None, MemError(
                 MemError.UNSUPPORTED,
