@@ -9,7 +9,7 @@ from slowbeast.core.errors import AssertFailError
 from slowbeast.domains.concrete import ConcreteVal
 
 from .memorymodel import SymbolicMemoryModel
-from .executionstate import SEState
+from .executionstate import SEState, IncrementalSEState
 from .statesset import StatesSet
 
 from random import getrandbits
@@ -56,7 +56,7 @@ class Executor(ConcreteExecutor):
     def __init__(self, solver, opts, memorymodel=None):
         if memorymodel is None:
             memorymodel = SymbolicMemoryModel(opts)
-        super(Executor, self).__init__(opts, memorymodel)
+        super().__init__(opts, memorymodel)
         self.solver = solver
         self.stats = SEStats()
         # use these values in place of nondet values
@@ -78,7 +78,11 @@ class Executor(ConcreteExecutor):
     def createState(self, pc=None, m=None):
         if m is None:
             m = self.getMemoryModel().createMemory()
-        s = SEState(self, pc, m, self.solver)
+        if self.getOptions().incremental_solving:
+            s = IncrementalSEState(self, pc, m)
+        else:
+            # FIXME: we do not use the solver...
+            s = SEState(self, pc, m, self.solver)
         assert not s.getConstraints(), "the state is not clean"
         return s
 

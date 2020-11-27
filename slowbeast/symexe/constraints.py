@@ -46,7 +46,6 @@ class IncrementalConstraintsSet(ConstraintsSet):
 
     def __init__(self, C=None):
         self._solver = IncrementalSolver()
-        self._solver_ro = False
         super().__init__(C)
 
     def solver(self):
@@ -54,17 +53,10 @@ class IncrementalConstraintsSet(ConstraintsSet):
 
     def copy(self):
         n = IncrementalConstraintsSet()
-        n._constraints = self._constraints
-        self._solver_ro = True
-        n._solver_ro = True
-        n._solver = self._solver
+        self._constraints = self._constraints.copy()
+        self._solver = self._solver.copy()
         return n
 
     def add(self, *C):
-        if self._solver_ro:
-            self._constraints = self._constraints.copy()
-            self._solver = self._solver.copy()
-            self._solver_ro = False
-
         self._solver.add(*C)
         super().add(*C)

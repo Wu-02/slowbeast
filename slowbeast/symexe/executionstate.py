@@ -184,6 +184,30 @@ class SEState(ExecutionState):
 
 
 class IncrementalSEState(SEState):
-    def __init__(self, executor, pc, m):
-        C = IncrementalConstraintsSet()
-        super().__init__(executor, pc, m, C.solver(), C)
+    def __init__(self, executor, pc, m, solver=None):
+        if solver: #copy ctor
+            super().__init__(executor, pc, m, None, None)
+        else:
+            C = IncrementalConstraintsSet()
+            super().__init__(executor, pc, m, C.solver(), C)
+
+    def copy(self):
+        # do not use copy.copy() so that we bump the id counter
+        new = IncrementalSEState(self._executor, self.pc, self.memory)
+        super().copyTo(new)  # cow copy of super class
+
+        new._constraints = self._constraints
+        new._constraints_ro = True
+        self._constraints_ro = True
+
+        new._warnings = self._warnings
+        new._warnings_ro = True
+        self._warnings_ro = True
+
+        new._nondets = self._nondets
+        new._nondets_ro = True
+        self._nondets_ro = True
+
+        return new
+
+

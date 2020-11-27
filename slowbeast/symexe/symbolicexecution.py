@@ -8,12 +8,14 @@ class SEOptions(ExecutionOptions):
     def __init__(self, opts=None):
         super(SEOptions, self).__init__(opts)
         if opts:
+            self.incremental_solving = opts.incremental_solving
             self.replay_errors = opts.replay_errors
             self.concretize_nondets = opts.concretize_nondets
             self.uninit_is_nondet = opts.uninit_is_nondet
             self.exit_on_error = opts.exit_on_error
             self.error_funs = opts.error_funs
         else:
+            self.incremental_solving = False
             self.replay_errors = False
             self.concretize_nondets = False
             self.uninit_is_nondet = False

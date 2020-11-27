@@ -52,7 +52,7 @@ class MemoryObject(CoreMO):
                         assert extr.bytewidth() == bts, extr
                         return extr, None
                     break
-                o = offval - 4
+                o = o - 4
 
             return None, MemError(
                 MemError.UNINIT_READ,

@@ -30,6 +30,31 @@ if _use_z3:
 
         return vals
 
+    def models_inc(solver, assumpt, *args):
+        solver.push()
+        for a in assumpt:
+            assert a.is_bool()
+            solver.add(a.unwrap())
+        r = solver.check()
+        if r != sat:
+            solver.pop()
+            return None
+
+        m = solver.model()
+        vals = []
+        for a in args:
+            c = m[a.unwrap()]
+            if c is None:
+                # m does not have a value for this variable
+                # use 0
+                c = BoolVal(False) if a.is_bool() else BitVecVal(0, a.type().bitwidth())
+            vals.append(c)
+
+        solver.pop()
+        return vals
+
+
+
     def smallmodels(assumpt, *args):
         s = Z3Solver()
         for a in assumpt:
@@ -160,6 +185,34 @@ class ConcreteSolver(SolverIntf):
         return True
 
 
+def map_model(m, e):
+    if m is None:  # unsat
+        return None
+    ret = []
+    for n, v in enumerate(e):
+        if m[n] is None:
+            ret.append(None)
+        else:
+            if v.is_float():
+                val = m[n]
+                if isinstance(val, BitVecNumRef):
+                    f = val.as_long()
+                elif isinstance(val, FPNumRef):
+                    if val.isNaN():
+                        f = float("NaN")
+                    elif val.isInf():
+                        if val.isNegative():
+                            f = float("-inf")
+                        else:
+                            f = float("inf")
+                    else:
+                        f = float(eval(str(val)))
+                ret.append(ConcreteVal(f, v.type()))
+            else:
+                ret.append(ConcreteVal(m[n].as_long(), v.type()))
+    return ret
+
+
 class SymbolicSolver(SolverIntf):
     """
     Wrapper for SMT solver(s) used throughout this project
@@ -181,32 +234,7 @@ class SymbolicSolver(SolverIntf):
             return None
         # m = smallmodels(assumpt, *e)
         m = models(assumpt, *e)
-        if m is None:  # unsat
-            return None
-        ret = []
-        for n, v in enumerate(e):
-            if m[n] is None:
-                ret.append(None)
-            else:
-                if v.is_float():
-                    val = m[n]
-                    if isinstance(val, BitVecNumRef):
-                        f = val.as_long()
-                    elif isinstance(val, FPNumRef):
-                        if val.isNaN():
-                            f = float("NaN")
-                        elif val.isInf():
-                            if val.isNegative():
-                                f = float("-inf")
-                            else:
-                                f = float("inf")
-                        else:
-                            f = float(eval(str(val)))
-                    ret.append(ConcreteVal(f, v.type()))
-                else:
-                    ret.append(ConcreteVal(m[n].as_long(), v.type()))
-        return ret
-
+        return map_model(m, e)
 
 class IncrementalSolver(SymbolicSolver):
     def __init__(self, em=global_expr_manager):
@@ -232,11 +260,18 @@ class IncrementalSolver(SymbolicSolver):
 
     def copy(self):
         s = IncrementalSolver()
-        s._solver = self._solver.translate(Z3Context())
+        s._solver = self._solver.translate(self._solver.ctx)
         return s
 
     def concretize(self, assumpt, *e):
-        raise NotImplementedError("Not implemented yet")
+        assert all(
+            map(lambda x: not x.is_concrete(), e)
+        ), "ConcreteVal instead of symbolic value"
+        if any(map(lambda x: x.is_concrete() and x.value() is False, assumpt)):
+            return None
+        m = models_inc(self._solver, assumpt, *e)
+        return map_model(m, e)
+
 
     def __repr__(self):
         return f"IncrementalSolver: {self._solver}"
