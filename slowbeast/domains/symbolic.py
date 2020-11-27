@@ -73,9 +73,9 @@ if _use_z3:
         return simplify(fpFPToFP(RNE(), fexpr, get_fp_sort(bw)))
 
     def to_double(x):
-        if x.bitwidth() == 64:
+        if x.is_float() and x.bitwidth() == 64:
             return x._expr
-        return simplify(fpFPToFP(RNE(), x._expr, Float64()))
+        return simplify(fpToFP(RNE(), x._expr, Float64()))
 
     def floatToBV(x):
         if x.is_float():
