@@ -361,6 +361,9 @@ class Executor:
         state.pc = state.pc.get_next_inst()
         return [state]
 
+    def execIte(self, state, instr):
+        raise NotImplementedError("Ite not implemented in core")
+
     def execCall(self, state, instr):
         assert isinstance(instr, Call)
 
@@ -450,6 +453,8 @@ class Executor:
             states = self.execUnaryOp(state, instr)
         elif isinstance(instr, BinaryOperation):
             states = self.execBinaryOp(state, instr)
+        elif isinstance(instr, Ite):
+            states = self.execIte(state, instr)
         elif isinstance(instr, Call):
             states = self.execCall(state, instr)
         elif isinstance(instr, Return):

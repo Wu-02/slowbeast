@@ -414,6 +414,24 @@ class Executor(ConcreteExecutor):
         states.append(state)
         return states
 
+    def execIte(self, state, instr):
+        cond = state.eval(instr.condition())
+        assert cond.is_bool(), cond
+        if cond.is_concrete():
+            cval = cond.value()
+            if cval is True:
+                state.set(instr, state.eval(instr.getOperand(0)))
+            elif cval is False:
+                state.set(instr, state.eval(instr.getOperand(0)))
+            else:
+                raise RuntimeError(f"Invalid value of boolean condition: {cval}")
+        else:
+            op1 = state.eval(instr.getOperand(0))
+            op2 = state.eval(instr.getOperand(2))
+            expr = state.getExprManager().Ite(cond, op1, op2)
+            state.set(instr, expr)
+        return [state]
+
     def execUnaryOp(self, state, instr):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.getOperand(0))

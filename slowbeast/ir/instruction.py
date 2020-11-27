@@ -406,7 +406,6 @@ class Cmp(ValueInstruction):
             "f" if self._fp else ""
         )
 
-
 class UnaryOperation(ValueInstruction):
     NEG = 1
     ZEXT = 2
@@ -721,3 +720,21 @@ class Xor(BinaryOperation):
         return "x{0} = xor {1}, {2}".format(
             self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
         )
+
+# TODO: do we want this instruction? (can we replace it somehow without
+# creating an artificial braching?).
+class Ite(ValueInstruction):
+    """ if-then-else: assign a value based on a condition """
+
+    def __init__(self, cond, op1, op2):
+        super().__init__([op1, op2])
+        self._cond = cond
+
+    def condition(self):
+        return self._cond
+
+    def __repr__(self):
+        return f"{self.as_value()} = if {self._cond.as_value()} then "\
+               f"{self.getOperand(0).as_value()} else {self.getOperand(1).as_value()}"
+
+

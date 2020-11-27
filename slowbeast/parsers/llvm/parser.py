@@ -303,6 +303,19 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
+    def _createSelect(self, inst):
+        operands = getLLVMOperands(inst)
+        assert len(operands) == 3, "Invalid number of operands for select"
+
+        cond = self.getOperand(operands[0])
+        op1 = self.getOperand(operands[1])
+        op2 = self.getOperand(operands[2])
+
+        I = Ite(cond, op1, op2)
+        self._addMapping(inst, I)
+        return [I]
+
+
     def _createRem(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for rem"
@@ -624,6 +637,8 @@ class Parser:
             return self._createLogicOp(inst)
         elif opcode in ["srem", "urem"]:
             return self._createRem(inst)
+        elif opcode == "select":
+            return self._createSelect(inst)
         elif opcode == "phi":
             return self._handlePhi(inst)
         else:

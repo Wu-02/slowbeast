@@ -148,6 +148,12 @@ class ConcreteDomain:
         assert all(map(lambda a: a.is_bool(), args))
         return ConcreteBool(any(map(lambda x: x.value() is True, args)))
 
+    def Ite(c, a, b):
+        assert dom_is_concrete(c)
+        assert c.is_bool(), c
+        assert a.type() == b.type(), f"{a}, {b}"
+        return a if c else b
+
     def And(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type()

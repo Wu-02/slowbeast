@@ -476,6 +476,12 @@ class BVSymbolicDomain:
         assert all(map(lambda x: x.is_bool(), args))
         return Expr(Or(*map(lambda x: x.unwrap(), args)), BoolType())
 
+    def Ite(c, a, b):
+        assert BVSymbolicDomain.belongto(c)
+        assert c.is_bool(), c
+        assert a.type() == b.type(), f"{a}, {b}"
+        return Expr(If(c, a, b), a.type())
+
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.type() == b.type()

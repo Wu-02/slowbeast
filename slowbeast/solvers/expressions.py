@@ -186,6 +186,18 @@ class ExprManager:
         lift = self.lift
         return opt(SymbolicDomain.disjunction(*map(lift, args)))
 
+    def Ite(self, c, a, b):
+        if ConcreteDomain.belongto(c):
+            cval = c.value()
+            if cval is True:
+                return a
+            elif cval is False:
+                return b
+            raise RuntimeError(f"Invalid bool: {cval}")
+            return ConcreteDomain.And(a, b)
+        lift = self.lift
+        return opt(SymbolicDomain.Ite(lift(c), lift(a), lift(b)))
+
     def And(self, a, b):
         if ConcreteDomain.belongto(a, b):
             return ConcreteDomain.And(a, b)
