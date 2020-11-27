@@ -1,6 +1,7 @@
 from slowbeast.ir.types import OffsetType, IntType
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.core.errors import MemError
+from slowbeast.util.debugging import dbg
 from slowbeast.core.memory import Memory as CoreMemory
 from slowbeast.core.memoryobject import MemoryObject as CoreMO
 from slowbeast.solvers.solver import getGlobalExprManager
@@ -39,17 +40,22 @@ class MemoryObject(CoreMO):
             o = offval - 4
             while o >= 0:
                 predval = values.get(o)
-                if predval:
+                if predval is not None:
                     if predval.bytewidth() + o >= offval + bts - 1:
                         # the value on immediately lower offset perfectly overlaps with our read,
                         # extract the value from it
                         EM = getGlobalExprManager()
                         startb = offval - o
-                        extr = EM.Extract(EM.Cast(predval, IntType(predval.bitwidth())),
-                                          ConcreteVal(8*(startb), OffsetType),
-                                          ConcreteVal(8*(offval + bts)-1, OffsetType))
-                        assert extr.bytewidth() == bts, extr
-                        return extr, None
+                        cast = EM.Cast(predval, IntType(predval.bitwidth()))
+                        if cast:
+                            extr = EM.Extract(cast,
+                                              ConcreteVal(8*startb, OffsetType),
+                                              ConcreteVal(8*(offval + bts)-1, OffsetType))
+                            assert extr.bytewidth() == bts, extr
+                            return extr, None
+                        else:
+                            dbg(f"Unsupported conversion from {predval.type()} to i{predval.bitwidth()}")
+                            break
                     break
                 o = o - 4
 

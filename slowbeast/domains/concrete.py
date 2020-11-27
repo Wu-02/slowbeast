@@ -24,7 +24,7 @@ def float_to_bv(x, unsigned=True):
         d = (unpack("I", pack("f", x.value())) if unsigned else unpack("i", pack("f", x.value())))[0]
     else:
         assert bw == 64, f"{x}, bw: {bw}"
-        d = (unpack("L", pack("f", x.value())) if unsigned else unpack("l", pack("f", x.value())))[0]
+        d = (unpack("L", pack("d", x.value())) if unsigned else unpack("l", pack("d", x.value())))[0]
     return d
 
 def to_unsigned(x, bw):
@@ -212,9 +212,8 @@ class ConcreteDomain:
         elif a.is_float():
             if ty.is_float():
                 return ConcreteVal(trunc_to_float(a.value(), ty), ty)
-        # unsupported yet
-        # elif ty.is_int():
-        #    return ConcreteVal(int(v), ty)
+            elif ty.is_int():
+               return ConcreteVal(float_to_bv(a), ty)
         return None  # unsupported conversion
 
     def Shl(a, b):
