@@ -573,6 +573,7 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a)
         assert start.is_concrete()
         assert end.is_concrete()
+        print(a, start, end)
         return Expr(
             BVExtract(end.value(), start.value(), a.unwrap()),
             IntType(end.value() - start.value() + 1),
