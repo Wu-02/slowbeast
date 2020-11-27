@@ -76,10 +76,8 @@ if _use_z3:
         bw = x.bitwidth()
         if x.is_float() and bw == 64:
             return x._expr
-        r = x._expr
-        if bw != 64:
-            # we first must convert to float and then extend to double
-            r = simplify(fpToFP(r, get_fp_sort(bw)))
+        # we first must convert to float and then extend to double
+        r = simplify(fpToFP(x._expr, get_fp_sort(bw)))
         r = simplify(fpFPToFP(RNE(), r, Float64()))
         return r
 
