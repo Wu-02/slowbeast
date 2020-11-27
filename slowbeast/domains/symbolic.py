@@ -1,6 +1,6 @@
 from slowbeast.domains.value import Value
 from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.ir.types import Type, IntType, BoolType
+from slowbeast.ir.types import Type, IntType, BoolType, FloatType
 from slowbeast.ir.instruction import FpOp
 
 _use_z3 = True
@@ -69,8 +69,7 @@ if _use_z3:
         fpLT,
     )
 
-    def trunc_fp(fexpr, ty):
-        bw = ty.bitwidth()
+    def trunc_fp(fexpr, bw):
         return simplify(fpFPToFP(RNE(), fexpr, get_fp_sort(bw)))
 
     def to_double(x):
@@ -683,57 +682,57 @@ class BVSymbolicDomain:
 
     ##
     # Arithmetic operations
-    def Add(a, b):
+    def Add(a, b, isfloat=False):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
             a.type(), b.type()
         )
-        result_ty = a.type()
-        if a.is_float() or b.is_float():
+        bw = a.bitwidth()
+        if isfloat:
             # the operations on CPU work on doubles( well, 80-bits...)
             # and then truncate to float if needed
             ae = to_double(a)
             be = to_double(b)
-            return Expr(trunc_fp(ae + be, result_ty), result_ty)
-        return Expr(a.unwrap() + b.unwrap(), result_ty)
+            return Expr(trunc_fp(ae + be, bw), FloatType(bw))
+        return Expr(a.unwrap() + b.unwrap(), IntType(bw))
 
-    def Sub(a, b):
+    def Sub(a, b, isfloat=False):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
             a.type(), b.type()
         )
-        result_ty = a.type()
-        if a.is_float() or b.is_float():
+        bw = a.bitwidth()
+        if isfloat:
             ae = to_double(a)
             be = to_double(b)
-            return Expr(trunc_fp(ae - be, result_ty), result_ty)
-        return Expr(a.unwrap() - b.unwrap(), result_ty)
+            return Expr(trunc_fp(ae - be, bw), FloatType(bw))
+        return Expr(a.unwrap() - b.unwrap(), IntType(bw))
 
-    def Mul(a, b):
+    def Mul(a, b, isfloat=False):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
             a.type(), b.type()
         )
-        result_ty = a.type()
-        if a.is_float() or b.is_float():
+        bw = a.bitwidth()
+        if isfloat:
             ae = to_double(a)
             be = to_double(b)
-            return Expr(trunc_fp(ae * be, result_ty), result_ty)
-        return Expr(a.unwrap() * b.unwrap(), result_ty)
+            return Expr(trunc_fp(ae * be, bw), FloatType(bw))
+        return Expr(a.unwrap() * b.unwrap(), IntType(bw))
 
-    def Div(a, b, unsigned=False):
+    def Div(a, b, unsigned=False, isfloat=False):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
             a.type(), b.type()
         )
-        result_ty = a.type()
-        if a.is_float() or b.is_float():
+        bw = a.bitwidth()
+        if isfloat:
             ae = to_double(a)
             be = to_double(b)
-            return Expr(trunc_fp(ae / be, result_ty), result_ty)
+            return Expr(trunc_fp(ae / be, bw), FloatType(bw))
         if unsigned:
-            return Expr(UDiv(a.unwrap(), b.unwrap()), result_ty)
-        return Expr(a.unwrap() / b.unwrap(), result_ty)
+            return Expr(UDiv(a.unwrap(), b.unwrap()), IntType(bw))
+        return Expr(a.unwrap() / b.unwrap(), IntType(bw))
 
     def Rem(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
