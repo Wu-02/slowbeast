@@ -492,7 +492,6 @@ class ConcreteDomain:
             )
         result_ty = IntType(bw)
         aval, bval = float_to_bv(a, unsigned), float_to_bv(b, unsigned)
-        return ConcreteVal(wrap_to_bw(bval * bval, bw), IntType(bw))
         if unsigned:
             return ConcreteVal(
                 to_unsigned(aval, bw) / to_unsigned(bval, bw), result_ty
