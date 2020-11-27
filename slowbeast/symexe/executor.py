@@ -141,7 +141,6 @@ class Executor(ConcreteExecutor):
                 F.addConstraint(ncond)
 
             if T and F:
-                print("--- FORK ----")
                 self.stats.forks += 1
 
         return T, F

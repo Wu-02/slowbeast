@@ -314,7 +314,7 @@ class NondetLoad(Expr):
     __slots__ = ["load", "alloc"]
 
     def __init__(self, e, t, load, alloc):
-        super().__init__(e, t)
+        super(NondetLoad, self).__init__(e, t)
         self.load = load
         self.alloc = alloc
 
