@@ -66,14 +66,15 @@ def to_unsigned(x, bw):
 
 def wrap_to_bw(x, bw):
     m = 1 << bw
-    if x >= 0:
-        while x >= m:
-            x -= m
-    else:
-        m = m
-        while x <= -m:
-            x += m
-    return x
+    return (x % m)
+   #if x >= 0:
+   #    while x >= m:
+   #        x -= m
+   #else:
+   #    m = m
+   #    while x <= -m:
+   #        x += m
+   #return x
 
 
 def dom_is_concrete(v):
@@ -429,7 +430,7 @@ class ConcreteDomain:
     # Arithmetic operations
     def Add(a, b, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
         # FIXME: add self-standing float domain
         bw = a.bitwidth()
@@ -437,31 +438,34 @@ class ConcreteDomain:
             return ConcreteVal(trunc_to_float(bv_to_float(a) + bv_to_float(b),
                                               bw),
                                FloatType(bw))
-        return ConcreteVal(wrap_to_bw(a.value() + b.value(), bw), IntType(bw))
+        aval, bval = float_to_bv(a), float_to_bv(b)
+        return ConcreteVal(wrap_to_bw(aval + bval, bw), IntType(bw))
 
     def Sub(a, b, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
         bw = a.bitwidth()
         if isfloat:
             return ConcreteVal(trunc_to_float(bv_to_float(a) - bv_to_float(b),
                                               bw), FloatType(bw))
-        return ConcreteVal(wrap_to_bw(a.value() - b.value(), bw), IntType(bw))
+        aval, bval = float_to_bv(a), float_to_bv(b)
+        return ConcreteVal(wrap_to_bw(aval - bval, bw), IntType(bw))
 
     def Mul(a, b, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
         bw = a.bitwidth()
         if isfloat:
             return ConcreteVal(trunc_to_float(bv_to_float(a) * bv_to_float(b),
                                               bw), FloatType(bw))
-        return ConcreteVal(wrap_to_bw(a.value() * b.value(), bw), IntType(bw))
+        aval, bval = float_to_bv(a), float_to_bv(b)
+        return ConcreteVal(wrap_to_bw(aval * bval, bw), IntType(bw))
 
     def Div(a, b, unsigned=False, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
-        assert a.type() == b.type(), f"{a}, {b}"
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
         bw = a.bitwidth()
         if isfloat:
@@ -487,10 +491,12 @@ class ConcreteDomain:
                 result_ty,
             )
         result_ty = IntType(bw)
+        aval, bval = float_to_bv(a, unsigned), float_to_bv(b, unsigned)
+        return ConcreteVal(wrap_to_bw(bval * bval, bw), IntType(bw))
         if unsigned:
             return ConcreteVal(
-                to_unsigned(a.value(), bw) / to_unsigned(b.value(), bw), result_ty
+                to_unsigned(aval, bw) / to_unsigned(bval, bw), result_ty
             )
         return ConcreteVal(
-            wrap_to_bw(int(a.value() / b.value()), result_ty.bitwidth()), result_ty
+            wrap_to_bw(int(aval / bval), bw), result_ty
         )

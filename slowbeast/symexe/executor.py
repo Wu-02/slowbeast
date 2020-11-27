@@ -385,7 +385,7 @@ class Executor(ConcreteExecutor):
             elif opcode == BinaryOperation.DIV:
                 if instr.is_fp():
                     # compilers allow division by FP 0
-                    r = E.Div(op1, op2, instr.isUnsigned(), fp=True)
+                    r = E.Div(op1, op2, instr.isUnsigned(), isfloat=True)
                 else:
                     good, bad = self.fork(state, E.Ne(op2, ConcreteVal(0, op2.type())))
                     if good:
@@ -438,6 +438,7 @@ class Executor(ConcreteExecutor):
             op2 = state.eval(instr.getOperand(2))
             expr = state.getExprManager().Ite(cond, op1, op2)
             state.set(instr, expr)
+        state.pc = state.pc.get_next_inst()
         return [state]
 
     def execUnaryOp(self, state, instr):

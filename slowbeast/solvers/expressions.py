@@ -372,7 +372,7 @@ class ExprManager:
             if a.value() == 0:
                 return a
             if ConcreteDomain.belongto(b):
-                return ConcreteDomain.Div(a, b, unsigned)
+                return ConcreteDomain.Div(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Div(lift(a), lift(b), unsigned, isfloat))
 

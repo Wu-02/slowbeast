@@ -266,7 +266,7 @@ class Parser:
         elif opcode in ("mul", "fmul"):
             I = Mul(op1, op2, isfloat)
         elif opcode in ("sdiv", "fdiv"):
-            I = Div(op1, op2, isfloat)
+            I = Div(op1, op2, fp=isfloat)
         elif opcode == "udiv":
             I = Div(op1, op2, unsigned=True, fp=isfloat)
         else:
