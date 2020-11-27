@@ -15,6 +15,7 @@ if _use_z3:
         BoolVal,
         BitVec,
         BitVecVal,
+        BitVecSort,
         URem,
         SRem,
         UDiv,
@@ -55,7 +56,7 @@ if _use_z3:
         fpToFP,
         fpFPToFP,
         RNE,
-        fpToIEEEBV,
+        fpToUBV,
         fpEQ,
         fpNEQ,
         fpGEQ,
@@ -64,9 +65,18 @@ if _use_z3:
         fpLT,
     )
 
+    def trunc_fp(fexpr, ty):
+        bw = ty.bitwidth()
+        return simplify(fpFPToFP(RNE(), fexpr, get_fp_sort(bw)))
+
+    def to_double(x):
+        if x.bitwidth() == 64:
+            return x._expr
+        return fpFPToFP(RNE(), x._expr, Float64())
+
     def fpToBV(x):
         if x.is_float():
-            return fpToIEEEBV(x.unwrap())
+            return fpToUBV(RNE(), x._expr, BitVecSort(x.bitwidth()))
 
         return x.unwrap()
 
@@ -622,6 +632,12 @@ class BVSymbolicDomain:
             a.type(), b.type()
         )
         result_ty = a.type()
+        if a.is_float() or b.is_float():
+            # the operations on CPU work on doubles( well, 80-bits...)
+            # and then truncate to float if needed
+            ae = to_double(a)
+            be = to_double(b)
+            return Expr(trunc_fp(ae + be, result_ty), result_ty)
         return Expr(a.unwrap() + b.unwrap(), result_ty)
 
     def Sub(a, b):
@@ -630,6 +646,10 @@ class BVSymbolicDomain:
             a.type(), b.type()
         )
         result_ty = a.type()
+        if a.is_float() or b.is_float():
+            ae = to_double(a)
+            be = to_double(b)
+            return Expr(trunc_fp(ae - be, result_ty), result_ty)
         return Expr(a.unwrap() - b.unwrap(), result_ty)
 
     def Mul(a, b):
@@ -638,6 +658,10 @@ class BVSymbolicDomain:
             a.type(), b.type()
         )
         result_ty = a.type()
+        if a.is_float() or b.is_float():
+            ae = to_double(a)
+            be = to_double(b)
+            return Expr(trunc_fp(ae * be, result_ty), result_ty)
         return Expr(a.unwrap() * b.unwrap(), result_ty)
 
     def Div(a, b, unsigned=False):
@@ -646,6 +670,10 @@ class BVSymbolicDomain:
             a.type(), b.type()
         )
         result_ty = a.type()
+        if a.is_float() or b.is_float():
+            ae = to_double(a)
+            be = to_double(b)
+            return Expr(trunc_fp(ae / be, result_ty), result_ty)
         if unsigned:
             return Expr(UDiv(a.unwrap(), b.unwrap()), result_ty)
         return Expr(a.unwrap() / b.unwrap(), result_ty)

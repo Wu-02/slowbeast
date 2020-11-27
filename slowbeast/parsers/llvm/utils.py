@@ -30,12 +30,13 @@ def to_float_ty(val):
     return val
 
 def _get_float(s):
+    from z3 import FPVal, fpToFP, fpFPToFP, simplify, BitVecVal, Float32, Float64, RNE, fpToIEEEBV
     try:
         if s.startswith("0x"):
             # llvm writes the constants as double 
             # FIXME: get the byte order from module
-            return  trunc_to_float(unpack(">d",
-                                          int(s, 16).to_bytes(8, "big"))[0])
+            return trunc_to_float(unpack(">d",
+                                         int(s, 16).to_bytes(8, "big"))[0])
         else:
             return float(s)
     except ValueError:
