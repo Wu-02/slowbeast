@@ -273,35 +273,41 @@ class ExprManager:
     ##
     # Relational operators
 
-    def Le(self, a, b, unsigned=False):
+    def Le(self, a, b, unsigned=False, isfloat=False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Le(a, b, unsigned)
-        return opt(SymbolicDomain.Le(self.lift(a), self.lift(b), unsigned))
+            return ConcreteDomain.Le(a, b, unsigned, isfloat)
+        lift = self.lift
+        return opt(SymbolicDomain.Le(lift(a), lift(b), unsigned, isfloat))
 
-    def Lt(self, a, b, unsigned=False):
+    def Lt(self, a, b, unsigned=False, isfloat=False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Lt(a, b, unsigned)
-        return opt(SymbolicDomain.Lt(self.lift(a), self.lift(b), unsigned))
+            return ConcreteDomain.Lt(a, b, unsigned, isfloat)
+        lift = self.lift
+        return opt(SymbolicDomain.Lt(lift(a), lift(b), unsigned, isfloat))
 
-    def Ge(self, a, b, unsigned=False):
+    def Ge(self, a, b, unsigned=False, isfloat=False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ge(a, b, unsigned)
-        return opt(SymbolicDomain.Ge(self.lift(a), self.lift(b), unsigned))
+            return ConcreteDomain.Ge(a, b, unsigned, isfloat)
+        lift = self.lift
+        return opt(SymbolicDomain.Ge(lift(a), lift(b), unsigned, isfloat))
 
-    def Gt(self, a, b, unsigned=False):
+    def Gt(self, a, b, unsigned=False, isfloat=False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Gt(a, b, unsigned)
-        return opt(SymbolicDomain.Gt(self.lift(a), self.lift(b), unsigned))
+            return ConcreteDomain.Gt(a, b, unsigned, isfloat)
+        lift = self.lift
+        return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned, isfloat))
 
-    def Eq(self, a, b, unsigned=False):
+    def Eq(self, a, b, unsigned=False, isfloat=False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Eq(a, b, unsigned)
-        return opt(SymbolicDomain.Eq(self.lift(a), self.lift(b), unsigned))
+            return ConcreteDomain.Eq(a, b, unsigned, isfloat)
+        lift = self.lift
+        return opt(SymbolicDomain.Eq(lift(a), lift(b), unsigned, isfloat))
 
-    def Ne(self, a, b, unsigned=False):
+    def Ne(self, a, b, unsigned=False, isfloat=False):
         if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ne(a, b, unsigned)
-        return opt(SymbolicDomain.Ne(self.lift(a), self.lift(b), unsigned))
+            return ConcreteDomain.Ne(a, b, unsigned, isfloat)
+        lift = self.lift
+        return opt(SymbolicDomain.Ne(lift(a), lift(b), unsigned, isfloat))
 
     ##
     # Artihmetic operations

@@ -58,6 +58,7 @@ if _use_z3:
         fpBVToFP,
         RNE,
         fpToUBV,
+        fpToSBV,
         fpEQ,
         fpNEQ,
         fpGEQ,
@@ -549,81 +550,83 @@ class BVSymbolicDomain:
     ##
     # Relational operators
 
-    def Le(a, b, unsigned=False):
+    def Le(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         # we need this explicit float cast for the cases when a or b are
         # nondet loads (in which case they are bitvectors)
-        if a.is_float() or b.is_float():
+        if floats:
             a, b = castToFP(a), castToFP(b)
             expr = fpLEQ(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         if unsigned:
-            return Expr(BVULE(a.unwrap(), b.unwrap()), BoolType())
-        return Expr(a.unwrap() <= b.unwrap(), BoolType())
+            return Expr(BVULE(fpToBV(a), fpToBV(b)), BoolType())
+        return Expr(fpToBV(a) <= fpToBV(b), BoolType())
 
-    def Lt(a, b, unsigned=False):
+    def Lt(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
             a, b = castToFP(a), castToFP(b)
             expr = fpLT(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         if unsigned:
-            return Expr(BVULT(a.unwrap(), b.unwrap()), BoolType())
-        return Expr(a.unwrap() < b.unwrap(), BoolType())
+            return Expr(BVULT(fpToBV(a), fpToBV(b)), BoolType())
+        return Expr(fpToBV(a) < fpToBV(b), BoolType())
 
-    def Ge(a, b, unsigned=False):
+    def Ge(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
             a, b = castToFP(a), castToFP(b)
-            expr = fpGEQ(a, b)
+            expr = fpGE(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         if unsigned:
-            return Expr(BVUGE(a.unwrap(), b.unwrap()), BoolType())
-        return Expr(a.unwrap() >= b.unwrap(), BoolType())
+            return Expr(BVUGE(fpToBV(a), fpToBV(b)), BoolType())
+        return Expr(fpToBV(a) >= fpToBV(b), BoolType())
 
-    def Gt(a, b, unsigned=False):
+    def Gt(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
             a, b = castToFP(a), castToFP(b)
             expr = fpGT(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         if unsigned:
-            return Expr(BVUGT(a.unwrap(), b.unwrap()), BoolType())
-        return Expr(a.unwrap() > b.unwrap(), BoolType())
+            return Expr(BVUGT(fpToBV(a), fpToBV(b)), BoolType())
+        return Expr(fpToBV(a) > fpToBV(b), BoolType())
 
-    def Eq(a, b, unsigned=False):
+
+    def Eq(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
             a, b = castToFP(a), castToFP(b)
             expr = fpEQ(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        return Expr(a.unwrap() == b.unwrap(), BoolType())
+        return Expr(fpToBV(a) == fpToBV(b), BoolType())
 
-    def Ne(a, b, unsigned=False):
+
+    def Ne(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
             a, b = castToFP(a), castToFP(b)
             expr = fpNEQ(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        return Expr(a.unwrap() != b.unwrap(), BoolType())
+        return Expr(fpToBV(a) != fpToBV(b), BoolType())
 
     ##
     # Arithmetic operations

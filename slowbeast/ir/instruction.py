@@ -374,10 +374,18 @@ class Cmp(ValueInstruction):
 
         raise NotImplementedError("Invalid comparison")
 
-    def __init__(self, p, val1, val2, unsgn=False):
+    def __init__(self, p, val1, val2, unsgn=False, fp=False):
         super().__init__([val1, val2])
         self._predicate = p
         self._unsigned = unsgn
+        self._fp = fp
+
+    def setFloat(self):
+        """ Set that this comparison is on floating-point numbers """
+        self._fp = True
+
+    def isFloat(self):
+        return self._fp
 
     def setUnsigned(self):
         """ Set that this comparison is unsigned """
@@ -390,11 +398,12 @@ class Cmp(ValueInstruction):
         return self._predicate
 
     def __str__(self):
-        return "{0} = cmp {1} {2} {3}".format(
+        return "{0} = {4}cmp {1} {2} {3}".format(
             self.as_value(),
             self.getOperand(0).as_value(),
             Cmp.predicateStr(self.getPredicate(), self.isUnsigned()),
             self.getOperand(1).as_value(),
+            "f" if self._fp else ""
         )
 
 

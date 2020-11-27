@@ -16,12 +16,22 @@ def trunc_to_float(x, ty):
         return unpack("f", pack("f", x))[0]
     return x
 
-def getUnsigned(a):
+def float_to_bv(x):
+    if not x.is_float():
+        return x.value()
+    bw = x.bitwidth()
+    if bw == 32:
+        return unpack("I", pack("f", x.value()))[0]
+    else:
+        assert bw == 64, f"{x}, bw: {bw}"
+        return unpack("L", pack("f", x.value()))[0]
+    return None
+
+def to_unsigned(x, bw):
     """ Get unsigned value for signed in 2's complement """
-    x = a.value()
     if x >= 0:
         return x
-    return x + (1 << a.bitwidth())
+    return x + (1 << bw)
 
 
 def wrap_to_bw(x, bw):
@@ -169,7 +179,7 @@ class ConcreteDomain:
     def ZExt(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
-        return ConcreteInt(getUnsigned(a), b.value())
+        return ConcreteInt(to_unsigned(a.value(), a.bitwidth()), b.value())
 
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
@@ -230,7 +240,8 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert b.value() != 0, "Invalid remainder"
         if unsigned:
-            return ConcreteVal(getUnsigned(a) % getUnsigned(b), a.type())
+            return ConcreteVal(to_unsigned(a.value(), a.bitwidth()) %
+                               to_unsigned(b.value(), b.bitwidth()), a.type())
         return ConcreteVal(a.value() % b.value(), a.type())
 
     def Neg(a):
@@ -269,71 +280,98 @@ class ConcreteDomain:
 
     ##
     # Relational operators
-    def Le(a, b, unsigned=False):
+    def Le(a, b, unsigned=False, floats=False):
         assert ConcreteDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
-            aval, bval = a.value(), b.value()
-            if unsigned: # means unordered
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
+            aval, bval = float(a.value()), float(b.value())
+            if unsigned: # means unordered for floats
                 return ConcreteBool(aval <= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval <= bval)
-        if unsigned:
-            return ConcreteBool(getUnsigned(a) <= getUnsigned(b))
-        return ConcreteBool(a.value() <= b.value())
 
-    def Lt(a, b, unsigned=False):
+        aval, bval = float_to_bv(a), float_to_bv(b)
+        if unsigned:
+            bw = a.bitwidth()
+            return ConcreteBool(to_unsigned(aval, bw) <= to_unsigned(bval, bw))
+        return ConcreteBool(aval <= bval)
+
+    def Lt(a, b, unsigned=False, floats=False):
         assert ConcreteDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
-            aval, bval = a.value(), b.value()
-            if unsigned: # means unordered
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
+            aval, bval = float(a.value()), float(b.value())
+            if unsigned: # means unordered for floats
                 return ConcreteBool(aval < bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval < bval)
-        if unsigned:
-            return ConcreteBool(getUnsigned(a) < getUnsigned(b))
-        return ConcreteBool(a.value() < b.value())
 
-    def Ge(a, b, unsigned=False):
+        aval, bval = float_to_bv(a), float_to_bv(b)
+        if unsigned:
+            bw = a.bitwidth()
+            return ConcreteBool(to_unsigned(aval, bw) < to_unsigned(bval, bw))
+        return ConcreteBool(aval < bval)
+
+    def Ge(a, b, unsigned=False, floats=False):
         assert ConcreteDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
-            aval, bval = a.value(), b.value()
-            if unsigned: # means unordered
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
+            aval, bval = float(a.value()), float(b.value())
+            if unsigned: # means unordered for floats
                 return ConcreteBool(aval >= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval >= bval)
-        if unsigned:
-            return ConcreteBool(getUnsigned(a) >= getUnsigned(b))
-        return ConcreteBool(a.value() >= b.value())
 
-    def Gt(a, b, unsigned=False):
+        aval, bval = float_to_bv(a), float_to_bv(b)
+        if unsigned:
+            bw = a.bitwidth()
+            return ConcreteBool(to_unsigned(aval, bw) >= to_unsigned(bval, bw))
+        return ConcreteBool(aval >= bval)
+
+    def Gt(a, b, unsigned=False, floats=False):
         assert ConcreteDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
-            aval, bval = a.value(), b.value()
-            if unsigned: # means unordered
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
+            aval, bval = float(a.value()), float(b.value())
+            if unsigned: # means unordered for floats
                 return ConcreteBool(aval > bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval > bval)
-        if unsigned:
-            return ConcreteBool(getUnsigned(a) > getUnsigned(b))
-        return ConcreteBool(a.value() > b.value())
 
-    def Eq(a, b, unsigned=False):
+        aval, bval = float_to_bv(a), float_to_bv(b)
+        if unsigned:
+            bw = a.bitwidth()
+            return ConcreteBool(to_unsigned(aval, bw) > to_unsigned(bval, bw))
+        return ConcreteBool(aval > bval)
+
+
+    def Eq(a, b, unsigned=False, floats=False):
         assert ConcreteDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
-            aval, bval = a.value(), b.value()
-            if unsigned: # means unordered
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
+            aval, bval = float(a.value()), float(b.value())
+            if unsigned: # means unordered for floats
                 return ConcreteBool(aval == bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval == bval)
-        if unsigned:
-            return ConcreteBool(getUnsigned(a) == getUnsigned(b))
-        return ConcreteBool(a.value() == b.value())
 
-    def Ne(a, b, unsigned=False):
+        aval, bval = float_to_bv(a), float_to_bv(b)
+        if unsigned:
+            bw = a.bitwidth()
+            return ConcreteBool(to_unsigned(aval, bw) == to_unsigned(bval, bw))
+        return ConcreteBool(aval == bval)
+
+    def Ne(a, b, unsigned=False, floats=False):
         assert ConcreteDomain.belongto(a, b)
-        if a.is_float() or b.is_float():
-            aval, bval = a.value(), b.value()
-            if unsigned: # means unordered
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        if floats:
+            aval, bval = float(a.value()), float(b.value())
+            if unsigned: # means unordered for floats
                 return ConcreteBool(aval != bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval != bval)
+
+        aval, bval = float_to_bv(a), float_to_bv(b)
         if unsigned:
-            return ConcreteBool(getUnsigned(a) != getUnsigned(b))
-        return ConcreteBool(a.value() != b.value())
+            bw = a.bitwidth()
+            return ConcreteBool(to_unsigned(aval, bw) != to_unsigned(bval, bw))
+        return ConcreteBool(aval != bval)
+
+
 
     ##
     # Arithmetic operations
@@ -370,6 +408,7 @@ class ConcreteDomain:
 
     def Div(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
         result_ty = a.type()
         if a.is_float():
@@ -386,7 +425,9 @@ class ConcreteDomain:
             return ConcreteVal(trunc_to_float(a.value() / b.value(), result_ty),
                                result_ty)
         if unsigned:
-            return ConcreteVal(getUnsigned(a) / getUnsigned(b), result_ty)
+            bw = a.bitwidth()
+            return ConcreteVal(to_unsigned(a.value(), bw) /
+                               to_unsigned(b.value(), bw), result_ty)
         return ConcreteVal(
             wrap_to_bw(int(a.value() / b.value()), result_ty.bitwidth()), result_ty
         )

@@ -218,19 +218,19 @@ class Executor(ConcreteExecutor):
 
         return states
 
-    def cmpValues(self, E, p, op1, op2, unsgn):
+    def cmpValues(self, E, p, op1, op2, unsgn, flt=False):
         if p == Cmp.LE:
-            return E.Le(op1, op2, unsgn)
+            return E.Le(op1, op2, unsgn, flt)
         elif p == Cmp.LT:
-            return E.Lt(op1, op2, unsgn)
+            return E.Lt(op1, op2, unsgn, flt)
         elif p == Cmp.GE:
-            return E.Ge(op1, op2, unsgn)
+            return E.Ge(op1, op2, unsgn, flt)
         elif p == Cmp.GT:
-            return E.Gt(op1, op2, unsgn)
+            return E.Gt(op1, op2, unsgn, flt)
         elif p == Cmp.EQ:
-            return E.Eq(op1, op2, unsgn)
+            return E.Eq(op1, op2, unsgn, flt)
         elif p == Cmp.NE:
-            return E.Ne(op1, op2, unsgn)
+            return E.Ne(op1, op2, unsgn, flt)
         else:
             raise RuntimeError("Invalid comparison")
 
@@ -283,7 +283,8 @@ class Executor(ConcreteExecutor):
                 return state
 
         x = self.cmpValues(
-            state.getExprManager(), instr.getPredicate(), op1, op2, instr.isUnsigned()
+            state.getExprManager(), instr.getPredicate(), op1, op2,
+            instr.isUnsigned(), instr.isFloat()
         )
         state.set(instr, x)
         state.pc = state.pc.get_next_inst()

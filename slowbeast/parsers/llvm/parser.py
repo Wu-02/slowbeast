@@ -347,7 +347,7 @@ class Parser:
                 raise NotImplementedError(
                     "Unsupported fcmp instruction: {0}".format(inst)
                 )
-            C = Cmp(P, op1, op2, is_unordered)
+            C = Cmp(P, op1, op2, is_unordered, fp=True)
         else:
             P, is_unsigned = parseCmp(inst)
             if not P:
