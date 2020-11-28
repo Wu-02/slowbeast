@@ -3,6 +3,7 @@ from struct import unpack, pack
 from slowbeast.util.debugging import warn
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.pointer import NullPointer
 from slowbeast.ir.types import IntType, FloatType
 
 
@@ -33,18 +34,6 @@ def to_float_ty(val):
 
 
 def _get_float(s):
-    from z3 import (
-        FPVal,
-        fpToFP,
-        fpFPToFP,
-        simplify,
-        BitVecVal,
-        Float32,
-        Float64,
-        RNE,
-        fpToIEEEBV,
-    )
-
     try:
         if s.startswith("0x"):
             # llvm writes the constants as double
@@ -193,6 +182,9 @@ def getConstantPtr(val):
     # not provide any other way...
     if not val.type.is_pointer:
         return None
+
+    if str(val).endswith('null'):
+        return NullPointer
 
     # FIXME
     return None

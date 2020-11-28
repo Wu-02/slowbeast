@@ -1,5 +1,6 @@
-from ..domains.concrete import ConcreteVal
-from ..core.executionstatus import ExecutionStatus
+from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.pointer import Pointer
+from slowbeast.core.executionstatus import ExecutionStatus
 from sys import stdout
 
 #from slowbeast.util.debugging import dbgv
@@ -79,7 +80,10 @@ class ExecutionState:
         return self.status.isReady()
 
     def eval(self, v):
+        # FIXME: make an attribute is_constant...
         if isinstance(v, ConcreteVal):
+            return v
+        if isinstance(v, Pointer) and v.is_null():
             return v
         value = self.get(v)
         if value is None:

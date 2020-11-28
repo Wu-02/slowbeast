@@ -110,6 +110,12 @@ class ConcreteVal(Value):
     def is_concrete(self):
         return True
 
+    def is_zero(self):
+        return self._value == 0
+
+    def is_one(self):
+        return self._value == 1
+
     def __repr__(self):
         return f"{self._value}:{self.type()}"
 

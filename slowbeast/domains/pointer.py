@@ -15,7 +15,6 @@ class Pointer(Value):
 
         assert self.is_pointer(), "Incorrectly constructed pointer"
         assert not self.is_bool(), "Incorrectly constructed pointer"
-        assert not self.is_concrete(), "Incorrectly constructed pointer"
 
     def __str__(self):
         return "({0}, {1})".format(self._object.as_value(), self._offset)
@@ -30,7 +29,10 @@ class Pointer(Value):
         return str(self)
 
     def is_concrete(self):
-        return False
+        return self._object.is_concrete() and self._offset.is_concrete()
+
+    def is_null(self):
+        return self.is_concrete() and self._object.is_zero() and self._offset.is_zero()
 
     def __eq__(self, oth):
         return self._object == oth._object and self._offset == oth._offset
@@ -40,3 +42,7 @@ class Pointer(Value):
 
     def dump(self):
         print(self)
+
+NullPointer = Pointer(ConcreteInt(0, POINTER_BIT_WIDTH),
+                      ConcreteInt(0, POINTER_BIT_WIDTH))
+
