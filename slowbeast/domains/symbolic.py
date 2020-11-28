@@ -77,7 +77,10 @@ if _use_z3:
         if x.is_float() and bw == 64:
             return x._expr
         # we first must convert to float and then extend to double
-        r = simplify(fpToFP(x._expr, get_fp_sort(bw)))
+        if x.is_float() and bw == 32:
+            r = x._expr
+        else:
+            r = simplify(fpToFP(x._expr, get_fp_sort(bw)))
         r = simplify(fpFPToFP(RNE(), r, Float64()))
         return r
 
