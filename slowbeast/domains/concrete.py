@@ -281,13 +281,19 @@ class ConcreteDomain:
             (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
         )
 
-    def Concat(a, b):
-        assert ConcreteDomain.belongto(a, b)
-        bw = b.bitwidth()
-        return ConcreteInt(
-            ((a.value() << bw) | b.value()),
-            a.bitwidth() + bw,
-        )
+    def Concat(*args):
+        l = len(args)
+        assert l > 0, args
+        assert ConcreteDomain.belongto(*args), args
+        if l == 1:
+            return args[0]
+        bw = 0
+        val = 0
+        for i in range(1, l+1):
+            a = args[l - i]
+            val |= a.value() << bw
+            bw += a.bitwidth()
+        return ConcreteInt(val, bw)
 
     def Rem(a, b, unsigned=False):
         assert ConcreteDomain.belongto(a, b)

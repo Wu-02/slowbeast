@@ -583,11 +583,15 @@ class BVSymbolicDomain:
             IntType(end.value() - start.value() + 1),
         )
 
-    def Concat(a, b):
-        assert BVSymbolicDomain.belongto(a, b), (a, b)
+    def Concat(*args):
+        l = len(args)
+        assert l > 0, args
+        assert BVSymbolicDomain.belongto(*args), args
+        if l == 1:
+            return args[0]
         return Expr(
-            BVConcat(a.unwrap(), b.unwrap()),
-            IntType(a.bitwidth() + b.bitwidth()),
+            BVConcat(*(e.unwrap() for e in args)),
+            IntType(sum(e.bitwidth() for e in args))
         )
 
     def Shl(a, b):

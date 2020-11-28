@@ -1,13 +1,58 @@
 from slowbeast.ir.types import OffsetType, IntType
 from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.value import Value
 from slowbeast.core.errors import MemError
-from slowbeast.util.debugging import dbg
+from slowbeast.util.debugging import dbg, dbgv
 from slowbeast.core.memory import Memory as CoreMemory
 from slowbeast.core.memoryobject import MemoryObject as CoreMO
 from slowbeast.solvers.solver import getGlobalExprManager
 
+def get_byte(EM, x, bw, i):
+    off = 8*i
+    b = EM.Extract(
+        x,
+        ConcreteVal(off, OffsetType),
+        ConcreteVal(off+7, OffsetType),
+    )
+    assert b.bitwidth() == 8
+    return b
 
+def write_bytes(offval, values, size, x):
+    EM = getGlobalExprManager()
+    bw = x.bytewidth()
+    if not x.is_int():
+        x = EM.Cast(x, IntType(bw))
+    n = 0
+    for i in range(offval, offval + bw):
+        b = get_byte(EM, x, bw, n)
+        values[i] = b
+        n += 1
+    return None
+
+def read_bytes(values, offval, size, bts):
+    assert bts > 0, bts
+    assert size > 0, bts
+    assert offval >= 0, bts
+    EM = getGlobalExprManager()
+    if not all(values[i] for i in range(offval, offval + bts)):
+        return None, MemError(MemError.UNSUPPORTED,
+                              "Read of uninitialized byte")
+    c = offval + bts - 1
+    return EM.Concat(*(values[c - i] for i in range(0, bts))), None
+
+def mo_to_bytes(values, size):
+    dbgv("Promoting MO to bytes", color="gray")
+    newvalues = [None] * size
+    for o, val in values.items():
+       tmp = write_bytes(o, newvalues, size, val)
+       if not tmp is None:
+           return None, MemError(MemError.UNSUPPORTED,
+                                 "Error when writing to memory")
+    return newvalues, None
+
+MAX_BYTES_SIZE = 64
 class MemoryObject(CoreMO):
+    # FIXME: refactor
     def read(self, bts, off=ConcreteVal(0, OffsetType)):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
@@ -16,96 +61,54 @@ class MemoryObject(CoreMO):
         assert isinstance(bts, int), "Read non-constant number of bytes"
 
         if not off.is_concrete():
-            raise NotImplementedError("Read from non-constant offset not supported")
+            return None, MemError(MemError.UNSUPPORTED,
+                                  "Read from non-constant offset not supported")
 
-        if not self.getSize().is_concrete():
-            raise NotImplementedError(
+        size = self.getSize()
+        if not size.is_concrete():
+            return None, MemError(
+                MemError.UNSUPPORTED,
                 "Read from symbolic-sized objects not implemented yet"
             )
 
+        assert size.is_int(), size
         offval = off.value()
+        size = size.value()
 
-        if self.getSize().value() < bts:
+        if size < bts:
             return None, MemError(
                 MemError.OOB_ACCESS,
-                "Read {0}B from object of size {1}B".format(bts, self.getSize()),
+                f"Read {bts}B from object of size {size}"
             )
 
         values = self.values
+        if isinstance(values, list):
+            return read_bytes(values, offval, size, bts)
+
         val = values.get(offval)
         if val is None:
-            # FIXME: a hack that works for some type of accesses
-            # FIXME: until we have a proper byte-level memory objects
-            o = offval - 4
-            while o >= 0:
-                predval = values.get(o)
-                if predval is not None:
-                    if predval.bytewidth() + o >= offval + bts - 1:
-                        # the value on immediately lower offset perfectly overlaps with our read,
-                        # extract the value from it
-                        EM = getGlobalExprManager()
-                        startb = offval - o
-                        cast = EM.Cast(predval, IntType(predval.bitwidth()))
-                        if cast:
-                            extr = EM.Extract(
-                                cast,
-                                ConcreteVal(8 * startb, OffsetType),
-                                ConcreteVal(8 * (offval + bts) - 1, OffsetType),
-                            )
-                            assert extr.bytewidth() == bts, extr
-                            return extr, None
-                        else:
-                            dbg(
-                                f"Unsupported conversion from {predval.type()} to i{predval.bitwidth()}"
-                            )
-                            break
-                    break
-                o = o - 4
+            if size <= MAX_BYTES_SIZE:
+                values, err = mo_to_bytes(values, size)
+                if err:
+                    return None, err
+                self.values = values
+                return read_bytes(values, offval, size, bts)
 
             return None, MemError(
                 MemError.UNINIT_READ,
-                f"Read from uninitialized memory (or unaligned read (not supp.  yet)).\n"
+                f"Uninitialized or unaligned read (the latter is unsupported)\n"
                 f"Reading bytes {offval}-{offval+bts-1} from obj {self._id} with contents:\n"
-                f"{self.values}",
+                f"{values}",
             )
 
         valbw = val.bytewidth()
         if valbw != bts:
-            # HACK!
-            if offval == 0:  # for != 0 we do not know if it has been overwritten
-                if valbw > bts:
-                    # truncate the value
-                    EM = getGlobalExprManager()
-                    cast = EM.Cast(val, IntType(val.bitwidth()))
-                    if cast:
-                        extr = EM.Extract(
-                            cast,
-                            ConcreteVal(0, OffsetType),
-                            ConcreteVal(8 * (offval + bts) - 1, OffsetType),
-                        )
-                        assert extr.bytewidth() == bts, extr
-                        return extr, None
-                    else:
-                        dbg(
-                            f"Unsupported conversion from {val.type()} to i{val.bitwidth()}"
-                        )
-                        # fall-thourgh
-                else:
-                    # join two consequiteve values if possible
-                    nxtval = values.get(offval + valbw)
-                    if nxtval and valbw + nxtval.bytewidth() >= bts:
-                        EM = getGlobalExprManager()
-                        extr = EM.Extract(
-                            EM.Cast(nxtval, IntType(val.bitwidth())),
-                            ConcreteVal(0, OffsetType),
-                            ConcreteVal(8 * (bts - valbw) - 1, OffsetType),
-                        )
-                        assert valbw + extr.bytewidth() == bts, extr
-                        expr = EM.Concat(
-                            extr, val
-                        )  # the values are store in little endian
-                        assert expr.bytewidth() == bts, expr
-                        return expr, None
+            if size <= MAX_BYTES_SIZE:
+                values, err = mo_to_bytes(values, size)
+                if err:
+                    return None, err
+                self.values = values
+                return read_bytes(values, offval, size, bts)
 
             return None, MemError(
                 MemError.UNSUPPORTED,
@@ -116,6 +119,72 @@ class MemoryObject(CoreMO):
 
         # FIXME: make me return Bytes objects (a sequence of bytes)
         return val, None
+
+    def write(self, x, off=ConcreteVal(0, OffsetType)):
+        """
+        Write 'x' to 'off' offset in this object.
+        Return None if everything is fine, otherwise return the error
+        """
+        assert isinstance(x, Value)
+        assert self._ro is False, "Writing read-only object (COW bug)"
+
+        if not off.is_concrete():
+            return MemError(MemError.UNSUPPORTED,
+                "Write to non-constant offset not supported")
+
+        if not self.getSize().is_concrete():
+            return MemError(MemError.UNSUPPORTED,
+                "Write to symbolic-sized objects not implemented yet"
+            )
+
+        size = self.getSize().value()
+        offval = off.value()
+
+        if x.bytewidth() > size + offval:
+         return MemError(
+             MemError.OOB_ACCESS,
+             "Written value too big for the object. "
+             "Writing {0}B to offset {1} of {2}B object".format(
+                 x.bytewidth(), offval, size
+             ),
+         )
+
+        values = self.values
+        if isinstance(values, list):
+            return write_bytes(offval, values, size, x)
+        else:
+            # does the write overlap? should we promote the object
+            # to bytes-object?
+            # FIXME: not efficient...
+            bw = x.bytewidth()
+            for o, val in values.items():
+                if offval < o + val.bytewidth() and offval + bw > o:
+                    if size <= MAX_BYTES_SIZE: #For now...
+                        # promote to bytes
+                        tmp, err = mo_to_bytes(values, size)
+                        if err:
+                            return err
+                        self.values = tmp
+                        return write_bytes(offval, tmp, size, x)
+                    return MemError(MemError.UNSUPPORTED,
+                                    "Overlapping writes to memory")
+
+            values[offval] = x
+            return None
+        return MemError(MemError.UNSUPPORTED, "Unsupported memory operation")
+
+    def __repr__(self):
+        s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
+            self._id,
+            self.name if self.name else "no name",
+            self.allocation.as_value() if self.allocation else "unknown",
+            self._ro,
+            self.getSize(),
+        )
+        vals = self.values
+        for k, v in (enumerate(vals) if isinstance(vals, list) else vals.items()):
+            s += "\n  {0} -> {1}".format(k, v)
+        return s
 
 
 class Memory(CoreMemory):

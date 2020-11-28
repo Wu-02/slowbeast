@@ -139,7 +139,7 @@ class MemoryObject:
     def __eq__(self, oth):
         return self._id == oth._id
 
-    def __str__(self):
+    def __repr__(self):
         s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
             self._id,
             self.name if self.name else "no name",
