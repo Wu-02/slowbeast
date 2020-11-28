@@ -310,8 +310,8 @@ def main():
             rmtree(args.out_dir)
             mkdir(args.out_dir)
 
-            with open('{0}/program.txt'.format(args.out_dir), 'w') as f:
-                P.dump(f)
+        with open('{0}/program.txt'.format(args.out_dir), 'w') as f:
+            P.dump(f)
 
         if not args.no_tests:
             testgen = TestCaseGenerator(args.out_dir, args.all_tests)
