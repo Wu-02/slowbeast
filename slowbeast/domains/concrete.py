@@ -209,7 +209,6 @@ class ConcreteDomain:
 
     def Xor(a, b):
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
-        assert a.type() == b.type()
         return ConcreteVal(float_to_bv(a) ^ float_to_bv(b), IntType(a.bitwidth()))
 
     def Not(a):
