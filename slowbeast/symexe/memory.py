@@ -35,7 +35,7 @@ def read_bytes(values, offval, size, bts):
     assert offval >= 0, bts
     EM = getGlobalExprManager()
     if not all(values[i] for i in range(offval, offval + bts)):
-        return None, MemError(MemError.UNSUPPORTED,
+        return None, MemError(MemError.UNINIT_READ,
                               "Read of uninitialized byte")
     c = offval + bts - 1
     return EM.Concat(*(values[c - i] for i in range(0, bts))), None

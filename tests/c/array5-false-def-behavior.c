@@ -10,6 +10,6 @@ int main() {
 	int n = 7;
 	array[n+1] = 1;
 	assert(array[n] == 1);
-	// CHECK: Read from uninitialized memory
+	// CHECK: memory error - uninitialized read
 	// CHECK: Found errors: 1
 }
