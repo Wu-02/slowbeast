@@ -701,9 +701,7 @@ class BVSymbolicDomain:
     # Arithmetic operations
     def Add(a, b, isfloat=False):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
-            a.type(), b.type()
-        )
+        assert a.bitwidth() == b.bitwidth(), f"{a} + {b}"
         bw = a.bitwidth()
         if isfloat:
             # the operations on CPU work on doubles( well, 80-bits...)
@@ -711,45 +709,39 @@ class BVSymbolicDomain:
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(ae + be, bw), FloatType(bw))
-        return Expr(a.unwrap() + b.unwrap(), IntType(bw))
+        return Expr(floatToBV(a) + floatToBV(b), IntType(bw))
 
     def Sub(a, b, isfloat=False):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
-            a.type(), b.type()
-        )
+        assert a.bitwidth() == b.bitwidth(), f"{a} - {b}"
         bw = a.bitwidth()
         if isfloat:
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(ae - be, bw), FloatType(bw))
-        return Expr(a.unwrap() - b.unwrap(), IntType(bw))
+        return Expr(floatToBV(a) - floatToBV(b), IntType(bw))
 
     def Mul(a, b, isfloat=False):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
-            a.type(), b.type()
-        )
+        assert a.bitwidth() == b.bitwidth(), f"{a} * {b}"
         bw = a.bitwidth()
         if isfloat:
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(ae * be, bw), FloatType(bw))
-        return Expr(a.unwrap() * b.unwrap(), IntType(bw))
+        return Expr(floatToBV(a) * floatToBV(b), IntType(bw))
 
     def Div(a, b, unsigned=False, isfloat=False):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
-            a.type(), b.type()
-        )
+        assert a.bitwidth() == b.bitwidth(), f"{a} / {b}"
         bw = a.bitwidth()
         if isfloat:
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(ae / be, bw), FloatType(bw))
         if unsigned:
-            return Expr(UDiv(a.unwrap(), b.unwrap()), IntType(bw))
-        return Expr(a.unwrap() / b.unwrap(), IntType(bw))
+            return Expr(UDiv(floatToBV(a), floatToBV(b)), IntType(bw))
+        return Expr(floatToBV(a) / floatToBV(b), IntType(bw))
 
     def Rem(a, b, unsigned=False):
         assert BVSymbolicDomain.belongto(a, b)
