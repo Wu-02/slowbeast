@@ -550,8 +550,8 @@ class BVSymbolicDomain:
     def Cast(a: Value, ty: Type, signed: bool = True):
         """ Reinterpret cast """
         assert BVSymbolicDomain.belongto(a)
+        tybw = ty.bitwidth()
         if ty.is_float():
-            tybw = ty.bitwidth()
             if a.is_int():
                 if tybw > a.bitwidth():
                     # extend the bitvector
@@ -572,6 +572,12 @@ class BVSymbolicDomain:
             #    ae = floatToUBV(a, ty)
             ae = fpToIEEEBV(a._expr)
             return Expr(ae, ty)
+        elif a.is_bool() and ty.is_int():
+            return Expr(If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)),
+                        IntType(tybw))
+        elif a.is_int() and ty.is_bool():
+            return Expr(If(Ne(a.unwrap(), bv_const(0, a.bitwidth())),
+                           TRUE(), FALSE()), BoolType())
         return None  # unsupported conversion
 
     def Extract(a, start, end):

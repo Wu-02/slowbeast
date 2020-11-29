@@ -21,7 +21,11 @@ def write_bytes(offval, values, size, x):
     EM = getGlobalExprManager()
     bw = x.bytewidth()
     if not x.is_int():
-        x = EM.Cast(x, IntType(bw))
+        newx = EM.Cast(x, IntType(8*bw))
+        if newx is None:
+            return MemError(MemError.UNSUPPORTED,
+                            f"Cast of {x} to i{bw} is unsupported")
+        x = newx
     n = 0
     for i in range(offval, offval + bw):
         b = get_byte(EM, x, bw, n)
@@ -44,10 +48,9 @@ def mo_to_bytes(values, size):
     dbgv("Promoting MO to bytes", color="gray")
     newvalues = [None] * size
     for o, val in values.items():
-       tmp = write_bytes(o, newvalues, size, val)
-       if not tmp is None:
-           return None, MemError(MemError.UNSUPPORTED,
-                                 "Error when writing to memory")
+        tmp = write_bytes(o, newvalues, size, val)
+        if not tmp is None:
+            return None, tmp
     return newvalues, None
 
 MAX_BYTES_SIZE = 64

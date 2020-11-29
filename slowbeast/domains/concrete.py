@@ -237,12 +237,17 @@ class ConcreteDomain:
         Reinterpret cast
         """
         assert ConcreteDomain.belongto(a)
+        if a.is_bool() and ty.is_int():
+            return ConcreteVal(1 if a.value() else 0,
+                               IntType(ty.bitwidth()))
         if a.is_int():
             if ty.is_float():
                 return ConcreteVal(trunc_to_float(float(a.value()),
                                                   ty.bitwidth()), ty)
             elif ty.is_int():
                 return ConcreteVal(a.value(), ty)
+            elif ty.is_bool():
+                return ConcreteBool(False if a.value() == 0 else True)
         elif a.is_float():
             if ty.is_float():
                 return ConcreteVal(trunc_to_float(a.value(),
