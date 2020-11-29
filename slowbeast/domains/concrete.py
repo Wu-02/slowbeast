@@ -356,7 +356,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = float(a.value()), float(b.value())
+            aval, bval = bv_to_float(a), bv_to_float(b)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval <= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval <= bval)
@@ -371,7 +371,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = float(a.value()), float(b.value())
+            aval, bval = bv_to_float(a), bv_to_float(b)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval < bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval < bval)
@@ -386,7 +386,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = float(a.value()), float(b.value())
+            aval, bval = bv_to_float(a), bv_to_float(b)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval >= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval >= bval)
@@ -401,7 +401,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = float(a.value()), float(b.value())
+            aval, bval = bv_to_float(a), bv_to_float(b)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval > bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval > bval)
@@ -416,7 +416,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = float(a.value()), float(b.value())
+            aval, bval = bv_to_float(a), bv_to_float(b)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval == bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval == bval)
@@ -431,7 +431,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = float(a.value()), float(b.value())
+            aval, bval = bv_to_float(a), bv_to_float(b)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval != bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval != bval)
