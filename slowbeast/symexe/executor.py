@@ -435,7 +435,7 @@ class Executor(ConcreteExecutor):
                 raise RuntimeError(f"Invalid value of boolean condition: {cval}")
         else:
             op1 = state.eval(instr.getOperand(0))
-            op2 = state.eval(instr.getOperand(2))
+            op2 = state.eval(instr.getOperand(1))
             expr = state.getExprManager().Ite(cond, op1, op2)
             state.set(instr, expr)
         state.pc = state.pc.get_next_inst()
