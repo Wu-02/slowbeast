@@ -251,7 +251,7 @@ class ConcreteDomain:
                                IntType(ty.bitwidth()))
         if a.is_int():
             if ty.is_float():
-                return ConcreteVal(trunc_to_float(float(a.value()),
+                return ConcreteVal(trunc_to_float(to_fp(a),
                                                   ty.bitwidth()), ty)
             elif ty.is_int():
                 return ConcreteVal(a.value(), ty)

@@ -86,7 +86,9 @@ if _use_z3:
 
     def to_bv(x):
         if x.is_float():
-            return simplify(fpToIEEEBV(x._expr))
+            r = simplify(fpToIEEEBV(x._expr))
+            assert r.sort().ebits() + r.sort().sbits() == x.bitwidth()
+            return r
 
         return x.unwrap()
 
@@ -554,15 +556,17 @@ class BVSymbolicDomain:
         tybw = ty.bitwidth()
         if ty.is_float():
             if a.is_int():
-                if tybw > a.bitwidth():
+                abw = a.bitwidth()
+                if tybw > abw:
+                    # first convert to float of the same bw and then extend
+                    r = simplify(fpToFP(a._expr, get_fp_sort(abw)))
                     # extend the bitvector
-                    e = sext_expr(a, tybw) if signed else zext_expr(a, tybw)
+                    expr = fpFPToFP(RNE(), r, get_fp_sort(tybw))
                 else:
-                    e = a._expr
-                if signed:
-                    expr = fpToFP(RNE(), e, get_fp_sort(tybw))
-                else:
-                    expr = fpToFP(e, get_fp_sort(tybw))
+                    if signed:
+                        expr = fpToFP(RNE(), a._expr, get_fp_sort(tybw))
+                    else:
+                        expr = fpToFP(a._expr, get_fp_sort(tybw))
                 return Expr(expr, ty)
             elif a.is_float():
                 return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
