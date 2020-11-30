@@ -250,6 +250,7 @@ class ExprManager:
         return opt(SymbolicDomain.SExt(a, b))
 
     def Cast(self, a: Value, ty: Type):
+        """ reinterpret cast"""
         assert isinstance(ty, Type)
         if a.type() == ty:
             return a
@@ -260,6 +261,20 @@ class ExprManager:
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.Cast(a, ty)
         return SymbolicDomain.Cast(a, ty)
+
+    def BitCast(self, a: Value, ty: Type):
+        """ static cast"""
+        assert isinstance(ty, Type)
+        if a.type() == ty:
+            return a
+        if a.is_pointer():
+            # pointer to int or int to pointer (where the int is actually
+            # a pointer as we do not change its value)
+            return a
+        if ConcreteDomain.belongto(a):
+            return ConcreteDomain.BitCast(a, ty)
+        return SymbolicDomain.BitCast(a, ty)
+
 
     def Extract(self, a, start, end):
         assert ConcreteDomain.belongto(start, end), "Invalid sext argument"

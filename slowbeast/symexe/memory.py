@@ -21,7 +21,8 @@ def write_bytes(offval, values, size, x):
     EM = getGlobalExprManager()
     bw = x.bytewidth()
     if not x.is_int():
-        newx = EM.Cast(x, IntType(8*bw))
+        # rename to Cast and Cast to ReinterpretCast
+        newx = EM.BitCast(x, IntType(8*bw))
         if newx is None:
             return MemError(MemError.UNSUPPORTED,
                             f"Cast of {x} to i{bw} is unsupported")

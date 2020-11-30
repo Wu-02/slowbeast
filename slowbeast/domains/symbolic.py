@@ -50,6 +50,7 @@ if _use_z3:
         Float64,
         Float128,
         FPVal,
+        fpDiv,
         fpAbs,
         fpNeg,
         fpIsInf,
@@ -82,6 +83,8 @@ if _use_z3:
         if x.is_float() and bw == 32:
             r = x._expr
         else:
+            assert not x.is_float()
+            # bitcast from IEEE
             r = simplify(fpToFP(x._expr, get_fp_sort(bw)))
         r = simplify(fpFPToFP(RNE(), r, Float64()))
         return r
@@ -551,6 +554,29 @@ class BVSymbolicDomain:
         ae = to_bv(a) if a.is_float() else boolToBV(a)
         return Expr(BVSExt(bw - a.bitwidth(), ae), IntType(bw))
 
+    def BitCast(a: Value, ty: Type):
+        """ Static cast """
+        assert BVSymbolicDomain.belongto(a)
+        tybw = ty.bitwidth()
+        if ty.is_float():
+            if a.is_int():
+                # from IEEE bitvector
+                expr = fpToFP(a._expr, get_fp_sort(tybw))
+                return Expr(expr, ty)
+            elif a.is_float():
+                return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
+        elif a.is_float() and ty.is_int():
+            ae = fpToIEEEBV(a._expr)
+            return Expr(ae, ty)
+        elif a.is_bool() and ty.is_int():
+            return Expr(If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)),
+                        IntType(tybw))
+        elif a.is_int() and ty.is_bool():
+            return Expr(If((a.unwrap() != bv_const(0, a.bitwidth())),
+                           TRUE(), FALSE()), BoolType())
+        return None  # unsupported conversion
+
+
     def Cast(a: Value, ty: Type, signed: bool = True):
         """ Reinterpret cast """
         assert BVSymbolicDomain.belongto(a)
@@ -744,7 +770,7 @@ class BVSymbolicDomain:
         if isfloat:
             ae = to_double(a)
             be = to_double(b)
-            return Expr(trunc_fp(ae / be, bw), FloatType(bw))
+            return Expr(trunc_fp(fpDiv(RNE(), ae, be), bw), FloatType(bw))
         if unsigned:
             return Expr(UDiv(to_bv(a), to_bv(b)), IntType(bw))
         return Expr(to_bv(a) / to_bv(b), IntType(bw))
