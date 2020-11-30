@@ -39,7 +39,7 @@ def to_bv(x, unsigned=True):
                 else unpack("q", pack("d", x.value()))
             )[0]
         return d
-    if x.is_int() and not unsigned:
+    if (x.is_int() or x.is_bytes()) and not unsigned:
         # signed/unsigned conversion
         return (unpack(">q", to_unsigned(x.value(), bw).to_bytes(8, "big")) if bw == 64 else
                 unpack(">i", to_unsigned(x.value(), bw).to_bytes(4, "big")))[0]
