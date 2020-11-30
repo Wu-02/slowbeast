@@ -263,23 +263,29 @@ class ConcreteDomain:
 
     def Shl(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert b.value() < a.bitwidth(), "Invalid shift"
-        return ConcreteVal(a.value() << b.value(), a.type())
+        assert b.is_int(), b
+        bw = a.bitwidth()
+        assert b.value() < bw, "Invalid shift"
+        return ConcreteVal(float_to_bv(a) << b.value(), IntType(bw))
 
     def AShr(a, b):
         assert ConcreteDomain.belongto(a, b)
-        assert b.value() < a.bitwidth(), "Invalid shift"
-        return ConcreteVal(a.value() >> b.value(), a.type())
+        assert b.is_int(), b
+        bw = a.bitwidth()
+        assert b.value() < bw, "Invalid shift"
+        return ConcreteVal(float_to_bv(a) >> b.value(), IntType(bw))
 
     def LShr(a, b):
         assert ConcreteDomain.belongto(a, b)
+        assert b.is_int(), b
         assert b.value() < a.bitwidth(), "Invalid shift"
-        val = a.value()
+        val = float_to_bv(a)
+        bw = a.bitwidth()
         return ConcreteVal(
-            a.value() >> b.value()
+            float_to_bv(a) >> b.value()
             if val >= 0
-            else (val + (1 << a.bitwidth())) >> b.value(),
-            a.type(),
+            else (val + (1 << bw)) >> b.value(),
+            IntType(bw),
         )
 
     def Extract(a, start, end):
@@ -288,7 +294,7 @@ class ConcreteDomain:
         assert end.is_concrete()
         bitsnum = end.value() - start.value() + 1
         return ConcreteInt(
-            (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
+            (float_to_bv(a) >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
         )
 
     def Concat(*args):
@@ -310,8 +316,8 @@ class ConcreteDomain:
         assert b.value() != 0, "Invalid remainder"
         if unsigned:
             return ConcreteVal(
-                to_unsigned(a.value(), a.bitwidth())
-                % to_unsigned(b.value(), b.bitwidth()),
+                to_unsigned(float_to_bv(a), a.bitwidth())
+                % to_unsigned(float_to_bv(b), b.bitwidth()),
                 a.type(),
             )
         return ConcreteVal(a.value() % b.value(), a.type())

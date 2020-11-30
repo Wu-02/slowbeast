@@ -501,6 +501,7 @@ class BVSymbolicDomain:
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
+            print(a, b)
             return Expr(to_bv(a) & to_bv(b), IntType(a.bitwidth()))
 
     def Or(a, b):
@@ -602,15 +603,18 @@ class BVSymbolicDomain:
 
     def Shl(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a.unwrap() << b.unwrap(), a.type())
+        assert b.is_int(), b
+        return Expr(to_bv(a) << b.unwrap(),  IntType(a.bitwidth()))
 
     def AShr(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(a.unwrap() >> b.unwrap(), a.type())
+        assert b.is_int(), b
+        return Expr(to_bv(a) >> b.unwrap(), IntType(a.bitwidth()))
 
     def LShr(a, b):
         assert BVSymbolicDomain.belongto(a, b)
-        return Expr(BVLShR(a.unwrap(), b.unwrap()), a.type())
+        assert b.is_int(), b
+        return Expr(BVLShR(to_bv(a), b.unwrap()), IntType(a.bitwidth()))
 
     def getTrue():
         return Expr(TRUE(), BoolType())
