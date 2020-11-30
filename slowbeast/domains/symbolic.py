@@ -492,7 +492,7 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(c)
         assert c.is_bool(), c
         assert a.type() == b.type(), f"{a}, {b}"
-        return Expr(If(c, a, b), a.type())
+        return Expr(If(c.unwrap(), a.unwrap(), b.unwrap()), a.type())
 
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)
