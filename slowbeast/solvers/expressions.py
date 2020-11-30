@@ -221,11 +221,11 @@ class ExprManager:
             return ConcreteDomain.Not(a)
         return opt(SymbolicDomain.Not(self.lift(a)))
 
-    def Neg(self, a):
+    def Neg(self, a, isfloat):
         """ Return the negated number """
         if ConcreteDomain.belongto(a):
-            return ConcreteDomain.Neg(a)
-        return opt(SymbolicDomain.Neg(self.lift(a)))
+            return ConcreteDomain.Neg(a, isfloat)
+        return opt(SymbolicDomain.Neg(self.lift(a), isfloat))
 
     def Abs(self, a):
         if ConcreteDomain.belongto(a):

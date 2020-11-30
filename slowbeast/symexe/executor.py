@@ -461,7 +461,7 @@ class Executor(ConcreteExecutor):
             start, end = instr.getRange()
             r = E.Extract(op1, start, end)
         elif opcode == UnaryOperation.NEG:
-            r = E.Neg(op1)
+            r = E.Neg(op1, instr.is_fp())
         elif opcode == UnaryOperation.ABS:
             r = E.Abs(op1)
         elif opcode == UnaryOperation.FP_OP:

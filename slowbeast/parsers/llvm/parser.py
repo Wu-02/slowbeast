@@ -352,7 +352,7 @@ class Parser:
     def _createFNeg(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for fneg"
-        I = Neg(to_float_ty(self.getOperand(operands[0])))
+        I = Neg(to_float_ty(self.getOperand(operands[0])), fp=True)
         self._addMapping(inst, I)
         return [I]
 

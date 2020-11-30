@@ -497,11 +497,17 @@ class Cast(UnaryOperation):
 class Neg(UnaryOperation):
     """ Negate the number (return the same number with opposite sign) """
 
-    def __init__(self, val):
+    def __init__(self, val, fp):
         super().__init__(UnaryOperation.NEG, val)
+        self._fp = fp
+
+    def is_fp(self):
+        return self._fp
 
     def __str__(self):
-        return "x{0} = -({1})".format(self.get_id(), self.getOperand(0).as_value())
+        return "x{0} = -({1}){2}".format(self.get_id(),
+                                         self.getOperand(0).as_value(),
+                                         "f" if self._fp else "")
 
 
 class ExtractBits(UnaryOperation):

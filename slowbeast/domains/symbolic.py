@@ -760,11 +760,13 @@ class BVSymbolicDomain:
         expr = a.unwrap()
         return Expr(If(expr < 0, -expr, expr), a.type())
 
-    def Neg(a):
+    def Neg(a, isfloat):
         """ Return the negated number """
         assert BVSymbolicDomain.belongto(a)
-        if a.is_float():
-            return Expr(fpNeg(a.unwrap()), a.type())
+        bw = a.bitwidth()
+        if isfloat:
+            return Expr(trunc_fp(fpNeg(to_double(a)), bw),
+                        FloatType(bw))
         expr = a.unwrap()
         return Expr(-expr, a.type())
 

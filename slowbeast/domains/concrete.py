@@ -41,20 +41,25 @@ def bv_to_float(x, unsigned=False):
     val = x.value()
     if x.is_float():
         return val
-
-    if unsigned:
-        r = (
+    return (
             unpack("f", pack("I", val))
             if x.bitwidth() == 32
-            else unpack("d", pack("L", val))
-        )
-    else:
-        r = (
-            unpack("f", pack("i", val))
-            if x.bitwidth() == 32
-            else unpack("d", pack("l", val))
-        )
-    return r[0]
+            else unpack("d", pack("Q", val))
+        )[0]
+
+   #if unsigned:
+   #    r = (
+   #        unpack("f", pack("I", val))
+   #        if x.bitwidth() == 32
+   #        else unpack("d", pack("Q", val))
+   #    )
+   #else:
+   #    r = (
+   #        unpack("f", pack("i", val))
+   #        if x.bitwidth() == 32
+   #        else unpack("d", pack("Q", val))
+   #    )
+   #return r[0]
 
 
 def to_unsigned(x, bw):
@@ -311,13 +316,14 @@ class ConcreteDomain:
             )
         return ConcreteVal(a.value() % b.value(), a.type())
 
-    def Neg(a):
+    def Neg(a, isfloat):
         """ Return the negated number """
         assert ConcreteDomain.belongto(a)
         ty = a.type()
-        if a.is_float():
-            return ConcreteVal(trunc_to_float(-a.value(),
-                                              ty.bitwidth()), ty)
+        bw = ty.bitwidth()
+        if isfloat:
+            return ConcreteVal(trunc_to_float(-bv_to_float(a),
+                                              ty.bitwidth()), FloatType(bw))
         return ConcreteVal(wrap_to_bw(-a.value(), ty.bitwidth()), ty)
 
     def Abs(a):
@@ -356,7 +362,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = bv_to_float(a), bv_to_float(b)
+            aval, bval = bv_to_float(a, unsigned), bv_to_float(b, unsigned)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval <= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval <= bval)
@@ -371,7 +377,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = bv_to_float(a), bv_to_float(b)
+            aval, bval = bv_to_float(a, unsigned), bv_to_float(b, unsigned)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval < bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval < bval)
@@ -386,7 +392,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = bv_to_float(a), bv_to_float(b)
+            aval, bval = bv_to_float(a, unsigned), bv_to_float(b, unsigned)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval >= bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval >= bval)
@@ -401,7 +407,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = bv_to_float(a), bv_to_float(b)
+            aval, bval = bv_to_float(a, unsigned), bv_to_float(b, unsigned)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval > bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval > bval)
@@ -416,7 +422,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = bv_to_float(a), bv_to_float(b)
+            aval, bval = bv_to_float(a, unsigned), bv_to_float(b, unsigned)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval == bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval == bval)
@@ -431,7 +437,7 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            aval, bval = bv_to_float(a), bv_to_float(b)
+            aval, bval = bv_to_float(a, unsigned), bv_to_float(b, unsigned)
             if unsigned:  # means unordered for floats
                 return ConcreteBool(aval != bval)
             return ConcreteBool(not isnan(aval) and not isnan(bval) and aval != bval)
