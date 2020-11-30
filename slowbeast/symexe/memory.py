@@ -1,4 +1,4 @@
-from slowbeast.ir.types import OffsetType, IntType
+from slowbeast.ir.types import OffsetType, IntType, Bytes
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.core.errors import MemError
@@ -43,7 +43,11 @@ def read_bytes(values, offval, size, bts):
         return None, MemError(MemError.UNINIT_READ,
                               "Read of uninitialized byte")
     c = offval + bts - 1
-    return EM.Concat(*(values[c - i] for i in range(0, bts))), None
+    # FIXME hack
+    # just make Extract return Bytes and it should work well then
+    val = EM.Concat(*(values[c - i] for i in range(0, bts)))
+    val._type = Bytes(val.bytewidth())
+    return val, None
 
 def mo_to_bytes(values, size):
     dbgv("Promoting MO to bytes", color="gray")

@@ -27,6 +27,10 @@ class Type:
     def is_float(self):
         return False
 
+    def is_bytes(self):
+        """ Uninterpreted sequence of bytes """
+        return False
+
     def is_bool(self):
         return False
 
@@ -44,6 +48,8 @@ class Type:
             return "bool"
         if self.is_float():
             s = "f{0}b".format(self._bitwidth)
+        elif self.is_bytes():
+            s = "x{0}".format(self._bitwidth)
         else:
             s = "{0}b".format(self._bitwidth)
         if self.is_pointer():
@@ -86,6 +92,13 @@ class BoolType(Type):
         Type.__init__(self, 1)
 
     def is_bool(self):
+        return True
+
+class Bytes(Type):
+    def __init__(self, bytenum):
+        Type.__init__(self, bytenum*8)
+
+    def is_bytes(self):
         return True
 
 

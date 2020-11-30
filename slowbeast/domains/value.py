@@ -34,6 +34,9 @@ class Value:
     def is_float(self):
         return self._type.is_float()
 
+    def is_bytes(self):
+        return self._type.is_bytes()
+
     def is_concrete(self):
         """
         Is integer constant or boolean constant?

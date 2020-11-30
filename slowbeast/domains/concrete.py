@@ -247,6 +247,9 @@ class ConcreteDomain:
         if a.is_bool() and ty.is_int():
             return ConcreteVal(1 if a.value() else 0,
                                IntType(ty.bitwidth()))
+        if a.is_bytes() and ty.is_float():
+                return ConcreteVal(trunc_to_float(to_fp(a),
+                                                  ty.bitwidth()), ty)
         if a.is_int():
             if ty.is_float():
                 return ConcreteVal(trunc_to_float(float(a.value()),
@@ -269,6 +272,9 @@ class ConcreteDomain:
         if a.is_bool() and ty.is_int():
             return ConcreteVal(1 if a.value() else 0,
                                IntType(ty.bitwidth()))
+        if a.is_bytes() and ty.is_float():
+                return ConcreteVal(trunc_to_float(to_fp(a),
+                                                  ty.bitwidth()), ty)
         if a.is_int():
             if ty.is_float():
                 return ConcreteVal(trunc_to_float(to_fp(a),
@@ -483,7 +489,7 @@ class ConcreteDomain:
     def Add(a, b, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert a.is_int() or a.is_float()
+        assert a.is_int() or a.is_float() or a.is_bytes()
         # FIXME: add self-standing float domain
         bw = a.bitwidth()
         if isfloat:
@@ -496,7 +502,7 @@ class ConcreteDomain:
     def Sub(a, b, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert a.is_int() or a.is_float()
+        assert a.is_int() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
             return ConcreteVal(trunc_to_float(to_fp(a) - to_fp(b),
@@ -507,7 +513,7 @@ class ConcreteDomain:
     def Mul(a, b, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert a.is_int() or a.is_float()
+        assert a.is_int() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
             return ConcreteVal(trunc_to_float(to_fp(a) * to_fp(b),
@@ -518,7 +524,7 @@ class ConcreteDomain:
     def Div(a, b, unsigned=False, isfloat=False):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert a.is_int() or a.is_float()
+        assert a.is_int() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
             result_ty = FloatType(bw)

@@ -558,6 +558,10 @@ class BVSymbolicDomain:
         """ Static cast """
         assert BVSymbolicDomain.belongto(a)
         tybw = ty.bitwidth()
+        if ty.is_float() and a.is_bytes():
+                # from IEEE bitvector
+                expr = fpToFP(a._expr, get_fp_sort(tybw))
+                return Expr(expr, ty)
         if ty.is_float():
             if a.is_int():
                 # from IEEE bitvector
@@ -594,6 +598,11 @@ class BVSymbolicDomain:
                 return Expr(expr, ty)
             elif a.is_float():
                 return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
+            if a.is_bytes():
+                # from IEEE bitvector
+                expr = fpToFP(a._expr, get_fp_sort(a.bitwidth()))
+                expr = fpFPToFP(RNE(), expr, get_fp_sort(tybw))
+                return Expr(expr, ty)
         elif a.is_float() and ty.is_int():
             if signed:
                ae = floatToSBV(a, ty)
