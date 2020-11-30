@@ -57,6 +57,8 @@ if _use_z3:
         fpToFP,
         fpFPToFP,
         fpBVToFP,
+        fpSignedToFP,
+        fpUnsignedToFP,
         fpToIEEEBV,
         RNE,
         fpToUBV,
@@ -556,32 +558,28 @@ class BVSymbolicDomain:
         if ty.is_float():
             if a.is_int():
                 abw = a.bitwidth()
-                if tybw > abw:
-                    # first convert to float of the same bw and then extend
-                    r = simplify(fpToFP(a._expr, get_fp_sort(abw)))
-                    # extend the bitvector
-                    expr = fpFPToFP(RNE(), r, get_fp_sort(tybw))
+                if signed: # from signed bitvector
+                    expr = fpSignedToFP(RNE(), a._expr, get_fp_sort(tybw))
                 else:
-                    if signed: # from signed bitvector
-                        expr = fpToFP(RNE(), a._expr, get_fp_sort(tybw))
-                    else: # from IEEE bitvector
-                        expr = fpToFP(a._expr, get_fp_sort(tybw))
+                    expr = fpUnsignedToFP(RNE(), a._expr, get_fp_sort(tybw))
+                    # from IEEE bitvector
                     #expr = fpToFP(a._expr, get_fp_sort(tybw))
+                #expr = fpToFP(a._expr, get_fp_sort(tybw))
                 return Expr(expr, ty)
             elif a.is_float():
                 return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
         elif a.is_float() and ty.is_int():
-            # if signed:
-            #    ae = floatToSBV(a, ty)
-            # else:
-            #    ae = floatToUBV(a, ty)
-            ae = fpToIEEEBV(a._expr)
+            if signed:
+               ae = floatToSBV(a, ty)
+            else:
+               ae = floatToUBV(a, ty)
+            # ae = fpToIEEEBV(a._expr)
             return Expr(ae, ty)
         elif a.is_bool() and ty.is_int():
             return Expr(If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)),
                         IntType(tybw))
         elif a.is_int() and ty.is_bool():
-            return Expr(If(Ne(a.unwrap(), bv_const(0, a.bitwidth())),
+            return Expr(If((a.unwrap() != bv_const(0, a.bitwidth())),
                            TRUE(), FALSE()), BoolType())
         return None  # unsupported conversion
 
