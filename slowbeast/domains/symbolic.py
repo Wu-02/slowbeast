@@ -87,7 +87,7 @@ if _use_z3:
     def to_bv(x):
         if x.is_float():
             r = simplify(fpToIEEEBV(x._expr))
-            assert r.sort().ebits() + r.sort().sbits() == x.bitwidth()
+            assert r.sort().size() == x.bitwidth(), f"{r.sort()}, {x.type()}"
             return r
 
         return x.unwrap()
@@ -503,7 +503,6 @@ class BVSymbolicDomain:
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            print(a, b)
             return Expr(to_bv(a) & to_bv(b), IntType(a.bitwidth()))
 
     def Or(a, b):
