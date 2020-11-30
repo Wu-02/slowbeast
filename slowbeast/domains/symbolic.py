@@ -563,9 +563,9 @@ class BVSymbolicDomain:
                     # extend the bitvector
                     expr = fpFPToFP(RNE(), r, get_fp_sort(tybw))
                 else:
-                    if signed:
+                    if signed: # from signed bitvector
                         expr = fpToFP(RNE(), a._expr, get_fp_sort(tybw))
-                    else:
+                    else: # from IEEE bitvector
                         expr = fpToFP(a._expr, get_fp_sort(tybw))
                 return Expr(expr, ty)
             elif a.is_float():
