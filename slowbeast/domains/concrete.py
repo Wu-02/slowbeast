@@ -16,6 +16,11 @@ def trunc_to_float(x, bw):
         return unpack("f", pack("f", x))[0]
     return x
 
+def to_unsigned(x, bw):
+    """ Get unsigned value for signed in 2's complement """
+    if x >= 0:
+        return x
+    return x + (1 << bw)
 
 def to_bv(x, unsigned=True):
     bw = x.bitwidth()
@@ -36,8 +41,8 @@ def to_bv(x, unsigned=True):
         return d
     if x.is_int() and not unsigned:
         # signed/unsigned conversion
-        return (unpack(">q", x.value().to_bytes(8, "big")) if bw == 64 else
-                unpack(">i", x.value().to_bytes(4, "big")))[0]
+        return (unpack(">q", to_unsigned(x.value(), bw).to_bytes(8, "big")) if bw == 64 else
+                unpack(">i", to_unsigned(x.value(), bw).to_bytes(4, "big")))[0]
     return x.value()
 
 
@@ -64,13 +69,6 @@ def to_fp(x, unsigned=False):
    #        else unpack("d", pack("Q", val))
    #    )
    #return r[0]
-
-
-def to_unsigned(x, bw):
-    """ Get unsigned value for signed in 2's complement """
-    if x >= 0:
-        return x
-    return x + (1 << bw)
 
 
 def wrap_to_bw(x, bw):
