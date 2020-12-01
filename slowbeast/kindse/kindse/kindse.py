@@ -585,18 +585,17 @@ def simplify_expr(expr, EM):
 
 
 class KindSymbolicExecutor(BaseKindSE):
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions(), genannot=False):
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions(), programstructure=None):
         super().__init__(
-            prog=prog, ohandler=ohandler, opts=opts
+            prog=prog, ohandler=ohandler, opts=opts, programstructure=programstructure
         )
 
         self.readypaths = []
         self.stalepaths = []
 
         self.invpoints = {}
-        self.loops = {}
 
-        self.genannot = genannot
+        self.genannot = False
         self.sum_loops = {}
 
     def handle_loop(self, loc, path, states):
@@ -855,7 +854,9 @@ class KindSymbolicExecutor(BaseKindSE):
         def reportfn(msg, *args, **kwargs):
             print_stdout(f"> {msg}", *args, **kwargs)
 
-        kindse = BaseKindSE(self.getProgram())
+        kindse = KindSymbolicExecutor(self.getProgram(), programstructure=self.programstructure)
+        kindse.invpoints = self.invpoints
+        kindse.sum_loops = self.invpoints
         kindse.reportfn = reportfn
 
         newpaths = []
