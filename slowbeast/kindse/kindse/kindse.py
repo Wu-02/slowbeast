@@ -586,7 +586,7 @@ def simplify_expr(expr, EM):
 
 class KindSymbolicExecutor(BaseKindSE):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions(), genannot=False):
-        super(KindSymbolicExecutor, self).__init__(
+        super().__init__(
             prog=prog, ohandler=ohandler, opts=opts
         )
 
@@ -940,7 +940,7 @@ class KindSymbolicExecutor(BaseKindSE):
         paths = []
         # initialize the paths only in functions
         # that are reachable in the callgraph
-        for F in self.callgraph.funs():
+        for F in self.programstructure.callgraph.funs():
             if F.isUndefined():
                 continue
 

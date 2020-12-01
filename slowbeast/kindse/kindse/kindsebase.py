@@ -11,13 +11,29 @@ from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
-from slowbeast.transforms.splitbblocks import splitProgAroundCalls
-from slowbeast.ir.instruction import Cmp
+class ProgramStructure:
+    def __init__(self, prog, new_dbg_file=None):
+        # run only on reachable functions
+        callgraph = CallGraph(prog)
+        if __debug__:
+            with new_dbg_file("callgraph-full.txt") as f:
+                callgraph.dump(f)
 
+        callgraph.pruneUnreachable(prog.entry())
+        if __debug__:
+            with new_dbg_file("callgraph.txt") as f:
+                callgraph.dump(f)
+
+        self.callgraph = callgraph
+        self.cfgs = {F: CFG(F) for F in callgraph.funs() if not F.isUndefined()}
+        # cfa = CFA(self.getProgram())
+        # if __debug__:
+        #    with self.new_output_file("cfa.txt") as f:
+        #        cfa.dump(f)
 
 class KindSymbolicExecutor(SymbolicInterpreter):
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
-        super(KindSymbolicExecutor, self).__init__(
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions(), programstructure=None):
+        super().__init__(
             P=prog, ohandler=ohandler, opts=opts, ExecutorClass=PathExecutor
         )
 
@@ -29,23 +45,10 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         indexecutor.forbidCalls()
         self.indexecutor = indexecutor
 
-        # run only on reachable functions
-        callgraph = CallGraph(prog)
-        if __debug__:
-            with self.new_output_file("callgraph-full.txt") as f:
-                callgraph.dump(f)
-
-        callgraph.pruneUnreachable(prog.entry())
-        if __debug__:
-            with self.new_output_file("callgraph.txt") as f:
-                callgraph.dump(f)
-
-        self.callgraph = callgraph
-        self.cfgs = {F: CFG(F) for F in callgraph.funs() if not F.isUndefined()}
-        # cfa = CFA(self.getProgram())
-        # if __debug__:
-        #    with self.new_output_file("cfa.txt") as f:
-        #        cfa.dump(f)
+        if programstructure is None:
+            self.programstructure = ProgramStructure(prog, self.new_output_file)
+        else:
+            self.programstructure = programstructure
 
         self.paths = []
         # as we run the executor in nested manners,
@@ -60,8 +63,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         return self.indexecutor
 
     def getCFG(self, F):
-        assert self.cfgs.get(F), f"Have no CFG for function {F.getName()}"
-        return self.cfgs.get(F)
+        assert self.programstructure.cfgs.get(F), f"Have no CFG for function {F.getName()}"
+        return self.programstructure.cfgs.get(F)
 
     def get_return_states(self):
         """
@@ -122,7 +125,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         self.have_problematic_path = True
         print_stdout("Killing a path that goes to caller")
         # start = path.first()
-        # cgnode = self.callgraph.getNode(start.getBBlock().fun())
+        # cgnode = self.programstructure.callgraph.getNode(start.getBBlock().fun())
         # for callerfun, callsite in cgnode.getCallers():
         #    print('caller', callerfun.fun())
         #    print('cs', callsite)
