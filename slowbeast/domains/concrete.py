@@ -263,7 +263,7 @@ class ConcreteDomain:
                 return ConcreteVal(trunc_to_float(a.value(),
                                                   ty.bitwidth()), ty)
             elif ty.is_int():
-                return ConcreteVal(to_bv(a), ty)
+                return ConcreteVal(int(a.value()), ty)
         return None  # unsupported conversion
 
     def BitCast(a: ConcreteVal, ty: Type):
