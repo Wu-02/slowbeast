@@ -286,7 +286,9 @@ def main():
         from slowbeast.ir.types import sb_set_pointer_width
         sb_set_pointer_width(args.pointer_bitwidth)
 
-    llvmparser = LLVMParser()
+    # FIXME: a hack for SV-COMP... we do not support the in KindSE yet
+    llvmparser = LLVMParser(['__VERIFIER_nondet_float',
+                             '__VERIFIER_nondet_double'] if args.kind else None)
     bitcode = compile_and_link(args.prog, args.out_dir)
     try:
         P = llvmparser.parse(bitcode)

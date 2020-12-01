@@ -160,7 +160,7 @@ def offset_of_struct_elem(llvmmodule, ty, cval):
 
 
 class Parser:
-    def __init__(self):
+    def __init__(self, forbid_funs=None):
         self.llvmmodule = None
         self.program = Program()
         self._bblocks = {}
@@ -169,6 +169,7 @@ class Parser:
         # records about PHIs that we created. We must place
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
+        self.forbid_funs = forbid_funs
 
     def getOperand(self, op):
         ret = self._mapping.get(op)
@@ -427,6 +428,8 @@ class Parser:
                             fun = None
         if not fun:
             raise NotImplementedError("Unsupported call: {0}".format(inst))
+        if self.forbid_funs and fun in self.forbid_funs:
+            raise NotImplementedError(f"Forbidden call: {inst} ({fun})")
 
         if fun.startswith("llvm.dbg"):
             return []
