@@ -75,30 +75,6 @@ def remove_implied_literals(clauses):
     return singletons + newclauses
 
 
-def check_base(prog, L, inv):
-    loc = L.header()
-    dbg_sec(f"Checking if {inv} is invariant of loc {loc.getBBlock().get_id()}")
-
-    def reportfn(msg, *args, **kwargs):
-        print_stdout(f"> {msg}", *args, **kwargs)
-
-    kindse = BaseKindSE(prog)
-    kindse.reportfn = reportfn
-
-    newpaths = []
-    for p, _ in L.getEntries():
-        apath = AnnotatedCFGPath([p, loc])
-        apath.addLocAnnotationBefore(inv, loc)
-        newpaths.append(apath)
-
-    maxk = max(map(len, L.getPaths())) + 1
-    dbg_sec("Running nested KindSE")
-    res = kindse.run(newpaths, maxk=maxk)
-    dbg_sec()
-    dbg_sec()
-    return res == 0
-
-
 def get_initial_seq2(unsafe, path, L):
     """
     Return two annotations, one that is the initial safe sequence
@@ -840,7 +816,7 @@ class KindSymbolicExecutor(BaseKindSE):
             # FIXME: check that all the sequences together cover the input paths
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
             for s, S in ((s, s.toannotation(True)) for s in sequences):
-                if check_base(self.getProgram(), L, S):
+                if self.check_base(L, S):
                     print_stdout(
                         f"{S} is inductive on {loc.getBBlock().get_id()}", color="BLUE"
                     )
@@ -871,6 +847,29 @@ class KindSymbolicExecutor(BaseKindSE):
                 return False  # fall-back to unwinding
 
             sequences = extended
+
+    def check_base(self, L, inv):
+        loc = L.header()
+        dbg_sec(f"Checking if {inv} holds at loc {loc.getBBlock().get_id()}")
+
+        def reportfn(msg, *args, **kwargs):
+            print_stdout(f"> {msg}", *args, **kwargs)
+
+        kindse = BaseKindSE(self.getProgram())
+        kindse.reportfn = reportfn
+
+        newpaths = []
+        for p, _ in L.getEntries():
+            apath = AnnotatedCFGPath([p, loc])
+            apath.addLocAnnotationBefore(inv, loc)
+            newpaths.append(apath)
+
+        maxk = max(map(len, L.getPaths())) + 1
+        dbg_sec("Running nested KindSE")
+        res = kindse.run(newpaths, maxk=maxk)
+        dbg_sec()
+        dbg_sec()
+        return res == 0
 
     def check_path(self, path):
         first_loc = path.first()

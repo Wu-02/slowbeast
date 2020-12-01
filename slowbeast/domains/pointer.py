@@ -6,6 +6,7 @@ from slowbeast.domains.value import Value
 class Pointer(Value):
 
     __slots__ = "_object", "_offset"
+    KIND = 5
 
     def __init__(self, obj, off=ConcreteInt(0, POINTER_BIT_WIDTH)):
         assert isinstance(off, Value)
