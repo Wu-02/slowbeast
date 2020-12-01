@@ -16,7 +16,9 @@ class SymbolicMemoryModel(CoreMM):
         return Memory()
 
 
-class LazySymbolicMemoryModel(SymbolicMemoryModel):
+# LazySymbolicMemoryModel inherints from CoreMM intentionally (SymbolicMemoryModel
+# redefined uninitialized reads)
+class LazySymbolicMemoryModel(CoreMM):
     def __init__(self, opts):
         super().__init__(opts)
 
