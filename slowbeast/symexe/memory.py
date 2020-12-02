@@ -100,6 +100,7 @@ class MemoryObject(CoreMO):
                 if err:
                     return None, err
                 self.values = values
+                assert isinstance(self.values, list)
                 return read_bytes(values, offval, size, bts)
 
             return None, MemError(
@@ -167,6 +168,9 @@ class MemoryObject(CoreMO):
             bw = x.bytewidth()
             for o, val in values.items():
                 if offval < o + val.bytewidth() and offval + bw > o:
+                    if o == offval and val.bytewidth() == bw:
+                        break # the overlap is perfect, we just overwrite
+                              # the value
                     if size <= MAX_BYTES_SIZE: #For now...
                         # promote to bytes
                         tmp, err = mo_to_bytes(values, size)
