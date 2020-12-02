@@ -852,7 +852,7 @@ class KindSymbolicExecutor(BaseKindSE):
         dbg_sec(f"Checking if {inv} holds at loc {loc.getBBlock().get_id()}")
 
         def reportfn(msg, *args, **kwargs):
-            print_stdout(f"> {msg}", *args, **kwargs)
+            dbg(f"> {msg}", *args, **kwargs)
 
         kindse = KindSymbolicExecutor(self.getProgram(), programstructure=self.programstructure)
         kindse.invpoints = self.invpoints
@@ -867,7 +867,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
         maxk = max(map(len, L.getPaths())) + 1
         dbg_sec("Running nested KindSE")
-        res = kindse.run(newpaths, maxk=maxk)
+        res = kindse.run(newpaths, maxk=maxk, reportfn=reportfn)
         dbg_sec()
         dbg_sec()
         return res == 0
@@ -890,7 +890,7 @@ class KindSymbolicExecutor(BaseKindSE):
                     (s for s in states.early if s.wasKilled()) if states.early else ()
                 )
                 for s in join_iter(killed1, killed2):
-                    self.report(s)
+                    self.report(s, self.reportfn)
                 self.reportfn(f"Inconclusive (init) path: {path}")
                 self.have_problematic_path = True
                 # there is a problem with this path,
@@ -910,7 +910,7 @@ class KindSymbolicExecutor(BaseKindSE):
         problem = False
         for s in join_iter(killed1, killed2):
             problem = True
-            self.report(s)
+            self.report(s, fn=self.reportfn)
             self.reportfn(f"Killed states when executing {path}")
             self.have_problematic_path = True
 
@@ -1003,7 +1003,7 @@ class KindSymbolicExecutor(BaseKindSE):
         )
         self.queue_paths(newpaths)
 
-    def run(self, paths=None, maxk=None):
+    def run(self, paths=None, maxk=None, reportfn=print_stdout):
         k = 1
 
         if paths is None:
@@ -1018,20 +1018,20 @@ class KindSymbolicExecutor(BaseKindSE):
             path = self.get_path_to_run()
             if path is None:
                 if self.have_problematic_path:
-                    print_stdout(
+                    reportfn(
                         "Enumerating paths finished, but a problem was met.",
                         color="ORANGE",
                     )
                     return 1
 
-                print_stdout("Enumerating paths done!", color="GREEN")
+                reportfn("Enumerating paths done!", color="GREEN")
                 return 0
 
             r, states = self.check_path(path)
             if r is Result.UNSAFE:
                 for s in states.errors:
-                    self.report(s)
-                print_stdout("Error found.", color="RED")
+                    self.report(s, reportfn)
+                reportfn("Error found.", color="RED")
                 return 1
             elif states.errors:  # got error states that may not be real
                 assert r is None
@@ -1047,7 +1047,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
             k += 1
             if maxk and maxk <= k:
-                print_stdout(
+                reportfn(
                     "Hit the maximal number of iterations, giving up.", color="ORANGE"
                 )
                 return 1
