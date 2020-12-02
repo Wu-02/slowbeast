@@ -1,7 +1,7 @@
 import sys
 
 from slowbeast.domains.pointer import Pointer
-from slowbeast.util.debugging import dbgv
+from slowbeast.util.debugging import ldbgv
 from slowbeast.ir.instruction import *
 from slowbeast.domains.concrete import ConcreteInt
 from .errors import GenericError
@@ -372,7 +372,7 @@ class Executor:
             return [state]
 
         fun = instr.getCalledFunction()
-        dbgv("-- CALL {0} --".format(fun.getName()))
+        ldbgv("-- CALL {0} --", (fun.getName()))
         if fun.isUndefined():
             state.setError(
                 GenericError("Called undefined function: {0}".format(fun.getName()))
@@ -421,8 +421,8 @@ class Executor:
         TODO: exceptional termination (like assert?)
         """
         # debug print
-        dbgv(
-            "({2}) {0}: {1}".format(
+        ldbgv(
+            "({2}) {0}: {1}", (
                 "--" if not instr.getBBlock() else instr.fun().getName(),
                 str(instr),
                 state.get_id(),
