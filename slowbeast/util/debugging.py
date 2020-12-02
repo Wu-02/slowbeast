@@ -123,6 +123,18 @@ def dbgv(msg, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr):
 
     fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
+def ldbgv(fmt, args, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr):
+    """
+    Lazy dbgv -- does not build the debugging message unless debugging is set
+    to True. Especially strings that contain solver expressions take a long
+    time to build.
+    """
+    if __debug__:
+        if _is_debugging < verbose_lvl:
+            return
+
+        fn(fmt.format(*args), f"[sb] {_debugging_prefix}", print_ws, color)
+
 
 def dbg_sec(msg=None, color="WHITE"):
     if msg is None:

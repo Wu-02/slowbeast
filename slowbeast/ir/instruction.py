@@ -4,7 +4,7 @@ from .types import Type  # due to assertions
 from .bblock import BBlock  # due to assertions
 from .program import ProgramElement
 
-from ..util.debugging import print_highlight
+from slowbeast.util.debugging import print_highlight
 
 
 class GlobalVariable(ProgramElement):
