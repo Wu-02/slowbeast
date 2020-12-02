@@ -905,7 +905,8 @@ class KindSymbolicExecutor(BaseKindSE):
         r = self.executePath(path)
 
         killed1 = (s for s in r.other if s.wasKilled()) if r.other else ()
-        killed2 = (s for s in r.early if s.wasKilled()) if r.early else ()
+        killed2 = (s for s in r.early if s.wasKilled() or (s.hasError() and
+                                                           s.getError().isMemError())) if r.early else ()
         problem = False
         for s in join_iter(killed1, killed2):
             problem = True
