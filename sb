@@ -20,6 +20,9 @@ def createArgParser():
     parser = argparse.ArgumentParser()
     parser.add_argument('prog', nargs='+', help='program to be analyzed')
     parser.add_argument('-dbg', action='store_true', help='write debugging messages')
+    parser.add_argument('-lang', action='store', help='Specify the input'
+                        'language: C, LLVM (forces the file to be compiled to LLVM if'
+                        'lang is LLVM and input file is C)')
     parser.add_argument('-entry', default='main', help='entry function')
     parser.add_argument('-out-dir', default='sb-out', help='Directory for output files')
     parser.add_argument('-interactive', action='store_true', default=False, help='Introspect the run of the algorithm')
@@ -286,15 +289,27 @@ def main():
         from slowbeast.ir.types import sb_set_pointer_width
         sb_set_pointer_width(args.pointer_bitwidth)
 
-    llvmparser = LLVMParser()
-    bitcode = compile_and_link(args.prog, args.out_dir)
+    parser = None
+    if args.lang:
+        lang = args.lang.lower()
+    else:
+        lang = 'llvm'
+
+    if lang == 'c':
+        from slowbeast.parsers.c.parser import Parser as CParser
+        parser = CParser()
+        code = args.prog
+    elif lang == 'llvm':
+        from slowbeast.parsers.llvm.parser import Parser as LLVMParser
+        parser = LLVMParser()
+        code = compile_and_link(args.prog, args.out_dir)
     try:
-        P = llvmparser.parse(bitcode)
+        P = parser.parse(code)
     except FileNotFoundError as e:
         err(str(e))
 
     if not P:
-        err("Failed parsing the bitcode")
+        err("Failed parsing the code")
 
     if args.parse_only:
         P.dump()

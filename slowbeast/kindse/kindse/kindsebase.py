@@ -1,15 +1,33 @@
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbgv
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 from slowbeast.kindse.annotatedcfg import CFG
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.callgraph import CallGraph
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
-    SEOptions,
 )
+from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
+
+
+def check_paths(executor, paths, pre=None, post=None):
+    result = PathExecutionResult()
+    for path in paths:
+        p = path.copy()
+        # the post-condition is the whole frame
+        if post:
+            p.addPostcondition(post.as_assert_annotation())
+
+        if pre:
+            p.addPrecondition(pre.as_assume_annotation())
+
+        r = executor.executePath(p)
+        result.merge(r)
+
+    return result
+
 
 class ProgramStructure:
     def __init__(self, prog, new_dbg_file=None):
