@@ -450,31 +450,17 @@ class KindSymbolicExecutor(BaseKindSE):
 
         return None, r
 
-    def findInvPoints(self, cfg):
-        points = []
-
-        def processedge(start, end, dfstype):
-            if dfstype == DFSEdgeType.BACK:
-                points.append(end)
-
-        if __debug__:
-            with self.new_output_file(f"{cfg.fun().getName()}-dfs.dot") as f:
-                DFSVisitor().dump(cfg, f)
-
-        DFSVisitor().foreachedge(cfg.entry(), processedge)
-
-        return points
-
     def initializePaths(self, k=1):
         paths = []
         # initialize the paths only in functions
         # that are reachable in the callgraph
-        for F in self.programstructure.callgraph.funs():
+        PS = self.programstructure
+        for F in PS.callgraph.funs():
             if F.isUndefined():
                 continue
 
             cfg = self.getCFG(F)
-            invpoints = self.findInvPoints(cfg)
+            invpoints = PS.get_loop_headers(cfg)
             self.invpoints[cfg] = invpoints
             self.sum_loops[cfg] = invpoints
 

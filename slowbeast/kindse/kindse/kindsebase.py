@@ -2,6 +2,7 @@ from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 from slowbeast.kindse.annotatedcfg import CFG
 from slowbeast.analysis.cfa import CFA
+from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.analysis.callgraph import CallGraph
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
@@ -28,10 +29,27 @@ def check_paths(executor, paths, pre=None, post=None):
 
     return result
 
+def find_loop_headers(cfg, new_output_file=None):
+    points = []
+
+    def processedge(start, end, dfstype):
+        if dfstype == DFSEdgeType.BACK:
+            points.append(end)
+
+    if __debug__:
+        if new_output_file:
+            with new_output_file(f"{cfg.fun().getName()}-dfs.dot") as f:
+                DFSVisitor().dump(cfg, f)
+
+    DFSVisitor().foreachedge(cfg.entry(), processedge)
+
+    return points
+
 
 class ProgramStructure:
     def __init__(self, prog, new_dbg_file=None):
         # run only on reachable functions
+        self.new_dbg_file = new_dbg_file
         callgraph = CallGraph(prog)
         if __debug__:
             with new_dbg_file("callgraph-full.txt") as f:
@@ -48,6 +66,15 @@ class ProgramStructure:
         # if __debug__:
         #    with self.new_output_file("cfa.txt") as f:
         #        cfa.dump(f)
+        self.loop_headers = {}
+
+    def get_loop_headers(self, cfg):
+        headers = self.loop_headers
+        h = headers.get(cfg)
+        if h is None:
+            h = find_loop_headers(cfg, self.new_dbg_file)
+            headers[cfg] = h
+        return h
 
 class KindSymbolicExecutor(SymbolicInterpreter):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions(), programstructure=None):
