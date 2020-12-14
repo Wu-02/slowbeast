@@ -466,6 +466,9 @@ class Executor(ConcreteExecutor):
             r = E.Abs(op1)
         elif opcode == UnaryOperation.FP_OP:
             r = E.FpOp(instr.fp_operation(), op1)
+            if r is None:
+                state.setKilled(f"Unsupported FP operation: {instr}")
+                return [state]
         else:
             state.setKilled("Unary instruction not implemented: {0}".format(instr))
             return [state]

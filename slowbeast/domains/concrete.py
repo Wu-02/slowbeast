@@ -384,7 +384,7 @@ class ConcreteDomain:
                 return ConcreteInt(1, 32)
             if v >= 0 and v <= 0:
                 return ConcreteInt(2, 32)
-            if isfinite(v):
+            if isfinite(v) and v > 1.1754942106924411e-38:
                 return ConcreteInt(4, 32)
             return ConcreteInt(3, 32)  # subnormal
         if op == FpOp.SIGNBIT:
