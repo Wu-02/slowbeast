@@ -2,6 +2,7 @@ from slowbeast.domains.value import Value
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.types import Type, IntType, BoolType, FloatType
 from slowbeast.ir.instruction import FpOp
+from slowbeast.util.debugging import FIXME
 
 _use_z3 = True
 if _use_z3:
@@ -55,6 +56,9 @@ if _use_z3:
         fpNeg,
         fpIsInf,
         fpIsNaN,
+        fpIsSubnormal,
+        fpIsZero,
+        fpIsNegative,
         fpToFP,
         fpFPToFP,
         fpBVToFP,
@@ -820,7 +824,21 @@ class BVSymbolicDomain:
             return Expr(fpIsInf(val.unwrap()), BoolType())
         if op == FpOp.IS_NAN:
             return Expr(fpIsNaN(val.unwrap()), BoolType())
-        raise NotImplementedError("Invalid FP operation")
+        if op == FpOp.FPCLASSIFY:
+            FIXME("Using implementation dependent constants")
+            v = val.unwrap()
+            expr =\
+            If(fpIsNaN(v), bv_const(0, 32),
+                If(fpIsInf(v), bv_const(1, 32),
+                    If(fpIsZero(v), bv_const(2, 32),
+                        If(fpIsSubnormal(v), bv_const(3, 32),
+                                              bv_const(4, 32)))))
+            return Expr(expr, IntType(32))
+            if op == FpOp.SIGNBIT:
+                return Expr(If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))),
+                            IntType(32))
+ 
+        return None
 
 
 # The default symbolic domain are bitvectors
