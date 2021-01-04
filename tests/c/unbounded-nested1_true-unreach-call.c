@@ -23,7 +23,6 @@ int main() {
 	assert(x == 0);
 
 	// CHECK-NOT: assertion failed!
-	// CHECK: Enumerating paths done!
 	// CHECK: Found errors: 0
 }
 
