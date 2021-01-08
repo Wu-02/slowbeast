@@ -124,7 +124,7 @@ def get_predicate(l):
     raise NotImplementedError(f"Unhandled predicate in expr {l}")
 
 
-def decompose_literal(l):
+def _decompose_literal(l):
     isnot = False
     if l.isNot():
         isnot = True
@@ -149,6 +149,24 @@ def decompose_literal(l):
 
     return left, right, P, addtoleft
 
+class DecomposedLiteral:
+    __slots__ = "left", "right", "pred", "addtoleft"
+
+    def __init__(self, lit):
+        self.left, self.right,  self.pred, self.addtoleft = _decompose_literal(lit)
+
+    def __bool__(self):
+        assert self.left is None or self.right and self.pred
+        return self.left is not None
+
+    def toformula(self):
+        return self.pred(self.left, self.right)
+
+    def bitwidth(self):
+        left = self.left
+        if left:
+            return left.type().bitwidth()
+        return None
 
 def get_left_right(l):
     if l.isNot():
@@ -190,7 +208,7 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
     return have_feasible
 
 def check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
-    if lit.is_concrete():
+    if lit is None or lit.is_concrete():
         return False
     return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
 
@@ -198,7 +216,6 @@ def modify_literal(goodl, P, num, EM, addtoleft):
     assert (
         not goodl.isAnd() and not goodl.isOr()
     ), f"Input is not a literal: {goodl}"
-    # FIXME: wbt. overflow?
     left, right = get_left_right(goodl)
     if addtoleft:
         left = EM.Add(left, num)
@@ -207,15 +224,15 @@ def modify_literal(goodl, P, num, EM, addtoleft):
 
     # try pushing further
     l = P(left, right)
-    if l.is_concrete():
-        return None
-    if l == goodl:  # got nothing new...
+    if l.is_concrete() or l == goodl:
         return None
     return l
 
 
-def extend_literal(goodl, left, P, right, litrep, I, safety_solver, solver, rl, poststates, addtoleft):
-    bw = left.type().bitwidth()
+def extend_literal(goodl, dliteral : DecomposedLiteral, litrep, I, safety_solver, solver, rl, poststates):
+    bw = dliteral.bitwidth()
+    P = dliteral.pred
+    addtoleft = dliteral.addtoleft
     two = ConcreteInt(2, bw)
     maxnum = 2 ** bw - 1
     accnum = 1
@@ -231,9 +248,6 @@ def extend_literal(goodl, left, P, right, litrep, I, safety_solver, solver, rl, 
     # If we cant, we can give up
     num = ConcreteInt(1, bw)
     l = modify_literal(goodl, P, num, EM, addtoleft)
-    if l is None:
-        return goodl
-
     if check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
             goodl = l
     else:
@@ -265,8 +279,6 @@ def extend_literal(goodl, left, P, right, litrep, I, safety_solver, solver, rl, 
 
             accnum += numval
             l = modify_literal(goodl, P, num, EM, addtoleft)
-            if l is None:
-                break
 
         if numval <= 1:
             return goodl
@@ -285,11 +297,11 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
     goodl = l  # last good overapprox of l
 
-    left, right, P, addtoleft = decompose_literal(l)
-    if left is None:
-        assert right is None
+    dliteral = DecomposedLiteral(l)
+    if not dliteral:
         return goodl
 
+    assert dliteral.toformula() == goodl
     EM = getGlobalExprManager()
     disjunction = EM.disjunction
 
@@ -320,7 +332,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     em_optimize_expressions(False)
     # the optimizer could make And or Or from the literal, we do not want that...
-    goodl = extend_literal(goodl, left, P, right, litrep, I, safety_solver, solver, rl, poststates, addtoleft)
+    goodl = extend_literal(goodl, dliteral, litrep, I, safety_solver, solver, rl, poststates)
     em_optimize_expressions(True)
 
     return goodl
