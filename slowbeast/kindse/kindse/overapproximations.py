@@ -223,30 +223,10 @@ def check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         return False
     return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
 
-def modify_literal(goodl, P, num, EM, addtoleft):
-    assert (
-        not goodl.isAnd() and not goodl.isOr()
-    ), f"Input is not a literal: {goodl}"
-    left, right = get_left_right(goodl)
-    if addtoleft:
-        left = EM.Add(left, num)
-    else:
-        right = EM.Add(right, num)
-
-    # try pushing further
-    l = P(left, right)
-    if l.is_concrete() or l == goodl:
-        return None
-    return l
-
-
 def extend_literal(goodl, dliteral : DecomposedLiteral, litrep, I, safety_solver, solver, rl, poststates):
     bw = dliteral.bitwidth()
-    P = dliteral.pred
-    addtoleft = dliteral.addtoleft
     two = ConcreteInt(2, bw)
     maxnum = 2 ** bw - 1 # adding 2 ** bw - 1 would be like adding 0
-    accnum = 1
 
     EM = getGlobalExprManager()
 
@@ -260,14 +240,11 @@ def extend_literal(goodl, dliteral : DecomposedLiteral, litrep, I, safety_solver
     # FIXME: try more low values (e.g., to 10)
     num = ConcreteInt(1, bw)
     l = dliteral.extend(num)
-    if check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
-        goodl = l
-    else:
+    if not check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
         return goodl
 
     resultnum = ConcreteInt(1, bw)
     Add = EM.Add
-
     num = ConcreteInt(2 ** (bw - 1) - 1, bw)
     while resultnum.value() <= maxnum:
         numval = num.value()
