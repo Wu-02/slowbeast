@@ -159,7 +159,44 @@ def get_left_right(l):
     return chld[0], chld[1]
 
 
+def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
+    # safety check
+    if not safety_solver.is_sat(EM.disjunction(lit, *rl)) is False:
+        return False
+
+    have_feasible = False
+    for s in poststates:
+        # feasability check
+        solver.push()
+        pathcond = EM.substitute(s.path_condition(), (litrep, lit))
+        solver.add(pathcond)
+        if solver.is_sat() is not True:
+            solver.pop()
+            continue
+        # feasible means ok, but we want at least one feasible path
+        # FIXME: do we?
+        have_feasible = True
+
+        # inductivity check
+        A = AssertAnnotation(
+            EM.substitute(I.getExpr(), (litrep, lit)), I.getSubstitutions(), EM
+        )
+        hasnocti = A.doSubs(s)
+        # we have got pathcond in solver already
+        if solver.is_sat(EM.Not(hasnocti)) is not False:  # there exist CTI
+            solver.pop()
+            return False
+        solver.pop()
+    return have_feasible
+
 def overapprox_literal(l, rl, S, unsafe, target, executor, L):
+    """
+    l - literal
+    rl - list of all literals in the clause
+    S - rest of clauses of the formula except for 'rl'
+    unsafe - set of unsafe states
+    target - set of safe states that we want to keep reachable
+    """
     assert not l.isAnd() and not l.isOr(), f"Input is not a literal: {l}"
     assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
     goodl = l  # last good overapprox of l
@@ -197,58 +234,11 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     solver = IncrementalSolver()
 
-    def _check_literal(lit):
-        # safety check
-        if not safety_solver.is_sat(disjunction(lit, *rl)) is False:
-            return False
-
-        have_feasible = False
-        for s in poststates:
-            # feasability check
-            solver.push()
-            pathcond = EM.substitute(s.path_condition(), (litrep, lit))
-            solver.add(pathcond)
-            if solver.is_sat() is not True:
-                solver.pop()
-                continue
-            # feasible means ok, but we want at least one feasible path
-            # FIXME: do we?
-            have_feasible = True
-
-            # inductivity check
-            A = AssertAnnotation(
-                EM.substitute(I.getExpr(), (litrep, lit)), I.getSubstitutions(), EM
-            )
-            hasnocti = A.doSubs(s)
-            # we have got pathcond in solver already
-            if solver.is_sat(EM.Not(hasnocti)) is not False:  # there exist CTI
-                solver.pop()
-                return False
-            solver.pop()
-        return have_feasible
-
     def check_literal(lit):
         if lit.is_concrete():
             return False
-        return _check_literal(lit)
 
-    #
-    # # NOTE: the check above should be equivalent to this code but should be faster as we do not re-execute
-    # # the paths all the time
-    # def check_literal_old(lit):
-    #     if lit.is_concrete():
-    #         return False
-    #     X = intersection(S, disjunction(lit, *rl))
-    #     if not intersection(X, unsafe).is_empty():
-    #         return False
-    #
-    #     r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
-    #     return r.errors is None and r.ready is not None
-    #
-    # def check_literal(lit):
-    #     r = check_literal_new(lit)
-    #     assert r == check_literal_old(lit), f"{lit} : {r}"
-    #     return r
+        return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
 
     def modify_literal(goodl, P, num):
         assert (
@@ -278,7 +268,8 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         accnum = 1
 
         # check if we can drop the literal completely
-        if _check_literal(EM.getTrue()):
+        # XXX: is this any good? We already dropped the literals...
+        if _check_literal(EM.getTrue(), litrep, I, safety_solver, solver, EM, rl, poststates):
             return EM.getTrue()
 
         # a fast path where we try shift just by one.
@@ -461,4 +452,3 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     sd = S.as_description()
     A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)
     return InductiveSequence.Frame(S.as_assert_annotation(), None)
-
