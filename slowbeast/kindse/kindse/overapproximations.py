@@ -214,6 +214,65 @@ def modify_literal(goodl, P, num, EM, addtoleft):
     return l
 
 
+def extend_literal(goodl, left, P, right, litrep, I, safety_solver, solver, rl, poststates, addtoleft):
+    bw = left.type().bitwidth()
+    two = ConcreteInt(2, bw)
+    maxnum = 2 ** bw - 1
+    accnum = 1
+
+    EM = getGlobalExprManager()
+
+    # check if we can drop the literal completely
+    # XXX: is this any good? We already dropped the literals...
+    if _check_literal(EM.getTrue(), litrep, I, safety_solver, solver, EM, rl, poststates):
+        return EM.getTrue()
+
+    # a fast path where we try shift just by one.
+    # If we cant, we can give up
+    num = ConcreteInt(1, bw)
+    l = modify_literal(goodl, P, num, EM, addtoleft)
+    if l is None:
+        return goodl
+
+    if check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
+            goodl = l
+    else:
+        return goodl
+
+    # FIXME: try more low values (e.g., to 10)
+
+    # generic case
+    num = ConcreteInt(2 ** (bw - 1) - 1, bw)
+
+    while True:
+        numval = num.value()
+        # do not try to shift the number by more than 2^bw
+        if accnum + numval > maxnum:
+            return goodl
+
+        accnum += numval
+        l = modify_literal(goodl, P, num, EM, addtoleft)
+        if l is None:
+            return goodl
+
+        # push as far as we can with this num
+        while check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
+            assert accnum <= maxnum
+            goodl = l
+
+            if accnum + numval > maxnum:
+                break
+
+            accnum += numval
+            l = modify_literal(goodl, P, num, EM, addtoleft)
+            if l is None:
+                break
+
+        if numval <= 1:
+            return goodl
+        num = EM.Div(num, two)
+
+
 def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     """
     l - literal
@@ -259,66 +318,9 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     solver = IncrementalSolver()
 
-
-    def extend_literal(goodl):
-        bw = left.type().bitwidth()
-        two = ConcreteInt(2, bw)
-        maxnum = 2 ** bw - 1
-        accnum = 1
-
-        # check if we can drop the literal completely
-        # XXX: is this any good? We already dropped the literals...
-        if _check_literal(EM.getTrue(), litrep, I, safety_solver, solver, EM, rl, poststates):
-            return EM.getTrue()
-
-        # a fast path where we try shift just by one.
-        # If we cant, we can give up
-        num = ConcreteInt(1, bw)
-        l = modify_literal(goodl, P, num, EM, addtoleft)
-        if l is None:
-            return goodl
-
-        if check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
-                goodl = l
-        else:
-            return goodl
-
-        # FIXME: try more low values (e.g., to 10)
-
-        # generic case
-        num = ConcreteInt(2 ** (bw - 1) - 1, bw)
-
-        while True:
-            numval = num.value()
-            # do not try to shift the number by more than 2^bw
-            if accnum + numval > maxnum:
-                return goodl
-
-            accnum += numval
-            l = modify_literal(goodl, P, num, EM, addtoleft)
-            if l is None:
-                return goodl
-
-            # push as far as we can with this num
-            while check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
-                assert accnum <= maxnum
-                goodl = l
-
-                if accnum + numval > maxnum:
-                    break
-
-                accnum += numval
-                l = modify_literal(goodl, P, num, EM, addtoleft)
-                if l is None:
-                    break
-
-            if numval <= 1:
-                return goodl
-            num = EM.Div(num, two)
-
     em_optimize_expressions(False)
     # the optimizer could make And or Or from the literal, we do not want that...
-    goodl = extend_literal(goodl)
+    goodl = extend_literal(goodl, left, P, right, litrep, I, safety_solver, solver, rl, poststates, addtoleft)
     em_optimize_expressions(True)
 
     return goodl
