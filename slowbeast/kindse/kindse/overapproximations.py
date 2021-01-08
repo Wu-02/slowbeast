@@ -189,6 +189,11 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         solver.pop()
     return have_feasible
 
+def check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
+    if lit.is_concrete():
+        return False
+    return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
+
 def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     """
     l - literal
@@ -234,12 +239,6 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     solver = IncrementalSolver()
 
-    def check_literal(lit):
-        if lit.is_concrete():
-            return False
-
-        return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
-
     def modify_literal(goodl, P, num):
         assert (
             not goodl.isAnd() and not goodl.isOr()
@@ -279,8 +278,8 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         if l is None:
             return goodl
 
-        if check_literal(l):
-            goodl = l
+        if check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
+                goodl = l
         else:
             return goodl
 
@@ -301,7 +300,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
                 return goodl
 
             # push as far as we can with this num
-            while check_literal(l):
+            while check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
                 assert accnum <= maxnum
                 goodl = l
 
