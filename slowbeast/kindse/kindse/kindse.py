@@ -127,9 +127,7 @@ class KindSEChecker(BaseKindSE):
         self.toplevel_executor = toplevel_executor
 
         self.readypaths = []
-        self.stalepaths = []
 
-        cfg = loc.getCFG()
         self.no_sum_loops = set()
 
     def check_loop_precondition(self, L, A):
@@ -455,8 +453,6 @@ class KindSEChecker(BaseKindSE):
 
     def get_path_to_run(self):
         ready = self.readypaths
-        if not ready:
-            ready = self.stalepaths
         if ready:
             if len(ready) % 4 == 0:
                 # do not run DFS so that we do not starve
@@ -471,12 +467,9 @@ class KindSEChecker(BaseKindSE):
         return loc in self.programstructure.get_loop_headers(loc.getCFG())
 
     def queue_paths(self, paths):
-        is_loop_header = self.is_loop_header
+        ready = self.readypaths
         for p in paths:
-            if is_loop_header(p.first()):
-                self.stalepaths.append(p)
-            else:
-                self.readypaths.append(p)
+            ready.append(p)
 
     def extend_and_queue_paths(self, path, states):
         step = self.getOptions().step
