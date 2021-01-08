@@ -168,6 +168,17 @@ class DecomposedLiteral:
             return left.type().bitwidth()
         return None
 
+    def extend(self, num):
+        EM = getGlobalExprManager()
+        left, right = self.left, self.right
+        if self.addtoleft:
+            left = EM.Add(left, num)
+        else:
+            right = EM.Add(right, num)
+
+        # try pushing further
+        return self.pred(left, right)
+
 def get_left_right(l):
     if l.isNot():
         l = list(l.children())[0]
@@ -234,7 +245,7 @@ def extend_literal(goodl, dliteral : DecomposedLiteral, litrep, I, safety_solver
     P = dliteral.pred
     addtoleft = dliteral.addtoleft
     two = ConcreteInt(2, bw)
-    maxnum = 2 ** bw - 1
+    maxnum = 2 ** bw - 1 # adding 2 ** bw - 1 would be like adding 0
     accnum = 1
 
     EM = getGlobalExprManager()
@@ -246,42 +257,37 @@ def extend_literal(goodl, dliteral : DecomposedLiteral, litrep, I, safety_solver
 
     # a fast path where we try shift just by one.
     # If we cant, we can give up
+    # FIXME: try more low values (e.g., to 10)
     num = ConcreteInt(1, bw)
-    l = modify_literal(goodl, P, num, EM, addtoleft)
+    l = dliteral.extend(num)
     if check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
-            goodl = l
+        goodl = l
     else:
         return goodl
 
-    # FIXME: try more low values (e.g., to 10)
+    resultnum = ConcreteInt(1, bw)
+    Add = EM.Add
 
-    # generic case
     num = ConcreteInt(2 ** (bw - 1) - 1, bw)
-
-    while True:
+    while resultnum.value() <= maxnum:
         numval = num.value()
         # do not try to shift the number by more than 2^bw
-        if accnum + numval > maxnum:
-            return goodl
-
-        accnum += numval
-        l = modify_literal(goodl, P, num, EM, addtoleft)
-        if l is None:
-            return goodl
+        nextval = Add(resultnum, num)
+        l = dliteral.extend(nextval)
 
         # push as far as we can with this num
         while check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
-            assert accnum <= maxnum
-            goodl = l
+            assert resultnum.value() <= maxnum
+            resultnum = nextval
+            nextval = Add(resultnum, num)
 
-            if accnum + numval > maxnum:
+            if nextval.value() > maxnum:
                 break
-
-            accnum += numval
-            l = modify_literal(goodl, P, num, EM, addtoleft)
+            l = dliteral.extend(nextval)
 
         if numval <= 1:
-            return goodl
+            # we have added also as many 1 as we could, finish
+            return dliteral.extend(resultnum)
         num = EM.Div(num, two)
 
 
