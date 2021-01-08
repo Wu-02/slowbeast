@@ -194,6 +194,26 @@ def check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         return False
     return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
 
+def modify_literal(goodl, P, num, EM, addtoleft):
+    assert (
+        not goodl.isAnd() and not goodl.isOr()
+    ), f"Input is not a literal: {goodl}"
+    # FIXME: wbt. overflow?
+    left, right = get_left_right(goodl)
+    if addtoleft:
+        left = EM.Add(left, num)
+    else:
+        right = EM.Add(right, num)
+
+    # try pushing further
+    l = P(left, right)
+    if l.is_concrete():
+        return None
+    if l == goodl:  # got nothing new...
+        return None
+    return l
+
+
 def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     """
     l - literal
@@ -239,26 +259,6 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     solver = IncrementalSolver()
 
-    def modify_literal(goodl, P, num):
-        assert (
-            not goodl.isAnd() and not goodl.isOr()
-        ), f"Input is not a literal: {goodl}"
-        # FIXME: wbt. overflow?
-        left, right = get_left_right(goodl)
-        if addtoleft:
-            left = EM.Add(left, num)
-        else:
-            right = EM.Add(right, num)
-
-        # try pushing further
-        l = P(left, right)
-        if l.is_concrete():
-            return None
-        if l == goodl:  # got nothing new...
-            return None
-        return l
-
-    # FIXME: add a fast path where we try several values from the bottom...
 
     def extend_literal(goodl):
         bw = left.type().bitwidth()
@@ -274,7 +274,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
         # a fast path where we try shift just by one.
         # If we cant, we can give up
         num = ConcreteInt(1, bw)
-        l = modify_literal(goodl, P, num)
+        l = modify_literal(goodl, P, num, EM, addtoleft)
         if l is None:
             return goodl
 
@@ -295,7 +295,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
                 return goodl
 
             accnum += numval
-            l = modify_literal(goodl, P, num)
+            l = modify_literal(goodl, P, num, EM, addtoleft)
             if l is None:
                 return goodl
 
@@ -308,7 +308,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
                     break
 
                 accnum += numval
-                l = modify_literal(goodl, P, num)
+                l = modify_literal(goodl, P, num, EM, addtoleft)
                 if l is None:
                     break
 
