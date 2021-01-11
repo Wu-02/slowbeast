@@ -1,4 +1,4 @@
-from .cfg import CFG
+from .cfa import CFA
 
 
 class DFSEdgeType:
@@ -30,10 +30,14 @@ class DFSCounter:
         self.counter = 0
 
 
+def _get_id(x):
+    if isinstance(x, CFA.Location):
+        return x.id()
+    return x.getBBlock().get_id(),
+
 class DFSVisitor:
     """
-    Visit nodes/edges in the DFS order and
-    run a user-specified function on them.
+    Visit edges in the DFS order and run a user-specified function on them.
     """
 
     def __init__(self):
@@ -43,23 +47,14 @@ class DFSVisitor:
     def _getdata(self, node):
         return self._data.setdefault(node, DFSData())
 
-    # def foreach(self, fun, node=None):
-    #     getdata = self._getdata
-    #
-    #     nddata = getdata(node)
-    #     nddata.visited = True
-    #
-    #     fun(succ)
-    #
-    #     for succ in node.getSuccessors():
-    #         if not getdata(succ).visited:
-    #             self.foreach(fun, succ)
-
     def foreachedge(self, startnode, fun, backtrackfun=None):
         counter = DFSCounter()
-        self._foreachedge(fun, backtrackfun, None, startnode, counter)
+        if isinstance(startnode, CFA.Location):
+            self._foreachedge_cfa(fun, backtrackfun, None, startnode, counter)
+        else:
+            self._foreachedge_cfg(fun, backtrackfun, None, startnode, counter)
 
-    def _foreachedge(self, fun, backtrackfun, prevnode, node, counter):
+    def _foreachedge_cfg(self, fun, backtrackfun, prevnode, node, counter):
         getdata = self._getdata
         counter.counter += 1
 
@@ -84,14 +79,49 @@ class DFSVisitor:
                     fun(node, succ, DFSEdgeType.FORWARD)
             else:
                 fun(node, succ, DFSEdgeType.TREE)
-                self._foreachedge(fun, backtrackfun, node, succ, counter)
+                self._foreachedge_cfg(fun, backtrackfun, node, succ, counter)
 
         counter.counter += 1
         nddata.outnum = counter.counter
         if backtrackfun:
             backtrackfun(prevnode, node)
 
-    def dump(self, cfg, outfl=None):
+    # FIXME: we don't need to duplicate the code, just need to unify the API for CFG and CFA
+    def _foreachedge_cfa(self, fun, backtrackfun, backtrackedge, loc, counter):
+        getdata = self._getdata
+        counter.counter += 1
+
+        nddata = getdata(loc)
+        nddata.visited = True
+        nddata.innum = counter.counter
+
+        for succedge in loc.successors():
+            succ = succedge.target()
+            assert succedge.source() is loc
+            succdata = getdata(succ)
+            if succdata.visited:
+                sin = succdata.innum
+                din = nddata.innum
+                assert sin is not None
+
+                if sin < din:
+                    sout = succdata.outnum
+                    if sout is None:
+                        fun(succedge, DFSEdgeType.BACK)
+                    elif sout < din:
+                        fun(succedge, DFSEdgeType.CROSS)
+                else:
+                    fun(succedge, DFSEdgeType.FORWARD)
+            else:
+                fun(succedge, DFSEdgeType.TREE)
+                self._foreachedge_cfa(fun, backtrackfun, succedge, succ, counter)
+
+        counter.counter += 1
+        nddata.outnum = counter.counter
+        if backtrackfun:
+            backtrackfun(backtrackedge)
+
+    def dump(self, graph, outfl=None):
         out = None
         if outfl is None:
             from sys import stdout
@@ -120,8 +150,8 @@ class DFSVisitor:
         def dumpdot(start, end, edgetype):
             print(
                 '  {0} -> {1} [label="{2}", color="{3}"]'.format(
-                    start.getBBlock().get_id(),
-                    end.getBBlock().get_id(),
+                    _get_id(start),
+                    _get_id(end),
                     DFSEdgeType.tostr(edgetype),
                     edgecol(edgetype),
                 ),
@@ -131,18 +161,25 @@ class DFSVisitor:
         print("digraph {", file=out)
 
         # dump nodes
-        for n in cfg.getNodes():
-            print("  {0}".format(n.getBBlock().get_id()), file=out)
+        if isinstance(graph, CFA):
+            nodes = graph.locations()
+        else:
+            nodes = graph.getNodes()
+        for n in nodes:
+            print("  {0}".format(_get_id(n)), file=out)
 
         # dump edges
         print("", file=out)
-        self.foreachedge(cfg.entry(), dumpdot)
+        if isinstance(graph, CFA):
+            self.foreachedge(graph.entry(), lambda e, t: dumpdot(e.source(), e.target(), t))
+        else:
+            self.foreachedge(graph.entry(), dumpdot)
 
         # dump the in/out counters
-        for n in cfg.getNodes():
+        for n in nodes:
             print(
                 '  {0} [label="{0}\\nin,out = {1}, {2}"]'.format(
-                    n.getBBlock().get_id(),
+                    _get_id(n),
                     self._getdata(n).innum,
                     self._getdata(n).outnum,
                 ),

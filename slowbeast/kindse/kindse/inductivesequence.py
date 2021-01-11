@@ -132,15 +132,14 @@ class InductiveSequence:
         for path in paths:
             p = path.copy()
             # the post-condition is the whole frame
-            p.addPostcondition(selfassert)
+            p.add_annot_after(selfassert)
             if post:
-                p.addPostcondition(post.as_assert_annotation())
+                p.add_annot_after(post.as_assert_annotation())
 
             if self_as_pre:
-                p.addPrecondition(selfassert)
-
+                p.add_annot_before(selfassert)
             if pre:
-                p.addPrecondition(pre.as_assume_annotation())
+                p.add_annot_before(pre.as_assume_annotation())
 
             r = executor.executePath(p)
             result.merge(r)

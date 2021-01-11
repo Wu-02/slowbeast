@@ -19,36 +19,36 @@ def check_paths(executor, paths, pre=None, post=None):
         p = path.copy()
         # the post-condition is the whole frame
         if post:
-            p.addPostcondition(post.as_assert_annotation())
+            p.add_annot_after(post.as_assert_annotation())
 
         if pre:
-            p.addPrecondition(pre.as_assume_annotation())
+            p.add_annot_before(pre.as_assume_annotation())
 
         r = executor.executePath(p)
         result.merge(r)
 
     return result
 
-def find_loop_headers(cfg, new_output_file=None):
-    points = []
+def find_loop_headers(cfas, new_output_file=None):
+    headers = set()
 
-    def processedge(start, end, dfstype):
+    def processedge(edge, dfstype):
         if dfstype == DFSEdgeType.BACK:
-            points.append(end)
+            headers.add(edge.target())
 
-    if __debug__:
-        if new_output_file:
-            with new_output_file(f"{cfg.fun().getName()}-dfs.dot") as f:
-                DFSVisitor().dump(cfg, f)
+    for cfa in cfas.values():
+        if __debug__:
+            if new_output_file:
+                with new_output_file(f"{cfa.fun().getName()}-dfs.dot") as f:
+                    DFSVisitor().dump(cfa, f)
 
-    DFSVisitor().foreachedge(cfg.entry(), processedge)
+        DFSVisitor().foreachedge(cfa.entry(), processedge)
 
-    return points
+    return headers
 
 
 class ProgramStructure:
     def __init__(self, prog, new_dbg_file=None):
-        # run only on reachable functions
         self.new_dbg_file = new_dbg_file
         callgraph = CallGraph(prog)
         if __debug__:
@@ -61,21 +61,24 @@ class ProgramStructure:
                 callgraph.dump(f)
 
         self.callgraph = callgraph
-        self.cfgs = {F: CFG(F) for F in callgraph.funs() if not F.isUndefined()}
-        self.cfas = CFA.from_program(prog, callgraph)
+        cfas = CFA.from_program(prog, callgraph)
         if __debug__:
-            for fun, cfa in self.cfas.items():
-                with self.new_dbg_file(f"cfa.{fun.getName()}.txt") as f:
+            for fun, cfa in cfas.items():
+                with self.new_dbg_file(f"cfa.{fun.getName()}.dot") as f:
                     cfa.dump(f)
-        self.loop_headers = {}
+        self.cfas = cfas
+        # entry location of the whole program
+        self.entry_loc = cfas[prog.entry()].entry()
 
-    def get_loop_headers(self, cfg):
+        self.loop_headers = None
+
+    def get_loop_headers(self):
+        # FIXME: do it separately for each CFA
         headers = self.loop_headers
-        h = headers.get(cfg)
-        if h is None:
-            h = find_loop_headers(cfg, self.new_dbg_file)
-            headers[cfg] = h
-        return h
+        if headers is None:
+            headers = find_loop_headers(self.cfas, self.new_dbg_file)
+            self.loop_headers = headers
+        return headers
 
 class KindSymbolicExecutor(SymbolicInterpreter):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions(), programstructure=None):
@@ -96,6 +99,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         else:
             self.programstructure = programstructure
 
+        self._entry_loc = self.programstructure.entry_loc
         self.paths = []
         # as we run the executor in nested manners,
         # we want to give different outputs
@@ -108,9 +112,9 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def getIndExecutor(self):
         return self.indexecutor
 
-    def getCFG(self, F):
-        assert self.programstructure.cfgs.get(F), f"Have no CFG for function {F.getName()}"
-        return self.programstructure.cfgs.get(F)
+    def get_cfa(self, F):
+        assert self.programstructure.cfas.get(F), f"Have no CFA for function {F.getName()}"
+        return self.programstructure.cfas.get(F)
 
     def get_return_states(self):
         """
@@ -151,7 +155,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
-        r = executor.executeAnnotatedPath(states, path, branch_on_last=False)
+        r = executor.execute_annotated_path(states, path)
         self.stats.paths += 1
 
         earl = r.early
@@ -165,9 +169,9 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         return r
 
     def _is_init(self, loc):
-        return loc.getBBlock() is self.getProgram().entry().getBBlock(0)
+        return loc is self._entry_loc
 
-    def extendToCaller(self, path, states):
+    def extend_to_caller(self, path, states):
         self.have_problematic_path = True
         print_stdout("Killing a path that goes to caller")
         # start = path.first()
@@ -178,7 +182,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         #    callsite.getBBlock()
         return []
 
-    def extendPath(self, path, states, steps=-1, atmost=False, stoppoints=[]):
+    def extend_path(self, path, states, steps=-1, atmost=False, stoppoints=[]):
         """
         Take a path and extend it by prepending one or more
         predecessors.
@@ -198,7 +202,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         num = 0
         newpaths = []
-        locs = path.getLocations()[:]
+        locs = path.edges()[:]
         locs.reverse()  # reverse the list so that we can do append
         worklist = [locs]
         while worklist:
@@ -206,8 +210,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             newworklist = []
 
             for p in worklist:
-                front = p[-1]
-                preds = front.getPredecessors()
+                front = p[-1] # the list is reversed, so the front is at the end
+                preds = front.source().predecessors()
                 predsnum = len(preds)
 
                 # no predecessors, we're done with this path
@@ -217,7 +221,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                         # is a path that ends in the entry block and
                         # we already processed it...
                         dbg("Extending a path to the caller")
-                        np = self.extendToCaller(path, states)
+                        np = self.extend_to_caller(path, states)
                         newpaths += np
                     else:
                         # FIXME: do not do this reverse, rather execute in reverse
@@ -244,7 +248,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                         # fall-through to further extending this path
 
                     assert all(
-                        map(lambda x: isinstance(x, CFG.AnnotatedNode), stoppoints)
+                        map(lambda x: isinstance(x, CFA.Location), stoppoints)
                     )
                     if pred in stoppoints:
                         newpath.reverse()
@@ -253,7 +257,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                         newworklist.append(newpath)
                     elif steps == 0 and predsnum <= 1:
                         newworklist.append(newpath)
-                    elif steps == -1 and pred.isBranch():
+                    elif steps == -1 and len(pred.source().successors()) > 1:
                         newworklist.append(newpath)
                     else:  # we're done with this path
                         if not added:
@@ -295,7 +299,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             killed = any(True for s in r.other if s.wasKilled()) if r.other else None
             if killed:
                 return Result.UNKNOWN, r
-            if len(path.first().getPredecessors()) == 0:
+            if len(self._entry_loc.predecessors()) == 0:
                 # this path is safe and we do not need to extend it
                 return Result.SAFE, r
             # else just fall-through to execution from clear state
@@ -329,7 +333,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             step = self.getOptions().step
             if r.errors:
                 has_err = True
-                newpaths += self.extendPath(path, r, steps=step, atmost=step != 1)
+                newpaths += self.extend_path(path, r, steps=step, atmost=step != 1)
 
         self.paths = newpaths
 

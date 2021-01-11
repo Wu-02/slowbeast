@@ -487,7 +487,7 @@ class Executor(ConcreteExecutor):
             isunsat = tmp is None
 
         if isunsat:
-            state.setTerminated("Assumption unsat: {0} == {1} (!= True)".format(o, v))
+            state.setTerminated(f"Assumption unsat: {v} (!= True)")
 
         return [state]
 
