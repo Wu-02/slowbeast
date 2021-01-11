@@ -329,6 +329,7 @@ class KindSEChecker(BaseKindSE):
 
         L = SimpleLoop.construct(loc)
         if L is None:
+            dbg("Was not able to construct the loop info")
             return False  # fall-back to loop unwinding...
 
         dbgv(f"Getting initial sequence for loop {loc.getBBlockID()}")
