@@ -24,7 +24,7 @@ class CFA:
             return self._predecessors
 
         def __repr__(self):
-            return f"l{self._id}"
+            return f"L{self._id}"
 
     class Edge:
         __slots__ = "_source", "_target", "_type", "_elems", "_orig_elem"
@@ -78,41 +78,39 @@ class CFA:
         def assume_false(self):
             return not self._is_true
 
-    def __init__(self, prog):
+    def __init__(self, fun : Function):
+        assert isinstance(fun, Function)
+        self._fun = fun
         self._locs = []
         self._edges = []
 
-        self.build(prog)
+        self._build(fun)
 
-    def build(self, prog):
-        if isinstance(prog, Program):
-            self.build_from_program(prog)
-        elif isinstance(prog, Function):
-            self.build_from_function(prog)
-        # elif isinstance(prog, CFG):
-        #    build_from_cfg(prog)
-        return NotImplementedError(f"Invalid input to build(): {type(prog)}")
+    def fun(self):
+        return self._fun
 
-    def build_from_program(self, prog: Program):
+    def from_program(prog: Program, callgraph=None):
+        """
+        Build CFAs from program and populate call edges
+        """
         assert isinstance(prog, Program)
         # build a CFA for each function and then connect them with call edges
-        for F in prog.funs():
-            cfa = CFA(F)
-            self._locs.extend(cfa._locs)
-            self._edges.extend(cfa._edges)
+        cfas = { fun : CFA(fun) for fun in prog.funs() if not fun.isUndefined() }
+        # FIXME: populate call edges
+        return cfas
 
     def create_loc(self, elem=None):
         loc = CFA.Location(elem)
         self._locs.append(loc)
         return loc
 
-    def add_edge(self, e: Edge):
+    def _add_edge(self, e: Edge):
         e._target._predecessors.append(e)
         e._source._successors.append(e)
         # do we need this?
         self._edges.append(e)
 
-    def build_from_function(self, fun: Function):
+    def _build(self, fun: Function):
         assert isinstance(fun, Function)
         locs = {}
         # create locations
@@ -126,7 +124,7 @@ class CFA:
                     if e.is_noop():
                         e._type = CFA.Edge.CALL
                     else:
-                        self.add_edge(e)
+                        self._add_edge(e)
                         assert not e.is_noop()
                         # create the call edge
                         tmp = self.create_loc(B)
@@ -134,7 +132,7 @@ class CFA:
                         loc2 = tmp
                     # populate the call edge
                     e.add_elem(i)
-                    self.add_edge(e)
+                    self._add_edge(e)
                     assert not e.is_noop()
 
                     # create a new edge
@@ -143,7 +141,7 @@ class CFA:
                     loc2 = tmp
                 else:
                     e.add_elem(i)
-            self.add_edge(e)
+            self._add_edge(e)
             locs[B] = (loc1, loc2)
 
         # create CFG edges
@@ -153,25 +151,26 @@ class CFA:
             if not isinstance(br, Branch):
                 e = CFA.Edge(CFA.Edge.REGULAR, l[1], self.create_loc(br), br)
                 e.add_elem(br)
-                self.add_edge(e)
+                self._add_edge(e)
                 continue
 
             tsucc = locs[br.getTrueSuccessor()][0]
             fsucc = locs[br.getFalseSuccessor()][0]
             if tsucc is fsucc:
-                self.add_edge(CFA.AssumeEdge(l[1], tsucc, br, True))
+                self._add_edge(CFA.AssumeEdge(l[1], tsucc, br, True))
             else:
                 # FIXME: assume True/False
                 cond = br.getCondition()
                 e = CFA.AssumeEdge(l[1], tsucc, br, True)
                 e.add_elem(cond)
-                self.add_edge(e)
+                self._add_edge(e)
                 e = CFA.AssumeEdge(l[1], fsucc, br, False)
                 e.add_elem(cond)
-                self.add_edge(e)
+                self._add_edge(e)
 
     def dump(self, stream):
-        print("digraph CFA {", file=stream)
+        print(f'digraph CFA_{self._fun.getName()} {{', file=stream)
+        print(f'  label="{self._fun.getName()}"', file=stream)
         for l in self._locs:
             print(l, file=stream)
         for e in self._edges:
