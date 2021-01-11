@@ -62,10 +62,11 @@ class ProgramStructure:
 
         self.callgraph = callgraph
         self.cfgs = {F: CFG(F) for F in callgraph.funs() if not F.isUndefined()}
-        # cfa = CFA(self.getProgram())
-        # if __debug__:
-        #    with self.new_output_file("cfa.txt") as f:
-        #        cfa.dump(f)
+        self.cfas = CFA.from_program(prog, callgraph)
+        if __debug__:
+            for fun, cfa in self.cfas.items():
+                with self.new_dbg_file(f"cfa.{fun.getName()}.txt") as f:
+                    cfa.dump(f)
         self.loop_headers = {}
 
     def get_loop_headers(self, cfg):
