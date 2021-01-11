@@ -1,4 +1,4 @@
-from slowbeast.util.debugging import dbgv_sec, dbgv
+from slowbeast.util.debugging import dbgv_sec, ldbgv
 from slowbeast.core.executor import split_ready_states
 from .statedescription import StateDescription, unify_state_descriptions
 from copy import copy
@@ -235,6 +235,7 @@ def execute_annotations(executor, s, annots):
 
     ready, nonready = [s], []
     for annot in annots:
+        ldbgv("{0}", (annot,))
         ready, nr = execute_annotation(executor, ready, annot)
         nonready += nr
 

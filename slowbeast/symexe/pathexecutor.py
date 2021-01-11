@@ -1,6 +1,5 @@
 from slowbeast.util.debugging import dbgv
 from .executor import Executor as SExecutor
-from .constraints import ConstraintsSet
 from .annotations import execute_annotations
 from slowbeast.core.executor import (
     PathExecutionResult,
@@ -8,16 +7,158 @@ from slowbeast.core.executor import (
     split_nonready_states,
 )
 
-from slowbeast.domains.symbolic import Expr
-from slowbeast.ir.instruction import Branch, Instruction, Load
-
-from copy import copy
-
 
 class Executor(SExecutor):
     """
     Symbolic Executor instance adjusted to executing
+    CFA paths possibly annotated with formulas.
+    """
+
+    def __init__(self, solver, opts, memorymodel=None):
+        super(Executor, self).__init__(solver, opts, memorymodel)
+
+    def execute_annotations(self, states, annots):
+        # if there are no annotations, return the original states
+        if not annots:
+            return states, []
+
+        ready = []
+        nonready = []
+
+        for s in states:
+            ts, tu = execute_annotations(self, s, annots)
+            ready += ts
+            nonready += tu
+        return ready, nonready
+
+    def _exec_assume_edge(self, states, edge):
+        nonready = []
+        isnot = edge.assume_false()
+        for elem in edge:
+            newstates = []
+            for r in states:
+                cond = r.get(elem)
+                if cond is None:
+                    r.setTerminated(f"Invalid assume edge: {elem}")
+                    nonready.append(r)
+                tmp = self.execAssumeExpr(r, r.getExprManager().Not(cond) if isnot else cond)
+                for t in tmp:
+                    if t.isReady():
+                        newstates.append(t)
+                    else:
+                        nonready.append(t)
+            states = newstates
+
+        return states, nonready
+
+    def _execute_annotated_edge(self, states, edge, path):
+        source = edge.source()
+        ready, nonready = states, []
+        # annotations before source
+        locannot = path.annot_before_loc(source) if path else None
+        if locannot:
+            ready, tu = self.execute_annotations(ready, locannot)
+            nonready += tu
+        # annotations after source
+        locannot = path.annot_after_loc(source) if path else None
+        if locannot:
+            ready, tu = self.execute_annotations(ready, locannot)
+            nonready += tu
+
+        # execute the instructions from the edge
+        if edge.is_assume():
+            ready, tmpnonready = self._exec_assume_edge(ready, edge)
+            nonready += tmpnonready
+        elif edge.is_call():
+            raise NotImplementedError("Call edges not implemented")
+        else:
+            ready, tmpnonready = self.execute_seq(ready, edge)
+            nonready += tmpnonready
+
+        return ready, nonready
+
+    def execute_annotated_path(self, state, path):
+        """
+        Execute the given path through CFG with annotations from the given
+        state. NOTE: the passed states may be modified.
+
+        Return three lists of states.  The first list contains the states
+        that reach the end of the path (i.e., the states after the execution of
+        the last instruction on the path), the other list contains all other
+        states, i.e., the error, killed or exited states reached during the
+        execution of the CFG. Note that if the path is infeasible, this set
+        contains no states.
+        The last list contains states that terminate (e.g., are killed or are error
+        states) during the execution of the path, but that does not reach the last
+        step.
+        """
+
+        if isinstance(state, list):
+            states = state
+        else:
+            states = [state]
+
+        result = PathExecutionResult()
+        earlytermstates = []
+        edges = path.edges()
+        # set the pc of the states to be the first instruction of the path
+        newpc = path.get_first_inst()
+        if newpc is None: # nothing to execute
+            return result
+        for s in states:
+            s.pc = newpc
+
+        # execute the precondition of the path
+        pre = path.annot_before()
+        if pre:
+            states, tu = self.execute_annotations(states, pre)
+            earlytermstates += tu
+
+        pathlen = len(path)
+        for idx in range(pathlen):
+            edge = edges[idx]
+            dbgv(f"vv ----- Edge {edge} ----- vv")
+            states, nonready = self._execute_annotated_edge(states, edge, path)
+            assert all(map(lambda x: x.isReady(), states))
+
+            # now execute the branch following the edge on the path
+            if idx < pathlen - 1:
+                earlytermstates += nonready
+            else:  # this is the last edge on the path,
+                result.errors, result.other = split_nonready_states(nonready)
+                # execute the annotations of the target (as _execute_annotated_edge
+                # executes only the annotations of the source to avoid repetition)
+                target = edge.target()
+                locannot = path.annot_before_loc(target)
+                if locannot:
+                    states, tu = self.execute_annotations(states, locannot)
+                    result.errors, result.other = split_nonready_states(tu)
+                locannot = path.annot_after_loc(target)
+                if locannot:
+                    states, tu = self.execute_annotations(states, locannot)
+                    result.errors, result.other = split_nonready_states(tu)
+                # execute the postcondition of the path
+                post = path.annot_after()
+                if post:
+                    states, tu = self.execute_annotations(states, post)
+                    result.errors, result.other = split_nonready_states(tu)
+
+            dbgv(f"^^ ----- Edge {edge} ----- ^^")
+            if not states:
+                break
+
+        result.ready = states or None
+        result.early = earlytermstates or None
+
+        assert result.check(), "The states were partitioned incorrectly"
+        return result
+
+
+class CFGExecutor(SExecutor):
+    """
+    Symbolic Executor instance adjusted to executing
     paths possibly annotated with formulas.
+    The paths are supposed to be AnnotatedCFGPaths (paths in CFG)
     """
 
     def __init__(self, solver, opts, memorymodel=None):

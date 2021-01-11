@@ -81,7 +81,7 @@ def postimage(executor, paths, pre=None):
         p = path.copy()
         # the post-condition is the whole frame
         if pre:
-            p.addPrecondition(pre.as_assume_annotation())
+            p.add_annot_before(pre.as_assume_annotation())
 
         # FIXME do not branch on last here, its add useless states
         r = executor.executePath(p)

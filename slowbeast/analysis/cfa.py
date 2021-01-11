@@ -23,6 +23,18 @@ class CFA:
         def predecessors(self):
             return self._predecessors
 
+        def id(self):
+            return self._id
+
+        def __eq__(self, oth):
+            return self._id == oth._id
+
+        def __hash__(self):
+            return self._id
+
+        def __lt__(self, oth):
+            return self._id < oth._id
+
         def __repr__(self):
             return f"L{self._id}"
 
@@ -47,6 +59,12 @@ class CFA:
         def target(self):
             return self._target
 
+        def successors(self):
+            return self._target.successors()
+
+        def predecessors(self):
+            return self._target.predecessors()
+
         def type(self):
             return self._type
 
@@ -59,11 +77,29 @@ class CFA:
         def add_elem(self, e):
             self._elems.append(e)
 
+        def elems(self):
+            return self._elems
+
+        def get_elem(self, idx):
+            """ Get element on index 'idx' or None if such elem does not exists """
+            if idx < len(self._elems):
+                return self._elems[idx]
+            return None
+
         def is_noop(self):
             return len(self._elems) == 0
 
+        def __len__(self):
+            return len(self._elems)
+
         def __repr__(self):
             return f"{self._source} -> {self._target}"
+
+        def __iter__(self):
+            return self._elems.__iter__()
+
+        def __getitem__(self, item):
+            return self._elems.__getitem__(item)
 
     class AssumeEdge(Edge):
         __slots__ = "_is_true"
@@ -83,11 +119,21 @@ class CFA:
         self._fun = fun
         self._locs = []
         self._edges = []
+        self._entry = None
 
         self._build(fun)
 
     def fun(self):
         return self._fun
+
+    def entry(self):
+        return self._entry
+
+    def edges(self):
+        return self._edges
+
+    def locations(self):
+        return self._locs
 
     def from_program(prog: Program, callgraph=None):
         """
@@ -168,11 +214,18 @@ class CFA:
                 e.add_elem(cond)
                 self._add_edge(e)
 
+        self._entry = locs.get(fun.getBBlock(0))[0]
+        assert self._entry, "Do not have entry loc"
+
     def dump(self, stream):
         print(f'digraph CFA_{self._fun.getName()} {{', file=stream)
         print(f'  label="{self._fun.getName()}"', file=stream)
+        entry = self._entry
         for l in self._locs:
-            print(l, file=stream)
+            if l is entry:
+                print(f"{l} [color=blue]", file=stream)
+            else:
+                print(l, file=stream)
         for e in self._edges:
             label = "\\l".join(map(lambda s: str(s).replace('"', '\\"'), e._elems))
             if e.is_assume() and label:

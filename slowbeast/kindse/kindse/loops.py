@@ -1,6 +1,7 @@
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.symexe.annotations import InstrsAnnotation
-from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
+from slowbeast.analysis.cfa import CFA
+from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.util.debugging import dbg_sec
 from slowbeast.ir.instruction import Load, Alloc
 
@@ -68,6 +69,7 @@ class SimpleLoop:
         self._entries = entries  # edges from outside to loop header
         self._inedges = inedges  # edges from header into loop
         self._backedges = backedges  # edges from loop into header
+        self._edges = set(e for path in paths for e in path)
 
         # the state after executing the given path
         self.states = None
@@ -82,11 +84,30 @@ class SimpleLoop:
     def has_loc(self, l):
         return l in self._locs
 
-    def __contains__(self, item):
-        return item in self._locs
+    def __contains__(self, item : CFA.Edge):
+        assert isinstance(item, CFA.Edge)
+        return item in self._edges
 
     def getPaths(self):
         return self._paths
+
+    def get_exit_paths(self):
+        """
+        Take all paths in the loop and prolong them such that they end with an exit edge.
+        """
+        result = []
+        queue = self._paths.copy()
+        while queue:
+            newqueue = []
+            for path in queue:
+                for succedge in path[-1].successors():
+                    if succedge in self._exits:
+                        result.append(path.copyandappend(succedge))
+                    elif succedge not in self._backedges:
+                        newqueue.append(path.copyandappend(succedge))
+                    # else drop the path
+            queue = newqueue
+        return result
 
     def getExits(self):
         return self._exits
@@ -96,6 +117,22 @@ class SimpleLoop:
 
     def get_inedges(self):
         return self._inedges
+
+    def has_inedge(self, *args):
+        if len(args) == 1:
+            assert isinstance(args[0], CFA.Edge)
+            s, t = args[0].source(), args[0].target()
+        elif len(args) == 2:
+            s, t = args[0], args[1]
+        else:
+            raise RuntimeError("Invalid arguments to has_inedge")
+
+        assert isinstance(s, CFA.Location)
+        assert isinstance(t, CFA.Location)
+        for edge in self._inedges:
+            if edge.source() == s and edge.target() == t:
+                return True
+        return False
 
     def construct(loc):
         """
@@ -107,19 +144,20 @@ class SimpleLoop:
         locs = set()
         locs.add(loc)
 
-        def processedge(start, end, dfstype):
+        def processedge(edge, dfstype):
+            start, end = edge.source(), edge.target()
             if dfstype == DFSEdgeType.BACK:
                 if end == loc:
-                    backedges.add((start, end))
+                    backedges.add(edge)
                 else:
                     raise ValueError("Nested loop")
             if dfstype != DFSEdgeType.TREE and end in locs:
                 # backtrack is not called for non-tree edges...
                 locs.add(start)
 
-        def backtrack(start, end):
-            if start is not None and end in locs:
-                locs.add(start)
+        def backtrack(edge):
+            if edge is not None and edge.target() in locs:
+                locs.add(edge.source())
 
         try:
             DFSVisitor().foreachedge(loc, processedge, backtrack)
@@ -129,28 +167,29 @@ class SimpleLoop:
         entries = set()
         inedges = set()
         exits = set()
-        # FIXME: do not store this, just return generators from getters (except for exits, thos need to be precomputed)
-        for succ in loc.getSuccessors():
-            if succ in locs:
-                inedges.add((loc, succ))
+        # FIXME: do not store this, just return generators from getters (except for exits, those need to be precomputed)
+        for edge in loc.successors():
+            if edge.target() in locs:
+                inedges.add(edge)
             else:
-                exits.add((loc, succ))
-        for pred in loc.getPredecessors():
-            if pred not in locs:
-                entries.add((pred, loc))
+                exits.add(edge)
+        for edge in loc.predecessors():
+            if edge.source() not in locs:
+                entries.add(edge)
 
         # fixme: not efficient at all...
         paths = []
-        queue = [[l, e] for l, e in inedges]
+        queue = [[e] for e in inedges]
         while queue:
             newqueue = []
             for path in queue:
-                for succ in path[-1].getSuccessors():
-                    if succ not in locs:
-                        exits.add((path[-1], succ))
+                for succedge in path[-1].successors():
+                    succloc = succedge.target()
+                    if succloc not in locs:
+                        exits.add(succedge)
                         continue
-                    np = path + [succ]
-                    if succ != loc:
+                    np = path + [succedge]
+                    if succloc != loc:
                         newqueue.append(np)
                     else:
                         paths.append(np)
@@ -158,101 +197,10 @@ class SimpleLoop:
 
         return SimpleLoop(
             loc,
-            [AnnotatedCFGPath(p) for p in paths],
+            [AnnotatedCFAPath(p) for p in paths],
             locs,
             entries,
             exits,
             inedges,
             backedges,
         )
-
-    def getVariables(self):
-        V = set()
-        for p in self._paths:
-            for loc in p:
-                for L in (
-                    l for l in loc.getBBlock().instructions() if isinstance(l, Load)
-                ):
-                    op = L.getPointerOperand()
-                    if isinstance(op, Alloc):
-                        V.add(op)
-        self.vars = {v: None for v in V}
-
-    def computeMonotonicVars(self, executor):
-        """
-        Compute how the value of loads changes in this loop.
-        NOTE: this is not the same as how the value of "variables"
-        changes. E.g., if there is a load that can be executed only
-        once on the path, it must necessarily have invariant value,
-        although the memory from which it load may change.
-        """
-
-        dbg_sec(
-            f"Checking monotonicity of variables in simple loop"
-            f" over {self._header.getBBlock().get_id()}"
-        )
-        if self.vars is None:
-            self.getVariables()
-
-        results = {}
-
-        def addRel(x, r):
-            assert r in [None, "<", "<=", ">", ">=", "="]
-            # group by the allocations
-            x = x.load.getPointerOperand()
-            n = results.setdefault(x, "?")
-            # print(x, n, r)
-            if n is None:
-                return
-
-            if r is None:
-                results[x] = None
-            if n == "?":  # first assignment
-                results[x] = r
-            elif n != r:
-                if n == "<" and r == "<=":
-                    results[x] = "<="
-                elif n == "<=" and r in ["<", "="]:
-                    pass
-                elif n == ">" and r == ">=":
-                    results[x] = ">="
-                elif n == ">=" and r in [">", "="]:
-                    pass
-                elif n == "=" and r in [">=", "<="]:
-                    results[x] = r
-                else:
-                    assert (n == "=" and r in [">", "<"]) or (
-                        r == "=" and n in [">", "<"]
-                    )
-                    results[x] = None
-            else:
-                assert n == r and n is not None and n != "?"
-
-        V = self.vars.keys()
-        loads = [Load(v, v.getSize().value()) for v in V]
-        for p in self._paths:
-            path = p.copy()
-            path.addLocAnnotationBefore(InstrsAnnotation(loads), self._header)
-            r = executor.executePath(path)
-            assert r.errors is None
-            assert r.other is None
-
-            ready = r.ready
-            if not ready:
-                continue
-
-            for s in ready:
-                # NOTE: we do not need to handle the cases when x is not
-                # present in the state, because in that case
-                # it is invariant for the path
-                for x in (
-                    l for l in s.getNondets() if l.isNondetLoad() and l.load in loads
-                ):
-                    curval = s.get(x.load)
-                    assert curval, "BUG: must have the load as it is nondet"
-                    addRel(x, get_rel(s, x, curval))
-
-        V = self.vars
-        for (x, r) in results.items():
-            # print(x, r)
-            V[x] = r

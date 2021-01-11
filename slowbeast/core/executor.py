@@ -417,8 +417,6 @@ class Executor:
     def execute(self, state, instr):
         """
         Execute the next instruction in the state and modify the state accordingly.
-        If the instruction terminated the program, return the exit code.
-        TODO: exceptional termination (like assert?)
         """
         # debug print
         ldbgv(
@@ -465,10 +463,44 @@ class Executor:
 
         return states
 
+    def execute_seq(self, state, instrs):
+        """
+        Execute instructions 'instrs' from state(s) 'state'. The instructions
+        must not contain Branch instruction. \return two list, the first
+        contains READY states and the other contains not READY states.
+        """
+        nonreadystates = []
+        if isinstance(state, list):
+            readystates = state
+        else:
+            readystates = [state]
+
+        execute = self.execute
+        nonreadystatesappend = nonreadystates.append
+        for i in instrs:
+            assert not isinstance(i, Branch), "Branch instruction in execute_seq"
+
+            newst = []
+            newstappend = newst.append
+            for s in readystates:
+                s.pc = i
+                nxt = execute(s, i)
+                for n in nxt:
+                    if n.isReady():
+                        newstappend(n)
+                    else:
+                        nonreadystatesappend(n)
+
+            readystates = newst
+            if not readystates:
+                break
+
+        return readystates, nonreadystates
+
     def executeTillBranch(self, state, stopBefore=False):
         """
         Start executing from 'state' and stop execution after executing a
-        branch instruction.  This usually will execute exactly one basic block
+        branch instruction.  This will typically execute exactly one basic block
         of the code.
         If 'stopBefore' is True, stop the execution before executing the
         branch instruction.

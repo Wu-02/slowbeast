@@ -1,7 +1,8 @@
 from itertools import chain
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv
 
-from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath, CFG
+from slowbeast.ir.instruction import Assert as AssertInst
+from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from .kindsebase import check_paths
 
@@ -10,8 +11,7 @@ from slowbeast.symexe.annotations import (
     or_annotations,
 )
 
-from slowbeast.symexe.statesset import union, intersection
-from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
+from slowbeast.solvers.solver import getGlobalExprManager
 from slowbeast.kindse.kindse.relations import get_subs
 
 from .loops import SimpleLoop
@@ -113,7 +113,7 @@ def simplify_expr(expr, EM):
 
 class KindSEChecker(BaseKindSE):
     """
-    An executor that recursively checks the validity of a one particular assertion.
+    An executor that recursively checks the validity of one particular assertion.
     It inherits from BaseKindSE to have the capabilities to execute paths.
     """
 
@@ -132,13 +132,13 @@ class KindSEChecker(BaseKindSE):
 
     def check_loop_precondition(self, L, A):
         loc = L.header()
-        dbg_sec(f"Checking if {A} holds on loc {loc.getBBlock().get_id()}")
+        dbg_sec(f"Checking if {A} holds on {loc}")
 
        # def reportfn(msg, *args, **kwargs):
        #     print_stdout(f"> {msg}", *args, **kwargs)
 
         checker = KindSEChecker(self.toplevel_executor, loc, A)
-        result, states = checker.check()
+        result, states = checker.check(L.getEntries())
         dbg_sec()
         return result, states
 
@@ -156,7 +156,7 @@ class KindSEChecker(BaseKindSE):
        #dbg_sec()
        #if res is Result.SAFE:
        #    print_stdout(
-       #        f"Loop {loc.getBBlockID()} proved by unwinding", color="GREEN"
+       #        f"Loop {loc} proved by unwinding", color="GREEN"
        #    )
        #    return res
        #FIXME: uncomment and return the states
@@ -168,7 +168,7 @@ class KindSEChecker(BaseKindSE):
 
         self.no_sum_loops.add(loc)
         print_stdout(
-            f"Falling back to unwinding loop {loc.getBBlockID()}", color="BROWN"
+            f"Falling back to unwinding loop {loc}", color="BROWN"
         )
         return Result.UNKNOWN
 
@@ -260,8 +260,6 @@ class KindSEChecker(BaseKindSE):
     def strengthen_initial_seq(self, seq0, errs0, path, L: SimpleLoop):
         # NOTE: if we would pass states here we would safe some work.. be it would be less generic
         r = seq0.check_ind_on_paths(self, L.getPaths())
-        # catch it in debug mode so that we can improve...
-        # assert r.errors is None, f"Initial seq is not inductive: {seq0}"
         if r.errors is None:
             dbg("Initial sequence is inductive", color="dark_green")
             return seq0
@@ -269,20 +267,14 @@ class KindSEChecker(BaseKindSE):
         dbg("Initial sequence is NOT inductive, trying to fix it", color="wine")
         # is the assertion inside the loop or after the loop?
         EM = getGlobalExprManager()
-        assert path[0] == L._header
+        assert path[0].source() is L.header()
         createSet = self.getIndExecutor().createStatesSet
-        if (path[0], path[1]) in L.get_inedges():
-            # FIXME: we actually do not use the concrete assertion at all right now...
-            # assertion is inside, evaluate the jump-out instruction
+        if path[-1] in L: # the assertion is inside the loop
+            # FIXME: we actually do not use the assertion at all right now, only implicitly as it is contained in the paths...
+            # evaluate the jump-out instruction
             # get the safe states that jump out of the loop after one iteration
-            r = check_paths(self, L.getPaths())
-            if not r.ready:
-                return None
-            ready = [
-                s
-                for s in r.ready
-                if s.pc in (e[1].getBBlock().first() for e in L.getExits())
-            ]
+            r = check_paths(self, L.get_exit_paths())
+            ready = r.ready
             if not ready:
                 return None
             R = createSet()
@@ -299,31 +291,41 @@ class KindSEChecker(BaseKindSE):
                 tmp.reset_expr(expr)
                 R.add(tmp)
             seq0 = InductiveSequence(R.as_assert_annotation())
-            r = seq0.check_ind_on_paths(self, L.getPaths())
             # this may mean that the assertion in fact does not hold
+            # r = seq0.check_ind_on_paths(self, L.getPaths())
             # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
-        else:
-            r = check_paths(self, [AnnotatedCFGPath([path[0]])])
-            if r.ready is None:
+        else: # the assertion is outside the loop
+            # get the prefix of the path that exits the loop
+            prefix = None
+            exits = L.getExits()
+            for n in range(len(path)):
+                if path[n] in exits:
+                    prefix = AnnotatedCFAPath(path.edges()[:n+1])
+                    break
+            assert prefix, "Failed getting loop-exit condition"
+            r = check_paths(self, [prefix])
+            ready = r.ready
+            if ready is None:
                 return None
             R = createSet()
-            ready = [s for s in r.ready if s.pc is path[1].getBBlock().first()]
-            for r in ready:
-                R.add(r)
+           #for r in ready:
+           #    R.add(r)
+            R.add(ready)
             R.intersect(seq0.toannotation(True))
             seq0 = InductiveSequence(R.as_assert_annotation())
-            r = seq0.check_ind_on_paths(self, L.getPaths())
             # this may mean that the assertion in fact does not hold
+            # r = seq0.check_ind_on_paths(self, L.getPaths())
             # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
 
         r = seq0.check_ind_on_paths(self, L.getPaths())
         if r.errors is None:
             dbg("Initial sequence made inductive", color="dark_green")
             return seq0
+        dbg("Failed making the initial sequence inductive")
         return None
 
     def execute_loop(self, path, loc, states):
-        dbgv(f"========== Executing loop {loc.getBBlockID()} ===========")
+        dbgv(f"========== Executing loop {loc} ===========")
         unsafe = states.errors
         assert unsafe, "No unsafe states, we should not get here at all"
 
@@ -332,7 +334,7 @@ class KindSEChecker(BaseKindSE):
             dbg("Was not able to construct the loop info")
             return False  # fall-back to loop unwinding...
 
-        dbgv(f"Getting initial sequence for loop {loc.getBBlockID()}")
+        dbgv(f"Getting initial sequence for loop {loc}")
         seq0, errs0 = get_initial_seq(unsafe, path, L)
         # the initial sequence may not be inductive (usually when the assertion
         # is inside the loop, so we must strenghten it
@@ -348,7 +350,7 @@ class KindSEChecker(BaseKindSE):
         sequences = [seq0]
 
         print_stdout(
-            f"Executing loop {loc.getBBlockID()} with assumption", color="white"
+            f"Executing loop {loc} with assumption", color="white"
         )
         print_stdout(str(seq0[0]), color="white")
         print_stdout(f"and errors : {errs0}")
@@ -361,7 +363,7 @@ class KindSEChecker(BaseKindSE):
         while True:
             print("--- extending sequences ---")
             print_stdout(
-                f"Got {len(sequences)} abstract path(s) of loop " f"{loc.getBBlockID()}",
+                f"Got {len(sequences)} abstract path(s) of loop " f"{loc}",
                 color="GRAY",
             )
 
@@ -371,7 +373,7 @@ class KindSEChecker(BaseKindSE):
                 res, _ = self.check_loop_precondition(L, S)
                 if res is Result.SAFE:
                     print_stdout(
-                        f"{S} holds on {loc.getBBlock().get_id()}", color="BLUE"
+                        f"{S} holds on {loc}", color="BLUE"
                     )
                    #if self.genannot:
                    #    # maybe remember the ind set even without genannot
@@ -402,8 +404,8 @@ class KindSEChecker(BaseKindSE):
             sequences = extended
 
     def check_path(self, path):
-        first_loc = path.first()
-        if self._is_init(first_loc):
+        first_loc = path[0]
+        if self._is_init(first_loc.source()):
             r, states = self.checkInitialPath(path)
             if r is Result.UNSAFE:
                 self.reportfn(f"Error path: {path}", color="RED")
@@ -464,8 +466,7 @@ class KindSEChecker(BaseKindSE):
         return None
 
     def is_loop_header(self, loc):
-        assert isinstance(loc, CFG.AnnotatedNode), loc
-        return loc in self.programstructure.get_loop_headers(loc.getCFG())
+        return loc in self.programstructure.get_loop_headers()
 
     def queue_paths(self, paths):
         ready = self.readypaths
@@ -474,8 +475,8 @@ class KindSEChecker(BaseKindSE):
 
     def extend_and_queue_paths(self, path, states):
         step = self.getOptions().step
-        invpoints = self.programstructure.get_loop_headers(path[0].getCFG())
-        newpaths = self.extendPath(
+        invpoints = self.programstructure.get_loop_headers()
+        newpaths = self.extend_path(
             path,
             states,
             steps=step,
@@ -485,12 +486,14 @@ class KindSEChecker(BaseKindSE):
 
         self.queue_paths(newpaths)
 
-    def check(self):
+    def check(self, onlyedges=None):
         # the initial error path that we check
         loc = self.location
-        path = AnnotatedCFGPath([loc])
-        path.addLocAnnotationBefore(self.assertion, loc)
-        self.extend_and_queue_paths(path, states=None)
+        EM = getGlobalExprManager()
+        for edge in (onlyedges if onlyedges else loc.predecessors()):
+            path = AnnotatedCFAPath([edge])
+            path.add_annot_after(self.assertion)
+            self.extend_and_queue_paths(path, states=None)
 
         problem_states = []
         while True:
@@ -503,7 +506,7 @@ class KindSEChecker(BaseKindSE):
                 return r, states
             elif states.errors:  # got error states that may not be real
                 assert r is None
-                fl = path.first()
+                fl = path[0].source()
                 if fl not in self.no_sum_loops and self.is_loop_header(fl):
                     res = self.handle_loop(fl, path, states)
                     if res is Result.UNSAFE:
@@ -515,7 +518,7 @@ class KindSEChecker(BaseKindSE):
                         self.extend_and_queue_paths(path, states)
                     else:
                         assert res is Result.SAFE
-                        dbg(f"Path with loop {fl.getBBlockID()} proved safe", color="dark_green")
+                        dbg(f"Path with loop {fl} proved safe", color="dark_green")
                 else:
                     # normal path or a loop that we cannot summarize
                     self.extend_and_queue_paths(path, states)
@@ -524,6 +527,8 @@ class KindSEChecker(BaseKindSE):
 
         raise RuntimeError("Unreachable")
 
+def edge_has_assert(edge):
+    return any(map(lambda i : isinstance(i, AssertInst), edge))
 
 class KindSymbolicExecutor(BaseKindSE):
     """
@@ -533,7 +538,7 @@ class KindSymbolicExecutor(BaseKindSE):
     and keep BaseKindSE a class that just takes care for executing paths.
     """
 
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions(), genannot=False):
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
         super().__init__(
             prog=prog, ohandler=ohandler, opts=opts
         )
@@ -546,9 +551,9 @@ class KindSymbolicExecutor(BaseKindSE):
             if F.isUndefined():
                 continue
 
-            cfg = self.getCFG(F)
-            nodes = cfg.getNodes()
-            paths.extend(AnnotatedCFGPath([n]) for n in nodes if n.hasAssert())
+            cfa = self.get_cfa(F)
+            edges = cfa.edges()
+            paths.extend(AnnotatedCFAPath([e]) for e in edges if edge_has_assert(e))
 
         return paths
 
@@ -558,7 +563,8 @@ class KindSymbolicExecutor(BaseKindSE):
             r = check_paths(self, [err])
             assert r.errors, "The error path has no errors"
             for e in r.errors:
-                yield err[0], AssertAnnotation(e.path_condition(), get_subs(e), e.getExprManager())
+                EM = e.getExprManager()
+                yield err[0].source(), AssertAnnotation(EM.Not(e.path_condition()), get_subs(e), EM)
 
     def run(self):
         has_unknown = False
@@ -573,9 +579,9 @@ class KindSymbolicExecutor(BaseKindSE):
                 print_stdout("Error found.", color="red")
                 return result
             elif result is Result.SAFE:
-                print_stdout(f"Error condition {A.getExpr()} at {loc.getBBlockID()} is safe!.", color="green")
+                print_stdout(f"Error condition {A.getExpr()} at {loc} is safe!.", color="green")
             elif result is Result.UNKNOWN:
-                print_stdout(f"Checking assert {A} at {loc.getBBlockID()} was unsuccessful.", color="orange")
+                print_stdout(f"Checking assert {A} at {loc} was unsuccessful.", color="orange")
                 has_unknown = True
 
         return Result.UNKNOWN if has_unknown else Result.SAFE
