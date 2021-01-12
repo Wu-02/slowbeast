@@ -69,7 +69,11 @@ class Executor(SExecutor):
         if edge.is_assume():
             ready, tmpnonready = self._exec_assume_edge(ready, edge)
             nonready += tmpnonready
-        elif edge.is_call():
+        elif edge.is_call() and not edge.called_function().isUndefined():
+            fn = edge.called_function().name()
+            for s in ready:
+                s.setTerminated("Called function {fn} on intraprocedural path")
+                return [], nonready + ready
             raise NotImplementedError("Call edges not implemented")
         else:
             ready, tmpnonready = self.execute_seq(ready, edge)
