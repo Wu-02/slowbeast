@@ -54,7 +54,7 @@ class Interpreter:
     def getStates(self):
         return self.states
 
-    def getInitialStates(self):
+    def initialStates(self):
         """
         Get state(s) from which to start execution.
         May be overriden by child classes
@@ -114,9 +114,9 @@ class Interpreter:
             for s in states:
                 s.memory.allocateGlobal(G)
 
-            if not G.hasInit():
+            if not G.has_init():
                 continue
-            for i in G.getInit():
+            for i in G.init():
                 for s in states:
                     ret = self._executor.execute(s, i)
                     assert len(ret) == 1, "Unhandled initialization"
@@ -135,7 +135,7 @@ class Interpreter:
         Result is a set of states before starting executing
         the entry function.
         """
-        self.states = self.getInitialStates()
+        self.states = self.initialStates()
         self.run_static()
 
         # push call to main to call stack
