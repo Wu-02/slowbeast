@@ -80,7 +80,7 @@ class MemoryObject(CoreMO):
                 MemError.UNSUPPORTED, "Read from non-constant offset not supported"
             )
 
-        size = self.getSize()
+        size = self.size()
         if not size.is_concrete():
             return None, MemError(
                 MemError.UNSUPPORTED,
@@ -96,7 +96,7 @@ class MemoryObject(CoreMO):
                 MemError.OOB_ACCESS, f"Read {bts}B from object of size {size}"
             )
 
-        values = self.values
+        values = self._values
         if isinstance(values, list):
             return read_bytes(values, offval, size, bts)
 
@@ -123,7 +123,7 @@ class MemoryObject(CoreMO):
                 values, err = mo_to_bytes(values, size)
                 if err:
                     return None, err
-                self.values = values
+                self._values = values
                 return read_bytes(values, offval, size, bts)
 
             return None, MemError(
@@ -149,13 +149,13 @@ class MemoryObject(CoreMO):
                 MemError.UNSUPPORTED, "Write to non-constant offset not supported"
             )
 
-        if not self.getSize().is_concrete():
+        if not self.size().is_concrete():
             return MemError(
                 MemError.UNSUPPORTED,
                 "Write to symbolic-sized objects not implemented yet",
             )
 
-        size = self.getSize().value()
+        size = self.size().value()
         offval = off.value()
 
         if x.bytewidth() > size + offval:
@@ -167,7 +167,7 @@ class MemoryObject(CoreMO):
                 ),
             )
 
-        values = self.values
+        values = self._values
         if isinstance(values, list):
             return write_bytes(offval, values, size, x)
         else:
@@ -198,12 +198,12 @@ class MemoryObject(CoreMO):
     def __repr__(self):
         s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
             self._id,
-            self.name if self.name else "no name",
-            self.allocation.as_value() if self.allocation else "unknown",
+            self._name if self._name else "no name",
+            self._allocation.as_value() if self._allocation else "unknown",
             self._ro,
-            self.getSize(),
+            self._size,
         )
-        vals = self.values
+        vals = self._values
         for k, v in enumerate(vals) if isinstance(vals, list) else vals.items():
             s += "\n  {0} -> {1}".format(k, v)
         return s
