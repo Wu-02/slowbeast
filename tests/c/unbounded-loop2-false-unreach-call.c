@@ -23,6 +23,6 @@ int main(void) {
 		//old_diff -= 2;
 	}
 
-	// CHECK: assertion failed!
+	// CHECK: assertion failure
 	// CHECK: Found errors: 1
 }
