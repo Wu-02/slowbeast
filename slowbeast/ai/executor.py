@@ -404,7 +404,7 @@ class Executor(ConcreteExecutor):
     def execAssert(self, state, instr):
         assert isinstance(instr, Assert)
         o = instr.condition()
-        msg = instr.getMessage()
+        msg = instr.msg()
         if not msg:
             msg = str(o)
         v = state.eval(o)

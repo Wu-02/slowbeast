@@ -302,7 +302,7 @@ class Assert(Instruction):
     def __init__(self, cond, msg=None):
         super().__init__([cond, msg])
 
-    def getMessage(self):
+    def msg(self):
         ops = self.operands()
         assert len(ops) <= 2 and len(ops) >= 1
         if len(ops) == 1:
@@ -314,7 +314,7 @@ class Assert(Instruction):
 
     def __str__(self):
         r = "assert {0}".format(self.condition().as_value())
-        m = self.getMessage()
+        m = self.msg()
         if m:
             r += ', "{0}"'.format(m)
         return r
