@@ -341,7 +341,7 @@ class Cmp(ValueInstruction):
     EQ = 5
     NE = 6
 
-    def predicateStr(p, u=False):
+    def predicate_str(p, u=False):
         if p == Cmp.LE:
             s = "<="
         elif p == Cmp.LT:
@@ -362,7 +362,7 @@ class Cmp(ValueInstruction):
 
         return s
 
-    def predicateNeg(p):
+    def predicate_neg(p):
         if p == Cmp.LE:
             return Cmp.GT
         if p == Cmp.LT:
@@ -384,28 +384,28 @@ class Cmp(ValueInstruction):
         self._unsigned = unsgn
         self._fp = fp
 
-    def setFloat(self):
+    def set_float(self):
         """ Set that this comparison is on floating-point numbers """
         self._fp = True
 
-    def isFloat(self):
+    def is_float(self):
         return self._fp
 
-    def setUnsigned(self):
+    def set_unsigned(self):
         """ Set that this comparison is unsigned """
         self._unsigned = True
 
-    def isUnsigned(self):
+    def is_unsigned(self):
         return self._unsigned
 
-    def getPredicate(self):
+    def predicate(self):
         return self._predicate
 
     def __str__(self):
         return "{0} = {4}cmp {1} {2} {3}".format(
             self.as_value(),
             self.operand(0).as_value(),
-            Cmp.predicateStr(self.getPredicate(), self.isUnsigned()),
+            Cmp.predicate_str(self.predicate(), self.is_unsigned()),
             self.operand(1).as_value(),
             "f" if self._fp else "",
         )
@@ -430,7 +430,7 @@ class UnaryOperation(ValueInstruction):
         UnaryOperation.__check(op)
         self._op = op
 
-    def getOperation(self):
+    def operation(self):
         return self._op
 
 
@@ -520,18 +520,18 @@ class ExtractBits(UnaryOperation):
         self._start = start
         self._end = end
 
-    def getRange(self):
+    def range(self):
         return (self._start, self._end)
 
-    def getStart(self):
+    def start(self):
         return self._start
 
-    def getEnd(self):
+    def end(self):
         return self._end
 
     def __str__(self):
         return "x{0} = extractbits {1}-{2} from {3}".format(
-            self.get_id(), self.getStart(), self.getEnd(), self.operand(0).as_value()
+            self.get_id(), self.start(), self.end(), self.operand(0).as_value()
         )
 
 
@@ -606,7 +606,7 @@ class BinaryOperation(ValueInstruction):
         BinaryOperation.__check(op)
         self._op = op
 
-    def getOperation(self):
+    def operation(self):
         return self._op
 
 
@@ -670,7 +670,7 @@ class Div(BinaryOperation):
     def is_fp(self):
         return self._fp
 
-    def isUnsigned(self):
+    def is_unsigned(self):
         return self._unsigned
 
     def __str__(self):
@@ -678,7 +678,7 @@ class Div(BinaryOperation):
             self.get_id(),
             self.operand(0).as_value(),
             self.operand(1).as_value(),
-            "u" if self.isUnsigned() else "",
+            "u" if self.is_unsigned() else "",
             "." if self._fp else "",
         )
 
@@ -688,7 +688,7 @@ class Rem(BinaryOperation):
         super().__init__(BinaryOperation.REM, a, b)
         self._unsigned = unsigned
 
-    def isUnsigned(self):
+    def is_unsigned(self):
         return self._unsigned
 
     def __str__(self):
@@ -696,7 +696,7 @@ class Rem(BinaryOperation):
             self.get_id(),
             self.operand(0).as_value(),
             self.operand(1).as_value(),
-            "u" if self.isUnsigned() else "",
+            "u" if self.is_unsigned() else "",
         )
 
 
