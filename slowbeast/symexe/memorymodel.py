@@ -29,20 +29,24 @@ class LazySymbolicMemoryModel(CoreMM):
         dbgv("Lazily allocated {0}".format(op), color="WHITE")
         assert state.get(op), "Did not bind an allocated value"
 
-    def write(self, state, valueOp, toOp):
-        value = state.eval(valueOp)
+    def write(self, state, instr, valueOp, toOp):
         to = state.get(toOp)
         if to is None:
             self.lazyAllocate(state, toOp)
             # FIXME "We're calling get() method but we could return the value..."
             to = state.get(toOp)
-
-        assert isinstance(value, Value)
         assert to.is_pointer()
         if not to.offset().is_concrete():
             # FIXME: move this check to memory.write() object
             state.setKilled("Write with non-constant offset not supported yet")
             return [state]
+
+        value = state.try_eval(valueOp)
+        if value is None:
+            value = state.getSolver().Var(f"uninit_{valueOp.as_value()}",
+                                          IntType(8 * instr.bytewidth()))
+        assert isinstance(value, Value)
+ 
         try:
             err = state.memory.write(to, value)
         except NotImplementedError as e:

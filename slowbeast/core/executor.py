@@ -172,7 +172,7 @@ class Executor:
         assert isinstance(instr, Store)
 
         states = self.memorymodel.write(
-            state, instr.getValueOperand(), instr.getPointerOperand()
+            state, instr, instr.getValueOperand(), instr.getPointerOperand()
         )
 
         for s in states:
