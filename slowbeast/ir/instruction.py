@@ -562,18 +562,6 @@ class FpOp(UnaryOperation):
     def fp_operation(self):
         return self._fp_op
 
-    def isInf(self):
-        return self._fp_op == FpOp.IS_INF
-
-    def isNan(self):
-        return self._fp_op == FpOp.IS_NAN
-
-    def fpclassify(self):
-        return self._fp_op == FpOp.SIGNBIT
-
-    def signbit(self):
-        return self._fp_op == FpOp.SIGNBIT
-
     def __str__(self):
         return "x{0} = fp {1} {2}".format(
             self.get_id(), FpOp.op_to_str(self._fp_op), self.operand(0).as_value()
