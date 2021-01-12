@@ -13,7 +13,7 @@ class FutureExecutor(SExecutor):
         assert isinstance(instr, Call)
         fun = instr.getCalledFunction()
         if self.is_error_fn(fun):
-            state.setError(AssertFailError(f"Called '{fun.getName()}'"))
+            state.setError(AssertFailError(f"Called '{fun.name()}'"))
             return [state]
 
         if fun.isUndefined():
@@ -22,7 +22,7 @@ class FutureExecutor(SExecutor):
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
             state.setKilled(
-                "calling '{0}', but calls are forbidden".format(fun.getName())
+                "calling '{0}', but calls are forbidden".format(fun.name())
             )
             return [state]
 

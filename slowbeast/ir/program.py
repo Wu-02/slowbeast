@@ -20,12 +20,12 @@ class Program:
 
     def fun(self, name):
         for f in self._functions:
-            if f.getName() == name:
+            if f.name() == name:
                 return f
         return None
 
     def set_entry(self, e):
-        assert self.fun(e.getName())
+        assert self.fun(e.name())
         self._entry = e
 
     def entry(self):

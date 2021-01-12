@@ -23,7 +23,7 @@ class GlobalVariable(ProgramElement):
     def size(self):
         return self._size
 
-    def getName(self):
+    def name(self):
         return self._name
 
     def hasInit(self):
@@ -42,7 +42,7 @@ class GlobalVariable(ProgramElement):
 
     def __str__(self):
         return "{0} = global {1} of size {2}".format(
-            self.as_value(), self.getName(), self.size()
+            self.as_value(), self.name(), self.size()
         )
 
     def dump(self, ind=0, stream=stdout, color=True):

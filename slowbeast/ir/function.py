@@ -23,7 +23,7 @@ class Function(ProgramElement):
     def isUndefined(self):
         return self._bblocks == []
 
-    def getName(self):
+    def name(self):
         return self._name
 
     def getArgument(self, idx):

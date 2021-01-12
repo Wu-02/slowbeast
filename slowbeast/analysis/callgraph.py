@@ -107,12 +107,12 @@ class CallGraph:
 
     def dump(self, stream=stdout):
         for f, node in self._nodes.items():
-            stream.write("Fun '{0}' calls\n".format(f.getName()))
+            stream.write("Fun '{0}' calls\n".format(f.name()))
             for cs, funs in node.getCallSites().items():
                 for n, cf in enumerate(funs):
                     if n == 0:
                         stream.write(
-                            "  {0} -> {1}\n".format(cs.get_id(), cf.fun().getName())
+                            "  {0} -> {1}\n".format(cs.get_id(), cf.fun().name())
                         )
                     else:
-                        stream.write("     -> {0}\n".format(cf.fun().getName()))
+                        stream.write("     -> {0}\n".format(cf.fun().name()))
