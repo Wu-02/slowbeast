@@ -88,7 +88,7 @@ class SimpleLoop:
         assert isinstance(item, CFA.Edge)
         return item in self._edges
 
-    def getPaths(self):
+    def paths(self):
         return self._paths
 
     def get_exit_paths(self):
@@ -109,13 +109,13 @@ class SimpleLoop:
             queue = newqueue
         return result
 
-    def getExits(self):
+    def exits(self):
         return self._exits
 
-    def getEntries(self):
+    def entries(self):
         return self._entries
 
-    def get_inedges(self):
+    def inedges(self):
         return self._inedges
 
     def has_inedge(self, *args):

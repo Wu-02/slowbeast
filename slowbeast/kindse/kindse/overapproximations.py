@@ -301,7 +301,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     litrep = EM.Bool("litext")
     X = intersection(S, disjunction(litrep, *rl))
     assert not X.is_empty()
-    post = postimage(executor, L.getPaths(), pre=X)
+    post = postimage(executor, L.paths(), pre=X)
     if not post:
         return goodl
     formulas = []
@@ -425,7 +425,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
             continue  # unsafe overapprox
         X = S.copy()
         X.reset_expr(tmpexpr)
-        r = check_paths(executor, L.getPaths(), pre=X, post=union(X, target))
+        r = check_paths(executor, L.paths(), pre=X, post=union(X, target))
         if r.errors is None and r.ready:
             newclauses = tmp
             # dbg(f"  dropped {c}...")
