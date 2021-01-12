@@ -74,22 +74,22 @@ class ExprAnnotation(Annotation):
     def getDescr(self):
         return self._sd
 
-    def getExpr(self):
-        return self._sd.getExpr()
+    def expr(self):
+        return self._sd.expr()
 
     # NOTE: use carefully...
     def set_expr(self, expr):
         return self._sd.set_expr(expr)
 
-    def getSubstitutions(self):
-        return self._sd.getSubstitutions()
+    def substitutions(self):
+        return self._sd.substitutions()
 
     def getCannonical(self):
         return self.cannonical
 
     def Not(self, EM):
         n = copy(self)  # to copy the type and methods
-        n._sd = StateDescription(EM.Not(self.getExpr()), self.getSubstitutions())
+        n._sd = StateDescription(EM.Not(self.expr()), self.substitutions())
         n.cannonical = n._sd.cannonical(EM)
         return n
 
@@ -119,13 +119,13 @@ class ExprAnnotation(Annotation):
                 "assert" if self.type == Annotation.ASSERT else "assume"
             )
         )
-        print(f"> expr: {self.getExpr()}")
+        print(f"> expr: {self.expr()}")
         print(f"> cannonical: {self.getCannonical()}")
         print(
             "> substitutions: {0}".format(
                 ", ".join(
                     f"{x.as_value()}/{val.unwrap()}"
-                    for (val, x) in self.getSubstitutions().items()
+                    for (val, x) in self.substitutions().items()
                 )
             )
         )
@@ -136,7 +136,7 @@ class AssertAnnotation(ExprAnnotation):
         super().__init__(Annotation.ASSERT, expr, subs, EM)
 
     def toAssume(self, EM):
-        return AssumeAnnotation(self.getExpr(), self.getSubstitutions(), EM)
+        return AssumeAnnotation(self.expr(), self.substitutions(), EM)
 
     def __repr__(self):
         return f"assert {ExprAnnotation.__repr__(self)}"
@@ -178,7 +178,7 @@ def execute_annotation_substitutions(executor, states, annot):
     """
     Execute instructions from substitutions of an annotation
     """
-    subs = annot.getSubstitutions()
+    subs = annot.substitutions()
     nonready = []
     for i in set(subs.values()):
         states, nr = _execute_instr(executor, states, i)
@@ -190,7 +190,7 @@ def _execute_expr_annotation(executor, states, annot):
     states, nonready = execute_annotation_substitutions(executor, states, annot)
 
     isassume = annot.isAssume()
-    expr = annot.getExpr()
+    expr = annot.expr()
     ready = states
     states = []
     for s in ready:
@@ -248,7 +248,7 @@ def execute_annotations(executor, s, annots):
 def _join_annotations(EM, Ctor, op, annots):
     assert len(annots) > 0
     if len(annots) == 1:
-        return Ctor(annots[0].getExpr(), annots[0].getSubstitutions(), EM)
+        return Ctor(annots[0].expr(), annots[0].substitutions(), EM)
 
     simplify = EM.simplify
     subs = {}
@@ -283,7 +283,7 @@ def and_annotations(EM, toassert, *annots):
 
 
 def state_to_annotation(state):
-    EM = state.getExprManager()
+    EM = state.expr_manager()
     return AssumeAnnotation(
         state.getConstraintsObj().as_formula(EM),
         {l: l.load for l in state.getNondetLoads()},
@@ -294,7 +294,7 @@ def state_to_annotation(state):
 def states_to_annotation(states):
     a = None
     for s in states:
-        EM = s.getExprManager()
+        EM = s.expr_manager()
         a = or_annotations(
             EM,
             False,

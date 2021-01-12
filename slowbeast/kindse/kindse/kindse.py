@@ -105,7 +105,7 @@ def get_initial_seq(unsafe, path, L):
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
     S = executor.ind_executor().create_states_set(s)
-    EM = s.getExprManager()
+    EM = s.expr_manager()
     return overapprox_set(executor, EM, S, unsafeAnnot, seq, L)
 
 
@@ -212,8 +212,8 @@ class KindSEChecker(BaseKindSE):
         assert len(seq) >= 2
         A1 = seq[-1].toassume()
         A2 = seq[-2].toassume()
-        e1 = A1.getExpr().to_cnf()
-        e2 = A2.getExpr().to_cnf()
+        e1 = A1.expr().to_cnf()
+        e2 = A2.expr().to_cnf()
 
         C1 = set(e1.children())
         C = set()
@@ -235,9 +235,9 @@ class KindSEChecker(BaseKindSE):
         EM = getGlobalExprManager()
         seq.pop()
 
-        seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.getSubstitutions(), EM)
-        S1 = AssertAnnotation(EM.conjunction(*N1), A1.getSubstitutions(), EM)
-        S2 = AssertAnnotation(EM.conjunction(*N2), A2.getSubstitutions(), EM)
+        seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.substitutions(), EM)
+        S1 = AssertAnnotation(EM.conjunction(*N1), A1.substitutions(), EM)
+        S2 = AssertAnnotation(EM.conjunction(*N2), A2.substitutions(), EM)
         seq[-1].strengthening = or_annotations(EM, True, S1, S2)
 
         # FIXME: we are still precies, use abstraction here...
@@ -567,7 +567,7 @@ class KindSymbolicExecutor(BaseKindSE):
             r = check_paths(self, [err])
             assert r.errors, "The error path has no errors"
             for e in r.errors:
-                EM = e.getExprManager()
+                EM = e.expr_manager()
                 yield err[0].source(), AssertAnnotation(
                     EM.Not(e.path_condition()), get_subs(e), EM
                 )
@@ -575,7 +575,7 @@ class KindSymbolicExecutor(BaseKindSE):
     def run(self):
         has_unknown = False
         for loc, A in self._get_possible_errors():
-            dbg(f"Checking possible error: {A.getExpr()} @ {loc}")
+            dbg(f"Checking possible error: {A.expr()} @ {loc}")
             checker = KindSEChecker(self, loc, A)
             result, states = checker.check()
             if result is Result.UNSAFE:
@@ -586,7 +586,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 return result
             elif result is Result.SAFE:
                 print_stdout(
-                    f"Error condition {A.getExpr()} at {loc} is safe!.", color="green"
+                    f"Error condition {A.expr()} at {loc} is safe!.", color="green"
                 )
             elif result is Result.UNKNOWN:
                 print_stdout(

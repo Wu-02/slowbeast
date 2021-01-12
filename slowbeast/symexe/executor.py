@@ -33,7 +33,7 @@ def addPointerWithConstant(E, op1, op2):
 
 def evalCond(state, cond):
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
-    E = state.getExprManager()
+    E = state.expr_manager()
     c = state.eval(cond)
     assert isinstance(c, Value)
     # solvers make difference between bitvectors and booleans, so we must
@@ -119,7 +119,7 @@ class Executor(ConcreteExecutor):
             T = state.copy()
             T.setKilled("Solver failure: {0}".format(r))
 
-        ncond = state.getExprManager().Not(cond)
+        ncond = state.expr_manager().Not(cond)
         ncsat = state.is_sat(ncond)
         if ncsat is None:
             F = state.copy()
@@ -184,7 +184,7 @@ class Executor(ConcreteExecutor):
             s = self.assume(state, cval)
             succ = instr.true_successor()
         elif to is False:
-            s = self.assume(state, state.getExprManager().Not(cval))
+            s = self.assume(state, state.expr_manager().Not(cval))
             succ = instr.false_successor()
         else:
             raise RuntimeError("Invalid branch successor: {0}".format(to))
@@ -247,7 +247,7 @@ class Executor(ConcreteExecutor):
             )
             return [state]
 
-        E = state.getExprManager()
+        E = state.expr_manager()
         p = instr.predicate()
         if mo1.get_id() == mo2.get_id():
             state.set(
@@ -287,7 +287,7 @@ class Executor(ConcreteExecutor):
                 return state
 
         x = self.cmpValues(
-            state.getExprManager(),
+            state.expr_manager(),
             instr.predicate(),
             op1,
             op2,
@@ -353,7 +353,7 @@ class Executor(ConcreteExecutor):
         # if one of the operands is a pointer,
         # lift the other to pointer too
         r = None
-        E = state.getExprManager()
+        E = state.expr_manager()
         op1ptr = op1.is_pointer()
         op2ptr = op2.is_pointer()
         if op1ptr:
@@ -434,7 +434,7 @@ class Executor(ConcreteExecutor):
         else:
             op1 = state.eval(instr.operand(0))
             op2 = state.eval(instr.operand(1))
-            expr = state.getExprManager().Ite(cond, op1, op2)
+            expr = state.expr_manager().Ite(cond, op1, op2)
             state.set(instr, expr)
         state.pc = state.pc.get_next_inst()
         return [state]
@@ -443,7 +443,7 @@ class Executor(ConcreteExecutor):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
         opcode = instr.operation()
-        E = state.getExprManager()
+        E = state.expr_manager()
         if opcode == UnaryOperation.ZEXT:
             bw = instr.bitwidth()
             r = E.ZExt(op1, bw)

@@ -43,7 +43,7 @@ class StatesSet:
     def copy(self):
         return StatesSet(self.get_se_state().copy())
 
-    def getExprManager(self):
+    def expr_manager(self):
         return getGlobalExprManager()
 
     def get_se_state(self):
@@ -54,18 +54,18 @@ class StatesSet:
 
     def as_expr(self):
         """ NOTE: use carefully, only when you know what you do... """
-        return self._state.getConstraintsObj().as_formula(self.getExprManager())
+        return self._state.getConstraintsObj().as_formula(self.expr_manager())
 
     def as_assume_annotation(self):
         sd = state_to_description(self._state)
         return AssumeAnnotation(
-            sd.getExpr(), sd.getSubstitutions(), self._state.getExprManager()
+            sd.expr(), sd.substitutions(), self._state.expr_manager()
         )
 
     def as_assert_annotation(self):
         sd = state_to_description(self._state)
         return AssertAnnotation(
-            sd.getExpr(), sd.getSubstitutions(), self._state.getExprManager()
+            sd.expr(), sd.substitutions(), self._state.expr_manager()
         )
 
     def reset_expr(self, expr):
@@ -84,7 +84,7 @@ class StatesSet:
             state.addConstraint(expr)
             return
 
-        EM = state.getExprManager()
+        EM = state.expr_manager()
         C = ConstraintsSet()
         newexpr = EM.Or(expr, state.getConstraintsObj().as_formula(EM))
         if not newexpr.is_concrete():
@@ -110,7 +110,7 @@ class StatesSet:
 
     def complement(self):
         state = self._state
-        EM = state.getExprManager()
+        EM = state.expr_manager()
         expr = EM.Not(state.getConstraintsObj().as_formula(EM))
         C = ConstraintsSet()
         C.add(expr)
@@ -120,7 +120,7 @@ class StatesSet:
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
-        EM = state.getExprManager()
+        EM = state.expr_manager()
         state.addConstraint(EM.Not(expr))
 
     def is_empty(self):
@@ -218,10 +218,10 @@ def complement(S) -> StatesSet:
 #             self._descr = d
 #
 #     def add(self, S):
-#         self._adjoin(S, self.getExprManager().Or)
+#         self._adjoin(S, self.expr_manager().Or)
 #
 #     def intersect(self, S):
-#         self._adjoin(S, self.getExprManager().And)
+#         self._adjoin(S, self.expr_manager().And)
 #
 #     def union(self, S):
 #         self.add(S)
@@ -230,21 +230,21 @@ def complement(S) -> StatesSet:
 #         """ Complement this set in-place """
 #         descr = self._descr
 #         if descr:
-#             descr.setExpr(self.getExprManager().Not(descr.getExpr()))
+#             descr.setExpr(self.expr_manager().Not(descr.expr()))
 #
 #     def complement(self):
 #         """ Returns the complement of this set without modifying it """
 #         d = self._descr
 #         if d:
-#             EM = self.getExprManager()
-#             return StatesSet(StateDescription(EM.Not(d), d.getSubstitutions()))
+#             EM = self.expr_manager()
+#             return StatesSet(StateDescription(EM.Not(d), d.substitutions()))
 #         return StatesSet()
 #
 #     def __repr__(self):
 #         d = self._descr
 #         if d is None:
 #             return "{empty}"
-#         return f"{{{d.cannonical(self.getExprManager())}}}"
+#         return f"{{{d.cannonical(self.expr_manager())}}}"
 #
 #     def dump(self):
 #         d = self._descr
@@ -253,7 +253,7 @@ def complement(S) -> StatesSet:
 #             return
 #         print("StatesSet -->:")
 #         print(f"Expr:\n{{{d}}}\n")
-#         print(f"Cannonical:\n{{{d.cannonical(self.getExprManager())}}}")
+#         print(f"Cannonical:\n{{{d.cannonical(self.expr_manager())}}}")
 #         print("<--:")
 #
 #

@@ -211,7 +211,7 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
 
         # inductivity check
         A = AssertAnnotation(
-            EM.substitute(I.getExpr(), (litrep, lit)), I.getSubstitutions(), EM
+            EM.substitute(I.expr(), (litrep, lit)), I.substitutions(), EM
         )
         hasnocti = A.doSubs(s)
         # we have got pathcond in solver already
@@ -360,7 +360,7 @@ def overapprox_clause(c, S, executor, L, unsafe, target):
     if len(newc) == 1:
         return newc[0]
 
-    EM = S.get_se_state().getExprManager()
+    EM = S.get_se_state().expr_manager()
     return EM.disjunction(*newc)
 
 
@@ -454,5 +454,5 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     dbg(f"Overapproximated to {S}", color="dark_blue")
 
     sd = S.as_description()
-    A1 = AssertAnnotation(sd.getExpr(), sd.getSubstitutions(), EM)
+    A1 = AssertAnnotation(sd.expr(), sd.substitutions(), EM)
     return InductiveSequence.Frame(S.as_assert_annotation(), None)

@@ -224,7 +224,9 @@ class Executor(ConcreteExecutor):
         if mo1.get_id() == mo2.get_id():
             state.set(
                 instr,
-                self.cmpValues(Domain, p, p1.offset(), p2.offset(), instr.is_unsigned()),
+                self.cmpValues(
+                    Domain, p, p1.offset(), p2.offset(), instr.is_unsigned()
+                ),
             )
             state.pc = state.pc.get_next_inst()
             return [state]

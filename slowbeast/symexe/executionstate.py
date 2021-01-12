@@ -55,8 +55,8 @@ class SEState(ExecutionState):
     def executor(self):
         return self._executor
 
-    def getExprManager(self):
-        return self._solver.getExprManager()
+    def expr_manager(self):
+        return self._solver.expr_manager()
 
     def is_sat(self, *e):
         # XXX: check whether this kind of preprocessing is not too costly
@@ -122,7 +122,7 @@ class SEState(ExecutionState):
         return self._constraints
 
     def path_condition(self):
-        return self._constraints.as_formula(self._solver.getExprManager())
+        return self._constraints.as_formula(self._solver.expr_manager())
 
     def addConstraint(self, *C):
         if self._constraints_ro:
