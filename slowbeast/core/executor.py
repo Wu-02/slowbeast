@@ -214,7 +214,7 @@ class Executor:
             op1 = op1.value()
             op2 = op2.value()
         x = None
-        p = instr.getPredicate()
+        p = instr.predicate()
         if p == Cmp.LE:
             x = op1 <= op2
         elif p == Cmp.LT:
@@ -330,25 +330,25 @@ class Executor:
             raise RuntimeError("Pointer arithmetic on unrelated pointers")
 
         r = None
-        if instr.getOperation() == BinaryOperation.ADD:
+        if instr.operation() == BinaryOperation.ADD:
             if op1c.is_pointer():
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset + op2c.offset)
             else:
                 r = ConcreteInt(op1 + op2, bw)
-        elif instr.getOperation() == BinaryOperation.SUB:
+        elif instr.operation() == BinaryOperation.SUB:
             if isinstance(op1c, Pointer):
                 assert isinstance(op2c, Pointer)
                 r = Pointer(op1c.object, op1c.offset - op2c.offset)
             else:
                 r = ConcreteInt(op1 - op2, bw)
-        elif instr.getOperation() == BinaryOperation.MUL:
+        elif instr.operation() == BinaryOperation.MUL:
             if op1c.is_pointer():
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset * op2c.offset)
             else:
                 r = ConcreteInt(op1 * op2, bw)
-        elif instr.getOperation() == BinaryOperation.DIV:
+        elif instr.operation() == BinaryOperation.DIV:
             if op1c.is_pointer():
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset / op2c.offset)

@@ -248,11 +248,11 @@ class Executor(ConcreteExecutor):
             return [state]
 
         E = state.getExprManager()
-        p = instr.getPredicate()
+        p = instr.predicate()
         if mo1.get_id() == mo2.get_id():
             state.set(
                 instr,
-                self.cmpValues(E, p, p1.offset(), p2.offset(), instr.isUnsigned()),
+                self.cmpValues(E, p, p1.offset(), p2.offset(), instr.is_unsigned()),
             )
             state.pc = state.pc.get_next_inst()
             return [state]
@@ -288,11 +288,11 @@ class Executor(ConcreteExecutor):
 
         x = self.cmpValues(
             state.getExprManager(),
-            instr.getPredicate(),
+            instr.predicate(),
             op1,
             op2,
-            instr.isUnsigned(),
-            instr.isFloat(),
+            instr.is_unsigned(),
+            instr.is_float(),
         )
         state.set(instr, x)
         state.pc = state.pc.get_next_inst()
@@ -373,7 +373,7 @@ class Executor(ConcreteExecutor):
                 )
                 return [state]
         else:
-            opcode = instr.getOperation()
+            opcode = instr.operation()
             if opcode == BinaryOperation.ADD:
                 r = E.Add(op1, op2, instr.is_fp())
             elif opcode == BinaryOperation.SUB:
@@ -383,13 +383,13 @@ class Executor(ConcreteExecutor):
             elif opcode == BinaryOperation.DIV:
                 if instr.is_fp():
                     # compilers allow division by FP 0
-                    r = E.Div(op1, op2, instr.isUnsigned(), isfloat=True)
+                    r = E.Div(op1, op2, instr.is_unsigned(), isfloat=True)
                 else:
                     good, bad = self.fork(state, E.Ne(op2, ConcreteVal(0, op2.type())))
                     if good:
                         state = good
                         assert not instr.is_fp()
-                        r = E.Div(op1, op2, instr.isUnsigned())
+                        r = E.Div(op1, op2, instr.is_unsigned())
                     if bad:
                         bad.setKilled("Division by 0")
                         states.append(bad)
@@ -402,7 +402,7 @@ class Executor(ConcreteExecutor):
             elif opcode == BinaryOperation.ASHR:
                 r = E.AShr(op1, op2)
             elif opcode == BinaryOperation.REM:
-                r = E.Rem(op1, op2, instr.isUnsigned())
+                r = E.Rem(op1, op2, instr.is_unsigned())
             elif opcode == BinaryOperation.AND:
                 r = E.And(op1, op2)
             elif opcode == BinaryOperation.OR:
@@ -442,7 +442,7 @@ class Executor(ConcreteExecutor):
     def execUnaryOp(self, state, instr):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
-        opcode = instr.getOperation()
+        opcode = instr.operation()
         E = state.getExprManager()
         if opcode == UnaryOperation.ZEXT:
             bw = instr.bitwidth()
@@ -456,7 +456,7 @@ class Executor(ConcreteExecutor):
                 state.setKilled("Unsupported/invalid cast: {0}".format(instr))
                 return [state]
         elif opcode == UnaryOperation.EXTRACT:
-            start, end = instr.getRange()
+            start, end = instr.range()
             r = E.Extract(op1, start, end)
         elif opcode == UnaryOperation.NEG:
             r = E.Neg(op1, instr.is_fp())

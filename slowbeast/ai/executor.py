@@ -220,11 +220,11 @@ class Executor(ConcreteExecutor):
             )
             return [state]
 
-        p = instr.getPredicate()
+        p = instr.predicate()
         if mo1.get_id() == mo2.get_id():
             state.set(
                 instr,
-                self.cmpValues(Domain, p, p1.offset(), p2.offset(), instr.isUnsigned()),
+                self.cmpValues(Domain, p, p1.offset(), p2.offset(), instr.is_unsigned()),
             )
             state.pc = state.pc.get_next_inst()
             return [state]
@@ -254,7 +254,7 @@ class Executor(ConcreteExecutor):
                 state.setKilled("Comparison of pointer to a constant not implemented")
                 return state
 
-        x = self.cmpValues(Domain, instr.getPredicate(), op1, op2, instr.isUnsigned())
+        x = self.cmpValues(Domain, instr.predicate(), op1, op2, instr.is_unsigned())
         state.set(instr, x)
         state.pc = state.pc.get_next_inst()
 
@@ -321,27 +321,27 @@ class Executor(ConcreteExecutor):
                 )
                 return [state]
         else:
-            if instr.getOperation() == BinaryOperation.ADD:
+            if instr.operation() == BinaryOperation.ADD:
                 r = Domain.Add(op1, op2)
-            elif instr.getOperation() == BinaryOperation.SUB:
+            elif instr.operation() == BinaryOperation.SUB:
                 r = Domain.Sub(op1, op2)
-            elif instr.getOperation() == BinaryOperation.MUL:
+            elif instr.operation() == BinaryOperation.MUL:
                 r = Domain.Mul(op1, op2)
-            elif instr.getOperation() == BinaryOperation.DIV:
-                r = Domain.Div(op1, op2, instr.isUnsigned())
-            elif instr.getOperation() == BinaryOperation.SHL:
+            elif instr.operation() == BinaryOperation.DIV:
+                r = Domain.Div(op1, op2, instr.is_unsigned())
+            elif instr.operation() == BinaryOperation.SHL:
                 r = Domain.Shl(op1, op2)
-            elif instr.getOperation() == BinaryOperation.LSHR:
+            elif instr.operation() == BinaryOperation.LSHR:
                 r = Domain.LShr(op1, op2)
-            elif instr.getOperation() == BinaryOperation.ASHR:
+            elif instr.operation() == BinaryOperation.ASHR:
                 r = Domain.AShr(op1, op2)
-            elif instr.getOperation() == BinaryOperation.REM:
-                r = Domain.Rem(op1, op2, instr.isUnsigned())
-            elif instr.getOperation() == BinaryOperation.AND:
+            elif instr.operation() == BinaryOperation.REM:
+                r = Domain.Rem(op1, op2, instr.is_unsigned())
+            elif instr.operation() == BinaryOperation.AND:
                 r = Domain.And(op1, op2)
-            elif instr.getOperation() == BinaryOperation.OR:
+            elif instr.operation() == BinaryOperation.OR:
                 r = Domain.Or(op1, op2)
-            elif instr.getOperation() == BinaryOperation.XOR:
+            elif instr.operation() == BinaryOperation.XOR:
                 r = Domain.Xor(op1, op2)
             else:
                 state.setKilled("Not implemented binary operation: {0}".format(instr))
@@ -356,21 +356,21 @@ class Executor(ConcreteExecutor):
     def execUnaryOp(self, state, instr):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
-        if instr.getOperation() == UnaryOperation.ZEXT:
+        if instr.operation() == UnaryOperation.ZEXT:
             bw = instr.bitwidth()
             r = Domain.ZExt(op1, bw)
-        elif instr.getOperation() == UnaryOperation.SEXT:
+        elif instr.operation() == UnaryOperation.SEXT:
             bw = instr.bitwidth()
             r = Domain.SExt(op1, bw)
-        elif instr.getOperation() == UnaryOperation.CAST:
+        elif instr.operation() == UnaryOperation.CAST:
             r = Domain.Cast(op1, instr.casttype())
             if r is None:
                 state.setKilled("Unsupported/invalid cast: {0}".format(instr))
                 return [state]
-        elif instr.getOperation() == UnaryOperation.EXTRACT:
-            start, end = instr.getRange()
+        elif instr.operation() == UnaryOperation.EXTRACT:
+            start, end = instr.range()
             r = Domain.Extract(op1, start, end)
-        elif instr.getOperation() == UnaryOperation.NEG:
+        elif instr.operation() == UnaryOperation.NEG:
             r = Domain.Neg(op1)
         else:
             state.setKilled("Unary instruction not implemented: {0}".format(instr))
