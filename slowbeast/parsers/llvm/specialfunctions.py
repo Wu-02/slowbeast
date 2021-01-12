@@ -63,7 +63,7 @@ def create_special_fun(parser, inst, fun):
         return A, [A]
     elif fun == "__VERIFIER_assume":
         operands = getLLVMOperands(inst)
-        cond = parser.getOperand(operands[0])
+        cond = parser.operand(operands[0])
         C = Cmp(
             Cmp.NE,
             cond,
@@ -76,7 +76,7 @@ def create_special_fun(parser, inst, fun):
         return A, [A]
     elif fun == "__VERIFIER_assert" or fun == "__INSTR_check_assume":
         operands = getLLVMOperands(inst)
-        cond = parser.getOperand(operands[0])
+        cond = parser.operand(operands[0])
         C = Cmp(
             Cmp.NE,
             cond,
@@ -91,7 +91,7 @@ def create_special_fun(parser, inst, fun):
         return A, [A]
     elif fun == "__INSTR_check_nontermination":
         operands = getLLVMOperands(inst)
-        cond = parser.getOperand(operands[0])
+        cond = parser.operand(operands[0])
         C = Cmp(Cmp.NE, cond, ConstantTrue)
         A = Assert(C)
         return A, [C, A]
@@ -100,16 +100,16 @@ def create_special_fun(parser, inst, fun):
         assert (
             len(operands) == 2
         ), "Invalid malloc"  # (call has +1 operand for the function)
-        size = parser.getOperand(operands[0])
+        size = parser.operand(operands[0])
         A = Alloc(size, on_heap=True)
         return A, [A]
     elif fun.startswith("llvm.fabs."):
         operands = getLLVMOperands(inst)
-        val = parser.getOperand(operands[0])
+        val = parser.operand(operands[0])
         A = Abs(val)
         return A, [A]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
-        val = to_float_ty(parser.getOperand(getLLVMOperands(inst)[0]))
+        val = to_float_ty(parser.operand(getLLVMOperands(inst)[0]))
         O = FpOp(FpOp.IS_INF, val)
         P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type), SizeType))
         return P, [O, P]
@@ -117,25 +117,25 @@ def create_special_fun(parser, inst, fun):
         I = Cast(ConcreteVal(float("NaN"), FloatType(64)), FloatType(64))
         return I, [I]
     elif fun in ("__isnan", "__isnanf", "__isnanfl"):
-        val = to_float_ty(parser.getOperand(getLLVMOperands(inst)[0]))
+        val = to_float_ty(parser.operand(getLLVMOperands(inst)[0]))
         O = FpOp(FpOp.IS_NAN, val)
         # the functions return int
         P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type), SizeType))
         return P, [O, P]
     elif fun in ("__fpclassify", "__fpclassifyf", "__fpclassifyl"):
-        val = to_float_ty(parser.getOperand(getLLVMOperands(inst)[0]))
+        val = to_float_ty(parser.operand(getLLVMOperands(inst)[0]))
         O = FpOp(FpOp.FPCLASSIFY, val)
         # the functions return int
         return O, [O]
     elif fun in ("__signbit", "__signbitf", "__signbitl"):
-        val = to_float_ty(parser.getOperand(getLLVMOperands(inst)[0]))
+        val = to_float_ty(parser.operand(getLLVMOperands(inst)[0]))
         O = FpOp(FpOp.SIGNBIT, val)
         # the functions return int
         return O, [O]
     elif fun == "fesetround":
         raise NotImplementedError("fesetround is not supported yet")
     elif fun == "__slowbeast_print":
-        P = Print(*[parser.getOperand(x) for x in getLLVMOperands(inst)[:-1]])
+        P = Print(*[parser.operand(x) for x in getLLVMOperands(inst)[:-1]])
         return P, [P]
     else:
         raise NotImplementedError("Unknown special function: {0}".format(fun))

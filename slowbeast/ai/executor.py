@@ -244,8 +244,8 @@ class Executor(ConcreteExecutor):
 
     def execCmp(self, state, instr):
         assert isinstance(instr, Cmp)
-        op1 = state.eval(instr.getOperand(0))
-        op2 = state.eval(instr.getOperand(1))
+        op1 = state.eval(instr.operand(0))
+        op2 = state.eval(instr.operand(1))
 
         if op1.is_pointer() or op2.is_pointer():
             if op1.is_pointer() and op2.is_pointer():
@@ -278,9 +278,9 @@ class Executor(ConcreteExecutor):
             return [state]
 
         # map values to arguments
-        assert len(instr.getOperands()) == len(fun.getArguments())
+        assert len(instr.operands()) == len(fun.getArguments())
         mapping = {
-            x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.getOperands())
+            x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.operands())
         }
         state.pushCall(instr, fun, mapping)
         return [state]
@@ -301,8 +301,8 @@ class Executor(ConcreteExecutor):
 
     def execBinaryOp(self, state, instr):
         assert isinstance(instr, BinaryOperation)
-        op1 = state.eval(instr.getOperand(0))
-        op2 = state.eval(instr.getOperand(1))
+        op1 = state.eval(instr.operand(0))
+        op2 = state.eval(instr.operand(1))
         # if one of the operands is a pointer,
         # lift the other to pointer too
         r = None
@@ -357,7 +357,7 @@ class Executor(ConcreteExecutor):
 
     def execUnaryOp(self, state, instr):
         assert isinstance(instr, UnaryOperation)
-        op1 = state.eval(instr.getOperand(0))
+        op1 = state.eval(instr.operand(0))
         if instr.getOperation() == UnaryOperation.ZEXT:
             bw = instr.bitwidth()
             r = Domain.ZExt(op1, bw)
@@ -384,7 +384,7 @@ class Executor(ConcreteExecutor):
 
     def execAssume(self, state, instr):
         assert isinstance(instr, Assume)
-        for o in instr.getOperands():
+        for o in instr.operands():
             v = state.eval(o)
             assert v.is_bool()
             if v.is_concrete():

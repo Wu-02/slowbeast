@@ -170,7 +170,7 @@ class Parser:
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
 
-    def getOperand(self, op):
+    def operand(self, op):
         ret = self._mapping.get(op)
         if not ret:
             ret = getConstant(op)
@@ -198,7 +198,7 @@ class Parser:
 
         tySize = type_size(self.llvmmodule, inst.type.element_type)
         assert tySize and tySize > 0, "Invalid type size"
-        num = self.getOperand(operands[0])
+        num = self.operand(operands[0])
 
         if isinstance(num, ValueInstruction):  # VLA
             retlist = []
@@ -223,7 +223,7 @@ class Parser:
         assert len(operands) == 2, "Invalid number of operands for store"
 
         bytesNum = type_size(self.llvmmodule, operands[0].type)
-        S = Store(self.getOperand(operands[0]), self.getOperand(operands[1]), bytesNum)
+        S = Store(self.operand(operands[0]), self.operand(operands[1]), bytesNum)
         self._addMapping(inst, S)
         return [S]
 
@@ -233,7 +233,7 @@ class Parser:
 
         bytesNum = type_size(self.llvmmodule, inst.type)
         assert bytesNum, "Could not get the size of type"
-        L = Load(self.getOperand(operands[0]), bytesNum)
+        L = Load(self.operand(operands[0]), bytesNum)
         self._addMapping(inst, L)
         return [L]
 
@@ -244,7 +244,7 @@ class Parser:
         if len(operands) == 0:
             R = Return()
         else:
-            R = Return(self.getOperand(operands[0]))
+            R = Return(self.operand(operands[0]))
 
         self._addMapping(inst, R)
         return [R]
@@ -253,8 +253,8 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
-        op1 = self.getOperand(operands[0])
-        op2 = self.getOperand(operands[1])
+        op1 = self.operand(operands[0])
+        op2 = self.operand(operands[1])
         isfloat = False
         if opcode.startswith("f"):
             op1 = to_float_ty(op1)
@@ -282,8 +282,8 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for shift"
 
-        op1 = self.getOperand(operands[0])
-        op2 = self.getOperand(operands[1])
+        op1 = self.operand(operands[0])
+        op2 = self.operand(operands[1])
         opcode = inst.opcode
 
         if opcode == "shl":
@@ -302,8 +302,8 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for logic op"
 
-        op1 = self.getOperand(operands[0])
-        op2 = self.getOperand(operands[1])
+        op1 = self.operand(operands[0])
+        op2 = self.operand(operands[1])
         opcode = inst.opcode
 
         if opcode == "and":
@@ -322,9 +322,9 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 3, "Invalid number of operands for select"
 
-        cond = self.getOperand(operands[0])
-        op1 = self.getOperand(operands[1])
-        op2 = self.getOperand(operands[2])
+        cond = self.operand(operands[0])
+        op1 = self.operand(operands[1])
+        op2 = self.operand(operands[2])
 
         I = Ite(cond, op1, op2)
         self._addMapping(inst, I)
@@ -334,8 +334,8 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for rem"
 
-        op1 = self.getOperand(operands[0])
-        op2 = self.getOperand(operands[1])
+        op1 = self.operand(operands[0])
+        op2 = self.operand(operands[1])
         opcode = inst.opcode
 
         if opcode == "srem":
@@ -353,15 +353,15 @@ class Parser:
     def _createFNeg(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for fneg"
-        I = Neg(to_float_ty(self.getOperand(operands[0])), fp=True)
+        I = Neg(to_float_ty(self.operand(operands[0])), fp=True)
         self._addMapping(inst, I)
         return [I]
 
     def _createCmp(self, inst, isfloat=False):
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
-        op1 = self.getOperand(operands[0])
-        op2 = self.getOperand(operands[1])
+        op1 = self.operand(operands[0])
+        op2 = self.operand(operands[1])
         if isfloat:
             P, is_unordered = parseFCmp(inst)
             op1 = to_float_ty(op1)
@@ -389,7 +389,7 @@ class Parser:
     def _createBranch(self, inst):
         operands = getLLVMOperands(inst)
         if len(operands) == 3:
-            cond = self.getOperand(operands[0])
+            cond = self.operand(operands[0])
             # XXX: whaat? for some reason, the bindings return
             # the false branch as first
             b1 = self.getBBlock(operands[2])
@@ -439,7 +439,7 @@ class Parser:
         if not F:
             raise NotImplementedError("Unknown function: {0}".format(fun))
 
-        C = Call(F, *[self.getOperand(x) for x in getLLVMOperands(inst)[:-1]])
+        C = Call(F, *[self.operand(x) for x in getLLVMOperands(inst)[:-1]])
         self._addMapping(inst, C)
         return [C]
 
@@ -452,7 +452,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
-            self.getOperand(operands[0]),
+            self.operand(operands[0]),
             ConcreteInt(type_size_in_bits(self.llvmmodule, inst.type), 32),
         )
         self._addMapping(inst, zext)
@@ -463,7 +463,7 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no ZExt for now
         sext = SExt(
-            self.getOperand(operands[0]),
+            self.operand(operands[0]),
             ConcreteInt(type_size_in_bits(self.llvmmodule, inst.type), 32),
         )
         self._addMapping(inst, sext)
@@ -492,7 +492,7 @@ class Parser:
         else:
             raise NotImplementedError(f"Unimplemented cast: {inst}")
         # just behave that there's no ZExt for now
-        cast = Cast(self.getOperand(operands[0]), ty, sgn)
+        cast = Cast(self.operand(operands[0]), ty, sgn)
         self._addMapping(inst, cast)
         return [cast]
 
@@ -501,7 +501,7 @@ class Parser:
 
     # operands = getLLVMOperands(inst)
     # assert len(operands) == 1, "Invalid number of operands for cast"
-    # cast = Cast(self.getOperand(operands[0]),
+    # cast = Cast(self.operand(operands[0]),
     #            IntType(type_size_in_bits(self.llvmmodule, inst.type)))
     # self._addMapping(inst, cast)
     # return [cast]
@@ -511,7 +511,7 @@ class Parser:
 
     # operands = getLLVMOperands(inst)
     # assert len(operands) == 1, "Invalid number of operands for cast"
-    # cast = Cast(self.getOperand(operands[0]), PointerType())
+    # cast = Cast(self.operand(operands[0]), PointerType())
     # self._addMapping(inst, cast)
     # return [cast]
 
@@ -521,7 +521,7 @@ class Parser:
         # just behave that there's no ZExt for now
         bits = type_size_in_bits(self.llvmmodule, inst.type)
         ext = ExtractBits(
-            self.getOperand(operands[0]),
+            self.operand(operands[0]),
             ConcreteInt(0, 32),
             ConcreteInt(bits - 1, 32),
         )
@@ -531,7 +531,7 @@ class Parser:
     def _createCast(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for cast"
-        op = self.getOperand(operands[0])
+        op = self.operand(operands[0])
         self._mapping[inst] = op
         return []
 
@@ -544,7 +544,7 @@ class Parser:
         for idx in operands[1:]:
             c = getConstant(idx)
             if not c:
-                var = self.getOperand(idx)
+                var = self.operand(idx)
                 assert var, "Unsupported GEP instruction"
                 if idx is not operands[-1]:
                     raise NotImplementedError(
@@ -580,7 +580,7 @@ class Parser:
                 else:
                     raise NotImplementedError(f"Invalid GEP type: {ty}")
 
-        mem = self.getOperand(operands[0])
+        mem = self.operand(operands[0])
 
         if varIdx:
             A = Add(mem, varIdx[-1])
@@ -720,7 +720,7 @@ class Parser:
                 for i in range(0, inst.phi_incoming_count):
                     v, b = inst.phi_incoming(i)
                     B = self._bblocks[b]
-                    S = Store(self.getOperand(v), var, load.bytewidth())
+                    S = Store(self.operand(v), var, load.bytewidth())
                     S.insertBefore(B.last())
             self.phis = []  # we handled these PHI nodes
 

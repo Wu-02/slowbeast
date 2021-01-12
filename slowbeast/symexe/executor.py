@@ -273,7 +273,7 @@ class Executor(ConcreteExecutor):
     def execCmp(self, state, instr):
         assert isinstance(instr, Cmp)
         seval = state.eval
-        getop = instr.getOperand
+        getop = instr.operand
         op1 = seval(getop(0))
         op2 = seval(getop(1))
 
@@ -317,9 +317,9 @@ class Executor(ConcreteExecutor):
             return [state]
 
         # map values to arguments
-        assert len(instr.getOperands()) == len(fun.getArguments())
+        assert len(instr.operands()) == len(fun.getArguments())
         mapping = {
-            x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.getOperands())
+            x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.operands())
         }
         state.pushCall(instr, fun, mapping)
         return [state]
@@ -348,7 +348,7 @@ class Executor(ConcreteExecutor):
     def execBinaryOp(self, state, instr):
         assert isinstance(instr, BinaryOperation)
         seval = state.eval
-        getop = instr.getOperand
+        getop = instr.operand
         op1 = seval(getop(0))
         op2 = seval(getop(1))
         states = []
@@ -428,14 +428,14 @@ class Executor(ConcreteExecutor):
         if cond.is_concrete():
             cval = cond.value()
             if cval is True:
-                state.set(instr, state.eval(instr.getOperand(0)))
+                state.set(instr, state.eval(instr.operand(0)))
             elif cval is False:
-                state.set(instr, state.eval(instr.getOperand(0)))
+                state.set(instr, state.eval(instr.operand(0)))
             else:
                 raise RuntimeError(f"Invalid value of boolean condition: {cval}")
         else:
-            op1 = state.eval(instr.getOperand(0))
-            op2 = state.eval(instr.getOperand(1))
+            op1 = state.eval(instr.operand(0))
+            op2 = state.eval(instr.operand(1))
             expr = state.getExprManager().Ite(cond, op1, op2)
             state.set(instr, expr)
         state.pc = state.pc.get_next_inst()
@@ -443,7 +443,7 @@ class Executor(ConcreteExecutor):
 
     def execUnaryOp(self, state, instr):
         assert isinstance(instr, UnaryOperation)
-        op1 = state.eval(instr.getOperand(0))
+        op1 = state.eval(instr.operand(0))
         opcode = instr.getOperation()
         E = state.getExprManager()
         if opcode == UnaryOperation.ZEXT:
@@ -493,7 +493,7 @@ class Executor(ConcreteExecutor):
 
     def execAssume(self, state, instr):
         assert isinstance(instr, Assume)
-        for o in instr.getOperands():
+        for o in instr.operands():
             v = state.eval(o)
             assert v.is_bool()
             if v.is_concrete():
