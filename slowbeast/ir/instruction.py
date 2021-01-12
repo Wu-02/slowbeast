@@ -34,7 +34,7 @@ class GlobalVariable(ProgramElement):
 
     def set_init(self, I):
         for i in I:
-            self.addMetadata("init", str(i))
+            self.add_metadata("init", str(i))
         self._init = I
 
     def as_value(self):
