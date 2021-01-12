@@ -432,10 +432,10 @@ class Executor(ConcreteExecutor):
         if val.is_concrete():
             return val
 
-        return state.getSolver().toUnique(val, *state.getConstraints())
+        return state.solver().toUnique(val, *state.getConstraints())
 
     def concretize(self, state, val):
         if val.is_concrete():
             return val
 
-        return state.getSolver().concretize(val, *state.getConstraints())
+        return state.solver().concretize(val, *state.getConstraints())

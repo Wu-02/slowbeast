@@ -38,8 +38,8 @@ class SymbolicExecutor(Interpreter):
     def __init__(
         self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=SExecutor
     ):
-        self.solver = Solver()
-        super().__init__(P, opts, executor or ExecutorClass(self.solver, opts))
+        self._solver = Solver()
+        super().__init__(P, opts, executor or ExecutorClass(self._solver, opts))
         self.stats = SEStats()
         # outputs handler
         self.ohandler = ohandler
@@ -52,8 +52,8 @@ class SymbolicExecutor(Interpreter):
         odir = self.ohandler.outdir if self.ohandler else None
         return open("{0}/{1}".format(odir or ".", name), "w")
 
-    def getSolver(self):
-        return self.solver
+    def solver(self):
+        return self._solver
 
     def getNextState(self):
         states = self.states

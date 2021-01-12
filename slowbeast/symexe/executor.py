@@ -91,7 +91,7 @@ class Executor(ConcreteExecutor):
         s.pushCall(None)
         return s
 
-    def createStatesSet(self, S=None):
+    def create_states_set(self, S=None):
         ss = StatesSet(self.createCleanState())
         if S:
             # set the set to be S
@@ -337,7 +337,7 @@ class Executor(ConcreteExecutor):
                 dbgv(f"Using value from input vector: {val}")
                 assert val.type() == retTy
             else:
-                val = state.getSolver().freshValue(name, retTy)
+                val = state.solver().freshValue(name, retTy)
                 state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
@@ -560,10 +560,10 @@ class Executor(ConcreteExecutor):
         if val.is_concrete():
             return val
 
-        return state.getSolver().toUnique(val, *state.getConstraints())
+        return state.solver().toUnique(val, *state.getConstraints())
 
     def concretize(self, state, val):
         if val.is_concrete():
             return val
 
-        return state.getSolver().concretize(val, *state.getConstraints())
+        return state.solver().concretize(val, *state.getConstraints())

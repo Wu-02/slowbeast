@@ -48,7 +48,7 @@ class Interpreter:
     def getOptions(self):
         return self._options
 
-    def getExecutor(self):
+    def executor(self):
         return self._executor
 
     def getStates(self):

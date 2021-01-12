@@ -77,7 +77,7 @@ class StatesSet:
     def _unite(self, s):
         state = self._state
         sd = to_states_descr(s)
-        expr = eval_state_description(state.getExecutor(), state, sd)
+        expr = eval_state_description(state.executor(), state, sd)
 
         if not state.getConstraints():
             # the state is clean, just add the first constraints
@@ -105,7 +105,7 @@ class StatesSet:
     def intersect(self, s):
         state = self._state
         sd = to_states_descr(s)
-        expr = eval_state_description(state.getExecutor(), state, sd)
+        expr = eval_state_description(state.executor(), state, sd)
         state.addConstraint(expr)
 
     def complement(self):
@@ -119,7 +119,7 @@ class StatesSet:
     def minus(self, s):
         state = self._state
         sd = to_states_descr(s)
-        expr = eval_state_description(state.getExecutor(), state, sd)
+        expr = eval_state_description(state.executor(), state, sd)
         EM = state.getExprManager()
         state.addConstraint(EM.Not(expr))
 

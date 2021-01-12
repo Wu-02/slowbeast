@@ -28,12 +28,12 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             assert states
             print_stdout("Executing path from init: {0}".format(path), color="ORANGE")
             # we must execute without lazy memory
-            executor = self.getExecutor()
+            executor = self.executor()
         else:
-            s = self.getIndExecutor().createState()
+            s = self.ind_executor().createState()
             s.pushCall(None, self.getProgram().entry())
             states = [s]
-            executor = self.getIndExecutor()
+            executor = self.ind_executor()
 
             print_stdout("Executing path: {0}".format(path), color="ORANGE")
 

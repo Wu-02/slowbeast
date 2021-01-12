@@ -24,15 +24,15 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts)
-        self.indexecutor = SExecutor(self.getSolver(), opts, memorymodel)
+        self.indexecutor = SExecutor(self.solver(), opts, memorymodel)
         dbg("Forbidding calls in induction step for now with k-induction")
         self.indexecutor.forbidCalls()
 
-    def getIndExecutor(self):
+    def ind_executor(self):
         return self.indexecutor
 
     def extendBase(self):
-        states = self.getExecutor().executeTillBranch(self.base)
+        states = self.executor().executeTillBranch(self.base)
         self.base = []
         for ns in states:
             if ns.hasError():
