@@ -209,13 +209,13 @@ class CFA:
                 self._add_edge(e)
                 continue
 
-            tsucc = locs[br.getTrueSuccessor()][0]
-            fsucc = locs[br.getFalseSuccessor()][0]
+            tsucc = locs[br.true_successor()][0]
+            fsucc = locs[br.false_successor()][0]
             if tsucc is fsucc:
                 self._add_edge(CFA.AssumeEdge(l[1], tsucc, br, True))
             else:
                 # FIXME: assume True/False
-                cond = br.getCondition()
+                cond = br.condition()
                 e = CFA.AssumeEdge(l[1], tsucc, br, True)
                 e.add_elem(cond)
                 self._add_edge(e)

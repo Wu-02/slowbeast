@@ -277,9 +277,9 @@ class CFGExecutor(SExecutor):
                 else:
                     curbb = loc.bblock()
                     succbb = locs[idx + 1].bblock()
-                    followsucc = curbb.last().getTrueSuccessor() == succbb
+                    followsucc = curbb.last().true_successor() == succbb
                     newstates = []
-                    assert followsucc or curbb.last().getFalseSuccessor() == succbb
+                    assert followsucc or curbb.last().false_successor() == succbb
                     for s in ready:
                         newstates += self.execBranchTo(s, s.pc, followsucc)
             else:  # this is the last location on path,

@@ -237,20 +237,20 @@ class Branch(Instruction):
         assert isinstance(b1, BBlock)
         assert isinstance(b2, BBlock)
 
-    def getCondition(self):
+    def condition(self):
         return self.operand(0)
 
-    def getTrueSuccessor(self):
+    def true_successor(self):
         return self.operand(1)
 
-    def getFalseSuccessor(self):
+    def false_successor(self):
         return self.operand(2)
 
     def __str__(self):
         return "branch {0} ? {1} : {2}".format(
-            self.getCondition().as_value(),
-            self.getTrueSuccessor().as_value(),
-            self.getFalseSuccessor().as_value(),
+            self.condition().as_value(),
+            self.true_successor().as_value(),
+            self.false_successor().as_value(),
         )
 
 
@@ -309,11 +309,11 @@ class Assert(Instruction):
             return None
         return ops[1]
 
-    def getCondition(self):
+    def condition(self):
         return self.operand(0)
 
     def __str__(self):
-        r = "assert {0}".format(self.getCondition().as_value())
+        r = "assert {0}".format(self.condition().as_value())
         m = self.getMessage()
         if m:
             r += ', "{0}"'.format(m)
