@@ -371,7 +371,7 @@ class Executor:
             state.setKilled("Calls are forbidden")
             return [state]
 
-        fun = instr.getCalledFunction()
+        fun = instr.called_function()
         ldbgv("-- CALL {0} --", (fun.name()))
         if fun.isUndefined():
             state.setError(
