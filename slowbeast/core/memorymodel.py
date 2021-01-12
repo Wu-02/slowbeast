@@ -28,7 +28,7 @@ class MemoryModel:
         """
         assert isinstance(instr, Alloc) or isinstance(instr, GlobalVariable)
         size = state.eval(instr.getSize())
-        if instr.isGlobal():
+        if instr.is_global():
             ptr = state.memory.allocateGlobal(instr)
         else:
             ptr = state.memory.allocate(size, instr)

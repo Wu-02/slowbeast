@@ -76,7 +76,7 @@ class ProgramElement:
         assert isinstance(key, str)
         self._metadata.append((key, value))
 
-    def isGlobal(self):
+    def is_global(self):
         """ Is visible everywhere in the program? """
         return False
 
