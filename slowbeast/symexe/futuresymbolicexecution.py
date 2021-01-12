@@ -21,9 +21,7 @@ class FutureExecutor(SExecutor):
 
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.setKilled(
-                "calling '{0}', but calls are forbidden".format(fun.name())
-            )
+            state.setKilled("calling '{0}', but calls are forbidden".format(fun.name()))
             return [state]
 
         nexti = instr.get_next_inst()
@@ -32,8 +30,7 @@ class FutureExecutor(SExecutor):
             # map values to arguments
             assert len(instr.operands()) == len(fun.getArguments())
             mapping = {
-                x: state.eval(y)
-                for (x, y) in zip(fun.getArguments(), instr.operands())
+                x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.operands())
             }
             state.pushCall(instr, fun, mapping)
             return [state]

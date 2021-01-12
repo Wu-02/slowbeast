@@ -117,9 +117,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         return self.indexecutor
 
     def get_cfa(self, F):
-        assert self.programstructure.cfas.get(
-            F
-        ), f"Have no CFA for function {F.name()}"
+        assert self.programstructure.cfas.get(F), f"Have no CFA for function {F.name()}"
         return self.programstructure.cfas.get(F)
 
     def get_return_states(self):

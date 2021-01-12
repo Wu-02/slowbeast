@@ -272,9 +272,7 @@ class Executor(ConcreteExecutor):
 
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.setKilled(
-                "calling '{0}', but calls are forbidden".format(fun.name())
-            )
+            state.setKilled("calling '{0}', but calls are forbidden".format(fun.name()))
             return [state]
 
         # map values to arguments

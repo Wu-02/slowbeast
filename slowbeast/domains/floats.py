@@ -71,20 +71,22 @@ class ConcreteFloatsDomain:
     def Add(a, b):
         assert ConcreteFloatsDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        bw = a.bitwidth()
         return ConcreteFloat(a.value() + b.value(), bw)
 
     def Sub(a, b):
         assert ConcreteFloatsDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        bw = a.type().bitwidth()
+        bw = a.bitwidth()
         return ConcreteFloat(a.value() - b.value(), bw)
 
     def Mul(a, b):
         assert ConcreteFloatsDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        bw = a.type().bitwidth()
+        bw = a.bitwidth()
         return ConcreteFloat(a.value() * b.value(), bw)
 
     def Div(a, b, unordered=False):
         assert ConcreteFloatsDomain.belongto(a, b)
+        bw = a.bitwidth()
         return ConcreteFloat(a.value() / b.value(), bw)

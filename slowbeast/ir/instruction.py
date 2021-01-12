@@ -124,6 +124,7 @@ class Instruction(ProgramElement):
         assert isinstance(self.getBBlock(), BBlock)
         return self.getBBlock().get_next_inst(self.getBBlockIdx())
 
+
 class ValueInstruction(Instruction):
     """
     Instruction that returns a value
@@ -183,7 +184,7 @@ class Load(ValueInstruction):
         return self._bw
 
     def bitwidth(self):
-        return 8*self._bw
+        return 8 * self._bw
 
     def pointer_operand(self):
         return self.operand(0)
