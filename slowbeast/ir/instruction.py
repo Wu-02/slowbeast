@@ -17,7 +17,7 @@ class GlobalVariable(ProgramElement):
         # sequence of instructions used to initialize this global
         self._init = []
 
-    def isGlobal(self):
+    def is_global(self):
         return True
 
     def getSize(self):
