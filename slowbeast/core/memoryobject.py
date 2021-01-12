@@ -11,7 +11,7 @@ from ..core.errors import MemError
 class MemoryObject:
     ids = 0
 
-    __slots__ = "_id", "values", "size", "name", "allocation", "_ro"
+    __slots__ = "_id", "_values", "_size", "_name", "_allocation", "_ro"
 
     def __init__(self, size, nm="unnamed", objid=None):
         if objid:
@@ -20,10 +20,10 @@ class MemoryObject:
             MemoryObject.ids += 1  # shift the objects counter for the next object
             self._id = MemoryObject.ids
 
-        self.values = {}  # until we support composite objects, use just 'value'
-        self.size = size
-        self.name = nm  # for debugging
-        self.allocation = None  # which allocation allocated this memory
+        self._values = {}  # until we support composite objects, use just 'value'
+        self._size = size
+        self._name = nm  # for debugging
+        self._allocation = None  # which allocation allocated this memory
 
         self._ro = False  # COW support
 
@@ -35,7 +35,7 @@ class MemoryObject:
 
     def writableCopy(self):
         new = copy(self)
-        new.values = copy(self.values)
+        new._values = copy(self._values)
         new._ro = False
         return new
 
@@ -45,11 +45,11 @@ class MemoryObject:
     def get_id(self):
         return self._id
 
-    def getSize(self):
-        return self.size
+    def size(self):
+        return self._size
 
     def setAllocation(self, a):
-        self.allocation = a
+        self._allocation = a
 
     def write(self, x, off=ConcreteVal(0, OffsetType)):
         """
@@ -62,7 +62,7 @@ class MemoryObject:
         if not off.is_concrete():
             raise NotImplementedError("Write to non-constant offset not supported")
 
-        if not self.getSize().is_concrete():
+        if not self._size.is_concrete():
             raise NotImplementedError(
                 "Write to symbolic-sized objects not implemented yet"
             )
@@ -71,21 +71,21 @@ class MemoryObject:
         if offval != 0:
             # FIXME: not efficient...
             bw = x.bytewidth()
-            for o, val in self.values.items():
+            for o, val in self._values.items():
                 if offval < o + val.bytewidth() and offval + bw > o:
                     return MemError(
                         MemError.UNSUPPORTED,
                         "Writing overlapping values to an object is not supported yet",
                     )
-        if x.bytewidth() > self.getSize().value() + offval:
+        if x.bytewidth() > self._size.value() + offval:
             return MemError(
                 MemError.OOB_ACCESS,
                 "Written value too big for the object. "
                 "Writing {0}B to offset {1} of {2}B object".format(
-                    x.bytewidth(), off, self.getSize()
+                    x.bytewidth(), off, self._size
                 ),
             )
-        self.values[offval] = x
+        self._values[offval] = x
         return None
 
     def read(self, bts, off=ConcreteVal(0, OffsetType)):
@@ -98,26 +98,26 @@ class MemoryObject:
         if not off.is_concrete():
             raise NotImplementedError("Read from non-constant offset not supported")
 
-        if not self.getSize().is_concrete():
+        if not self._size.is_concrete():
             raise NotImplementedError(
                 "Read from symbolic-sized objects not implemented yet"
             )
 
         offval = off.value()
 
-        if self.getSize().value() < bts:
+        if self._size.value() < bts:
             return None, MemError(
                 MemError.OOB_ACCESS,
-                "Read {0}B from object of size {1}B".format(bts, self.getSize()),
+                "Read {0}B from object of size {1}B".format(bts, self._size),
             )
 
-        val = self.values.get(offval)
+        val = self._values.get(offval)
         if val is None:
             return None, MemError(
                 MemError.UNINIT_READ,
                 f"Read from uninitialized memory (or unaligned read (not supp.  yet)).\n"
                 f"Reading bytes {offval}-{offval+bts-1} from obj {self._id} with contents:\n"
-                f"{self.values}",
+                f"{self._values}",
             )
 
         # we would need to obtain overlapping offsets
@@ -134,7 +134,7 @@ class MemoryObject:
 
     def offsets(self):
         """ Get offsets on which something is written """
-        return self.values.keys()
+        return self._values.keys()
 
     def __eq__(self, oth):
         return self._id == oth._id
@@ -142,12 +142,12 @@ class MemoryObject:
     def __repr__(self):
         s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
             self._id,
-            self.name if self.name else "no name",
-            self.allocation.as_value() if self.allocation else "unknown",
+            self._name if self._name else "no name",
+            self._allocation.as_value() if self._allocation else "unknown",
             self._ro,
-            self.getSize(),
+            self._size,
         )
-        for k, v in self.values.items():
+        for k, v in self._values.items():
             s += "\n  {0} -> {1}".format(k, v)
         return s
 

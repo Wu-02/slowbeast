@@ -20,7 +20,7 @@ class GlobalVariable(ProgramElement):
     def is_global(self):
         return True
 
-    def getSize(self):
+    def size(self):
         return self._size
 
     def getName(self):
@@ -42,7 +42,7 @@ class GlobalVariable(ProgramElement):
 
     def __str__(self):
         return "{0} = global {1} of size {2}".format(
-            self.as_value(), self.getName(), self.getSize()
+            self.as_value(), self.getName(), self.size()
         )
 
     def dump(self, ind=0, stream=stdout, color=True):
@@ -213,13 +213,13 @@ class Alloc(ValueInstruction):
         self._size = size
         self._is_heap = on_heap
 
-    def getSize(self):
+    def size(self):
         return self._size
 
     def __str__(self):
         return "x{0} = alloc {1} bytes{2}".format(
             self.get_id(),
-            self.getSize().as_value(),
+            self.size().as_value(),
             " on heap" if self._is_heap else "",
         )
 
