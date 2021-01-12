@@ -114,6 +114,18 @@ class CFA:
         def assume_false(self):
             return not self._is_true
 
+    class CallEdge(Edge):
+        def __init__(self, s, t, callinst):
+            super().__init__(CFA.Edge.CALL, s, t, callinst)
+            self._elems.append(callinst)
+
+        def call(self):
+            return self._elems[0]
+
+        def called_function(self):
+            return self._elems[0].getCalledFunction()
+
+
     def __init__(self, fun : Function):
         assert isinstance(fun, Function)
         self._fun = fun
@@ -168,16 +180,14 @@ class CFA:
                 # break on calls
                 if isinstance(i, Call):
                     if e.is_noop():
-                        e._type = CFA.Edge.CALL
+                        e = CFA.CallEdge(loc1, loc2, i)
                     else:
                         self._add_edge(e)
                         assert not e.is_noop()
                         # create the call edge
                         tmp = self.create_loc(B)
-                        e = CFA.Edge(CFA.Edge.CALL, loc2, tmp, i)
+                        e = CFA.CallEdge(loc2, tmp, i)
                         loc2 = tmp
-                    # populate the call edge
-                    e.add_elem(i)
                     self._add_edge(e)
                     assert not e.is_noop()
 
