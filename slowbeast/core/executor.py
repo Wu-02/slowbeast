@@ -249,14 +249,14 @@ class Executor:
 
     def execBranch(self, state, instr):
         assert isinstance(instr, Branch)
-        c = instr.getCondition()
+        c = instr.condition()
         assert isinstance(c, ValueInstruction) or c.is_concrete()
-        cv = state.eval(instr.getCondition()).value()
+        cv = state.eval(instr.condition()).value()
 
         if cv:
-            succ = instr.getTrueSuccessor()
+            succ = instr.true_successor()
         elif cv == False:
-            succ = instr.getFalseSuccessor()
+            succ = instr.false_successor()
         else:
             raise RuntimeError("Indeterminite condition")
 
@@ -579,9 +579,9 @@ class Executor:
             if idx + 1 < len(locs):
                 curbb = locs[idx].bblock()
                 succbb = locs[idx + 1].bblock()
-                followsucc = curbb.last().getTrueSuccessor() == succbb
+                followsucc = curbb.last().true_successor() == succbb
                 newstates = []
-                assert followsucc or curbb.last().getFalseSuccessor() == succbb
+                assert followsucc or curbb.last().false_successor() == succbb
                 for s in states:
                     assert s.isReady()
                     newstates += self.execBranchTo(s, s.pc, followsucc)

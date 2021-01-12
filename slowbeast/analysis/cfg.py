@@ -88,8 +88,8 @@ class CFG:
             if not isinstance(br, Branch):
                 continue
 
-            node.addSuccessor(self._nodes[br.getTrueSuccessor()])
-            node.addSuccessor(self._nodes[br.getFalseSuccessor()])
+            node.addSuccessor(self._nodes[br.true_successor()])
+            node.addSuccessor(self._nodes[br.false_successor()])
 
         # the entry should be the first bblock in the function
         entrybb = fun.bblock(0)

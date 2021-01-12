@@ -176,16 +176,16 @@ class Executor(ConcreteExecutor):
         dbgv("branching to {0} succ of {1}".format(to, instr))
         self.stats.branchings += 1
 
-        cond = instr.getCondition()
+        cond = instr.condition()
         cval = evalCond(state, cond)
 
         succ = None
         if to is True:
             s = self.assume(state, cval)
-            succ = instr.getTrueSuccessor()
+            succ = instr.true_successor()
         elif to is False:
             s = self.assume(state, state.getExprManager().Not(cval))
-            succ = instr.getFalseSuccessor()
+            succ = instr.false_successor()
         else:
             raise RuntimeError("Invalid branch successor: {0}".format(to))
 
@@ -202,7 +202,7 @@ class Executor(ConcreteExecutor):
         assert isinstance(instr, Branch)
         self.stats.branchings += 1
 
-        cond = instr.getCondition()
+        cond = instr.condition()
         cval = evalCond(state, cond)
 
         trueBranch, falseBranch = self.fork(state, cval)
@@ -211,10 +211,10 @@ class Executor(ConcreteExecutor):
 
         states = []
         if trueBranch:
-            trueBranch.pc = instr.getTrueSuccessor().instruction(0)
+            trueBranch.pc = instr.true_successor().instruction(0)
             states.append(trueBranch)
         if falseBranch:
-            falseBranch.pc = instr.getFalseSuccessor().instruction(0)
+            falseBranch.pc = instr.false_successor().instruction(0)
             states.append(falseBranch)
 
         if trueBranch and falseBranch:
@@ -531,7 +531,7 @@ class Executor(ConcreteExecutor):
 
     def execAssert(self, state, instr):
         assert isinstance(instr, Assert)
-        o = instr.getCondition()
+        o = instr.condition()
         msg = instr.getMessage()
         if not msg:
             msg = str(o)
