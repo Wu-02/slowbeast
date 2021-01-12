@@ -372,10 +372,10 @@ class Executor:
             return [state]
 
         fun = instr.getCalledFunction()
-        ldbgv("-- CALL {0} --", (fun.getName()))
+        ldbgv("-- CALL {0} --", (fun.name()))
         if fun.isUndefined():
             state.setError(
-                GenericError("Called undefined function: {0}".format(fun.getName()))
+                GenericError("Called undefined function: {0}".format(fun.name()))
             )
             return [state]
         # map values to arguments
@@ -422,7 +422,7 @@ class Executor:
         ldbgv(
             "({2}) {0}: {1}",
             (
-                "--" if not instr.getBBlock() else instr.fun().getName(),
+                "--" if not instr.getBBlock() else instr.fun().name(),
                 str(instr),
                 state.get_id(),
             ),

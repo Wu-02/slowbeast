@@ -122,7 +122,7 @@ class Memory:
             objid is None or self._glob_objects.get(objid) is None
         ), "Already has a global object with id {0}".format(objid)
 
-        o = self._allocate(G.size(), G, G.getName(), objid)
+        o = self._allocate(G.size(), G, G.name(), objid)
 
         self._globs_reown()
         assert self._glob_objects.get(o.get_id()) is None

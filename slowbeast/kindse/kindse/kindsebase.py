@@ -40,7 +40,7 @@ def find_loop_headers(cfas, new_output_file=None):
     for cfa in cfas.values():
         if __debug__:
             if new_output_file:
-                with new_output_file(f"{cfa.fun().getName()}-dfs.dot") as f:
+                with new_output_file(f"{cfa.fun().name()}-dfs.dot") as f:
                     DFSVisitor().dump(cfa, f)
 
         DFSVisitor().foreachedge(cfa.entry(), processedge)
@@ -65,7 +65,7 @@ class ProgramStructure:
         cfas = CFA.from_program(prog, callgraph)
         if __debug__:
             for fun, cfa in cfas.items():
-                with self.new_dbg_file(f"cfa.{fun.getName()}.dot") as f:
+                with self.new_dbg_file(f"cfa.{fun.name()}.dot") as f:
                     cfa.dump(f)
         self.cfas = cfas
         # entry location of the whole program
@@ -119,7 +119,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def get_cfa(self, F):
         assert self.programstructure.cfas.get(
             F
-        ), f"Have no CFA for function {F.getName()}"
+        ), f"Have no CFA for function {F.name()}"
         return self.programstructure.cfas.get(F)
 
     def get_return_states(self):

@@ -227,8 +227,8 @@ class CFA:
         assert self._entry, "Do not have entry loc"
 
     def dump(self, stream):
-        print(f"digraph CFA_{self._fun.getName()} {{", file=stream)
-        print(f'  label="{self._fun.getName()}"', file=stream)
+        print(f"digraph CFA_{self._fun.name()} {{", file=stream)
+        print(f'  label="{self._fun.name()}"', file=stream)
         entry = self._entry
         for l in self._locs:
             if l is entry:
