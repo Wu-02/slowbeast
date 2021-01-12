@@ -14,6 +14,6 @@ int main(void) {
 
 	assert(x == i);
 
-	// CHECK: assertion failed!
+	// CHECK: assertion failure
 	// CHECK: Found errors: 1
 }
