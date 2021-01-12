@@ -27,7 +27,7 @@ if __name__ == "__main__":
     B0.append(Assert(C2))
     B0.append(Return(Constant(0, 4)))
 
-    P.addFun(F)
+    P.add_fun(F)
     P.set_entry(F)
     #P.dump()
 
