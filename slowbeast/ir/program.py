@@ -69,10 +69,10 @@ class ProgramElement:
         ProgramElement.elemsCounter += 1
         self._id = ProgramElement.elemsCounter
 
-    def getMetadata(self):
+    def metadata(self):
         return self._metadata
 
-    def addMetadata(self, key, value):
+    def add_metadata(self, key, value):
         assert isinstance(key, str)
         self._metadata.append((key, value))
 

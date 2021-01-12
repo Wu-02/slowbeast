@@ -25,7 +25,7 @@ class Parser:
 
     def _add_mapping(self, celem, sbinst):
         if "c" in self._metadata_opts:
-            sbinst.addMetadata("c", str(celem))
+            sbinst.add_metadata("c", str(celem))
         assert self._mapping.get(ccode) is None, "Duplicated mapping"
         self._mapping[celem] = sbinst
 

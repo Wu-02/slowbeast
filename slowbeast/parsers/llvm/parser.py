@@ -188,7 +188,7 @@ class Parser:
 
     def _addMapping(self, llinst, sbinst):
         if "llvm" in self._metadata_opts:
-            sbinst.addMetadata("llvm", str(llinst))
+            sbinst.add_metadata("llvm", str(llinst))
         assert self._mapping.get(llinst) is None, "Duplicated mapping"
         self._mapping[llinst] = sbinst
 
