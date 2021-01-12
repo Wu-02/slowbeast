@@ -156,9 +156,9 @@ class SolverIntf:
     def is_sat(self, *e):
         raise NotImplementedError("Must be overriden")
 
-    def freshValue(self, name, ty):
+    def fresh_value(self, name, ty):
         """ ty = type """
-        return self._exprmanager.freshValue(name, ty)
+        return self._exprmanager.fresh_value(name, ty)
 
     def Var(self, name, ty):
         """ ty = type """

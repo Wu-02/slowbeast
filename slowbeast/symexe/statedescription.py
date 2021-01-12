@@ -130,7 +130,7 @@ def unify_state_descriptions(EM, sd1, sd2):
         instr2 = subs2.get(val)
         if instr2 and instr2 != instr:
             # collision
-            freshval = EM.freshValue(val.name(), val.type())
+            freshval = EM.fresh_value(val.name(), val.type())
             expr2 = EM.substitute(expr2, (val, freshval))
             subs[freshval] = instr2
 

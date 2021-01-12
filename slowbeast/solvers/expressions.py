@@ -95,7 +95,7 @@ class ExprManager:
             return expr
         return SymbolicExprOpt.optimize(expr)
 
-    def freshValue(self, name, ty):
+    def fresh_value(self, name, ty):
         assert isinstance(name, str)
         names = self._names
         origname = name
@@ -129,7 +129,7 @@ class ExprManager:
         lift = self.lift
         return lift(e1) == lift(e2)
 
-    def dropValue(self, name):
+    def drop_value(self, name):
         self._names.pop(name)
 
     def Int1(self, name):

@@ -337,7 +337,7 @@ class Executor(ConcreteExecutor):
                 dbgv(f"Using value from input vector: {val}")
                 assert val.type() == retTy
             else:
-                val = state.solver().freshValue(name, retTy)
+                val = state.solver().fresh_value(name, retTy)
                 state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
