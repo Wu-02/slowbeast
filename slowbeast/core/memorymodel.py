@@ -35,7 +35,7 @@ class MemoryModel:
         state.set(instr, ptr)
         return [state]
 
-    def write(self, state, valueOp, toOp):
+    def write(self, state, instr, valueOp, toOp):
         value = state.eval(valueOp)
         to = state.get(toOp)
         if to is None:
