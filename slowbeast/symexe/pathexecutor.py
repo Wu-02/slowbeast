@@ -42,7 +42,7 @@ class Executor(SExecutor):
                     r.setTerminated(f"Invalid assume edge: {elem}")
                     nonready.append(r)
                 tmp = self.execAssumeExpr(
-                    r, r.getExprManager().Not(cond) if isnot else cond
+                    r, r.expr_manager().Not(cond) if isnot else cond
                 )
                 for t in tmp:
                     if t.isReady():
@@ -326,7 +326,7 @@ class CFGExecutor(SExecutor):
 #    # join the states
 #    finalstates = []
 #    for r in fromstates:
-#        EM = r.getExprManager()
+#        EM = r.expr_manager()
 #        for s in tostates:
 #            tmpr = r.copy()
 #            newconstr = s.getConstraints()

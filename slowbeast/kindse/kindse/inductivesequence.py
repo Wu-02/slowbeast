@@ -28,15 +28,15 @@ class InductiveSequence:
             self.strengthening = strengthening
 
             if strengthening:
-                e = strengthening.getExpr()
+                e = strengthening.expr()
                 if e.is_concrete() and e.value() is True:
                     self.strengthening = None
 
             assert strengthening is None or (
-                states.getSubstitutions() and strengthening.getSubstitutions()
+                states.substitutions() and strengthening.substitutions()
             )
             assert strengthening is None or (
-                states.getSubstitutions() == strengthening.getSubstitutions()
+                states.substitutions() == strengthening.substitutions()
             ), strengthening
 
         def toannot(self):
@@ -44,15 +44,12 @@ class InductiveSequence:
             states = self.states
             stren = self.strengthening
 
-            assert states and states.getSubstitutions() is not None
+            assert states and states.substitutions() is not None
             assert (
-                stren is None or (states.getSubstitutions() ==
-                                  stren.getSubstitutions()),
+                stren is None or (states.substitutions() == stren.substitutions()),
             ), stren
-            expr = (
-                EM.And(states.getExpr(), stren.getExpr()) if stren else states.getExpr()
-            )
-            return expr, states.getSubstitutions()
+            expr = EM.And(states.expr(), stren.expr()) if stren else states.expr()
+            return expr, states.substitutions()
 
         def toassert(self):
             EM = getGlobalExprManager()

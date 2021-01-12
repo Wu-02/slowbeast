@@ -50,14 +50,14 @@ class StateDescription:
     def cannonical(self, EM):
         return _createCannonical(self._expr, self._subs, EM)
 
-    def getExpr(self):
+    def expr(self):
         return self._expr
 
     def set_expr(self, expr):
         """ Set expression in this states decriptior. Use responsibly!"""
         self._expr = expr
 
-    def getSubstitutions(self):
+    def substitutions(self):
         return self._subs
 
     def eval_subs(self, state):
@@ -69,7 +69,7 @@ class StateDescription:
         Return the expression after substitutions
         in the given state.
         """
-        EM = state.getExprManager()
+        EM = state.expr_manager()
         get = state.get
         expr = self._expr
         # for (x, val) in self.subs.items():
@@ -107,15 +107,15 @@ def unify_state_descriptions(EM, sd1, sd2):
     Return the new expressions and the substitutions
     """
     if sd1 is None:
-        return None, sd2.getExpr(), sd2.getSubstitutions()
+        return None, sd2.expr(), sd2.substitutions()
     if sd2 is None:
-        return sd1.getExpr(), None, sd1.getSubstitutions()
+        return sd1.expr(), None, sd1.substitutions()
 
     # perform less substitutions if possible
-    subs1 = sd1.getSubstitutions()
-    subs2 = sd2.getSubstitutions()
-    expr1 = sd1.getExpr()
-    expr2 = sd2.getExpr()
+    subs1 = sd1.substitutions()
+    subs2 = sd2.substitutions()
+    expr1 = sd1.expr()
+    expr2 = sd2.expr()
     if 0 < len(subs2) < len(subs1) or len(subs1) == 0:
         subs1, subs2 = subs2, subs1
         expr1, expr2 = expr2, expr1
@@ -146,7 +146,7 @@ def unify_state_descriptions(EM, sd1, sd2):
 
 
 def state_to_description(state):
-    EM = state.getExprManager()
+    EM = state.expr_manager()
     return StateDescription(
         state.getConstraintsObj().as_formula(EM),
         {l: l.load for l in state.getNondetLoads()},
@@ -157,7 +157,7 @@ def states_to_description(states) -> StateDescription:
     a = None
     for s in states:
         # FIXME: this can break things in the future
-        EM = s.getExprManager()
+        EM = s.expr_manager()
         if a is None:
             a = state_to_description(s)
         else:
@@ -194,7 +194,7 @@ def _execute_instr(executor, state, instr):
 
 
 def eval_state_description(executor, state, sd):
-    subs = sd.getSubstitutions()
+    subs = sd.substitutions()
     # execute those instructions whose value we are going to substitute
     for i in set(subs.values()):
         if state.get(i) is not None:

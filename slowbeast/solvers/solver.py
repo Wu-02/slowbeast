@@ -150,7 +150,7 @@ class SolverIntf:
         # for now we use a global expr manager
         self._exprmanager = em
 
-    def getExprManager(self):
+    def expr_manager(self):
         return self._exprmanager
 
     def is_sat(self, *e):

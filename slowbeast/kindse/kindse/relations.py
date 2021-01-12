@@ -32,7 +32,7 @@ def get_subs(state):
 
 def get_safe_subexpressions(state, unsafe):
     subs = get_subs(state)
-    EM = state.getExprManager()
+    EM = state.expr_manager()
 
     safe = set()
     solver = Solver()
@@ -72,7 +72,7 @@ def iter_load_pairs(state):
 
 def get_all_relations(state):
     subs = get_subs(state)
-    EM = state.getExprManager()
+    EM = state.expr_manager()
 
     for l1, l2 in iter_load_pairs(state):
         l1bw = l1.type().bitwidth()
@@ -107,6 +107,6 @@ def get_safe_relations(safe, unsafe):
 
 # for s in unsafe:
 #    # get and filter out those relations that make the state safe
-#    EM = s.getExprManager()
+#    EM = s.expr_manager()
 #    for r in get_all_relations(s):
 #        yield r.Not(EM)

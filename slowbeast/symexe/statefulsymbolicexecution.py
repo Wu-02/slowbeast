@@ -52,7 +52,7 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
         pc = state.pc
         # FIXME use approximate hasing to get a small set of states for subsumption checking
         # for s in self.explored_states.setdefault(pc, set()):
-        EM = state.getExprManager()
+        EM = state.expr_manager()
         for s in self.explored_states.setdefault(pc, []):
             # FIXME: will not work with incremental solving, there may be a symbol collision
             # every value in the state must be included in the corresponding value of s

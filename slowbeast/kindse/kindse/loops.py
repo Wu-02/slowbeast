@@ -25,7 +25,7 @@ def reachable(node, what):
 
 
 def get_rel(s, x, curval):
-    EM = s.getExprManager()
+    EM = s.expr_manager()
     Lt = EM.Lt
     Gt = EM.Gt
     Eq = EM.Eq
