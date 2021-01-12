@@ -64,7 +64,7 @@ class StateDescription:
         get = state.get
         return ((v, get(x)) for (v, x) in self._subs.items())
 
-    def doSubs(self, state):
+    def do_substitutions(self, state):
         """
         Return the expression after substitutions
         in the given state.
@@ -201,4 +201,4 @@ def eval_state_description(executor, state, sd):
             continue  # we already got this value, do not execute again
         state = _execute_instr(executor, state, i)
 
-    return sd.doSubs(state)
+    return sd.do_substitutions(state)

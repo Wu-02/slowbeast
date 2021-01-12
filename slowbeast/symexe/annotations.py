@@ -93,8 +93,8 @@ class ExprAnnotation(Annotation):
         n.cannonical = n._sd.cannonical(EM)
         return n
 
-    def doSubs(self, state):
-        return self._sd.doSubs(state)
+    def do_substitutions(self, state):
+        return self._sd.do_substitutions(state)
 
     def eval_subs(self, state):
         return self._sd.eval_subs(state)
@@ -194,7 +194,7 @@ def _execute_expr_annotation(executor, states, annot):
     ready = states
     states = []
     for s in ready:
-        expr = annot.doSubs(s)
+        expr = annot.do_substitutions(s)
         # dbgv(f"Executing annotation\n{annot}\n==>\n{expr}")
         if isassume:
             s = executor.assume(s, expr)
