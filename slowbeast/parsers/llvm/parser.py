@@ -760,7 +760,7 @@ class Parser:
                 raise NotImplementedError(
                     "Cannot parse function return type: {0}".format(f.type.element_type)
                 )
-            self.program.addFun(Function(f.name, len(list(f.arguments)), retty))
+            self.program.add_fun(Function(f.name, len(list(f.arguments)), retty))
 
         for f in m.functions:
             if f.name in special_functions:

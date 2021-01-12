@@ -22,7 +22,7 @@ if __name__ == "__main__":
     B0.append(Store(FOO.getArgument(0), FOO.getArgument(1)))
     B0.append(Return(None))
 
-    P.addFun(FOO)
+    P.add_fun(FOO)
 
     F = Function("main")
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     B3.append(Return(Constant(0)))
 
 
-    P.addFun(F)
+    P.add_fun(F)
     P.set_entry(F)
 
     I = Interpreter(P)

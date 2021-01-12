@@ -12,7 +12,7 @@ class Program:
         self._metadata = {}
         self._globals = []
 
-    def addFun(self, f):
+    def add_fun(self, f):
         self._functions.append(f)
 
     def funs(self):

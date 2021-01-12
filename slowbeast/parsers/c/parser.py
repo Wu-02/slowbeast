@@ -52,4 +52,4 @@ class Parser:
             #    raise NotImplementedError(
             #        "Cannot parse function return type: {0}".format(f.type.element_type)
             #    )
-            # self.program.addFun(Function(f.spelling, len(list(f.arguments)), retty))
+            # self.program.add_fun(Function(f.spelling, len(list(f.arguments)), retty))
