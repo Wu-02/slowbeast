@@ -80,7 +80,7 @@ class InteractiveHandler:
                     i = i.get_next_inst()
                     n += 1
             elif query[1] in ["b", "bblock", "block"]:
-                s.pc.getBBlock().dump()
+                s.pc.bblock().dump()
         else:
             print("Unknown query: {0}".format(q))
             print("FIXME: ... print help ...")

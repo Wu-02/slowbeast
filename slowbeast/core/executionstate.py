@@ -125,7 +125,7 @@ class ExecutionState:
         assert fun or not callsite, "Got no fun by some callsite..."
         self.memory.pushCall(callsite, fun, argsMapping or {})
         if fun:
-            self.pc = fun.getBBlock(0).instruction(0)
+            self.pc = fun.bblock(0).instruction(0)
 
     def popCall(self):
         return self.memory.popCall()

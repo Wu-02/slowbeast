@@ -40,11 +40,11 @@ class Function(ProgramElement):
         self._bblocks.append(bb)
         bb.set_fun(self)
 
-    def getBBlock(self, idx):
+    def bblock(self, idx):
         assert idx < len(self._bblocks)
         return self._bblocks[idx]
 
-    def getBBlocks(self):
+    def bblocks(self):
         return self._bblocks
 
     def __iter__(self):

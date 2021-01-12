@@ -171,7 +171,7 @@ class CFA:
         assert isinstance(fun, Function)
         locs = {}
         # create locations
-        for B in fun.getBBlocks():
+        for B in fun.bblocks():
             loc1, loc2 = self.create_loc(B), self.create_loc(B)
 
             e = CFA.Edge(CFA.Edge.REGULAR, loc1, loc2, B)
@@ -200,7 +200,7 @@ class CFA:
             locs[B] = (loc1, loc2)
 
         # create CFG edges
-        for B in fun.getBBlocks():
+        for B in fun.bblocks():
             br = B.last()
             l = locs.get(B)
             if not isinstance(br, Branch):
@@ -223,7 +223,7 @@ class CFA:
                 e.add_elem(cond)
                 self._add_edge(e)
 
-        self._entry = locs.get(fun.getBBlock(0))[0]
+        self._entry = locs.get(fun.bblock(0))[0]
         assert self._entry, "Do not have entry loc"
 
     def dump(self, stream):

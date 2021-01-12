@@ -180,7 +180,7 @@ class Parser:
         assert ret, "Do not have an operand: {0}".format(op)
         return ret
 
-    def getBBlock(self, llvmb):
+    def bblock(self, llvmb):
         return self._bblocks[llvmb]
 
     def fun(self, fn):
@@ -392,11 +392,11 @@ class Parser:
             cond = self.operand(operands[0])
             # XXX: whaat? for some reason, the bindings return
             # the false branch as first
-            b1 = self.getBBlock(operands[2])
-            b2 = self.getBBlock(operands[1])
+            b1 = self.bblock(operands[2])
+            b2 = self.bblock(operands[1])
             B = Branch(cond, b1, b2)
         elif len(operands) == 1:
-            b1 = self.getBBlock(operands[0])
+            b1 = self.bblock(operands[0])
             B = Branch(ConstantTrue, b1, b1)
         else:
             raise NotImplementedError("Invalid number of operands for br")
@@ -673,7 +673,7 @@ class Parser:
         F     - slowbeast.Function
         block - llvm.block
         """
-        B = self.getBBlock(block)
+        B = self.bblock(block)
         assert B is not None, "Do not have a bblock"
 
         for inst in block.instructions:
@@ -715,7 +715,7 @@ class Parser:
         if self.phis:
             for inst, var, load in self.phis:
                 # place the allocation to the entry node
-                var.insertBefore(F.getBBlock(0).last())
+                var.insertBefore(F.bblock(0).last())
                 # place the writes to memory
                 for i in range(0, inst.phi_incoming_count):
                     v, b = inst.phi_incoming(i)

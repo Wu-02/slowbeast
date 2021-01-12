@@ -15,7 +15,7 @@ class CFG:
             self._successors = []
             self._predecessors = []
 
-        def getBBlock(self):
+        def bblock(self):
             return self._block
 
         def getSuccessors(self):
@@ -80,7 +80,7 @@ class CFG:
     def _build(self):
         fun = self._fun
 
-        for B in fun.getBBlocks():
+        for B in fun.bblocks():
             self._nodes[B] = self.createNode(B)
 
         for block, node in self._nodes.items():
@@ -92,7 +92,7 @@ class CFG:
             node.addSuccessor(self._nodes[br.getFalseSuccessor()])
 
         # the entry should be the first bblock in the function
-        entrybb = fun.getBBlock(0)
+        entrybb = fun.bblock(0)
         assert self.getNode(entrybb)
         self.set_entry(entrybb)
 
@@ -101,7 +101,7 @@ class CFG:
             for succ in node.getSuccessors():
                 stream.write(
                     "{0} -> {1}\n".format(
-                        node.getBBlock().get_id(), succ.getBBlock().get_id()
+                        node.bblock().get_id(), succ.bblock().get_id()
                     )
                 )
 
@@ -170,4 +170,4 @@ class CFGPath:
         stream.write("\n")
 
     def __repr__(self):
-        return " -> ".join(map(lambda x: str(x.getBBlock().get_id()), self.locations))
+        return " -> ".join(map(lambda x: str(x.bblock().get_id()), self.locations))

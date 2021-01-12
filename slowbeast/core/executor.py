@@ -422,7 +422,7 @@ class Executor:
         ldbgv(
             "({2}) {0}: {1}",
             (
-                "--" if not instr.getBBlock() else instr.fun().name(),
+                "--" if not instr.bblock() else instr.fun().name(),
                 str(instr),
                 state.get_id(),
             ),
@@ -564,7 +564,7 @@ class Executor:
         # set the pc of the states to be the first instruction of the path
         for s in states:
             assert s.isReady()
-            s.pc = locs[0].getBBlock().first()
+            s.pc = locs[0].bblock().first()
 
         for idx in range(0, len(locs)):
             # execute the block till branch
@@ -577,8 +577,8 @@ class Executor:
 
             # now execute the branch following the edge on the path
             if idx + 1 < len(locs):
-                curbb = locs[idx].getBBlock()
-                succbb = locs[idx + 1].getBBlock()
+                curbb = locs[idx].bblock()
+                succbb = locs[idx + 1].bblock()
                 followsucc = curbb.last().getTrueSuccessor() == succbb
                 newstates = []
                 assert followsucc or curbb.last().getFalseSuccessor() == succbb

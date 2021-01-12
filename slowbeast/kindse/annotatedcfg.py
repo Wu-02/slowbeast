@@ -31,7 +31,7 @@ class CFG(PureCFG):
         def __repr__(self):
             return "{0}{1}{2}{3}".format(
                 "a" if self.annotationsBefore else "",
-                self.getBBlockID(),
+                self.bblockID(),
                 "a" if self.annotationsAfter else "",
                 "!" if self._has_assert else "",
             )
@@ -53,8 +53,8 @@ class CFG(PureCFG):
             """
             self.annotationsBefore.append(annot)
 
-        def getBBlockID(self):
-            return self.getBBlock().get_id()
+        def bblockID(self):
+            return self.bblock().get_id()
 
     def __init__(self, F):
         super(CFG, self).__init__(F)
@@ -77,7 +77,7 @@ class CFGPath(PureCFGPath):
 
 def _get_loc_key(loc):
     if isinstance(loc, CFG.AnnotatedNode):
-        return loc.getBBlock().get_id()
+        return loc.bblock().get_id()
     elif isinstance(loc, BBlock):
         return loc.get_id()
     else:
@@ -181,7 +181,7 @@ class AnnotatedCFGPath(CFGPath):
 
     def __repr__(self):
         def loc_str(x):
-            blk = x.getBBlock()
+            blk = x.bblock()
             return "{0}{1}{2}".format(
                 "a" if self.getLocAnnotationsBefore(blk) else "",
                 blk.get_id(),

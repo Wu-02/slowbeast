@@ -33,7 +33,7 @@ class DFSCounter:
 def _get_id(x):
     if isinstance(x, CFA.Location):
         return x.id()
-    return (x.getBBlock().get_id(),)
+    return (x.bblock().get_id(),)
 
 
 class DFSVisitor:

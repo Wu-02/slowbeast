@@ -185,7 +185,7 @@ class CFGExecutor(SExecutor):
         return ready, nonready
 
     def executeAnnotatedLoc(self, states, loc, path=None):
-        dbgv(f"vv ----- Loc {loc.getBBlock().get_id()} ----- vv")
+        dbgv(f"vv ----- Loc {loc.bblock().get_id()} ----- vv")
 
         # execute annotations before bblock
         ready, nonready = self.executeAnnotations(states, loc.annotationsBefore)
@@ -210,7 +210,7 @@ class CFGExecutor(SExecutor):
             ready, tu = self.executeAnnotations(ready, locannot)
             nonready += tu
 
-        dbgv(f"^^ ----- Loc {loc.getBBlock().get_id()} ----- ^^")
+        dbgv(f"^^ ----- Loc {loc.bblock().get_id()} ----- ^^")
         return ready, nonready
 
     def executeAnnotatedPath(self, state, path, branch_on_last=False):
@@ -247,7 +247,7 @@ class CFGExecutor(SExecutor):
 
         locs = path.getLocations()
         # set the pc of the states to be the first instruction of the path
-        newpc = locs[0].getBBlock().first()
+        newpc = locs[0].bblock().first()
         for s in states:
             s.pc = newpc
 
@@ -275,8 +275,8 @@ class CFGExecutor(SExecutor):
                     newstates = self.executeTillBranch(ready)
                     assert all(map(lambda x: x.isReady(), newstates))
                 else:
-                    curbb = loc.getBBlock()
-                    succbb = locs[idx + 1].getBBlock()
+                    curbb = loc.bblock()
+                    succbb = locs[idx + 1].bblock()
                     followsucc = curbb.last().getTrueSuccessor() == succbb
                     newstates = []
                     assert followsucc or curbb.last().getFalseSuccessor() == succbb
@@ -432,7 +432,7 @@ class CFGExecutor(SExecutor):
 #        for s in r.ready:
 #            # get the CFG node that is going to be executed
 #            # (executeAnnotatedPath transferd the control to the right bblocks)
-#            loc = cfg.getNode(s.pc.getBBlock())
+#            loc = cfg.getNode(s.pc.bblock())
 #            ts, tu = self.executeAnnotatedLoc([s], loc, prefix)
 #            tmpready += ts
 #            nonready += tu

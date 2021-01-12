@@ -75,7 +75,7 @@ def splitBlockAroundCalls(block):
 
 def splitFunAroundCalls(F):
     F._bblocks = [
-        b for block in F.getBBlocks().copy() for b in splitBlockAroundCalls(block)
+        b for block in F.bblocks().copy() for b in splitBlockAroundCalls(block)
     ]
 
 
