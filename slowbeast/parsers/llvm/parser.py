@@ -222,7 +222,10 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
-        S = Store(self.getOperand(operands[0]), self.getOperand(operands[1]))
+        bytesNum = type_size(self.llvmmodule, operands[0].type)
+        S = Store(self.getOperand(operands[0]),
+                  self.getOperand(operands[1]),
+                  bytesNum)
         self._addMapping(inst, S)
         return [S]
 
@@ -719,7 +722,7 @@ class Parser:
                 for i in range(0, inst.phi_incoming_count):
                     v, b = inst.phi_incoming(i)
                     B = self._bblocks[b]
-                    S = Store(self.getOperand(v), var)
+                    S = Store(self.getOperand(v), var, load.getBytesNum())
                     S.insertBefore(B.last())
             self.phis = []  # we handled these PHI nodes
 
@@ -733,7 +736,7 @@ class Parser:
             c = getConstant(g.initializer)
             if c:
                 # FIXME: add composed instruction
-                G.setInit([Store(c, G)])
+                G.setInit([Store(c, G, ts)])
             # elif is_array_ty(g.initializer.type):
             #    parts=str(g.initializer.type).split()
             #    assert parts[1] == 'x'

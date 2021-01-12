@@ -152,15 +152,16 @@ class ValueInstruction(Instruction):
 
 
 class Store(Instruction):
-    def __init__(self, val, to):
+    """ Store 'val' which has 'bw' bytes to 'to' """
+    # NOTE: having 'bw' is important for lazy allocation of objects
+    # since when we create SMT bitvector objects, we must specify
+    # their bitwidth (well, we could do that dynamically, but for most
+    # situations this is much easier...)
+    def __init__(self, val, to, bw):
         assert val, val
         assert to, to
         super().__init__([val, to])
-
-    # assert isinstance(val, ConcreteVal) or\
-    #       isinstance(val, ValueInstruction) or\
-    #       isinstance(val, Argument)
-    # assert isinstance(to, ValueInstruction)
+        self._bw = bw
 
     def getPointerOperand(self):
         return self.getOperand(1)
@@ -168,9 +169,15 @@ class Store(Instruction):
     def getValueOperand(self):
         return self.getOperand(0)
 
+    def bytewidth(self):
+        return self._bw
+
+    def bitwidth(self):
+        return self._bw * 8
+
     def __str__(self):
-        return "store {0} to {1}".format(
-            self.getValueOperand().as_value(), self.getPointerOperand().as_value()
+        return "store {1} to {2}:{0}B".format(
+            self._bw, self.getValueOperand().as_value(), self.getPointerOperand().as_value()
         )
 
 
