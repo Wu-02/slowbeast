@@ -213,7 +213,7 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         A = AssertAnnotation(
             EM.substitute(I.expr(), (litrep, lit)), I.substitutions(), EM
         )
-        hasnocti = A.doSubs(s)
+        hasnocti = A.do_substitutions(s)
         # we have got pathcond in solver already
         if solver.is_sat(EM.Not(hasnocti)) is not False:  # there exist CTI
             solver.pop()
