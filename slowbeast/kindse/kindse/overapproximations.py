@@ -16,6 +16,7 @@ from slowbeast.symexe.annotations import (
     execute_annotation_substitutions,
 )
 
+
 def remove_implied_literals(clauses):
     """
     Returns an equivalent but possibly smaller formula
@@ -149,11 +150,12 @@ def _decompose_literal(l):
 
     return left, right, P, addtoleft
 
+
 class DecomposedLiteral:
     __slots__ = "left", "right", "pred", "addtoleft"
 
     def __init__(self, lit):
-        self.left, self.right,  self.pred, self.addtoleft = _decompose_literal(lit)
+        self.left, self.right, self.pred, self.addtoleft = _decompose_literal(lit)
 
     def __bool__(self):
         assert self.left is None or self.right and self.pred
@@ -178,6 +180,7 @@ class DecomposedLiteral:
 
         # try pushing further
         return self.pred(left, right)
+
 
 def get_left_right(l):
     if l.isNot():
@@ -218,21 +221,27 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         solver.pop()
     return have_feasible
 
+
 def check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
     if lit is None or lit.is_concrete():
         return False
     return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
 
-def extend_literal(goodl, dliteral : DecomposedLiteral, litrep, I, safety_solver, solver, rl, poststates):
+
+def extend_literal(
+    goodl, dliteral: DecomposedLiteral, litrep, I, safety_solver, solver, rl, poststates
+):
     bw = dliteral.bitwidth()
     two = ConcreteInt(2, bw)
-    maxnum = 2 ** bw - 1 # adding 2 ** bw - 1 would be like adding 0
+    maxnum = 2 ** bw - 1  # adding 2 ** bw - 1 would be like adding 0
 
     EM = getGlobalExprManager()
 
     # check if we can drop the literal completely
     # XXX: is this any good? We already dropped the literals...
-    if _check_literal(EM.getTrue(), litrep, I, safety_solver, solver, EM, rl, poststates):
+    if _check_literal(
+        EM.getTrue(), litrep, I, safety_solver, solver, EM, rl, poststates
+    ):
         return EM.getTrue()
 
     # a fast path where we try shift just by one.
@@ -315,7 +324,9 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     em_optimize_expressions(False)
     # the optimizer could make And or Or from the literal, we do not want that...
-    goodl = extend_literal(goodl, dliteral, litrep, I, safety_solver, solver, rl, poststates)
+    goodl = extend_literal(
+        goodl, dliteral, litrep, I, safety_solver, solver, rl, poststates
+    )
     em_optimize_expressions(True)
 
     return goodl
@@ -374,7 +385,6 @@ def break_eq_ne(expr):
             clauses.append(c)
 
     return clauses
-
 
 
 def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):

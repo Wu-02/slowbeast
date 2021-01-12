@@ -172,7 +172,7 @@ class Executor:
         assert isinstance(instr, Store)
 
         states = self.memorymodel.write(
-            state, instr, instr.getValueOperand(), instr.getPointerOperand()
+            state, instr, instr.value_operand(), instr.pointer_operand()
         )
 
         for s in states:
@@ -184,7 +184,7 @@ class Executor:
         assert isinstance(instr, Load)
 
         states = self.memorymodel.read(
-            state, instr, instr.getPointerOperand(), instr.getBytesNum()
+            state, instr, instr.pointer_operand(), instr.bytewidth()
         )
 
         for s in states:
@@ -420,11 +420,12 @@ class Executor:
         """
         # debug print
         ldbgv(
-            "({2}) {0}: {1}", (
+            "({2}) {0}: {1}",
+            (
                 "--" if not instr.getBBlock() else instr.fun().getName(),
                 str(instr),
                 state.get_id(),
-            )
+            ),
         )
 
         self._executed_instrs += 1

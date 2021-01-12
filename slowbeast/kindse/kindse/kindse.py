@@ -102,10 +102,12 @@ def get_initial_seq(unsafe, path, L):
 
     return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
 
+
 def overapprox(executor, s, unsafeAnnot, seq, L):
     S = executor.getIndExecutor().createStatesSet(s)
     EM = s.getExprManager()
     return overapprox_set(executor, EM, S, unsafeAnnot, seq, L)
+
 
 def simplify_expr(expr, EM):
     return EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
@@ -118,10 +120,12 @@ class KindSEChecker(BaseKindSE):
     """
 
     def __init__(self, toplevel_executor, loc, A):
-        super().__init__(toplevel_executor.getProgram(),
-                         ohandler=None,
-                         opts=toplevel_executor.getOptions(),
-                         programstructure=toplevel_executor.programstructure)
+        super().__init__(
+            toplevel_executor.getProgram(),
+            ohandler=None,
+            opts=toplevel_executor.getOptions(),
+            programstructure=toplevel_executor.programstructure,
+        )
         self.location = loc
         self.assertion = A
         self.toplevel_executor = toplevel_executor
@@ -134,14 +138,13 @@ class KindSEChecker(BaseKindSE):
         loc = L.header()
         dbg_sec(f"Checking if {A} holds on {loc}")
 
-       # def reportfn(msg, *args, **kwargs):
-       #     print_stdout(f"> {msg}", *args, **kwargs)
+        # def reportfn(msg, *args, **kwargs):
+        #     print_stdout(f"> {msg}", *args, **kwargs)
 
         checker = KindSEChecker(self.toplevel_executor, loc, A)
         result, states = checker.check(L.getEntries())
         dbg_sec()
         return result, states
-
 
     def handle_loop(self, loc, path, states):
         assert (
@@ -149,27 +152,25 @@ class KindSEChecker(BaseKindSE):
         ), "Handling a loop that should not be handled"
 
         # first try to unroll it in the case the loop is easy to verify
-       #kindse = BaseKindSE(self.getProgram())
-       #maxk = 15
-       #dbg_sec("Running nested KindSE")
-       #res = kindse.run([path.copy()], maxk=maxk)
-       #dbg_sec()
-       #if res is Result.SAFE:
-       #    print_stdout(
-       #        f"Loop {loc} proved by unwinding", color="GREEN"
-       #    )
-       #    return res
-       #FIXME: uncomment and return the states
-       #elif res is Result.UNSAFE:
-       #    return res # found an error
+        # kindse = BaseKindSE(self.getProgram())
+        # maxk = 15
+        # dbg_sec("Running nested KindSE")
+        # res = kindse.run([path.copy()], maxk=maxk)
+        # dbg_sec()
+        # if res is Result.SAFE:
+        #    print_stdout(
+        #        f"Loop {loc} proved by unwinding", color="GREEN"
+        #    )
+        #    return res
+        # FIXME: uncomment and return the states
+        # elif res is Result.UNSAFE:
+        #    return res # found an error
 
         if self.execute_loop(path, loc, states):
             return Result.SAFE
 
         self.no_sum_loops.add(loc)
-        print_stdout(
-            f"Falling back to unwinding loop {loc}", color="BROWN"
-        )
+        print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
         return Result.UNKNOWN
 
     def extend_seq(self, seq, errs0, L):
@@ -269,7 +270,7 @@ class KindSEChecker(BaseKindSE):
         EM = getGlobalExprManager()
         assert path[0].source() is L.header()
         createSet = self.getIndExecutor().createStatesSet
-        if path[-1] in L: # the assertion is inside the loop
+        if path[-1] in L:  # the assertion is inside the loop
             # FIXME: we actually do not use the assertion at all right now, only implicitly as it is contained in the paths...
             # evaluate the jump-out instruction
             # get the safe states that jump out of the loop after one iteration
@@ -294,13 +295,13 @@ class KindSEChecker(BaseKindSE):
             # this may mean that the assertion in fact does not hold
             # r = seq0.check_ind_on_paths(self, L.getPaths())
             # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
-        else: # the assertion is outside the loop
+        else:  # the assertion is outside the loop
             # get the prefix of the path that exits the loop
             prefix = None
             exits = L.getExits()
             for n in range(len(path)):
                 if path[n] in exits:
-                    prefix = AnnotatedCFAPath(path.edges()[:n+1])
+                    prefix = AnnotatedCFAPath(path.edges()[: n + 1])
                     break
             assert prefix, "Failed getting loop-exit condition"
             r = check_paths(self, [prefix])
@@ -308,8 +309,8 @@ class KindSEChecker(BaseKindSE):
             if ready is None:
                 return None
             R = createSet()
-           #for r in ready:
-           #    R.add(r)
+            # for r in ready:
+            #    R.add(r)
             R.add(ready)
             R.intersect(seq0.toannotation(True))
             seq0 = InductiveSequence(R.as_assert_annotation())
@@ -349,9 +350,7 @@ class KindSEChecker(BaseKindSE):
 
         sequences = [seq0]
 
-        print_stdout(
-            f"Executing loop {loc} with assumption", color="white"
-        )
+        print_stdout(f"Executing loop {loc} with assumption", color="white")
         print_stdout(str(seq0[0]), color="white")
         print_stdout(f"and errors : {errs0}")
 
@@ -372,13 +371,11 @@ class KindSEChecker(BaseKindSE):
             for s, S in ((s, s.toannotation(True)) for s in sequences):
                 res, _ = self.check_loop_precondition(L, S)
                 if res is Result.SAFE:
-                    print_stdout(
-                        f"{S} holds on {loc}", color="BLUE"
-                    )
-                   #if self.genannot:
-                   #    # maybe remember the ind set even without genannot
-                   #    # and use it just for another 'execute_loop'?
-                   #    loc.addAnnotationBefore(s.toannotation().Not(EM))
+                    print_stdout(f"{S} holds on {loc}", color="BLUE")
+                    # if self.genannot:
+                    #    # maybe remember the ind set even without genannot
+                    #    # and use it just for another 'execute_loop'?
+                    #    loc.addAnnotationBefore(s.toannotation().Not(EM))
                     return True
 
             extended = []
@@ -436,8 +433,15 @@ class KindSEChecker(BaseKindSE):
         r = self.executePath(path)
 
         killed1 = (s for s in r.other if s.wasKilled()) if r.other else ()
-        killed2 = (s for s in r.early if s.wasKilled() or (s.hasError() and
-                                                           s.getError().isMemError())) if r.early else ()
+        killed2 = (
+            (
+                s
+                for s in r.early
+                if s.wasKilled() or (s.hasError() and s.getError().isMemError())
+            )
+            if r.early
+            else ()
+        )
         problem = False
         for s in chain(killed1, killed2):
             problem = True
@@ -490,7 +494,7 @@ class KindSEChecker(BaseKindSE):
         # the initial error path that we check
         loc = self.location
         EM = getGlobalExprManager()
-        for edge in (onlyedges if onlyedges else loc.predecessors()):
+        for edge in onlyedges if onlyedges else loc.predecessors():
             path = AnnotatedCFAPath([edge])
             path.add_annot_after(self.assertion)
             self.extend_and_queue_paths(path, states=None)
@@ -527,8 +531,10 @@ class KindSEChecker(BaseKindSE):
 
         raise RuntimeError("Unreachable")
 
+
 def edge_has_assert(edge):
-    return any(map(lambda i : isinstance(i, AssertInst), edge))
+    return any(map(lambda i: isinstance(i, AssertInst), edge))
+
 
 class KindSymbolicExecutor(BaseKindSE):
     """
@@ -539,9 +545,7 @@ class KindSymbolicExecutor(BaseKindSE):
     """
 
     def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
-        super().__init__(
-            prog=prog, ohandler=ohandler, opts=opts
-        )
+        super().__init__(prog=prog, ohandler=ohandler, opts=opts)
 
     def _get_error_paths(self):
         paths = []
@@ -564,7 +568,9 @@ class KindSymbolicExecutor(BaseKindSE):
             assert r.errors, "The error path has no errors"
             for e in r.errors:
                 EM = e.getExprManager()
-                yield err[0].source(), AssertAnnotation(EM.Not(e.path_condition()), get_subs(e), EM)
+                yield err[0].source(), AssertAnnotation(
+                    EM.Not(e.path_condition()), get_subs(e), EM
+                )
 
     def run(self):
         has_unknown = False
@@ -579,9 +585,13 @@ class KindSymbolicExecutor(BaseKindSE):
                 print_stdout("Error found.", color="red")
                 return result
             elif result is Result.SAFE:
-                print_stdout(f"Error condition {A.getExpr()} at {loc} is safe!.", color="green")
+                print_stdout(
+                    f"Error condition {A.getExpr()} at {loc} is safe!.", color="green"
+                )
             elif result is Result.UNKNOWN:
-                print_stdout(f"Checking assert {A} at {loc} was unsuccessful.", color="orange")
+                print_stdout(
+                    f"Checking assert {A} at {loc} was unsuccessful.", color="orange"
+                )
                 has_unknown = True
 
         return Result.UNKNOWN if has_unknown else Result.SAFE

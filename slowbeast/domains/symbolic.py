@@ -563,9 +563,9 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a)
         tybw = ty.bitwidth()
         if ty.is_float() and a.is_bytes():
-                # from IEEE bitvector
-                expr = fpToFP(a._expr, get_fp_sort(tybw))
-                return Expr(expr, ty)
+            # from IEEE bitvector
+            expr = fpToFP(a._expr, get_fp_sort(tybw))
+            return Expr(expr, ty)
         if ty.is_float():
             if a.is_int():
                 # from IEEE bitvector
@@ -577,13 +577,15 @@ class BVSymbolicDomain:
             ae = fpToIEEEBV(a._expr)
             return Expr(ae, ty)
         elif a.is_bool() and ty.is_int():
-            return Expr(If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)),
-                        IntType(tybw))
+            return Expr(
+                If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)), IntType(tybw)
+            )
         elif a.is_int() and ty.is_bool():
-            return Expr(If((a.unwrap() != bv_const(0, a.bitwidth())),
-                           TRUE(), FALSE()), BoolType())
+            return Expr(
+                If((a.unwrap() != bv_const(0, a.bitwidth())), TRUE(), FALSE()),
+                BoolType(),
+            )
         return None  # unsupported conversion
-
 
     def Cast(a: Value, ty: Type, signed: bool = True):
         """ Reinterpret cast """
@@ -592,13 +594,13 @@ class BVSymbolicDomain:
         if ty.is_float():
             if a.is_int():
                 abw = a.bitwidth()
-                if signed: # from signed bitvector
+                if signed:  # from signed bitvector
                     expr = fpSignedToFP(RNE(), a._expr, get_fp_sort(tybw))
                 else:
                     expr = fpUnsignedToFP(RNE(), a._expr, get_fp_sort(tybw))
                     # from IEEE bitvector
-                    #expr = fpToFP(a._expr, get_fp_sort(tybw))
-                #expr = fpToFP(a._expr, get_fp_sort(tybw))
+                    # expr = fpToFP(a._expr, get_fp_sort(tybw))
+                # expr = fpToFP(a._expr, get_fp_sort(tybw))
                 return Expr(expr, ty)
             elif a.is_float():
                 return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
@@ -609,17 +611,20 @@ class BVSymbolicDomain:
                 return Expr(expr, ty)
         elif a.is_float() and ty.is_int():
             if signed:
-               ae = floatToSBV(a, ty)
+                ae = floatToSBV(a, ty)
             else:
-               ae = floatToUBV(a, ty)
+                ae = floatToUBV(a, ty)
             # ae = fpToIEEEBV(a._expr)
             return Expr(ae, ty)
         elif a.is_bool() and ty.is_int():
-            return Expr(If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)),
-                        IntType(tybw))
+            return Expr(
+                If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)), IntType(tybw)
+            )
         elif a.is_int() and ty.is_bool():
-            return Expr(If((a.unwrap() != bv_const(0, a.bitwidth())),
-                           TRUE(), FALSE()), BoolType())
+            return Expr(
+                If((a.unwrap() != bv_const(0, a.bitwidth())), TRUE(), FALSE()),
+                BoolType(),
+            )
         return None  # unsupported conversion
 
     def Extract(a, start, end):
@@ -639,13 +644,13 @@ class BVSymbolicDomain:
             return args[0]
         return Expr(
             BVConcat(*(e.unwrap() for e in args)),
-            IntType(sum(e.bitwidth() for e in args))
+            IntType(sum(e.bitwidth() for e in args)),
         )
 
     def Shl(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert b.is_int(), b
-        return Expr(to_bv(a) << b.unwrap(),  IntType(a.bitwidth()))
+        return Expr(to_bv(a) << b.unwrap(), IntType(a.bitwidth()))
 
     def AShr(a, b):
         assert BVSymbolicDomain.belongto(a, b)
@@ -810,8 +815,7 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a)
         bw = a.bitwidth()
         if isfloat:
-            return Expr(trunc_fp(fpNeg(to_double(a)), bw),
-                        FloatType(bw))
+            return Expr(trunc_fp(fpNeg(to_double(a)), bw), FloatType(bw))
         expr = a.unwrap()
         return Expr(-expr, a.type())
 
@@ -827,17 +831,25 @@ class BVSymbolicDomain:
         if op == FpOp.FPCLASSIFY:
             FIXME("Using implementation dependent constants")
             v = val.unwrap()
-            expr =\
-            If(fpIsNaN(v), bv_const(0, 32),
-                If(fpIsInf(v), bv_const(1, 32),
-                    If(fpIsZero(v), bv_const(2, 32),
-                        If(fpIsSubnormal(v), bv_const(3, 32),
-                                              bv_const(4, 32)))))
+            expr = If(
+                fpIsNaN(v),
+                bv_const(0, 32),
+                If(
+                    fpIsInf(v),
+                    bv_const(1, 32),
+                    If(
+                        fpIsZero(v),
+                        bv_const(2, 32),
+                        If(fpIsSubnormal(v), bv_const(3, 32), bv_const(4, 32)),
+                    ),
+                ),
+            )
             return Expr(expr, IntType(32))
             if op == FpOp.SIGNBIT:
-                return Expr(If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))),
-                            IntType(32))
- 
+                return Expr(
+                    If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))), IntType(32)
+                )
+
         return None
 
 

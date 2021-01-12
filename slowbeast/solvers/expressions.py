@@ -236,7 +236,7 @@ class ExprManager:
         if ConcreteDomain.belongto(val):
             return ConcreteDomain.FpOp(op, val)
         r = SymbolicDomain.FpOp(op, self.lift(val))
-        return opt(r) if r else r # FpOp may return None
+        return opt(r) if r else r  # FpOp may return None
 
     def ZExt(self, a, b):
         assert ConcreteDomain.belongto(b), "Invalid zext argument"
@@ -275,7 +275,6 @@ class ExprManager:
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.BitCast(a, ty)
         return SymbolicDomain.BitCast(a, ty)
-
 
     def Extract(self, a, start, end):
         assert ConcreteDomain.belongto(start, end), "Invalid sext argument"

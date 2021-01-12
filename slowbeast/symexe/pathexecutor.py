@@ -41,7 +41,9 @@ class Executor(SExecutor):
                 if cond is None:
                     r.setTerminated(f"Invalid assume edge: {elem}")
                     nonready.append(r)
-                tmp = self.execAssumeExpr(r, r.getExprManager().Not(cond) if isnot else cond)
+                tmp = self.execAssumeExpr(
+                    r, r.getExprManager().Not(cond) if isnot else cond
+                )
                 for t in tmp:
                     if t.isReady():
                         newstates.append(t)
@@ -107,7 +109,7 @@ class Executor(SExecutor):
         edges = path.edges()
         # set the pc of the states to be the first instruction of the path
         newpc = path.get_first_inst()
-        if newpc is None: # nothing to execute
+        if newpc is None:  # nothing to execute
             return result
         for s in states:
             s.pc = newpc

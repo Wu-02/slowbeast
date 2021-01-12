@@ -33,7 +33,8 @@ class DFSCounter:
 def _get_id(x):
     if isinstance(x, CFA.Location):
         return x.id()
-    return x.getBBlock().get_id(),
+    return (x.getBBlock().get_id(),)
+
 
 class DFSVisitor:
     """
@@ -171,7 +172,9 @@ class DFSVisitor:
         # dump edges
         print("", file=out)
         if isinstance(graph, CFA):
-            self.foreachedge(graph.entry(), lambda e, t: dumpdot(e.source(), e.target(), t))
+            self.foreachedge(
+                graph.entry(), lambda e, t: dumpdot(e.source(), e.target(), t)
+            )
         else:
             self.foreachedge(graph.entry(), dumpdot)
 

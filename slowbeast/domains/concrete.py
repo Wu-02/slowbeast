@@ -16,11 +16,13 @@ def trunc_to_float(x, bw):
         return unpack("f", pack("f", x))[0]
     return x
 
+
 def to_unsigned(x, bw):
     """ Get unsigned value for signed in 2's complement """
     if x >= 0:
         return x
     return x + (1 << bw)
+
 
 def to_bv(x, unsigned=True):
     bw = x.bitwidth()
@@ -41,8 +43,11 @@ def to_bv(x, unsigned=True):
         return d
     if (x.is_int() or x.is_bytes()) and not unsigned:
         # signed/unsigned conversion
-        return (unpack(">q", to_unsigned(x.value(), bw).to_bytes(8, "big")) if bw == 64 else
-                unpack(">i", to_unsigned(x.value(), bw).to_bytes(4, "big")))[0]
+        return (
+            unpack(">q", to_unsigned(x.value(), bw).to_bytes(8, "big"))
+            if bw == 64
+            else unpack(">i", to_unsigned(x.value(), bw).to_bytes(4, "big"))
+        )[0]
     return x.value()
 
 
@@ -51,37 +56,40 @@ def to_fp(x, unsigned=False):
     if x.is_float():
         return val
     return (
-            unpack("f", pack("I", val))
-            if x.bitwidth() == 32
-            else unpack("d", pack("Q", val))
-        )[0]
+        unpack("f", pack("I", val))
+        if x.bitwidth() == 32
+        else unpack("d", pack("Q", val))
+    )[0]
 
-   #if unsigned:
-   #    r = (
-   #        unpack("f", pack("I", val))
-   #        if x.bitwidth() == 32
-   #        else unpack("d", pack("Q", val))
-   #    )
-   #else:
-   #    r = (
-   #        unpack("f", pack("i", val))
-   #        if x.bitwidth() == 32
-   #        else unpack("d", pack("Q", val))
-   #    )
-   #return r[0]
+
+# if unsigned:
+#    r = (
+#        unpack("f", pack("I", val))
+#        if x.bitwidth() == 32
+#        else unpack("d", pack("Q", val))
+#    )
+# else:
+#    r = (
+#        unpack("f", pack("i", val))
+#        if x.bitwidth() == 32
+#        else unpack("d", pack("Q", val))
+#    )
+# return r[0]
 
 
 def wrap_to_bw(x, bw):
     m = 1 << bw
-    return (x % m)
-   #if x >= 0:
-   #    while x >= m:
-   #        x -= m
-   #else:
-   #    m = m
-   #    while x <= -m:
-   #        x += m
-   #return x
+    return x % m
+
+
+# if x >= 0:
+#    while x >= m:
+#        x -= m
+# else:
+#    m = m
+#    while x <= -m:
+#        x += m
+# return x
 
 
 def dom_is_concrete(v):
@@ -245,23 +253,19 @@ class ConcreteDomain:
         """
         assert ConcreteDomain.belongto(a)
         if a.is_bool() and ty.is_int():
-            return ConcreteVal(1 if a.value() else 0,
-                               IntType(ty.bitwidth()))
+            return ConcreteVal(1 if a.value() else 0, IntType(ty.bitwidth()))
         if a.is_bytes() and ty.is_float():
-                return ConcreteVal(trunc_to_float(to_fp(a),
-                                                  ty.bitwidth()), ty)
+            return ConcreteVal(trunc_to_float(to_fp(a), ty.bitwidth()), ty)
         if a.is_int():
             if ty.is_float():
-                return ConcreteVal(trunc_to_float(float(a.value()),
-                                                  ty.bitwidth()), ty)
+                return ConcreteVal(trunc_to_float(float(a.value()), ty.bitwidth()), ty)
             elif ty.is_int():
                 return ConcreteVal(a.value(), ty)
             elif ty.is_bool():
                 return ConcreteBool(False if a.value() == 0 else True)
         elif a.is_float():
             if ty.is_float():
-                return ConcreteVal(trunc_to_float(a.value(),
-                                                  ty.bitwidth()), ty)
+                return ConcreteVal(trunc_to_float(a.value(), ty.bitwidth()), ty)
             elif ty.is_int():
                 return ConcreteVal(int(a.value()), ty)
         return None  # unsupported conversion
@@ -270,23 +274,19 @@ class ConcreteDomain:
         """ static cast """
         assert ConcreteDomain.belongto(a)
         if a.is_bool() and ty.is_int():
-            return ConcreteVal(1 if a.value() else 0,
-                               IntType(ty.bitwidth()))
+            return ConcreteVal(1 if a.value() else 0, IntType(ty.bitwidth()))
         if a.is_bytes() and ty.is_float():
-                return ConcreteVal(trunc_to_float(to_fp(a),
-                                                  ty.bitwidth()), ty)
+            return ConcreteVal(trunc_to_float(to_fp(a), ty.bitwidth()), ty)
         if a.is_int():
             if ty.is_float():
-                return ConcreteVal(trunc_to_float(to_fp(a),
-                                                  ty.bitwidth()), ty)
+                return ConcreteVal(trunc_to_float(to_fp(a), ty.bitwidth()), ty)
             elif ty.is_int():
                 return ConcreteVal(a.value(), ty)
             elif ty.is_bool():
                 return ConcreteBool(False if a.value() == 0 else True)
         elif a.is_float():
             if ty.is_float():
-                return ConcreteVal(trunc_to_float(a.value(),
-                                                  ty.bitwidth()), ty)
+                return ConcreteVal(trunc_to_float(a.value(), ty.bitwidth()), ty)
             elif ty.is_int():
                 return ConcreteVal(to_bv(a), ty)
         return None  # unsupported conversion
@@ -312,9 +312,7 @@ class ConcreteDomain:
         val = to_bv(a)
         bw = a.bitwidth()
         return ConcreteVal(
-            to_bv(a) >> b.value()
-            if val >= 0
-            else (val + (1 << bw)) >> b.value(),
+            to_bv(a) >> b.value() if val >= 0 else (val + (1 << bw)) >> b.value(),
             IntType(bw),
         )
 
@@ -335,7 +333,7 @@ class ConcreteDomain:
             return args[0]
         bw = 0
         val = 0
-        for i in range(1, l+1):
+        for i in range(1, l + 1):
             a = args[l - i]
             val |= a.value() << bw
             bw += a.bitwidth()
@@ -358,8 +356,7 @@ class ConcreteDomain:
         ty = a.type()
         bw = ty.bitwidth()
         if isfloat:
-            return ConcreteVal(trunc_to_float(-to_fp(a),
-                                              ty.bitwidth()), FloatType(bw))
+            return ConcreteVal(trunc_to_float(-to_fp(a), ty.bitwidth()), FloatType(bw))
         return ConcreteVal(wrap_to_bw(-a.value(), ty.bitwidth()), ty)
 
     def Abs(a):
@@ -493,9 +490,7 @@ class ConcreteDomain:
         # FIXME: add self-standing float domain
         bw = a.bitwidth()
         if isfloat:
-            return ConcreteVal(trunc_to_float(to_fp(a) + to_fp(b),
-                                              bw),
-                               FloatType(bw))
+            return ConcreteVal(trunc_to_float(to_fp(a) + to_fp(b), bw), FloatType(bw))
         aval, bval = to_bv(a), to_bv(b)
         return ConcreteVal(wrap_to_bw(aval + bval, bw), IntType(bw))
 
@@ -505,8 +500,7 @@ class ConcreteDomain:
         assert a.is_int() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
-            return ConcreteVal(trunc_to_float(to_fp(a) - to_fp(b),
-                                              bw), FloatType(bw))
+            return ConcreteVal(trunc_to_float(to_fp(a) - to_fp(b), bw), FloatType(bw))
         aval, bval = to_bv(a), to_bv(b)
         return ConcreteVal(wrap_to_bw(aval - bval, bw), IntType(bw))
 
@@ -516,8 +510,7 @@ class ConcreteDomain:
         assert a.is_int() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
-            return ConcreteVal(trunc_to_float(to_fp(a) * to_fp(b),
-                                              bw), FloatType(bw))
+            return ConcreteVal(trunc_to_float(to_fp(a) * to_fp(b), bw), FloatType(bw))
         aval, bval = to_bv(a), to_bv(b)
         return ConcreteVal(wrap_to_bw(aval * bval, bw), IntType(bw))
 
@@ -531,29 +524,17 @@ class ConcreteDomain:
             if b.value() == 0:
                 aval = a.value()
                 if aval > 0:
-                    return ConcreteVal(
-                        trunc_to_float(float("inf"), bw), result_ty
-                    )
+                    return ConcreteVal(trunc_to_float(float("inf"), bw), result_ty)
                 if aval < 0:
-                    return ConcreteVal(
-                        trunc_to_float(float("-inf"), bw), result_ty
-                    )
+                    return ConcreteVal(trunc_to_float(float("-inf"), bw), result_ty)
                 else:
-                    return ConcreteVal(
-                        trunc_to_float(float("NaN"), bw), result_ty
-                    )
+                    return ConcreteVal(trunc_to_float(float("NaN"), bw), result_ty)
             return ConcreteVal(
-                trunc_to_float(
-                    to_fp(a, unsigned) / to_fp(b, unsigned), bw
-                ),
+                trunc_to_float(to_fp(a, unsigned) / to_fp(b, unsigned), bw),
                 result_ty,
             )
         result_ty = IntType(bw)
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
-            return ConcreteVal(
-                to_unsigned(aval, bw) / to_unsigned(bval, bw), result_ty
-            )
-        return ConcreteVal(
-            wrap_to_bw(int(aval / bval), bw), result_ty
-        )
+            return ConcreteVal(to_unsigned(aval, bw) / to_unsigned(bval, bw), result_ty)
+        return ConcreteVal(wrap_to_bw(int(aval / bval), bw), result_ty)

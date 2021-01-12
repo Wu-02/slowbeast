@@ -84,7 +84,7 @@ class SimpleLoop:
     def has_loc(self, l):
         return l in self._locs
 
-    def __contains__(self, item : CFA.Edge):
+    def __contains__(self, item: CFA.Edge):
         assert isinstance(item, CFA.Edge)
         return item in self._edges
 

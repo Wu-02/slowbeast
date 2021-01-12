@@ -43,10 +43,11 @@ class LazySymbolicMemoryModel(CoreMM):
 
         value = state.try_eval(valueOp)
         if value is None:
-            value = state.getSolver().Var(f"uninit_{valueOp.as_value()}",
-                                          IntType(8 * instr.bytewidth()))
+            value = state.getSolver().Var(
+                f"uninit_{valueOp.as_value()}", IntType(8 * instr.bytewidth())
+            )
         assert isinstance(value, Value)
- 
+
         try:
             err = state.memory.write(to, value)
         except NotImplementedError as e:

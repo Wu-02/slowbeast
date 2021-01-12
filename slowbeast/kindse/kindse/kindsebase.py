@@ -29,6 +29,7 @@ def check_paths(executor, paths, pre=None, post=None):
 
     return result
 
+
 def find_loop_headers(cfas, new_output_file=None):
     headers = set()
 
@@ -80,8 +81,11 @@ class ProgramStructure:
             self.loop_headers = headers
         return headers
 
+
 class KindSymbolicExecutor(SymbolicInterpreter):
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions(), programstructure=None):
+    def __init__(
+        self, prog, ohandler=None, opts=KindSeOptions(), programstructure=None
+    ):
         super().__init__(
             P=prog, ohandler=ohandler, opts=opts, ExecutorClass=PathExecutor
         )
@@ -113,7 +117,9 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         return self.indexecutor
 
     def get_cfa(self, F):
-        assert self.programstructure.cfas.get(F), f"Have no CFA for function {F.getName()}"
+        assert self.programstructure.cfas.get(
+            F
+        ), f"Have no CFA for function {F.getName()}"
         return self.programstructure.cfas.get(F)
 
     def get_return_states(self):
@@ -210,7 +216,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             newworklist = []
 
             for p in worklist:
-                front = p[-1] # the list is reversed, so the front is at the end
+                front = p[-1]  # the list is reversed, so the front is at the end
                 preds = front.source().predecessors()
                 predsnum = len(preds)
 
@@ -247,9 +253,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                         newpaths.append(path.copyandsetpath(tmp))
                         # fall-through to further extending this path
 
-                    assert all(
-                        map(lambda x: isinstance(x, CFA.Location), stoppoints)
-                    )
+                    assert all(map(lambda x: isinstance(x, CFA.Location), stoppoints))
                     if pred in stoppoints:
                         newpath.reverse()
                         newpaths.append(path.copyandsetpath(newpath))

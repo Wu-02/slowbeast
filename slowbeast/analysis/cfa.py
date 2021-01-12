@@ -125,8 +125,7 @@ class CFA:
         def called_function(self):
             return self._elems[0].getCalledFunction()
 
-
-    def __init__(self, fun : Function):
+    def __init__(self, fun: Function):
         assert isinstance(fun, Function)
         self._fun = fun
         self._locs = []
@@ -153,7 +152,7 @@ class CFA:
         """
         assert isinstance(prog, Program)
         # build a CFA for each function and then connect them with call edges
-        cfas = { fun : CFA(fun) for fun in prog.funs() if not fun.isUndefined() }
+        cfas = {fun: CFA(fun) for fun in prog.funs() if not fun.isUndefined()}
         # FIXME: populate call edges
         return cfas
 
@@ -228,7 +227,7 @@ class CFA:
         assert self._entry, "Do not have entry loc"
 
     def dump(self, stream):
-        print(f'digraph CFA_{self._fun.getName()} {{', file=stream)
+        print(f"digraph CFA_{self._fun.getName()} {{", file=stream)
         print(f'  label="{self._fun.getName()}"', file=stream)
         entry = self._entry
         for l in self._locs:

@@ -94,9 +94,10 @@ class BoolType(Type):
     def is_bool(self):
         return True
 
+
 class Bytes(Type):
     def __init__(self, bytenum):
-        Type.__init__(self, bytenum*8)
+        Type.__init__(self, bytenum * 8)
 
     def is_bytes(self):
         return True
