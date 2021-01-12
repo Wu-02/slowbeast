@@ -142,7 +142,7 @@ class KindSEChecker(BaseKindSE):
         #     print_stdout(f"> {msg}", *args, **kwargs)
 
         checker = KindSEChecker(self.toplevel_executor, loc, A)
-        result, states = checker.check(L.getEntries())
+        result, states = checker.check(L.entries())
         dbg_sec()
         return result, states
 
@@ -175,7 +175,7 @@ class KindSEChecker(BaseKindSE):
 
     def extend_seq(self, seq, errs0, L):
         S = self.getIndExecutor().createStatesSet(seq[-1].toassert())
-        r = check_paths(self, L.getPaths(), post=S)
+        r = check_paths(self, L.paths(), post=S)
         if not r.ready:  # cannot step into this frame...
             # FIXME we can use it at least for annotations
             dbg("Infeasible frame...")
@@ -194,7 +194,7 @@ class KindSEChecker(BaseKindSE):
             tmp.append(e.states, e.strengthening)
 
             if __debug__:
-                r = tmp.check_ind_on_paths(self, L.getPaths())
+                r = tmp.check_ind_on_paths(self, L.paths())
                 assert (
                     r.errors is None
                 ), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
@@ -245,14 +245,14 @@ class KindSEChecker(BaseKindSE):
 
     def overapprox_init_seq(self, seq0, errs0, L):
         if __debug__:
-            r = seq0.check_ind_on_paths(self, L.getPaths())
+            r = seq0.check_ind_on_paths(self, L.paths())
             assert r.errors is None, "seq is not inductive"
         S = self.getIndExecutor().createStatesSet(seq0.toannotation(True))
         EM = getGlobalExprManager()
         seq = InductiveSequence(
             overapprox_set(self, EM, S, errs0.toassert(), seq0, L).toassert()
         )
-        r = seq.check_ind_on_paths(self, L.getPaths())
+        r = seq.check_ind_on_paths(self, L.paths())
         # Why could this happen?
         if r.errors is None and r.ready:
             return seq
@@ -260,7 +260,7 @@ class KindSEChecker(BaseKindSE):
 
     def strengthen_initial_seq(self, seq0, errs0, path, L: SimpleLoop):
         # NOTE: if we would pass states here we would safe some work.. be it would be less generic
-        r = seq0.check_ind_on_paths(self, L.getPaths())
+        r = seq0.check_ind_on_paths(self, L.paths())
         if r.errors is None:
             dbg("Initial sequence is inductive", color="dark_green")
             return seq0
@@ -293,12 +293,12 @@ class KindSEChecker(BaseKindSE):
                 R.add(tmp)
             seq0 = InductiveSequence(R.as_assert_annotation())
             # this may mean that the assertion in fact does not hold
-            # r = seq0.check_ind_on_paths(self, L.getPaths())
+            # r = seq0.check_ind_on_paths(self, L.paths())
             # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
         else:  # the assertion is outside the loop
             # get the prefix of the path that exits the loop
             prefix = None
-            exits = L.getExits()
+            exits = L.exits()
             for n in range(len(path)):
                 if path[n] in exits:
                     prefix = AnnotatedCFAPath(path.edges()[: n + 1])
@@ -315,10 +315,10 @@ class KindSEChecker(BaseKindSE):
             R.intersect(seq0.toannotation(True))
             seq0 = InductiveSequence(R.as_assert_annotation())
             # this may mean that the assertion in fact does not hold
-            # r = seq0.check_ind_on_paths(self, L.getPaths())
+            # r = seq0.check_ind_on_paths(self, L.paths())
             # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
 
-        r = seq0.check_ind_on_paths(self, L.getPaths())
+        r = seq0.check_ind_on_paths(self, L.paths())
         if r.errors is None:
             dbg("Initial sequence made inductive", color="dark_green")
             return seq0
@@ -384,7 +384,7 @@ class KindSEChecker(BaseKindSE):
                     f"Processing sequence of len {len(seq)}:\n{seq}", color="dark_blue"
                 )
                 if __debug__:
-                    r = seq.check_ind_on_paths(self, L.getPaths())
+                    r = seq.check_ind_on_paths(self, L.paths())
                     assert r.errors is None, "seq is not inductive"
 
                 for e in self.extend_seq(seq, errs0, L):
