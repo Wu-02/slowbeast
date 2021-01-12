@@ -179,11 +179,11 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         self.have_problematic_path = True
         print_stdout("Killing a path that goes to caller")
         # start = path.first()
-        # cgnode = self.programstructure.callgraph.getNode(start.getBBlock().fun())
+        # cgnode = self.programstructure.callgraph.getNode(start.bblock().fun())
         # for callerfun, callsite in cgnode.getCallers():
         #    print('caller', callerfun.fun())
         #    print('cs', callsite)
-        #    callsite.getBBlock()
+        #    callsite.bblock()
         return []
 
     def extend_path(self, path, states, steps=-1, atmost=False, stoppoints=[]):

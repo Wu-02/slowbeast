@@ -14,7 +14,7 @@ class BBlock(ProgramElement):
             f.addBBlock(self)
 
     def append(self, i):
-        i.setBBlock(self, len(self._instructions))
+        i.set_bblock(self, len(self._instructions))
         self._instructions.append(i)
 
     def insert(self, i, idx):
@@ -24,11 +24,11 @@ class BBlock(ProgramElement):
         for n in range(idx, len(instrs)):
             instrs[n]._bblock_idx += 1
         instrs.insert(idx, i)
-        i.setBBlock(self, idx)
+        i.set_bblock(self, idx)
 
         if __debug__:
             for n, inst in enumerate(self._instructions):
-                assert inst.getBBlockIdx() == n, "Invalid insertion of instruction"
+                assert inst.bblock_idx() == n, "Invalid insertion of instruction"
 
     def first(self):
         assert len(self._instructions) > 0

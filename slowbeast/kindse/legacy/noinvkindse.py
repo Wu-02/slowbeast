@@ -110,7 +110,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return newpaths
 
     def _is_init(self, loc):
-        return loc.getBBlock() is self.getProgram().entry().getBBlock(0)
+        return loc.bblock() is self.getProgram().entry().bblock(0)
 
     def report(self, n):
         if n.hasError():

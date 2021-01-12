@@ -67,20 +67,20 @@ class Instruction(ProgramElement):
     def operands_num(self):
         return len(self._operands)
 
-    def setBBlock(self, bb, idx):
+    def set_bblock(self, bb, idx):
         assert bb, "None bblock is invalid"
         assert idx >= 0, "Invalid bblock idx"
         self._bblock = bb
         self._bblock_idx = idx
 
-    def getBBlock(self):
+    def bblock(self):
         return self._bblock
 
     def fun(self):
         assert self._bblock
         return self._bblock.fun()
 
-    def getBBlockIdx(self):
+    def bblock_idx(self):
         return self._bblock_idx
 
     def dump(self, ind=0, stream=stdout, color=True):
@@ -112,17 +112,17 @@ class Instruction(ProgramElement):
     ###
     # Helper methods
     def insertBefore(self, i):
-        assert self.getBBlock() is None
-        assert self.getBBlockIdx() is None
-        assert i.getBBlock() is not None
-        assert i.getBBlockIdx() is not None
-        return i.getBBlock().insert(self, i.getBBlockIdx())
+        assert self.bblock() is None
+        assert self.bblock_idx() is None
+        assert i.bblock() is not None
+        assert i.bblock_idx() is not None
+        return i.bblock().insert(self, i.bblock_idx())
 
     def get_next_inst(self):
-        assert self.getBBlock() is not None
-        assert self.getBBlockIdx() is not None
-        assert isinstance(self.getBBlock(), BBlock)
-        return self.getBBlock().get_next_inst(self.getBBlockIdx())
+        assert self.bblock() is not None
+        assert self.bblock_idx() is not None
+        assert isinstance(self.bblock(), BBlock)
+        return self.bblock().get_next_inst(self.bblock_idx())
 
 
 class ValueInstruction(Instruction):
