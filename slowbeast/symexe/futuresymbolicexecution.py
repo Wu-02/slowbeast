@@ -92,7 +92,7 @@ class FutureSymbolicExecutor(Interpreter):
         odir = self.ohandler.outdir if self.ohandler else None
         return open("{0}/{1}".format(odir or ".", name), "w")
 
-    def getSolver(self):
+    def solver(self):
         return self.solver
 
     def getNextState(self):

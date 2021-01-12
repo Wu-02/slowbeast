@@ -92,11 +92,11 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts)
-        indexecutor = PathExecutor(self.getSolver(), opts, memorymodel)
+        indexecutor = PathExecutor(self.solver(), opts, memorymodel)
         # add error funs and forbid defined calls...
         dbg("Forbidding calls in induction step for now with k-induction")
         indexecutor.forbidCalls()
-        self.indexecutor = indexecutor
+        self._indexecutor = indexecutor
 
         if programstructure is None:
             self.programstructure = ProgramStructure(prog, self.new_output_file)
@@ -113,8 +113,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         # here we report error states
         self.return_states = None
 
-    def getIndExecutor(self):
-        return self.indexecutor
+    def ind_executor(self):
+        return self._indexecutor
 
     def get_cfa(self, F):
         assert self.programstructure.cfas.get(F), f"Have no CFA for function {F.name()}"
@@ -137,7 +137,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         """
         if fromInit:
             # we must execute without lazy memory
-            executor = self.getExecutor()
+            executor = self.executor()
 
             if not self.states:
                 self.prepare()
@@ -146,7 +146,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
             dbg(f"Executing (init) path: {path}", fn=self.reportfn)
         else:
-            executor = self.getIndExecutor()
+            executor = self.ind_executor()
 
             s = executor.createCleanState()
             states = [s]

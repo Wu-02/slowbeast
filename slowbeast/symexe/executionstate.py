@@ -49,10 +49,10 @@ class SEState(ExecutionState):
         ), "Comparing execution states of different executors"
         return super().__eq__(rhs) and self._constraints == rhs._constraints
 
-    def getSolver(self):
+    def solver(self):
         return self._solver
 
-    def getExecutor(self):
+    def executor(self):
         return self._executor
 
     def getExprManager(self):

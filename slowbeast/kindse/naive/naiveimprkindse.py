@@ -30,7 +30,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
     def executePath(self, path):
         print_stdout("Executing path: {0}".format(path), color="ORANGE")
-        ready, notready = self.getIndExecutor().executePath(
+        ready, notready = self.ind_executor().executePath(
             path.getState(), path.getPath()
         )
         return ready, notready

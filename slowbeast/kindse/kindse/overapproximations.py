@@ -310,7 +310,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     I = U.as_assume_annotation()
     # execute the instructions from annotations, so that the substitutions have up-to-date value
     poststates, nonr = execute_annotation_substitutions(
-        executor.getIndExecutor(), post, I
+        executor.ind_executor(), post, I
     )
     assert not nonr, f"Got errors while processing annotations: {nonr}"
 
@@ -388,8 +388,8 @@ def break_eq_ne(expr):
 
 
 def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
-    createSet = executor.getIndExecutor().createStatesSet
-    unsafe = createSet(unsafeAnnot)  # safe strengthening
+    create_set = executor.ind_executor().create_states_set
+    unsafe = create_set(unsafeAnnot)  # safe strengthening
     assert intersection(
         S, unsafe
     ).is_empty(), f"Whata? Unsafe states among one-step reachable safe states:\nS = {S},\nunsafe = {unsafe}"
@@ -397,7 +397,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
     # FIXME: move target one level up
-    target = createSet(seq[-1].toassert())
+    target = create_set(seq[-1].toassert())
 
     expr = S.as_expr()
     if expr.is_concrete():
@@ -432,7 +432,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     newclauses = []
 
     for n in range(0, len(clauses)):
-        tmp = createSet()
+        tmp = create_set()
         c = None
         for i, x in enumerate(clauses):
             if i == n:

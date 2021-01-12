@@ -104,7 +104,7 @@ def get_initial_seq(unsafe, path, L):
 
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
-    S = executor.getIndExecutor().createStatesSet(s)
+    S = executor.ind_executor().create_states_set(s)
     EM = s.getExprManager()
     return overapprox_set(executor, EM, S, unsafeAnnot, seq, L)
 
@@ -174,7 +174,7 @@ class KindSEChecker(BaseKindSE):
         return Result.UNKNOWN
 
     def extend_seq(self, seq, errs0, L):
-        S = self.getIndExecutor().createStatesSet(seq[-1].toassert())
+        S = self.ind_executor().create_states_set(seq[-1].toassert())
         r = check_paths(self, L.paths(), post=S)
         if not r.ready:  # cannot step into this frame...
             # FIXME we can use it at least for annotations
@@ -247,7 +247,7 @@ class KindSEChecker(BaseKindSE):
         if __debug__:
             r = seq0.check_ind_on_paths(self, L.paths())
             assert r.errors is None, "seq is not inductive"
-        S = self.getIndExecutor().createStatesSet(seq0.toannotation(True))
+        S = self.ind_executor().create_states_set(seq0.toannotation(True))
         EM = getGlobalExprManager()
         seq = InductiveSequence(
             overapprox_set(self, EM, S, errs0.toassert(), seq0, L).toassert()
@@ -269,7 +269,7 @@ class KindSEChecker(BaseKindSE):
         # is the assertion inside the loop or after the loop?
         EM = getGlobalExprManager()
         assert path[0].source() is L.header()
-        createSet = self.getIndExecutor().createStatesSet
+        create_set = self.ind_executor().create_states_set
         if path[-1] in L:  # the assertion is inside the loop
             # FIXME: we actually do not use the assertion at all right now, only implicitly as it is contained in the paths...
             # evaluate the jump-out instruction
@@ -278,7 +278,7 @@ class KindSEChecker(BaseKindSE):
             ready = r.ready
             if not ready:
                 return None
-            R = createSet()
+            R = create_set()
             # FIXME: we can use only a subset of the states, wouldn't that be better?
             for r in ready:
                 # do not use the first constraint -- it is the inedge condition that we want to ignore,
@@ -288,7 +288,7 @@ class KindSEChecker(BaseKindSE):
                 expr = EM.conjunction(
                     *remove_implied_literals(expr.to_cnf().children())
                 )
-                tmp = createSet(r)
+                tmp = create_set(r)
                 tmp.reset_expr(expr)
                 R.add(tmp)
             seq0 = InductiveSequence(R.as_assert_annotation())
@@ -308,7 +308,7 @@ class KindSEChecker(BaseKindSE):
             ready = r.ready
             if ready is None:
                 return None
-            R = createSet()
+            R = create_set()
             # for r in ready:
             #    R.add(r)
             R.add(ready)
