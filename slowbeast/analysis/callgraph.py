@@ -22,7 +22,7 @@ class CallGraph:
         def getCallers(self):
             return self.callers
 
-        def addCallSite(self, callsite, funs):
+        def add_callsite(self, callsite, funs):
             """
             This node contains a call-site 'callsite'
             that calls funs
@@ -81,7 +81,7 @@ class CallGraph:
                     continue
 
                 # this function (node) contains call I that calls ...
-                node.addCallSite(I, [self._nodes[I.getCalledFunction()]])
+                node.add_callsite(I, [self._nodes[I.called_function()]])
 
     def getReachable(self, node):
         if isinstance(node, Function):

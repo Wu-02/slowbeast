@@ -123,7 +123,7 @@ class CFA:
             return self._elems[0]
 
         def called_function(self):
-            return self._elems[0].getCalledFunction()
+            return self._elems[0].called_function()
 
     def __init__(self, fun: Function):
         assert isinstance(fun, Function)

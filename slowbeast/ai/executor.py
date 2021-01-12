@@ -262,7 +262,7 @@ class Executor(ConcreteExecutor):
 
     def execCall(self, state, instr):
         assert isinstance(instr, Call)
-        fun = instr.getCalledFunction()
+        fun = instr.called_function()
         if self.is_error_fn(fun):
             state.setError(AssertFailError(f"Called '{fun.name()}'"))
             return [state]

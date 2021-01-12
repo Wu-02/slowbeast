@@ -259,16 +259,16 @@ class Call(ValueInstruction):
         super().__init__([*operands])
         self._function = wht
 
-    def getCalledFunction(self):
+    def called_function(self):
         return self._function
 
-    def getReturnValue(self):
+    def return_value(self):
         raise NotImplementedError("No return values in funs yet")
         # return self._function
 
     def __str__(self):
         r = "x{0} = call {1}(".format(
-            self.get_id(), self.getCalledFunction().as_value()
+            self.get_id(), self.called_function().as_value()
         )
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + ")"
