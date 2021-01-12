@@ -715,13 +715,13 @@ class Parser:
         if self.phis:
             for inst, var, load in self.phis:
                 # place the allocation to the entry node
-                var.insertBefore(F.bblock(0).last())
+                var.insert_before(F.bblock(0).last())
                 # place the writes to memory
                 for i in range(0, inst.phi_incoming_count):
                     v, b = inst.phi_incoming(i)
                     B = self._bblocks[b]
                     S = Store(self.operand(v), var, load.bytewidth())
-                    S.insertBefore(B.last())
+                    S.insert_before(B.last())
             self.phis = []  # we handled these PHI nodes
 
     def _parse_globals(self, m):

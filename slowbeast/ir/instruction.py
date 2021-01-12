@@ -111,7 +111,7 @@ class Instruction(ProgramElement):
 
     ###
     # Helper methods
-    def insertBefore(self, i):
+    def insert_before(self, i):
         assert self.bblock() is None
         assert self.bblock_idx() is None
         assert i.bblock() is not None
