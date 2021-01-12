@@ -734,7 +734,7 @@ class Parser:
             c = getConstant(g.initializer)
             if c:
                 # FIXME: add composed instruction
-                G.setInit([Store(c, G, ts)])
+                G.set_init([Store(c, G, ts)])
             # elif is_array_ty(g.initializer.type):
             #    parts=str(g.initializer.type).split()
             #    assert parts[1] == 'x'

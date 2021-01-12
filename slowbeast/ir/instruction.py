@@ -26,13 +26,13 @@ class GlobalVariable(ProgramElement):
     def name(self):
         return self._name
 
-    def hasInit(self):
+    def has_init(self):
         return self._init is not None
 
-    def getInit(self):
+    def init(self):
         return self._init
 
-    def setInit(self, I):
+    def set_init(self, I):
         for i in I:
             self.addMetadata("init", str(i))
         self._init = I
