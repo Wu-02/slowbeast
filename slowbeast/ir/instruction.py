@@ -57,14 +57,14 @@ class Instruction(ProgramElement):
         self._bblock = None
         self._bblock_idx = None
 
-    def getOperand(self, idx):
+    def operand(self, idx):
         assert idx < len(self._operands)
         return self._operands[idx]
 
-    def getOperands(self):
+    def operands(self):
         return self._operands
 
-    def getOperandsNum(self):
+    def operands_num(self):
         return len(self._operands)
 
     def setBBlock(self, bb, idx):
@@ -124,18 +124,6 @@ class Instruction(ProgramElement):
         assert isinstance(self.getBBlock(), BBlock)
         return self.getBBlock().get_next_inst(self.getBBlockIdx())
 
-
-# Defined in super class
-# def __eq__(self, other):
-#    return self.get_id() == other.get_id()
-
-# def __ne__(self, other):
-#    return not(self.__eq__(self, other))
-
-# def __hash__(self):
-#    return self.get_id()
-
-
 class ValueInstruction(Instruction):
     """
     Instruction that returns a value
@@ -165,10 +153,10 @@ class Store(Instruction):
         self._bw = bw
 
     def pointer_operand(self):
-        return self.getOperand(1)
+        return self.operand(1)
 
     def value_operand(self):
-        return self.getOperand(0)
+        return self.operand(0)
 
     def bytewidth(self):
         return self._bw
@@ -198,7 +186,7 @@ class Load(ValueInstruction):
         return 8*self._bw
 
     def pointer_operand(self):
-        return self.getOperand(0)
+        return self.operand(0)
 
     def __str__(self):
         return "x{0} = load {1}:{2}B".format(
@@ -249,13 +237,13 @@ class Branch(Instruction):
         assert isinstance(b2, BBlock)
 
     def getCondition(self):
-        return self.getOperand(0)
+        return self.operand(0)
 
     def getTrueSuccessor(self):
-        return self.getOperand(1)
+        return self.operand(1)
 
     def getFalseSuccessor(self):
-        return self.getOperand(2)
+        return self.operand(2)
 
     def __str__(self):
         return "branch {0} ? {1} : {2}".format(
@@ -281,7 +269,7 @@ class Call(ValueInstruction):
         r = "x{0} = call {1}(".format(
             self.get_id(), self.getCalledFunction().as_value()
         )
-        r += ", ".join(map(lambda x: x.as_value(), self.getOperands()))
+        r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + ")"
 
 
@@ -293,9 +281,9 @@ class Return(Instruction):
             super().__init__([val])
 
     def __str__(self):
-        if len(self.getOperands()) == 0:
+        if len(self.operands()) == 0:
             return "ret"
-        return "ret {0}".format(str(self.getOperand(0).as_value()))
+        return "ret {0}".format(str(self.operand(0).as_value()))
 
 
 class Print(Instruction):
@@ -314,14 +302,14 @@ class Assert(Instruction):
         super().__init__([cond, msg])
 
     def getMessage(self):
-        ops = self.getOperands()
+        ops = self.operands()
         assert len(ops) <= 2 and len(ops) >= 1
         if len(ops) == 1:
             return None
         return ops[1]
 
     def getCondition(self):
-        return self.getOperand(0)
+        return self.operand(0)
 
     def __str__(self):
         r = "assert {0}".format(self.getCondition().as_value())
@@ -415,9 +403,9 @@ class Cmp(ValueInstruction):
     def __str__(self):
         return "{0} = {4}cmp {1} {2} {3}".format(
             self.as_value(),
-            self.getOperand(0).as_value(),
+            self.operand(0).as_value(),
             Cmp.predicateStr(self.getPredicate(), self.isUnsigned()),
-            self.getOperand(1).as_value(),
+            self.operand(1).as_value(),
             "f" if self._fp else "",
         )
 
@@ -462,7 +450,7 @@ class Abs(UnaryOperation):
         super().__init__(UnaryOperation.ABS, val)
 
     def __str__(self):
-        return "x{0} = abs({1})".format(self.get_id(), self.getOperand(0).as_value())
+        return "x{0} = abs({1})".format(self.get_id(), self.operand(0).as_value())
 
 
 class ZExt(Extend):
@@ -471,7 +459,7 @@ class ZExt(Extend):
 
     def __str__(self):
         return "x{0} = zext {1} to {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.bitwidth()
+            self.get_id(), self.operand(0).as_value(), self.bitwidth()
         )
 
 
@@ -481,7 +469,7 @@ class SExt(Extend):
 
     def __str__(self):
         return "x{0} = sext {1} to {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.bitwidth()
+            self.get_id(), self.operand(0).as_value(), self.bitwidth()
         )
 
 
@@ -501,7 +489,7 @@ class Cast(UnaryOperation):
     def __str__(self):
         return "x{0} = cast {1} to {2}{3}".format(
             self.get_id(),
-            self.getOperand(0).as_value(),
+            self.operand(0).as_value(),
             "signed " if self._signed else "",
             self.casttype(),
         )
@@ -519,7 +507,7 @@ class Neg(UnaryOperation):
 
     def __str__(self):
         return "x{0} = -({1}){2}".format(
-            self.get_id(), self.getOperand(0).as_value(), "f" if self._fp else ""
+            self.get_id(), self.operand(0).as_value(), "f" if self._fp else ""
         )
 
 
@@ -542,7 +530,7 @@ class ExtractBits(UnaryOperation):
 
     def __str__(self):
         return "x{0} = extractbits {1}-{2} from {3}".format(
-            self.get_id(), self.getStart(), self.getEnd(), self.getOperand(0).as_value()
+            self.get_id(), self.getStart(), self.getEnd(), self.operand(0).as_value()
         )
 
 
@@ -587,7 +575,7 @@ class FpOp(UnaryOperation):
 
     def __str__(self):
         return "x{0} = fp {1} {2}".format(
-            self.get_id(), FpOp.op_to_str(self._fp_op), self.getOperand(0).as_value()
+            self.get_id(), FpOp.op_to_str(self._fp_op), self.operand(0).as_value()
         )
 
 
@@ -632,8 +620,8 @@ class Add(BinaryOperation):
     def __str__(self):
         return "x{0} = {1} +{3} {2}".format(
             self.get_id(),
-            self.getOperand(0).as_value(),
-            self.getOperand(1).as_value(),
+            self.operand(0).as_value(),
+            self.operand(1).as_value(),
             "." if self._fp else "",
         )
 
@@ -649,8 +637,8 @@ class Sub(BinaryOperation):
     def __str__(self):
         return "x{0} = {1} -{3} {2}".format(
             self.get_id(),
-            self.getOperand(0).as_value(),
-            self.getOperand(1).as_value(),
+            self.operand(0).as_value(),
+            self.operand(1).as_value(),
             "." if self._fp else "",
         )
 
@@ -666,8 +654,8 @@ class Mul(BinaryOperation):
     def __str__(self):
         return "x{0} = {1} *{3} {2}".format(
             self.get_id(),
-            self.getOperand(0).as_value(),
-            self.getOperand(1).as_value(),
+            self.operand(0).as_value(),
+            self.operand(1).as_value(),
             "." if self._fp else "",
         )
 
@@ -687,8 +675,8 @@ class Div(BinaryOperation):
     def __str__(self):
         return "x{0} = {1} /{3}{4} {2}".format(
             self.get_id(),
-            self.getOperand(0).as_value(),
-            self.getOperand(1).as_value(),
+            self.operand(0).as_value(),
+            self.operand(1).as_value(),
             "u" if self.isUnsigned() else "",
             "." if self._fp else "",
         )
@@ -705,8 +693,8 @@ class Rem(BinaryOperation):
     def __str__(self):
         return "x{0} = {1} %{3} {2}".format(
             self.get_id(),
-            self.getOperand(0).as_value(),
-            self.getOperand(1).as_value(),
+            self.operand(0).as_value(),
+            self.operand(1).as_value(),
             "u" if self.isUnsigned() else "",
         )
 
@@ -717,7 +705,7 @@ class Shl(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} << {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
@@ -727,7 +715,7 @@ class LShr(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} l>> {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
@@ -737,7 +725,7 @@ class AShr(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} >> {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
@@ -747,7 +735,7 @@ class And(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} & {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
@@ -757,7 +745,7 @@ class Or(BinaryOperation):
 
     def __str__(self):
         return "x{0} = {1} | {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
@@ -767,7 +755,7 @@ class Xor(BinaryOperation):
 
     def __str__(self):
         return "x{0} = xor {1}, {2}".format(
-            self.get_id(), self.getOperand(0).as_value(), self.getOperand(1).as_value()
+            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
@@ -786,5 +774,5 @@ class Ite(ValueInstruction):
     def __repr__(self):
         return (
             f"{self.as_value()} = if {self._cond.as_value()} then "
-            f"{self.getOperand(0).as_value()} else {self.getOperand(1).as_value()}"
+            f"{self.operand(0).as_value()} else {self.operand(1).as_value()}"
         )

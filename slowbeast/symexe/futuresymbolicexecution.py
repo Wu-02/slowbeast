@@ -30,10 +30,10 @@ class FutureExecutor(SExecutor):
         # if we have no next instr, execute normally
         if False or nexti is None:  # execute normally
             # map values to arguments
-            assert len(instr.getOperands()) == len(fun.getArguments())
+            assert len(instr.operands()) == len(fun.getArguments())
             mapping = {
                 x: state.eval(y)
-                for (x, y) in zip(fun.getArguments(), instr.getOperands())
+                for (x, y) in zip(fun.getArguments(), instr.operands())
             }
             state.pushCall(instr, fun, mapping)
             return [state]

@@ -201,8 +201,8 @@ class Executor:
 
     def execCmp(self, state, instr):
         assert isinstance(instr, Cmp)
-        op1 = state.eval(instr.getOperand(0))
-        op2 = state.eval(instr.getOperand(1))
+        op1 = state.eval(instr.operand(0))
+        op2 = state.eval(instr.operand(1))
         if op1.is_pointer():
             if not op2.is_pointer():
                 raise RuntimeError("Comparison of pointer to a constant")
@@ -235,7 +235,7 @@ class Executor:
 
     def execPrint(self, state, instr):
         assert isinstance(instr, Print)
-        for x in instr.getOperands():
+        for x in instr.operands():
             v = state.eval(x)
             if v.is_concrete():
                 v = v.value()
@@ -270,7 +270,7 @@ class Executor:
 
     def execAssert(self, state, instr):
         assert isinstance(instr, Assert)
-        for o in instr.getOperands():
+        for o in instr.operands():
             v = state.eval(o)
             assert v.is_concrete()
             if v.value() != True:
@@ -287,7 +287,7 @@ class Executor:
     def execAssume(self, state, instr):
         assert isinstance(instr, Assume)
         state.pc = state.pc.get_next_inst()
-        for o in instr.getOperands():
+        for o in instr.operands():
             v = state.eval(o)
             assert v.is_concrete()
             assert v.is_bool()
@@ -303,8 +303,8 @@ class Executor:
 
     def execBinaryOp(self, state, instr):
         assert isinstance(instr, BinaryOperation)
-        op1c = state.eval(instr.getOperand(0))
-        op2c = state.eval(instr.getOperand(1))
+        op1c = state.eval(instr.operand(0))
+        op2c = state.eval(instr.operand(1))
         op1 = None
         op2 = None
         bw = max(op1c.bytewidth(), op2c.bytewidth())
@@ -379,9 +379,9 @@ class Executor:
             )
             return [state]
         # map values to arguments
-        assert len(instr.getOperands()) == len(fun.getArguments())
+        assert len(instr.operands()) == len(fun.getArguments())
         mapping = {
-            x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.getOperands())
+            x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.operands())
         }
         state.pushCall(instr, fun, mapping)
         return [state]
@@ -391,8 +391,8 @@ class Executor:
 
         # obtain the return value (if any)
         ret = None
-        if len(instr.getOperands()) != 0:  # returns something
-            ret = state.eval(instr.getOperand(0))
+        if len(instr.operands()) != 0:  # returns something
+            ret = state.eval(instr.operand(0))
 
         # pop the call frame and get the return site
         rs = state.popCall()
