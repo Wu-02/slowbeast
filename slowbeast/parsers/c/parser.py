@@ -29,32 +29,27 @@ class Parser:
         assert self._mapping.get(ccode) is None, "Duplicated mapping"
         self._mapping[celem] = sbinst
 
-
     def parse(self, code):
-        print(f'Parse {code}')
+        print(f"Parse {code}")
         index = clang.cindex.Index.create()
-        tus =  self._tus
+        tus = self._tus
         for cfile in code:
             tu = index.parse(cfile)
-            print('Translation unit:', tu.spelling)
+            print("Translation unit:", tu.spelling)
             tus[cfile] = tu
             print(tu.cursor.kind)
             print(tu.cursor.spelling)
             print(tu.cursor.location)
             for c in tu.cursor.get_children():
-                print('  ', c.kind)
-                print('  ', c.spelling)
-                print('  ', c.location)
-                print('  ', c.is_definition())
+                print("  ", c.kind)
+                print("  ", c.spelling)
+                print("  ", c.location)
+                print("  ", c.is_definition())
                 print(dir(c))
 
-               #succ, retty = parseFunctionRetTy(self.llvmmodule, f.type.element_type)
-               #if not succ:
-               #    raise NotImplementedError(
-               #        "Cannot parse function return type: {0}".format(f.type.element_type)
-               #    )
-               #self.program.addFun(Function(f.spelling, len(list(f.arguments)), retty))
-
-
-
-    
+            # succ, retty = parseFunctionRetTy(self.llvmmodule, f.type.element_type)
+            # if not succ:
+            #    raise NotImplementedError(
+            #        "Cannot parse function return type: {0}".format(f.type.element_type)
+            #    )
+            # self.program.addFun(Function(f.spelling, len(list(f.arguments)), retty))

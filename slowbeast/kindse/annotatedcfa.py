@@ -1,10 +1,12 @@
 from slowbeast.analysis.cfa import CFA
 from slowbeast.ir.instruction import Assert
 
+
 def _loc_id(loc):
     if isinstance(loc, int):
         return loc
     return loc.id()
+
 
 def _edge_str(edge, ab, aa):
     return "({0}{1}{2} -> {3}{4}{5})".format(
@@ -13,7 +15,9 @@ def _edge_str(edge, ab, aa):
         " @" if aa.get(_loc_id(edge.source())) else "",
         "@ " if ab.get(_loc_id(edge.target())) else "",
         edge.target(),
-        " @" if aa.get(_loc_id(edge.source())) else "")
+        " @" if aa.get(_loc_id(edge.source())) else "",
+    )
+
 
 def _copy_annots(dst, src):
     # FIXME: do cow?
@@ -30,7 +34,13 @@ class AnnotatedCFAPath:
     are executed on given places.
     """
 
-    __slots__ = "_edges", "_annot_after_loc", "_annot_before_loc", "_annot_before", "_annot_after"
+    __slots__ = (
+        "_edges",
+        "_annot_after_loc",
+        "_annot_before_loc",
+        "_annot_before",
+        "_annot_after",
+    )
 
     def __init__(self, edges=[]):
         self._edges = edges
@@ -44,7 +54,7 @@ class AnnotatedCFAPath:
         if edges:
             for e in edges:
                 elems = e.elems()
-                if elems: # edge may be empty
+                if elems:  # edge may be empty
                     return elems[0]
         return None
 
@@ -79,7 +89,7 @@ class AnnotatedCFAPath:
         self._annot_before_loc.setdefault(_loc_id(loc), []).append(annot)
 
     def subpath(self, start, end):
-        n = AnnotatedCFAPath(self._edges[start:end+1])
+        n = AnnotatedCFAPath(self._edges[start : end + 1])
         _copy_annots(n, self)
         return n
 
@@ -115,4 +125,3 @@ class AnnotatedCFAPath:
             "".join(map(lambda e: _edge_str(e, ab, aa), self.edges())),
             " A" if self._annot_after else "",
         )
-

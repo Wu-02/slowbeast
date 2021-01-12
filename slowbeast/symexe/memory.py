@@ -7,25 +7,28 @@ from slowbeast.core.memory import Memory as CoreMemory
 from slowbeast.core.memoryobject import MemoryObject as CoreMO
 from slowbeast.solvers.solver import getGlobalExprManager
 
+
 def get_byte(EM, x, bw, i):
-    off = 8*i
+    off = 8 * i
     b = EM.Extract(
         x,
         ConcreteVal(off, OffsetType),
-        ConcreteVal(off+7, OffsetType),
+        ConcreteVal(off + 7, OffsetType),
     )
     assert b.bitwidth() == 8
     return b
+
 
 def write_bytes(offval, values, size, x):
     EM = getGlobalExprManager()
     bw = x.bytewidth()
     if not x.is_int():
         # rename to Cast and Cast to ReinterpretCast
-        newx = EM.BitCast(x, IntType(8*bw))
+        newx = EM.BitCast(x, IntType(8 * bw))
         if newx is None:
-            return MemError(MemError.UNSUPPORTED,
-                            f"Cast of {x} to i{bw} is unsupported")
+            return MemError(
+                MemError.UNSUPPORTED, f"Cast of {x} to i{bw} is unsupported"
+            )
         x = newx
     n = 0
     for i in range(offval, offval + bw):
@@ -34,20 +37,21 @@ def write_bytes(offval, values, size, x):
         n += 1
     return None
 
+
 def read_bytes(values, offval, size, bts):
     assert bts > 0, bts
     assert size > 0, bts
     assert offval >= 0, bts
     EM = getGlobalExprManager()
     if not all(values[i] for i in range(offval, offval + bts)):
-        return None, MemError(MemError.UNINIT_READ,
-                              "Read of uninitialized byte")
+        return None, MemError(MemError.UNINIT_READ, "Read of uninitialized byte")
     c = offval + bts - 1
     # FIXME hack
     # just make Extract return Bytes and it should work well then
     val = EM.Concat(*(values[c - i] for i in range(0, bts)))
     val._type = Bytes(val.bytewidth())
     return val, None
+
 
 def mo_to_bytes(values, size):
     dbgv("Promoting MO to bytes", color="gray")
@@ -58,7 +62,10 @@ def mo_to_bytes(values, size):
             return None, tmp
     return newvalues, None
 
+
 MAX_BYTES_SIZE = 64
+
+
 class MemoryObject(CoreMO):
     # FIXME: refactor
     def read(self, bts, off=ConcreteVal(0, OffsetType)):
@@ -69,14 +76,15 @@ class MemoryObject(CoreMO):
         assert isinstance(bts, int), "Read non-constant number of bytes"
 
         if not off.is_concrete():
-            return None, MemError(MemError.UNSUPPORTED,
-                                  "Read from non-constant offset not supported")
+            return None, MemError(
+                MemError.UNSUPPORTED, "Read from non-constant offset not supported"
+            )
 
         size = self.getSize()
         if not size.is_concrete():
             return None, MemError(
                 MemError.UNSUPPORTED,
-                "Read from symbolic-sized objects not implemented yet"
+                "Read from symbolic-sized objects not implemented yet",
             )
 
         assert size.is_int(), size
@@ -85,8 +93,7 @@ class MemoryObject(CoreMO):
 
         if size < bts:
             return None, MemError(
-                MemError.OOB_ACCESS,
-                f"Read {bts}B from object of size {size}"
+                MemError.OOB_ACCESS, f"Read {bts}B from object of size {size}"
             )
 
         values = self.values
@@ -138,25 +145,27 @@ class MemoryObject(CoreMO):
         assert self._ro is False, "Writing read-only object (COW bug)"
 
         if not off.is_concrete():
-            return MemError(MemError.UNSUPPORTED,
-                "Write to non-constant offset not supported")
+            return MemError(
+                MemError.UNSUPPORTED, "Write to non-constant offset not supported"
+            )
 
         if not self.getSize().is_concrete():
-            return MemError(MemError.UNSUPPORTED,
-                "Write to symbolic-sized objects not implemented yet"
+            return MemError(
+                MemError.UNSUPPORTED,
+                "Write to symbolic-sized objects not implemented yet",
             )
 
         size = self.getSize().value()
         offval = off.value()
 
         if x.bytewidth() > size + offval:
-         return MemError(
-             MemError.OOB_ACCESS,
-             "Written value too big for the object. "
-             "Writing {0}B to offset {1} of {2}B object".format(
-                 x.bytewidth(), offval, size
-             ),
-         )
+            return MemError(
+                MemError.OOB_ACCESS,
+                "Written value too big for the object. "
+                "Writing {0}B to offset {1} of {2}B object".format(
+                    x.bytewidth(), offval, size
+                ),
+            )
 
         values = self.values
         if isinstance(values, list):
@@ -169,17 +178,18 @@ class MemoryObject(CoreMO):
             for o, val in values.items():
                 if offval < o + val.bytewidth() and offval + bw > o:
                     if o == offval and val.bytewidth() == bw:
-                        break # the overlap is perfect, we just overwrite
-                              # the value
-                    if size <= MAX_BYTES_SIZE: #For now...
+                        break  # the overlap is perfect, we just overwrite
+                        # the value
+                    if size <= MAX_BYTES_SIZE:  # For now...
                         # promote to bytes
                         tmp, err = mo_to_bytes(values, size)
                         if err:
                             return err
                         self.values = tmp
                         return write_bytes(offval, tmp, size, x)
-                    return MemError(MemError.UNSUPPORTED,
-                                    "Overlapping writes to memory")
+                    return MemError(
+                        MemError.UNSUPPORTED, "Overlapping writes to memory"
+                    )
 
             values[offval] = x
             return None
@@ -194,7 +204,7 @@ class MemoryObject(CoreMO):
             self.getSize(),
         )
         vals = self.values
-        for k, v in (enumerate(vals) if isinstance(vals, list) else vals.items()):
+        for k, v in enumerate(vals) if isinstance(vals, list) else vals.items():
             s += "\n  {0} -> {1}".format(k, v)
         return s
 

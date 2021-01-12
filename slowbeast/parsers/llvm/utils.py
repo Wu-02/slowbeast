@@ -183,7 +183,7 @@ def getConstantPtr(val):
     if not val.type.is_pointer:
         return None
 
-    if str(val).endswith('null'):
+    if str(val).endswith("null"):
         return NullPointer
 
     # FIXME

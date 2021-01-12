@@ -153,6 +153,7 @@ class ValueInstruction(Instruction):
 
 class Store(Instruction):
     """ Store 'val' which has 'bw' bytes to 'to' """
+
     # NOTE: having 'bw' is important for lazy allocation of objects
     # since when we create SMT bitvector objects, we must specify
     # their bitwidth (well, we could do that dynamically, but for most
@@ -163,10 +164,10 @@ class Store(Instruction):
         super().__init__([val, to])
         self._bw = bw
 
-    def getPointerOperand(self):
+    def pointer_operand(self):
         return self.getOperand(1)
 
-    def getValueOperand(self):
+    def value_operand(self):
         return self.getOperand(0)
 
     def bytewidth(self):
@@ -177,7 +178,9 @@ class Store(Instruction):
 
     def __str__(self):
         return "store {1} to {2}:{0}B".format(
-            self._bw, self.getValueOperand().as_value(), self.getPointerOperand().as_value()
+            self._bw,
+            self.value_operand().as_value(),
+            self.pointer_operand().as_value(),
         )
 
 
@@ -186,17 +189,20 @@ class Load(ValueInstruction):
 
     def __init__(self, frm, bw):
         super().__init__([frm])
-        self.bytes = bw
+        self._bw = bw
 
-    def getBytesNum(self):
-        return self.bytes
+    def bytewidth(self):
+        return self._bw
 
-    def getPointerOperand(self):
+    def bitwidth(self):
+        return 8*self._bw
+
+    def pointer_operand(self):
         return self.getOperand(0)
 
     def __str__(self):
         return "x{0} = load {1}:{2}B".format(
-            self.get_id(), self.getPointerOperand().as_value(), self.bytes
+            self.get_id(), self.pointer_operand().as_value(), self._bw
         )
 
 
@@ -512,9 +518,9 @@ class Neg(UnaryOperation):
         return self._fp
 
     def __str__(self):
-        return "x{0} = -({1}){2}".format(self.get_id(),
-                                         self.getOperand(0).as_value(),
-                                         "f" if self._fp else "")
+        return "x{0} = -({1}){2}".format(
+            self.get_id(), self.getOperand(0).as_value(), "f" if self._fp else ""
+        )
 
 
 class ExtractBits(UnaryOperation):

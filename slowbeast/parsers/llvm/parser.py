@@ -223,9 +223,7 @@ class Parser:
         assert len(operands) == 2, "Invalid number of operands for store"
 
         bytesNum = type_size(self.llvmmodule, operands[0].type)
-        S = Store(self.getOperand(operands[0]),
-                  self.getOperand(operands[1]),
-                  bytesNum)
+        S = Store(self.getOperand(operands[0]), self.getOperand(operands[1]), bytesNum)
         self._addMapping(inst, S)
         return [S]
 
@@ -722,7 +720,7 @@ class Parser:
                 for i in range(0, inst.phi_incoming_count):
                     v, b = inst.phi_incoming(i)
                     B = self._bblocks[b]
-                    S = Store(self.getOperand(v), var, load.getBytesNum())
+                    S = Store(self.getOperand(v), var, load.bytewidth())
                     S.insertBefore(B.last())
             self.phis = []  # we handled these PHI nodes
 

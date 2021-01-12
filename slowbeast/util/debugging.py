@@ -123,6 +123,7 @@ def dbgv(msg, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr):
 
     fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
+
 def ldbgv(fmt, args, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr):
     """
     Lazy dbgv -- does not build the debugging message unless debugging is set

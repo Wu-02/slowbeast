@@ -44,6 +44,7 @@ class Pointer(Value):
     def dump(self):
         print(self)
 
-NullPointer = Pointer(ConcreteInt(0, POINTER_BIT_WIDTH),
-                      ConcreteInt(0, POINTER_BIT_WIDTH))
 
+NullPointer = Pointer(
+    ConcreteInt(0, POINTER_BIT_WIDTH), ConcreteInt(0, POINTER_BIT_WIDTH)
+)
