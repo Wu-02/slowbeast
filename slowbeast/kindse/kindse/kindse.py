@@ -547,30 +547,44 @@ class KindSymbolicExecutor(BaseKindSE):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
         super().__init__(prog=prog, ohandler=ohandler, opts=opts)
 
-    def _get_error_paths(self):
-        paths = []
-        # initialize the paths only in functions
-        # that are reachable in the callgraph
+   #def _get_error_paths(self):
+   #    paths = []
+   #    # initialize the paths only in functions
+   #    # that are reachable in the callgraph
+   #    for F in self.programstructure.callgraph.funs():
+   #        if F.isUndefined():
+   #            continue
+
+   #        cfa = self.get_cfa(F)
+   #        locs = cfa.locations()
+   #        iserr = cfa.is_err
+   #        paths.extend(AnnotatedCFAPath([edge]) for l in locs for edge in l.predecessors() if iserr(l))
+
+   #    return paths
+
+   #def _get_possible_errors(self):
+       #for err in self._get_error_paths():
+       #    assert len(err) == 1
+       #    r = check_paths(self, [err])
+       #    assert r.errors, "The error path has no errors"
+       #    for e in r.errors:
+       #        EM = e.expr_manager()
+       #        yield err[0].source(), AssertAnnotation(
+       #            EM.Not(e.path_condition()), get_subs(e), EM
+       #        )
+    def _get_possible_errors(self):
+        EM = getGlobalExprManager()
         for F in self.programstructure.callgraph.funs():
             if F.isUndefined():
                 continue
 
             cfa = self.get_cfa(F)
-            edges = cfa.edges()
-            paths.extend(AnnotatedCFAPath([e]) for e in edges if edge_has_assert(e))
+            locs = cfa.locations()
+            iserr = cfa.is_err
 
-        return paths
-
-    def _get_possible_errors(self):
-        for err in self._get_error_paths():
-            assert len(err) == 1
-            r = check_paths(self, [err])
-            assert r.errors, "The error path has no errors"
-            for e in r.errors:
-                EM = e.expr_manager()
-                yield err[0].source(), AssertAnnotation(
-                    EM.Not(e.path_condition()), get_subs(e), EM
-                )
+            for l in locs:
+                if iserr(l):
+                    yield l, AssertAnnotation(EM.getFalse(), {}, EM)
 
     def run(self):
         has_unknown = False
