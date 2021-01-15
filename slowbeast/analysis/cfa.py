@@ -1,6 +1,6 @@
 from slowbeast.ir.program import Program
 from slowbeast.ir.function import Function
-from slowbeast.ir.instruction import Branch, Call
+from slowbeast.ir.instruction import Branch, Call, Assert
 
 
 class CFA:
@@ -131,6 +131,7 @@ class CFA:
         self._locs = []
         self._edges = []
         self._entry = None
+        self._errors = set()
 
         self._build(fun)
 
@@ -145,6 +146,18 @@ class CFA:
 
     def locations(self):
         return self._locs
+
+    def errors(self):
+        return self._errors
+
+    def add_error_loc(self, l):
+        self._errors.add(l)
+
+    def is_init(self, l):
+        return l == self._entry
+
+    def is_err(self, l):
+        return l in self._errors
 
     def from_program(prog: Program, callgraph=None):
         """
@@ -175,11 +188,13 @@ class CFA:
             loc1, loc2 = self.create_loc(B), self.create_loc(B)
 
             e = CFA.Edge(CFA.Edge.REGULAR, loc1, loc2, B)
-            for i in B.instructions()[:-1]:
+            for i in B.instructions():
                 # break on calls
-                if isinstance(i, Call):
+                if isinstance(i, Branch):
+                    break # this is a last inst and we handle it later
+                elif isinstance(i, Call):
                     if e.is_noop():
-                        e = CFA.CallEdge(loc1, loc2, i)
+                        e = CFA.CallEdge(e.source(), e.target(), i) # replace the edge
                     else:
                         self._add_edge(e)
                         assert not e.is_noop()
@@ -194,8 +209,34 @@ class CFA:
                     tmp = self.create_loc(B)
                     e = CFA.Edge(CFA.Edge.REGULAR, loc2, tmp, B)
                     loc2 = tmp
+                # break on assert
+                elif isinstance(i, Assert):
+                    err = self.create_loc(i)
+                    self.add_error_loc(err)
+                    if e.is_noop():
+                        e = CFA.AssumeEdge(e.source(), e.target(), i, True) # replace the edge
+                        erre = CFA.AssumeEdge(e.source(), err, i, False)
+                    else:
+                        self._add_edge(e)
+                        assert not e.is_noop()
+                        # create the assert edges
+                        tmp = self.create_loc(B)
+                        e = CFA.AssumeEdge(loc2, tmp, i, True)
+                        erre = CFA.AssumeEdge(loc2, err, i, False)
+                        loc2 = tmp
+                    self._add_edge(e)
+                    self._add_edge(erre)
+                    cond = i.condition()
+                    e.add_elem(cond)
+                    erre.add_elem(cond)
+
+                    # create a new edge
+                    tmp = self.create_loc(B)
+                    e = CFA.Edge(CFA.Edge.REGULAR, loc2, tmp, B)
+                    loc2 = tmp
                 else:
                     e.add_elem(i)
+
             self._add_edge(e)
             locs[B] = (loc1, loc2)
 
@@ -204,10 +245,7 @@ class CFA:
             br = B.last()
             l = locs.get(B)
             if not isinstance(br, Branch):
-                e = CFA.Edge(CFA.Edge.REGULAR, l[1], self.create_loc(br), br)
-                e.add_elem(br)
-                self._add_edge(e)
-                continue
+                continue # these were handled
 
             tsucc = locs[br.true_successor()][0]
             fsucc = locs[br.false_successor()][0]
@@ -230,9 +268,12 @@ class CFA:
         print(f"digraph CFA_{self._fun.name()} {{", file=stream)
         print(f'  label="{self._fun.name()}"', file=stream)
         entry = self._entry
+        errs = self._errors
         for l in self._locs:
             if l is entry:
                 print(f"{l} [color=blue]", file=stream)
+            elif l in errs:
+                print(f"{l} [color=red penwidth=2]", file=stream)
             else:
                 print(l, file=stream)
         for e in self._edges:
