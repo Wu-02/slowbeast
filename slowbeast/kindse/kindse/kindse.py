@@ -575,7 +575,7 @@ class KindSymbolicExecutor(BaseKindSE):
     def run(self):
         has_unknown = False
         for loc, A in self._get_possible_errors():
-            dbg(f"Checking possible error: {A.expr()} @ {loc}")
+            print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
             checker = KindSEChecker(self, loc, A)
             result, states = checker.check()
             if result is Result.UNSAFE:
