@@ -2,14 +2,8 @@ from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.types import IntType
 from slowbeast.ir.instruction import Load
 from slowbeast.symexe.annotations import AssertAnnotation
-from slowbeast.core.executor import PathExecutionResult
 
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
-from slowbeast.kindse.annotatedcfg import AnnotatedCFGPath
 from slowbeast.solvers.solver import Solver
-
-from .kindsebase import KindSymbolicExecutor as BaseKindSE
-from .loops import SimpleLoop
 
 # we want our annotations to talk about memory
 # and if they talk about the same memory, to look the same
