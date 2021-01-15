@@ -107,12 +107,6 @@ class Executor(SExecutor):
         result = PathExecutionResult()
         earlytermstates = []
         edges = path.edges()
-        # set the pc of the states to be the first instruction of the path
-        newpc = path.get_first_inst()
-        if newpc is None:  # nothing to execute
-            return result
-        for s in states:
-            s.pc = newpc
 
         # execute the precondition of the path
         pre = path.annot_before()
@@ -126,28 +120,38 @@ class Executor(SExecutor):
             dbgv(f"vv ----- Edge {edge} ----- vv")
             states, nonready = self._execute_annotated_edge(states, edge, path)
             assert all(map(lambda x: x.isReady(), states))
+            assert all(map(lambda x: not x.isReady(), nonready))
 
             # now execute the branch following the edge on the path
             if idx < pathlen - 1:
                 earlytermstates += nonready
             else:  # this is the last edge on the path,
-                result.errors, result.other = split_nonready_states(nonready)
+                errors, other = split_nonready_states(nonready)
+                errors, other = errors or [], other or []
                 # execute the annotations of the target (as _execute_annotated_edge
                 # executes only the annotations of the source to avoid repetition)
                 target = edge.target()
                 locannot = path.annot_before_loc(target)
-                if locannot:
+                if locannot and states:
                     states, tu = self.execute_annotations(states, locannot)
-                    result.errors, result.other = split_nonready_states(tu)
-                locannot = path.annot_after_loc(target)
-                if locannot:
+                    err, oth = split_nonready_states(tu)
+                    if err: errors.extend(err)
+                    if oth: other.extend(oth)
+                if locannot and states:
                     states, tu = self.execute_annotations(states, locannot)
-                    result.errors, result.other = split_nonready_states(tu)
+                    err, oth = split_nonready_states(tu)
+                    if err: errors.extend(err)
+                    if oth: other.extend(oth)
                 # execute the postcondition of the path
                 post = path.annot_after()
-                if post:
+                if post and states:
                     states, tu = self.execute_annotations(states, post)
-                    result.errors, result.other = split_nonready_states(tu)
+                    err, oth = split_nonready_states(tu)
+                    if err: errors.extend(err)
+                    if oth: other.extend(oth)
+
+                result.errors = errors or None
+                result.other = other or None
 
             dbgv(f"^^ ----- Edge {edge} ----- ^^")
             if not states:

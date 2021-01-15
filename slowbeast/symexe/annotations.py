@@ -149,19 +149,32 @@ class AssumeAnnotation(ExprAnnotation):
     def __repr__(self):
         return f"assume {ExprAnnotation.__repr__(self)}"
 
+class DummyInst:
+    """
+    Dummy instruction that serves as a place-holder for the
+    pc in a state. The execute methods call get_next_inst()
+    and if the state has no pc set, it crashes.
+    FIXME: this is a hack, rather make the execute() not to call get_next_inst()
+    (add a new method execute_with_pc or something like that)
+    """
+    def get_next_inst(self):
+        return self
 
 def _execute_instr(executor, states, instr):
     newstates = []
+    dummypc = DummyInst()
     for state in states:
-        # FIXME: get rid of this -- make a version of
-        # execute() that does not mess with pc
+        # FIXME: get rid of this -- make a version of execute() that does not mess with pc
         oldpc = state.pc
+        state.pc = dummypc
         assert state.isReady()
-        newstates += executor.execute(state, instr)
+        tmp = executor.execute(state, instr)
+        for t in tmp:
+            t.pc = oldpc
+        newstates += tmp
 
     ready, nonready = [], []
     for x in newstates:
-        x.pc = oldpc
         (ready, nonready)[0 if x.isReady() else 1].append(x)
     return ready, nonready
 
@@ -172,7 +185,6 @@ def _execute_instr_annotation(executor, states, annot):
         states, u = _execute_instr(executor, states, instr)
         nonready += u
     return states, nonready
-
 
 def execute_annotation_substitutions(executor, states, annot):
     """
@@ -185,12 +197,10 @@ def execute_annotation_substitutions(executor, states, annot):
         nonready += nr
     return states, nonready
 
-
 def _execute_expr_annotation(executor, states, annot):
     states, nonready = execute_annotation_substitutions(executor, states, annot)
 
     isassume = annot.isAssume()
-    expr = annot.expr()
     ready = states
     states = []
     for s in ready:
@@ -202,7 +212,8 @@ def _execute_expr_annotation(executor, states, annot):
                 states.append(s)
         else:
             assert annot.isAssert()
-            tr, tu = split_ready_states(executor.execAssertExpr(s, expr))
+            tmp = executor.execAssertExpr(s, expr)
+            tr, tu = split_ready_states(tmp)
             states += tr
             nonready += tu
 
