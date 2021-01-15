@@ -1,5 +1,5 @@
 from functools import partial
-from slowbeast.domains.concrete import ConcreteInt
+from slowbeast.domains.concrete import ConcreteInt, dom_is_concrete
 from slowbeast.util.debugging import dbg
 from slowbeast.solvers.expressions import em_optimize_expressions
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
@@ -364,23 +364,21 @@ def overapprox_clause(c, S, executor, L, unsafe, target):
     return EM.disjunction(*newc)
 
 
-def break_eq_ne(expr):
+def break_const_eq(expr):
     EM = getGlobalExprManager()
     clauses = []
-    # break equalities and inequalities, so that we can generalize them
+
+    def break_eq(c):
+        l, r = c.children()
+        if dom_is_concrete(l) or dom_is_concrete(r):
+            return [EM.Le(l, r), EM.Le(r, l)]
+        return [c]
+
+    # break equalities that have a constant on one side,
+    # so that we can generalize them
     for c in expr.children():
         if c.isEq():
-            l, r = c.children()
-            clauses.append(EM.Le(l, r))
-            clauses.append(EM.Le(r, l))
-        elif c.isNot():
-            (d,) = c.children()
-            if d.isEq():
-                l, r = d.children()
-                clauses.append(EM.Lt(l, r))
-                clauses.append(EM.Gt(l, r))
-            else:
-                clauses.append(c)
+            clauses.extend(break_eq(c))
         else:
             clauses.append(c)
 
@@ -404,8 +402,8 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     expr = expr.to_cnf()
-    # clauses = break_eq_ne(expr)
-    clauses = list(expr.children())
+    clauses = break_const_eq(expr)
+    #clauses = list(expr.children())
 
     safesolver = IncrementalSolver()
     safesolver.add(unsafe.as_expr())

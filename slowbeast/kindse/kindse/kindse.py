@@ -1,5 +1,5 @@
 from itertools import chain
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv
 
 from slowbeast.ir.instruction import Assert as AssertInst
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
@@ -12,12 +12,12 @@ from slowbeast.symexe.annotations import (
 )
 
 from slowbeast.solvers.solver import getGlobalExprManager
-from slowbeast.kindse.kindse.relations import get_subs
 
 from .loops import SimpleLoop
 from .kindsebase import KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 from .overapproximations import remove_implied_literals, overapprox_set
+from .relations import get_safe_relations
 
 
 def get_initial_seq2(unsafe, path, L):
@@ -105,6 +105,9 @@ def get_initial_seq(unsafe, path, L):
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
     S = executor.ind_executor().create_states_set(s)
+    for rel in get_safe_relations([s], None):
+        ldbgv("  Adding relation {0}", (rel,))
+        S.intersect(rel)
     EM = s.expr_manager()
     return overapprox_set(executor, EM, S, unsafeAnnot, seq, L)
 
