@@ -68,6 +68,7 @@ def get_all_relations(state):
     subs = get_subs(state)
     EM = state.expr_manager()
 
+    # relation between loads
     for l1, l2 in iter_load_pairs(state):
         l1bw = l1.type().bitwidth()
         l2bw = l2.type().bitwidth()
@@ -88,6 +89,22 @@ def get_all_relations(state):
             if nonunique is False:
                 yield AssertAnnotation(
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
+                )
+
+    # equalities with constants
+    for l in state.getNondetLoads():
+        lbw = l.type().bitwidth()
+        c = EM.Var("c_coef", IntType(lbw))
+        expr = EM.Eq(l, c)
+        c_concr = state.concretize_with_assumptions([expr], c)
+        if c_concr is not None:
+            # is c unique?
+            cval = c_concr[0]
+            nonunique = state.is_sat(expr, EM.Ne(c, cval))
+            if nonunique is False:
+                expr = EM.simplify(EM.substitute(expr, (c, cval)))
+                yield AssertAnnotation(
+                    expr, subs, EM
                 )
 
 
