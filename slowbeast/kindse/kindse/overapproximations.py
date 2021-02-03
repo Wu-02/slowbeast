@@ -290,15 +290,15 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     # create a fresh literal that we use as a symbol for our literal during extending
     litrep = EM.Bool("litext")
+    # X is the original formula with 'litrep' instead of 'l'
     X = intersection(S, disjunction(litrep, *rl))
     assert not X.is_empty()
     post = postimage(executor, L.getPaths(), pre=X)
     if not post:
         return goodl
-    formulas = []
+    # U is allowed reachable set of states
     U = union(target, X)
     I = U.as_assume_annotation()
-    step = I.getExpr()
     # execute the instructions from annotations, so that the substitutions have up-to-date value
     poststates, nonr = execute_annotation_substitutions(
         executor.getIndExecutor(), post, I
@@ -335,8 +335,6 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
 def overapprox_clause(c, S, executor, L, unsafe, target):
     assert intersection(S, c, unsafe).is_empty(), f"{S} \cap {c} \cap {unsafe}"
-
-    createSet = executor.getIndExecutor().createStatesSet
 
     newc = []
     lits = list(literals(c))
