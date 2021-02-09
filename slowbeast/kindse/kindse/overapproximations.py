@@ -197,10 +197,11 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         return False
 
     have_feasible = False
+    substitute = EM.substitute
     for s in poststates:
         # feasability check
         solver.push()
-        pathcond = EM.substitute(s.path_condition(), (litrep, lit))
+        pathcond = substitute(s.path_condition(), (litrep, lit))
         solver.add(pathcond)
         if solver.is_sat() is not True:
             solver.pop()
@@ -211,7 +212,7 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
 
         # inductivity check
         A = AssertAnnotation(
-            EM.substitute(I.expr(), (litrep, lit)), I.substitutions(), EM
+            substitute(I.expr(), (litrep, lit)), I.substitutions(), EM
         )
         hasnocti = A.do_substitutions(s)
         # we have got pathcond in solver already
@@ -229,20 +230,21 @@ def check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
 
 
 def extend_literal(
-    goodl, dliteral: DecomposedLiteral, litrep, I, safety_solver, solver, rl, poststates
-):
+    goodl, dliteral: DecomposedLiteral, litrep, I,
+    safety_solver, solver, rl, poststates):
+
     bw = dliteral.bitwidth()
     two = ConcreteInt(2, bw)
-    maxnum = 2 ** bw - 1  # adding 2 ** bw - 1 would be like adding 0
+    maxnum = 2 ** bw  # adding 2 ** bw would be like adding 0
 
     EM = getGlobalExprManager()
 
-    # check if we can drop the literal completely
-    # XXX: is this any good? We already dropped the literals...
-    if _check_literal(
-        EM.getTrue(), litrep, I, safety_solver, solver, EM, rl, poststates
-    ):
-        return EM.getTrue()
+   ## check if we can drop the literal completely
+   ## XXX: is this any good? We already dropped the literals...
+   #if _check_literal(
+   #    EM.getTrue(), litrep, I, safety_solver, solver, EM, rl, poststates
+   #):
+   #    return EM.getTrue()
 
     # a fast path where we try shift just by one.
     # If we cant, we can give up
@@ -252,9 +254,9 @@ def extend_literal(
     if not check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
         return goodl
 
-    resultnum = ConcreteInt(1, bw)
+    resultnum = ConcreteInt(1, bw) # we know we can add 1
     Add = EM.Add
-    num = ConcreteInt(2 ** (bw - 1) - 1, bw)
+    num = ConcreteInt(2 ** (bw - 1) - 1, bw) # this num we'll try to add
     while resultnum.value() <= maxnum:
         numval = num.value()
         # do not try to shift the number by more than 2^bw
@@ -275,6 +277,7 @@ def extend_literal(
             # we have added also as many 1 as we could, finish
             return dliteral.extend(resultnum)
         num = EM.Div(num, two)
+    raise RuntimeError("Unreachable")
 
 
 def overapprox_literal(l, rl, S, unsafe, target, executor, L):
@@ -300,7 +303,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     # create a fresh literal that we use as a symbol for our literal during extending
     litrep = EM.Bool("litext")
     # X is the original formula with 'litrep' instead of 'l'
-    X = intersection(S, disjunction(litrep, *rl))
+    X = intersection(S, disjunction(litrep, *(x for x in rl if x != l)))
     assert not X.is_empty()
     post = postimage(executor, L.paths(), pre=X)
     if not post:
@@ -331,36 +334,49 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     return goodl
 
+def overapprox_clause(c, R, executor, L, unsafe, target):
+    """ c - the clause
+        R - rest of clauses of the formula
+        unsafe - unsafe states
+        target - safe states that should be reachable from c \cap R
+    """
+    EM = R.get_se_state().expr_manager()
 
-#
-# def split_nth_item(items, n):
-#     item = None
-#     rest = []
-#     for i, x in enumerate(items):
-#         if i == n:
-#             item = x
-#         else:
-#             rest.append(x)
-#     return item, rest
-
-
-def overapprox_clause(c, S, executor, L, unsafe, target):
-    assert intersection(S, c, unsafe).is_empty(), f"{S} \cap {c} \cap {unsafe}"
+    assert intersection(R, c, unsafe).is_empty(), f"{R} \cap {c} \cap {unsafe}"
+    if __debug__:
+        X = R.copy()
+        X.intersect(c)
+        r = check_paths(executor, L.paths(), pre=X, post=union(X, target))
+        assert (
+                r.errors is None
+        ), f"Input state is not inductive (CTI: {r.errors[0].model()})"
 
     newc = []
     lits = list(literals(c))
+    simplify = EM.simplify
+
     for l in lits:
-        newl = overapprox_literal(l, lits, S, unsafe, target, executor, L)
+        newl = simplify(overapprox_literal(l, lits, R, unsafe, target, executor, L))
         newc.append(newl)
         dbg(
-            f"  Overapproximated {l} ==> {getGlobalExprManager().simplify(newl)}",
-            color="gray",
+            f"  Overapproximated {l} ==> {newl}", color="gray",
         )
+
+        if __debug__:
+            X = R.copy()
+            X.intersect(EM.disjunction(*(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))))
+            r = check_paths(executor, L.paths(), pre=X, post=union(X, target))
+            if r.errors:
+                print('States:', X)
+                print('Target:', target)
+                print(r.errors[0].path_condition())
+            assert (
+                    r.errors is None
+            ), f"Extended literal renders state non-inductive (CTI: {r.errors[0].model()})"
 
     if len(newc) == 1:
         return newc[0]
 
-    EM = S.get_se_state().expr_manager()
     return EM.disjunction(*newc)
 
 
