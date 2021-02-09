@@ -384,6 +384,39 @@ def break_const_eq(expr):
 
     return clauses
 
+def drop_caluses(clauses, S, target, EM, L, safesolver, executor):
+    # we start with all clauses
+    newclauses = clauses.copy()
+    conjunction = EM.conjunction
+    lpaths = L.paths()
+    for c in clauses:
+        # create a temporary formula without the given clause
+        tmp = newclauses.copy()
+        tmp.remove(c)
+
+        # check whether we can get rid of the clause
+        tmpexpr = conjunction(*tmp)
+        if tmpexpr.is_concrete():
+            continue  # either False or True are bad for us
+        if safesolver.is_sat(tmpexpr) is not False:
+            continue  # unsafe overapprox
+        X = S.copy()
+        X.reset_expr(tmpexpr)
+        r = check_paths(executor, lpaths, pre=X, post=union(X, target))
+        if r.errors is None and r.ready:
+            newclauses = tmp
+            dbg(f"  dropped {c}...")
+    return newclauses
+
+def drop_caluses_fixpoint(clauses, S, target, EM, L, safesolver, executor):
+    """ Drop clauses until fixpoint """
+    newclauses = clauses
+    while True:
+        oldlen = len(newclauses)
+        newclauses = drop_caluses(newclauses, S, target, EM, L, safesolver, executor)
+        if oldlen == len(newclauses):
+            break
+    return newclauses
 
 def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     create_set = executor.ind_executor().create_states_set
@@ -402,33 +435,19 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     expr = expr.to_cnf()
+    # break equalities to constants to <= && >= so that we can overapproximate them
     clauses = break_const_eq(expr)
     #clauses = list(expr.children())
 
     safesolver = IncrementalSolver()
     safesolver.add(unsafe.as_expr())
 
-    # can we drop a clause completely?
-    newclauses = clauses.copy()
-    for c in clauses:
-        tmp = newclauses.copy()
-        tmp.remove(c)
-
-        tmpexpr = EM.conjunction(*tmp)
-        if tmpexpr.is_concrete():
-            continue  # either False or True are bad for us
-        if safesolver.is_sat(tmpexpr) is not False:
-            continue  # unsafe overapprox
-        X = S.copy()
-        X.reset_expr(tmpexpr)
-        r = check_paths(executor, L.paths(), pre=X, post=union(X, target))
-        if r.errors is None and r.ready:
-            newclauses = tmp
-            # dbg(f"  dropped {c}...")
-
+    # can we drop some clause completely?
+    newclauses = drop_caluses_fixpoint(clauses, S, target, EM, L, safesolver, executor)
     clauses = remove_implied_literals(newclauses)
     newclauses = []
 
+    # Now take every clause c and try to overapproximate it
     for n in range(0, len(clauses)):
         tmp = create_set()
         c = None
@@ -438,7 +457,8 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
             else:
                 tmp.intersect(x)
         assert c
-        R = S.copy()
+        # R is the rest of the formula without the clause c
+        R = S.copy() # copy the substitutions
         R.reset_expr(tmp.as_expr())
         newclause = overapprox_clause(c, R, executor, L, unsafe, target)
         if newclause:
@@ -451,6 +471,4 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
 
     dbg(f"Overapproximated to {S}", color="dark_blue")
 
-    sd = S.as_description()
-    A1 = AssertAnnotation(sd.expr(), sd.substitutions(), EM)
     return InductiveSequence.Frame(S.as_assert_annotation(), None)

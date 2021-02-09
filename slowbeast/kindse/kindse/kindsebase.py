@@ -1,4 +1,4 @@
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg, ldbgv
 
 from slowbeast.kindse.annotatedcfg import CFG
 from slowbeast.analysis.cfa import CFA
@@ -144,14 +144,14 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             states = [s.copy() for s in self.states]
             assert states
 
-            dbg(f"Executing (init) path: {path}", fn=self.reportfn)
+            ldbgv("Executing (init) path: {0}", (path,), fn=self.reportfn)
         else:
             executor = self.ind_executor()
 
             s = executor.createCleanState()
             states = [s]
 
-            dbg(f"Executing path: {path}", fn=self.reportfn)
+            ldbgv("Executing path: {0}", (path,), fn=self.reportfn)
 
         assert all(
             map(lambda s: not s.getConstraints(), states)
