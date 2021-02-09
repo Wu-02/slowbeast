@@ -36,6 +36,9 @@ class Function(ProgramElement):
     def getReturnType(self):
         return self._retty
 
+    def type(self):
+        return self._retty
+
     def addBBlock(self, bb):
         self._bblocks.append(bb)
         bb.set_fun(self)

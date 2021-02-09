@@ -209,3 +209,21 @@ class IncrementalSEState(SEState):
         self._nondets_ro = True
 
         return new
+
+class LazySEState(SEState):
+
+    def __init__(self, executor, pc, m, solver, constraints=None):
+        super().__init__(executor, pc, m, solver, constraints)
+
+    def eval(self, v):
+        value = self.try_eval(v)
+        if value is None:
+            vtype = v.type()
+            if vtype.is_pointer():
+                name = f"nondet_ptr_{v.as_value()}"
+            else:
+                name = f"nondet_{v.as_value()}"
+            value = self.solver().Var(name, v.type())
+            self.set(v, value)
+        return value
+

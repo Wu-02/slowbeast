@@ -453,7 +453,7 @@ class BVSymbolicDomain:
         if ty.is_float():
             return Expr(FP(name, get_fp_sort(ty.bitwidth())), ty)
         else:
-            assert ty.is_int(), ty
+            assert ty.is_int() or ty.is_pointer(), ty
             return Expr(bv(name, ty.bitwidth()), ty)
 
     def BVVar(name, bw):

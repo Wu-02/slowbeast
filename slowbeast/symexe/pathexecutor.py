@@ -1,6 +1,7 @@
 from slowbeast.util.debugging import dbgv
 from .executor import Executor as SExecutor
 from .annotations import execute_annotations
+from .executionstate import LazySEState, IncrementalSEState
 from slowbeast.core.executor import (
     PathExecutionResult,
     split_ready_states,
@@ -16,6 +17,18 @@ class Executor(SExecutor):
 
     def __init__(self, solver, opts, memorymodel=None):
         super(Executor, self).__init__(solver, opts, memorymodel)
+
+    def createState(self, pc=None, m=None):
+        """
+        Overridden method for creating states.
+        Since the path may not be initial, we must use states
+        that are able to lazily create unknown values
+        """
+        if m is None:
+            m = self.getMemoryModel().createMemory()
+        s = LazySEState(self, pc, m, self.solver)
+        assert not s.getConstraints(), "the state is not clean"
+        return s
 
     def execute_annotations(self, states, annots):
         # if there are no annotations, return the original states

@@ -1,6 +1,6 @@
 from sys import stdout
 
-from .types import Type  # due to assertions
+from .types import PointerType, Type
 from .bblock import BBlock  # due to assertions
 from .program import ProgramElement
 
@@ -205,6 +205,9 @@ class Alloc(ValueInstruction):
     def size(self):
         return self._size
 
+    def type(self):
+        return PointerType()
+
     def __str__(self):
         return "x{0} = alloc {1} bytes{2}".format(
             self.get_id(),
@@ -261,6 +264,9 @@ class Call(ValueInstruction):
 
     def called_function(self):
         return self._function
+
+    def type(self):
+        return self._function.type()
 
     def return_value(self):
         raise NotImplementedError("No return values in funs yet")

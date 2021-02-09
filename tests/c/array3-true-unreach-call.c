@@ -1,5 +1,8 @@
 #include <assert.h>
 
+// We do not handle symbolic pointers in kind yet
+// REQUIRES: nokind
+//
 // RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out
 // RUN: sb -out-dir=%t-out %opts %t.bc &>%t.log
