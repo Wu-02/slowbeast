@@ -1,6 +1,6 @@
 from sys import stdout
 
-from .types import PointerType, Type
+from .types import Type, IntType, BoolType, PointerType
 from .bblock import BBlock  # due to assertions
 from .program import ProgramElement
 
@@ -127,10 +127,9 @@ class Instruction(ProgramElement):
         assert isinstance(self.bblock(), BBlock)
         return self.bblock().get_next_inst(self.bblock_idx())
 
-
 class ValueInstruction(Instruction):
     """
-    Instruction that returns a value
+    Instruction that generates a value
     """
 
     def __init__(self, ops=None):
@@ -141,6 +140,18 @@ class ValueInstruction(Instruction):
 
     def as_value(self):
         return "x{0}".format(self.get_id())
+
+class ValueTypedInstruction(ValueInstruction):
+    """
+    ValueInstruction with associated type of the generated value
+    """
+    def __init__(self, ty, ops=None):
+        super().__init__(ops or [])
+        self._type = ty
+
+    def type(self):
+        return self._type
+
 
 
 class Store(Instruction):
@@ -176,25 +187,26 @@ class Store(Instruction):
         )
 
 
-class Load(ValueInstruction):
-    """ Load 'bw' bytes from 'frm' """
+class Load(ValueTypedInstruction):
+    """ Load value of type 'ty' from 'frm' """
 
-    def __init__(self, frm, bw):
-        super().__init__([frm])
-        self._bw = bw
+    def __init__(self, frm, ty):
+        assert isinstance(ty, Type), ty
+        assert isinstance(frm, (Instruction, GlobalVariable)), frm
+        super().__init__(ty, [frm])
 
     def bytewidth(self):
-        return self._bw
+        return self._type.bytewidth()
 
     def bitwidth(self):
-        return 8 * self._bw
+        return 8 * self._type.bitwidth()
 
     def pointer_operand(self):
         return self.operand(0)
 
     def __str__(self):
-        return "x{0} = load {1}:{2}B".format(
-            self.get_id(), self.pointer_operand().as_value(), self._bw
+        return "x{0} = load {1}:{2}".format(
+            self.get_id(), self.pointer_operand().as_value(), self.type()
         )
 
 
@@ -260,9 +272,9 @@ class Branch(Instruction):
         )
 
 
-class Call(ValueInstruction):
-    def __init__(self, wht, *operands):
-        super().__init__([*operands])
+class Call(ValueTypedInstruction):
+    def __init__(self, wht, ty, *operands):
+        super().__init__(ty, [*operands])
         self._function = wht
 
     def called_function(self):
@@ -278,7 +290,7 @@ class Call(ValueInstruction):
     def __str__(self):
         r = "x{0} = call {1}(".format(self.get_id(), self.called_function().as_value())
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
-        return r + ")"
+        return r + f") -> {self._type}"
 
 
 class Return(Instruction):
@@ -340,7 +352,7 @@ class Assume(Instruction):
         return r
 
 
-class Cmp(ValueInstruction):
+class Cmp(ValueTypedInstruction):
     LE = 1
     LT = 2
     GE = 3
@@ -386,7 +398,7 @@ class Cmp(ValueInstruction):
         raise NotImplementedError("Invalid comparison")
 
     def __init__(self, p, val1, val2, unsgn=False, fp=False):
-        super().__init__([val1, val2])
+        super().__init__(BoolType(), [val1, val2])
         self._predicate = p
         self._unsigned = unsgn
         self._fp = fp
@@ -418,7 +430,7 @@ class Cmp(ValueInstruction):
         )
 
 
-class UnaryOperation(ValueInstruction):
+class UnaryOperation(ValueTypedInstruction):
     NEG = 1
     ZEXT = 2
     SEXT = 3
@@ -432,24 +444,14 @@ class UnaryOperation(ValueInstruction):
     def __check(op):
         assert UnaryOperation.NEG <= op <= UnaryOperation.LAST_UNARY_OP
 
-    def __init__(self, op, a):
-        super().__init__([a])
+    def __init__(self, op, a, ty=None):
+        """ Some unary operations do not inherit the type -- set it in 'ty'"""
+        super().__init__(ty or a.type(), [a])
         UnaryOperation.__check(op)
         self._op = op
 
     def operation(self):
         return self._op
-
-
-class Extend(UnaryOperation):
-    def __init__(self, op, a, bw):
-        assert bw.is_concrete(), "Invalid bitwidth to extend"
-        super().__init__(op, a)
-        self._bw = bw
-
-    def bitwidth(self):
-        return self._bw
-
 
 class Abs(UnaryOperation):
     """ Absolute value """
@@ -459,6 +461,15 @@ class Abs(UnaryOperation):
 
     def __str__(self):
         return "x{0} = abs({1})".format(self.get_id(), self.operand(0).as_value())
+
+class Extend(UnaryOperation):
+    def __init__(self, op, a, bw):
+        assert bw.is_concrete(), "Invalid bitwidth to extend"
+        super().__init__(op, a, ty=IntType(bw.value()))
+        self._bw = bw
+
+    def bitwidth(self):
+        return self._bw
 
 
 class ZExt(Extend):
@@ -484,12 +495,11 @@ class SExt(Extend):
 class Cast(UnaryOperation):
     def __init__(self, a, ty, sgn=True):
         assert isinstance(ty, Type)
-        super().__init__(UnaryOperation.CAST, a)
-        self._ty = ty
+        super().__init__(UnaryOperation.CAST, a, ty=ty)
         self._signed = sgn
 
     def casttype(self):
-        return self._ty
+        return self.type()
 
     def signed(self):
         return self._signed
@@ -501,7 +511,6 @@ class Cast(UnaryOperation):
             "signed " if self._signed else "",
             self.casttype(),
         )
-
 
 class Neg(UnaryOperation):
     """ Negate the number (return the same number with opposite sign) """
@@ -575,7 +584,7 @@ class FpOp(UnaryOperation):
         )
 
 
-class BinaryOperation(ValueInstruction):
+class BinaryOperation(ValueTypedInstruction):
     # arith
     ADD = 1
     SUB = 2
@@ -593,12 +602,12 @@ class BinaryOperation(ValueInstruction):
     # more logicals to come ...
     LAST = 12
 
-    def __check(op):
-        assert BinaryOperation.ADD <= op <= BinaryOperation.LAST
-
     def __init__(self, op, a, b):
-        super().__init__([a, b])
-        BinaryOperation.__check(op)
+        isptr = a.type().is_pointer() or b.type().is_pointer()
+        assert isptr or a.type() == b.type(),\
+            f"{a} ({a.type()}), {b} ({b.type()})"
+        assert BinaryOperation.ADD <= op <= BinaryOperation.LAST
+        super().__init__(PointerType() if isptr else a.type(), [a, b])
         self._op = op
 
     def operation(self):
@@ -757,11 +766,11 @@ class Xor(BinaryOperation):
 
 # TODO: do we want this instruction? (can we replace it somehow without
 # creating an artificial braching?).
-class Ite(ValueInstruction):
+class Ite(ValueTypedInstruction):
     """ if-then-else: assign a value based on a condition """
 
     def __init__(self, cond, op1, op2):
-        super().__init__([op1, op2])
+        super().__init__(BoolType(), [op1, op2])
         self._cond = cond
 
     def condition(self):

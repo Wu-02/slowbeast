@@ -18,7 +18,7 @@ def get_subs(state):
     subs = {}
     for l in state.getNondetLoads():
         alloc = l.load.pointer_operand()
-        load = cannonic_loads.setdefault(alloc, Load(alloc, alloc.size().value()))
+        load = cannonic_loads.setdefault(alloc, Load(alloc, l.type()))
         subs[l] = load
 
     return subs

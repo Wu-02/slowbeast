@@ -232,9 +232,8 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
 
-        bytesNum = type_size(self.llvmmodule, inst.type)
-        assert bytesNum, "Could not get the size of type"
-        L = Load(self.operand(operands[0]), bytesNum)
+        L = Load(self.operand(operands[0]),
+                 get_sb_type(self.llvmmodule, inst.type))
         self._addMapping(inst, L)
         return [L]
 
@@ -440,7 +439,8 @@ class Parser:
         if not F:
             raise NotImplementedError("Unknown function: {0}".format(fun))
 
-        C = Call(F, *[self.operand(x) for x in getLLVMOperands(inst)[:-1]])
+        ty = get_sb_type(self.llvmmodule, inst.type)
+        C = Call(F, ty, *[self.operand(x) for x in getLLVMOperands(inst)[:-1]])
         self._addMapping(inst, C)
         return [C]
 
@@ -462,7 +462,7 @@ class Parser:
     def _createSExt(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
-        # just behave that there's no ZExt for now
+        # just behave that there's no SExt for now
         sext = SExt(
             self.operand(operands[0]),
             ConcreteInt(type_size_in_bits(self.llvmmodule, inst.type), 32),

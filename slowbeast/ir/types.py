@@ -6,7 +6,7 @@
 
 
 class Type:
-    __slots__ = ["_bitwidth"]
+    __slots__ = "_bitwidth"
 
     def __init__(self, bw):
         assert isinstance(bw, int)

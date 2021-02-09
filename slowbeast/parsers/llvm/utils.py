@@ -4,7 +4,7 @@ from slowbeast.util.debugging import warn
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import NullPointer
-from slowbeast.ir.types import IntType, FloatType
+from slowbeast.ir.types import IntType, FloatType, PointerType
 
 
 def _getInt(s):
@@ -137,6 +137,24 @@ def type_size(m, ty):
         return int(max(ts / 8, 1))
     return None
 
+def get_sb_type(m, ty):
+    if is_pointer_ty(ty):
+        return PointerType()
+
+    sty = str(ty)
+    if sty == 'void':
+        return None
+
+    ts = type_size_in_bits(m, ty)
+    if ts is None:
+        return None
+
+    if sty in ("float", "double"):
+        return FloatType(ts)
+    elif sty.startswith('i'):
+        return IntType(ts)
+    assert False, f"Unsupported type: {ty}"
+    return None
 
 def getFloatConstant(sval, isdouble=True):
     if isdouble:
@@ -176,7 +194,6 @@ def getConstant(val):
 
     return ConcreteVal(c, FloatType(bw) if isfloating else IntType(bw))
 
-
 def getConstantPtr(val):
     # good, this is so ugly. But llvmlite does
     # not provide any other way...
@@ -189,11 +206,9 @@ def getConstantPtr(val):
     # FIXME
     return None
 
-
 def get_constant(val):
     if val.type.is_pointer:
         return getConstantPtr(val)
-
 
 def getLLVMOperands(inst):
     return [x for x in inst.operands]
