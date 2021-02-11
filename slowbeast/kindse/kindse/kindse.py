@@ -390,11 +390,13 @@ class KindSEChecker(BaseKindSE):
                     r = seq.check_ind_on_paths(self, L.paths())
                     assert r.errors is None, "seq is not inductive"
 
+                dbg("Extending the sequence")
                 for e in self.extend_seq(seq, errs0, L):
                     extended.append(self.abstract_seq(e, errs0, L))
-                # print(" -- extending DONE --")
+                dbg("Extending the sequence finished")
 
             if not extended:
+                dbg("Failed extending any sequence")
                 # seq not extended... it looks that there is no
                 # safe invariant
                 # FIXME: could we use it for annotations?

@@ -170,7 +170,7 @@ class DecomposedLiteral:
             return left.type().bitwidth()
         return None
 
-    def extend(self, num):
+    def extended(self, num):
         EM = getGlobalExprManager()
         left, right = self.left, self.right
         if self.addtoleft:
@@ -228,6 +228,50 @@ def check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         return False
     return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
 
+def extend_with_num(dliteral, litrep, constadd, num, maxnum, I,
+                    safety_solver, solver, EM, rl, poststates):
+    """
+    Add 'num' to the literal 'l' as many times as is possible
+
+    dliteral, litrep - literal FIXME: merge into one?
+    constadd - this number is always added to the literal (that is the current
+               value of extending
+    num - number to keep adding
+    maxnum - maximal number to try (the sum of added 'num' cannot exceed this)
+
+    \return the maximal added number which is multiple of 'num' + constadd,
+            i.e., the new value that is safe to add to the literal
+    """
+    numval = num.value()
+    retval = constadd
+    Add = EM.Add
+
+    # keep the retval also in python int, so that we can check it agains
+    # maxnum (expressions are counted modulo, so we cannot check that
+    # on expressions)
+    acc = retval.value() + numval
+    if acc > maxnum:
+        return retval
+
+    newretval = Add(retval, num)
+    newl = dliteral.extended(newretval)
+
+    ### push as far as we can with this num
+    while check_literal(newl, litrep, I, safety_solver, solver, EM, rl, poststates):
+        # the tried value is ok, so set it as the new final value
+        retval = newretval
+        assert retval.value() <= maxnum
+
+        newretval = Add(newretval, num)
+        acc += numval
+
+        # do not try to shift the number beyond maxnum
+        if acc > maxnum:
+            break
+        newl = dliteral.extended(newretval)
+
+    return retval
+
 
 def extend_literal(
     goodl, dliteral: DecomposedLiteral, litrep, I,
@@ -235,47 +279,30 @@ def extend_literal(
 
     bw = dliteral.bitwidth()
     two = ConcreteInt(2, bw)
-    maxnum = 2 ** bw  # adding 2 ** bw would be like adding 0
+    # adding 2 ** bw would be like adding 0, stop before that
+    maxnum = 2 ** bw - 1
 
     EM = getGlobalExprManager()
 
-   ## check if we can drop the literal completely
-   ## XXX: is this any good? We already dropped the literals...
-   #if _check_literal(
-   #    EM.getTrue(), litrep, I, safety_solver, solver, EM, rl, poststates
-   #):
-   #    return EM.getTrue()
-
-    # a fast path where we try shift just by one.
-    # If we cant, we can give up
+    # a fast path where we try shift just by one.  If we cant, we can give up
     # FIXME: try more low values (e.g., to 10)
     num = ConcreteInt(1, bw)
-    l = dliteral.extend(num)
+    l = dliteral.extended(num)
     if not check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
         return goodl
 
-    resultnum = ConcreteInt(1, bw) # we know we can add 1
-    Add = EM.Add
+    # this is the final number that we are going to add to one side of the
+    # literal
+    finalnum = ConcreteInt(1, bw) # we know we can add 1 now
     num = ConcreteInt(2 ** (bw - 1) - 1, bw) # this num we'll try to add
-    while resultnum.value() <= maxnum:
-        numval = num.value()
-        # do not try to shift the number by more than 2^bw
-        nextval = Add(resultnum, num)
-        l = dliteral.extend(nextval)
+    while finalnum.value() <= maxnum:
+        finalnum = extend_with_num(dliteral, litrep, finalnum,
+                                   num, maxnum, I, safety_solver, solver,
+                                   EM, rl, poststates)
 
-        # push as far as we can with this num
-        while check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
-            assert resultnum.value() <= maxnum
-            resultnum = nextval
-            nextval = Add(resultnum, num)
-
-            if nextval.value() > maxnum:
-                break
-            l = dliteral.extend(nextval)
-
-        if numval <= 1:
+        if num.value() <= 1:
             # we have added also as many 1 as we could, finish
-            return dliteral.extend(resultnum)
+            return dliteral.extended(finalnum)
         num = EM.Div(num, two)
     raise RuntimeError("Unreachable")
 
@@ -434,6 +461,20 @@ def drop_caluses_fixpoint(clauses, S, target, EM, L, safesolver, executor):
             break
     return newclauses
 
+def enumerate_clauses(clauses, create_set):
+    """ Return pair (clause, rest of clauses (as set) """
+    tmp = create_set()
+    for n in range(len(clauses)):
+        tmp = create_set()
+        c = None
+        for i, x in enumerate(clauses):
+            if i == n:
+                c = x
+            else:
+                tmp.intersect(x)
+        assert c
+        yield c, tmp
+
 def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     create_set = executor.ind_executor().create_states_set
     unsafe = create_set(unsafeAnnot)  # safe strengthening
@@ -463,27 +504,39 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     clauses = remove_implied_literals(newclauses)
     newclauses = []
 
+    # FIXME: THIS WORKS GOOD!
+    #S.reset_expr(EM.conjunction(*clauses))
+    #return InductiveSequence.Frame(S.as_assert_annotation(), None)
+
     # Now take every clause c and try to overapproximate it
-    for n in range(0, len(clauses)):
-        tmp = create_set()
-        c = None
-        for i, x in enumerate(clauses):
-            if i == n:
-                c = x
-            else:
-                tmp.intersect(x)
-        assert c
+    NS = S.copy()
+    NS.complement()
+    for c, xc in enumerate_clauses(clauses, create_set):
         # R is the rest of the formula without the clause c
         R = S.copy() # copy the substitutions
-        R.reset_expr(tmp.as_expr())
+        R.reset_expr(xc.as_expr())
+
         newclause = overapprox_clause(c, R, executor, L, unsafe, target)
         if newclause:
-            newclauses.append(newclause)
+            #newclauses.append(newclause)
+            # FIXME: this check should be assertion,
+            # overapprox_clause should not give us such clauses
+            tmp = R.copy()
+            tmp.intersect(newclause)
+            tmp.complement()
+            #assert intersection(tmp, S).is_empty()
+            if intersection(tmp, S).is_empty():
+                newclauses.append(newclause)
+            else:
+                newclauses.append(c)
+        else:
+            newclauses.append(c)
 
+    # drop clauses once more
+   #newclauses = drop_caluses_fixpoint(newclauses, S, target, EM, L,
+   #                                   safesolver, executor)
     clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses))
-
-    # FIXME: drop clauses once more?
 
     dbg(f"Overapproximated to {S}", color="dark_blue")
 
