@@ -503,7 +503,6 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     # can we drop some clause completely?
     newclauses = drop_clauses_fixpoint(clauses, S, target, EM, L, safesolver, executor)
     clauses = remove_implied_literals(newclauses)
-    newclauses = []
 
     # FIXME: THIS WORKS GOOD!
     if drop_only:
@@ -511,8 +510,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     # Now take every clause c and try to overapproximate it
-    NS = S.copy()
-    NS.complement()
+    newclauses = []
     for c, xc in enumerate_clauses(clauses, create_set):
         # R is the rest of the formula without the clause c
         R = S.copy() # copy the substitutions
