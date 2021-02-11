@@ -427,7 +427,7 @@ def break_const_eq(expr):
 
     return clauses
 
-def drop_caluses(clauses, S, target, EM, L, safesolver, executor):
+def drop_clauses(clauses, S, target, EM, L, safesolver, executor):
     # we start with all clauses
     newclauses = clauses.copy()
     conjunction = EM.conjunction
@@ -451,12 +451,12 @@ def drop_caluses(clauses, S, target, EM, L, safesolver, executor):
             dbg(f"  dropped {c}...")
     return newclauses
 
-def drop_caluses_fixpoint(clauses, S, target, EM, L, safesolver, executor):
+def drop_clauses_fixpoint(clauses, S, target, EM, L, safesolver, executor):
     """ Drop clauses until fixpoint """
     newclauses = clauses
     while True:
         oldlen = len(newclauses)
-        newclauses = drop_caluses(newclauses, S, target, EM, L, safesolver, executor)
+        newclauses = drop_clauses(newclauses, S, target, EM, L, safesolver, executor)
         if oldlen == len(newclauses):
             break
     return newclauses
@@ -500,7 +500,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     safesolver.add(unsafe.as_expr())
 
     # can we drop some clause completely?
-    newclauses = drop_caluses_fixpoint(clauses, S, target, EM, L, safesolver, executor)
+    newclauses = drop_clauses_fixpoint(clauses, S, target, EM, L, safesolver, executor)
     clauses = remove_implied_literals(newclauses)
     newclauses = []
 
@@ -533,7 +533,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
             newclauses.append(c)
 
     # drop clauses once more
-   #newclauses = drop_caluses_fixpoint(newclauses, S, target, EM, L,
+   #newclauses = drop_clauses_fixpoint(newclauses, S, target, EM, L,
    #                                   safesolver, executor)
     clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses))

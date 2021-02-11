@@ -261,27 +261,42 @@ class KindSEChecker(BaseKindSE):
             return seq
         return seq0
 
-    def strengthen_initial_seq_dropping(self, seq0, errs0, path, L: SimpleLoop):
-            # first, try to drop some literals
-            # dropping the clauses failed
-            return None
+    def strengthen_initial_seq_picking(self, seq0, errs0, path, L: SimpleLoop):
+        # try to pick some inductive subset
  
-           ## try to drop some clauses to see if the formula becomes inductive
-           #F = seq0.toassert()
-           #expr = F.expr()
-           #for c in expr.clauses():
-           #    print(c)
+        F = seq0.toannotation(True)
+        expr = F.expr()
+        EM = getGlobalExprManager()
+        R = self.ind_executor().create_states_set(F)
+        R.reset_expr() # clear the state but preserve substitutions
+        T = R.copy()
 
-           #assert False
-           ##tmp = InductiveSequence(
-           #r = seq0.check_ind_on_paths(self, L.paths())
-           #if r.errors is None:
-           #    return seq0
+        for c in expr.to_cnf().children():
+            tmpset = T.copy()
+            tmpset.intersect(c)
+            tmp = InductiveSequence(tmpset.as_assert_annotation())
+            print('tmp', tmp)
+            r = tmp.check_ind_on_paths(self, L.paths())
+            if r.errors is None:
+                print('INDUCTIVE', c)
+                R.intersect(c)
+            else:
+                print(f"Not inductive (CTI: {r.errors[0].model()})")
 
-           #dbg("Initial sequence made inductive", color="dark_green")
-           ## dropping the clauses failed
+        print(R)
+        seq0 = InductiveSequence(R.as_assert_annotation())
 
-    def strengthen_initial_seq_entry_cond(self, seq0, errs0, path, L: SimpleLoop):
+        #dbg("Initial sequence made inductive", color="dark_green")
+        ## dropping the clauses failed
+        r = seq0.check_ind_on_paths(self, L.paths())
+        if r.errors is None:
+            dbg("Initial sequence made inductive", color="dark_green")
+            return seq0
+ 
+        assert False
+        return None
+
+    def strengthen_initial_seq_exit_cond(self, seq0, errs0, path, L: SimpleLoop):
         """ Strengthen the initial sequence through loop entry condition.
             Does not work for assertions inside the loop
         """
@@ -289,7 +304,6 @@ class KindSEChecker(BaseKindSE):
         prefix = None
         exits = L.exits()
         for n in range(len(path)):
-            print(path[n])
             if path[n] in exits:
                 prefix = AnnotatedCFAPath(path.edges()[: n + 1])
                 break
@@ -299,15 +313,19 @@ class KindSEChecker(BaseKindSE):
         if ready is None:
             return None
         R = self.ind_executor().create_states_set()
-        # for r in ready:
-        #    R.add(r)
         R.add(ready)
         R.intersect(seq0.toannotation(True))
+        if R.is_empty():
+            # empty initial set is wrong, it probably means that
+            # the assertion is inside the loop and we added
+            # contradicting exit condition
+            return None
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
-        # r = seq0.check_ind_on_paths(self, L.paths())
-        # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
-        return seq0
+        r = seq0.check_ind_on_paths(self, L.paths())
+        if r.errors is None:
+            return seq0
+        return None
 
     def strengthen_initial_seq_loop_iter(self, seq0, errs0, path, L: SimpleLoop):
         """
@@ -322,8 +340,10 @@ class KindSEChecker(BaseKindSE):
         ready = r.ready
         if not ready:
             return None
-        R = self.ind_executor().create_states_set()
+        create_set = self.ind_executor().create_states_set
+        R = create_set()
         # FIXME: we can use only a subset of the states, wouldn't that be better?
+        EM = getGlobalExprManager()
         for r in ready:
             # do not use the first constraint -- it is the inedge condition that we want to ignore,
             # because we want to jump out of the loop (otherwise we will not get inductive set)
@@ -337,36 +357,38 @@ class KindSEChecker(BaseKindSE):
             R.add(tmp)
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
-        # r = seq0.check_ind_on_paths(self, L.paths())
-        # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
-        return seq0
+        r = seq0.check_ind_on_paths(self, L.paths())
+        if r.errors is None:
+            return seq0
+        return None
 
 
     def strengthen_initial_seq(self, seq0, errs0, path, L: SimpleLoop):
         # NOTE: if we would pass states here we would safe some work.. be it would be less generic
+        assert path[0].source() is L.header()
         r = seq0.check_ind_on_paths(self, L.paths())
         if r.errors is None:
             dbg("Initial sequence is inductive", color="dark_green")
             return seq0
 
-        tmp = self.strengthen_initial_seq_dropping(seq0, errs0, path, L)
+        dbg("Initial sequence is NOT inductive, trying to fix it", color="wine")
+        dbg(str(seq0))
+
+        tmp = self.strengthen_initial_seq_exit_cond(seq0, errs0, path, L)
         if tmp:
             return tmp
+        dbg("Failed strengthening the initial sequence with exit condition")
 
-        dbg("Initial sequence is NOT inductive, trying to fix it", color="wine")
-        assert path[0].source() is L.header()
-        # is the assertion inside the loop or after the loop?
-        if path[-1] in L:  # the assertion is inside the loop
-            seq0 = self.strengthen_initial_seq_loop_iter(seq0, errs0, path, L)
-        else:  # the assertion is outside the loop
-            seq0 = self.strengthen_initial_seq_entry_cond(seq0, errs0, path, L)
-        if seq0 is None:
-            return None # failed...
+       #tmp = self.strengthen_initial_seq_picking(seq0, errs0, path, L)
+       #if tmp:
+       #    return tmp
+       #dbg("Failed strengthening the initial sequence with picking")
 
-        r = seq0.check_ind_on_paths(self, L.paths())
-        if r.errors is None:
-            dbg("Initial sequence made inductive", color="dark_green")
-            return seq0
+        tmp = self.strengthen_initial_seq_loop_iter(tmp, errs0, path, L)
+        if tmp:
+            ## FIXME: overapprox & drop
+            return tmp
+
         dbg("Failed making the initial sequence inductive")
         return None
 
@@ -384,7 +406,7 @@ class KindSEChecker(BaseKindSE):
         seq0, errs0 = get_initial_seq(unsafe, path, L)
         # the initial sequence may not be inductive (usually when the assertion
         # is inside the loop, so we must strenghten it
-        dbg(f"Strengthening the initial sequence: {seq0}")
+        dbg(f"Strengthening the initial sequence")
         seq0 = self.strengthen_initial_seq(seq0, errs0, path, L)
         if seq0 is None:
             return False  # we failed...
