@@ -261,6 +261,87 @@ class KindSEChecker(BaseKindSE):
             return seq
         return seq0
 
+    def strengthen_initial_seq_dropping(self, seq0, errs0, path, L: SimpleLoop):
+            # first, try to drop some literals
+            # dropping the clauses failed
+            return None
+ 
+           ## try to drop some clauses to see if the formula becomes inductive
+           #F = seq0.toassert()
+           #expr = F.expr()
+           #for c in expr.clauses():
+           #    print(c)
+
+           #assert False
+           ##tmp = InductiveSequence(
+           #r = seq0.check_ind_on_paths(self, L.paths())
+           #if r.errors is None:
+           #    return seq0
+
+           #dbg("Initial sequence made inductive", color="dark_green")
+           ## dropping the clauses failed
+
+    def strengthen_initial_seq_entry_cond(self, seq0, errs0, path, L: SimpleLoop):
+        """ Strengthen the initial sequence through loop entry condition.
+            Does not work for assertions inside the loop
+        """
+        # get the prefix of the path that exits the loop
+        prefix = None
+        exits = L.exits()
+        for n in range(len(path)):
+            print(path[n])
+            if path[n] in exits:
+                prefix = AnnotatedCFAPath(path.edges()[: n + 1])
+                break
+        assert prefix, "Failed getting loop-exit condition"
+        r = check_paths(self, [prefix])
+        ready = r.ready
+        if ready is None:
+            return None
+        R = self.ind_executor().create_states_set()
+        # for r in ready:
+        #    R.add(r)
+        R.add(ready)
+        R.intersect(seq0.toannotation(True))
+        seq0 = InductiveSequence(R.as_assert_annotation())
+        # this may mean that the assertion in fact does not hold
+        # r = seq0.check_ind_on_paths(self, L.paths())
+        # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
+        return seq0
+
+    def strengthen_initial_seq_loop_iter(self, seq0, errs0, path, L: SimpleLoop):
+        """
+        Strengthen the initial sequence through obtaining the
+        last safe iteration of the loop.
+
+        FIXME: we actually do not use the assertion at all right now,
+        only implicitly as it is contained in the paths...
+        """
+        # get the safe states that jump out of the loop after one iteration
+        r = check_paths(self, L.get_exit_paths())
+        ready = r.ready
+        if not ready:
+            return None
+        R = self.ind_executor().create_states_set()
+        # FIXME: we can use only a subset of the states, wouldn't that be better?
+        for r in ready:
+            # do not use the first constraint -- it is the inedge condition that we want to ignore,
+            # because we want to jump out of the loop (otherwise we will not get inductive set)
+            C = r.getConstraints()[1:]
+            expr = EM.conjunction(*C)
+            expr = EM.conjunction(
+                *remove_implied_literals(expr.to_cnf().children())
+            )
+            tmp = create_set(r)
+            tmp.reset_expr(expr)
+            R.add(tmp)
+        seq0 = InductiveSequence(R.as_assert_annotation())
+        # this may mean that the assertion in fact does not hold
+        # r = seq0.check_ind_on_paths(self, L.paths())
+        # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
+        return seq0
+
+
     def strengthen_initial_seq(self, seq0, errs0, path, L: SimpleLoop):
         # NOTE: if we would pass states here we would safe some work.. be it would be less generic
         r = seq0.check_ind_on_paths(self, L.paths())
@@ -268,58 +349,19 @@ class KindSEChecker(BaseKindSE):
             dbg("Initial sequence is inductive", color="dark_green")
             return seq0
 
+        tmp = self.strengthen_initial_seq_dropping(seq0, errs0, path, L)
+        if tmp:
+            return tmp
+
         dbg("Initial sequence is NOT inductive, trying to fix it", color="wine")
-        # is the assertion inside the loop or after the loop?
-        EM = getGlobalExprManager()
         assert path[0].source() is L.header()
-        create_set = self.ind_executor().create_states_set
+        # is the assertion inside the loop or after the loop?
         if path[-1] in L:  # the assertion is inside the loop
-            # FIXME: we actually do not use the assertion at all right now, only implicitly as it is contained in the paths...
-            # evaluate the jump-out instruction
-            # get the safe states that jump out of the loop after one iteration
-            r = check_paths(self, L.get_exit_paths())
-            ready = r.ready
-            if not ready:
-                return None
-            R = create_set()
-            # FIXME: we can use only a subset of the states, wouldn't that be better?
-            for r in ready:
-                # do not use the first constraint -- it is the inedge condition that we want to ignore,
-                # because we want to jump out of the loop (otherwise we will not get inductive set)
-                C = r.getConstraints()[1:]
-                expr = EM.conjunction(*C)
-                expr = EM.conjunction(
-                    *remove_implied_literals(expr.to_cnf().children())
-                )
-                tmp = create_set(r)
-                tmp.reset_expr(expr)
-                R.add(tmp)
-            seq0 = InductiveSequence(R.as_assert_annotation())
-            # this may mean that the assertion in fact does not hold
-            # r = seq0.check_ind_on_paths(self, L.paths())
-            # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
+            seq0 = self.strengthen_initial_seq_loop_iter(seq0, errs0, path, L)
         else:  # the assertion is outside the loop
-            # get the prefix of the path that exits the loop
-            prefix = None
-            exits = L.exits()
-            for n in range(len(path)):
-                if path[n] in exits:
-                    prefix = AnnotatedCFAPath(path.edges()[: n + 1])
-                    break
-            assert prefix, "Failed getting loop-exit condition"
-            r = check_paths(self, [prefix])
-            ready = r.ready
-            if ready is None:
-                return None
-            R = create_set()
-            # for r in ready:
-            #    R.add(r)
-            R.add(ready)
-            R.intersect(seq0.toannotation(True))
-            seq0 = InductiveSequence(R.as_assert_annotation())
-            # this may mean that the assertion in fact does not hold
-            # r = seq0.check_ind_on_paths(self, L.paths())
-            # assert r.errors is None, f"SEQ not inductive, but should be. CTI: {r.errors[0].model()}"
+            seq0 = self.strengthen_initial_seq_entry_cond(seq0, errs0, path, L)
+        if seq0 is None:
+            return None # failed...
 
         r = seq0.check_ind_on_paths(self, L.paths())
         if r.errors is None:
@@ -342,7 +384,7 @@ class KindSEChecker(BaseKindSE):
         seq0, errs0 = get_initial_seq(unsafe, path, L)
         # the initial sequence may not be inductive (usually when the assertion
         # is inside the loop, so we must strenghten it
-        dbgv(f"Strengthening the initial sequence")
+        dbg(f"Strengthening the initial sequence: {seq0}")
         seq0 = self.strengthen_initial_seq(seq0, errs0, path, L)
         if seq0 is None:
             return False  # we failed...
