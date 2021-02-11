@@ -475,7 +475,10 @@ def enumerate_clauses(clauses, create_set):
         assert c
         yield c, tmp
 
-def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
+def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
+    """
+    drop_only - only drop redundant clauses
+    """
     create_set = executor.ind_executor().create_states_set
     unsafe = create_set(unsafeAnnot)  # safe strengthening
     assert intersection(
@@ -484,15 +487,13 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
 
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
-    # FIXME: move target one level up
-    target = create_set(seq[-1].toassert())
 
     expr = S.as_expr()
     if expr.is_concrete():
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     expr = expr.to_cnf()
-    # break equalities to constants to <= && >= so that we can overapproximate them
+    # break equalities with constants to <= && >= so that we can overapproximate them
     clauses = break_const_eq(expr)
     #clauses = list(expr.children())
 
@@ -505,8 +506,9 @@ def overapprox_set(executor, EM, S, unsafeAnnot, seq, L):
     newclauses = []
 
     # FIXME: THIS WORKS GOOD!
-    #S.reset_expr(EM.conjunction(*clauses))
-    #return InductiveSequence.Frame(S.as_assert_annotation(), None)
+    if drop_only:
+        S.reset_expr(EM.conjunction(*clauses))
+        return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     # Now take every clause c and try to overapproximate it
     NS = S.copy()

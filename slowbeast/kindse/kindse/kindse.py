@@ -104,12 +104,14 @@ def get_initial_seq(unsafe, path, L):
 
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
-    S = executor.ind_executor().create_states_set(s)
+    create_set = executor.ind_executor().create_states_set
+    target = create_set(seq[-1].toassert())
+    S = create_set(s)
     for rel in get_safe_relations([s], None):
         ldbgv("  Adding relation {0}", (rel,))
         S.intersect(rel)
     EM = s.expr_manager()
-    return overapprox_set(executor, EM, S, unsafeAnnot, seq, L)
+    return overapprox_set(executor, EM, S, unsafeAnnot, target, L)
 
 
 def simplify_expr(expr, EM):
@@ -250,10 +252,12 @@ class KindSEChecker(BaseKindSE):
         if __debug__:
             r = seq0.check_ind_on_paths(self, L.paths())
             assert r.errors is None, "seq is not inductive"
-        S = self.ind_executor().create_states_set(seq0.toannotation(True))
+        create_set = self.ind_executor().create_states_set
+        target = create_set(seq0[-1].toassert())
+        S = create_set(seq0.toannotation(True))
         EM = getGlobalExprManager()
         seq = InductiveSequence(
-            overapprox_set(self, EM, S, errs0.toassert(), seq0, L).toassert()
+            overapprox_set(self, EM, S, errs0.toassert(), target, L).toassert()
         )
         r = seq.check_ind_on_paths(self, L.paths())
         # Why could this happen?
@@ -355,6 +359,11 @@ class KindSEChecker(BaseKindSE):
             tmp = create_set(r)
             tmp.reset_expr(expr)
             R.add(tmp)
+
+       #expr = R.as_expr()
+       #S = overapprox_set(self, EM, R, errs0.toassert(), seq0.toannotation(),
+       #                   L, drop_only=True)
+       #seq0 = InductiveSequence(S.toassert())
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
         r = seq0.check_ind_on_paths(self, L.paths())
@@ -384,7 +393,7 @@ class KindSEChecker(BaseKindSE):
        #    return tmp
        #dbg("Failed strengthening the initial sequence with picking")
 
-        tmp = self.strengthen_initial_seq_loop_iter(tmp, errs0, path, L)
+        tmp = self.strengthen_initial_seq_loop_iter(seq0, errs0, path, L)
         if tmp:
             ## FIXME: overapprox & drop
             return tmp
