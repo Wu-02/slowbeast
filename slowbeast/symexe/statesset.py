@@ -68,10 +68,11 @@ class StatesSet:
             sd.expr(), sd.substitutions(), self._state.expr_manager()
         )
 
-    def reset_expr(self, expr):
+    def reset_expr(self, expr=None):
         """ NOTE: use carefully, only when you know what you do... """
         C = ConstraintsSet()
-        C.add(expr)
+        if expr is not None:
+            C.add(expr)
         self._state.setConstraints(C)
 
     def _unite(self, s):

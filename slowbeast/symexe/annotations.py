@@ -79,7 +79,7 @@ class ExprAnnotation(Annotation):
 
     # NOTE: use carefully...
     def set_expr(self, expr):
-        return self._sd.set_expr(expr)
+        self._sd.set_expr(expr)
 
     def substitutions(self):
         return self._sd.substitutions()
