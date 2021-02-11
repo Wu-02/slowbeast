@@ -331,7 +331,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     litrep = EM.Bool("litext")
     # X is the original formula with 'litrep' instead of 'l'
     X = intersection(S, disjunction(litrep, *(x for x in rl if x != l)))
-    assert not X.is_empty()
+    assert not X.is_empty(), f"S: {S}, l: {l}, rl: {rl}"
     post = postimage(executor, L.paths(), pre=X)
     if not post:
         return goodl

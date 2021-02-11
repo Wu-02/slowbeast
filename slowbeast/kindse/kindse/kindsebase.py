@@ -317,7 +317,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         paths = self.paths
         for path in paths:
-            first_loc = path.first()
+            first_loc = path[0].source()
             if self._is_init(first_loc):
                 r, states = self.checkInitialPath(path)
                 if r is Result.UNSAFE:

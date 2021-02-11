@@ -135,9 +135,13 @@ class KindSEChecker(BaseKindSE):
         self.assertion = A
         self.toplevel_executor = toplevel_executor
 
+        # paths to still search
         self.readypaths = []
 
         self.no_sum_loops = set()
+
+    def unfinished_paths(self):
+        return self.readypaths
 
     def check_loop_precondition(self, L, A):
         loc = L.header()
@@ -157,26 +161,41 @@ class KindSEChecker(BaseKindSE):
         ), "Handling a loop that should not be handled"
 
         # first try to unroll it in the case the loop is easy to verify
-        # kindse = BaseKindSE(self.getProgram())
-        # maxk = 15
-        # dbg_sec("Running nested KindSE")
-        # res = kindse.run([path.copy()], maxk=maxk)
-        # dbg_sec()
-        # if res is Result.SAFE:
-        #    print_stdout(
-        #        f"Loop {loc} proved by unwinding", color="GREEN"
-        #    )
-        #    return res
+        kindse = BaseKindSE(self.getProgram())
+        maxk = 15
+        dbg_sec("Running nested KindSE")
+        res = kindse.run([path.copy()], maxk=maxk)
+        dbg_sec()
+        if res is Result.SAFE:
+           print_stdout(
+               f"Loop {loc} proved by unwinding", color="GREEN"
+           )
+           return res, []
         # FIXME: uncomment and return the states
-        # elif res is Result.UNSAFE:
-        #    return res # found an error
+        elif res is Result.UNSAFE:
+           self.no_sum_loops.add(loc)
+           return res, [path]  # found an error
 
-        if self.execute_loop(path, loc, states):
-            return Result.SAFE
+        L = SimpleLoop.construct(loc)
+        if L is None:
+            print_stdout("Was not able to construct the loop info")
+            print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
+            self.no_sum_loops.add(loc)
+            return Result.UNKNOWN, [path]
 
-        self.no_sum_loops.add(loc)
-        print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
-        return Result.UNKNOWN
+        if self.fold_loop(path, loc, L, states):
+            return Result.SAFE, []
+        else:
+            return Result.UNKNOWN, self.unfold_loop(path, L)
+
+    def unfold_loop(self, path, L : SimpleLoop):
+        """
+        Take path and loop for which we failed to create an invariant and unwind the loop as far as we can
+        such that we avoid the safe sets that we computed.
+        """
+        # FIXME for now, we just unwind one iteration of the loop, not subsumption
+        suffix = path.edges()
+        return [path.copyandsetpath(p.edges() + suffix) for p in L.paths()]
 
     def extend_seq(self, seq, errs0, L):
         S = self.ind_executor().create_states_set(seq[-1].toassert())
@@ -311,7 +330,9 @@ class KindSEChecker(BaseKindSE):
             if path[n] in exits:
                 prefix = AnnotatedCFAPath(path.edges()[: n + 1])
                 break
-        assert prefix, "Failed getting loop-exit condition"
+        if prefix is None:
+            return None
+        #assert prefix, "Failed getting loop-exit condition"
         r = check_paths(self, [prefix])
         ready = r.ready
         if ready is None:
@@ -401,15 +422,10 @@ class KindSEChecker(BaseKindSE):
         dbg("Failed making the initial sequence inductive")
         return None
 
-    def execute_loop(self, path, loc, states):
-        dbgv(f"========== Executing loop {loc} ===========")
+    def fold_loop(self, path, loc, L : SimpleLoop, states):
+        dbg(f"========== Folding loop {loc} ===========")
         unsafe = states.errors
         assert unsafe, "No unsafe states, we should not get here at all"
-
-        L = SimpleLoop.construct(loc)
-        if L is None:
-            dbg("Was not able to construct the loop info")
-            return False  # fall-back to loop unwinding...
 
         dbgv(f"Getting initial sequence for loop {loc}")
         seq0, errs0 = get_initial_seq(unsafe, path, L)
@@ -450,7 +466,7 @@ class KindSEChecker(BaseKindSE):
                     print_stdout(f"{S} holds on {loc}", color="BLUE")
                     # if self.genannot:
                     #    # maybe remember the ind set even without genannot
-                    #    # and use it just for another 'execute_loop'?
+                    #    # and use it just for another 'fold_loop'?
                     #    loc.addAnnotationBefore(s.toannotation().Not(EM))
                     return True
 
@@ -551,9 +567,7 @@ class KindSEChecker(BaseKindSE):
         return loc in self.programstructure.get_loop_headers()
 
     def queue_paths(self, paths):
-        ready = self.readypaths
-        for p in paths:
-            ready.append(p)
+        self.readypaths.extend(paths)
 
     def extend_and_queue_paths(self, path, states):
         step = self.getOptions().step
@@ -571,7 +585,6 @@ class KindSEChecker(BaseKindSE):
     def check(self, onlyedges=None):
         # the initial error path that we check
         loc = self.location
-        EM = getGlobalExprManager()
         for edge in onlyedges if onlyedges else loc.predecessors():
             path = AnnotatedCFAPath([edge])
             path.add_annot_after(self.assertion)
@@ -584,23 +597,23 @@ class KindSEChecker(BaseKindSE):
                 return Result.UNKNOWN if problem_states else Result.SAFE, problem_states
 
             r, states = self.check_path(path)
+
             if r is Result.UNSAFE:
                 return r, states
             elif states.errors:  # got error states that may not be real
                 assert r is None
+                # is this a path starting at a loop header?
                 fl = path[0].source()
                 if fl not in self.no_sum_loops and self.is_loop_header(fl):
-                    res = self.handle_loop(fl, path, states)
-                    if res is Result.UNSAFE:
-                        raise NotImplementedError("We do not return the states here...")
-                        return res, None
-                    elif res is Result.UNKNOWN:
-                        # falled-back to unwinding
-                        # XXX: could we try again later?
-                        self.extend_and_queue_paths(path, states)
-                    else:
-                        assert res is Result.SAFE
+                    res, newpaths = self.handle_loop(fl, path, states)
+                    if res is Result.SAFE:
+                        assert not newpaths
                         dbg(f"Path with loop {fl} proved safe", color="dark_green")
+                    else:
+                        assert newpaths
+                        for n in newpaths:
+                            print('unfold: ', n)
+                        self.queue_paths(newpaths)
                 else:
                     # normal path or a loop that we cannot summarize
                     self.extend_and_queue_paths(path, states)
