@@ -197,10 +197,8 @@ class KindSEChecker(BaseKindSE):
         such that we avoid the safe sets that we computed.
         """
         # unwind the paths and check subsumption
-        print("UNFOLD LOOOOOOOP", loc)
         paths = self.extend_paths(path, None)
         inductive_sets = self.inductive_sets.get(loc)
-        print(inductive_sets)
         if not inductive_sets:
             return paths
 
@@ -209,8 +207,7 @@ class KindSEChecker(BaseKindSE):
         create_set = self.ind_executor().create_states_set
         # fixme: the state inside set should use incremental solver to speed-up solving... after all, it is a place
         # where we add formulas monotonically.
-        I = create_set()#create_set(union(inductive_sets))
-        print('I', I)
+        I = create_set(union(inductive_sets))
         assert not I.is_empty()
         I.complement()
        #solver = IncrementalSolver()
