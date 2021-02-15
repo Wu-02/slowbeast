@@ -20,6 +20,9 @@ class GlobalVariable(ProgramElement):
     def is_global(self):
         return True
 
+    def type(self):
+        return PointerType()
+
     def size(self):
         return self._size
 
