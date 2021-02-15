@@ -1,6 +1,6 @@
 from slowbeast.core.executionstate import ExecutionState
-from slowbeast.util.debugging import warn
-from slowbeast.ir.instruction import Alloc
+from slowbeast.util.debugging import warn, ldbgv
+from slowbeast.ir.instruction import Alloc, GlobalVariable
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
 from copy import copy
 from sys import stdout
@@ -224,7 +224,7 @@ class LazySEState(SEState):
             vtype = v.type()
             if vtype.is_pointer():
                 if isinstance(
-                    v, Alloc
+                    v, (Alloc, GlobalVariable)
                 ):  # FIXME: this is hack, do it generally for pointers
                     self.executor().memorymodel.lazyAllocate(self, v)
                     return self.try_eval(v)
@@ -232,5 +232,6 @@ class LazySEState(SEState):
             else:
                 name = f"nondet_{v.as_value()}"
             value = self.solver().Var(name, v.type())
+            ldbgv("Created new nondet value {0} = {1}", (v.as_value(), value), color="dark_blue")
             self.set(v, value)
         return value

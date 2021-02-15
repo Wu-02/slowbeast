@@ -439,8 +439,13 @@ def break_const_eq(expr):
 
     def break_eq(c):
         l, r = c.children()
+        ret = []
         if dom_is_concrete(l) or dom_is_concrete(r):
-            return [EM.Le(l, r), EM.Le(r, l)]
+            for x in  EM.Le(l, r), EM.Le(r, l):
+                if not x.is_concrete():
+                    ret.append(x)
+            return ret
+
         return [c]
 
     # break equalities that have a constant on one side,
@@ -460,6 +465,7 @@ def drop_clauses(clauses, S, target, EM, L, safesolver, executor):
     conjunction = EM.conjunction
     lpaths = L.paths()
     for c in clauses:
+        assert not c.is_concrete(), c
         # create a temporary formula without the given clause
         tmp = newclauses.copy()
         tmp.remove(c)
