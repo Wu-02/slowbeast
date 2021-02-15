@@ -301,7 +301,8 @@ def main():
         code = args.prog
     elif lang == 'llvm':
         from slowbeast.parsers.llvm.parser import Parser as LLVMParser
-        parser = LLVMParser()
+        error_funs = args.error_fn or None
+        parser = LLVMParser(error_funs.split(',') if error_funs else None)
         code = compile_and_link(args.prog, args.out_dir)
     try:
         P = parser.parse(code)

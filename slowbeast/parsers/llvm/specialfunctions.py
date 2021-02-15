@@ -48,14 +48,17 @@ special_functions = [
 ]
 
 
-def create_special_fun(parser, inst, fun):
+def create_special_fun(parser, inst, fun, error_funs):
     """
     Return a pair R, S where R is the representant
     used for mapping of instructions and S is the sequence
     of instructions created
     """
     module = parser.llvmmodule
-    if fun == "__assert_fail":
+    if fun in error_funs:
+        A = Assert(ConstantFalse, "error function called!")
+        return A, [A]
+    elif fun == "__assert_fail":
         A = Assert(ConstantFalse, "assertion failed!")
         return A, [A]
     elif fun == "__VERIFIER_error":

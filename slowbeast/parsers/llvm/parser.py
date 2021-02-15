@@ -160,9 +160,10 @@ def offset_of_struct_elem(llvmmodule, ty, cval):
 
 
 class Parser:
-    def __init__(self):
+    def __init__(self, error_funs=None):
         self.llvmmodule = None
         self.program = Program()
+        self.error_funs = error_funs or []
         self._bblocks = {}
         self._mapping = {}
         self._metadata_opts = ["llvm"]
@@ -404,7 +405,7 @@ class Parser:
         return [B]
 
     def _createSpecialCall(self, inst, fun):
-        mp, seq = create_special_fun(self, inst, fun)
+        mp, seq = create_special_fun(self, inst, fun, self.error_funs)
         if mp:
             self._addMapping(inst, mp)
         return seq
@@ -432,7 +433,7 @@ class Parser:
         if fun.startswith("llvm.dbg"):
             return []
 
-        if fun in special_functions:
+        if fun in special_functions or fun in self.error_funs:
             return self._createSpecialCall(inst, fun)
 
         F = self.fun(fun)
