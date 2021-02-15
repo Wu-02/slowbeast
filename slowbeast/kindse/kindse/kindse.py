@@ -189,7 +189,7 @@ class KindSEChecker(BaseKindSE):
         if self.fold_loop(path, loc, L, states):
             return Result.SAFE, []
         else:
-            return Result.UNKNOWN, self.unfold_loop(path, loc)
+            return self.unfold_loop(path, loc)
 
     def unfold_loop(self, path, loc):
         """
@@ -200,7 +200,7 @@ class KindSEChecker(BaseKindSE):
         paths = self.extend_paths(path, None)
         inductive_sets = self.inductive_sets.get(loc)
         if not inductive_sets:
-            return paths
+            return Result.UNKNOWN, paths
 
         finalpaths = []
         newpaths = []
@@ -223,24 +223,24 @@ class KindSEChecker(BaseKindSE):
                     if __debug__:
                         tmp = create_set(states.errors[0])
                         assert intersection(I, tmp).is_empty(), "Error state is subsumed..."
-                    return [p]
+                    return Result.UNSAFE, [p]
                 # otherwise just prolong the paths that failed the induction step
                 # and that are not subsumed
-                errs = states.errors or ()
-                extend = True
-                for s in errs:
-                    tmp = create_set(s)
+                assert states.errors is None or len(states.errors) == 1
+                errst = states.errors[0] if states.errors else None
+                if errst:
+                    tmp = create_set(errst)
                     if not intersection(I, tmp).is_empty():
                         # not subsumed
-                        extend = False
+                        # FIXME: some overapproximation of the complement of the intersection and add it to the path
                         finalpaths.append(p)
-                        break
-                # subsumed paths need to be prolonged
-                if extend:
-                    newpaths += self.extend_paths(p, None)
+                    else:
+                        # errst is subsumed and subsumed paths need to be prolonged
+                        newpaths += self.extend_paths(p, None)
             paths = newpaths
 
-        return paths
+        # TODO: we could return SAFE when finalpaths is empty
+        return Result.UNKNOWN, finalpaths
 
     def extend_seq(self, seq, errs0, L):
         S = self.ind_executor().create_states_set(seq[-1].toassert())
@@ -664,7 +664,7 @@ class KindSEChecker(BaseKindSE):
                         assert not newpaths
                         dbg(f"Path with loop {fl} proved safe", color="dark_green")
                     else:
-                        assert newpaths
+                        assert newpaths, newpaths
                         self.queue_paths(newpaths)
                 else:
                     # normal path or a loop that we cannot summarize
