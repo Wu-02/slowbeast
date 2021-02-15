@@ -104,17 +104,23 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             self.programstructure = programstructure
 
         self._entry_loc = self.programstructure.entry_loc
+        # number of executed paths
         self.paths = []
         # as we run the executor in nested manners,
         # we want to give different outputs
         self.reportfn = print_stdout
 
-        self.have_problematic_path = False
+        self.problematic_paths = []
         # here we report error states
         self.return_states = None
 
     def ind_executor(self):
         return self._indexecutor
+
+    def problematic_paths_as_result(self):
+        r = PathExecutionResult()
+        r.other = self.problematic_paths
+        return r
 
     def get_cfa(self, F):
         assert self.programstructure.cfas.get(F), f"Have no CFA for function {F.name()}"
@@ -177,7 +183,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         return loc is self._entry_loc
 
     def extend_to_caller(self, path, states):
-        self.have_problematic_path = True
+        self.problematic_paths.append(path)
         print_stdout("Killing a path that goes to caller")
         # start = path.first()
         # cgnode = self.programstructure.callgraph.getNode(start.bblock().fun())

@@ -620,10 +620,10 @@ class KindSEChecker(BaseKindSE):
         if self._is_init(first_loc.source()):
             r, states = self.checkInitialPath(path)
             if r is Result.UNSAFE:
-                self.reportfn(f"Error path: {path}", color="RED")
+                self.reportfn(f"Error path: {path}", color="red")
                 return r, states  # found a real error
             elif r is Result.SAFE:
-                self.reportfn(f"Safe (init) path: {path}", color="DARK_GREEN")
+                #dbgv(f"Safe (init) path: {path}", color="dark_green")
                 return None, states  # this path is safe
             elif r is Result.UNKNOWN:
                 killed1 = (
@@ -634,7 +634,7 @@ class KindSEChecker(BaseKindSE):
                 )
                 for s in chain(killed1, killed2):
                     self.report(s, self.reportfn)
-                self.reportfn(f"Inconclusive (init) path: {path}")
+                #dbgv(f"Inconclusive (init) path: {path}")
                 self.have_problematic_path = True
                 # there is a problem with this path,
                 # but we can still find an error
@@ -664,12 +664,12 @@ class KindSEChecker(BaseKindSE):
             self.reportfn(f"Killed states when executing {path}")
             self.have_problematic_path = True
 
-        if r.errors:
-            self.reportfn(f"Possibly error path: {path}", color="ORANGE")
-        elif problem:
-            self.reportfn(f"Problem path: {path}", color="PURPLE")
-        else:
-            self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
+       #if r.errors:
+       #    self.reportfn(f"Possibly error path: {path}", color="ORANGE")
+       #elif problem:
+       #    self.reportfn(f"Problem path: {path}", color="PURPLE")
+       #else:
+       #    self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
 
         return None, r
 
@@ -713,11 +713,10 @@ class KindSEChecker(BaseKindSE):
             path.add_annot_after(self.assertion)
             self.extend_and_queue_paths(path, states=None)
 
-        problem_states = []
         while True:
             path = self.get_path_to_run()
             if path is None:
-                return Result.UNKNOWN if problem_states else Result.SAFE, problem_states
+                return (Result.UNKNOWN if (self.problematic_paths) else Result.SAFE), self.problematic_paths_as_result()
 
             r, states = self.check_path(path)
 
@@ -739,7 +738,7 @@ class KindSEChecker(BaseKindSE):
                     # normal path or a loop that we cannot summarize
                     self.extend_and_queue_paths(path, states)
             else:
-                dbg(f"Safe path: {path}")
+                dbgv(f"Safe path: {path}")
 
         raise RuntimeError("Unreachable")
 
@@ -808,7 +807,7 @@ class KindSymbolicExecutor(BaseKindSE):
                 assert states.errors, "No errors in unsafe result"
                 for s in states.errors:
                     self.report(s)
-                print_stdout("Error found.", color="red")
+                print_stdout("Error found.", color="redul")
                 return result
             elif result is Result.SAFE:
                 print_stdout(
@@ -816,8 +815,17 @@ class KindSymbolicExecutor(BaseKindSE):
                 )
             elif result is Result.UNKNOWN:
                 print_stdout(
-                    f"Checking assert {A} at {loc} was unsuccessful.", color="orange"
+                    f"Checking {A} at {loc} was unsuccessful.", color="yellow"
                 )
                 has_unknown = True
+                assert checker.problematic_paths, "Unknown with no problematic paths?"
+                for p in checker.problematic_paths:
+                    self.stats.killed_paths += 1
+                    print_stdout(f"Killed path: {p}")
 
-        return Result.UNKNOWN if has_unknown else Result.SAFE
+        if has_unknown:
+            print_stdout("Failed deciding the result.", color="orangeul")
+            return Result.UNKNOWN
+
+        print_stdout("No error found.", color="greenul")
+        return Result.SAFE

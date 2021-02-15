@@ -16,6 +16,12 @@ COLORS = {
     "dark_gray": "\033[1;30m",
     "dark_gray_thin": "\033[38;5;238m",
     "orange": "\033[38;5;214m",
+    "orangebg": "\033[1;43m",
+    "greenbg": "\033[1;42m",
+    "redbg": "\033[1;41m",
+    "orangeul": "\033[1;4;33m",
+    "greenul": "\033[1;4;32m",
+    "redul": "\033[1;4;31m",
     "reset": "\033[0m",
 }
 
