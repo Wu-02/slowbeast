@@ -481,6 +481,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     """
     create_set = executor.ind_executor().create_states_set
     unsafe = create_set(unsafeAnnot)  # safe strengthening
+    assert not S.is_empty(), "Overapproximating empty set"
     assert intersection(
         S, unsafe
     ).is_empty(), f"Whata? Unsafe states among one-step reachable safe states:\nS = {S},\nunsafe = {unsafe}"
