@@ -84,6 +84,9 @@ class MemError(Error):
     def isInvalidObj(self):
         return self._memerr == MemError.INVALID_OBJ
 
+    def isUnsupported(self):
+        return self._memerr == MemError.UNSUPPORTED
+
     def __repr__(self):
         err = self._memerr
         assert self.isMemError()

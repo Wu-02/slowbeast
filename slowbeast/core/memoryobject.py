@@ -81,11 +81,15 @@ class MemoryObject:
         assert self._ro is False, "Writing read-only object (COW bug)"
 
         if not off.is_concrete():
-            raise NotImplementedError("Write to non-constant offset not supported")
+            return MemError(
+                MemError.UNSUPPORTED,
+                "Write to non-constant offset not supported"
+            )
 
         if not self._has_concrete_size():
-            raise NotImplementedError(
-                "Write to symbolic-sized objects not implemented yet"
+            return MemError(
+                MemError.UNSUPPORTED,
+                "Write to symbolic-sized objects not implemented"
             )
 
         offval = off.value()
@@ -120,7 +124,8 @@ class MemoryObject:
             raise NotImplementedError("Read from non-constant offset not supported")
 
         if not self._has_concrete_size():
-                raise NotImplementedError(
+            return None, MemError(
+                MemError.UNSUPPORTED,
                 "Read from symbolic-sized objects not implemented yet"
             )
 

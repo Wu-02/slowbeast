@@ -17,7 +17,8 @@ class SymbolicMemoryModel(CoreMM):
 
 
 # LazySymbolicMemoryModel inherints from CoreMM intentionally (SymbolicMemoryModel
-# redefined uninitialized reads in Memory() object)
+# to use core.Memory. symexe.Memory overrides uninitialized reads in the Memory() object
+# in a way that is not suitable for lazy memory
 class LazySymbolicMemoryModel(CoreMM):
     def __init__(self, opts):
         super().__init__(opts)
@@ -61,13 +62,13 @@ class LazySymbolicMemoryModel(CoreMM):
             )
         assert isinstance(value, Value)
 
-        try:
-            err = state.memory.write(to, value)
-        except NotImplementedError as e:
-            state.setKilled(str(e))
-            return [state]
+        err = state.memory.write(to, value)
         if err:
-            state.setError(err)
+            assert err.isMemError()
+            if err.isUnsupported() and self._overapprox_unsupported:
+                self._havoc_ptr_target(state, to)
+            else:
+                state.setError(err)
         return [state]
 
     def uninitializedRead(self, state, frm, ptr, bytesNum):
@@ -82,7 +83,9 @@ class LazySymbolicMemoryModel(CoreMM):
         # If an error occurs, just propagate it up
         if ptr.offset().is_concrete():
             err = state.memory.write(ptr, val)
-        else:
+            if err and self._overapprox_unsupported and err.isUnsupported():
+                err = self._havoc_ptr_target(state, ptr)
+        elif self._overapprox_unsupported:
             err = self._havoc_ptr_target(state, ptr)
 
         return val, err
@@ -106,18 +109,15 @@ class LazySymbolicMemoryModel(CoreMM):
             else:
                 state.setKilled("Read with non-constant offset not supported yet")
             return [state]
-        try:
-            val, err = state.memory.read(frm, bytesNum)
-            if err:
-                assert err.isMemError()
-                if err.isUninitRead():
-                    val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
-                    assert isinstance(toOp, Load)
-                    state.addNondet(NondetLoad.fromExpr(val, toOp, fromOp))
-
-        except NotImplementedError as e:
-            state.setKilled(str(e))
-            return [state]
+        val, err = state.memory.read(frm, bytesNum)
+        if err:
+            assert err.isMemError(), err
+            if err.isUninitRead():
+                val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
+                assert isinstance(toOp, Load)
+                state.addNondet(NondetLoad.fromExpr(val, toOp, fromOp))
+            elif err.isUnsupported() and self._overapprox_unsupported:
+                val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
         if err:
             state.setError(err)
         else:
