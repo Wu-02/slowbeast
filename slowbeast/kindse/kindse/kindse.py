@@ -1,5 +1,5 @@
 from itertools import chain
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv, ldbg
 
 from slowbeast.ir.instruction import Assert as AssertInst
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
@@ -607,6 +607,7 @@ class KindSEChecker(BaseKindSE):
             sequences = extended
 
     def check_path(self, path):
+        ldbg("{0}", (path,))
         first_loc = path[0]
         if self._is_init(first_loc.source()):
             r, states = self.checkInitialPath(path)

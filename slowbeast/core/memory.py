@@ -153,9 +153,10 @@ class Memory:
 
     def write(self, ptr, x):
         isglob = False
-        obj = self._objects.get(ptr.object().value())
+        objid = ptr.object().value()
+        obj = self._objects.get(objid)
         if obj is None:
-            obj = self._glob_objects.get(ptr.object().value())
+            obj = self._glob_objects.get(objid)
             isglob = True
 
         if obj is None:
@@ -221,3 +222,52 @@ class Memory:
             o.dump(stream)
         stream.write("-- Call stack:\n")
         self._cs.dump(stream)
+
+
+    def havoc_obj(self, objid):
+        isglob = False
+        obj = self._objects.get(objid)
+        if obj is None:
+            obj = self._glob_objects.get(objid)
+            isglob = True
+
+        if obj is None:
+            return
+
+        if isglob:
+            self._globs_reown()
+        else:
+            self._objs_reown()
+
+        if obj._isRO():
+            obj = obj.clean_copy()
+            assert not obj._isRO()
+            if isglob:
+                self._glob_objects[obj.get_id()] = obj
+            else:
+                self._objects[obj.get_id()] = obj
+        else:
+            obj.clear()
+
+
+    def havoc(self, objs=None):
+        """ Havoc the contents of memory """
+        # FIXME: we do not have to havoc constants and some other values
+        if objs:
+            havoc_obj = self.havoc_obj
+            for o in objs:
+                havoc_obj(o.get_id())
+            return
+
+        raise NotImplementedError("Havocing all memory unsupported yet")
+       #newobjs = {}
+       #self._objects_ro = False
+       #createMO = self.createMO()
+       #for p, o in self._objects.items():
+       #    no = createMO(o.size(), o.name(), o.get_id())
+       #    no.setAllocation(no.allocation())
+       #    newobjs[p] = no
+
+
+
+

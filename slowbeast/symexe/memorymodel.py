@@ -17,10 +17,12 @@ class SymbolicMemoryModel(CoreMM):
 
 
 # LazySymbolicMemoryModel inherints from CoreMM intentionally (SymbolicMemoryModel
-# redefined uninitialized reads)
+# redefined uninitialized reads in Memory() object)
 class LazySymbolicMemoryModel(CoreMM):
     def __init__(self, opts):
         super().__init__(opts)
+        # over-approximate unsupported operations
+        self._overapprox_unsupported = True
 
     def lazyAllocate(self, state, op):
         assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
@@ -29,16 +31,27 @@ class LazySymbolicMemoryModel(CoreMM):
         dbgv("Lazily allocated {0}".format(op), color="WHITE")
         assert state.get(op), "Did not bind an allocated value"
 
+    def _havoc_ptr_target(self, state, ptr):
+        """ Havoc memory possibly pointed by ptr"""
+        # we do not know what we write where, so just clear all the information if possible
+        mo = state.memory.get_obj(ptr.object())
+        if mo:
+            state.memory.havoc((mo,))
+        else:
+            state.memory.havoc()
+            return [state]
+
     def write(self, state, instr, valueOp, toOp):
         to = state.get(toOp)
         if to is None:
             self.lazyAllocate(state, toOp)
-            # FIXME "We're calling get() method but we could return the value..."
-            to = state.get(toOp)
+            to = state.get(toOp) # FIXME "We're calling get() method but we could return the value..."
         assert to.is_pointer()
-        if not to.offset().is_concrete():
-            # FIXME: move this check to memory.write() object
-            state.setKilled("Write with non-constant offset not supported yet")
+        if not to.offset().is_concrete(): # FIXME: move this check to memory.write() object
+            if self._overapprox_unsupported:
+                self._havoc_ptr_target(state, to)
+            else:
+                state.setKilled("Write with non-constant offset not supported yet")
             return [state]
 
         value = state.try_eval(valueOp)
@@ -67,7 +80,10 @@ class LazySymbolicMemoryModel(CoreMM):
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
-        err = state.memory.write(ptr, val)
+        if ptr.offset().is_concrete():
+            err = state.memory.write(ptr, val)
+        else:
+            err = self._havoc_ptr_target(state, ptr)
 
         return val, err
 
@@ -80,7 +96,15 @@ class LazySymbolicMemoryModel(CoreMM):
 
         assert frm.is_pointer()
         if not frm.offset().is_concrete():
-            state.setKilled("Read with non-constant offset not supported yet")
+            if self._overapprox_unsupported:
+                val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
+                if err:
+                    state.setError(err)
+                else:
+                    state.set(toOp, val)
+                return [state]
+            else:
+                state.setKilled("Read with non-constant offset not supported yet")
             return [state]
         try:
             val, err = state.memory.read(frm, bytesNum)

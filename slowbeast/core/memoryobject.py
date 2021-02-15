@@ -33,9 +33,19 @@ class MemoryObject:
     def _isRO(self):
         return self._ro
 
+    def clear(self):
+        assert not self._ro
+        self._values.clear()
+
     def writableCopy(self):
         new = copy(self)
         new._values = copy(self._values)
+        new._ro = False
+        return new
+
+    def clean_copy(self):
+        new = copy(self)
+        new._values = {}
         new._ro = False
         return new
 
@@ -50,6 +60,9 @@ class MemoryObject:
 
     def setAllocation(self, a):
         self._allocation = a
+
+    def allocation(self):
+        return self._allocation
 
     def write(self, x, off=ConcreteVal(0, OffsetType)):
         """
@@ -136,9 +149,6 @@ class MemoryObject:
         """ Get offsets on which something is written """
         return self._values.keys()
 
-    def __eq__(self, oth):
-        return self._id == oth._id
-
     def __repr__(self):
         s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
             self._id,
@@ -157,3 +167,6 @@ class MemoryObject:
     def dump(self, stream=stdout):
         stream.write(str(self))
         stream.write("\n")
+
+
+
