@@ -64,6 +64,14 @@ class MemoryObject:
     def allocation(self):
         return self._allocation
 
+    def _has_concrete_size(self):
+        sz = self._size
+        return sz is not None and sz.is_concrete()
+
+    def _is_oob(self, bytesnum, offval=0):
+        sz = self._size
+        return sz is None or bytesnum > sz.value() + offval
+
     def write(self, x, off=ConcreteVal(0, OffsetType)):
         """
         Write 'x' to 'off' offset in this object.
@@ -75,7 +83,7 @@ class MemoryObject:
         if not off.is_concrete():
             raise NotImplementedError("Write to non-constant offset not supported")
 
-        if not self._size.is_concrete():
+        if not self._has_concrete_size():
             raise NotImplementedError(
                 "Write to symbolic-sized objects not implemented yet"
             )
@@ -90,7 +98,7 @@ class MemoryObject:
                         MemError.UNSUPPORTED,
                         "Writing overlapping values to an object is not supported yet",
                     )
-        if x.bytewidth() > self._size.value() + offval:
+        if self._is_oob(x.bytewidth(), offval):
             return MemError(
                 MemError.OOB_ACCESS,
                 "Written value too big for the object. "
@@ -111,15 +119,15 @@ class MemoryObject:
         if not off.is_concrete():
             raise NotImplementedError("Read from non-constant offset not supported")
 
-        if not self._size.is_concrete():
-            raise NotImplementedError(
+        if not self._has_concrete_size():
+                raise NotImplementedError(
                 "Read from symbolic-sized objects not implemented yet"
             )
 
         offval = off.value()
 
-        if self._size.value() < bts:
-            return None, MemError(
+        if self._is_oob(bts):
+                return None, MemError(
                 MemError.OOB_ACCESS,
                 "Read {0}B from object of size {1}B".format(bts, self._size),
             )
