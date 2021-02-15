@@ -107,7 +107,7 @@ def get_initial_seq(unsafe, path, L):
 
 
 def overapprox(executor, s, unsafeAnnot, seq, L):
-    create_set = executor.ind_executor().create_states_set
+    create_set = executor.create_set
     target = create_set(seq[-1].toassert())
     S = create_set(s)
     assert not S.is_empty(), "Infeasible states given to overapproximate"
@@ -139,6 +139,7 @@ class KindSEChecker(BaseKindSE):
         self.location = loc
         self.assertion = A
         self.toplevel_executor = toplevel_executor
+        self.create_set = self.ind_executor().create_states_set
 
         # paths to still search
         self.readypaths = []
@@ -171,7 +172,7 @@ class KindSEChecker(BaseKindSE):
         unsafe = []
         inductive_sets = self.inductive_sets.get(loc)
         if inductive_sets:
-            create_set = self.ind_executor().create_states_set
+            create_set = self.create_set
             assert states.errors
             I = create_set(union(inductive_sets))
             assert not I.is_empty()
@@ -223,7 +224,7 @@ class KindSEChecker(BaseKindSE):
         such that we avoid the safe sets that we computed.
         """
         # unwind the paths and check subsumption
-        dbg("Unfolding the loop {loc}")
+        dbg(f"Unfolding the loop {loc}")
         paths = self.extend_paths(path, None)
         inductive_sets = self.inductive_sets.get(loc)
         if not inductive_sets:
@@ -231,7 +232,7 @@ class KindSEChecker(BaseKindSE):
 
         finalpaths = []
         newpaths = []
-        create_set = self.ind_executor().create_states_set
+        create_set = self.create_set
         # fixme: the state inside set should use incremental solver to speed-up solving... after all, it is a place
         # where we add formulas monotonically.
         I = create_set(union(inductive_sets))
@@ -270,7 +271,7 @@ class KindSEChecker(BaseKindSE):
         return Result.UNKNOWN, finalpaths
 
     def extend_seq(self, seq, errs0, L):
-        create_set = self.ind_executor().create_states_set
+        create_set = self.create_set
         S = create_set(seq[-1].toassert())
         E = create_set(errs0.toassert())
 
@@ -348,7 +349,7 @@ class KindSEChecker(BaseKindSE):
         if __debug__:
             r = seq0.check_ind_on_paths(self, L.paths())
             assert r.errors is None, "seq is not inductive"
-        create_set = self.ind_executor().create_states_set
+        create_set = self.create_set
         target = create_set(seq0[-1].toassert())
         S = create_set(seq0.toannotation(True))
         assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
@@ -449,7 +450,7 @@ class KindSEChecker(BaseKindSE):
         ready = r.ready
         if not ready:
             return None
-        create_set = self.ind_executor().create_states_set
+        create_set = self.create_set
         R = create_set()
         # FIXME: we can use only a subset of the states, wouldn't that be better?
         EM = getGlobalExprManager()
@@ -491,9 +492,9 @@ class KindSEChecker(BaseKindSE):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
 
-        create_set = self.ind_executor().create_states_set
+        create_set = self.create_set
         if create_set(seq0.toannotation(True)).is_empty():
-            dbg("Initial sequence is empty", color="dark_wine")
+            dbg("Initial sequence is empty", color="wine")
             return None
 
         E = create_set(errs0.toassert())
@@ -529,6 +530,7 @@ class KindSEChecker(BaseKindSE):
     def fold_loop(self, path, loc, L : SimpleLoop, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
         assert unsafe, "No unsafe states, we should not get here at all"
+        create_set = self.create_set
 
         dbg(f"Getting initial sequence for loop {loc}")
         seq0, errs0 = get_initial_seq(unsafe, path, L)
@@ -548,7 +550,6 @@ class KindSEChecker(BaseKindSE):
         assert seq0
 
         if __debug__:
-            create_set = self.ind_executor().create_states_set
             assert intersection(create_set(seq0.toannotation()), errs0.toassert()).is_empty(),\
                 "Initial sequence contains error states"
 
@@ -604,7 +605,6 @@ class KindSEChecker(BaseKindSE):
                 print_stdout("Failed extending any sequence", color="orange")
                 # store the generated sequences, we will use them during unfolding
                 # and when we reach the loop again
-                create_set = self.ind_executor().create_states_set
                 # FIXME: add only sets that are not subset of currently added stuff
                 self.inductive_sets.setdefault(loc, []).extend((create_set(s.toannotation()) for s in sequences))
                 if __debug__:
