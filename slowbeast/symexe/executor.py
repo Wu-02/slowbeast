@@ -33,7 +33,7 @@ def addPointerWithConstant(E, op1, op2):
 
 def condition_to_bool(cond, EM):
     if cond.is_concrete():
-        cval = EM.Ne(cond, ConcreteVal(0, c.type()))
+        cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
     else:
         assert is_symbolic(cond)
         if not cond.type().is_bool():
