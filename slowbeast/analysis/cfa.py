@@ -191,10 +191,10 @@ class CFA:
             for i in B.instructions():
                 # break on calls
                 if isinstance(i, Branch):
-                    break # this is a last inst and we handle it later
+                    break  # this is a last inst and we handle it later
                 elif isinstance(i, Call):
                     if e.is_noop():
-                        e = CFA.CallEdge(e.source(), e.target(), i) # replace the edge
+                        e = CFA.CallEdge(e.source(), e.target(), i)  # replace the edge
                     else:
                         self._add_edge(e)
                         assert not e.is_noop()
@@ -214,7 +214,9 @@ class CFA:
                     err = self.create_loc(i)
                     self.add_error_loc(err)
                     if e.is_noop():
-                        e = CFA.AssumeEdge(e.source(), e.target(), i, True) # replace the edge
+                        e = CFA.AssumeEdge(
+                            e.source(), e.target(), i, True
+                        )  # replace the edge
                         erre = CFA.AssumeEdge(e.source(), err, i, False)
                     else:
                         self._add_edge(e)
@@ -245,7 +247,7 @@ class CFA:
             br = B.last()
             l = locs.get(B)
             if not isinstance(br, Branch):
-                continue # these were handled
+                continue  # these were handled
 
             tsucc = locs[br.true_successor()][0]
             fsucc = locs[br.false_successor()][0]

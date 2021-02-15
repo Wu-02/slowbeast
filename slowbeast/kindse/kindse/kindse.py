@@ -89,7 +89,11 @@ def get_initial_seq(unsafe, path, L):
         # all constr. apart from the last one
         pc = uconstr[:-1]
         # last constraint is the failed assertion
-        S = conjunction(*pc, Not(uconstr[-1]), S) if S else conjunction(*pc, Not(uconstr[-1]))
+        S = (
+            conjunction(*pc, Not(uconstr[-1]), S)
+            if S
+            else conjunction(*pc, Not(uconstr[-1]))
+        )
         # unsafe states
         E = EM.Or(conjunction(*uconstr), E) if E else conjunction(*uconstr)
 
@@ -122,6 +126,7 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
 def simplify_expr(expr, EM):
     return EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
 
+
 def is_seq_inductive(seq, executor, L, has_ready=False):
     r = seq.check_ind_on_paths(executor, L.paths())
     for s in r.killed():
@@ -129,6 +134,7 @@ def is_seq_inductive(seq, executor, L, has_ready=False):
         executor.report(s)
         return False
     return r.errors is None and (r.ready or not has_ready)
+
 
 class KindSEChecker(BaseKindSE):
     """
@@ -198,20 +204,20 @@ class KindSEChecker(BaseKindSE):
         assert unsafe, "No unsafe states, we should not get here at all"
 
         #   # first try to unroll it in the case the loop is easy to verify
-    #   kindse = BaseKindSE(self.getProgram())
-    #   maxk = 15
-    #   dbg_sec("Running nested KindSE")
-    #   res = kindse.run([path.copy()], maxk=maxk)
-    #   dbg_sec()
-    #   if res is Result.SAFE:
-    #      print_stdout(
-    #          f"Loop {loc} proved by unwinding", color="GREEN"
-    #      )
-    #      return res, []
-    #   # FIXME: uncomment and return the states
-    #   elif res is Result.UNSAFE:
-    #      self.no_sum_loops.add(loc)
-    #      return res, [path]  # found an error
+        #   kindse = BaseKindSE(self.getProgram())
+        #   maxk = 15
+        #   dbg_sec("Running nested KindSE")
+        #   res = kindse.run([path.copy()], maxk=maxk)
+        #   dbg_sec()
+        #   if res is Result.SAFE:
+        #      print_stdout(
+        #          f"Loop {loc} proved by unwinding", color="GREEN"
+        #      )
+        #      return res, []
+        #   # FIXME: uncomment and return the states
+        #   elif res is Result.UNSAFE:
+        #      self.no_sum_loops.add(loc)
+        #      return res, [path]  # found an error
 
         L = SimpleLoop.construct(loc)
         if L is None:
@@ -245,8 +251,8 @@ class KindSEChecker(BaseKindSE):
         I = create_set(union(inductive_sets))
         assert not I.is_empty()
         I.complement()
-       #solver = IncrementalSolver()
-       #solver.add(I.expr())
+        # solver = IncrementalSolver()
+        # solver.add(I.expr())
 
         while paths:
             dbg("Next iteration of unfolding the loop...")
@@ -257,7 +263,9 @@ class KindSEChecker(BaseKindSE):
                     # will re-execute it and report
                     if __debug__:
                         tmp = create_set(states.errors[0])
-                        assert intersection(I, tmp).is_empty(), "Error state is subsumed..."
+                        assert intersection(
+                            I, tmp
+                        ).is_empty(), "Error state is subsumed..."
                     return Result.UNSAFE, [p]
                 # otherwise just prolong the paths that failed the induction step
                 # and that are not subsumed
@@ -368,8 +376,8 @@ class KindSEChecker(BaseKindSE):
             overapprox_set(self, EM, S, errs0.toassert(), target, L).toassert()
         )
         # Why could this happen?
-        #r = seq.check_ind_on_paths(self, L.paths())
-        #if r.errors is None and r.ready:
+        # r = seq.check_ind_on_paths(self, L.paths())
+        # if r.errors is None and r.ready:
         if is_seq_inductive(seq, self, L, has_ready=True):
             return seq
         return seq0
@@ -388,7 +396,7 @@ class KindSEChecker(BaseKindSE):
                 break
         if prefix is None:
             return None
-        #assert prefix, "Failed getting loop-exit condition"
+        # assert prefix, "Failed getting loop-exit condition"
         r = check_paths(self, [prefix])
         ready = r.ready
         if ready is None:
@@ -443,9 +451,7 @@ class KindSEChecker(BaseKindSE):
             # because we want to jump out of the loop (otherwise we will not get inductive set)
             C = r.getConstraints()[1:]
             expr = EM.conjunction(*C)
-            expr = EM.conjunction(
-                *remove_implied_literals(expr.to_cnf().children())
-            )
+            expr = EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
             tmp = create_set(r)
             tmp.reset_expr(expr)
             R.add(tmp)
@@ -460,16 +466,15 @@ class KindSEChecker(BaseKindSE):
             if R.is_empty():
                 return None
 
-       #expr = R.as_expr()
-       #S = overapprox_set(self, EM, R, errs0.toassert(), seq0.toannotation(),
-       #                   L, drop_only=True)
-       #seq0 = InductiveSequence(S.toassert())
+        # expr = R.as_expr()
+        # S = overapprox_set(self, EM, R, errs0.toassert(), seq0.toannotation(),
+        #                   L, drop_only=True)
+        # seq0 = InductiveSequence(S.toassert())
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
         if is_seq_inductive(seq0, self, L):
             return seq0
         return None
-
 
     def strengthen_initial_seq(self, seq0, errs0, path, L: SimpleLoop):
         assert path[0].source() is L.header()
@@ -494,10 +499,10 @@ class KindSEChecker(BaseKindSE):
             return tmp
         dbg("Failed strengthening the initial sequence with exit condition")
 
-       #tmp = self.strengthen_initial_seq_picking(seq0, E, path, L)
-       #if tmp:
-       #    return tmp
-       #dbg("Failed strengthening the initial sequence with picking")
+        # tmp = self.strengthen_initial_seq_picking(seq0, E, path, L)
+        # if tmp:
+        #    return tmp
+        # dbg("Failed strengthening the initial sequence with picking")
 
         tmp = self.strengthen_initial_seq_loop_iter(seq0, E, path, L)
         if tmp:
@@ -509,7 +514,7 @@ class KindSEChecker(BaseKindSE):
         dbg("-- Failed making the initial sequence inductive --")
         return None
 
-    def fold_loop(self, path, loc, L : SimpleLoop, unsafe):
+    def fold_loop(self, path, loc, L: SimpleLoop, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
         assert unsafe, "No unsafe states, we should not get here at all"
         create_set = self.create_set
@@ -532,8 +537,9 @@ class KindSEChecker(BaseKindSE):
         assert seq0
 
         if __debug__:
-            assert intersection(create_set(seq0.toannotation()), errs0.toassert()).is_empty(),\
-                "Initial sequence contains error states"
+            assert intersection(
+                create_set(seq0.toannotation()), errs0.toassert()
+            ).is_empty(), "Initial sequence contains error states"
 
         sequences = [seq0]
 
@@ -570,7 +576,9 @@ class KindSEChecker(BaseKindSE):
                     f"Processing sequence of len {len(seq)}:\n{seq}", color="dark_blue"
                 )
                 if __debug__:
-                    assert intersection(create_set(seq.toannotation(True)), errs0.toassert()).is_empty(), "Sequence is not safe"
+                    assert intersection(
+                        create_set(seq.toannotation(True)), errs0.toassert()
+                    ).is_empty(), "Sequence is not safe"
                     assert is_seq_inductive(seq, self, L), "seq is not inductive"
 
                 dbg("Extending the sequence")
@@ -587,7 +595,9 @@ class KindSEChecker(BaseKindSE):
                 # store the generated sequences, we will use them during unfolding
                 # and when we reach the loop again
                 # FIXME: add only sets that are not subset of currently added stuff
-                self.inductive_sets.setdefault(loc, []).extend((create_set(s.toannotation()) for s in sequences))
+                self.inductive_sets.setdefault(loc, []).extend(
+                    (create_set(s.toannotation()) for s in sequences)
+                )
                 if __debug__:
                     dbg(f"Got these inductive sets for loc {loc}", color="green")
                     for IS in self.inductive_sets.get(loc) or ():
@@ -604,12 +614,12 @@ class KindSEChecker(BaseKindSE):
                 self.reportfn(f"Error path: {path}", color="red")
                 return r, states  # found a real error
             elif r is Result.SAFE:
-                #dbgv(f"Safe (init) path: {path}", color="dark_green")
+                # dbgv(f"Safe (init) path: {path}", color="dark_green")
                 return None, states  # this path is safe
             elif r is Result.UNKNOWN:
                 for s in states.killed():
                     self.report(s, self.reportfn)
-                #dbgv(f"Inconclusive (init) path: {path}")
+                # dbgv(f"Inconclusive (init) path: {path}")
                 self.problematic_paths.append(path)
                 # there is a problem with this path,
                 # but we can still find an error
@@ -632,19 +642,19 @@ class KindSEChecker(BaseKindSE):
             if r.early
             else ()
         )
-        #problem = False
+        # problem = False
         for s in chain(killed1, killed2):
-            #problem = True
+            # problem = True
             self.report(s, fn=self.reportfn)
             self.reportfn(f"Killed states when executing {path}")
             self.problematic_paths.append(path)
 
-       #if r.errors:
-       #    self.reportfn(f"Possibly error path: {path}", color="ORANGE")
-       #elif problem:
-       #    self.reportfn(f"Problem path: {path}", color="PURPLE")
-       #else:
-       #    self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
+        # if r.errors:
+        #    self.reportfn(f"Possibly error path: {path}", color="ORANGE")
+        # elif problem:
+        #    self.reportfn(f"Problem path: {path}", color="PURPLE")
+        # else:
+        #    self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
 
         return None, r
 
@@ -691,7 +701,9 @@ class KindSEChecker(BaseKindSE):
         while True:
             path = self.get_path_to_run()
             if path is None:
-                return (Result.UNKNOWN if (self.problematic_paths) else Result.SAFE), self.problematic_paths_as_result()
+                return (
+                    Result.UNKNOWN if (self.problematic_paths) else Result.SAFE
+                ), self.problematic_paths_as_result()
 
             r, states = self.check_path(path)
 
@@ -764,9 +776,7 @@ class KindSymbolicExecutor(BaseKindSE):
                     f"Error condition {A.expr()} at {loc} is safe!.", color="green"
                 )
             elif result is Result.UNKNOWN:
-                print_stdout(
-                    f"Checking {A} at {loc} was unsuccessful.", color="yellow"
-                )
+                print_stdout(f"Checking {A} at {loc} was unsuccessful.", color="yellow")
                 has_unknown = True
                 assert checker.problematic_paths, "Unknown with no problematic paths?"
                 for p in checker.problematic_paths:

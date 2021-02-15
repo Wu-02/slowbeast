@@ -96,12 +96,8 @@ class PathExecutionResult:
     def killed(self):
         other = self.other
         early = self.early
-        killed1 = (
-            (s for s in other if s.wasKilled()) if other else ()
-        )
-        killed2 = (
-            (s for s in early if s.wasKilled()) if early else ()
-        )
+        killed1 = (s for s in other if s.wasKilled()) if other else ()
+        killed2 = (s for s in early if s.wasKilled()) if early else ()
         return chain(killed1, killed2)
 
     def check(self):

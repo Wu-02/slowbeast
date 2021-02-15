@@ -149,6 +149,7 @@ class AssumeAnnotation(ExprAnnotation):
     def __repr__(self):
         return f"assume {ExprAnnotation.__repr__(self)}"
 
+
 class DummyInst:
     """
     Dummy instruction that serves as a place-holder for the
@@ -157,8 +158,10 @@ class DummyInst:
     FIXME: this is a hack, rather make the execute() not to call get_next_inst()
     (add a new method execute_with_pc or something like that)
     """
+
     def get_next_inst(self):
         return self
+
 
 def _execute_instr(executor, states, instr):
     newstates = []
@@ -186,6 +189,7 @@ def _execute_instr_annotation(executor, states, annot):
         nonready += u
     return states, nonready
 
+
 def execute_annotation_substitutions(executor, states, annot):
     """
     Execute instructions from substitutions of an annotation
@@ -196,6 +200,7 @@ def execute_annotation_substitutions(executor, states, annot):
         states, nr = _execute_instr(executor, states, i)
         nonready += nr
     return states, nonready
+
 
 def _execute_expr_annotation(executor, states, annot):
     states, nonready = execute_annotation_substitutions(executor, states, annot)

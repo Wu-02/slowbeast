@@ -103,9 +103,7 @@ def get_all_relations(state):
             nonunique = state.is_sat(expr, EM.Ne(c, cval))
             if nonunique is False:
                 expr = EM.simplify(EM.substitute(expr, (c, cval)))
-                yield AssertAnnotation(
-                    expr, subs, EM
-                )
+                yield AssertAnnotation(expr, subs, EM)
 
 
 def get_safe_relations(safe, unsafe):

@@ -213,8 +213,8 @@ class IncrementalSEState(SEState):
 
         return new
 
-class LazySEState(SEState):
 
+class LazySEState(SEState):
     def __init__(self, executor, pc, m, solver, constraints=None):
         super().__init__(executor, pc, m, solver, constraints)
 
@@ -223,7 +223,9 @@ class LazySEState(SEState):
         if value is None:
             vtype = v.type()
             if vtype.is_pointer():
-                if isinstance(v, Alloc): #FIXME: this is hack, do it generally for pointers
+                if isinstance(
+                    v, Alloc
+                ):  # FIXME: this is hack, do it generally for pointers
                     self.executor().memorymodel.lazyAllocate(self, v)
                     return self.try_eval(v)
                 name = f"nondet_ptr_{v.as_value()}"

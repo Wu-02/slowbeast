@@ -124,7 +124,9 @@ class Executor(SExecutor):
         else:
             states = [state]
 
-        assert all(map(lambda s: isinstance(s, LazySEState), states)), "Wrong state type"
+        assert all(
+            map(lambda s: isinstance(s, LazySEState), states)
+        ), "Wrong state type"
 
         result = PathExecutionResult()
         earlytermstates = []
@@ -137,12 +139,16 @@ class Executor(SExecutor):
             earlytermstates += tu
 
         pathlen = len(path)
-        assert all(map(lambda s: isinstance(s, LazySEState), states)), "Wrong state type"
+        assert all(
+            map(lambda s: isinstance(s, LazySEState), states)
+        ), "Wrong state type"
         for idx in range(pathlen):
             edge = edges[idx]
             dbgv(f"vv ----- Edge {edge} ----- vv")
             states, nonready = self._execute_annotated_edge(states, edge, path)
-            assert all(map(lambda s: isinstance(s, LazySEState), states)), "Wrong state type"
+            assert all(
+                map(lambda s: isinstance(s, LazySEState), states)
+            ), "Wrong state type"
             assert all(map(lambda x: x.isReady(), states))
             assert all(map(lambda x: not x.isReady(), nonready))
 
@@ -171,15 +177,19 @@ class Executor(SExecutor):
             if locannot and states:
                 states, tu = self.execute_annotations(states, locannot)
                 err, oth = split_nonready_states(tu)
-                if err: errors.extend(err)
-                if oth: other.extend(oth)
+                if err:
+                    errors.extend(err)
+                if oth:
+                    other.extend(oth)
             # execute the postcondition of the path
             post = path.annot_after()
             if post and states:
                 states, tu = self.execute_annotations(states, post)
                 err, oth = split_nonready_states(tu)
-                if err: errors.extend(err)
-                if oth: other.extend(oth)
+                if err:
+                    errors.extend(err)
+                if oth:
+                    other.extend(oth)
 
             result.errors = errors or None
             result.other = other or None

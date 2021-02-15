@@ -211,9 +211,7 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         have_feasible = True
 
         # inductivity check
-        A = AssertAnnotation(
-            substitute(I.expr(), (litrep, lit)), I.substitutions(), EM
-        )
+        A = AssertAnnotation(substitute(I.expr(), (litrep, lit)), I.substitutions(), EM)
         hasnocti = A.do_substitutions(s)
         # we have got pathcond in solver already
         if solver.is_sat(EM.Not(hasnocti)) is not False:  # there exist CTI
@@ -228,8 +226,20 @@ def check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         return False
     return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
 
-def extend_with_num(dliteral, litrep, constadd, num, maxnum, I,
-                    safety_solver, solver, EM, rl, poststates):
+
+def extend_with_num(
+    dliteral,
+    litrep,
+    constadd,
+    num,
+    maxnum,
+    I,
+    safety_solver,
+    solver,
+    EM,
+    rl,
+    poststates,
+):
     """
     Add 'num' to the literal 'l' as many times as is possible
 
@@ -274,8 +284,8 @@ def extend_with_num(dliteral, litrep, constadd, num, maxnum, I,
 
 
 def extend_literal(
-    goodl, dliteral: DecomposedLiteral, litrep, I,
-    safety_solver, solver, rl, poststates):
+    goodl, dliteral: DecomposedLiteral, litrep, I, safety_solver, solver, rl, poststates
+):
 
     bw = dliteral.bitwidth()
     two = ConcreteInt(2, bw)
@@ -293,12 +303,22 @@ def extend_literal(
 
     # this is the final number that we are going to add to one side of the
     # literal
-    finalnum = ConcreteInt(1, bw) # we know we can add 1 now
-    num = ConcreteInt(2 ** (bw - 1) - 1, bw) # this num we'll try to add
+    finalnum = ConcreteInt(1, bw)  # we know we can add 1 now
+    num = ConcreteInt(2 ** (bw - 1) - 1, bw)  # this num we'll try to add
     while finalnum.value() <= maxnum:
-        finalnum = extend_with_num(dliteral, litrep, finalnum,
-                                   num, maxnum, I, safety_solver, solver,
-                                   EM, rl, poststates)
+        finalnum = extend_with_num(
+            dliteral,
+            litrep,
+            finalnum,
+            num,
+            maxnum,
+            I,
+            safety_solver,
+            solver,
+            EM,
+            rl,
+            poststates,
+        )
 
         if num.value() <= 1:
             # we have added also as many 1 as we could, finish
@@ -361,11 +381,12 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     return goodl
 
+
 def overapprox_clause(c, R, executor, L, unsafe, target):
-    """ c - the clause
-        R - rest of clauses of the formula
-        unsafe - unsafe states
-        target - safe states that should be reachable from c \cap R
+    """c - the clause
+    R - rest of clauses of the formula
+    unsafe - unsafe states
+    target - safe states that should be reachable from c \cap R
     """
     EM = R.get_se_state().expr_manager()
 
@@ -375,7 +396,7 @@ def overapprox_clause(c, R, executor, L, unsafe, target):
         X.intersect(c)
         r = check_paths(executor, L.paths(), pre=X, post=union(X, target))
         assert (
-                r.errors is None
+            r.errors is None
         ), f"Input state is not inductive (CTI: {r.errors[0].model()})"
 
     newc = []
@@ -386,19 +407,24 @@ def overapprox_clause(c, R, executor, L, unsafe, target):
         newl = simplify(overapprox_literal(l, lits, R, unsafe, target, executor, L))
         newc.append(newl)
         dbg(
-            f"  Overapproximated {l} ==> {newl}", color="gray",
+            f"  Overapproximated {l} ==> {newl}",
+            color="gray",
         )
 
         if __debug__:
             X = R.copy()
-            X.intersect(EM.disjunction(*(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))))
+            X.intersect(
+                EM.disjunction(
+                    *(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))
+                )
+            )
             r = check_paths(executor, L.paths(), pre=X, post=union(X, target))
             if r.errors:
-                print('States:', X)
-                print('Target:', target)
+                print("States:", X)
+                print("Target:", target)
                 print(r.errors[0].path_condition())
             assert (
-                    r.errors is None
+                r.errors is None
             ), f"Extended literal renders state non-inductive (CTI: {r.errors[0].model()})"
 
     if len(newc) == 1:
@@ -426,6 +452,7 @@ def break_const_eq(expr):
             clauses.append(c)
 
     return clauses
+
 
 def drop_clauses(clauses, S, target, EM, L, safesolver, executor):
     # we start with all clauses
@@ -455,6 +482,7 @@ def drop_clauses(clauses, S, target, EM, L, safesolver, executor):
 
     return newclauses
 
+
 def drop_clauses_fixpoint(clauses, S, target, EM, L, safesolver, executor):
     """ Drop clauses until fixpoint """
     newclauses = clauses
@@ -464,6 +492,7 @@ def drop_clauses_fixpoint(clauses, S, target, EM, L, safesolver, executor):
         if oldlen == len(newclauses):
             break
     return newclauses
+
 
 def enumerate_clauses(clauses, create_set):
     """ Return pair (clause, rest of clauses (as set) """
@@ -478,6 +507,7 @@ def enumerate_clauses(clauses, create_set):
                 tmp.intersect(x)
         assert c
         yield c, tmp
+
 
 def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     """
@@ -500,7 +530,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     expr = expr.to_cnf()
     # break equalities with constants to <= && >= so that we can overapproximate them
     clauses = break_const_eq(expr)
-    #clauses = list(expr.children())
+    # clauses = list(expr.children())
 
     safesolver = IncrementalSolver()
     safesolver.add(unsafe.as_expr())
@@ -518,18 +548,18 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     newclauses = []
     for c, xc in enumerate_clauses(clauses, create_set):
         # R is the rest of the formula without the clause c
-        R = S.copy() # copy the substitutions
+        R = S.copy()  # copy the substitutions
         R.reset_expr(xc.as_expr())
 
         newclause = overapprox_clause(c, R, executor, L, unsafe, target)
         if newclause:
-            #newclauses.append(newclause)
+            # newclauses.append(newclause)
             # FIXME: this check should be assertion,
             # overapprox_clause should not give us such clauses
             tmp = R.copy()
             tmp.intersect(newclause)
             tmp.complement()
-            #assert intersection(tmp, S).is_empty()
+            # assert intersection(tmp, S).is_empty()
             if intersection(tmp, S).is_empty():
                 newclauses.append(newclause)
             else:
@@ -538,8 +568,8 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
             newclauses.append(c)
 
     # drop clauses once more
-   #newclauses = drop_clauses_fixpoint(newclauses, S, target, EM, L,
-   #                                   safesolver, executor)
+    # newclauses = drop_clauses_fixpoint(newclauses, S, target, EM, L,
+    #                                   safesolver, executor)
     clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses))
 
