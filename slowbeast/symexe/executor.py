@@ -31,26 +31,28 @@ def addPointerWithConstant(E, op1, op2):
     return Pointer(op1.object(), E.Add(op1.offset(), op2))
 
 
+def condition_to_bool(cond, EM):
+    if cond.is_concrete():
+        cval = EM.Ne(cond, ConcreteVal(0, c.type()))
+    else:
+        assert is_symbolic(cond)
+        if not cond.type().is_bool():
+            assert cond.type().bitwidth() == 1, "Invalid condition in branching"
+            cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
+        else:
+            cval = cond  # It already is a boolean expression
+
+    assert cval.is_bool()
+    return cval
+
 def evalCond(state, cond):
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
-    E = state.expr_manager()
     c = state.eval(cond)
     assert isinstance(c, Value)
     # solvers make difference between bitvectors and booleans, so we must
     # take care of it here: if it is a bitvector, compare it to 0 (C
     # semantics)
-    if c.is_concrete():
-        cval = E.Ne(c, ConcreteVal(0, c.type()))
-    else:
-        assert is_symbolic(c)
-        if not c.type().is_bool():
-            assert c.type().bitwidth() == 1, "Invalid condition in branching"
-            cval = E.Ne(c, ConcreteVal(0, c.type()))
-        else:
-            cval = c  # It already is a boolean expression
-
-    return cval
-
+    return condition_to_bool(c, state.expr_manager())
 
 class Executor(ConcreteExecutor):
     def __init__(self, solver, opts, memorymodel=None):
@@ -476,7 +478,8 @@ class Executor(ConcreteExecutor):
         return [state]
 
     def execAssumeExpr(self, state, v):
-        assert v.is_bool()
+        v = condition_to_bool(v, state.expr_manager())
+        assert v.is_bool(), v
         if v.is_concrete():
             assert isinstance(v.value(), bool)
             isunsat = not v.value()
