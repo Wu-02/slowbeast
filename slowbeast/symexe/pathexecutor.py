@@ -31,6 +31,7 @@ class Executor(SExecutor):
         return s
 
     def execute_annotations(self, states, annots):
+        assert all(map(lambda s: isinstance(s, LazySEState), states))
         # if there are no annotations, return the original states
         if not annots:
             return states, []
@@ -42,6 +43,7 @@ class Executor(SExecutor):
             ts, tu = execute_annotations(self, s, annots)
             ready += ts
             nonready += tu
+        assert all(map(lambda s: isinstance(s, LazySEState), ready)), "Wrong state type"
         return ready, nonready
 
     def _exec_assume_edge(self, states, edge):
@@ -68,6 +70,8 @@ class Executor(SExecutor):
         return states, nonready
 
     def _execute_annotated_edge(self, states, edge, path):
+        assert all(map(lambda s: isinstance(s, LazySEState), states))
+
         source = edge.source()
         ready, nonready = states, []
         # annotations before source
@@ -120,6 +124,8 @@ class Executor(SExecutor):
         else:
             states = [state]
 
+        assert all(map(lambda s: isinstance(s, LazySEState), states)), "Wrong state type"
+
         result = PathExecutionResult()
         earlytermstates = []
         edges = path.edges()
@@ -131,10 +137,12 @@ class Executor(SExecutor):
             earlytermstates += tu
 
         pathlen = len(path)
+        assert all(map(lambda s: isinstance(s, LazySEState), states)), "Wrong state type"
         for idx in range(pathlen):
             edge = edges[idx]
             dbgv(f"vv ----- Edge {edge} ----- vv")
             states, nonready = self._execute_annotated_edge(states, edge, path)
+            assert all(map(lambda s: isinstance(s, LazySEState), states)), "Wrong state type"
             assert all(map(lambda x: x.isReady(), states))
             assert all(map(lambda x: not x.isReady(), nonready))
 

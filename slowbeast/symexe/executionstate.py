@@ -98,7 +98,9 @@ class SEState(ExecutionState):
 
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
-        new = SEState(self._executor, self.pc, self.memory, self._solver)
+        # also, use type(self) so that this method works also for
+        # child classes (if not overridden)
+        new = type(self)(self._executor, self.pc, self.memory, self._solver)
         super().copyTo(new)  # cow copy of super class
 
         new._constraints = self._constraints
