@@ -5,13 +5,14 @@ from slowbeast.ir.instruction import Assert as AssertInst
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from .kindsebase import check_paths
+from slowbeast.symexe.statesset import intersection, union
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
     or_annotations,
 )
 
-from slowbeast.solvers.solver import getGlobalExprManager
+from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 
 from .loops import SimpleLoop
 from .kindsebase import KindSymbolicExecutor as BaseKindSE
@@ -137,6 +138,8 @@ class KindSEChecker(BaseKindSE):
 
         # paths to still search
         self.readypaths = []
+        # invariant sets that we generated
+        self.inductive_sets = {}
 
         self.no_sum_loops = set()
 
@@ -160,42 +163,87 @@ class KindSEChecker(BaseKindSE):
             loc not in self.no_sum_loops
         ), "Handling a loop that should not be handled"
 
-        # first try to unroll it in the case the loop is easy to verify
-        kindse = BaseKindSE(self.getProgram())
-        maxk = 15
-        dbg_sec("Running nested KindSE")
-        res = kindse.run([path.copy()], maxk=maxk)
-        dbg_sec()
-        if res is Result.SAFE:
-           print_stdout(
-               f"Loop {loc} proved by unwinding", color="GREEN"
-           )
-           return res, []
-        # FIXME: uncomment and return the states
-        elif res is Result.UNSAFE:
-           self.no_sum_loops.add(loc)
-           return res, [path]  # found an error
+    #   # first try to unroll it in the case the loop is easy to verify
+    #   kindse = BaseKindSE(self.getProgram())
+    #   maxk = 15
+    #   dbg_sec("Running nested KindSE")
+    #   res = kindse.run([path.copy()], maxk=maxk)
+    #   dbg_sec()
+    #   if res is Result.SAFE:
+    #      print_stdout(
+    #          f"Loop {loc} proved by unwinding", color="GREEN"
+    #      )
+    #      return res, []
+    #   # FIXME: uncomment and return the states
+    #   elif res is Result.UNSAFE:
+    #      self.no_sum_loops.add(loc)
+    #      return res, [path]  # found an error
 
         L = SimpleLoop.construct(loc)
         if L is None:
             print_stdout("Was not able to construct the loop info")
             print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
             self.no_sum_loops.add(loc)
-            return Result.UNKNOWN, [path]
+            return Result.UNKNOWN, self.extend_paths(path, None)
 
         if self.fold_loop(path, loc, L, states):
             return Result.SAFE, []
         else:
-            return Result.UNKNOWN, self.unfold_loop(path, L)
+            return Result.UNKNOWN, self.unfold_loop(path, loc)
 
-    def unfold_loop(self, path, L : SimpleLoop):
+    def unfold_loop(self, path, loc):
         """
         Take path and loop for which we failed to create an invariant and unwind the loop as far as we can
         such that we avoid the safe sets that we computed.
         """
-        # FIXME for now, we just unwind one iteration of the loop, not subsumption
-        suffix = path.edges()
-        return [path.copyandsetpath(p.edges() + suffix) for p in L.paths()]
+        # unwind the paths and check subsumption
+        print("UNFOLD LOOOOOOOP", loc)
+        paths = self.extend_paths(path, None)
+        inductive_sets = self.inductive_sets.get(loc)
+        print(inductive_sets)
+        if not inductive_sets:
+            return paths
+
+        finalpaths = []
+        newpaths = []
+        create_set = self.ind_executor().create_states_set
+        # fixme: the state inside set should use incremental solver to speed-up solving... after all, it is a place
+        # where we add formulas monotonically.
+        I = create_set()#create_set(union(inductive_sets))
+        print('I', I)
+        assert not I.is_empty()
+        I.complement()
+       #solver = IncrementalSolver()
+       #solver.add(I.expr())
+
+        while paths:
+            dbg("Next iteration of unfolding the loop...")
+            for p in paths:
+                r, states = self.check_path(p)
+                if r is Result.UNSAFE:
+                    # we hit real unsafe path - return it so that the main executor
+                    # will re-execute it and report
+                    if __debug__:
+                        tmp = create_set(states.errors[0])
+                        assert intersection(I, tmp).is_empty(), "Error state is subsumed..."
+                    return [p]
+                # otherwise just prolong the paths that failed the induction step
+                # and that are not subsumed
+                errs = states.errors or ()
+                extend = True
+                for s in errs:
+                    tmp = create_set(s)
+                    if not intersection(I, tmp).is_empty():
+                        # not subsumed
+                        extend = False
+                        finalpaths.append(p)
+                        break
+                # subsumed paths need to be prolonged
+                if extend:
+                    newpaths += self.extend_paths(p, None)
+            paths = newpaths
+
+        return paths
 
     def extend_seq(self, seq, errs0, L):
         S = self.ind_executor().create_states_set(seq[-1].toassert())
@@ -406,6 +454,7 @@ class KindSEChecker(BaseKindSE):
 
         tmp = self.strengthen_initial_seq_exit_cond(seq0, errs0, path, L)
         if tmp:
+            dbg("Succeeded strengthening the initial sequence with exit condition")
             return tmp
         dbg("Failed strengthening the initial sequence with exit condition")
 
@@ -416,10 +465,12 @@ class KindSEChecker(BaseKindSE):
 
         tmp = self.strengthen_initial_seq_loop_iter(seq0, errs0, path, L)
         if tmp:
+            dbg("Succeeded strengthening the initial sequence with last iteration")
             ## FIXME: overapprox & drop
             return tmp
+        dbg("Failed strengthening the initial sequence with last iteration")
 
-        dbg("Failed making the initial sequence inductive")
+        dbg("-- Failed making the initial sequence inductive --")
         return None
 
     def fold_loop(self, path, loc, L : SimpleLoop, states):
@@ -490,6 +541,10 @@ class KindSEChecker(BaseKindSE):
                 # safe invariant
                 # FIXME: could we use it for annotations?
                 print_stdout("Failed extending any sequence", color="orange")
+                # store the generated sequences, we will use them during unfolding
+                # and when we reach the loop again
+                create_set = self.ind_executor().create_states_set
+                self.inductive_sets.setdefault(loc, []).extend((create_set(s.toannotation()) for s in sequences))
                 return False  # fall-back to unwinding
 
             sequences = extended
@@ -567,12 +622,13 @@ class KindSEChecker(BaseKindSE):
         return loc in self.programstructure.get_loop_headers()
 
     def queue_paths(self, paths):
+        assert isinstance(paths, list), paths
         self.readypaths.extend(paths)
 
-    def extend_and_queue_paths(self, path, states):
+    def extend_paths(self, path, states):
         step = self.getOptions().step
         invpoints = self.programstructure.get_loop_headers()
-        newpaths = self.extend_path(
+        return self.extend_path(
             path,
             states,
             steps=step,
@@ -580,7 +636,8 @@ class KindSEChecker(BaseKindSE):
             stoppoints=invpoints,
         )
 
-        self.queue_paths(newpaths)
+    def extend_and_queue_paths(self, path, states):
+        self.queue_paths(self.extend_paths(path, states))
 
     def check(self, onlyedges=None):
         # the initial error path that we check
@@ -611,8 +668,6 @@ class KindSEChecker(BaseKindSE):
                         dbg(f"Path with loop {fl} proved safe", color="dark_green")
                     else:
                         assert newpaths
-                        for n in newpaths:
-                            print('unfold: ', n)
                         self.queue_paths(newpaths)
                 else:
                     # normal path or a loop that we cannot summarize
