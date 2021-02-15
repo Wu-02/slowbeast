@@ -173,6 +173,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         return r
 
     def _is_init(self, loc):
+        assert isinstance(loc, CFA.Location), loc
         return loc is self._entry_loc
 
     def extend_to_caller(self, path, states):
@@ -244,7 +245,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                     # (note that this is not covered by 'predsnum == 0',
                     # because init may have predecessors)
                     added = False
-                    if atmost and steps != 1 and self._is_init(pred):
+                    if atmost and steps != 1 and self._is_init(pred.source()):
                         added = True
                         tmp = newpath[:]
                         tmp.reverse()
