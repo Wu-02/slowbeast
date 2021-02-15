@@ -1,4 +1,5 @@
 import sys
+from itertools import chain
 
 from slowbeast.domains.pointer import Pointer
 from slowbeast.util.debugging import ldbgv
@@ -91,6 +92,17 @@ class PathExecutionResult:
             oth = self.other or []
             oth += r.other
             self.other = oth
+
+    def killed(self):
+        other = self.other
+        early = self.early
+        killed1 = (
+            (s for s in other if s.wasKilled()) if other else ()
+        )
+        killed2 = (
+            (s for s in early if s.wasKilled()) if early else ()
+        )
+        return chain(killed1, killed2)
 
     def check(self):
         assert not self.ready or all(map(lambda x: x.isReady(), self.ready))

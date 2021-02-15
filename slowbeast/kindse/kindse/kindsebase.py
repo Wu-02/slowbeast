@@ -1,6 +1,5 @@
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, ldbgv
 
-from slowbeast.kindse.annotatedcfg import CFG
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.analysis.callgraph import CallGraph

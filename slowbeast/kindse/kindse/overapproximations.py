@@ -446,9 +446,13 @@ def drop_clauses(clauses, S, target, EM, L, safesolver, executor):
         X = S.copy()
         X.reset_expr(tmpexpr)
         r = check_paths(executor, lpaths, pre=X, post=union(X, target))
+        for s in r.killed():
+            dbg("Killed a state")
+            return newclauses
         if r.errors is None and r.ready:
             newclauses = tmp
             dbg(f"  dropped {c}...")
+
     return newclauses
 
 def drop_clauses_fixpoint(clauses, S, target, EM, L, safesolver, executor):

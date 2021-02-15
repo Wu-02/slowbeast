@@ -122,6 +122,13 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
 def simplify_expr(expr, EM):
     return EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
 
+def is_seq_inductive(seq, executor, L, has_ready=False):
+    r = seq.check_ind_on_paths(executor, L.paths())
+    for s in r.killed():
+        dbg("Killed a state")
+        executor.report(s)
+        return False
+    return r.errors is None and (r.ready or not has_ready)
 
 class KindSEChecker(BaseKindSE):
     """
@@ -280,6 +287,10 @@ class KindSEChecker(BaseKindSE):
             # FIXME we can use it at least for annotations
             dbg("Infeasible frame...")
             return []
+        for s in r.killed():
+            dbg("Killed a state")
+            self.report(s)
+            return []
 
         newseqs = []
 
@@ -347,8 +358,7 @@ class KindSEChecker(BaseKindSE):
 
     def overapprox_init_seq(self, seq0, errs0, L):
         if __debug__:
-            r = seq0.check_ind_on_paths(self, L.paths())
-            assert r.errors is None, "seq is not inductive"
+            assert is_seq_inductive(seq0, self, L), "seq is not inductive"
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
         S = create_set(seq0.toannotation(True))
@@ -357,50 +367,17 @@ class KindSEChecker(BaseKindSE):
         seq = InductiveSequence(
             overapprox_set(self, EM, S, errs0.toassert(), target, L).toassert()
         )
-        r = seq.check_ind_on_paths(self, L.paths())
         # Why could this happen?
-        if r.errors is None and r.ready:
+        #r = seq.check_ind_on_paths(self, L.paths())
+        #if r.errors is None and r.ready:
+        if is_seq_inductive(seq, self, L, has_ready=True):
             return seq
         return seq0
 
-    def strengthen_initial_seq_picking(self, seq0, errs0, path, L: SimpleLoop):
-        # try to pick some inductive subset
- 
-        F = seq0.toannotation(True)
-        expr = F.expr()
-        EM = getGlobalExprManager()
-        R = self.ind_executor().create_states_set(F)
-        R.reset_expr() # clear the state but preserve substitutions
-        T = R.copy()
-
-        for c in expr.to_cnf().children():
-            tmpset = T.copy()
-            tmpset.intersect(c)
-            tmp = InductiveSequence(tmpset.as_assert_annotation())
-            print('tmp', tmp)
-            r = tmp.check_ind_on_paths(self, L.paths())
-            if r.errors is None:
-                print('INDUCTIVE', c)
-                R.intersect(c)
-            else:
-                print(f"Not inductive (CTI: {r.errors[0].model()})")
-
-        print(R)
-        seq0 = InductiveSequence(R.as_assert_annotation())
-
-        #dbg("Initial sequence made inductive", color="dark_green")
-        ## dropping the clauses failed
-        r = seq0.check_ind_on_paths(self, L.paths())
-        if r.errors is None:
-            dbg("Initial sequence made inductive", color="dark_green")
-            return seq0
- 
-        assert False
-        return None
-
     def strengthen_initial_seq_exit_cond(self, seq0, E, path, L: SimpleLoop):
-        """ Strengthen the initial sequence through loop entry condition.
-            Does not work for assertions inside the loop
+        """
+        Strengthen the initial sequence through loop entry condition.
+        Does not work for assertions inside the loop.
         """
         # get the prefix of the path that exits the loop
         prefix = None
@@ -416,7 +393,11 @@ class KindSEChecker(BaseKindSE):
         ready = r.ready
         if ready is None:
             return None
-        R = self.ind_executor().create_states_set()
+        for s in r.killed():
+            dbg("Killed a state")
+            self.report(s)
+            return None
+        R = self.create_set()
         R.add(ready)
         R.intersect(seq0.toannotation(True))
         if R.is_empty():
@@ -432,8 +413,7 @@ class KindSEChecker(BaseKindSE):
                 return None
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
-        r = seq0.check_ind_on_paths(self, L.paths())
-        if r.errors is None:
+        if is_seq_inductive(seq0, self, L):
             return seq0
         return None
 
@@ -449,6 +429,10 @@ class KindSEChecker(BaseKindSE):
         r = check_paths(self, L.get_exit_paths())
         ready = r.ready
         if not ready:
+            return None
+        for s in r.killed():
+            dbg("Killed a state")
+            self.report(s)
             return None
         create_set = self.create_set
         R = create_set()
@@ -482,8 +466,7 @@ class KindSEChecker(BaseKindSE):
        #seq0 = InductiveSequence(S.toassert())
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
-        r = seq0.check_ind_on_paths(self, L.paths())
-        if r.errors is None:
+        if is_seq_inductive(seq0, self, L):
             return seq0
         return None
 
@@ -499,8 +482,7 @@ class KindSEChecker(BaseKindSE):
 
         E = create_set(errs0.toassert())
         assert not E.is_empty(), "Error states are empty"
-        r = seq0.check_ind_on_paths(self, L.paths())
-        if r.errors is None:
+        if is_seq_inductive(seq0, self, L):
             dbg("Initial sequence is inductive", color="dark_green")
             return seq0
 
@@ -589,8 +571,7 @@ class KindSEChecker(BaseKindSE):
                 )
                 if __debug__:
                     assert intersection(create_set(seq.toannotation(True)), errs0.toassert()).is_empty(), "Sequence is not safe"
-                    r = seq.check_ind_on_paths(self, L.paths())
-                    assert r.errors is None, "seq is not inductive"
+                    assert is_seq_inductive(seq, self, L), "seq is not inductive"
 
                 dbg("Extending the sequence")
                 for e in self.extend_seq(seq, errs0, L):
@@ -626,16 +607,10 @@ class KindSEChecker(BaseKindSE):
                 #dbgv(f"Safe (init) path: {path}", color="dark_green")
                 return None, states  # this path is safe
             elif r is Result.UNKNOWN:
-                killed1 = (
-                    (s for s in states.other if s.wasKilled()) if states.other else ()
-                )
-                killed2 = (
-                    (s for s in states.early if s.wasKilled()) if states.early else ()
-                )
-                for s in chain(killed1, killed2):
+                for s in states.killed():
                     self.report(s, self.reportfn)
                 #dbgv(f"Inconclusive (init) path: {path}")
-                self.have_problematic_path = True
+                self.problematic_paths.append(path)
                 # there is a problem with this path,
                 # but we can still find an error
                 # on some different path
@@ -657,12 +632,12 @@ class KindSEChecker(BaseKindSE):
             if r.early
             else ()
         )
-        problem = False
+        #problem = False
         for s in chain(killed1, killed2):
-            problem = True
+            #problem = True
             self.report(s, fn=self.reportfn)
             self.reportfn(f"Killed states when executing {path}")
-            self.have_problematic_path = True
+            self.problematic_paths.append(path)
 
        #if r.errors:
        #    self.reportfn(f"Possibly error path: {path}", color="ORANGE")
@@ -758,31 +733,6 @@ class KindSymbolicExecutor(BaseKindSE):
     def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
         super().__init__(prog=prog, ohandler=ohandler, opts=opts)
 
-   #def _get_error_paths(self):
-   #    paths = []
-   #    # initialize the paths only in functions
-   #    # that are reachable in the callgraph
-   #    for F in self.programstructure.callgraph.funs():
-   #        if F.isUndefined():
-   #            continue
-
-   #        cfa = self.get_cfa(F)
-   #        locs = cfa.locations()
-   #        iserr = cfa.is_err
-   #        paths.extend(AnnotatedCFAPath([edge]) for l in locs for edge in l.predecessors() if iserr(l))
-
-   #    return paths
-
-   #def _get_possible_errors(self):
-       #for err in self._get_error_paths():
-       #    assert len(err) == 1
-       #    r = check_paths(self, [err])
-       #    assert r.errors, "The error path has no errors"
-       #    for e in r.errors:
-       #        EM = e.expr_manager()
-       #        yield err[0].source(), AssertAnnotation(
-       #            EM.Not(e.path_condition()), get_subs(e), EM
-       #        )
     def _get_possible_errors(self):
         EM = getGlobalExprManager()
         for F in self.programstructure.callgraph.funs():
