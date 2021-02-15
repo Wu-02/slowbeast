@@ -82,14 +82,12 @@ class MemoryObject:
 
         if not off.is_concrete():
             return MemError(
-                MemError.UNSUPPORTED,
-                "Write to non-constant offset not supported"
+                MemError.UNSUPPORTED, "Write to non-constant offset not supported"
             )
 
         if not self._has_concrete_size():
             return MemError(
-                MemError.UNSUPPORTED,
-                "Write to symbolic-sized objects not implemented"
+                MemError.UNSUPPORTED, "Write to symbolic-sized objects not implemented"
             )
 
         offval = off.value()
@@ -126,13 +124,13 @@ class MemoryObject:
         if not self._has_concrete_size():
             return None, MemError(
                 MemError.UNSUPPORTED,
-                "Read from symbolic-sized objects not implemented yet"
+                "Read from symbolic-sized objects not implemented yet",
             )
 
         offval = off.value()
 
         if self._is_oob(bts):
-                return None, MemError(
+            return None, MemError(
                 MemError.OOB_ACCESS,
                 "Read {0}B from object of size {1}B".format(bts, self._size),
             )
@@ -180,6 +178,3 @@ class MemoryObject:
     def dump(self, stream=stdout):
         stream.write(str(self))
         stream.write("\n")
-
-
-

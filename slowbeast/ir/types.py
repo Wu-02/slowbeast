@@ -13,7 +13,7 @@ class Type:
         self._bitwidth = bw
 
     def bytewidth(self):
-        return int(max(self._bitwidth / 8, 1))
+        return max(int(self._bitwidth / 8), 1)
 
     def bitwidth(self):
         return self._bitwidth

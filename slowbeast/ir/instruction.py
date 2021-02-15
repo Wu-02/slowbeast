@@ -127,6 +127,7 @@ class Instruction(ProgramElement):
         assert isinstance(self.bblock(), BBlock)
         return self.bblock().get_next_inst(self.bblock_idx())
 
+
 class ValueInstruction(Instruction):
     """
     Instruction that generates a value
@@ -141,17 +142,18 @@ class ValueInstruction(Instruction):
     def as_value(self):
         return "x{0}".format(self.get_id())
 
+
 class ValueTypedInstruction(ValueInstruction):
     """
     ValueInstruction with associated type of the generated value
     """
+
     def __init__(self, ty, ops=None):
         super().__init__(ops or [])
         self._type = ty
 
     def type(self):
         return self._type
-
 
 
 class Store(Instruction):
@@ -199,7 +201,7 @@ class Load(ValueTypedInstruction):
         return self._type.bytewidth()
 
     def bitwidth(self):
-        return 8 * self._type.bitwidth()
+        return self._type.bitwidth()
 
     def pointer_operand(self):
         return self.operand(0)
@@ -453,6 +455,7 @@ class UnaryOperation(ValueTypedInstruction):
     def operation(self):
         return self._op
 
+
 class Abs(UnaryOperation):
     """ Absolute value """
 
@@ -461,6 +464,7 @@ class Abs(UnaryOperation):
 
     def __str__(self):
         return "x{0} = abs({1})".format(self.get_id(), self.operand(0).as_value())
+
 
 class Extend(UnaryOperation):
     def __init__(self, op, a, bw):
@@ -511,6 +515,7 @@ class Cast(UnaryOperation):
             "signed " if self._signed else "",
             self.casttype(),
         )
+
 
 class Neg(UnaryOperation):
     """ Negate the number (return the same number with opposite sign) """
@@ -604,8 +609,7 @@ class BinaryOperation(ValueTypedInstruction):
 
     def __init__(self, op, a, b):
         isptr = a.type().is_pointer() or b.type().is_pointer()
-        assert isptr or a.type() == b.type(),\
-            f"{a} ({a.type()}), {b} ({b.type()})"
+        assert isptr or a.type() == b.type(), f"{a} ({a.type()}), {b} ({b.type()})"
         assert BinaryOperation.ADD <= op <= BinaryOperation.LAST
         super().__init__(PointerType() if isptr else a.type(), [a, b])
         self._op = op

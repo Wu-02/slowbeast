@@ -37,13 +37,16 @@ def condition_to_bool(cond, EM):
     else:
         assert is_symbolic(cond)
         if not cond.type().is_bool():
-            assert cond.type().bitwidth() == 1, "Invalid condition in branching"
+            assert (
+                cond.type().bitwidth() == 1
+            ), f"Invalid condition in branching: {cond}"
             cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
         else:
             cval = cond  # It already is a boolean expression
 
     assert cval.is_bool()
     return cval
+
 
 def evalCond(state, cond):
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
@@ -53,6 +56,7 @@ def evalCond(state, cond):
     # take care of it here: if it is a bitvector, compare it to 0 (C
     # semantics)
     return condition_to_bool(c, state.expr_manager())
+
 
 class Executor(ConcreteExecutor):
     def __init__(self, solver, opts, memorymodel=None):

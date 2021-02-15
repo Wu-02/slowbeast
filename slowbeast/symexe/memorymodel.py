@@ -78,13 +78,13 @@ class LazySymbolicMemoryModel(CoreMM):
                 state.setError(err)
         return [state]
 
-    def uninitializedRead(self, state, frm, ptr, bytesNum):
-        dbgv("Reading nondet for uninitialized value: {0}".format(ptr), color="WHITE")
+    def uninitializedRead(self, state, frm, ptr, bitsnum):
+        dbgv("Reading nondet for uninitialized value: {0}".format(ptr), color="white")
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
         # val = self.solver().fresh_value(f"uninit_{frm.as_value()}", 8 * bytesNum)
-        val = state.solver().Var(f"uninit_{frm.as_value()}", IntType(8 * bytesNum))
+        val = state.solver().Var(f"uninit_{frm.as_value()}", IntType(bitsnum))
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
@@ -97,8 +97,16 @@ class LazySymbolicMemoryModel(CoreMM):
 
         return val, err
 
-    def read(self, state, toOp, fromOp, bytesNum):
+    def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
+        """
+        We want to read 'bitsnum' of bits and in order to do that
+        we read 'bytesNum' of bytes
+        """
+        assert (
+            bitsnum is None or max(1, int(bitsnum / 8)) == bytesNum
+        ), f"{bytesNum} {bitsnum}"
         assert isinstance(bytesNum, int), f"Invalid number of bytes: {bytesNum}"
+
         frm = state.get(fromOp)
         if frm is None:
             self.lazyAllocate(state, fromOp)
@@ -107,7 +115,9 @@ class LazySymbolicMemoryModel(CoreMM):
         assert frm.is_pointer()
         if not frm.offset().is_concrete():
             if self._overapprox_unsupported:
-                val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
+                val, err = self.uninitializedRead(
+                    state, fromOp, frm, bitsnum or bytesNum * 8
+                )
                 if err:
                     state.setError(err)
                 else:
@@ -120,11 +130,15 @@ class LazySymbolicMemoryModel(CoreMM):
         if err:
             assert err.isMemError(), err
             if err.isUninitRead():
-                val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
+                val, err = self.uninitializedRead(
+                    state, fromOp, frm, bitsnum or bytesNum * 8
+                )
                 assert isinstance(toOp, Load)
                 state.addNondet(NondetLoad.fromExpr(val, toOp, fromOp))
             elif err.isUnsupported() and self._overapprox_unsupported:
-                val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
+                val, err = self.uninitializedRead(
+                    state, fromOp, frm, bitsnum or bytesNum * 8
+                )
         if err:
             state.setError(err)
         else:

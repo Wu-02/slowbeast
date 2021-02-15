@@ -223,7 +223,6 @@ class Memory:
         stream.write("-- Call stack:\n")
         self._cs.dump(stream)
 
-
     def havoc_obj(self, objid):
         isglob = False
         obj = self._objects.get(objid)
@@ -248,7 +247,6 @@ class Memory:
                 self._objects[obj.get_id()] = obj
         else:
             obj.clear()
-
 
     def havoc(self, objs=None):
         """ Havoc the contents of memory """
@@ -277,8 +275,4 @@ class Memory:
         # clear values in call stack
         for frame in self._cs:
             frame.clear()
-
-
-
-
 

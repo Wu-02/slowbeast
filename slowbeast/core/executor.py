@@ -192,7 +192,7 @@ class Executor:
         assert isinstance(instr, Load)
 
         states = self.memorymodel.read(
-            state, instr, instr.pointer_operand(), instr.bytewidth()
+            state, instr, instr.pointer_operand(), instr.bytewidth(), instr.bitwidth()
         )
 
         for s in states:

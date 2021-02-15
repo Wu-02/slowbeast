@@ -57,7 +57,7 @@ class MemoryModel:
             state.setError(err)
         return [state]
 
-    def read(self, state, toOp, fromOp, bytesNum):
+    def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
         frm = state.get(fromOp)
         if frm is None:
             state.setKilled("Use of unknown variable: {0}".format(fromOp))

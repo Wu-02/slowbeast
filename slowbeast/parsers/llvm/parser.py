@@ -232,8 +232,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
 
-        L = Load(self.operand(operands[0]),
-                 get_sb_type(self.llvmmodule, inst.type))
+        L = Load(self.operand(operands[0]), get_sb_type(self.llvmmodule, inst.type))
         self._addMapping(inst, L)
         return [L]
 
@@ -601,7 +600,7 @@ class Parser:
         operands = getLLVMOperands(inst)
         bnum = type_size(self.llvmmodule, inst.type)
         phivar = Alloc(ConcreteVal(bnum, SizeType))
-        L = Load(phivar, bnum)
+        L = Load(phivar, get_sb_type(self.llvmmodule, inst.type))
         self._addMapping(inst, L)
         self.phis.append((inst, phivar, L))
         return [L]
