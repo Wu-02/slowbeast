@@ -58,11 +58,28 @@ class AnnotatedCFAPath:
                     return elems[0]
         return None
 
+    def first_assume_edge_idx(self):
+        edges = self._edges
+        if edges:
+            for idx in range(len(edges)):
+                if edges[idx].is_assume():
+                    return idx
+        return None
+
+    def first_assume_edge(self):
+        idx = self.first_assume_edge_idx()
+        if idx is not None:
+            return self._edges[idx]
+        return None
+
     def edges(self):
         return self._edges
 
     def __getitem__(self, item):
         return self._edges.__getitem__(item)
+
+    def __iter__(self):
+        return self._edges.__iter__()
 
     def annot_after_loc(self, loc):
         return self._annot_after_loc.get(_loc_id(loc))
@@ -88,8 +105,11 @@ class AnnotatedCFAPath:
     def add_annot_before_loc(self, annot, loc):
         self._annot_before_loc.setdefault(_loc_id(loc), []).append(annot)
 
-    def subpath(self, start, end):
-        n = AnnotatedCFAPath(self._edges[start : end + 1])
+    def subpath(self, start, end=None):
+        if end is None:
+            n = AnnotatedCFAPath(self._edges[start :])
+        else:
+            n = AnnotatedCFAPath(self._edges[start : end + 1])
         _copy_annots(n, self)
         return n
 
