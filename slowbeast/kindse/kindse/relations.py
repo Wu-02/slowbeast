@@ -74,7 +74,7 @@ def get_all_relations(state):
         l2bw = l2.type().bitwidth()
 
         bw = max(l1bw, l2bw)
-        if l1bw == bw:
+        if l1bw != bw:
             l1 = EM.SExt(l1, ConcreteInt(bw, bw))
         if l2bw != bw:
             l2 = EM.SExt(l2, ConcreteInt(bw, bw))
