@@ -4,7 +4,7 @@ from slowbeast.domains.constants import ConcreteBool
 from slowbeast.domains.pointer import Pointer
 from slowbeast.core.executor import Executor as ConcreteExecutor
 from slowbeast.solvers.expressions import is_symbolic
-from slowbeast.util.debugging import dbgv
+from slowbeast.util.debugging import dbgv, ldbgv
 from slowbeast.core.errors import AssertFailError
 from slowbeast.domains.concrete import ConcreteVal
 
@@ -179,7 +179,7 @@ class Executor(ConcreteExecutor):
         """
         assert isinstance(instr, Branch)
         assert isinstance(to, bool)
-        dbgv("branching to {0} succ of {1}".format(to, instr))
+        ldbgv("branching to {0} succ of {1}", (to, instr))
         self.stats.branchings += 1
 
         cond = instr.condition()
@@ -358,7 +358,7 @@ class Executor(ConcreteExecutor):
                 val = ConcreteVal(getrandbits(32), retTy)
             elif self._input_vector:
                 val = self._input_vector.pop()
-                dbgv(f"Using value from input vector: {val}")
+                ldbgv(f"Using value from input vector: {0}", (val,))
                 assert val.type() == retTy
             else:
                 val = state.solver().fresh_value(name, retTy)

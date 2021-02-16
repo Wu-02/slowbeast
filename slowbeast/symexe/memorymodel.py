@@ -29,7 +29,7 @@ class LazySymbolicMemoryModel(CoreMM):
         assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
-        dbgv("Lazily allocated {0}".format(op), color="WHITE")
+        dbgv("Lazily allocated {0}".format(op), color="white", verbose_lvl=3)
         assert state.get(op), "Did not bind an allocated value"
 
     def _havoc_ptr_target(self, state, ptr):
@@ -79,7 +79,8 @@ class LazySymbolicMemoryModel(CoreMM):
         return [state]
 
     def uninitializedRead(self, state, frm, ptr, bitsnum):
-        dbgv("Reading nondet for uninitialized value: {0}".format(ptr), color="white")
+        dbgv("Reading nondet for uninitialized value: {0}".format(ptr),
+             color="white", verbose_lvl=3)
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name

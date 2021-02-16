@@ -431,9 +431,10 @@ class Executor:
             "({2}) {0}: {1}",
             (
                 "--" if not instr.bblock() else instr.fun().name(),
-                str(instr),
+                instr,
                 state.get_id(),
             ),
+            verbose_lvl=3
         )
 
         self._executed_instrs += 1

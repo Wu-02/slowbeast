@@ -29,9 +29,12 @@ def createArgParser():
     parser.add_argument('-no-output', action='store_true', default=False, help='Genereate no output (other than stdout/stderr)')
     parser.add_argument('-verbose', '-v', action='store_true', dest='verbose',
                         default=False, help='Genereate verbose output')
+    parser.add_argument('-verbose-verbose', '-vv', action='store_true', dest='verbose_v',
+                        default=False, help='Genereate verbose lvl 2 output')
     parser.add_argument('-verbose-lvl', '-vlvl', type=int, dest='verbose_lvl',
-                        default=2, help='The level of verbose output (the higher, the more verbose)')
+                        default=1, help='The level of verbose output (the higher, the more verbose)')
     parser.add_argument('-dbgv', action='store_true', help='Shortcut for -dbg -v')
+    parser.add_argument('-dbgvv', action='store_true', help='Shortcut for -dbg -vv')
     parser.add_argument('-no-tests', action='store_true', help='Genereate no test files')
     parser.add_argument('-all-tests', action='store_true', default=False, help='Genereate tests for all paths (not only the erroneous)')
     parser.add_argument('-pointer-bitwidth', action='store', type=int, help='Set the bitwidth of pointers')
@@ -265,14 +268,18 @@ def compile_and_link(files, outd):
     return bitcode
 
 def setup_debugging(args):
+    if args.dbgvv:
+        args.dbg = True
+        args.verbose_lvl = max(3, args.verbose_lvl)
     if args.dbgv:
         args.dbg = True
-        args.verbose = True
+        args.verbose_lvl = max(2, args.verbose_lvl)
+    if args.verbose_v:
+        args.verbose_lvl = max(3, args.verbose_lvl)
+    if args.verbose:
+        args.verbose_lvl = max(2, args.verbose_lvl)
     if args.dbg:
-        if args.verbose:
-            set_debugging(args.verbose_lvl)
-        else:
-            set_debugging(1)
+        set_debugging(args.verbose_lvl)
 
 def main():
     # we do not use threads...

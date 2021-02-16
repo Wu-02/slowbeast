@@ -247,11 +247,11 @@ def execute_annotations(executor, s, annots):
     assert s.isReady(), "Cannot execute non-ready state"
     oldpc = s.pc
 
-    dbgv_sec(f"executing annotations on state {s.get_id()}")
+    dbgv_sec(f"executing annotations on state {s.get_id()}", verbose_lvl=3)
 
     ready, nonready = [s], []
     for annot in annots:
-        ldbgv("{0}", (annot,))
+        ldbgv("{0}", (annot,), verbose_lvl=3)
         ready, nr = execute_annotation(executor, ready, annot)
         nonready += nr
 

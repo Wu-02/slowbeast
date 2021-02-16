@@ -166,7 +166,7 @@ def dbgv_sec(msg=None, verbose_lvl=2, color="WHITE"):
     if msg is None:
         dec_debugging_lvl()
     else:
-        dbgv(msg, color=color)
+        dbgv(msg, color=color, verbose_lvl=verbose_lvl)
         inc_debugging_lvl()
 
 

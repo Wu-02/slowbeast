@@ -144,7 +144,7 @@ class Executor(SExecutor):
         ), "Wrong state type"
         for idx in range(pathlen):
             edge = edges[idx]
-            dbgv(f"vv ----- Edge {edge} ----- vv")
+            dbgv(f"vv ----- Edge {edge} ----- vv", verbose_lvl=3)
             states, nonready = self._execute_annotated_edge(states, edge, path)
             assert all(
                 map(lambda s: isinstance(s, LazySEState), states)
@@ -155,15 +155,15 @@ class Executor(SExecutor):
             # now execute the branch following the edge on the path
             earlytermstates += nonready
 
-            dbgv(f"^^ ----- Edge {edge} ----- ^^")
+            dbgv(f"^^ ----- Edge {edge} ----- ^^", verbose_lvl=3)
             if not states:
-                dbgv("^^ (-8 Infeasible path 8-) ^^")
+                dbgv("^^ (-8 Infeasible path 8-) ^^", verbose_lvl=3)
                 break
 
         if states:
             # execute the annotations of the target (as _execute_annotated_edge
             # executes only the annotations of the source to avoid repetition)
-            dbgv(">> Annotation of last loc + post")
+            dbgv(">> Annotation of last loc + post", verbose_lvl=3)
             target = edge.target()
             locannot = path.annot_before_loc(target)
             if locannot and states:
@@ -226,7 +226,7 @@ class CFGExecutor(SExecutor):
         return ready, nonready
 
     def executeAnnotatedLoc(self, states, loc, path=None):
-        dbgv(f"vv ----- Loc {loc.bblock().get_id()} ----- vv")
+        dbgv(f"vv ----- Loc {loc.bblock().get_id()} ----- vv", verbose_lvl=3)
 
         # execute annotations before bblock
         ready, nonready = self.executeAnnotations(states, loc.annotationsBefore)
