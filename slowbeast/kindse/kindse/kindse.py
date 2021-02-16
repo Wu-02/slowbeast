@@ -5,7 +5,7 @@ from slowbeast.ir.instruction import Assert as AssertInst
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from .kindsebase import check_paths
-from slowbeast.symexe.statesset import intersection, union
+from slowbeast.symexe.statesset import intersection, union, complement
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
@@ -424,10 +424,11 @@ class KindSEChecker(BaseKindSE):
             return None
         if not intersection(R, E).is_empty():
             dbg("   Intersection with unsafe states is non-empty")
-            E.complement()
-            R.intersect(E)
+            R.intersect(complement(E))
+            dbg("   trying to fix it")
             if R.is_empty():
                 return None
+        assert intersection(R, E).is_empty()
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
         if is_seq_inductive(seq0, self, L):
@@ -441,7 +442,8 @@ class KindSEChecker(BaseKindSE):
 
         FIXME: we actually do not use the assertion at all right now,
         only implicitly as it is contained in the paths...
-        FIXME: we can probably get rid of this one?
+        NOTE: this version of loop_iter strengthening works sometimes
+        with infinite loops where the first version does not work, so keep it.
         """
         # get the safe states that jump out of the loop after one iteration
         r = check_paths(self, L.get_exit_paths())
@@ -472,16 +474,13 @@ class KindSEChecker(BaseKindSE):
 
         if not intersection(R, E).is_empty():
             dbg("... (intersection with unsafe states is non-empty)")
-            E.complement()
-            R.intersect(E)
+            R.intersect(complement(E))
+            dbg("... (tried to fix it)")
             if R.is_empty():
                 return None
 
-        # expr = R.as_expr()
-        # S = overapprox_set(self, EM, R, errs0.toassert(), seq0.toannotation(),
-        #                   L, drop_only=True)
-        # seq0 = InductiveSequence(S.toassert())
-        print(R)
+        assert intersection(R, E).is_empty()
+
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
         if is_seq_inductive(seq0, self, L):
@@ -524,8 +523,8 @@ class KindSEChecker(BaseKindSE):
 
         if not intersection(R, E).is_empty():
             dbg("... (intersection with unsafe states is non-empty)")
-            E.complement()
-            R.intersect(E)
+            dbg("   trying to fix it")
+            R.intersect(complement(E))
             if R.is_empty():
                 return None
 
@@ -571,7 +570,6 @@ class KindSEChecker(BaseKindSE):
             return tmp
         dbg("Failed strengthening the initial sequence with last iteration")
 
-        # FIXME: get rid of this one?
         tmp = self.strengthen_initial_seq_loop_iter2(seq0, E, path, L)
         if tmp:
             dbg("Succeeded strengthening the initial sequence with last iteration (2)")
