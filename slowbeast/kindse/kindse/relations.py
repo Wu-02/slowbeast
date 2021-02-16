@@ -79,7 +79,7 @@ def get_all_relations(state):
         if l2bw != bw:
             l2 = EM.SExt(l2, ConcreteInt(bw, bw))
 
-        c = EM.Var("c_coef", IntType(bw))
+        c = EM.Var(f"c_diff_{l1.as_value()}_{l2.as_value()}", IntType(bw))
         expr = EM.Eq(EM.Sub(l2, l1), c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
@@ -94,7 +94,7 @@ def get_all_relations(state):
     # equalities with constants
     for l in state.getNondetLoads():
         lbw = l.type().bitwidth()
-        c = EM.Var("c_coef", IntType(lbw))
+        c = EM.Var(f"c_coef_{l.as_value()}", IntType(lbw))
         expr = EM.Eq(l, c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
