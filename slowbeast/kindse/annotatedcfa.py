@@ -1,6 +1,4 @@
-from slowbeast.analysis.cfa import CFA
-from slowbeast.ir.instruction import Assert
-
+from slowbeast.util.debugging import print_highlight
 
 def _loc_id(loc):
     if isinstance(loc, int):
@@ -18,6 +16,10 @@ def _edge_str(edge, ab, aa):
         " @" if aa.get(_loc_id(edge.source())) else "",
     )
 
+def _str_loc(loc, ab, aa):
+    return "{0}{1}{2}".format(
+        "@ " if ab.get(_loc_id(loc)) else "", loc, " @" if aa.get(_loc_id(loc)) else "",
+    )
 
 def _copy_annots(dst, src):
     # FIXME: do cow?
@@ -138,10 +140,30 @@ class AnnotatedCFAPath:
     def __len__(self):
         return len(self._edges)
 
+    def dump(self):
+        ab, aa = self._annot_before_loc, self._annot_after_loc
+        print_highlight("{0}{1}{2}".format(
+            "[A] " if self._annot_before else "",
+            "".join(map(lambda e: _edge_str(e, ab, aa), self.edges())),
+            " [A]" if self._annot_after else "",
+        ), words={'[A]' : 'green'})
+
     def __repr__(self):
         ab, aa = self._annot_before_loc, self._annot_after_loc
-        return "{0}{1}{2}".format(
-            "A " if self._annot_before else "",
-            "".join(map(lambda e: _edge_str(e, ab, aa), self.edges())),
-            " A" if self._annot_after else "",
-        )
+        if len(self) < 13:
+            return "{0}{1} -> {2}{3}".format(
+                "[A] " if self._annot_before else "",
+                " -> ".join(map(lambda e: _str_loc(e.source(), ab, aa), self._edges)),
+                _str_loc(self._edges[-1].target(), ab, aa),
+                " [A]" if self._annot_after else "",
+            )
+
+        N=5
+        return "{0}{1} ... ({2} edges) ... {3} -> {4}{5}".format(
+            "[A] " if self._annot_before else "",
+            " -> ".join(map(lambda e: _str_loc(e.source(), ab, aa), (ed for n, ed in enumerate(self._edges) if n < N))),
+            len(self) - N ,
+            _str_loc(self._edges[-1].source(), ab, aa),
+            _str_loc(self._edges[-1].target(), ab, aa),
+            " [A]" if self._annot_after else "")
+
