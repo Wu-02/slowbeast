@@ -264,13 +264,13 @@ class Executor(ConcreteExecutor):
                     "Comparison of pointers implemented only for "
                     "(non-)equality or into the same object"
                 )
-                return [state]
             else:
                 state.set(instr, ConcreteBool(p == Cmp.NE))
                 state.pc = state.pc.get_next_inst()
-                return [state]
+            return [state]
 
-        raise RuntimeError("Invalid pointer comparison")
+        state.setKilled("Invalid pointer comparison")
+        return [state]
 
     def execCmp(self, state, instr):
         assert isinstance(instr, Cmp)
@@ -285,8 +285,26 @@ class Executor(ConcreteExecutor):
             if op1isptr and op2isptr:
                 return self.cmpPointers(state, instr, op1, op2)
             else:
-                state.setKilled("Comparison of pointer to a constant not implemented")
-                return state
+                # we handle only comparison of symbolic constant (pointer) to null
+                if op1isptr and op1.is_null():
+                    E = state.expr_manager()
+                    state.set(
+                        instr,
+                        self.cmpValues(E, instr.predicate(),
+                                       E.ConcreteVal(0, op1.bitwidth()), op2,
+                                       instr.is_unsigned())
+                    )
+                elif op2isptr and op2.is_null():
+                    E = state.expr_manager()
+                    state.set(
+                        instr,
+                        self.cmpValues(E, instr.predicate(),
+                                       op1, E.ConcreteVal(0, op1.bitwidth()),
+                                       instr.is_unsigned())
+                    )
+                else:
+                    state.setKilled(f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}")
+                return [state]
 
         x = self.cmpValues(
             state.expr_manager(),

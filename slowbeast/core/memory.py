@@ -259,14 +259,25 @@ class Memory:
                 havoc_obj(o.get_id())
             return
 
-        raise NotImplementedError("Havocing all memory unsupported yet")
-       #newobjs = {}
-       #self._objects_ro = False
-       #createMO = self.createMO()
-       #for p, o in self._objects.items():
-       #    no = createMO(o.size(), o.name(), o.get_id())
-       #    no.setAllocation(no.allocation())
-       #    newobjs[p] = no
+        # create clean objects
+        newobjs = {}
+        for p, o in self._objects.items():
+            newobjs[p] = o.clean_copy()
+        self._objects = newobjs
+        self._objects_ro = False
+
+        # create clean global objects
+        newobjs = {}
+        for p, o in self._glob_objects.items():
+            newobjs[p] = o.clean_copy()
+            newobjs[p] = no
+        self._glob_objects = newobjs
+        self._glob_objects_ro = False
+
+        # clear values in call stack
+        for frame in self._cs:
+            frame.clear()
+
 
 
 

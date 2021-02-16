@@ -159,7 +159,7 @@ class SEState(ExecutionState):
                 lambda x: x.alloc != n.alloc,
                 (l for l in self._nondets if l.isNondetLoad()),
             )
-        )
+            ), f"n:{n}, nondetloads: {self._nondets}"
         self._nondets.append(n)
 
     def getNondets(self):

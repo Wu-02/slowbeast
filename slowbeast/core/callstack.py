@@ -91,6 +91,9 @@ class CallStack:
             ret ^= c.__hash__()
         return ret
 
+    def __iter__(self):
+        return self._cs.__iter__()
+
     def frame(self, idx=-1):
         return self._cs[idx]
 

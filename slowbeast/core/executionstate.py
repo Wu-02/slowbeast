@@ -93,6 +93,8 @@ class ExecutionState:
     def try_eval(self, v):
         if isinstance(v, ConcreteVal):
             return v
+        if isinstance(v, Pointer) and v.is_null():
+            return v
         return self.get(v)
 
     def set(self, what, v):
