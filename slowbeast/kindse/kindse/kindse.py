@@ -5,7 +5,7 @@ from slowbeast.ir.instruction import Assert as AssertInst
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from .kindsebase import check_paths
-from slowbeast.symexe.statesset import intersection, union, complement
+from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
@@ -160,6 +160,32 @@ def strip_first_assume_edge(path : AnnotatedCFAPath):
     # we use this func only on loop edges, so it must contain the entry condition
     assert idx is not None and idx + 1 < len(path)
     return path.subpath(idx+1)
+
+class InductiveSet:
+    """
+    Class representing an inductive set that we derive for a loop header.
+    """
+    def __init__(self, initial_set : StatesSet):
+        assert isinstance(initial_set, StatesSet)
+        self.I = initial_set
+        cI = IncrementalSolver()
+        cI.add(complement(initial_set).as_expr())
+        self.cI = cI
+
+    def add(self, elem):
+        cI = self.cI
+        expr = elem.as_expr()
+        if cI.is_sat(expr):
+            assert not intersection(complement(self.I), elem).is_empty()
+            # the elem is not a subset of current set
+            self.I.add(elem)
+            cI.add(complement(elem).as_expr())
+
+    def includes(self, elem):
+        return self.cI.is_sat(elem.as_expr()) is True
+
+    def __repr__(self):
+        return self.I.__repr__()
 
 class KindSEChecker(BaseKindSE):
     """
