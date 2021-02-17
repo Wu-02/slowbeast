@@ -55,7 +55,7 @@ class AbstractState(ExecutionState):
     def concretize(self, *e):
         return (Domain.concretize(x) for x in e)
 
-    def getNondets(self):
+    def nondets(self):
         return ()
 
     def __hash__(self):

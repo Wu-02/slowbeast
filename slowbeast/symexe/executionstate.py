@@ -86,12 +86,12 @@ class SEState(ExecutionState):
         return self._solver.concretize(self.getConstraints(), *e)
 
     def input_vector(self):
-        return self.concretize(*self.getNondets())
+        return self.concretize(*self.nondets())
 
     def model(self):
         return {
             x: c
-            for (x, c) in zip(self.getNondets(), self.concretize(*self.getNondets()))
+            for (x, c) in zip(self.nondets(), self.concretize(*self.nondets()))
         }
 
     def concretize_with_assumptions(self, assumptions, *e):
@@ -154,23 +154,23 @@ class SEState(ExecutionState):
             self._nondets = copy(self._nondets)
             self._nondets_ro = False
         # we can have only one nonded for a given allocation
-        assert not n.isNondetLoad() or all(
+        assert not n.is_nondet_load() or all(
             map(
                 lambda x: x.alloc != n.alloc,
-                (l for l in self._nondets if l.isNondetLoad()),
+                (l for l in self._nondets if l.is_nondet_load()),
             )
             ), f"n:{n}, nondetloads: {self._nondets}"
         self._nondets.append(n)
 
-    def getNondets(self):
+    def nondets(self):
         return self._nondets
 
     def getNondetLoads(self):
-        return (l for l in self._nondets if l.isNondetLoad())
+        return (l for l in self._nondets if l.is_nondet_load())
 
     def getNondetLoadOf(self, alloc):
         for n in self._nondets:
-            if n.isNondetLoad() and n.alloc == alloc:
+            if n.is_nondet_load() and n.alloc == alloc:
                 return n
         return None
 

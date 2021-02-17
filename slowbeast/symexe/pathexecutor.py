@@ -374,7 +374,7 @@ class CFGExecutor(SExecutor):
 
 #            FIXME("Handle other nondets")  # FIXME
 #            # map constraints from s to r
-#            for x in (l for l in s.getNondets() if l.isNondetLoad()):
+#            for x in (l for l in s.nondets() if l.is_nondet_load()):
 #                prex = tmpr.get(x.load)
 #                if not prex:
 #                    res = self.execute(tmpr, x.load)

@@ -228,7 +228,7 @@ class Expr(Value):
     def unwrap(self):
         return self._expr
 
-    def isNondetLoad(self):
+    def is_nondet_load(self):
         return False
 
     def is_future(self):
@@ -336,7 +336,7 @@ class NondetLoad(Expr):
         self.load = load
         self.alloc = alloc
 
-    def isNondetLoad(self):
+    def is_nondet_load(self):
         return True
 
     def fromExpr(expr, load, alloc):
