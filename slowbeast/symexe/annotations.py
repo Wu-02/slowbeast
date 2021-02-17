@@ -35,10 +35,10 @@ class InstrsAnnotation(Annotation):
     that should be executed
     """
 
-    __slots__ = ["instrs"]
+    __slots__ = "instrs"
 
     def __init__(self, instrs):
-        super(InstrsAnnotation, self).__init__(Annotation.INSTRS)
+        super().__init__(Annotation.INSTRS)
         self.instrs = instrs
 
     def instructions(self):
@@ -59,10 +59,10 @@ class InstrsAnnotation(Annotation):
 
 class ExprAnnotation(Annotation):
 
-    __slots__ = ["_sd", "cannonical"]
+    __slots__ = "_sd", "cannonical"
 
     def __init__(self, ty, expr, subs, EM):
-        super(ExprAnnotation, self).__init__(ty)
+        super().__init__(ty)
 
         # state description
         self._sd = StateDescription(expr, subs)

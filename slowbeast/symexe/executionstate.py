@@ -1,3 +1,4 @@
+from slowbeast.domains.symbolic import NondetInstrResult
 from slowbeast.core.executionstate import ExecutionState
 from slowbeast.util.debugging import warn, ldbgv
 from slowbeast.ir.instruction import Alloc, GlobalVariable
@@ -159,7 +160,7 @@ class SEState(ExecutionState):
                 lambda x: x.alloc != n.alloc,
                 (l for l in self._nondets if l.is_nondet_load()),
             )
-            ), f"n:{n}, nondetloads: {self._nondets}"
+            ), f"n:{n}, nondets: {self._nondets}"
         self._nondets.append(n)
 
     def nondets(self):
@@ -217,6 +218,21 @@ class IncrementalSEState(SEState):
 class LazySEState(SEState):
     def __init__(self, executor, pc, m, solver, constraints=None):
         super().__init__(executor, pc, m, solver, constraints)
+        # this is basically the input vector for this state.
+        # A state describes a set of executions by putting constraints
+        # on the inputs. But when inputs are created dynamically during
+        # the execution, we must put constraints on them once they are
+        # created. Those are these constraints.
+        self._future_nondets = {} # instr -> [expr]
+
+    def get_nondet_instr_result(self):
+        return (l for l in self._nondets if l.is_nondet_instr_result())
+
+    def get_future_nondet(self, instr):
+        exprs = self._future_nondets.get(instr)
+        if exprs:
+            return exprs.pop(0) # consume the returned expression
+        return None
 
     def eval(self, v):
         value = self.try_eval(v)
@@ -234,4 +250,5 @@ class LazySEState(SEState):
             value = self.solver().Var(name, v.type())
             ldbgv("Created new nondet value {0} = {1}", (v.as_value(), value), color="dark_blue")
             self.set(v, value)
+            self.addNondet(NondetInstrResult.fromExpr(value, v))
         return value

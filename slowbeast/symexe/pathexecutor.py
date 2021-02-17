@@ -1,7 +1,8 @@
-from slowbeast.util.debugging import dbgv
+from slowbeast.util.debugging import dbgv, ldbgv
 from .executor import Executor as SExecutor
 from .annotations import execute_annotations
-from .executionstate import LazySEState, IncrementalSEState
+from slowbeast.domains.symbolic import NondetInstrResult
+from .executionstate import LazySEState
 from slowbeast.core.executor import (
     PathExecutionResult,
     split_ready_states,
@@ -29,6 +30,25 @@ class Executor(SExecutor):
         s = LazySEState(self, pc, m, self.solver)
         assert not s.getConstraints(), "the state is not clean"
         return s
+
+    def execUndefFun(self, state, instr, fun):
+        name = fun.name()
+        if name == "abort":
+            state.setTerminated("Aborted via an abort() call")
+            return [state]
+
+        retTy = fun.getReturnType()
+        if retTy:
+            val = state.get_future_nondet(instr)
+            if val:
+                ldbgv(f"Using value from future nondets: {0}", (val))
+                assert val.type() == retTy
+            else:
+                val = state.solver().fresh_value(name, retTy)
+            state.addNondet(NondetInstrResult.fromExpr(val, instr))
+            state.set(instr, val)
+        state.pc = state.pc.get_next_inst()
+        return [state]
 
     def execute_annotations(self, states, annots):
         assert all(map(lambda s: isinstance(s, LazySEState), states))

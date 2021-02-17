@@ -1,12 +1,13 @@
 from slowbeast.ir.instruction import *
 from slowbeast.domains.value import Value
 from slowbeast.domains.constants import ConcreteBool
+from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.symbolic import NondetInstrResult
 from slowbeast.domains.pointer import Pointer
 from slowbeast.core.executor import Executor as ConcreteExecutor
 from slowbeast.solvers.expressions import is_symbolic
 from slowbeast.util.debugging import dbgv, ldbgv
 from slowbeast.core.errors import AssertFailError
-from slowbeast.domains.concrete import ConcreteVal
 
 from .memorymodel import SymbolicMemoryModel
 from .executionstate import SEState, IncrementalSEState
@@ -362,7 +363,7 @@ class Executor(ConcreteExecutor):
                 assert val.type() == retTy
             else:
                 val = state.solver().fresh_value(name, retTy)
-                state.addNondet(val)
+                state.addNondet(NondetInstrResult.fromExpr(val, instr))
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
         return [state]

@@ -231,6 +231,9 @@ class Expr(Value):
     def is_nondet_load(self):
         return False
 
+    def is_nondet_instr_result(self):
+        return False
+
     def is_future(self):
         return False
 
@@ -329,10 +332,10 @@ class Expr(Value):
 
 
 class NondetLoad(Expr):
-    __slots__ = ["load", "alloc"]
+    __slots__ = "load", "alloc"
 
     def __init__(self, e, t, load, alloc):
-        super(NondetLoad, self).__init__(e, t)
+        super().__init__(e, t)
         self.load = load
         self.alloc = alloc
 
@@ -346,6 +349,28 @@ class NondetLoad(Expr):
     def __repr__(self):
         return f"L({self.alloc.as_value()})={Expr.__repr__(self)}"
 
+
+class NondetInstrResult(Expr):
+    """ Expression representing a result of instruction that is unknown - non-deterministic """
+
+    __slots__ = "_instr"
+
+    def __init__(self, e, t, instr):
+        super().__init__(e, t)
+        self._instr = instr
+
+    def is_nondet_instr_result(self):
+        return True
+
+    def instruction(self):
+        return self._instr
+
+    def fromExpr(expr, instr):
+        assert isinstance(expr, Expr)
+        return NondetInstrResult(expr.unwrap(), expr.type(), instr)
+
+    def __repr__(self):
+        return f"{self._instr.as_value()}={Expr.__repr__(self)}"
 
 class Future(Expr):
     """

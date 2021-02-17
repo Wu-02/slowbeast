@@ -114,6 +114,26 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     create_set = executor.create_set
     target = create_set(seq[-1].toassert())
     S = create_set(s)
+
+    # FIXME: this is a workaround until we support nondet() calls in lazy execution
+    r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
+    if r.errors:
+        dbg("FIXME: pre-image is not inductive cause we do not support nondets() in lazy execution yet")
+        return None
+    # --- workaround ends here...
+
+    if __debug__:
+        r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
+        if r.errors:
+            print(r.errors[0].path_condition())
+        assert (
+            r.errors is None
+            ), f"Pre-image with sequence is not inductive\n"\
+               f"-- pre-image --:\n{S}\n"\
+               f"-- target --:\n{target}\n"\
+               f"-- error states --:\n{r.errors[0].path_condition()}\n"\
+               f"-- CTI: --\n{r.errors[0].model()}"
+
     assert not S.is_empty(), "Infeasible states given to overapproximate"
     for rel in get_safe_relations([s], None):
         ldbgv("  Adding relation {0}", (rel,))
@@ -317,12 +337,16 @@ class KindSEChecker(BaseKindSE):
             self.report(s)
             return
 
+
         for s in r.ready:
             if not intersection(E, s).is_empty():
                 dbg("Pre-image is not safe...")
                 # FIXME: should we do the intersection with complement of E?
                 continue
             e = overapprox(self, s, errs0.toassert(), seq, L)
+            if e is None:
+                dbg("Overapproximation failed...")
+                continue
             if e == seq[-1]:
                 dbg("Did not extend (got the same elem...)")
                 continue

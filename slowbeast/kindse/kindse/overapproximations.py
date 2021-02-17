@@ -407,7 +407,7 @@ def overapprox_clause(c, R, executor, L, unsafe, target):
         newl = simplify(overapprox_literal(l, lits, R, unsafe, target, executor, L))
         newc.append(newl)
         dbg(
-            f"  Overapproximated {l} ==> {newl}",
+            f"  Overapproximated {l} --> {newl}",
             color="gray",
         )
 
@@ -525,6 +525,11 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     assert intersection(
         S, unsafe
     ).is_empty(), f"Whata? Unsafe states among one-step reachable safe states:\nS = {S},\nunsafe = {unsafe}"
+    if __debug__:
+        r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
+        assert (
+            r.errors is None
+        ), f"Input set is not inductive (CTI: {r.errors[0].model()})"
 
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
