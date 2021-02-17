@@ -139,7 +139,7 @@ class AssertAnnotation(ExprAnnotation):
         return AssumeAnnotation(self.expr(), self.substitutions(), EM)
 
     def __repr__(self):
-        return f"assert {ExprAnnotation.__repr__(self)}"
+        return f"@[assert {ExprAnnotation.__repr__(self)}]"
 
 
 class AssumeAnnotation(ExprAnnotation):
@@ -147,7 +147,7 @@ class AssumeAnnotation(ExprAnnotation):
         super().__init__(Annotation.ASSUME, expr, subs, EM)
 
     def __repr__(self):
-        return f"assume {ExprAnnotation.__repr__(self)}"
+        return f"@[assume {ExprAnnotation.__repr__(self)}]"
 
 
 class DummyInst:
