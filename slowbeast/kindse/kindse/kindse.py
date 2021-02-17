@@ -189,22 +189,26 @@ class KindSEChecker(BaseKindSE):
 
         # check subsumption by inductive sets
         unsafe = []
-        inductive_sets = self.inductive_sets.get(loc)
-        if inductive_sets:
-            dbg("...(checking subsumed states)")
-            create_set = self.create_set
-            assert states.errors
-            I = create_set(union(inductive_sets))
-            assert not I.is_empty()
-            # FIXME: keep already the complement? Or build it only once on-demand?
-            I.complement()
+        if True: # check subsumption
+            inductive_sets = self.inductive_sets.get(loc)
+            if inductive_sets:
+                dbg("...(checking subsumed states)")
+                create_set = self.create_set
+                assert states.errors
+                I = create_set(union(inductive_sets))
+                assert not I.is_empty()
+                # FIXME: keep already the complement? Or build it only once on-demand?
+                I.complement()
 
-            for e in states.errors:
-                if not intersection(create_set(e), I).is_empty():
-                    unsafe.append(e)
-            if not unsafe:
-                dbg("The path was subsumed")
-                return True
+                for e in states.errors:
+                    if not intersection(create_set(e), I).is_empty():
+                        unsafe.append(e)
+                if not unsafe:
+                    dbg("... (the path was subsumed)")
+                    return Result.SAFE, []
+            else:
+                dbg("...(no inductive set for subsumption)")
+                unsafe = states.errors
         else:
             dbg("...(no inductive set for subsumption)")
             unsafe = states.errors
@@ -316,6 +320,7 @@ class KindSEChecker(BaseKindSE):
         for s in r.ready:
             if not intersection(E, s).is_empty():
                 dbg("Pre-image is not safe...")
+                # FIXME: should we do the intersection with complement of E?
                 continue
             e = overapprox(self, s, errs0.toassert(), seq, L)
             if e == seq[-1]:
@@ -616,15 +621,10 @@ class KindSEChecker(BaseKindSE):
         print_stdout(str(seq0[0]), color="white")
         print_stdout(f"and errors : {errs0}")
 
-        #add the starting set to inductive sequences
-        self.inductive_sets.setdefault(loc, []).append(create_set(seq0[-1].toassume()))
-        if __debug__:
-            dbg(f"Got these inductive sets for loc {loc}", color="green")
-            for IS in self.inductive_sets.get(loc) or ():
-                dbg(f" :  {IS}", color="green")
-
-        # NOTE: we do not require the initial (target) set to be inductive!,
-        # only the rest of the sequence is inductive and it implies the target set
+        # NOTE: if we would not overapproximate the starting set,
+        # then the initial (target) set would not need to be inductive (or
+        # would it?)
+        # only the rest of the sequence is inductive and it reaches the target set
 
         # print('--- starting building sequences  ---')
         EM = getGlobalExprManager()
@@ -642,6 +642,12 @@ class KindSEChecker(BaseKindSE):
                     print_stdout(f"{S} holds on {loc}", color="BLUE")
                     return True
 
+                # The sequence is not invariant, but it is still inductive, so
+                # we can use it later for subsumptions (add only its last
+                # element as we added the previous elements already)
+                # FIXME: add only sets that are not subset of currently added stuff
+                self.inductive_sets.setdefault(loc, []).append(create_set(seq[-1].toassume()))
+
             extended = []
             for seq in sequences:
                 print_stdout(
@@ -657,11 +663,6 @@ class KindSEChecker(BaseKindSE):
                 for e in self.extend_seq(seq, errs0, L):
                     #extended.append(self.abstract_seq(e, errs0, L))
                     extended.append(e)
-                    # store the generated sequences, we will use them during unfolding
-                    # and when we reach the loop again. Do it here so that we can
-                    # use these sets during checking invariance (due to nested loops)
-                    # FIXME: add only sets that are not subset of currently added stuff
-                    self.inductive_sets.setdefault(loc, []).append(create_set(e[-1].toassume()))
                 dbg("Extending the sequence finished")
 
             if not extended:
