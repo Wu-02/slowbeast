@@ -23,6 +23,12 @@ def to_unsigned(x, bw):
         return x
     return x + (1 << bw)
 
+def to_signed(x, bw):
+    """ Get signed value for number in 2's complement """
+    if x < (1 <<(bw - 1)):
+        return x
+    return x - (1 << bw)
+
 
 def to_bv(x, unsigned=True):
     bw = x.bitwidth()

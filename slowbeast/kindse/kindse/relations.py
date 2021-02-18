@@ -115,36 +115,50 @@ def get_const_cmp_relations(state):
 
 
 def get_relations_to_prev_states(state, prev):
-    pass
-   #subs = get_subs(state)
-   #EM = state.expr_manager()
+    subs = get_subs(state)
+    EM = state.expr_manager()
 
-   ## relation between loads
-   #prevexpr = prev.as_expr()
-   ##for l in state.getNondetLoads():
-   #for l, cval in _get_const_cmp_relations(state):
-   #  bw = l.bitwidth()
-   #  # l2bw = l2.type().bitwidth()
-   #  oldl = EM.Var(f"old{l.rhs_repr()}", IntType(bw))
-   #  oldpc = EM.substitute(prevexpr, (l, oldl))
-   #  diff = EM.Var(f"c_diff_{l.rhs_repr()}", IntType(bw))
-   #  expr = EM.Eq(EM.Sub(oldl, l), diff)
-   #  diff_concr = state.concretize_with_assumptions([oldpc, expr], diff)
-   #  has_general = False
-   #  if diff_concr is not None:
-   #      # is c unique?
-   #      dval = diff_concr[0]
-   #      vdval = dval.value()
-   #      if -1 <= vdval <= 1:
-   #          continue # we do not need to replace these
-   #      nonunique = state.is_sat(expr, oldpc, EM.Ne(diff, dval))
-   #      diff = EM.Var(f"c_diff_{l.rhs_repr()}", IntType(bw))
-   #      if nonunique is False:
-   #          yield AssertAnnotation(e, subs, EM)
-   #          has_general = True
-   #  if not has_general:
-   #        yield AssertAnnotation(
-   #            EM.simplify(EM.Eq(l, cval)), subs, EM)
+    # relation between loads
+    prevexpr = prev.as_expr()
+    #for l in state.getNondetLoads():
+    for l, cval in _get_const_cmp_relations(state):
+      bw = l.bitwidth()
+      # l2bw = l2.type().bitwidth()
+      oldl = EM.Var(f"old{l.rhs_repr()}", IntType(bw))
+      oldpc = EM.substitute(prevexpr, (l, oldl))
+      diff = EM.Var(f"c_diff_{l.rhs_repr()}", IntType(bw))
+      expr = EM.Eq(EM.Sub(oldl, l), diff)
+      diff_concr = state.concretize_with_assumptions([oldpc, expr], diff)
+      has_general = False
+      if diff_concr is not None:
+          # is c unique?
+          dval = diff_concr[0]
+          vdval = dval.value()
+          # convert the number from 2's complement bitvector to python int
+          if vdval > (1 << (bw - 1)):
+            vdval -= (1 << bw)
+          if -1 <= vdval <= 1:
+              continue # we do not need to replace these
+          nonunique = state.is_sat(expr, oldpc, EM.Ne(diff, dval))
+          diff = EM.Var(f"c_diff_{l.rhs_repr()}", IntType(bw))
+          if nonunique is False:
+              print(dval, vdval, cval)
+              if vdval > 0: # old value is higher
+                  expr = EM.conjunction(EM.Ge(l, cval),
+                                        EM.Le(l, EM.Add(cval, dval)),
+                                        EM.Eq(EM.Rem(l, dval), EM.Rem(cval, dval))
+                                        )
+              else:
+                  expr = EM.conjunction(EM.Ge(l, cval),
+                                        EM.Le(l, EM.Sub(cval, dval)),
+                                        EM.Eq(EM.Rem(l, dval), EM.Rem(cval, dval))
+                                        )
+              print('Added', expr)
+              yield AssertAnnotation(expr, subs, EM)
+              has_general = True
+      if not has_general:
+            yield AssertAnnotation(
+                EM.simplify(EM.Eq(l, cval)), subs, EM)
 
 
 
@@ -153,8 +167,8 @@ def get_safe_relations(safe, unsafe, prevsafe=None):
         # get and filter out those relations that make the state safe
         yield from get_var_cmp_relations(s)
 
-       #if prevsafe:
-       #    yield from get_relations_to_prev_states(s, prevsafe)
-       #else:
-        yield from get_const_cmp_relations(s)
+        if prevsafe:
+            yield from get_relations_to_prev_states(s, prevsafe)
+        else:
+            yield from get_const_cmp_relations(s)
 
