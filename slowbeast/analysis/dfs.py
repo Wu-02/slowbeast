@@ -41,14 +41,18 @@ class DFSVisitor:
     Visit edges in the DFS order and run a user-specified function on them.
     """
 
-    def __init__(self):
+    def __init__(self, vertices=None):
         self._data = {}
         self._dfscounter = 0
+        # traverse only these vertices
+        self._vertices = vertices
 
     def _getdata(self, node):
         return self._data.setdefault(node, DFSData())
 
     def foreachedge(self, startnode, fun, backtrackfun=None):
+        assert self._vertices is None or startnode in self._vertices
+
         counter = DFSCounter()
         if isinstance(startnode, CFA.Location):
             self._foreachedge_cfa(fun, backtrackfun, None, startnode, counter)
@@ -63,7 +67,11 @@ class DFSVisitor:
         nddata.visited = True
         nddata.innum = counter.counter
 
+        only_vertices = self._vertices
         for succ in node.getSuccessors():
+            if only_vertices and succ not in only_vertices:
+                continue
+
             succdata = getdata(succ)
             if succdata.visited:
                 sin = succdata.innum
@@ -96,9 +104,14 @@ class DFSVisitor:
         nddata.visited = True
         nddata.innum = counter.counter
 
+        only_vertices = self._vertices
         for succedge in loc.successors():
             succ = succedge.target()
             assert succedge.source() is loc
+
+            if only_vertices and succ not in only_vertices:
+                continue
+
             succdata = getdata(succ)
             if succdata.visited:
                 sin = succdata.innum

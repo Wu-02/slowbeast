@@ -1,7 +1,7 @@
 from slowbeast.analysis.callgraph import CallGraph
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.dfs import DFSEdgeType, DFSVisitor
-from slowbeast.analysis.scc import StronglyConnectedComponents
+from slowbeast.analysis.loops import compute_loops
 
 
 class ProgramStructure:
@@ -31,15 +31,24 @@ class ProgramStructure:
         # entry location of the whole program
         self.entry_loc = cfas[prog.entry()].entry()
 
-        self.loop_headers = None
+        self.loops = None
+
+    def get_loop(self, loc):
+        self._get_loops()
+        return self.loops.get(loc)
 
     def get_loop_headers(self):
         # FIXME: do it separately for each CFA
-        headers = self.loop_headers
-        if headers is None:
-            headers = find_loop_headers(self.cfas, self.new_dbg_file)
-            self.loop_headers = headers
-        return headers
+        self._get_loops()
+        return self.loops.keys()
+
+    def _get_loops(self):
+        loops = self.loops
+        if loops is None:
+            loops = {}
+            for cfa in self.cfas.values():
+                loops.update(compute_loops(cfa))
+            self.loops = loops
 
 
 def find_loop_headers(cfas, new_output_file=None):
@@ -50,9 +59,9 @@ def find_loop_headers(cfas, new_output_file=None):
             headers.add(edge.target())
 
     for cfa in cfas.values():
-        SCCs = StronglyConnectedComponents(cfa)
-        for C in SCCs:
-            print(C)
+        for loc, L in compute_loops(cfa).items():
+            print(loc)
+            print(L)
 
         if __debug__:
             if new_output_file:

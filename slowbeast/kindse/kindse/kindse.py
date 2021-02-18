@@ -4,8 +4,8 @@ from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv, ld
 from slowbeast.ir.instruction import Assert as AssertInst
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
-from .kindsebase import check_paths
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
+from slowbeast.analysis.loops import Loop
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
@@ -14,8 +14,7 @@ from slowbeast.symexe.annotations import (
 
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 
-from slowbeast.analysis.loops import SimpleLoop
-from .kindsebase import KindSymbolicExecutor as BaseKindSE
+from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 from .overapproximations import remove_implied_literals, overapprox_set
 from .relations import get_safe_relations
@@ -205,6 +204,7 @@ class KindSEChecker(BaseKindSE):
         self.assertion = A
         self.toplevel_executor = toplevel_executor
         self.create_set = self.ind_executor().create_states_set
+        self.get_loop = toplevel_executor.programstructure.get_loop
 
         # paths to still search
         self.readypaths = []
@@ -276,7 +276,7 @@ class KindSEChecker(BaseKindSE):
         #      self.no_sum_loops.add(loc)
         #      return res, [path]  # found an error
 
-        L = SimpleLoop.construct(loc)
+        L = self.get_loop(loc)
         if L is None:
             print_stdout("Was not able to construct the loop info")
             print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
@@ -444,7 +444,7 @@ class KindSEChecker(BaseKindSE):
             return seq
         return seq0
 
-    def strengthen_initial_seq_exit_cond(self, seq0, E, path, L: SimpleLoop):
+    def strengthen_initial_seq_exit_cond(self, seq0, E, path, L: Loop):
         """
         Strengthen the initial sequence through loop entry condition.
         Does not work for assertions inside the loop.
@@ -488,7 +488,7 @@ class KindSEChecker(BaseKindSE):
             return seq0
         return None
 
-    def strengthen_initial_seq_loop_iter2(self, seq0, E, path, L: SimpleLoop):
+    def strengthen_initial_seq_loop_iter2(self, seq0, E, path, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -541,7 +541,7 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
-    def strengthen_initial_seq_loop_iter(self, seq0, E, path, L: SimpleLoop):
+    def strengthen_initial_seq_loop_iter(self, seq0, E, path, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -589,7 +589,7 @@ class KindSEChecker(BaseKindSE):
         return None
 
 
-    def strengthen_initial_seq(self, seq0, errs0, path, L: SimpleLoop):
+    def strengthen_initial_seq(self, seq0, errs0, path, L: Loop):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
 
@@ -632,7 +632,7 @@ class KindSEChecker(BaseKindSE):
         dbg("-- Failed making the initial sequence inductive --", color="red")
         return None
 
-    def fold_loop(self, path, loc, L: SimpleLoop, unsafe):
+    def fold_loop(self, path, loc, L: Loop, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
         if __debug__:
             dbg(f"With this inductive set at loc {loc}:", color="dark_green")

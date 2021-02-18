@@ -44,6 +44,7 @@ class CFA:
         REGULAR = 1
         ASSUME = 2
         CALL = 4
+        SUMMARY = 5
 
         def __init__(self, ty, s, t, elem=None):
             self._type = ty
@@ -73,6 +74,9 @@ class CFA:
 
         def is_call(self):
             return self._type == CFA.Edge.CALL
+
+        def is_summary(self):
+            return self._type == CFA.Edge.SUMMARY
 
         def add_elem(self, e):
             self._elems.append(e)
@@ -113,6 +117,15 @@ class CFA:
 
         def assume_false(self):
             return not self._is_true
+
+    class SummaryEdge(Edge):
+        def __init__(self, s, t, elem):
+            super().__init__(CFA.Edge.SUMMARY, s, t, elem)
+            self._elems.append(elem)
+
+        def summary_of(self):
+            return self._orig_elem
+
 
     class CallEdge(Edge):
         def __init__(self, s, t, callinst):
