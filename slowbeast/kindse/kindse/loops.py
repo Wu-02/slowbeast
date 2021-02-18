@@ -1,9 +1,6 @@
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
-from slowbeast.symexe.annotations import InstrsAnnotation
 from slowbeast.analysis.cfa import CFA
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
-from slowbeast.util.debugging import dbg_sec
-from slowbeast.ir.instruction import Load, Alloc
 
 
 def reachable(node, what):
