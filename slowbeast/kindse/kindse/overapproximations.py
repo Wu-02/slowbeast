@@ -198,6 +198,8 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
 
     have_feasible = False
     substitute = EM.substitute
+
+    A = AssertAnnotation(substitute(I.expr(), (litrep, lit)), I.substitutions(), EM)
     for s in poststates:
         # feasability check
         solver.push()
@@ -211,7 +213,6 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
         have_feasible = True
 
         # inductivity check
-        A = AssertAnnotation(substitute(I.expr(), (litrep, lit)), I.substitutions(), EM)
         hasnocti = A.do_substitutions(s)
         # we have got pathcond in solver already
         if solver.is_sat(EM.Not(hasnocti)) is not False:  # there exist CTI

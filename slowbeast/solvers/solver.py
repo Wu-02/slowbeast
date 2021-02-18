@@ -271,6 +271,10 @@ class IncrementalSolver(SymbolicSolver):
         m = models_inc(self._solver, assumpt, *e)
         return map_model(m, e)
 
+    def _model(self):
+        """ Debugging feature atm. Must follow is_sat() that is True """
+        return self._solver.model()
+
     def __repr__(self):
         return f"IncrementalSolver: {self._solver}"
 

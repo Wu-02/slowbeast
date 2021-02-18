@@ -346,6 +346,9 @@ class NondetLoad(Expr):
         assert isinstance(expr, Expr)
         return NondetLoad(expr.unwrap(), expr.type(), load, alloc)
 
+    def rhs_repr(self):
+        return Expr.__repr__(self)
+
     def __repr__(self):
         return f"L({self.alloc.as_value()})={Expr.__repr__(self)}"
 

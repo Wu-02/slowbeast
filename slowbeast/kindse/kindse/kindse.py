@@ -122,20 +122,20 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
         return None
     # --- workaround ends here...
 
-    if __debug__:
-        r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
-        if r.errors:
-            print(r.errors[0].path_condition())
-        assert (
-            r.errors is None
-            ), f"Pre-image with sequence is not inductive\n"\
-               f"-- pre-image --:\n{S}\n"\
-               f"-- target --:\n{target}\n"\
-               f"-- error states --:\n{r.errors[0].path_condition()}\n"\
-               f"-- CTI: --\n{r.errors[0].model()}"
+   #if __debug__:
+   #    r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
+   #    if r.errors:
+   #        print(r.errors[0].path_condition())
+   #    assert (
+   #        r.errors is None
+   #        ), f"Pre-image with sequence is not inductive\n"\
+   #           f"-- pre-image --:\n{S}\n"\
+   #           f"-- target --:\n{target}\n"\
+   #           f"-- error states --:\n{r.errors[0].path_condition()}\n"\
+   #           f"-- CTI: --\n{r.errors[0].model()}"
 
     assert not S.is_empty(), "Infeasible states given to overapproximate"
-    for rel in get_safe_relations([s], None):
+    for rel in get_safe_relations([s], unsafe=None, prevsafe=create_set(seq[-1].toassume())):
         ldbgv("  Adding relation {0}", (rel,))
         S.intersect(rel)
     assert not S.is_empty(), "Added realtions rendered the state infeasible!"
@@ -427,8 +427,8 @@ class KindSEChecker(BaseKindSE):
         return seq
 
     def overapprox_init_seq(self, seq0, errs0, L):
-        if __debug__:
-            assert is_seq_inductive(seq0, self, L), "seq is not inductive"
+        assert is_seq_inductive(seq0, self, L), "seq is not inductive"
+
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
         S = create_set(seq0.toannotation(True))

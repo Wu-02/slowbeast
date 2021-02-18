@@ -64,7 +64,7 @@ def iter_load_pairs(state):
             yield loads[i], loads[j]
 
 
-def get_all_relations(state):
+def get_var_cmp_relations(state):
     subs = get_subs(state)
     EM = state.expr_manager()
 
@@ -79,7 +79,7 @@ def get_all_relations(state):
         if l2bw != bw:
             l2 = EM.SExt(l2, ConcreteInt(bw, bw))
 
-        c = EM.Var(f"c_diff_{l1.as_value()}_{l2.as_value()}", IntType(bw))
+        c = EM.Var(f"c_diff_{l1.rhs_repr()}_{l2.rhs_repr()}", IntType(bw))
         expr = EM.Eq(EM.Sub(l2, l1), c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
@@ -91,10 +91,13 @@ def get_all_relations(state):
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
 
+def _get_const_cmp_relations(state):
+    EM = state.expr_manager()
+
     # equalities with constants
     for l in state.getNondetLoads():
         lbw = l.type().bitwidth()
-        c = EM.Var(f"c_coef_{l.as_value()}", IntType(lbw))
+        c = EM.Var(f"c_coef_{l.rhs_repr()}", IntType(lbw))
         expr = EM.Eq(l, c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
@@ -102,20 +105,56 @@ def get_all_relations(state):
             cval = c_concr[0]
             nonunique = state.is_sat(expr, EM.Ne(c, cval))
             if nonunique is False:
-                expr = EM.simplify(EM.substitute(expr, (c, cval)))
-                yield AssertAnnotation(expr, subs, EM)
+                yield (l, cval)
+
+def get_const_cmp_relations(state):
+    EM = state.expr_manager()
+    subs = get_subs(state)
+    for l, cval in _get_const_cmp_relations(state):
+        yield AssertAnnotation(EM.Eq(l, cval), subs, EM)
 
 
-def get_safe_relations(safe, unsafe):
+def get_relations_to_prev_states(state, prev):
+    pass
+   #subs = get_subs(state)
+   #EM = state.expr_manager()
+
+   ## relation between loads
+   #prevexpr = prev.as_expr()
+   ##for l in state.getNondetLoads():
+   #for l, cval in _get_const_cmp_relations(state):
+   #  bw = l.bitwidth()
+   #  # l2bw = l2.type().bitwidth()
+   #  oldl = EM.Var(f"old{l.rhs_repr()}", IntType(bw))
+   #  oldpc = EM.substitute(prevexpr, (l, oldl))
+   #  diff = EM.Var(f"c_diff_{l.rhs_repr()}", IntType(bw))
+   #  expr = EM.Eq(EM.Sub(oldl, l), diff)
+   #  diff_concr = state.concretize_with_assumptions([oldpc, expr], diff)
+   #  has_general = False
+   #  if diff_concr is not None:
+   #      # is c unique?
+   #      dval = diff_concr[0]
+   #      vdval = dval.value()
+   #      if -1 <= vdval <= 1:
+   #          continue # we do not need to replace these
+   #      nonunique = state.is_sat(expr, oldpc, EM.Ne(diff, dval))
+   #      diff = EM.Var(f"c_diff_{l.rhs_repr()}", IntType(bw))
+   #      if nonunique is False:
+   #          yield AssertAnnotation(e, subs, EM)
+   #          has_general = True
+   #  if not has_general:
+   #        yield AssertAnnotation(
+   #            EM.simplify(EM.Eq(l, cval)), subs, EM)
+
+
+
+def get_safe_relations(safe, unsafe, prevsafe=None):
     for s in safe:
         # get and filter out those relations that make the state safe
-        saferels = (r for r in get_all_relations(s))
-        for x in saferels:
-            yield x
+        yield from get_var_cmp_relations(s)
 
+       #if prevsafe:
+       #    yield from get_relations_to_prev_states(s, prevsafe)
+       #else:
+        yield from get_const_cmp_relations(s)
 
-# for s in unsafe:
-#    # get and filter out those relations that make the state safe
-#    EM = s.expr_manager()
-#    for r in get_all_relations(s):
-#        yield r.Not(EM)

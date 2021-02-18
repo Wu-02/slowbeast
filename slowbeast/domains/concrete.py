@@ -138,7 +138,7 @@ class ConcreteVal(Value):
         return self._value
 
     def __eq__(self, rhs):
-        assert isinstance(rhs, ConcreteVal)
+        assert isinstance(rhs, ConcreteVal), rhs
         return self.value() == rhs.value() and self.type() == rhs.type()
 
 
