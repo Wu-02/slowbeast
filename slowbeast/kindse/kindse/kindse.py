@@ -14,7 +14,7 @@ from slowbeast.symexe.annotations import (
 
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 
-from .loops import SimpleLoop
+from slowbeast.analysis.loops import SimpleLoop
 from .kindsebase import KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 from .overapproximations import remove_implied_literals, overapprox_set
