@@ -130,7 +130,6 @@ def get_relations_to_prev_states(state, prev):
       diff = EM.Var(f"c_diff_{l.rhs_repr()}", IntType(bw))
       expr = EM.Eq(EM.Sub(oldl, l), diff)
       diff_concr = state.concretize_with_assumptions([oldpc, expr], diff)
-      has_general = False
       if diff_concr is not None:
           # is c unique?
           dval = diff_concr[0]
@@ -153,13 +152,7 @@ def get_relations_to_prev_states(state, prev):
                                         EM.Le(l, EM.Sub(cval, dval)),
                                         EM.Eq(EM.Rem(l, dval), EM.Rem(cval, dval))
                                         )
-              print('Added', expr)
               yield AssertAnnotation(expr, subs, EM)
-              has_general = True
-      if not has_general:
-            yield AssertAnnotation(
-                EM.simplify(EM.Eq(l, cval)), subs, EM)
-
 
 
 def get_safe_relations(safe, unsafe, prevsafe=None):
@@ -167,8 +160,7 @@ def get_safe_relations(safe, unsafe, prevsafe=None):
         # get and filter out those relations that make the state safe
         yield from get_var_cmp_relations(s)
 
+        yield from get_const_cmp_relations(s)
         if prevsafe:
             yield from get_relations_to_prev_states(s, prevsafe)
-        else:
-            yield from get_const_cmp_relations(s)
 
