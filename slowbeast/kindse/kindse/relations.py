@@ -141,7 +141,6 @@ def get_relations_to_prev_states(state, prev):
           if -1 <= vdval <= 1:
               continue # we do not need to replace these
           nonunique = state.is_sat(expr, oldpc, EM.Ne(diff, dval))
-          diff = EM.Var(f"c_diff_{l.rhs_repr()}", IntType(bw))
           if nonunique is False:
               print(dval, vdval, cval)
               if vdval > 0: # old value is higher
