@@ -26,7 +26,7 @@ class LazySymbolicMemoryModel(CoreMM):
         self._overapprox_unsupported = True
 
     def lazyAllocate(self, state, op):
-        assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
+        assert isinstance(op, Alloc) or isinstance(op, GlobalVariable), op
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
         dbgv("Lazily allocated {0}".format(op), color="white", verbose_lvl=3)
