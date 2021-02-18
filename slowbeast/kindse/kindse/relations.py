@@ -70,6 +70,7 @@ def get_var_cmp_relations(state):
 
     # relation between loads
     for l1, l2 in iter_load_pairs(state):
+        l1name,  l2name = l1.rhs_repr(), l2.rhs_repr()
         l1bw = l1.type().bitwidth()
         l2bw = l2.type().bitwidth()
 
@@ -79,7 +80,7 @@ def get_var_cmp_relations(state):
         if l2bw != bw:
             l2 = EM.SExt(l2, ConcreteInt(bw, bw))
 
-        c = EM.Var(f"c_diff_{l1.rhs_repr()}_{l2.rhs_repr()}", IntType(bw))
+        c = EM.Var(f"c_diff_{l1name}_{l2name}", IntType(bw))
         expr = EM.Eq(EM.Sub(l2, l1), c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
