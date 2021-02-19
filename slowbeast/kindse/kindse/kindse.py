@@ -682,8 +682,8 @@ class KindSEChecker(BaseKindSE):
             )
             # FIXME: the initial element must be inductive, otherwise we do not know whether
             # an error state is unreachable from it...
-           return False
-       assert seq0
+            return False
+        assert seq0
 
         if __debug__:
             assert (
