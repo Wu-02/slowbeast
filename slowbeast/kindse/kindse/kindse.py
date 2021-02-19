@@ -680,8 +680,10 @@ class KindSEChecker(BaseKindSE):
             print_stdout(
                 f"Failed getting initial inductive sequence for loop {loc}", color="red"
             )
-        #    return False
-        # assert seq0
+            # FIXME: the initial element must be inductive, otherwise we do not know whether
+            # an error state is unreachable from it...
+           return False
+       assert seq0
 
         if __debug__:
             assert (
@@ -717,13 +719,6 @@ class KindSEChecker(BaseKindSE):
                     S = seq.toannotation(True)
                     res, _ = self.check_loop_precondition(L, S)
 
-                    # No matter whether the sequence is invariant, it is still inductive,
-                    # so we can use it later for subsumptions (add only its last
-                    # element as we added the previous elements already)
-                    newi = create_set(seq[-1].toassume())
-                    I = self.inductive_sets.setdefault(loc, InductiveSet(newi))
-                    I.add(newi)
-
                     if res is Result.SAFE:
                         invs = self.invariant_sets.setdefault(loc, [])
                         inv = seq.toannotation(False)
@@ -734,6 +729,17 @@ class KindSEChecker(BaseKindSE):
                         # I.intersect()
                         print_stdout(f"{S} holds on {loc}", color="BLUE")
                         return True
+
+                    # FIXME: why cannot we have this just after check_loop_precondition?
+                    # FIXME: (why cannot we add parts of invariants to inductive sets?)
+                    # FIXME: It breaks e.g. sum03-1.i
+                    # No matter whether the sequence is invariant, it is still inductive,
+                    # so we can use it later for subsumptions (add only its last
+                    # element as we added the previous elements already)
+                    newi = create_set(seq[-1].toassume())
+                    I = self.inductive_sets.setdefault(loc, InductiveSet(newi))
+                    I.add(newi)
+
 
             extended = []
             for seq in sequences:
