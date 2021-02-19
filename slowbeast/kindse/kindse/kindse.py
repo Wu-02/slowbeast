@@ -117,24 +117,28 @@ def overapprox(executor, s, unsafeAnnot, seq, L):
     # FIXME: this is a workaround until we support nondet() calls in lazy execution
     r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
     if r.errors:
-        dbg("FIXME: pre-image is not inductive cause we do not support nondets() in lazy execution yet")
+        dbg(
+            "FIXME: pre-image is not inductive cause we do not support nondets() in lazy execution yet"
+        )
         return None
     # --- workaround ends here...
 
-   #if __debug__:
-   #    r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
-   #    if r.errors:
-   #        print(r.errors[0].path_condition())
-   #    assert (
-   #        r.errors is None
-   #        ), f"Pre-image with sequence is not inductive\n"\
-   #           f"-- pre-image --:\n{S}\n"\
-   #           f"-- target --:\n{target}\n"\
-   #           f"-- error states --:\n{r.errors[0].path_condition()}\n"\
-   #           f"-- CTI: --\n{r.errors[0].model()}"
+    # if __debug__:
+    #    r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
+    #    if r.errors:
+    #        print(r.errors[0].path_condition())
+    #    assert (
+    #        r.errors is None
+    #        ), f"Pre-image with sequence is not inductive\n"\
+    #           f"-- pre-image --:\n{S}\n"\
+    #           f"-- target --:\n{target}\n"\
+    #           f"-- error states --:\n{r.errors[0].path_condition()}\n"\
+    #           f"-- CTI: --\n{r.errors[0].model()}"
 
     assert not S.is_empty(), "Infeasible states given to overapproximate"
-    for rel in get_safe_relations([s], unsafe=None, prevsafe=create_set(seq[-1].toassume())):
+    for rel in get_safe_relations(
+        [s], unsafe=None, prevsafe=create_set(seq[-1].toassume())
+    ):
         ldbgv("  Adding relation {0}", (rel,))
         S.intersect(rel)
     assert not S.is_empty(), "Added realtions rendered the state infeasible!"
@@ -154,17 +158,20 @@ def is_seq_inductive(seq, executor, L, has_ready=False):
         return False
     return r.errors is None and (r.ready or not has_ready)
 
-def strip_first_assume_edge(path : AnnotatedCFAPath):
+
+def strip_first_assume_edge(path: AnnotatedCFAPath):
     idx = path.first_assume_edge_idx()
     # we use this func only on loop edges, so it must contain the entry condition
     assert idx is not None and idx + 1 < len(path)
-    return path.subpath(idx+1)
+    return path.subpath(idx + 1)
+
 
 class InductiveSet:
     """
     Class representing an inductive set that we derive for a loop header.
     """
-    def __init__(self, initial_set : StatesSet):
+
+    def __init__(self, initial_set: StatesSet):
         assert isinstance(initial_set, StatesSet)
         self.I = initial_set
         cI = IncrementalSolver()
@@ -186,6 +193,7 @@ class InductiveSet:
 
     def __repr__(self):
         return self.I.__repr__()
+
 
 class KindSEChecker(BaseKindSE):
     """
@@ -236,7 +244,7 @@ class KindSEChecker(BaseKindSE):
 
         # check subsumption by inductive sets
         unsafe = []
-        if True: # check subsumption
+        if True:  # check subsumption
             inductive_set = self.inductive_sets.get(loc)
             if inductive_set:
                 dbg("...(checking subsumed states)")
@@ -360,7 +368,6 @@ class KindSEChecker(BaseKindSE):
             dbg("Killed a state")
             self.report(s)
             return
-
 
         for s in r.ready:
             if not intersection(E, s).is_empty():
@@ -588,7 +595,6 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
-
     def strengthen_initial_seq(self, seq0, errs0, path, L: Loop):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
@@ -715,7 +721,7 @@ class KindSEChecker(BaseKindSE):
 
                 dbg("Extending the sequence")
                 for e in self.extend_seq(seq, errs0, L):
-                    #extended.append(self.abstract_seq(e, errs0, L))
+                    # extended.append(self.abstract_seq(e, errs0, L))
                     extended.append(e)
                 dbg("Extending the sequence finished")
 

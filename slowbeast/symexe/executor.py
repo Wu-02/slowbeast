@@ -295,20 +295,30 @@ class Executor(ConcreteExecutor):
                     E = state.expr_manager()
                     state.set(
                         instr,
-                        self.cmpValues(E, instr.predicate(),
-                                       E.ConcreteVal(0, op1.bitwidth()), op2,
-                                       instr.is_unsigned())
+                        self.cmpValues(
+                            E,
+                            instr.predicate(),
+                            E.ConcreteVal(0, op1.bitwidth()),
+                            op2,
+                            instr.is_unsigned(),
+                        ),
                     )
                 elif op2isptr and op2.is_null():
                     E = state.expr_manager()
                     state.set(
                         instr,
-                        self.cmpValues(E, instr.predicate(),
-                                       op1, E.ConcreteVal(0, op1.bitwidth()),
-                                       instr.is_unsigned())
+                        self.cmpValues(
+                            E,
+                            instr.predicate(),
+                            op1,
+                            E.ConcreteVal(0, op1.bitwidth()),
+                            instr.is_unsigned(),
+                        ),
                     )
                 else:
-                    state.setKilled(f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}")
+                    state.setKilled(
+                        f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}"
+                    )
                 return [state]
 
         x = self.cmpValues(

@@ -442,7 +442,7 @@ def break_const_eq(expr):
         l, r = c.children()
         ret = []
         if dom_is_concrete(l) or dom_is_concrete(r):
-            for x in  EM.Le(l, r), EM.Le(r, l):
+            for x in EM.Le(l, r), EM.Le(r, l):
                 if not x.is_concrete():
                     ret.append(x)
             return ret

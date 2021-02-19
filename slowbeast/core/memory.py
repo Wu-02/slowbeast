@@ -275,4 +275,3 @@ class Memory:
         # clear values in call stack
         for frame in self._cs:
             frame.clear()
-

@@ -103,8 +103,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             s = executor.createCleanState()
             states = [s]
 
-            ldbgv("Executing path: {0}", (path,), fn=self.reportfn,
-                  color="orange")
+            ldbgv("Executing path: {0}", (path,), fn=self.reportfn, color="orange")
 
         assert all(
             map(lambda s: not s.getConstraints(), states)

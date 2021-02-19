@@ -375,6 +375,7 @@ class NondetInstrResult(Expr):
     def __repr__(self):
         return f"{self._instr.as_value()}={Expr.__repr__(self)}"
 
+
 class Future(Expr):
     """
     Represents a value of non-executed operation (instruction)

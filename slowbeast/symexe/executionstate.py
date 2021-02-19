@@ -91,8 +91,7 @@ class SEState(ExecutionState):
 
     def model(self):
         return {
-            x: c
-            for (x, c) in zip(self.nondets(), self.concretize(*self.nondets()))
+            x: c for (x, c) in zip(self.nondets(), self.concretize(*self.nondets()))
         }
 
     def concretize_with_assumptions(self, assumptions, *e):
@@ -160,7 +159,7 @@ class SEState(ExecutionState):
                 lambda x: x.alloc != n.alloc,
                 (l for l in self._nondets if l.is_nondet_load()),
             )
-            ), f"n:{n}, nondets: {self._nondets}"
+        ), f"n:{n}, nondets: {self._nondets}"
         self._nondets.append(n)
 
     def nondets(self):
@@ -223,7 +222,7 @@ class LazySEState(SEState):
         # on the inputs. But when inputs are created dynamically during
         # the execution, we must put constraints on them once they are
         # created. Those are these constraints.
-        self._future_nondets = {} # instr -> [expr]
+        self._future_nondets = {}  # instr -> [expr]
 
     def get_nondet_instr_result(self):
         return (l for l in self._nondets if l.is_nondet_instr_result())
@@ -231,7 +230,7 @@ class LazySEState(SEState):
     def get_future_nondet(self, instr):
         exprs = self._future_nondets.get(instr)
         if exprs:
-            return exprs.pop(0) # consume the returned expression
+            return exprs.pop(0)  # consume the returned expression
         return None
 
     def eval(self, v):
@@ -248,7 +247,11 @@ class LazySEState(SEState):
             else:
                 name = f"nondet_{v.as_value()}"
             value = self.solver().Var(name, v.type())
-            ldbgv("Created new nondet value {0} = {1}", (v.as_value(), value), color="dark_blue")
+            ldbgv(
+                "Created new nondet value {0} = {1}",
+                (v.as_value(), value),
+                color="dark_blue",
+            )
             self.set(v, value)
             self.addNondet(NondetInstrResult.fromExpr(value, v))
         return value

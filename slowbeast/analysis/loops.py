@@ -1,7 +1,7 @@
 from slowbeast.util.debugging import dbg
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.analysis.cfa import CFA
-from slowbeast.analysis.scc import  strongly_connected_components_iterative
+from slowbeast.analysis.scc import strongly_connected_components_iterative
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 
 
@@ -164,7 +164,11 @@ def _compute_loops(vertices, edges, result):
 
         subvertices = list(C)
         # entries to the SCC
-        entries = set(l for l in subvertices if any(p.source() not in subvertices for p in l.predecessors()))
+        entries = set(
+            l
+            for l in subvertices
+            if any(p.source() not in subvertices for p in l.predecessors())
+        )
         if len(entries) != 1:
             dbg(f"SCC with multiple entries: {C}")
             continue
@@ -173,15 +177,13 @@ def _compute_loops(vertices, edges, result):
         loop = _construct_simple_loop(list(C), None, entry)
         result[entry] = loop
 
+
 def compute_loops(cfa):
     result = {}
     locations = cfa.locations()
     edges = {l: [succ.target() for succ in l.successors()] for l in locations}
     _compute_loops(locations, edges, result)
     return result
-
-
-
 
 
 class SimpleLoop:

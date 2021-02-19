@@ -48,14 +48,20 @@ class LazySymbolicMemoryModel(CoreMM):
         to = state.get(toOp)
         if to is None:
             self.lazyAllocate(state, toOp)
-            to = state.get(toOp) # FIXME "We're calling get() method but we could return the value..."
+            to = state.get(
+                toOp
+            )  # FIXME "We're calling get() method but we could return the value..."
         if not to.is_pointer():
             if self._overapprox_unsupported:
-                self._havoc_ptr_target(state, to) # symbolic pointers are unsupported atm
+                self._havoc_ptr_target(
+                    state, to
+                )  # symbolic pointers are unsupported atm
             else:
                 state.setKilled(f"Invalid pointer to write to: {to}")
             return [state]
-        if not to.offset().is_concrete(): # FIXME: move this check to memory.write() object
+        if (
+            not to.offset().is_concrete()
+        ):  # FIXME: move this check to memory.write() object
             if self._overapprox_unsupported:
                 self._havoc_ptr_target(state, to)
             else:
@@ -79,8 +85,11 @@ class LazySymbolicMemoryModel(CoreMM):
         return [state]
 
     def uninitializedRead(self, state, frm, ptr, bitsnum):
-        dbgv("Reading nondet for uninitialized value: {0}".format(ptr),
-             color="white", verbose_lvl=3)
+        dbgv(
+            "Reading nondet for uninitialized value: {0}".format(ptr),
+            color="white",
+            verbose_lvl=3,
+        )
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name

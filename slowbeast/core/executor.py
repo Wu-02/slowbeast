@@ -434,7 +434,7 @@ class Executor:
                 instr,
                 state.get_id(),
             ),
-            verbose_lvl=3
+            verbose_lvl=3,
         )
 
         self._executed_instrs += 1

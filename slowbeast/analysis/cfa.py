@@ -126,7 +126,6 @@ class CFA:
         def summary_of(self):
             return self._orig_elem
 
-
     class CallEdge(Edge):
         def __init__(self, s, t, callinst):
             super().__init__(CFA.Edge.CALL, s, t, callinst)

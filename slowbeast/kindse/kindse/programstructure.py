@@ -9,6 +9,7 @@ class ProgramStructure:
     Class that contains information about control-flow and call structure
     of the program.
     """
+
     def __init__(self, prog, new_dbg_file=None):
         self.new_dbg_file = new_dbg_file
         callgraph = CallGraph(prog)
