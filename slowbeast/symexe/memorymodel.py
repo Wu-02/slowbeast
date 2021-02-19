@@ -27,7 +27,7 @@ class LazySymbolicMemoryModel(CoreMM):
         self._overapprox_unsupported = True
 
     def lazyAllocate(self, state, op):
-        assert isinstance(op, Alloc) or isinstance(op, GlobalVariable), op
+        assert isinstance(op, (Alloc, GlobalVariable)), op
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
         dbgv("Lazily allocated {0}".format(op), color="white", verbose_lvl=3)
@@ -141,19 +141,29 @@ class LazySymbolicMemoryModel(CoreMM):
 
         frm = state.get(fromOp)
         if frm is None:
-            self.lazyAllocate(state, fromOp)
-            frm = state.get(fromOp)
+            if (
+                not isinstance(fromOp, (Alloc, GlobalVariable))
+                and self._overapprox_unsupported
+            ):
+                val = state.solver().Var(
+                    f"unknown_ptr_{fromOp.as_value()}",
+                    IntType(bitsnum or 8 * bytesNum()),
+                )
+                state.set(toOp, val)
+                return [state]
+            else:
+                self.lazyAllocate(state, fromOp)
+                frm = state.get(fromOp)
 
         if not frm.is_pointer() and self._overapprox_unsupported:
-            if self._overapprox_unsupported:
-                val, err = self.uninitializedRead(
-                    state, fromOp, frm, bitsnum or bytesNum * 8
-                )
-                if err:
-                    state.setError(err)
-                else:
-                    state.set(toOp, val)
-                return [state]
+            val, err = self.uninitializedRead(
+                state, fromOp, frm, bitsnum or bytesNum * 8
+            )
+            if err:
+                state.setError(err)
+            else:
+                state.set(toOp, val)
+            return [state]
         else:
             assert frm.is_pointer(), frm
         if not frm.offset().is_concrete():
