@@ -327,8 +327,22 @@ def extend_literal(
         num = EM.Div(num, two)
     raise RuntimeError("Unreachable")
 
+class OverapproximationData:
+    """
+    Structure holding information needed for over-approximations
+    """
+    __slots__ = "executor", "target", "unsafe", "loop", "expr_mgr"
 
-def overapprox_literal(l, rl, S, unsafe, target, executor, L):
+    def __init__(self, executor, target, unsafe, loop, expr_mgr):
+        self.executor = executor
+        self.target = target
+        self.unsafe = unsafe
+        self.loop = loop
+        self.expr_mgr = expr_mgr
+
+
+
+def overapprox_literal(l, rl, S, data):
     """
     l - literal
     rl - list of all literals in the clause
@@ -337,7 +351,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     target - set of safe states that we want to keep reachable
     """
     assert not l.isAnd() and not l.isOr(), f"Input is not a literal: {l}"
-    assert intersection(S, l, unsafe).is_empty(), "Unsafe states in input"
+    assert intersection(S, l, data.unsafe).is_empty(), "Unsafe states in input"
     goodl = l  # last good overapprox of l
 
     dliteral = DecomposedLiteral(l)
@@ -347,17 +361,18 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     assert dliteral.toformula() == goodl
     EM = getGlobalExprManager()
     disjunction = EM.disjunction
+    executor = data.executor
 
     # create a fresh literal that we use as a symbol for our literal during extending
     litrep = EM.Bool("litext")
     # X is the original formula with 'litrep' instead of 'l'
     X = intersection(S, disjunction(litrep, *(x for x in rl if x != l)))
     assert not X.is_empty(), f"S: {S}, l: {l}, rl: {rl}"
-    post = postimage(executor, L.paths(), pre=X)
+    post = postimage(executor, data.loop.paths(), pre=X)
     if not post:
         return goodl
     # U is allowed reachable set of states
-    U = union(target, X)
+    U = union(data.target, X)
     I = U.as_assume_annotation()
     # execute the instructions from annotations, so that the substitutions have up-to-date value
     poststates, nonr = execute_annotation_substitutions(
@@ -369,7 +384,7 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
     # in the solver all the time
     safety_solver = IncrementalSolver()
     safety_solver.add(S.as_expr())
-    safety_solver.add(unsafe.as_expr())
+    safety_solver.add(data.unsafe.as_expr())
 
     solver = IncrementalSolver()
 
@@ -382,20 +397,19 @@ def overapprox_literal(l, rl, S, unsafe, target, executor, L):
 
     return goodl
 
-
-def overapprox_clause(c, R, executor, L, unsafe, target):
+def overapprox_clause(c, R, data):
     """c - the clause
     R - rest of clauses of the formula
     unsafe - unsafe states
     target - safe states that should be reachable from c \cap R
     """
-    EM = R.get_se_state().expr_manager()
+    EM = data.expr_mgr
 
-    assert intersection(R, c, unsafe).is_empty(), f"{R} \cap {c} \cap {unsafe}"
+    assert intersection(R, c, data.unsafe).is_empty(), f"{R} \cap {c} \cap {data.unsafe}"
     if __debug__:
         X = R.copy()
         X.intersect(c)
-        r = check_paths(executor, L.paths(), pre=X, post=union(X, target))
+        r = check_paths(data.executor, data.loop.paths(), pre=X, post=union(X, data.target))
         assert (
             r.errors is None
         ), f"Input state is not inductive (CTI: {r.errors[0].model()})"
@@ -405,7 +419,7 @@ def overapprox_clause(c, R, executor, L, unsafe, target):
     simplify = EM.simplify
 
     for l in lits:
-        newl = simplify(overapprox_literal(l, lits, R, unsafe, target, executor, L))
+        newl = simplify(overapprox_literal(l, lits, R, data))
         newc.append(newl)
         dbg(
             f"  Overapproximated {l} --> {newl}",
@@ -419,7 +433,7 @@ def overapprox_clause(c, R, executor, L, unsafe, target):
                     *(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))
                 )
             )
-            r = check_paths(executor, L.paths(), pre=X, post=union(X, target))
+            r = check_paths(data.executor, data.loop.paths(), pre=X, post=union(X, data.target))
             if r.errors:
                 print("States:", X)
                 print("Target:", target)
@@ -460,11 +474,13 @@ def break_const_eq(expr):
     return clauses
 
 
-def drop_clauses(clauses, S, target, EM, L, safesolver, executor):
+def drop_clauses(clauses, S, safesolver, data):
+    target, executor = data.target, data.executor
+
     # we start with all clauses
     newclauses = clauses.copy()
-    conjunction = EM.conjunction
-    lpaths = L.paths()
+    conjunction = data.expr_mgr.conjunction
+    lpaths = data.loop.paths()
     for c in clauses:
         assert not c.is_concrete(), c
         # create a temporary formula without the given clause
@@ -490,12 +506,12 @@ def drop_clauses(clauses, S, target, EM, L, safesolver, executor):
     return newclauses
 
 
-def drop_clauses_fixpoint(clauses, S, target, EM, L, safesolver, executor):
+def drop_clauses_fixpoint(clauses, S, safesolver, data):
     """ Drop clauses until fixpoint """
     newclauses = clauses
     while True:
         oldlen = len(newclauses)
-        newclauses = drop_clauses(newclauses, S, target, EM, L, safesolver, executor)
+        newclauses = drop_clauses(newclauses, S, safesolver, data)
         if oldlen == len(newclauses):
             break
     return newclauses
@@ -535,6 +551,8 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
 
+    data = OverapproximationData(executor, target, unsafe, L, EM)
+
     expr = S.as_expr()
     if expr.is_concrete():
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
@@ -548,7 +566,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     safesolver.add(unsafe.as_expr())
 
     # can we drop some clause completely?
-    newclauses = drop_clauses_fixpoint(clauses, S, target, EM, L, safesolver, executor)
+    newclauses = drop_clauses_fixpoint(clauses, S, safesolver, data)
     clauses = remove_implied_literals(newclauses)
 
     # FIXME: THIS WORKS GOOD!
@@ -563,11 +581,10 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
         R = S.copy()  # copy the substitutions
         R.reset_expr(xc.as_expr())
 
-        newclause = overapprox_clause(c, R, executor, L, unsafe, target)
+        newclause = overapprox_clause(c, R, data)
         if newclause:
             # newclauses.append(newclause)
-            # FIXME: this check should be assertion,
-            # overapprox_clause should not give us such clauses
+            # FIXME: this check should be assertion, overapprox_clause should not give us such clauses
             tmp = R.copy()
             tmp.intersect(newclause)
             tmp.complement()
