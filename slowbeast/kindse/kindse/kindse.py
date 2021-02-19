@@ -888,10 +888,6 @@ class KindSEChecker(BaseKindSE):
         raise RuntimeError("Unreachable")
 
 
-def edge_has_assert(edge):
-    return any(map(lambda i: isinstance(i, AssertInst), edge))
-
-
 class KindSymbolicExecutor(BaseKindSE):
     """
     The main class for KindSE that divides and conquers the tasks.
