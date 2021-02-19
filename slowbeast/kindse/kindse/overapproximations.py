@@ -639,4 +639,4 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
 
     dbg(f"Overapproximated to {S}", color="dark_blue")
 
-    return InductiveSequence.Frame(S.as_assert_annotation(), None)
+    return S
