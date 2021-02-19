@@ -513,10 +513,18 @@ def drop_clauses(clauses, S, safesolver, data):
     target, executor = data.target, data.executor
 
     # we start with all clauses
-    newclauses = clauses.copy()
     conjunction = data.expr_mgr.conjunction
     lpaths = data.loop.paths()
+    expressions = []
     for c in clauses:
+        if c.is_concrete():
+            if c.value() is False:
+                return [data.expr_mgr.getFalse()]
+        else:
+            expressions.append(c)
+
+    newclauses = expressions.copy()
+    for c in expressions:
         assert not c.is_concrete(), c
         # create a temporary formula without the given clause
         tmp = newclauses.copy()
@@ -606,6 +614,8 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
 
     # FIXME: THIS WORKS GOOD!
     if drop_only:
+        # newclauses = drop_clauses_fixpoint(clauses, S, safesolver, data)
+        # clauses = remove_implied_literals(newclauses)
         S.reset_expr(EM.conjunction(*clauses))
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
@@ -630,10 +640,13 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
                 newclauses.append(c)
         else:
             newclauses.append(c)
+    if __debug__:
+        S.reset_expr(EM.conjunction(*clauses))
+        assert not S.is_empty()
 
     # drop clauses once more
-    # newclauses = drop_clauses_fixpoint(newclauses, S, target, EM, L,
-    #                                   safesolver, executor)
+    newclauses = drop_clauses_fixpoint(newclauses, S, safesolver, data)
+
     clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses))
 

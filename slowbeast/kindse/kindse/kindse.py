@@ -352,8 +352,8 @@ class KindSEChecker(BaseKindSE):
                 continue
             # FIXME: intersect with all inductive sets?
             if seq and intersection(A, complement(target)).is_empty():
-               dbg("Did not extend (got included elem...)")
-               continue
+                dbg("Did not extend (got included elem...)")
+                continue
 
             yield A
 
@@ -729,9 +729,9 @@ class KindSEChecker(BaseKindSE):
                         inv = seq.toannotation(False)
                         invs.append(inv)
                         # FIXME: check that the invariant gives us a new information
-                        #I = create_set() # FIXME: cache the union of invariants
-                       #I.add(invs)
-                       #I.intersect()
+                        # I = create_set() # FIXME: cache the union of invariants
+                        # I.add(invs)
+                        # I.intersect()
                         print_stdout(f"{S} holds on {loc}", color="BLUE")
                         return True
 
@@ -959,7 +959,6 @@ class KindSymbolicExecutor(BaseKindSE):
                 for p in checker.problematic_paths:
                     self.stats.killed_paths += 1
                     print_stdout(f"Killed path: {p}")
-
 
         if has_unknown:
             print_stdout("Failed deciding the result.", color="orangeul")
