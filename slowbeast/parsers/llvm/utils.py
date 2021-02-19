@@ -189,9 +189,11 @@ def getConstant(val):
     if c is None:
         if bw == 1:
             if parts[1] == "true":
-                return ConstantTrue
+                return ConcreteVal(1, IntType(bw))
+                #return ConstantTrue
             elif parts[1] == "false":
-                return ConstantFalse
+                return ConcreteVal(0, IntType(bw))
+                #return ConstantFalse
         return None
 
     return ConcreteVal(c, FloatType(bw) if isfloating else IntType(bw))
