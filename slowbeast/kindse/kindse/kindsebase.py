@@ -9,6 +9,8 @@ from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
+from slowbeast.symexe.annotations import state_to_annotation
+from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 
 
 def check_paths(executor, paths, pre=None, post=None):
@@ -131,13 +133,20 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def extend_to_caller(self, path, states):
         self.problematic_paths.append(path)
         print_stdout("Killing a path that goes to caller")
-        # start = path.first()
-        # cgnode = self.programstructure.callgraph.getNode(start.bblock().fun())
-        # for callerfun, callsite in cgnode.getCallers():
-        #    print('caller', callerfun.fun())
-        #    print('cs', callsite)
-        #    callsite.bblock()
         return []
+       #fun = path[0].source().cfa().fun()
+       #PS = self.programstructure
+       #cgnode = PS.callgraph.getNode(fun)
+       #paths = []
+       #assert states.errors
+       #for s in states.errors:
+       #    for callerfun, callsite in cgnode.getCallers():
+       #        for pred in PS.calls[callsite].predecessors():
+       #            p = AnnotatedCFAPath([pred])
+       #            p.add_annot_after(state_to_annotation(s, toassert=True))
+       #            print('tocaller', p)
+       #            paths.append(p)
+       #return paths
 
     def extend_path(self, path, states, steps=-1, atmost=False, stoppoints=[]):
         """

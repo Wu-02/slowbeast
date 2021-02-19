@@ -29,6 +29,8 @@ class ProgramStructure:
                 with self.new_dbg_file(f"cfa.{fun.name()}.dot") as f:
                     cfa.dump(f)
         self.cfas = cfas
+        # gather mapping from calls to call-edges
+        self.calls = calls = {e.elems()[0] : e for cfa in cfas.values() for e in cfa.edges() if e.is_call()}
         # entry location of the whole program
         self.entry_loc = cfas[prog.entry()].entry()
 

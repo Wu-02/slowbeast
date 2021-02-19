@@ -298,8 +298,9 @@ def and_annotations(EM, toassert, *annots):
     return _join_annotations(EM, Ctor, EM.And, annots)
 
 
-def state_to_annotation(state):
+def state_to_annotation(state, toassert=False):
     EM = state.expr_manager()
+    Ctor = AssertAnnotation if toassert else AssumeAnnotation
     return AssumeAnnotation(
         state.getConstraintsObj().as_formula(EM),
         {l: l.load for l in state.getNondetLoads()},

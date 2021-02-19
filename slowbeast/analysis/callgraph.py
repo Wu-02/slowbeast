@@ -8,7 +8,7 @@ from copy import copy
 class CallGraph:
     class Node:
         def __init__(self, F):
-            __slots__ = ["_fun", "callsites", "callers"]
+            __slots__ = "_fun", "callsites", "callers"
             self._fun = F
             self.callers = []
             self.callsites = {}
@@ -43,7 +43,7 @@ class CallGraph:
             """
             return set((v for funs in self.callsites.values() for v in funs)).__iter__()
 
-    __slots__ = ["program", "_nodes"]
+    __slots__ = "program", "_nodes"
 
     def __init__(self, P):
         self.program = P

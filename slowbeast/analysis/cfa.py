@@ -8,12 +8,13 @@ class CFA:
 
     class Location:
         _counter = 0
-        __slots__ = "_id", "_elem", "_successors", "_predecessors"
+        __slots__ = "_id", "_cfa", "_elem", "_successors", "_predecessors"
 
-        def __init__(self, elem=None):
+        def __init__(self, cfa, elem=None):
             CFA.Location._counter += 1
             self._id = CFA.Location._counter
             self._elem = elem
+            self._cfa = cfa
             self._successors = []
             self._predecessors = []
 
@@ -22,6 +23,12 @@ class CFA:
 
         def predecessors(self):
             return self._predecessors
+
+        def elem(self):
+            return self._elem
+
+        def cfa(self):
+            return self._cfa
 
         def id(self):
             return self._id
@@ -182,7 +189,7 @@ class CFA:
         return cfas
 
     def create_loc(self, elem=None):
-        loc = CFA.Location(elem)
+        loc = CFA.Location(self, elem)
         self._locs.append(loc)
         return loc
 
