@@ -96,9 +96,7 @@ def overapprox(executor, s, unsafeAnnot, target, L):
     #           f"-- CTI: --\n{r.errors[0].model()}"
 
     assert not S.is_empty(), "Infeasible states given to overapproximate"
-    for rel in get_safe_relations(
-        [s], unsafe=None, prevsafe=target
-    ):
+    for rel in get_safe_relations([s], unsafe=None, prevsafe=target):
         ldbgv("  Adding relation {0}", (rel,))
         S.intersect(rel)
     assert not S.is_empty(), "Added realtions rendered the state infeasible!"
@@ -106,12 +104,8 @@ def overapprox(executor, s, unsafeAnnot, target, L):
     return overapprox_set(executor, EM, S, unsafeAnnot, target, L)
 
 
-def simplify_expr(expr, EM):
-    return EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
-
-
-def is_seq_inductive(seq, executor, L, has_ready=False):
-    r = seq.check_ind_on_paths(executor, L.paths())
+def is_seq_inductive(seq, target, executor, L, has_ready=False):
+    r = seq.check_ind_on_paths(executor, L.paths(), target)
     for s in r.killed():
         dbg("Killed a state")
         executor.report(s)
@@ -328,14 +322,15 @@ class KindSEChecker(BaseKindSE):
         # TODO: we could return SAFE when finalpaths is empty
         return Result.UNKNOWN, finalpaths
 
-    def target_precondition(self, S, E, L):
+    def extend_seq(self, seq, target0, E, L):
         """
         Compute the precondition for reaching S and overapproximate it
 
         S - target states
         E - error states
         """
-        r = check_paths(self, L.paths(), post=S)
+        target = self.create_set(seq[-1].toassert()) if seq else target0
+        r = check_paths(self, L.paths(), post=target)
         if not r.ready:  # cannot step into this frame...
             # FIXME we can use it at least for annotations
             dbg("Infeasible frame...")
@@ -350,14 +345,14 @@ class KindSEChecker(BaseKindSE):
                 dbg("Pre-image is not safe...")
                 # FIXME: should we do the intersection with complement of E?
                 continue
-            A = overapprox(self, s, E, S, L)
+            A = overapprox(self, s, E, target, L)
             if A is None:
                 dbg("Overapproximation failed...")
                 continue
             # FIXME: intersect with all inductive sets?
-            if intersection(A, complement(S)).is_empty():
-                dbg("Did not extend (got included elem...)")
-                continue
+            if intersection(A, complement(target)).is_empty():
+               dbg("Did not extend (got included elem...)")
+               continue
 
             yield A
 
@@ -462,10 +457,12 @@ class KindSEChecker(BaseKindSE):
             seq0 = self.overapprox_init_seq(seq0, errs0, L)
 
         # inductive sequence is either inductive now, or it is None and we'll use non-inductive E
-        return EM.Not(E), seq0, errs0
+        target0 = self.create_set(unsafe[0])
+        target0.reset_expr(Not(E))
+        return target0, seq0, errs0
 
     def overapprox_init_seq(self, seq0, errs0, L):
-        assert is_seq_inductive(seq0, self, L), "seq is not inductive"
+        assert is_seq_inductive(seq0, None, self, L), "seq is not inductive"
 
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
@@ -473,12 +470,11 @@ class KindSEChecker(BaseKindSE):
         assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
         EM = getGlobalExprManager()
         seq = InductiveSequence(
-            overapprox_set(self, EM, S, errs0.toassert(), target, L).as_assert_annotation()
+            overapprox_set(
+                self, EM, S, errs0.toassert(), target, L
+            ).as_assert_annotation()
         )
-        # Why could this happen?
-        # r = seq.check_ind_on_paths(self, L.paths())
-        # if r.errors is None and r.ready:
-        if is_seq_inductive(seq, self, L, has_ready=True):
+        if is_seq_inductive(seq, None, self, L, has_ready=True):
             return seq
         return seq0
 
@@ -522,7 +518,7 @@ class KindSEChecker(BaseKindSE):
         assert intersection(R, E).is_empty()
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
-        if is_seq_inductive(seq0, self, L):
+        if is_seq_inductive(seq0, None, self, L):
             return seq0
         return None
 
@@ -574,7 +570,7 @@ class KindSEChecker(BaseKindSE):
 
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
-        if is_seq_inductive(seq0, self, L):
+        if is_seq_inductive(seq0, None, self, L):
             return seq0
         dbg("... (got non-inductive set)")
         return None
@@ -605,7 +601,7 @@ class KindSEChecker(BaseKindSE):
             tmp.add(r)
             tmpseq = InductiveSequence(tmp.as_assert_annotation())
             # this may mean that the assertion in fact does not hold
-            if is_seq_inductive(tmpseq, self, L):
+            if is_seq_inductive(tmpseq, None, self, L):
                 R.add(r)
 
         if R.is_empty():
@@ -621,7 +617,7 @@ class KindSEChecker(BaseKindSE):
 
         seq0 = InductiveSequence(R.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
-        if is_seq_inductive(seq0, self, L):
+        if is_seq_inductive(seq0, None, self, L):
             return seq0
         dbg("... (got non-inductive set)")
         return None
@@ -637,7 +633,7 @@ class KindSEChecker(BaseKindSE):
 
         E = create_set(errs0.toassert())
         assert not E.is_empty(), "Error states are empty"
-        if is_seq_inductive(seq0, self, L):
+        if is_seq_inductive(seq0, None, self, L):
             dbg("Initial sequence is inductive", color="dark_green")
             return seq0
 
@@ -678,22 +674,27 @@ class KindSEChecker(BaseKindSE):
         create_set = self.create_set
 
         dbg(f"Getting initial sequence for loop {loc}")
-        target, seq0, errs0 = self.get_initial_seq(unsafe, path, L)
+        target0, seq0, errs0 = self.get_initial_seq(unsafe, path, L)
         if seq0 is None:
-            dbg(f"Failed getting initial sequence for loop {loc}")
-            return False
-        assert seq0
+            print_stdout(
+                f"Failed getting initial inductive sequence for loop {loc}", color="red"
+            )
+        #    return False
+        # assert seq0
 
         if __debug__:
-            assert intersection(
-                create_set(seq0.toannotation()), errs0.toassert()
-            ).is_empty(), "Initial sequence contains error states"
+            assert (
+                seq0 is None
+                or intersection(
+                    create_set(seq0.toannotation()), errs0.toassert()
+                ).is_empty()
+            ), "Initial sequence contains error states"
 
         sequences = [seq0]
         E = create_set(errs0.toassert())
 
         print_stdout(f"Executing loop {loc} with assumption", color="white")
-        print_stdout(str(seq0[0]), color="white")
+        print_stdout(str(seq0[0]) if seq0 else str(target0), color="white")
         print_stdout(f"and errors : {errs0}")
 
         # NOTE: if we would not overapproximate the starting set,
@@ -710,44 +711,52 @@ class KindSEChecker(BaseKindSE):
             )
             # FIXME: check that all the sequences together cover the input paths
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
-            for seq, S in ((seq, seq.toannotation(True)) for seq in sequences):
-                res, _ = self.check_loop_precondition(L, S)
+            for seq in sequences:
+                if seq:
+                    S = seq.toannotation(True)
+                    res, _ = self.check_loop_precondition(L, S)
 
-                # No matter whether the sequence is invariant, it is still inductive,
-                # so we can use it later for subsumptions (add only its last
-                # element as we added the previous elements already)
-                newi = create_set(seq[-1].toassume())
-                I = self.inductive_sets.setdefault(loc, InductiveSet(newi))
-                I.add(newi)
+                    # No matter whether the sequence is invariant, it is still inductive,
+                    # so we can use it later for subsumptions (add only its last
+                    # element as we added the previous elements already)
+                    newi = create_set(seq[-1].toassume())
+                    I = self.inductive_sets.setdefault(loc, InductiveSet(newi))
+                    I.add(newi)
 
-                if res is Result.SAFE:
-                    self.invariant_sets.setdefault(loc, []).append(
-                        seq.toannotation(False)
-                    )
-                    print_stdout(f"{S} holds on {loc}", color="BLUE")
-                    return True
+                    if res is Result.SAFE:
+                        self.invariant_sets.setdefault(loc, []).append(
+                            seq.toannotation(False)
+                        )
+                        print_stdout(f"{S} holds on {loc}", color="BLUE")
+                        return True
 
             extended = []
             for seq in sequences:
                 print_stdout(
-                    f"Processing sequence of len {len(seq)}:\n{seq}", color="dark_blue"
+                    f"Processing sequence of len {len(seq) if seq else 0}:\n{seq}",
+                    color="dark_blue",
                 )
                 if __debug__:
-                    assert intersection(
-                        create_set(seq.toannotation(True)), errs0.toassert()
-                    ).is_empty(), "Sequence is not safe"
-                    assert is_seq_inductive(seq, self, L), "seq is not inductive"
+                    assert (
+                        seq is None
+                        or intersection(
+                            create_set(seq.toannotation(True)), errs0.toassert()
+                        ).is_empty()
+                    ), "Sequence is not safe"
+                    assert seq is None or is_seq_inductive(
+                        seq, target0, self, L
+                    ), "seq is not inductive"
 
                 dbg("Extending the sequence")
-                # FIXME: we usually need seq[-1] that as annotation, or not?
-                for A in self.target_precondition(create_set(seq[-1].toassert()), E, L):
+                # FIXME: we usually need seq[-1] as annotation, or not?
+                for A in self.extend_seq(seq, target0, E, L):
                     print_stdout(f"Extended with: {A}", color="BROWN")
-                    tmp = seq.copy()
+                    tmp = seq.copy() if seq else InductiveSequence()
                     tmp.append(A.as_assert_annotation(), None)
                     if __debug__:
-                        r = tmp.check_ind_on_paths(self, L.paths())
+                        r = tmp.check_ind_on_paths(self, L.paths(), target0)
                         assert (
-                                r.errors is None
+                            r.errors is None
                         ), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
 
                     # extended.append(self.abstract_seq(e, errs0, L))

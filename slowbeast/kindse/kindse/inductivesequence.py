@@ -4,7 +4,7 @@ from slowbeast.symexe.annotations import (
     AssertAnnotation,
     or_annotations,
 )
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec
+from slowbeast.symexe.statesset import union
 from slowbeast.solvers.solver import getGlobalExprManager
 
 
@@ -114,7 +114,14 @@ class InductiveSequence:
         )
 
     def check_on_paths(
-        self, executor, paths, tmpframes=[], pre=None, post=None, self_as_pre=False
+        self,
+        executor,
+        paths,
+        target,
+        tmpframes=[],
+        pre=None,
+        post=None,
+        self_as_pre=False,
     ):
         """
         Check whether when we execute paths, we get to one of the frames
@@ -129,7 +136,10 @@ class InductiveSequence:
         for path in paths:
             p = path.copy()
             # the post-condition is the whole frame
-            p.add_annot_after(selfassert)
+            if target:
+                p.add_annot_after(union(target, selfassert).as_assert_annotation())
+            else:
+                p.add_annot_after(selfassert)
             if post:
                 p.add_annot_after(post.as_assert_annotation())
 
@@ -175,8 +185,8 @@ class InductiveSequence:
 
         return result
 
-    def check_ind_on_paths(self, executor, paths):
-        return self.check_on_paths(executor, paths, self_as_pre=True)
+    def check_ind_on_paths(self, executor, paths, target=None):
+        return self.check_on_paths(executor, paths, target=target, self_as_pre=True)
 
 
 # can be used to split formula to abstraction and the rest
