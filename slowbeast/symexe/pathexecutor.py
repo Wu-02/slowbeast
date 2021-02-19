@@ -89,11 +89,15 @@ class Executor(SExecutor):
 
         return states, nonready
 
-    def _execute_annotated_edge(self, states, edge, path):
+    def _execute_annotated_edge(self, states, edge, path, pre=None):
         assert all(map(lambda s: isinstance(s, LazySEState), states))
 
         source = edge.source()
         ready, nonready = states, []
+        # annotations before taking the edge (proably an invariant)
+        if pre:
+            ready, tu = self.execute_annotations(ready, pre)
+            nonready += tu
         # annotations before source
         locannot = path.annot_before_loc(source) if path else None
         if locannot:
@@ -121,7 +125,7 @@ class Executor(SExecutor):
 
         return ready, nonready
 
-    def execute_annotated_path(self, state, path):
+    def execute_annotated_path(self, state, path, invariants=None):
         """
         Execute the given path through CFG with annotations from the given
         state. NOTE: the passed states may be modified.
@@ -137,6 +141,8 @@ class Executor(SExecutor):
         I.e., if the last location is error location, then the result.ready
         states are in fact error states (those that reach the error location
         and pass the annotations of this location).
+
+        Invariants are assume annotations 'before' locations.
         """
 
         if isinstance(state, list):
@@ -165,7 +171,8 @@ class Executor(SExecutor):
         for idx in range(pathlen):
             edge = edges[idx]
             dbgv(f"vv ----- Edge {edge} ----- vv", verbose_lvl=3)
-            states, nonready = self._execute_annotated_edge(states, edge, path)
+            states, nonready = self._execute_annotated_edge(states, edge, path,
+                                                            invariants.get(edge.source()) if invariants else None)
             assert all(
                 map(lambda s: isinstance(s, LazySEState), states)
             ), "Wrong state type"

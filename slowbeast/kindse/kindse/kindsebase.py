@@ -81,7 +81,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         """
         return self.return_states
 
-    def executePath(self, path, fromInit=False):
+    def executePath(self, path, fromInit=False, invariants=None):
         """
         Execute the given path. The path is such that
         it ends one step before possible error.
@@ -113,7 +113,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
-        r = executor.execute_annotated_path(states, path)
+        r = executor.execute_annotated_path(states, path, invariants)
         self.stats.paths += 1
 
         earl = r.early
