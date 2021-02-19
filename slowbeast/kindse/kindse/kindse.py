@@ -171,12 +171,13 @@ class KindSEChecker(BaseKindSE):
         # paths to still search
         self.readypaths = []
         # inductive sets that we generated
-        self.inductive_sets = inductive_sets or {}
-        self.invariant_sets = invariants or {}
+        self.inductive_sets = {} if inductive_sets is None else inductive_sets
+        self.invariant_sets = {} if invariants is None else invariants
 
         if __debug__ and invariants:
+            dbg("Have these invariants at hand:")
             for loc, invs in invariants.items():
-                dbg(f"  have invariants @ {loc}: {invs}")
+                dbg(f"  @ {loc}: {invs}")
 
         self.no_sum_loops = set()
 
@@ -350,7 +351,7 @@ class KindSEChecker(BaseKindSE):
                 dbg("Overapproximation failed...")
                 continue
             # FIXME: intersect with all inductive sets?
-            if intersection(A, complement(target)).is_empty():
+            if seq and intersection(A, complement(target)).is_empty():
                dbg("Did not extend (got included elem...)")
                continue
 
@@ -724,9 +725,13 @@ class KindSEChecker(BaseKindSE):
                     I.add(newi)
 
                     if res is Result.SAFE:
-                        self.invariant_sets.setdefault(loc, []).append(
-                            seq.toannotation(False)
-                        )
+                        invs = self.invariant_sets.setdefault(loc, [])
+                        inv = seq.toannotation(False)
+                        invs.append(inv)
+                        # FIXME: check that the invariant gives us a new information
+                        #I = create_set() # FIXME: cache the union of invariants
+                       #I.add(invs)
+                       #I.intersect()
                         print_stdout(f"{S} holds on {loc}", color="BLUE")
                         return True
 
@@ -746,6 +751,10 @@ class KindSEChecker(BaseKindSE):
                     assert seq is None or is_seq_inductive(
                         seq, target0, self, L
                     ), "seq is not inductive"
+
+                if seq and len(seq) > 5:
+                    dbg("Did not extend the sequence, it is too long")
+                    continue
 
                 dbg("Extending the sequence")
                 # FIXME: we usually need seq[-1] as annotation, or not?
@@ -927,16 +936,6 @@ class KindSymbolicExecutor(BaseKindSE):
                 if iserr(l):
                     yield l, AssertAnnotation(EM.getFalse(), {}, EM)
 
-    def _propagate_inductive_sets(self, checker):
-        """
-        Reuse information from one assertion checking in the other
-        assertion checking
-        """
-        if self.propagate_invariants:
-            invs = self.invariants
-            for loc, invariants in checker.invariant_sets.items() or ():
-                invs.setdefault(loc, []).extend(invariants)
-
     def run(self):
         has_unknown = False
         for loc, A in self._get_possible_errors():
@@ -961,7 +960,6 @@ class KindSymbolicExecutor(BaseKindSE):
                     self.stats.killed_paths += 1
                     print_stdout(f"Killed path: {p}")
 
-            self._propagate_inductive_sets(checker)
 
         if has_unknown:
             print_stdout("Failed deciding the result.", color="orangeul")
