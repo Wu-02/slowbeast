@@ -191,19 +191,27 @@ def get_left_right(l):
     return chld[0], chld[1]
 
 
-def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
+def check_literal(EM, lit, ldata):
+    if lit is None or lit.is_concrete():
+        return False
+
     # safety check
-    if not safety_solver.is_sat(EM.disjunction(lit, *rl)) is False:
+    if not ldata.safety_solver.is_sat(EM.disjunction(lit, *ldata.clause)) is False:
         return False
 
     have_feasible = False
     substitute = EM.substitute
 
-    A = AssertAnnotation(substitute(I.expr(), (litrep, lit)), I.substitutions(), EM)
-    for s in poststates:
+    I = ldata.indset_with_placeholder
+    placeholder = ldata.placeholder
+    solver = ldata.solver
+    A = AssertAnnotation(
+        substitute(I.expr(), (placeholder, lit)), I.substitutions(), EM
+    )
+    for s in ldata.loop_poststates:
         # feasability check
         solver.push()
-        pathcond = substitute(s.path_condition(), (litrep, lit))
+        pathcond = substitute(s.path_condition(), (placeholder, lit))
         solver.add(pathcond)
         if solver.is_sat() is not True:
             solver.pop()
@@ -222,29 +230,10 @@ def _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
     return have_feasible
 
 
-def check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates):
-    if lit is None or lit.is_concrete():
-        return False
-    return _check_literal(lit, litrep, I, safety_solver, solver, EM, rl, poststates)
-
-
-def extend_with_num(
-    dliteral,
-    litrep,
-    constadd,
-    num,
-    maxnum,
-    I,
-    safety_solver,
-    solver,
-    EM,
-    rl,
-    poststates,
-):
+def extend_with_num(dliteral, constadd, num, maxnum, ldata, EM):
     """
-    Add 'num' to the literal 'l' as many times as is possible
+    Add 'num' as many times as possible to the literal that is created from dliteral and constadd
 
-    dliteral, litrep - literal FIXME: merge into one?
     constadd - this number is always added to the literal (that is the current
                value of extending
     num - number to keep adding
@@ -268,7 +257,7 @@ def extend_with_num(
     newl = dliteral.extended(newretval)
 
     ### push as far as we can with this num
-    while check_literal(newl, litrep, I, safety_solver, solver, EM, rl, poststates):
+    while check_literal(EM, newl, ldata):
         # the tried value is ok, so set it as the new final value
         retval = newretval
         assert retval.value() <= maxnum
@@ -284,42 +273,27 @@ def extend_with_num(
     return retval
 
 
-def extend_literal(
-    goodl, dliteral: DecomposedLiteral, litrep, I, safety_solver, solver, rl, poststates
-):
+def extend_literal(ldata, EM):
+    dliteral = ldata.decomposed_literal
 
     bw = dliteral.bitwidth()
     two = ConcreteInt(2, bw)
     # adding 2 ** bw would be like adding 0, stop before that
     maxnum = 2 ** bw - 1
 
-    EM = getGlobalExprManager()
-
     # a fast path where we try shift just by one.  If we cant, we can give up
     # FIXME: try more low values (e.g., to 10)
     num = ConcreteInt(1, bw)
     l = dliteral.extended(num)
-    if not check_literal(l, litrep, I, safety_solver, solver, EM, rl, poststates):
-        return goodl
+    if not check_literal(EM, l, ldata):
+        return ldata.literal
 
     # this is the final number that we are going to add to one side of the
     # literal
     finalnum = ConcreteInt(1, bw)  # we know we can add 1 now
     num = ConcreteInt(2 ** (bw - 1) - 1, bw)  # this num we'll try to add
     while finalnum.value() <= maxnum:
-        finalnum = extend_with_num(
-            dliteral,
-            litrep,
-            finalnum,
-            num,
-            maxnum,
-            I,
-            safety_solver,
-            solver,
-            EM,
-            rl,
-            poststates,
-        )
+        finalnum = extend_with_num(dliteral, finalnum, num, maxnum, ldata, EM)
 
         if num.value() <= 1:
             # we have added also as many 1 as we could, finish
@@ -327,10 +301,12 @@ def extend_literal(
         num = EM.Div(num, two)
     raise RuntimeError("Unreachable")
 
+
 class OverapproximationData:
     """
     Structure holding information needed for over-approximations
     """
+
     __slots__ = "executor", "target", "unsafe", "loop", "expr_mgr"
 
     def __init__(self, executor, target, unsafe, loop, expr_mgr):
@@ -340,6 +316,48 @@ class OverapproximationData:
         self.loop = loop
         self.expr_mgr = expr_mgr
 
+
+class LiteralOverapproximationData:
+    __slots__ = (
+        "literal",
+        "decomposed_literal",
+        "clause",
+        "clause_without_literal",
+        "indset_with_placeholder",
+        "placeholder",
+        "safety_solver",
+        "solver",
+        "loop_poststates",
+    )
+
+    def __init__(
+        self,
+        literal,
+        dliteral: DecomposedLiteral,
+        clause,
+        clause_without_literal,
+        indset_with_placeholder,
+        placeholder,
+        safety_solver,
+        solver,
+        loop_poststates,
+    ):
+        assert isinstance(dliteral, DecomposedLiteral)
+        assert isinstance(clause, list)
+        assert isinstance(clause_without_literal, list)
+        assert isinstance(solver, IncrementalSolver)
+        assert isinstance(safety_solver, IncrementalSolver)
+
+        self.literal = literal
+        self.decomposed_literal = dliteral
+        self.clause = clause
+        self.clause_without_literal = clause_without_literal
+        self.indset_with_placeholder = indset_with_placeholder
+        self.placeholder = placeholder
+        self.safety_solver = safety_solver
+        self.solver = solver
+        # also with placeholder
+        self.loop_poststates = loop_poststates
 
 
 def overapprox_literal(l, rl, S, data):
@@ -352,31 +370,30 @@ def overapprox_literal(l, rl, S, data):
     """
     assert not l.isAnd() and not l.isOr(), f"Input is not a literal: {l}"
     assert intersection(S, l, data.unsafe).is_empty(), "Unsafe states in input"
-    goodl = l  # last good overapprox of l
 
     dliteral = DecomposedLiteral(l)
     if not dliteral:
-        return goodl
+        return l
 
-    assert dliteral.toformula() == goodl
-    EM = getGlobalExprManager()
-    disjunction = EM.disjunction
+    assert dliteral.toformula() == l
+    EM = data.expr_mgr
     executor = data.executor
 
-    # create a fresh literal that we use as a symbol for our literal during extending
-    litrep = EM.Bool("litext")
-    # X is the original formula with 'litrep' instead of 'l'
-    X = intersection(S, disjunction(litrep, *(x for x in rl if x != l)))
+    # create a fresh literal that we use as a placeholder instead of our literal during extending
+    placeholder = EM.Bool("litext")
+    # X is the original formula with 'placeholder' instead of 'l'
+    clause_without_lit = list(x for x in rl if x != l)
+    X = intersection(S, EM.disjunction(placeholder, *clause_without_lit))
     assert not X.is_empty(), f"S: {S}, l: {l}, rl: {rl}"
     post = postimage(executor, data.loop.paths(), pre=X)
     if not post:
-        return goodl
+        return l
     # U is allowed reachable set of states
     U = union(data.target, X)
-    I = U.as_assume_annotation()
+    indset_with_placeholder = U.as_assume_annotation()
     # execute the instructions from annotations, so that the substitutions have up-to-date value
-    poststates, nonr = execute_annotation_substitutions(
-        executor.ind_executor(), post, I
+    poststates_with_placeholder, nonr = execute_annotation_substitutions(
+        executor.ind_executor(), post, indset_with_placeholder
     )
     assert not nonr, f"Got errors while processing annotations: {nonr}"
 
@@ -388,14 +405,26 @@ def overapprox_literal(l, rl, S, data):
 
     solver = IncrementalSolver()
 
+    ldata = LiteralOverapproximationData(
+        l,
+        dliteral,
+        rl,
+        clause_without_lit,
+        indset_with_placeholder,
+        placeholder,
+        safety_solver,
+        solver,
+        poststates_with_placeholder,
+    )
+    assert isinstance(ldata.decomposed_literal, DecomposedLiteral)
+
     em_optimize_expressions(False)
     # the optimizer could make And or Or from the literal, we do not want that...
-    goodl = extend_literal(
-        goodl, dliteral, litrep, I, safety_solver, solver, rl, poststates
-    )
+    l = extend_literal(ldata, EM)
     em_optimize_expressions(True)
 
-    return goodl
+    return l
+
 
 def overapprox_clause(c, R, data):
     """c - the clause
@@ -405,11 +434,15 @@ def overapprox_clause(c, R, data):
     """
     EM = data.expr_mgr
 
-    assert intersection(R, c, data.unsafe).is_empty(), f"{R} \cap {c} \cap {data.unsafe}"
+    assert intersection(
+        R, c, data.unsafe
+    ).is_empty(), f"{R} \cap {c} \cap {data.unsafe}"
     if __debug__:
         X = R.copy()
         X.intersect(c)
-        r = check_paths(data.executor, data.loop.paths(), pre=X, post=union(X, data.target))
+        r = check_paths(
+            data.executor, data.loop.paths(), pre=X, post=union(X, data.target)
+        )
         assert (
             r.errors is None
         ), f"Input state is not inductive (CTI: {r.errors[0].model()})"
@@ -433,7 +466,9 @@ def overapprox_clause(c, R, data):
                     *(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))
                 )
             )
-            r = check_paths(data.executor, data.loop.paths(), pre=X, post=union(X, data.target))
+            r = check_paths(
+                data.executor, data.loop.paths(), pre=X, post=union(X, data.target)
+            )
             if r.errors:
                 print("States:", X)
                 print("Target:", target)
