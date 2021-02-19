@@ -170,7 +170,7 @@ class Executor:
     def getOptions(self):
         return self._opts
 
-    def forbidCalls(self):
+    def forbid_calls(self):
         self._opts.no_calls = True
 
     def callsForbidden(self):

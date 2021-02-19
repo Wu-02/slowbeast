@@ -9,8 +9,6 @@ from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
-from slowbeast.symexe.annotations import state_to_annotation
-from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 
 
 def check_paths(executor, paths, pre=None, post=None):
@@ -43,7 +41,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         indexecutor = PathExecutor(self.solver(), opts, memorymodel)
         # add error funs and forbid defined calls...
         dbg("Forbidding calls in induction step for now with k-induction")
-        indexecutor.forbidCalls()
+        indexecutor.forbid_calls()
         self._indexecutor = indexecutor
 
         if programstructure is None:

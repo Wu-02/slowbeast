@@ -26,7 +26,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         memorymodel = LazySymbolicMemoryModel(opts)
         self.indexecutor = SExecutor(self.solver(), opts, memorymodel)
         dbg("Forbidding calls in induction step for now with k-induction")
-        self.indexecutor.forbidCalls()
+        self.indexecutor.forbid_calls()
 
     def ind_executor(self):
         return self.indexecutor
