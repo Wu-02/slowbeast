@@ -98,7 +98,8 @@ if _use_z3:
             r = simplify(fpToIEEEBV(x._expr))
             assert r.sort().size() == x.bitwidth(), f"{r.sort()}, {x.type()}"
             return r
-
+        if x.is_bool():
+            return boolToBV(x)
         return x.unwrap()
 
     def floatToUBV(x, ty=None):
@@ -537,7 +538,7 @@ class BVSymbolicDomain:
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
-        if a.is_bool():
+        if a.is_bool() and b.is_bool():
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
@@ -546,7 +547,7 @@ class BVSymbolicDomain:
     def Or(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
-        if a.is_bool():
+        if a.is_bool() and b.is_bool():
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
@@ -555,7 +556,7 @@ class BVSymbolicDomain:
     def Xor(a, b):
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
-        if a.is_bool():
+        if a.is_bool() and b.is_bool():
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
