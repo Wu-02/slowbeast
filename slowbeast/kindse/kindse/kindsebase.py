@@ -132,19 +132,20 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         self.problematic_paths.append(path)
         print_stdout("Killing a path that goes to caller")
         return []
-       #fun = path[0].source().cfa().fun()
-       #PS = self.programstructure
-       #cgnode = PS.callgraph.getNode(fun)
-       #paths = []
-       #assert states.errors
-       #for s in states.errors:
-       #    for callerfun, callsite in cgnode.getCallers():
-       #        for pred in PS.calls[callsite].predecessors():
-       #            p = AnnotatedCFAPath([pred])
-       #            p.add_annot_after(state_to_annotation(s, toassert=True))
-       #            print('tocaller', p)
-       #            paths.append(p)
-       #return paths
+
+    # fun = path[0].source().cfa().fun()
+    # PS = self.programstructure
+    # cgnode = PS.callgraph.getNode(fun)
+    # paths = []
+    # assert states.errors
+    # for s in states.errors:
+    #    for callerfun, callsite in cgnode.getCallers():
+    #        for pred in PS.calls[callsite].predecessors():
+    #            p = AnnotatedCFAPath([pred])
+    #            p.add_annot_after(state_to_annotation(s, toassert=True))
+    #            print('tocaller', p)
+    #            paths.append(p)
+    # return paths
 
     def extend_path(self, path, states, steps=-1, atmost=False, stoppoints=[]):
         """

@@ -33,7 +33,6 @@ class LazySymbolicMemoryModel(CoreMM):
         dbgv("Lazily allocated {0}".format(op), color="white", verbose_lvl=3)
         assert state.get(op), "Did not bind an allocated value"
 
-
     def allocate(self, state, instr):
         """
         Perform the allocation by the instruction
@@ -44,7 +43,9 @@ class LazySymbolicMemoryModel(CoreMM):
         if isinstance(instr, (Alloc, GlobalVariable)):
             size = instr.size()
         elif self._overapprox_unsupported:
-            size = state.solver().Var(f"ndt_size_{instr.as_value()}", IntType(POINTER_BIT_WIDTH))
+            size = state.solver().Var(
+                f"ndt_size_{instr.as_value()}", IntType(POINTER_BIT_WIDTH)
+            )
         size = state.try_eval(size)
         if instr.is_global():
             ptr = state.memory.allocateGlobal(instr)
@@ -52,7 +53,6 @@ class LazySymbolicMemoryModel(CoreMM):
             ptr = state.memory.allocate(size, instr)
         state.set(instr, ptr)
         return [state]
-
 
     def _havoc_ptr_target(self, state, ptr):
         """ Havoc memory possibly pointed by ptr"""

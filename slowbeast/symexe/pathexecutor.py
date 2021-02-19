@@ -171,8 +171,12 @@ class Executor(SExecutor):
         for idx in range(pathlen):
             edge = edges[idx]
             dbgv(f"vv ----- Edge {edge} ----- vv", verbose_lvl=3)
-            states, nonready = self._execute_annotated_edge(states, edge, path,
-                                                            invariants.get(edge.source()) if invariants else None)
+            states, nonready = self._execute_annotated_edge(
+                states,
+                edge,
+                path,
+                invariants.get(edge.source()) if invariants else None,
+            )
             assert all(
                 map(lambda s: isinstance(s, LazySEState), states)
             ), "Wrong state type"
