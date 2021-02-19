@@ -120,7 +120,7 @@ class LazySymbolicMemoryModel(CoreMM):
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
-        if ptr.offset().is_concrete():
+        if ptr.is_pointer() and ptr.offset().is_concrete():
             err = state.memory.write(ptr, val)
             if err and self._overapprox_unsupported and err.isUnsupported():
                 err = self._havoc_ptr_target(state, ptr)
@@ -144,7 +144,18 @@ class LazySymbolicMemoryModel(CoreMM):
             self.lazyAllocate(state, fromOp)
             frm = state.get(fromOp)
 
-        assert frm.is_pointer()
+        if not frm.is_pointer() and self._overapprox_unsupported:
+            if self._overapprox_unsupported:
+                val, err = self.uninitializedRead(
+                    state, fromOp, frm, bitsnum or bytesNum * 8
+                )
+                if err:
+                    state.setError(err)
+                else:
+                    state.set(toOp, val)
+                return [state]
+        else:
+            assert frm.is_pointer(), frm
         if not frm.offset().is_concrete():
             if self._overapprox_unsupported:
                 val, err = self.uninitializedRead(
