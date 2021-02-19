@@ -5,6 +5,7 @@ from slowbeast.ir.types import IntType
 from slowbeast.domains.symbolic import NondetLoad
 from slowbeast.symexe.memory import Memory
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
+from slowbeast.ir.types import POINTER_BIT_WIDTH, PointerType
 
 
 class SymbolicMemoryModel(CoreMM):
@@ -31,6 +32,27 @@ class LazySymbolicMemoryModel(CoreMM):
         assert len(s) == 1 and s[0] is state
         dbgv("Lazily allocated {0}".format(op), color="white", verbose_lvl=3)
         assert state.get(op), "Did not bind an allocated value"
+
+
+    def allocate(self, state, instr):
+        """
+        Perform the allocation by the instruction
+        "inst" and return the new states (there may be
+        several new states, e.g., one where the allocation succeeds,
+        one where it fails, etc.).
+        """
+        if isinstance(instr, (Alloc, GlobalVariable)):
+            size = instr.size()
+        elif self._overapprox_unsupported:
+            size = state.solver().Var(f"ndt_size_{instr.as_value()}", IntType(POINTER_BIT_WIDTH))
+        size = state.try_eval(size)
+        if instr.is_global():
+            ptr = state.memory.allocateGlobal(instr)
+        else:
+            ptr = state.memory.allocate(size, instr)
+        state.set(instr, ptr)
+        return [state]
+
 
     def _havoc_ptr_target(self, state, ptr):
         """ Havoc memory possibly pointed by ptr"""
