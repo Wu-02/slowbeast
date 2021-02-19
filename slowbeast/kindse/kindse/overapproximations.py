@@ -509,7 +509,8 @@ def break_const_eq(expr):
     return clauses
 
 
-def drop_clauses(clauses, S, safesolver, data):
+def drop_clauses(clauses, S, safesolver, data, no_vars_eq=False):
+    "no_vars_eq: do not drop equalities between variables"
     target, executor = data.target, data.executor
 
     # we start with all clauses
@@ -525,6 +526,11 @@ def drop_clauses(clauses, S, safesolver, data):
 
     newclauses = expressions.copy()
     for c in expressions:
+        if no_vars_eq and c.isEq():
+            chld = c.children()
+            if not next(chld).is_concrete() and not next(chld).is_concrete():
+                continue
+
         assert not c.is_concrete(), c
         # create a temporary formula without the given clause
         tmp = newclauses.copy()
@@ -549,12 +555,12 @@ def drop_clauses(clauses, S, safesolver, data):
     return newclauses
 
 
-def drop_clauses_fixpoint(clauses, S, safesolver, data):
+def drop_clauses_fixpoint(clauses, S, safesolver, data, no_vars_eq=False):
     """ Drop clauses until fixpoint """
     newclauses = clauses
     while True:
         oldlen = len(newclauses)
-        newclauses = drop_clauses(newclauses, S, safesolver, data)
+        newclauses = drop_clauses(newclauses, S, safesolver, data, no_vars_eq)
         if oldlen == len(newclauses):
             break
     return newclauses
@@ -602,6 +608,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
 
     expr = expr.to_cnf()
     # break equalities with constants to <= && >= so that we can overapproximate them
+    # FIXME: try also var-var
     clauses = break_const_eq(expr)
     # clauses = list(expr.children())
 
@@ -609,7 +616,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     safesolver.add(unsafe.as_expr())
 
     # can we drop some clause completely?
-    newclauses = drop_clauses_fixpoint(clauses, S, safesolver, data)
+    newclauses = drop_clauses_fixpoint(clauses, S, safesolver, data, no_vars_eq=True)
     clauses = remove_implied_literals(newclauses)
 
     # FIXME: THIS WORKS GOOD!
