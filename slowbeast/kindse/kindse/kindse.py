@@ -19,6 +19,23 @@ from .inductivesequence import InductiveSequence
 from .overapproximations import remove_implied_literals, overapprox_set
 from .relations import get_safe_relations
 
+def dump_inductive_sets(checker, loc):
+    return
+    dbg(f"With this inductive set at loc {loc}:", color="dark_green")
+    IS = checker.inductive_sets.get(loc)
+    if IS:
+        dbg(f"\n{IS}", color="dark_green")
+    else:
+        dbg(" ∅", color="dark_green")
+    dbg(f"With this invariant set at loc {loc}:", color="dark_green")
+    IS = checker.invariant_sets.get(loc)
+    if IS:
+        dbg(f"\n{IS}", color="dark_green")
+    else:
+        dbg(" ∅", color="dark_green")
+
+
+
 
 def get_initial_seq2(unsafe, path, L):
     """
@@ -201,7 +218,8 @@ class KindSEChecker(BaseKindSE):
     It inherits from BaseKindSE to have the capabilities to execute paths.
     """
 
-    def __init__(self, toplevel_executor, loc, A, inductive_sets=None):
+    def __init__(self, toplevel_executor, loc, A,
+                 invariants=None, inductive_sets=None):
         super().__init__(
             toplevel_executor.getProgram(),
             ohandler=None,
@@ -218,8 +236,19 @@ class KindSEChecker(BaseKindSE):
         self.readypaths = []
         # inductive sets that we generated
         self.inductive_sets = inductive_sets or {}
+        self.invariant_sets = invariants or {}
+
+        if __debug__ and invariants:
+            for loc, invs in invariants.items():
+                dbg(f"  have invariants @ {loc}: {invs}")
 
         self.no_sum_loops = set()
+
+   #def executePath(self, path, fromInit=False):
+   #    """
+   #    Override executePath such that it uses invariants that we have
+   #    """
+   #    return super().executePath(path, fromInit=fromInit, invariants=None)#self.invariant_sets)
 
     def unfinished_paths(self):
         return self.readypaths
@@ -232,7 +261,9 @@ class KindSEChecker(BaseKindSE):
         #     print_stdout(f"> {msg}", *args, **kwargs)
 
         # run recursively KindSEChecker with already computed inductive sets
-        checker = KindSEChecker(self.toplevel_executor, loc, A, self.inductive_sets)
+        checker = KindSEChecker(self.toplevel_executor, loc, A,
+                                invariants=self.invariant_sets,
+                                inductive_sets = self.inductive_sets)
         result, states = checker.check(L.entries())
         dbg_sec()
         return result, states
@@ -303,13 +334,7 @@ class KindSEChecker(BaseKindSE):
         """
         # unwind the paths and check subsumption
         dbg(f"Unfolding the loop {loc}")
-        if __debug__:
-            dbg(f"With this inductive set at loc {loc}:", color="dark_green")
-            IS = self.inductive_sets.get(loc)
-            if IS:
-                dbg(f"\n{IS}", color="dark_green")
-            else:
-                dbg(" ∅", color="dark_green")
+        if __debug__: dump_inductive_sets(self, loc)
 
         paths = self.extend_paths(path, None)
         inductive_set = self.inductive_sets.get(loc)
@@ -640,13 +665,7 @@ class KindSEChecker(BaseKindSE):
 
     def fold_loop(self, path, loc, L: Loop, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
-        if __debug__:
-            dbg(f"With this inductive set at loc {loc}:", color="dark_green")
-            IS = self.inductive_sets.get(loc)
-            if IS:
-                dbg(f"\n{IS}", color="dark_green")
-            else:
-                dbg(" ∅", color="dark_green")
+        if __debug__: dump_inductive_sets(self, loc)
 
         assert unsafe, "No unsafe states, we should not get here at all"
         create_set = self.create_set
@@ -696,17 +715,18 @@ class KindSEChecker(BaseKindSE):
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
             for seq, S in ((seq, seq.toannotation(True)) for seq in sequences):
                 res, _ = self.check_loop_precondition(L, S)
-                if res is Result.SAFE:
-                    print_stdout(f"{S} holds on {loc}", color="BLUE")
-                    return True
 
-                # The sequence is not invariant, but it is still inductive, so
-                # we can use it later for subsumptions (add only its last
+                # No matther whether the sequence is invariant, it is still inductive,
+                # so we can use it later for subsumptions (add only its last
                 # element as we added the previous elements already)
-                # FIXME: use incremental solving here
                 newi = create_set(seq[-1].toassume())
                 I = self.inductive_sets.setdefault(loc, InductiveSet(newi))
                 I.add(newi)
+
+                if res is Result.SAFE:
+                    self.invariant_sets.setdefault(loc, []).append(seq.toannotation(False))
+                    print_stdout(f"{S} holds on {loc}", color="BLUE")
+                    return True
 
             extended = []
             for seq in sequences:
@@ -874,6 +894,7 @@ class KindSymbolicExecutor(BaseKindSE):
 
     def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
         super().__init__(prog=prog, ohandler=ohandler, opts=opts)
+        self.invariants = {}
 
     def _get_possible_errors(self):
         EM = getGlobalExprManager()
@@ -889,11 +910,21 @@ class KindSymbolicExecutor(BaseKindSE):
                 if iserr(l):
                     yield l, AssertAnnotation(EM.getFalse(), {}, EM)
 
+    def _propagate_inductive_sets(self, checker):
+        """
+        Reuse information from one assertion checking in the other
+        assertion checking
+        """
+        invs = self.invariants
+        for loc, invariants in (checker.invariant_sets.items() or ()):
+            invs.setdefault(loc, []).extend(invariants)
+
+
     def run(self):
         has_unknown = False
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = KindSEChecker(self, loc, A)
+            checker = KindSEChecker(self, loc, A, invariants=self.invariants)
             result, states = checker.check()
             if result is Result.UNSAFE:
                 assert states.errors, "No errors in unsafe result"
@@ -912,6 +943,8 @@ class KindSymbolicExecutor(BaseKindSE):
                 for p in checker.problematic_paths:
                     self.stats.killed_paths += 1
                     print_stdout(f"Killed path: {p}")
+
+            self._propagate_inductive_sets(checker)
 
         if has_unknown:
             print_stdout("Failed deciding the result.", color="orangeul")
