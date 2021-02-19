@@ -71,60 +71,6 @@ def get_initial_seq2(unsafe, path, L):
     return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
 
 
-def get_initial_seq(unsafe, path, L):
-    """
-    Return two annotations, one that is the initial safe sequence
-    and one that represents the error states.
-    This implementation returns not the weakest sets, but stronger sets
-    that should be easier to prove (and then we can prove the remaining
-    states safe in another iteration).
-    NOTE: this function may return false as the initial sequence - we must check it!
-    """
-
-    # NOTE: Only safe states that reach the assert are not inductive on the
-    # loop header -- what we need is to have safe states that already left
-    # the loop and safely pass assertion or avoid it.
-    # These are the complement of error states intersected with the
-    # negation of loop condition.
-
-    S = None  # safe states
-    E = None  # unsafe states
-
-    EM = getGlobalExprManager()
-    Not, conjunction = EM.Not, EM.conjunction
-    for u in unsafe:
-        assert u.isfeasible(), f"Infeasible state: {u.path_condition()}"
-        # add constraints without loop exit condition
-        # (we'll add the loop condition later)
-        uconstr = u.getConstraints()
-        if not uconstr:
-            S = EM.getFalse()
-            E = EM.getTrue()
-            break  # nothing we can do...
-        # all constr. apart from the last one
-        pc = uconstr[:-1]
-        # last constraint is the failed assertion
-        S = (
-            conjunction(*pc, Not(uconstr[-1]), S)
-            if S
-            else conjunction(*pc, Not(uconstr[-1]))
-        )
-        # unsafe states
-        E = EM.Or(conjunction(*uconstr), E) if E else conjunction(*uconstr)
-
-    # simplify the formulas
-    if not S.is_concrete():
-        S = conjunction(*remove_implied_literals(S.to_cnf().children()))
-    if not E.is_concrete():
-        E = conjunction(*remove_implied_literals(E.to_cnf().children()))
-
-    subs = {l: l.load for l in unsafe[0].getNondetLoads()}
-    Sa = AssertAnnotation(S, subs, EM)
-    Se = AssertAnnotation(E, subs, EM)
-
-    return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
-
-
 def overapprox(executor, s, unsafeAnnot, seq, L):
     create_set = executor.create_set
     target = create_set(seq[-1].toassert())
@@ -463,6 +409,69 @@ class KindSEChecker(BaseKindSE):
         # FIXME: we are still precise, use abstraction here...
         return seq
 
+    def get_initial_seq(self, unsafe, path, L):
+        """
+        Return two annotations, one that is the initial safe sequence
+        and one that represents the error states.
+        This implementation returns not the weakest sets, but stronger sets
+        that should be easier to prove (and then we can prove the remaining
+        states safe in another iteration).
+        NOTE: this function may return false as the initial sequence - we must check it!
+        """
+
+        # NOTE: Only safe states that reach the assert are not inductive on the
+        # loop header -- what we need is to have safe states that already left
+        # the loop and safely pass assertion or avoid it.
+        # These are the complement of error states intersected with the
+        # negation of loop condition.
+
+        S = None  # safe states
+        E = None  # unsafe states
+
+        EM = getGlobalExprManager()
+        Not, Or, conjunction = EM.Not, EM.Or, EM.conjunction
+        for u in unsafe:
+            assert u.isfeasible(), f"Infeasible state: {u.path_condition()}"
+            # add constraints without loop exit condition
+            # (we'll add the loop condition later)
+            uconstr = u.getConstraints()
+            if not uconstr:
+                S = EM.getFalse()
+                E = EM.getTrue()
+                break  # nothing we can do...
+            # all constr. apart from the last one
+            pc = uconstr[:-1]
+            # last constraint is the failed assertion
+            S = (
+                conjunction(*pc, Not(uconstr[-1]), S)
+                if S
+                else conjunction(*pc, Not(uconstr[-1]))
+            )
+            # unsafe states
+            E = Or(conjunction(*uconstr), E) if E else conjunction(*uconstr)
+
+        # simplify the formulas
+        if not S.is_concrete():
+            S = conjunction(*remove_implied_literals(S.to_cnf().children()))
+        if not E.is_concrete():
+            E = conjunction(*remove_implied_literals(E.to_cnf().children()))
+
+        subs = {l: l.load for l in unsafe[0].getNondetLoads()}
+        Sa = AssertAnnotation(S, subs, EM)
+        Se = AssertAnnotation(E, subs, EM)
+
+        seq0 = InductiveSequence(Sa, None)
+        errs0 = InductiveSequence.Frame(Se, None)
+
+        # the initial sequence may not be inductive (usually when the assertion
+        # is inside the loop, so we must strenghten it in that case
+        seq0 = self.strengthen_initial_seq(seq0, errs0, path, L)
+        if seq0:
+            seq0 = self.overapprox_init_seq(seq0, errs0, L)
+
+        # inductive sequence is either inductive now, or it is None and we'll use non-inductive E
+        return EM.Not(E), seq0, errs0
+
     def overapprox_init_seq(self, seq0, errs0, L):
         assert is_seq_inductive(seq0, self, L), "seq is not inductive"
 
@@ -677,20 +686,10 @@ class KindSEChecker(BaseKindSE):
         create_set = self.create_set
 
         dbg(f"Getting initial sequence for loop {loc}")
-        seq0, errs0 = get_initial_seq(unsafe, path, L)
+        target, seq0, errs0 = self.get_initial_seq(unsafe, path, L)
         if seq0 is None:
             dbg(f"Failed getting initial sequence for loop {loc}")
             return False
-        dbg(f"Initial sequence: {seq0} with error states: {errs0}")
-        # the initial sequence may not be inductive (usually when the assertion
-        # is inside the loop, so we must strenghten it
-        dbg(f"Strengthening the initial sequence")
-        seq0 = self.strengthen_initial_seq(seq0, errs0, path, L)
-        if seq0 is None:
-            return False  # we failed...
-
-        dbgv(f"Overapproximating the initial sequence")
-        seq0 = self.overapprox_init_seq(seq0, errs0, L)
         assert seq0
 
         if __debug__:
@@ -722,7 +721,7 @@ class KindSEChecker(BaseKindSE):
             for seq, S in ((seq, seq.toannotation(True)) for seq in sequences):
                 res, _ = self.check_loop_precondition(L, S)
 
-                # No matther whether the sequence is invariant, it is still inductive,
+                # No matter whether the sequence is invariant, it is still inductive,
                 # so we can use it later for subsumptions (add only its last
                 # element as we added the previous elements already)
                 newi = create_set(seq[-1].toassume())
