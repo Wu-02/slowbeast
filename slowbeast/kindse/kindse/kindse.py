@@ -1,7 +1,6 @@
 from itertools import chain
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv, ldbg
 
-from slowbeast.ir.instruction import Assert as AssertInst
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
@@ -100,7 +99,9 @@ def overapprox(executor, s, E, target, L):
         ldbgv("  Adding relation {0}", (rel,))
         S.intersect(rel)
         assert not S.is_empty(), "Added realtion rendered the set infeasible: {rel}"
-        assert intersection(S, E).is_empty(), "Added realtion rendered the set unsafe: {rel}"
+        assert intersection(
+            S, E
+        ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
     return overapprox_set(executor, s.expr_manager(), S, E, target, L)
 
@@ -353,10 +354,9 @@ class KindSEChecker(BaseKindSE):
                 continue
 
             if __debug__:
-                 assert (
-                     seq is None
-                     or intersection(A, E).is_empty()
-                     ), f"Overapproximation is not safe: {A}"
+                assert (
+                    seq is None or intersection(A, E).is_empty()
+                ), f"Overapproximation is not safe: {A}"
             # FIXME: intersect with all inductive sets?
             if seq and intersection(A, complement(target)).is_empty():
                 dbg("Did not extend (got included elem...)")
@@ -583,6 +583,99 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
+    def strengthen_initial_seq_loop_iter3(self, seq0, E, path, L: Loop):
+        """
+        Strengthen the initial sequence through obtaining the
+        last safe iteration of the loop.
+
+        FIXME: we actually do not use the assertion at all right now,
+        only implicitly as it is contained in the paths...
+        """
+
+        # get states corresopnding to jumping out of the loop - for inductivness
+        create_set = self.create_set
+        is_error_loc = L.cfa().is_err
+        r = check_paths(
+            self,
+            (p for p in L.get_exit_paths() if not is_error_loc(p[-1].target())),
+       )
+        assert r.ready
+
+        I = create_set()
+        I.add(r.ready)
+        assert is_seq_inductive(InductiveSequence(I.as_assert_annotation()), None, self, L)
+        R = intersection(I, complement(E))
+        if R.is_empty():
+            dbg("... (got empty set)")
+            return None
+
+        if not intersection(R, E).is_empty():
+            dbg("... (intersection with unsafe states is non-empty)")
+            dbg("   trying to fix it")
+            R.intersect(complement(E))
+            if R.is_empty():
+                return None
+
+        seq0 = InductiveSequence(R.as_assert_annotation())
+        # this may mean that the assertion in fact does not hold
+        if is_seq_inductive(seq0, None, self, L):
+            return seq0
+        dbg("... (got non-inductive set)")
+        return None
+
+
+    def strengthen_initial_seq_loop_iter5(self, seq0, E, path, L: Loop):
+        """
+        Strengthen the initial sequence through obtaining the
+        last safe iteration of the loop.
+
+        FIXME: we actually do not use the assertion at all right now,
+        only implicitly as it is contained in the paths...
+        """
+
+        create_set = self.create_set
+        is_error_loc = L.cfa().is_err
+        # get the safe states that jump out of the loop after one iteration - for safety
+        # (these will include conditions from passed assertions)
+        r = check_paths(
+            self,
+            (p for p in L.last_iteration_paths() if not is_error_loc(p[-1].target())),
+        )
+        ready = r.ready
+        assert ready, "Loop has only infeasible paths"
+        for s in r.killed():
+            dbg("Killed a state")
+            self.report(s)
+            return None
+        R = create_set()
+        # FIXME: we can use only a subset of the states, wouldn't that be better?
+
+        for r in ready:
+            tmp = R.copy()
+            tmp.add(r)
+            tmpseq = InductiveSequence(tmp.as_assert_annotation())
+            # failure may mean that the assertion in fact does not hold
+            if is_seq_inductive(tmpseq, None, self, L):
+                R.add(r)
+
+        if R.is_empty():
+            dbg("... (got empty set)")
+            return None
+
+        if not intersection(R, E).is_empty():
+            dbg("... (intersection with unsafe states is non-empty)")
+            dbg("   trying to fix it")
+            R.intersect(complement(E))
+            if R.is_empty():
+                return None
+
+        seq0 = InductiveSequence(R.as_assert_annotation())
+        # this may mean that the assertion in fact does not hold
+        if is_seq_inductive(seq0, None, self, L):
+            return seq0
+        dbg("... (got non-inductive set)")
+        return None
+
     def strengthen_initial_seq_loop_iter(self, seq0, E, path, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
@@ -591,24 +684,32 @@ class KindSEChecker(BaseKindSE):
         FIXME: we actually do not use the assertion at all right now,
         only implicitly as it is contained in the paths...
         """
-        # get the safe states that jump out of the loop after one iteration
-        r = check_paths(self, map(strip_first_assume_edge, L.get_exit_paths()))
-        ready = r.ready
-        assert ready, "Loop has only infeasible paths"
-        for s in r.killed():
-            dbg("Killed a state")
-            self.report(s)
-            return None
+
+        # get states corresopnding to jumping out of the loop - for inductivness
+       #last_constraint_src = None
+       #for idx in range(-1, -(len(path)+1), -1):
+       #    e = path[idx]
+       #    if e.is_assume():
+       #        last_constraint_src = e.source()
+       #if last_constraint_src is None:
+       #    dbg("Did not find the last constraint on the path")
+       #    assert all(lambda e: not e.is_assume(), path), "BUG"
+       #    return None
+
         create_set = self.create_set
-        R = create_set()
-        # FIXME: we can use only a subset of the states, wouldn't that be better?
-        for r in ready:
-            tmp = R.copy()
-            tmp.add(r)
-            tmpseq = InductiveSequence(tmp.as_assert_annotation())
-            # this may mean that the assertion in fact does not hold
-            if is_seq_inductive(tmpseq, None, self, L):
-                R.add(r)
+        is_error_loc = L.cfa().is_err
+        r = check_paths(
+            self,
+            (p for p in L.get_exit_paths() if not is_error_loc(p[-1].target())),
+        )
+        assert r.ready
+
+        I = create_set()
+        I.add(r.ready)
+        assert is_seq_inductive(InductiveSequence(I.as_assert_annotation()), None, self, L)
+
+        last_constr = list(E.as_expr().children())[-1]
+        R = intersection(I, getGlobalExprManager().Not(last_constr))
 
         if R.is_empty():
             dbg("... (got empty set)")
@@ -743,7 +844,6 @@ class KindSEChecker(BaseKindSE):
                     newi = create_set(seq[-1].toassume())
                     I = self.inductive_sets.setdefault(loc, InductiveSet(newi))
                     I.add(newi)
-
 
             extended = []
             for seq in sequences:

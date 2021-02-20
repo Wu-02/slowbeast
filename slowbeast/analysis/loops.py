@@ -25,6 +25,9 @@ class Loop:
         self._backedges = backedges  # edges from loop into header
         self._edges = set(e for path in paths for e in path)
 
+    def cfa(self):
+        return self._header.cfa()
+
     def header(self):
         return self._header
 

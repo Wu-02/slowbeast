@@ -176,6 +176,7 @@ class CFA:
         return l == self._entry
 
     def is_err(self, l):
+        assert isinstance(l, CFA.Location), l
         return l in self._errors
 
     def from_program(prog: Program, callgraph=None):

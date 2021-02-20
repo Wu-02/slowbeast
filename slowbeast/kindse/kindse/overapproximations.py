@@ -490,12 +490,12 @@ def break_eqs(expr):
     def break_eq(c):
         l, r = c.children()
         ret = []
-        #if not const_only or (dom_is_concrete(l) or dom_is_concrete(r)):
+        # if not const_only or (dom_is_concrete(l) or dom_is_concrete(r)):
         for x in EM.Le(l, r), EM.Le(r, l):
             if not x.is_concrete():
                 ret.append(x)
         return ret
-        #return [c]
+        # return [c]
 
     # break equalities that have a constant on one side,
     # so that we can generalize them
@@ -624,7 +624,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
         c = clauses[n]
         # R is the rest of the actual formula without the clause c
         R = S.copy()  # copy the substitutions
-        R.reset_expr(conjunction(*newclauses, *clauses[n+1:]))
+        R.reset_expr(conjunction(*newclauses, *clauses[n + 1 :]))
 
         newclause = overapprox_clause(c, R, data)
         if newclause:
@@ -633,8 +633,9 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
             # assertion, overapprox_clause should not give us such clauses
             tmp = R.copy()
             tmp.intersect(newclause)
-            assert intersection(tmp, unsafe).is_empty(),\
-                f"Overapprox clause: got unsafe set {c} --> {newclause}"
+            assert intersection(
+                tmp, unsafe
+            ).is_empty(), f"Overapprox clause: got unsafe set {c} --> {newclause}"
             tmp.complement()
             # assert intersection(tmp, S).is_empty()
             if intersection(tmp, S).is_empty():
@@ -650,8 +651,6 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
             assert not R.is_empty()
             R.intersect(unsafe)
             assert R.is_empty(), f"Overapproxmating clause made the set unsafe: {c}"
-
-
 
     if __debug__:
         S.reset_expr(EM.conjunction(*newclauses))

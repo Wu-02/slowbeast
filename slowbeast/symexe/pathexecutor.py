@@ -77,7 +77,12 @@ class Executor(SExecutor):
                     r.setTerminated(f"Invalid assume edge: {elem}")
                     nonready.append(r)
                     continue
-                ldbgv("assume {0}{1}", ("not " if isnot else "", cond), verbose_lvl=3, color="dark_green")
+                ldbgv(
+                    "assume {0}{1}",
+                    ("not " if isnot else "", cond),
+                    verbose_lvl=3,
+                    color="dark_green",
+                )
                 tmp = self.execAssumeExpr(
                     r, r.expr_manager().Not(cond) if isnot else cond
                 )
