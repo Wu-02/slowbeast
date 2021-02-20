@@ -98,7 +98,7 @@ def overapprox(executor, s, E, target, L):
     for rel in get_safe_relations([s], unsafe=None, prevsafe=target):
         ldbgv("  Adding relation {0}", (rel,))
         S.intersect(rel)
-        assert not S.is_empty(), "Added realtion rendered the set infeasible: {rel}"
+        assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
         assert intersection(
             S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"

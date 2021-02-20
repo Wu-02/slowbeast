@@ -64,7 +64,7 @@ def iter_load_pairs(state):
             yield loads[i], loads[j]
 
 
-def get_var_cmp_relations(state):
+def get_var_diff_relations(state):
     subs = get_subs(state)
     EM = state.expr_manager()
 
@@ -91,6 +91,35 @@ def get_var_cmp_relations(state):
                 yield AssertAnnotation(
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
+
+def _compare_two_loads(state, l1, l2):
+    subs = get_subs(state)
+    EM = state.expr_manager()
+    Lt, Gt, Eq, = EM.Lt, EM.Gt, EM.Eq
+    simpl = EM.simplify
+    lt = state.is_sat(Lt(l1, l2))
+    gt = state.is_sat(Gt(l1, l2))
+
+    if lt is False:  # l1 >= l2
+        if gt is False:  # l1 <= l2
+            yield AssertAnnotation(simpl(Eq(l1, l2)), subs, EM )
+        elif gt is True:  # l1 >= l2
+            if state.is_sat(Eq(l1, l2)) is False:
+                yield AssertAnnotation(simpl(Gt(l1, l2)), subs, EM)
+            else:
+                yield AssertAnnotation(simpl(EM.Ge(l1, l2)), subs, EM)
+    elif lt is True:
+        if gt is False:  # l1 <= l2
+            if state.is_sat(Eq(l1, l2)) is False:
+                yield AssertAnnotation(simpl(Lt(l1, l2)), subs, EM)
+            else:
+                yield AssertAnnotation(simpl(EM.Le(l1, l2)), subs, EM)
+
+def get_var_cmp_relations(state):
+
+    # comparision relations between loads
+    for l1, l2 in iter_load_pairs(state):
+        yield from _compare_two_loads(state, l1, l2)
 
 
 def _get_const_cmp_relations(state):
@@ -143,7 +172,6 @@ def get_relations_to_prev_states(state, prev):
                 continue  # we do not need to replace these
             nonunique = state.is_sat(expr, oldpc, EM.Ne(diff, dval))
             if nonunique is False:
-                print(dval, vdval, cval)
                 if vdval > 0:  # old value is higher
                     expr = EM.conjunction(
                         EM.Ge(l, cval),
@@ -162,6 +190,7 @@ def get_relations_to_prev_states(state, prev):
 def get_safe_relations(safe, unsafe, prevsafe=None):
     for s in safe:
         # get and filter out those relations that make the state safe
+        yield from get_var_diff_relations(s)
         yield from get_var_cmp_relations(s)
 
         yield from get_const_cmp_relations(s)
