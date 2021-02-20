@@ -566,27 +566,12 @@ def drop_clauses_fixpoint(clauses, S, safesolver, data, no_vars_eq=False):
     return newclauses
 
 
-def enumerate_clauses(clauses, create_set):
-    """ Return pair (clause, rest of clauses (as set) """
-    tmp = create_set()
-    for n in range(len(clauses)):
-        tmp = create_set()
-        c = None
-        for i, x in enumerate(clauses):
-            if i == n:
-                c = x
-            else:
-                tmp.intersect(x)
-        assert c
-        yield c, tmp
-
-
 def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     """
-    drop_only - only drop redundant clauses
+    drop_only - only try to drop clauses, not to extend them
     """
-    create_set = executor.ind_executor().create_states_set
-    unsafe = create_set(unsafeAnnot)  # safe strengthening
+    create_set = executor.create_set
+    unsafe = create_set(unsafeAnnot)
     assert not S.is_empty(), "Overapproximating empty set"
     assert intersection(
         S, unsafe
@@ -615,9 +600,13 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     safesolver = IncrementalSolver()
     safesolver.add(unsafe.as_expr())
 
-    # can we drop some clause completely?
+    # can we drop some clause True?
     newclauses = drop_clauses_fixpoint(clauses, S, safesolver, data, no_vars_eq=True)
     clauses = remove_implied_literals(newclauses)
+
+    assert intersection(
+        unsafe, create_set(EM.conjunction(*clauses))
+    ).is_empty(), f"Dropping clauses made the set unsafe"
 
     # FIXME: THIS WORKS GOOD!
     if drop_only:
@@ -627,35 +616,58 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     # Now take every clause c and try to overapproximate it
+    conjunction = EM.conjunction
     newclauses = []
-    for c, xc in enumerate_clauses(clauses, create_set):
-        # R is the rest of the formula without the clause c
+    for n in range(len(clauses)):
+        assert len(newclauses) == n
+        c = clauses[n]
+        # R is the rest of the actual formula without the clause c
         R = S.copy()  # copy the substitutions
-        R.reset_expr(xc.as_expr())
+        R.reset_expr(conjunction(*newclauses, *clauses[n+1:]))
 
         newclause = overapprox_clause(c, R, data)
         if newclause:
             # newclauses.append(newclause)
-            # FIXME: this check should be assertion, overapprox_clause should not give us such clauses
+            # FIXME: this check should be
+            # assertion, overapprox_clause should not give us such clauses
             tmp = R.copy()
             tmp.intersect(newclause)
+            assert intersection(tmp, unsafe).is_empty(),\
+                f"Overapprox clause: got unsafe set {c} --> {newclause}"
             tmp.complement()
             # assert intersection(tmp, S).is_empty()
             if intersection(tmp, S).is_empty():
+                # new clause makes S to be an overapproximation, good
                 newclauses.append(newclause)
             else:
                 newclauses.append(c)
         else:
             newclauses.append(c)
+
+        if __debug__:
+            R.intersect(newclauses[-1])
+            assert not R.is_empty()
+            R.intersect(unsafe)
+            assert R.is_empty(), f"Overapproxmating clause made the set unsafe: {c}"
+
+
+
     if __debug__:
-        S.reset_expr(EM.conjunction(*clauses))
+        S.reset_expr(EM.conjunction(*newclauses))
         assert not S.is_empty()
+        assert intersection(
+            unsafe, S
+        ).is_empty(), f"Overapproxmating clauses made the set unsafe"
 
     # drop clauses once more
     newclauses = drop_clauses_fixpoint(newclauses, S, safesolver, data)
 
     clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses))
+
+    assert intersection(
+        unsafe, create_set(S)
+    ).is_empty(), f"Dropping clauses second time made the set unsafe"
 
     dbg(f"Overapproximated to {S}", color="dark_blue")
 
