@@ -483,20 +483,19 @@ def overapprox_clause(c, R, data):
     return EM.disjunction(*newc)
 
 
-def break_const_eq(expr):
+def break_eqs(expr):
     EM = getGlobalExprManager()
     clauses = []
 
     def break_eq(c):
         l, r = c.children()
         ret = []
-        if dom_is_concrete(l) or dom_is_concrete(r):
-            for x in EM.Le(l, r), EM.Le(r, l):
-                if not x.is_concrete():
-                    ret.append(x)
-            return ret
-
-        return [c]
+        #if not const_only or (dom_is_concrete(l) or dom_is_concrete(r)):
+        for x in EM.Le(l, r), EM.Le(r, l):
+            if not x.is_concrete():
+                ret.append(x)
+        return ret
+        #return [c]
 
     # break equalities that have a constant on one side,
     # so that we can generalize them
@@ -596,10 +595,8 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     expr = expr.to_cnf()
-    # break equalities with constants to <= && >= so that we can overapproximate them
-    # FIXME: try also var-var
-    clauses = break_const_eq(expr)
-    # clauses = list(expr.children())
+    # break equalities to <= && >= so that we can overapproximate them
+    clauses = break_eqs(expr)
 
     safesolver = IncrementalSolver()
     safesolver.add(unsafe.as_expr())
