@@ -541,7 +541,7 @@ class KindSEChecker(BaseKindSE):
         with infinite loops where the first version does not work, so keep it.
         """
         # get the safe states that jump out of the loop after one iteration
-        r = check_paths(self, L.get_exit_paths())
+        r = check_paths(self, L.last_iteration_paths())
         ready = r.ready
         if not ready:
             return None
@@ -552,13 +552,13 @@ class KindSEChecker(BaseKindSE):
         create_set = self.create_set
         R = create_set()
         # FIXME: we can use only a subset of the states, wouldn't that be better?
-        EM = getGlobalExprManager()
+        conjunction = getGlobalExprManager().conjunction
         for r in ready:
             # do not use the first constraint -- it is the inedge condition that we want to ignore,
             # because we want to jump out of the loop (otherwise we will not get inductive set)
             C = r.getConstraints()[1:]
-            expr = EM.conjunction(*C)
-            expr = EM.conjunction(*remove_implied_literals(expr.to_cnf().children()))
+            expr = conjunction(*C)
+            expr = conjunction(*remove_implied_literals(expr.to_cnf().children()))
             tmp = create_set(r)
             tmp.reset_expr(expr)
             R.add(tmp)
@@ -594,8 +594,7 @@ class KindSEChecker(BaseKindSE):
         # get the safe states that jump out of the loop after one iteration
         r = check_paths(self, map(strip_first_assume_edge, L.get_exit_paths()))
         ready = r.ready
-        if not ready:
-            return None
+        assert ready, "Loop has only infeasible paths"
         for s in r.killed():
             dbg("Killed a state")
             self.report(s)
@@ -603,7 +602,6 @@ class KindSEChecker(BaseKindSE):
         create_set = self.create_set
         R = create_set()
         # FIXME: we can use only a subset of the states, wouldn't that be better?
-        EM = getGlobalExprManager()
         for r in ready:
             tmp = R.copy()
             tmp.add(r)
@@ -712,7 +710,6 @@ class KindSEChecker(BaseKindSE):
         # would it?)
         # only the rest of the sequence is inductive and it reaches the target set
 
-        EM = getGlobalExprManager()
         while True:
             print("--- extending sequences ---")
             print_stdout(

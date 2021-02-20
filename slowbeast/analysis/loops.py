@@ -41,12 +41,30 @@ class Loop:
     def paths(self):
         return self._paths
 
-    def get_exit_paths(self):
+    def last_iteration_paths(self):
         """
         Take all paths in the loop and prolong them such that they end with an exit edge.
         """
         result = []
         queue = self._paths.copy()
+        while queue:
+            newqueue = []
+            for path in queue:
+                for succedge in path[-1].successors():
+                    if succedge in self._exits:
+                        result.append(path.copyandappend(succedge))
+                    elif succedge not in self._backedges:
+                        newqueue.append(path.copyandappend(succedge))
+                    # else drop the path
+            queue = newqueue
+        return result
+
+    def get_exit_paths(self):
+        """
+        All paths from header to exit edge
+        """
+        result = []
+        queue = [AnnotatedCFAPath([e]) for e in self._header.successors()]
         while queue:
             newqueue = []
             for path in queue:
