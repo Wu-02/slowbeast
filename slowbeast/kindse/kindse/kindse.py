@@ -221,7 +221,7 @@ class KindSEChecker(BaseKindSE):
         if True:  # check subsumption
             inductive_set = self.inductive_sets.get(loc)
             if inductive_set:
-                dbg("...(checking subsumed states)")
+                dbg(f"...(at loop header {loc}: checking subsumed states)")
                 create_set = self.create_set
                 assert states.errors
                 assert not inductive_set.I.is_empty()
@@ -234,7 +234,7 @@ class KindSEChecker(BaseKindSE):
                     dbg("... (the path was subsumed)")
                     return Result.SAFE, []
             else:
-                dbg("...(no inductive set for subsumption)")
+                dbg(f"...(at loop header {loc}: no inductive set for subsumption)")
                 unsafe = states.errors
         else:
             dbg("...(no inductive set for subsumption)")
@@ -789,7 +789,6 @@ class KindSEChecker(BaseKindSE):
             sequences = extended
 
     def check_path(self, path):
-        ldbg("{0}", (path,))
         first_loc = path[0]
         if self._is_init(first_loc.source()):
             r, states = self.checkInitialPath(path)
@@ -888,6 +887,7 @@ class KindSEChecker(BaseKindSE):
                     Result.UNKNOWN if (self.problematic_paths) else Result.SAFE
                 ), self.problematic_paths_as_result()
 
+            ldbgv("Main loop: check path {0}", (path,))
             r, states = self.check_path(path)
 
             if r is Result.UNSAFE:
