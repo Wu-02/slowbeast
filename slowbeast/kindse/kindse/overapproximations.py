@@ -1,6 +1,6 @@
 from functools import partial
 from slowbeast.domains.concrete import ConcreteInt, dom_is_concrete
-from slowbeast.util.debugging import dbg
+from slowbeast.util.debugging import dbg, dbgv
 from slowbeast.solvers.expressions import em_optimize_expressions
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 
@@ -520,7 +520,10 @@ def drop_clauses(clauses, S, safesolver, data, no_vars_eq=False):
     for c in clauses:
         if c.is_concrete():
             if c.value() is False:
+                dbg("  ... got FALSE in clauses, returning FALSE")
                 return [data.expr_mgr.getFalse()]
+            else:
+                dbg("  ... dropping True clause")
         else:
             expressions.append(c)
 
@@ -559,6 +562,7 @@ def drop_clauses_fixpoint(clauses, S, safesolver, data, no_vars_eq=False):
     """ Drop clauses until fixpoint """
     newclauses = clauses
     while True:
+        dbgv(" ... droping clauses (starting iteration)")
         oldlen = len(newclauses)
         newclauses = drop_clauses(newclauses, S, safesolver, data, no_vars_eq)
         if oldlen == len(newclauses):

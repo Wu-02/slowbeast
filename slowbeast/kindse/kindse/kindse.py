@@ -71,7 +71,7 @@ def get_initial_seq2(unsafe, path, L):
     return InductiveSequence(Sa, None), InductiveSequence.Frame(Se, None)
 
 
-def overapprox(executor, s, unsafeAnnot, target, L):
+def overapprox(executor, s, E, target, L):
     S = executor.create_set(s)
 
     # FIXME: this is a workaround until we support nondet() calls in lazy execution
@@ -99,9 +99,10 @@ def overapprox(executor, s, unsafeAnnot, target, L):
     for rel in get_safe_relations([s], unsafe=None, prevsafe=target):
         ldbgv("  Adding relation {0}", (rel,))
         S.intersect(rel)
-    assert not S.is_empty(), "Added realtions rendered the state infeasible!"
-    EM = s.expr_manager()
-    return overapprox_set(executor, EM, S, unsafeAnnot, target, L)
+        assert not S.is_empty(), "Added realtion rendered the set infeasible: {rel}"
+        assert intersection(S, E).is_empty(), "Added realtion rendered the set unsafe: {rel}"
+
+    return overapprox_set(executor, s.expr_manager(), S, E, target, L)
 
 
 def is_seq_inductive(seq, target, executor, L, has_ready=False):
@@ -350,6 +351,12 @@ class KindSEChecker(BaseKindSE):
             if A is None:
                 dbg("Overapproximation failed...")
                 continue
+
+            if __debug__:
+                 assert (
+                     seq is None
+                     or intersection(A, E).is_empty()
+                     ), f"Overapproximation is not safe: {A}"
             # FIXME: intersect with all inductive sets?
             if seq and intersection(A, complement(target)).is_empty():
                 dbg("Did not extend (got included elem...)")
