@@ -702,7 +702,8 @@ class KindSEChecker(BaseKindSE):
             self,
             (p for p in L.get_exit_paths() if not is_error_loc(p[-1].target())),
         )
-        assert r.ready
+        if r.ready is None:
+            return None
 
         I = create_set()
         I.add(r.ready)
