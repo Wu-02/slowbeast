@@ -717,6 +717,7 @@ class KindSEChecker(BaseKindSE):
             safe.reset_expr(last_constr)
         else:
             safe = complement(E)
+        print('safe', safe)
         R = intersection(I, safe)
 
         if R.is_empty():
@@ -753,6 +754,7 @@ class KindSEChecker(BaseKindSE):
             return seq0
 
         dbg("Initial sequence is NOT inductive, trying to fix it", color="wine")
+        dbg(str(seq0))
 
         tmp = self.strengthen_initial_seq_exit_cond(seq0, E, path, L)
         if tmp:
@@ -765,17 +767,24 @@ class KindSEChecker(BaseKindSE):
         #    return tmp
         # dbg("Failed strengthening the initial sequence with picking")
 
-        tmp = self.strengthen_initial_seq_loop_iter(seq0, E, unsafe, path, L)
-        if tmp:
-            dbg("Succeeded strengthening the initial sequence with last iteration")
-            return tmp
-        dbg("Failed strengthening the initial sequence with last iteration")
+       #tmp = self.strengthen_initial_seq_loop_iter(seq0, E, unsafe, path, L)
+       #if tmp:
+       #    dbg("Succeeded strengthening the initial sequence with last iteration")
+       #    return tmp
+       #dbg("Failed strengthening the initial sequence with last iteration")
 
-        tmp = self.strengthen_initial_seq_loop_iter2(seq0, E, path, L)
+       #tmp = self.strengthen_initial_seq_loop_iter2(seq0, E, path, L)
+       #if tmp:
+       #    dbg("Succeeded strengthening the initial sequence with last iteration (2)")
+       #    return tmp
+       #dbg("Failed strengthening the initial sequence with last iteration (2)")
+
+        tmp = self.strengthen_initial_seq_loop_iter5(seq0, E, path, L)
         if tmp:
-            dbg("Succeeded strengthening the initial sequence with last iteration (2)")
+            dbg("Succeeded strengthening the initial sequence with last iteration (5)")
             return tmp
-        dbg("Failed strengthening the initial sequence with last iteration (2)")
+        dbg("Failed strengthening the initial sequence with last iteration (5)")
+
 
         dbg("-- Failed making the initial sequence inductive --", color="red")
         return None
@@ -796,8 +805,8 @@ class KindSEChecker(BaseKindSE):
             )
             # FIXME: the initial element must be inductive, otherwise we do not know whether
             # an error state is unreachable from it...
-            return False
-        assert seq0
+            #return False
+        #assert seq0
 
         if __debug__:
             assert (
@@ -833,9 +842,10 @@ class KindSEChecker(BaseKindSE):
                     res, _ = self.check_loop_precondition(L, S)
 
                     if res is Result.SAFE:
-                        invs = self.invariant_sets.setdefault(loc, [])
-                        inv = seq.toannotation(False)
-                        invs.append(inv)
+                        if seq.target_is_inductive:
+                            invs = self.invariant_sets.setdefault(loc, [])
+                            inv = seq.toannotation(False)
+                            invs.append(inv)
                         # FIXME: check that the invariant gives us a new information
                         # I = create_set() # FIXME: cache the union of invariants
                         # I.add(invs)
@@ -849,9 +859,10 @@ class KindSEChecker(BaseKindSE):
                     # No matter whether the sequence is invariant, it is still inductive,
                     # so we can use it later for subsumptions (add only its last
                     # element as we added the previous elements already)
-                    newi = create_set(seq[-1].toassume())
-                    I = self.inductive_sets.setdefault(loc, InductiveSet(newi))
-                    I.add(newi)
+                    if seq.target_is_inductive:
+                        newi = create_set(seq[-1].toassume())
+                        I = self.inductive_sets.setdefault(loc, InductiveSet(newi))
+                        I.add(newi)
 
             extended = []
             for seq in sequences:
@@ -878,7 +889,11 @@ class KindSEChecker(BaseKindSE):
                 # FIXME: we usually need seq[-1] as annotation, or not?
                 for A in self.extend_seq(seq, target0, E, L):
                     print_stdout(f"Extended with: {A}", color="BROWN")
-                    tmp = seq.copy() if seq else InductiveSequence()
+                    if seq:
+                        tmp = seq.copy()
+                    else:
+                        tmp = InductiveSequence(target=target0)
+                        tmp.target_is_inductive = False
                     tmp.append(A.as_assert_annotation(), None)
                     if __debug__:
                         r = tmp.check_ind_on_paths(self, L.paths(), target0)
