@@ -460,7 +460,7 @@ class KindSEChecker(BaseKindSE):
 
         # the initial sequence may not be inductive (usually when the assertion
         # is inside the loop, so we must strenghten it in that case
-        seq0 = self.strengthen_initial_seq(seq0, errs0, path, L)
+        seq0 = self.strengthen_initial_seq(seq0, errs0, unsafe, path, L)
         if seq0:
             seq0 = self.overapprox_init_seq(seq0, errs0, L)
 
@@ -676,7 +676,7 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
-    def strengthen_initial_seq_loop_iter(self, seq0, E, path, L: Loop):
+    def strengthen_initial_seq_loop_iter(self, seq0, E, unsafe, path, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -709,8 +709,15 @@ class KindSEChecker(BaseKindSE):
         I.add(r.ready)
         assert is_seq_inductive(InductiveSequence(I.as_assert_annotation()), None, self, L)
 
-        last_constr = list(E.as_expr().children())[-1]
-        R = intersection(I, getGlobalExprManager().Not(last_constr))
+        if unsafe:
+            last_constr_list = [u.getConstraints()[-1] for u in unsafe]
+            last_constr = unsafe[0].expr_manager().conjunction(*last_constr_list)
+            assert last_constr.is_bool(), last_constr
+            safe = E.copy()
+            safe.reset_expr(last_constr)
+        else:
+            safe = complement(E)
+        R = intersection(I, safe)
 
         if R.is_empty():
             dbg("... (got empty set)")
@@ -730,7 +737,7 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
-    def strengthen_initial_seq(self, seq0, errs0, path, L: Loop):
+    def strengthen_initial_seq(self, seq0, errs0, unsafe, path, L: Loop):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
 
@@ -758,7 +765,7 @@ class KindSEChecker(BaseKindSE):
         #    return tmp
         # dbg("Failed strengthening the initial sequence with picking")
 
-        tmp = self.strengthen_initial_seq_loop_iter(seq0, E, path, L)
+        tmp = self.strengthen_initial_seq_loop_iter(seq0, E, unsafe, path, L)
         if tmp:
             dbg("Succeeded strengthening the initial sequence with last iteration")
             return tmp

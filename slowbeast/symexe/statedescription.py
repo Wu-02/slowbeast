@@ -28,10 +28,10 @@ class StateDescription:
     the substitutions.
     """
 
-    __slots__ = ["_expr", "_subs"]
+    __slots__ = "_expr", "_subs"
 
     def __init__(self, expr, subs):
-        assert expr.is_bool()
+        assert expr.is_bool(), expr
         assert expr is not None and isinstance(expr, (Expr, ConcreteVal))
         assert subs is not None and isinstance(subs, dict)
 
