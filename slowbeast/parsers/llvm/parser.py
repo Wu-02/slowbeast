@@ -305,6 +305,10 @@ class Parser:
         op2 = self.operand(operands[1])
         opcode = inst.opcode
 
+        # make sure both operands are bool if one is bool
+        if op1.type().is_bool() or op2.type().is_bool():
+            op1, op2 = bvToBoolElseId(op1), bvToBoolElseId(op2)
+
         if opcode == "and":
             I = And(op1, op2)
         elif opcode == "or":

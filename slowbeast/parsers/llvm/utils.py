@@ -198,6 +198,14 @@ def getConstant(val):
 
     return ConcreteVal(c, FloatType(bw) if isfloating else IntType(bw))
 
+def bvToBoolElseId(bv):
+    if bv.is_concrete():
+        if bv.value() == 0:
+            return ConstantFalse
+        else:
+            return ConstantTrue
+    return bv
+
 
 def getConstantPtr(val):
     # good, this is so ugly. But llvmlite does
