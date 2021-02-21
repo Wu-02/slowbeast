@@ -97,6 +97,16 @@ def _compare_two_loads(state, l1, l2):
     EM = state.expr_manager()
     Lt, Gt, Eq, = EM.Lt, EM.Gt, EM.Eq
     simpl = EM.simplify
+
+    l1bw = l1.type().bitwidth()
+    l2bw = l2.type().bitwidth()
+
+    bw = max(l1bw, l2bw)
+    if l1bw != bw:
+        l1 = EM.SExt(l1, ConcreteInt(bw, bw))
+    if l2bw != bw:
+        l2 = EM.SExt(l2, ConcreteInt(bw, bw))
+
     lt = state.is_sat(Lt(l1, l2))
     gt = state.is_sat(Gt(l1, l2))
 
@@ -119,7 +129,7 @@ def get_var_cmp_relations(state):
 
     # comparision relations between loads
     for l1, l2 in iter_load_pairs(state):
-        yield from _compare_two_loads(state, l1, l2)
+       yield from _compare_two_loads(state, l1, l2)
 
 
 def _get_const_cmp_relations(state):
