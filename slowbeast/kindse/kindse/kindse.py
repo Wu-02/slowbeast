@@ -204,6 +204,25 @@ class KindSEChecker(BaseKindSE):
         dbg_sec()
         return result, states
 
+    def unwind(self, paths, maxk):
+        assert maxk
+        k = 0
+        dbg("Unwinding the loop...")
+        while paths and k < maxk:
+            newpaths = []
+            for p in paths:
+                r, states = self.check_path(p)
+                if r is Result.UNSAFE:
+                    # we hit real unsafe path - return it so that the main executor
+                    # will re-execute it and report
+                    return Result.UNSAFE, [p]
+                # otherwise just prolong the paths that failed
+                if states.errors:
+                     newpaths.extend(self.extend_paths(p, None))
+            paths = newpaths
+            k += 1
+        return Result.UNKNOWN if paths else Result.SAFE, paths
+
     def handle_loop(self, loc, path, states):
         assert (
             loc not in self.no_sum_loops
@@ -215,19 +234,18 @@ class KindSEChecker(BaseKindSE):
 
         #   # first try to unroll it in the case the loop is easy to verify
         #   kindse = BaseKindSE(self.getProgram())
-        #   maxk = 15
-        #   dbg_sec("Running nested KindSE")
-        #   res = kindse.run([path.copy()], maxk=maxk)
-        #   dbg_sec()
-        #   if res is Result.SAFE:
-        #      print_stdout(
-        #          f"Loop {loc} proved by unwinding", color="GREEN"
-        #      )
-        #      return res, []
-        #   # FIXME: uncomment and return the states
-        #   elif res is Result.UNSAFE:
-        #      self.no_sum_loops.add(loc)
-        #      return res, [path]  # found an error
+        maxk = 15
+        dbg_sec("Running nested KindSE")
+        res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
+        dbg_sec()
+        if res is Result.SAFE:
+           print_stdout(
+               f"Loop {loc} proved by unwinding", color="GREEN"
+           )
+           return res, []
+        elif res is Result.UNSAFE:
+           self.no_sum_loops.add(loc)
+           return res, [path]  # found an error
 
         L = self.get_loop(loc)
         if L is None:
@@ -239,7 +257,8 @@ class KindSEChecker(BaseKindSE):
         if self.fold_loop(path, loc, L, unsafe):
             return Result.SAFE, []
         else:
-            return self.unfold_loop(path, loc, indset=None)
+            return Result.UNKNOWN, unwoundloop
+            #return self.unfold_loop(path, loc, indset=None)
 
     def unfold_loop(self, path, loc, indset):
         """
