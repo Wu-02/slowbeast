@@ -246,9 +246,9 @@ class Executor(ConcreteExecutor):
             raise RuntimeError("Invalid comparison")
 
     def cmpPointers(self, state, instr, p1, p2):
-        mo1 = p1.object()
-        mo2 = p2.object()
-        if is_symbolic(mo1) or is_symbolic(mo2):
+        mo1id = p1.object()
+        mo2id = p2.object()
+        if is_symbolic(mo1id) or is_symbolic(mo2id):
             state.setKilled(
                 "Comparison of symbolic pointers unimplemented: {0}".format(instr)
             )
@@ -256,7 +256,7 @@ class Executor(ConcreteExecutor):
 
         E = state.expr_manager()
         p = instr.predicate()
-        if mo1.get_id() == mo2.get_id():
+        if mo1id == mo2id:
             state.set(
                 instr,
                 self.cmpValues(E, p, p1.offset(), p2.offset(), instr.is_unsigned()),

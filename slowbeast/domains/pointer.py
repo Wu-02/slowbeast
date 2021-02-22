@@ -9,6 +9,7 @@ class Pointer(Value):
     KIND = 5
 
     def __init__(self, obj, off=ConcreteInt(0, POINTER_BIT_WIDTH)):
+        assert isinstance(obj, Value)
         assert isinstance(off, Value)
         super().__init__(PointerType())
         self._object = obj
