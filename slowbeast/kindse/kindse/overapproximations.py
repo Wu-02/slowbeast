@@ -507,6 +507,24 @@ def break_eqs(expr):
 
     return clauses
 
+def replace_constants(expr, EM):
+    "Assume the expr is in CNF"
+    added = []
+    # FIXME: this is veeery inefficient
+    muls = [c for c in expr.subexpressions() if not c.is_concrete() and c.isMul()]
+    for m in muls:
+        chld = list(m.children())
+        if chld[0].is_concrete():
+            r = EM.fresh_value("const_repl", chld[0].type())
+            added.append(EM.Eq(r, chld[0]))
+            expr = EM.substitute(expr, (m, EM.Mul(r, chld[1])))
+        if chld[1].is_concrete():
+            r = EM.fresh_value("const_repl", chld[1].type())
+            added.append(EM.Eq(r, chld[1]))
+            expr = EM.substitute(expr, (m, EM.Mul(chld[0], r)))
+
+    return EM.conjunction(expr, *added)
+
 def _get_pre_post_states(executor, paths):
     """
     Return states from before and after executing paths.
@@ -615,6 +633,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
 
     expr = expr.to_cnf()
     # break equalities to <= && >= so that we can overapproximate them
+    #expr = replace_constants(expr, EM)
     clauses = break_eqs(expr)
 
     safesolver = IncrementalSolver()

@@ -42,6 +42,7 @@ if _use_z3:
         Z3_OP_UGT,
         Z3_OP_UGEQ,
         Z3_OP_EQ,
+        Z3_OP_BMUL,
     )
     from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic
@@ -321,6 +322,9 @@ class Expr(Value):
 
     def isUGt(self):
         return is_app_of(self._expr, Z3_OP_UGT)
+
+    def isMul(self):
+        return is_app_of(self._expr, Z3_OP_BMUL)# or is_app_of(self._expr, Z3_OP_MUL)
 
     def __hash__(self):
         return self._expr.__hash__()
