@@ -860,7 +860,7 @@ class KindSEChecker(BaseKindSE):
         print_stdout(str(seq0[0]) if seq0 else str(target0), color="white")
         print_stdout(f"and errors : {errs0}")
 
-        max_seq_len = 5#*len(L.paths())
+        max_seq_len = 3*len(L.paths())
         while True:
             print("--- extending sequences ---")
             print_stdout(
