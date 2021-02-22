@@ -201,7 +201,7 @@ def get_safe_relations(safe, unsafe, prevsafe=None):
     for s in safe:
         # get and filter out those relations that make the state safe
         yield from get_var_diff_relations(s)
-        yield from get_var_cmp_relations(s)
+        #yield from get_var_cmp_relations(s)
 
         yield from get_const_cmp_relations(s)
         if prevsafe:

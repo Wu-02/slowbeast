@@ -507,6 +507,19 @@ def break_eqs(expr):
 
     return clauses
 
+def _get_pre_post_states(executor, paths):
+    """
+    Return states from before and after executing paths.
+    These states can be used to get pre/post conditions of the path
+    using Annotations (do_substitutions()) and then checking along
+    with that path_condition.
+    """
+    r = check_paths(executor, paths)
+    for s in r.killed():
+        dbg("Killed a state")
+        return None, None
+    return executor.ind_executor().createCleanState(), r.ready
+
 
 def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=False):
     "no_vars_eq: do not drop equalities between variables"

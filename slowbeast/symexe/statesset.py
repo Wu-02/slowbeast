@@ -169,6 +169,7 @@ def to_states_descr(S) -> StateDescription:
 
 
 def union(S1, *Ss) -> StatesSet:
+    assert isinstance(S1, StatesSet), S1
     X = S1.copy()
     for S in Ss:
         X.add(S)
@@ -176,6 +177,7 @@ def union(S1, *Ss) -> StatesSet:
 
 
 def intersection(S1, *Ss) -> StatesSet:
+    assert isinstance(S1, StatesSet), S1
     X = S1.copy()
     for S in Ss:
         X.intersect(S)
@@ -183,6 +185,7 @@ def intersection(S1, *Ss) -> StatesSet:
 
 
 def complement(S) -> StatesSet:
+    assert isinstance(S, StatesSet), S
     X = S.copy()
     X.complement()
     return X
