@@ -8,7 +8,7 @@ from slowbeast.analysis.loops import Loop
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
-    or_annotations,
+    state_to_annotation
 )
 
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
@@ -114,6 +114,14 @@ def strip_first_assume_edge(path: AnnotatedCFAPath):
     assert idx is not None and idx + 1 < len(path)
     return path.subpath(idx + 1)
 
+def strip_last_assume_edge(path: AnnotatedCFAPath):
+    idx = path.last_assume_edge_idx()
+    # we use this func only on loop edges, so it must contain the entry condition
+    assert idx is not None and idx + 1 < len(path)
+    return path.subpath(0, idx - 1)
+
+def postcondition_expr(s):
+    return state_to_annotation(s).do_substitutions(s)
 
 class InductiveSet:
     """
@@ -667,7 +675,7 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
-    def strengthen_initial_seq_loop_iter(self, seq0, E, unsafe, path, L: Loop):
+    def strengthen_initial_seq_loop_iter6(self, seq0, E, unsafe, path, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -728,6 +736,51 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
+    def strengthen_initial_seq_loop_iter(self, seq0, E, unsafe, path, L: Loop):
+        """
+        Strengthen the initial sequence through obtaining the
+        last safe iteration of the loop.
+
+        FIXME: we actually do not use the assertion at all right now,
+        only implicitly as it is contained in the paths...
+        """
+
+        is_error_loc = L.cfa().is_err
+
+        print('path', path)
+        prefix = strip_last_assume_edge(path)
+        print('stripped path', prefix)
+        middle = L.paths_to_header(prefix.last_loc())
+        suffix = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
+
+        invpaths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suffix)
+
+        create_set = self.create_set
+        # execute the safe path that avoids error and then jumps out of the loop
+        # and also only paths that jump out of the loop, so that the set is inductive
+        r = check_paths(self, chain(invpaths, iter(suffix)))
+        if r.ready is None:
+            return None
+
+        I = create_set()
+        I.add(r.ready)
+        if not is_seq_inductive(InductiveSequence(I.as_assert_annotation()), None, self, L):
+            return None
+        assert not I.is_empty()
+
+        if not intersection(I, E).is_empty():
+            dbg("... (intersection with unsafe states is non-empty)")
+            dbg("   trying to fix it")
+            I.intersect(complement(E))
+            if I.is_empty():
+                return None
+
+        seq0 = InductiveSequence(I.as_assert_annotation())
+        # this may mean that the assertion in fact does not hold
+        assert is_seq_inductive(seq0, None, self, L)
+        return seq0
+
+
     def strengthen_initial_seq(self, seq0, errs0, unsafe, path, L: Loop):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
@@ -745,28 +798,30 @@ class KindSEChecker(BaseKindSE):
 
         dbg("Initial sequence is NOT inductive, trying to fix it", color="wine")
 
+        # this is good when the assertion is "after" the loop
         tmp = self.strengthen_initial_seq_exit_cond(seq0, E, path, L)
         if tmp:
             dbg("Succeeded strengthening the initial sequence with exit condition")
             return tmp
         dbg("Failed strengthening the initial sequence with exit condition")
 
+        # this works for a kind of formulas
         # tmp = self.strengthen_initial_seq_picking(seq0, E, path, L)
         # if tmp:
         #    return tmp
         # dbg("Failed strengthening the initial sequence with picking")
 
-        tmp = self.strengthen_initial_seq_loop_iter(seq0, E, unsafe, path, L)
+        tmp = self.strengthen_initial_seq_loop_iter6(seq0, E, unsafe, path, L)
         if tmp:
             dbg("Succeeded strengthening the initial sequence with last iteration")
             return tmp
         dbg("Failed strengthening the initial sequence with last iteration")
 
-        tmp = self.strengthen_initial_seq_loop_iter2(seq0, E, path, L)
-        if tmp:
-            dbg("Succeeded strengthening the initial sequence with last iteration (2)")
-            return tmp
-        dbg("Failed strengthening the initial sequence with last iteration (2)")
+       #tmp = self.strengthen_initial_seq_loop_iter2(seq0, E, path, L)
+       #if tmp:
+       #    dbg("Succeeded strengthening the initial sequence with last iteration (2)")
+       #    return tmp
+       #dbg("Failed strengthening the initial sequence with last iteration (2)")
 
         dbg("-- Failed making the initial sequence inductive --", color="red")
         return None

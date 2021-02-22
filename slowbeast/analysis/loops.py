@@ -62,6 +62,25 @@ class Loop:
             queue = newqueue
         return result
 
+    def paths_to_header(self, frm):
+        """
+        All paths from the given node to header
+        """
+        result = []
+        queue = [AnnotatedCFAPath([e]) for e in frm.successors()]
+        while queue:
+            newqueue = []
+            for path in queue:
+                for succedge in path[-1].successors():
+                    if succedge in self._exits:
+                        pass #drop
+                    elif succedge in self._backedges:
+                        result.append(path.copyandappend(succedge))
+                    else:
+                        newqueue.append(path.copyandappend(succedge))
+            queue = newqueue
+        return result
+
     def get_exit_paths(self):
         """
         All paths from header to exit edge
