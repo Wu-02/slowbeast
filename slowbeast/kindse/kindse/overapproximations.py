@@ -508,7 +508,7 @@ def break_eqs(expr):
     return clauses
 
 
-def drop_clauses(clauses, S, safesolver, data, no_vars_eq=False):
+def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=False):
     "no_vars_eq: do not drop equalities between variables"
     target, executor = data.target, data.executor
 
@@ -528,6 +528,11 @@ def drop_clauses(clauses, S, safesolver, data, no_vars_eq=False):
 
     newclauses = expressions.copy()
     for c in expressions:
+        if nodrop_safe and safesolver.is_sat(c) is False:
+            # do not drop clauses that refute the error states,
+            # those may be useful
+            continue
+
         if no_vars_eq and c.isEq():
             chld = c.children()
             if not next(chld).is_concrete() and not next(chld).is_concrete():
@@ -557,15 +562,16 @@ def drop_clauses(clauses, S, safesolver, data, no_vars_eq=False):
     return newclauses
 
 
-def drop_clauses_fixpoint(clauses, S, safesolver, data, no_vars_eq=False):
+def drop_clauses_fixpoint(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=False):
     """ Drop clauses until fixpoint """
     newclauses = clauses
     while True:
         dbgv(" ... droping clauses (starting iteration)")
         oldlen = len(newclauses)
-        newclauses = drop_clauses(newclauses, S, safesolver, data, no_vars_eq)
+        newclauses = drop_clauses(newclauses, S, safesolver, data, nodrop_safe, no_vars_eq)
         if oldlen == len(newclauses):
             break
+    dbgv(" ... done droping clauses")
     return newclauses
 
 
@@ -602,7 +608,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     safesolver.add(unsafe.as_expr())
 
     # can we drop some clause True?
-    newclauses = drop_clauses_fixpoint(clauses, S, safesolver, data, no_vars_eq=True)
+    newclauses = drop_clauses_fixpoint(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=True)
     clauses = remove_implied_literals(newclauses)
 
     assert intersection(
