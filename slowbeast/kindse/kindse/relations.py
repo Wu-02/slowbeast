@@ -91,6 +91,23 @@ def get_var_diff_relations(state):
                 yield AssertAnnotation(
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
+           #else:
+           #    # check d*l1 + e+l2 = c
+           #    d = EM.Var(f"c_{l1name}", IntType(bw))
+           #    e = EM.Var(f"c_{l2name}", IntType(bw))
+           #    expr = EM.Eq(EM.Add(EM.Mul(d, l1), EM.Mul(e, l2)), c)
+           #    # we do not want the trivial solution
+           #    exprchk = EM.And(EM.Or(EM.Ne(d, ConcreteInt(0, bw)), EM.Ne(e, ConcreteInt(0, bw))), expr)
+           #    c_concr = state.concretize_with_assumptions([exprchk], c, d, e)
+           #    if state.is_sat(exprchk, EM.Ne(c, c_concr[0])) is False and\
+           #       state.is_sat(exprchk, EM.Ne(d, c_concr[1])) is False and\
+           #       state.is_sat(exprchk, EM.Ne(e, c_concr[2])) is False:
+           #        yield AssertAnnotation(
+           #            EM.simplify(EM.substitute(expr, zip((d, e, c), c_concr))), subs, EM
+           #        )
+
+
+
 
         # check equalities to other loads: l1 - l2 = k*l3
         for l3 in state.getNondetLoads():
