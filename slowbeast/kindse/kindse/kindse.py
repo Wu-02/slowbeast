@@ -336,45 +336,45 @@ class KindSEChecker(BaseKindSE):
 
             yield A
 
-    def abstract_seq(self, seq, errs0, L):
-        # don't try with short sequences
-        if len(seq) < 5:
-            return seq
+   #def abstract_seq(self, seq, errs0, L):
+   #    # don't try with short sequences
+   #    if len(seq) < 5:
+   #        return seq
 
-        # try to merge last two frames
-        assert len(seq) >= 2
-        A1 = seq[-1].toassume()
-        A2 = seq[-2].toassume()
-        e1 = A1.expr().to_cnf()
-        e2 = A2.expr().to_cnf()
+   #    # try to merge last two frames
+   #    assert len(seq) >= 2
+   #    A1 = seq[-1].toassume()
+   #    A2 = seq[-2].toassume()
+   #    e1 = A1.expr().to_cnf()
+   #    e2 = A2.expr().to_cnf()
 
-        C1 = set(e1.children())
-        C = set()
-        N1 = set()
-        N2 = set()
-        for c in e2.children():
-            if c in C1:
-                C.add(c)
-            else:
-                N2.add(c)
-        for c in C1:
-            if c not in C:
-                N1.add(c)
+   #    C1 = set(e1.children())
+   #    C = set()
+   #    N1 = set()
+   #    N2 = set()
+   #    for c in e2.children():
+   #        if c in C1:
+   #            C.add(c)
+   #        else:
+   #            N2.add(c)
+   #    for c in C1:
+   #        if c not in C:
+   #            N1.add(c)
 
-        if not C:
-            return seq
+   #    if not C:
+   #        return seq
 
-        # replace last two frames with one merged frame
-        EM = getGlobalExprManager()
-        seq.pop()
+   #    # replace last two frames with one merged frame
+   #    EM = getGlobalExprManager()
+   #    seq.pop()
 
-        seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.substitutions(), EM)
-        S1 = AssertAnnotation(EM.conjunction(*N1), A1.substitutions(), EM)
-        S2 = AssertAnnotation(EM.conjunction(*N2), A2.substitutions(), EM)
-        seq[-1].strengthening = or_annotations(EM, True, S1, S2)
+   #    seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.substitutions(), EM)
+   #    S1 = AssertAnnotation(EM.conjunction(*N1), A1.substitutions(), EM)
+   #    S2 = AssertAnnotation(EM.conjunction(*N2), A2.substitutions(), EM)
+   #    seq[-1].strengthening = or_annotations(EM, True, S1, S2)
 
-        # FIXME: we are still precise, use abstraction here...
-        return seq
+   #    # FIXME: we are still precise, use abstraction here...
+   #    return seq
 
     def get_initial_seq(self, unsafe, path, L):
         """
