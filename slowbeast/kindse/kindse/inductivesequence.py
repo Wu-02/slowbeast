@@ -70,9 +70,7 @@ class InductiveSequence:
         def __repr__(self):
             return f"{self.states} with {self.strengthening}"
 
-    def __init__(self, fst=None, fststr=None, target=None):
-        self.target = target
-        self.target_is_inductive = True
+    def __init__(self, fst=None, fststr=None):
         self.frames = []
         if fst:
             # the first frame is supposed to be inductive
