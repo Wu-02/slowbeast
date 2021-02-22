@@ -92,6 +92,24 @@ def get_var_diff_relations(state):
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
 
+        # check equalities to other loads
+        for l3 in state.getNondetLoads():
+            l3bw = l3.type().bitwidth()
+            bw = max(l3bw, bw)
+            if l1bw != bw:
+                l1 = EM.SExt(l1, ConcreteInt(bw, bw))
+            if l2bw != bw:
+                l2 = EM.SExt(l2, ConcreteInt(bw, bw))
+            if l3bw != bw:
+                l3 = EM.SExt(l3, ConcreteInt(bw, bw))
+
+            if state.is_sat(EM.Ne(EM.Sub(l2, l1), l3)) is False:
+                yield AssertAnnotation(EM.Eq(EM.Sub(l2, l1), l3), subs, EM)
+            else:
+                if state.is_sat(EM.Ne(EM.Sub(l1, l2), l3)) is False:
+                    yield AssertAnnotation(EM.Eq(EM.Sub(l1, l2), l3), subs, EM)
+
+
 def _compare_two_loads(state, l1, l2):
     subs = get_subs(state)
     EM = state.expr_manager()
