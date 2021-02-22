@@ -786,11 +786,7 @@ class KindSEChecker(BaseKindSE):
         print_stdout(str(seq0[0]) if seq0 else str(target0), color="white")
         print_stdout(f"and errors : {errs0}")
 
-        # NOTE: if we would not overapproximate the starting set,
-        # then the initial (target) set would not need to be inductive (or
-        # would it?)
-        # only the rest of the sequence is inductive and it reaches the target set
-
+        max_seq_len = 5#*len(L.paths())
         while True:
             print("--- extending sequences ---")
             print_stdout(
@@ -833,8 +829,8 @@ class KindSEChecker(BaseKindSE):
                         seq, target0, self, L
                     ), "seq is not inductive"
 
-                if seq and len(seq) > 5:
-                    dbg("Did not extend the sequence, it is too long")
+                if seq and len(seq) > max_seq_len:
+                    dbg("Give up extending the sequence, it is too long")
                     continue
 
                 dbg("Extending the sequence")

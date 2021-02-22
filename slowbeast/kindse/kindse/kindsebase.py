@@ -50,7 +50,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             self.programstructure = programstructure
 
         self._entry_loc = self.programstructure.entry_loc
-        # number of executed paths
+        # paths to run
         self.paths = []
         # as we run the executor in nested manners,
         # we want to give different outputs
@@ -304,6 +304,9 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             return Result.SAFE, None
 
         return None, None
+
+    def unfinished_paths(self):
+        return self.paths
 
     def run(self, paths, maxk=None):
         dbg(
