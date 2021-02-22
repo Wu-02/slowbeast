@@ -20,13 +20,6 @@ from .relations import get_safe_relations
 
 
 def dump_inductive_sets(checker, loc):
-    return
-    dbg(f"With this inductive set at loc {loc}:", color="dark_green")
-    IS = checker.inductive_sets.get(loc)
-    if IS:
-        dbg(f"\n{IS}", color="dark_green")
-    else:
-        dbg(" ∅", color="dark_green")
     dbg(f"With this invariant set at loc {loc}:", color="dark_green")
     IS = checker.invariant_sets.get(loc)
     if IS:
@@ -157,7 +150,7 @@ class KindSEChecker(BaseKindSE):
     It inherits from BaseKindSE to have the capabilities to execute paths.
     """
 
-    def __init__(self, toplevel_executor, loc, A, invariants=None, inductive_sets=None):
+    def __init__(self, toplevel_executor, loc, A, invariants=None):
         super().__init__(
             toplevel_executor.getProgram(),
             ohandler=None,
@@ -173,7 +166,6 @@ class KindSEChecker(BaseKindSE):
         # paths to still search
         self.readypaths = []
         # inductive sets that we generated
-        self.inductive_sets = {} if inductive_sets is None else inductive_sets
         self.invariant_sets = {} if invariants is None else invariants
 
         if __debug__ and invariants:
@@ -206,8 +198,7 @@ class KindSEChecker(BaseKindSE):
             self.toplevel_executor,
             loc,
             A,
-            invariants=self.invariant_sets,
-            inductive_sets=self.inductive_sets,
+            invariants=self.invariant_sets
         )
         result, states = checker.check(L.entries())
         dbg_sec()
@@ -219,29 +210,7 @@ class KindSEChecker(BaseKindSE):
         ), "Handling a loop that should not be handled"
 
         # check subsumption by inductive sets
-        unsafe = []
-        if True:  # check subsumption
-            inductive_set = self.inductive_sets.get(loc)
-            if inductive_set:
-                dbg(f"...(at loop header {loc}: checking subsumed states)")
-                create_set = self.create_set
-                assert states.errors
-                assert not inductive_set.I.is_empty()
-                # FIXME: keep already the complement? Or build it only once on-demand?
-
-                for e in states.errors:
-                    if not inductive_set.includes(create_set(e)):
-                        unsafe.append(e)
-                if not unsafe:
-                    dbg("... (the path was subsumed)")
-                    return Result.SAFE, []
-            else:
-                dbg(f"...(at loop header {loc}: no inductive set for subsumption)")
-                unsafe = states.errors
-        else:
-            dbg("...(no inductive set for subsumption)")
-            unsafe = states.errors
-
+        unsafe = states.errors
         assert unsafe, "No unsafe states, we should not get here at all"
 
         #   # first try to unroll it in the case the loop is easy to verify
@@ -270,60 +239,63 @@ class KindSEChecker(BaseKindSE):
         if self.fold_loop(path, loc, L, unsafe):
             return Result.SAFE, []
         else:
-            return self.unfold_loop(path, loc)
+            return self.unfold_loop(path, loc, indset=None)
 
-    def unfold_loop(self, path, loc):
+    def unfold_loop(self, path, loc, indset):
         """
         Take path and loop for which we failed to create an invariant and unwind the loop as far as we can
         such that we avoid the safe sets that we computed.
         """
-        # unwind the paths and check subsumption
-        dbg(f"Unfolding the loop {loc}")
-        if __debug__:
-            dump_inductive_sets(self, loc)
 
-        paths = self.extend_paths(path, None)
-        inductive_set = self.inductive_sets.get(loc)
-        if not inductive_set:
-            return Result.UNKNOWN, paths
+        return Result.UNKNOWN, self.extend_paths(path, None)
 
-        finalpaths = []
-        newpaths = []
-        create_set = self.create_set
-        subsumed = inductive_set.includes
-        # fixme: the state inside set should use incremental solver to speed-up solving... after all, it is a place
-        # where we add formulas monotonically.
+        # We do not unfold the loops right now
+       ## unwind the paths and check subsumption
+       #dbg(f"Unfolding the loop {loc}")
+       #if __debug__:
+       #    dump_inductive_sets(self, loc)
 
-        while paths:
-            dbg("Next iteration of unfolding the loop...")
-            for p in paths:
-                r, states = self.check_path(p)
-                if r is Result.UNSAFE:
-                    # we hit real unsafe path - return it so that the main executor
-                    # will re-execute it and report
-                    if __debug__:
-                        tmp = create_set(states.errors[0])
-                        assert intersection(
-                            inductive_set.I, tmp
-                        ).is_empty(), "Error state is subsumed..."
-                    return Result.UNSAFE, [p]
-                # otherwise just prolong the paths that failed the induction step
-                # and that are not subsumed
-                assert states.errors is None or len(states.errors) == 1
-                errst = states.errors[0] if states.errors else None
-                if errst:
-                    tmp = create_set(errst)
-                    if not subsumed(tmp):
-                        # not subsumed
-                        # FIXME: some overapproximation of the complement of the intersection and add it to the path
-                        finalpaths.append(p)
-                    else:
-                        # errst is subsumed and subsumed paths need to be prolonged
-                        newpaths += self.extend_paths(p, None)
-            paths = newpaths
+       #paths = self.extend_paths(path, None)
+       #if not indset:
+       #    return Result.UNKNOWN, paths
 
-        # TODO: we could return SAFE when finalpaths is empty
-        return Result.UNKNOWN, finalpaths
+       #finalpaths = []
+       #newpaths = []
+       #create_set = self.create_set
+       #subsumed = indset.includes
+       ## fixme: the state inside set should use incremental solver to speed-up solving... after all, it is a place
+       ## where we add formulas monotonically.
+
+       #while paths:
+       #    dbg("Next iteration of unfolding the loop...")
+       #    for p in paths:
+       #        r, states = self.check_path(p)
+       #        if r is Result.UNSAFE:
+       #            # we hit real unsafe path - return it so that the main executor
+       #            # will re-execute it and report
+       #            if __debug__:
+       #                tmp = create_set(states.errors[0])
+       #                assert intersection(
+       #                    indset.I, tmp
+       #                ).is_empty(), "Error state is subsumed..."
+       #            return Result.UNSAFE, [p]
+       #        # otherwise just prolong the paths that failed the induction step
+       #        # and that are not subsumed
+       #        assert states.errors is None or len(states.errors) == 1
+       #        errst = states.errors[0] if states.errors else None
+       #        if errst:
+       #            tmp = create_set(errst)
+       #            if not subsumed(tmp):
+       #                # not subsumed
+       #                # FIXME: some overapproximation of the complement of the intersection and add it to the path
+       #                finalpaths.append(p)
+       #            else:
+       #                # errst is subsumed and subsumed paths need to be prolonged
+       #                newpaths += self.extend_paths(p, None)
+       #    paths = newpaths
+
+       ## TODO: we could return SAFE when finalpaths is empty
+       #return Result.UNKNOWN, finalpaths
 
     def extend_seq(self, seq, target0, E, L):
         """
@@ -843,15 +815,6 @@ class KindSEChecker(BaseKindSE):
                         print_stdout(f"{S} holds on {loc}", color="BLUE")
                         return True
 
-                    # FIXME: why cannot we have this just after check_loop_precondition?
-                    # FIXME: (why cannot we add parts of invariants to inductive sets?)
-                    # FIXME: It breaks e.g. sum03-1.i
-                    # No matter whether the sequence is invariant, it is still inductive,
-                    # so we can use it later for subsumptions (add only its last
-                    # element as we added the previous elements already)
-                    newi = create_set(seq[-1].toassume())
-                    I = self.inductive_sets.setdefault(loc, InductiveSet(newi))
-                    I.add(newi)
 
             extended = []
             for seq in sequences:
