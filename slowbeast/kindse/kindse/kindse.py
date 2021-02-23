@@ -452,6 +452,9 @@ class KindSEChecker(BaseKindSE):
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
         S = create_set(seq0.toannotation(True))
+        if S.is_empty():
+            dbg("Starting sequence is empty")
+            return None
         S.reset_expr(S.as_expr().rewrite_and_simplify())
         assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
         EM = getGlobalExprManager()
