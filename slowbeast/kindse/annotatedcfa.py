@@ -1,4 +1,5 @@
 from slowbeast.util.debugging import print_highlight
+from slowbeast.analysis.cfa import CFA
 
 
 def _loc_id(loc):
@@ -89,6 +90,21 @@ class AnnotatedCFAPath:
 
     def edges(self):
         return self._edges
+
+    def num_of_occurences(self, elem):
+        n = 0
+        if isinstance(elem, CFA.Edge):
+            for e in self._edges:
+                if e == elem:
+                    n += 1
+        else:
+            assert isinstance(elem, CFA.Location), elem
+            for e in self._edges:
+                if e.source() == elem:
+                    n += 1
+                if e.target() == elem:
+                    n += 1
+            return n
 
     def __getitem__(self, item):
         return self._edges.__getitem__(item)
