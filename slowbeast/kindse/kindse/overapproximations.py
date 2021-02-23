@@ -546,7 +546,9 @@ def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=Fals
     # we start with all clauses
     conjunction = data.expr_mgr.conjunction
     lpaths = data.loop.paths()
-    expressions = []
+    expressions_with_constants = set()
+    expressions = set()
+    vars_eq = set()
     for c in clauses:
         if c.is_concrete():
             if c.value() is False:
@@ -555,19 +557,26 @@ def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=Fals
             else:
                 dbg("  ... dropping True clause")
         else:
-            expressions.append(c)
+            d = next(c.children()) if c.isNot() else c
+            has_concr = any(map(lambda x: x.is_concrete(), d.children()))
 
-    newclauses = expressions.copy()
-    for c in expressions:
+            if c.isEq() and not has_concr:
+                vars_eq.add(c)
+            else:
+                (expressions_with_constants if has_concr else expressions).add(c)
+
+    # droping clauses with constants has priority over dopping those
+    # without constants
+    clauses = list(expressions_with_constants)
+    clauses.extend(expressions)
+    if not no_vars_eq:
+        clauses.extend(vars_eq)
+    newclauses = clauses.copy()
+    for c in clauses:
         if nodrop_safe and safesolver.is_sat(c) is False:
             # do not drop clauses that refute the error states,
             # those may be useful
             continue
-
-        if no_vars_eq and c.isEq():
-            chld = c.children()
-            if not next(chld).is_concrete() and not next(chld).is_concrete():
-                continue
 
         assert not c.is_concrete(), c
         # create a temporary formula without the given clause
@@ -589,6 +598,8 @@ def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=Fals
         if r.errors is None and r.ready:
             newclauses = tmp
             dbg(f"  dropped {c}...")
+    if no_vars_eq:
+        newclauses.extend(vars_eq)
 
     return newclauses
 
@@ -635,6 +646,11 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     # break equalities to <= && >= so that we can overapproximate them
     #expr = replace_constants(expr, EM)
     clauses = break_eqs(expr)
+
+    assert intersection(
+        unsafe, create_set(EM.conjunction(*clauses))
+    ).is_empty(), f"Simplifying and enriching the formula made it unsafe"
+
 
     safesolver = IncrementalSolver()
     safesolver.add(unsafe.as_expr())

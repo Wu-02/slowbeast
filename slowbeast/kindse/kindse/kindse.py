@@ -60,6 +60,7 @@ def overapprox(executor, s, E, target, L):
     #           f"-- CTI: --\n{r.errors[0].model()}"
 
     assert not S.is_empty(), "Infeasible states given to overapproximate"
+    S.reset_expr(S.as_expr().rewrite_and_simplify())
     for rel in get_safe_relations([s], unsafe=None, prevsafe=target):
         ldbgv("  Adding relation {0}", (rel,))
         S.intersect(rel)
@@ -444,6 +445,7 @@ class KindSEChecker(BaseKindSE):
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
         S = create_set(seq0.toannotation(True))
+        S.reset_expr(S.as_expr().rewrite_and_simplify())
         assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
         EM = getGlobalExprManager()
         seq = InductiveSequence(
@@ -451,208 +453,11 @@ class KindSEChecker(BaseKindSE):
                 self, EM, S, errs0.toassert(), target, L
             ).as_assert_annotation()
         )
-        if is_seq_inductive(seq, None, self, L, has_ready=True):
+        print('Ovv', seq)
+        if is_seq_inductive(seq, None, self, L):
             return seq
+        dbg("Overapproximated starting sequence is not inductive")
         return seq0
-
-    def strengthen_initial_seq_exit_cond(self, seq0, E, path, L: Loop):
-        """
-        Strengthen the initial sequence through loop entry condition.
-        Does not work for assertions inside the loop.
-        """
-        # get the prefix of the path that exits the loop
-        prefix = None
-        exits = L.exits()
-        for n in range(len(path)):
-            if path[n] in exits:
-                prefix = AnnotatedCFAPath(path.edges()[: n + 1])
-                break
-        if prefix is None:
-            return None
-        # assert prefix, "Failed getting loop-exit condition"
-        r = check_paths(self, [prefix])
-        ready = r.ready
-        if ready is None:
-            return None
-        for s in r.killed():
-            dbg("Killed a state")
-            self.report(s)
-            return None
-        R = self.create_set()
-        R.add(ready)
-        R.intersect(seq0.toannotation(True))
-        if R.is_empty():
-            # empty initial set is wrong, it probably means that
-            # the assertion is inside the loop and we added
-            # contradicting exit condition
-            return None
-        if not intersection(R, E).is_empty():
-            dbg("   Intersection with unsafe states is non-empty")
-            R.intersect(complement(E))
-            dbg("   trying to fix it")
-            if R.is_empty():
-                return None
-        assert intersection(R, E).is_empty()
-        seq0 = InductiveSequence(R.as_assert_annotation())
-        # this may mean that the assertion in fact does not hold
-        if is_seq_inductive(seq0, None, self, L):
-            return seq0
-        return None
-
-    def strengthen_initial_seq_loop_iter2(self, seq0, E, path, L: Loop):
-        """
-        Strengthen the initial sequence through obtaining the
-        last safe iteration of the loop.
-
-        FIXME: we actually do not use the assertion at all right now,
-        only implicitly as it is contained in the paths...
-        NOTE: this version of loop_iter strengthening works sometimes
-        with infinite loops where the first version does not work, so keep it.
-        """
-        # get the safe states that jump out of the loop after one iteration
-        r = check_paths(self, L.last_iteration_paths())
-        ready = r.ready
-        if not ready:
-            return None
-        for s in r.killed():
-            dbg("Killed a state")
-            self.report(s)
-            return None
-        create_set = self.create_set
-        R = create_set()
-        # FIXME: we can use only a subset of the states, wouldn't that be better?
-        conjunction = getGlobalExprManager().conjunction
-        for r in ready:
-            # do not use the first constraint -- it is the inedge condition that we want to ignore,
-            # because we want to jump out of the loop (otherwise we will not get inductive set)
-            C = r.getConstraints()[1:]
-            expr = conjunction(*C)
-            expr = conjunction(*remove_implied_literals(expr.to_cnf().children()))
-            tmp = create_set(r)
-            tmp.reset_expr(expr)
-            R.add(tmp)
-
-        if R.is_empty():
-            dbg("... (got empty set)")
-            return None
-
-        if not intersection(R, E).is_empty():
-            dbg("... (intersection with unsafe states is non-empty)")
-            R.intersect(complement(E))
-            dbg("... (tried to fix it)")
-            if R.is_empty():
-                return None
-
-        assert intersection(R, E).is_empty()
-
-        seq0 = InductiveSequence(R.as_assert_annotation())
-        # this may mean that the assertion in fact does not hold
-        if is_seq_inductive(seq0, None, self, L):
-            return seq0
-        dbg("... (got non-inductive set)")
-        return None
-
-    def strengthen_initial_seq_loop_iter3(self, seq0, E, path, L: Loop):
-        """
-        Strengthen the initial sequence through obtaining the
-        last safe iteration of the loop.
-
-        FIXME: we actually do not use the assertion at all right now,
-        only implicitly as it is contained in the paths...
-        """
-
-        # get states corresopnding to jumping out of the loop - for inductivness
-        create_set = self.create_set
-        is_error_loc = L.cfa().is_err
-        r = check_paths(
-            self,
-            (p for p in L.get_exit_paths() if not is_error_loc(p[-1].target())),
-       )
-        assert r.ready
-
-        I = create_set()
-        I.add(r.ready)
-        assert is_seq_inductive(InductiveSequence(I.as_assert_annotation()), None, self, L)
-        R = intersection(I, complement(E))
-        if R.is_empty():
-            dbg("... (got empty set)")
-            return None
-
-        if not intersection(R, E).is_empty():
-            dbg("... (intersection with unsafe states is non-empty)")
-            dbg("   trying to fix it")
-            R.intersect(complement(E))
-            if R.is_empty():
-                return None
-
-        seq0 = InductiveSequence(R.as_assert_annotation())
-        # this may mean that the assertion in fact does not hold
-        if is_seq_inductive(seq0, None, self, L):
-            return seq0
-        dbg("... (got non-inductive set)")
-        return None
-
-
-    def strengthen_initial_seq_loop_iter6(self, seq0, E, unsafe, path, L: Loop):
-        """
-        Strengthen the initial sequence through obtaining the
-        last safe iteration of the loop.
-
-        FIXME: we actually do not use the assertion at all right now,
-        only implicitly as it is contained in the paths...
-        """
-
-        # get states corresopnding to jumping out of the loop - for inductivness
-       #last_constraint_src = None
-       #for idx in range(-1, -(len(path)+1), -1):
-       #    e = path[idx]
-       #    if e.is_assume():
-       #        last_constraint_src = e.source()
-       #if last_constraint_src is None:
-       #    dbg("Did not find the last constraint on the path")
-       #    assert all(lambda e: not e.is_assume(), path), "BUG"
-       #    return None
-
-        create_set = self.create_set
-        is_error_loc = L.cfa().is_err
-        r = check_paths(
-            self,
-            (p for p in L.get_exit_paths() if not is_error_loc(p[-1].target())),
-        )
-        if r.ready is None:
-            return None
-
-        I = create_set()
-        I.add(r.ready)
-        assert is_seq_inductive(InductiveSequence(I.as_assert_annotation()), None, self, L)
-
-        if unsafe:
-            last_constr_list = [u.getConstraints()[-1] for u in unsafe]
-            last_constr = unsafe[0].expr_manager().conjunction(*last_constr_list)
-            assert last_constr.is_bool(), last_constr
-            safe = E.copy()
-            safe.reset_expr(last_constr)
-        else:
-            safe = complement(E)
-        R = intersection(I, safe)
-
-        if R.is_empty():
-            dbg("... (got empty set)")
-            return None
-
-        if not intersection(R, E).is_empty():
-            dbg("... (intersection with unsafe states is non-empty)")
-            dbg("   trying to fix it")
-            R.intersect(complement(E))
-            if R.is_empty():
-                return None
-
-        seq0 = InductiveSequence(R.as_assert_annotation())
-        # this may mean that the assertion in fact does not hold
-        if is_seq_inductive(seq0, None, self, L):
-            return seq0
-        dbg("... (got non-inductive set)")
-        return None
 
     def safe_path_with_last_iter(self, E, path, L: Loop):
         """
