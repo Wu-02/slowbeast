@@ -126,6 +126,9 @@ class AnnotatedCFAPath:
     def __iter__(self):
         return self._edges.__iter__()
 
+    def __lt__(self, rhs):
+        return len(self._edges) < len(rhs._edges)
+
     def first_loc(self):
         return self._edges[0].source()
 

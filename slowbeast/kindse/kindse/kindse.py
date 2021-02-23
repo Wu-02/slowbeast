@@ -1,3 +1,4 @@
+from heapq import heappush, heappop
 from itertools import chain
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv, ldbg
 
@@ -127,6 +128,7 @@ class InductiveSet:
             # the elem is not a subset of current set
             if I:
                 I.add(elem)
+                I.reset_expr(I.as_expr().rewrite_and_simplify())
             else:
                 self.I = elem
             cI.add(complement(elem).as_expr())
@@ -249,12 +251,14 @@ class KindSEChecker(BaseKindSE):
             print_stdout("Was not able to construct the loop info")
             print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
             self.no_sum_loops.add(loc)
-            return Result.UNKNOWN, self.extend_paths(path, None)
+            return Result.UNKNOWN, unwoundloop
 
         if self.fold_loop(path, loc, L, unsafe):
             return Result.SAFE, []
         else:
-            return Result.UNKNOWN, unwoundloop
+            # NOTE: do not return unwoundloop, we must not return more
+            # than one iteration to preserve the initial sets inductive
+            return Result.UNKNOWN, self.extend_paths(path, None)
 
     def extend_seq(self, seq, target0, E, L):
         """
@@ -405,15 +409,18 @@ class KindSEChecker(BaseKindSE):
         assert len(unsafe) == 1, "One path raises multiple unsafe states"
 
         # TODO: self-loops? Those are probably OK as that would be only assume edge
+        errstate = unsafe[0]
+        EM = errstate.expr_manager()
         isfirst = path.num_of_occurences(L.header()) == 1
-        EM = unsafe[0].expr_manager()
-        E = self.create_set(unsafe[0])
-        S = complement(E)
+        E = self.create_set(errstate)
+
+        S = E.copy()
+        C = errstate.getConstraints()
+        S.reset_expr(EM.conjunction(*C[:-1], EM.Not(C[-1])))
         target0 = S.copy()
 
         if isfirst:
             # last constraint is the failed assertion
-            # S.intersect(EM.Not(unsafe[0].getConstraints()[-1]))
             # first constraint is the loop exit condition
             S.intersect(unsafe[0].getConstraints()[0])
             # if the assertion is after the loop, the set is now inductive
@@ -455,7 +462,8 @@ class KindSEChecker(BaseKindSE):
                 self, EM, S, errs0.toassert(), target, L
             ).as_assert_annotation()
         )
-        if is_seq_inductive(seq, None, self, L, has_ready=True):
+
+        if is_seq_inductive(seq, None, self, L):
             return seq
         return seq0
 
@@ -597,6 +605,8 @@ class KindSEChecker(BaseKindSE):
             dbg("Initial sequence is empty", color="wine")
             return None
 
+        S = create_set(seq0.toannotation())
+        S.reset_expr(S.as_expr().rewrite_and_simplify())
         dbg("Initial sequence is NOT inductive, fixing it", color="wine")
 
         # get the inductive sets that we have created for this header.
@@ -605,21 +615,33 @@ class KindSEChecker(BaseKindSE):
         IS = self.inductive_sets.get(L.header())
         assert IS, "No inductive sequence for non-first iteration"
 
-        frame = seq0[-1].toassert()
-        tmp = InductiveSequence(union(IS.I, frame).as_assert_annotation())
-        if is_seq_inductive(tmp, None, self, L):
-            # FIXME: simplify as much as you can
-            return tmp
+        if not intersection(IS.I, E).is_empty():
+            dbg("The inductive sets are not disjunctive with error states")
+            return None
 
+        frame = seq0[-1].toassert()
+        # first check whether the frame is included in our inductive sequences.
+        # If so, we'll just add relations from it to the sequences
+        # (for boosing over-approximations) instead of adding it whole.
+        frameset = create_set(frame)
+        if IS.includes(frameset):
+            dbg("States are included, continuing with previous sequences")
+            F = IS.I.copy()
+        else:
+            F = union(IS.I, frame)
+        tmp = InductiveSequence(union(F).as_assert_annotation())
+        # FIXME: simplify as much as you can before using it
+        if is_seq_inductive(tmp, None, self, L):
+            return tmp
         # this must be assertion inside the loop -- we must simulate that the path
         # passes the assertion and jumps out of the loop
         I = self.safe_path_with_last_iter(E, path, L)
         if I is None:
             return None
 
-        tmp = InductiveSequence(union(IS.I, frame).as_assert_annotation())
+        tmp = InductiveSequence(union(I, frame).as_assert_annotation())
+        # FIXME: simplify as much as you can before using
         if is_seq_inductive(tmp, None, self, L):
-            # FIXME: simplify as much as you can
             return tmp
         dbg("Failed strengthening the initial sequence with last iteration")
         return None
@@ -640,6 +662,14 @@ class KindSEChecker(BaseKindSE):
             )
             # FIXME: the initial element must be inductive, otherwise we do not know whether
             # an error state is unreachable from it...
+
+            # store the non-inductive sequence -- in the future,
+            # these states may be necessary when doing the set
+            # inductive
+            newi = create_set(target0.as_assert_annotation())
+            I = self.inductive_sets.setdefault(loc, InductiveSet())
+            I.add(newi)
+
             return False
         assert seq0
 
@@ -658,9 +688,8 @@ class KindSEChecker(BaseKindSE):
         print_stdout(str(seq0[0]) if seq0 else str(target0), color="white")
         print_stdout(f"and errors : {errs0}")
 
-        max_seq_len = 3*len(L.paths())
+        max_seq_len = 2*len(L.paths())
         while True:
-            print("--- extending sequences ---")
             print_stdout(
                 f"Got {len(sequences)} abstract path(s) of loop " f"{loc}",
                 color="GRAY",
@@ -705,7 +734,7 @@ class KindSEChecker(BaseKindSE):
                         seq, target0, self, L
                     ), "seq is not inductive"
 
-                if seq and len(seq) > max_seq_len:
+                if seq and len(seq) >= max_seq_len:
                     dbg("Give up extending the sequence, it is too long")
                     continue
 
@@ -797,12 +826,7 @@ class KindSEChecker(BaseKindSE):
     def get_path_to_run(self):
         ready = self.readypaths
         if ready:
-            if len(ready) % 4 == 0:
-                # do not run DFS so that we do not starve
-                # some path indefinitely, but prefer the
-                # lastly added paths...
-                ready[-1], ready[0] = ready[0], ready[-1]
-            return ready.pop()
+            return heappop(ready)
         return None
 
     def is_loop_header(self, loc):
@@ -810,7 +834,9 @@ class KindSEChecker(BaseKindSE):
 
     def queue_paths(self, paths):
         assert isinstance(paths, list), paths
-        self.readypaths.extend(paths)
+        readyp = self.readypaths
+        for p in paths:
+            heappush(readyp, p)
 
     def extend_paths(self, path, states):
         step = self.getOptions().step
