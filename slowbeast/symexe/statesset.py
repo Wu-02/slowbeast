@@ -29,7 +29,7 @@ class StatesSet:
     (state.copy()).
     """
 
-    __slots__ = ["_state"]
+    __slots__ = "_state"
 
     def __init__(self, state: SEState):
         """ Create new states set from the given states """

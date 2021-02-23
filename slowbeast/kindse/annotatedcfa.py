@@ -1,4 +1,5 @@
 from slowbeast.util.debugging import print_highlight
+from slowbeast.analysis.cfa import CFA
 
 
 def _loc_id(loc):
