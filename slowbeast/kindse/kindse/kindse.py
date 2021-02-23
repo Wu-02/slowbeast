@@ -74,6 +74,9 @@ def overapprox(executor, s, E, target, L):
         )
         return None
     # --- workaround ends here...
+    if S.is_empty():
+        dbg("Starting sequence is empty")
+        return None
 
     # if __debug__:
     #    r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
