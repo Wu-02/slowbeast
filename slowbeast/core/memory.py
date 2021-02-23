@@ -248,30 +248,38 @@ class Memory:
         else:
             obj.clear()
 
-    def havoc(self, objs=None):
+    def havoc(self, objs=None, without=None):
         """ Havoc the contents of memory """
         # FIXME: we do not have to havoc constants and some other values
         if objs:
             havoc_obj = self.havoc_obj
             for o in objs:
+                if without and o in without:
+                    continue
                 havoc_obj(o.get_id())
             return
 
         # create clean objects
         newobjs = {}
         for p, o in self._objects.items():
-            newobjs[p] = o.clean_copy()
+            if without and o in without:
+                newobjs[p] = o.copy()
+            else:
+                newobjs[p] = o.clean_copy()
         self._objects = newobjs
         self._objects_ro = False
 
         # create clean global objects
         newobjs = {}
         for p, o in self._glob_objects.items():
-            newobjs[p] = o.clean_copy()
-            newobjs[p] = no
+            if without and o in without:
+                newobjs[p] = o.copy()
+            else:
+                newobjs[p] = o.clean_copy()
         self._glob_objects = newobjs
         self._glob_objects_ro = False
 
         # clear values in call stack
+        # FIXME: do not havoc the 'without' objects
         for frame in self._cs:
             frame.clear()

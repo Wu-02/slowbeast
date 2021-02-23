@@ -54,17 +54,17 @@ class LazySymbolicMemoryModel(CoreMM):
         state.set(instr, ptr)
         return [state]
 
-    def _havoc_ptr_target(self, state, ptr):
+    def _havoc_ptr_target(self, state, ptr, without=[]):
         """ Havoc memory possibly pointed by ptr"""
         # we do not know what we write where, so just clear all the information if possible
         mo = None
         if ptr.is_pointer():
             mo = state.memory.get_obj(ptr.object())
         if mo:
-            state.memory.havoc((mo,))
+            state.havoc((mo,))
         else:
-            state.memory.havoc()
-            return [state]
+            state.havoc()
+        return None
 
     def write(self, state, instr, valueOp, toOp):
         to = state.get(toOp)
@@ -73,6 +73,7 @@ class LazySymbolicMemoryModel(CoreMM):
             to = state.get(
                 toOp
             )  # FIXME "We're calling get() method but we could return the value..."
+            assert to
         if not to.is_pointer():
             if self._overapprox_unsupported:
                 self._havoc_ptr_target(

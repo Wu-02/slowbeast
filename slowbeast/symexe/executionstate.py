@@ -233,6 +233,22 @@ class LazySEState(SEState):
             return exprs.pop(0)  # consume the returned expression
         return None
 
+    def havoc(self, mobjs=None):
+        self.memory.havoc(mobjs)
+        if mobjs:
+            newnl = []
+            get = self.get
+            get_obj = self.memory.get_obj
+            for l in self._nondets:
+                if l.is_nondet_load():
+                    alloc = get(l.alloc)
+                    if alloc and get_obj(alloc.object()) in mobjs:
+                        newnl.append(l)
+            self._nondets = newnl
+        else:
+            self._nondets = []
+
+
     def eval(self, v):
         value = self.try_eval(v)
         if value is None:
