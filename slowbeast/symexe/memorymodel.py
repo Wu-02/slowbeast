@@ -52,7 +52,6 @@ class LazySymbolicMemoryModel(CoreMM):
         else:
             ptr = state.memory.allocate(size, instr)
         state.set(instr, ptr)
-        print(instr, '->', state.get(instr))
         return [state]
 
     def _havoc_ptr_target(self, state, ptr, without=[]):
@@ -65,7 +64,7 @@ class LazySymbolicMemoryModel(CoreMM):
             state.havoc((mo,))
         else:
             state.havoc()
-            return [state]
+        return None
 
     def write(self, state, instr, valueOp, toOp):
         to = state.get(toOp)
