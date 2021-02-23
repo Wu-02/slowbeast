@@ -45,7 +45,7 @@ if _use_z3:
         Z3_OP_BMUL,
     )
     from z3 import is_true, is_false, simplify, substitute
-    from z3 import Goal, Tactic
+    from z3 import Goal, Tactic, Then, With, Repeat, OrElse
     from z3 import (
         FP,
         Float32,
@@ -176,7 +176,26 @@ if _use_z3:
         g = Goal()
         g.add(*exprs)
         t = Tactic("tseitin-cnf")
-        return t(g)[0]
+        goal = t(g)
+        assert len(goal) == 1
+        return goal[0]
+
+    def rewrite_simplify(*exprs):
+        g = Goal()
+        g.add(*exprs)
+        t = Then(With('simplify', arith_lhs=True, som=True),
+                 Tactic('propagate-ineqs'),
+                 Tactic('normalize-bounds'),
+                 Tactic('propagate-values'),
+                 Tactic('simplify'))
+        return t(g)
+
+    def split_clauses(*exprs):
+        g = Goal()
+        g.add(*exprs)
+        t = Repeat(OrElse(Tactic('split-clause'),
+                          Tactic('skip')))
+        return t(g)
 
     def solver_to_sb_type(s):
         if is_bv(s):
@@ -274,6 +293,18 @@ class Expr(Value):
         Get the expression in CNF form.
         """
         return Expr(And(*to_cnf(self.unwrap())), self.type())
+
+    def rewrite_and_simplify(self):
+        """
+        Get the expression in CNF form.
+        """
+        return Expr(Or(*(And(*c) for c in rewrite_simplify(self._expr))), self.type())
+
+    def split_clauses(self):
+        """
+        Get the expression in CNF form.
+        """
+        return Expr(Or(*(And(*c) for c in split_clauses(self._expr))), self.type())
 
     def isAnd(self):
         return is_and(self.unwrap())
