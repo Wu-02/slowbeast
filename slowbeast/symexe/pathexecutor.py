@@ -164,11 +164,12 @@ class Executor(SExecutor):
         result = PathExecutionResult()
         earlytermstates = []
         edges = path.edges()
+        execannots = self.execute_annotations
 
         # execute the precondition of the path
         pre = path.annot_before()
         if pre:
-            states, tu = self.execute_annotations(states, pre)
+            states, tu = execannots(states, pre)
             earlytermstates += tu
 
         pathlen = len(path)
@@ -205,7 +206,7 @@ class Executor(SExecutor):
             target = edge.target()
             locannot = path.annot_before_loc(target)
             if locannot and states:
-                states, tu = self.execute_annotations(states, locannot)
+                states, tu = execannots(states, locannot)
                 # this annotation also counts as early terminating  as we still didn't
                 # virtually get to the final location of the path
                 earlytermstates += tu
@@ -213,7 +214,7 @@ class Executor(SExecutor):
             errors, other = [], []
             locannot = path.annot_after_loc(target)
             if locannot and states:
-                states, tu = self.execute_annotations(states, locannot)
+                states, tu = execannots(states, locannot)
                 err, oth = split_nonready_states(tu)
                 if err:
                     errors.extend(err)
@@ -222,7 +223,7 @@ class Executor(SExecutor):
             # execute the postcondition of the path
             post = path.annot_after()
             if post and states:
-                states, tu = self.execute_annotations(states, post)
+                states, tu = execannots(states, post)
                 err, oth = split_nonready_states(tu)
                 if err:
                     errors.extend(err)
