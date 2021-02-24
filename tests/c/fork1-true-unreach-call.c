@@ -1,5 +1,6 @@
 extern void __slowbeast_print();
 
+// UNSUPPORTED: bse
 // UNSUPPORTED: kind
 // RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out

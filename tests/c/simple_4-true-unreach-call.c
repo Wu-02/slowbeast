@@ -1,7 +1,6 @@
 #include <assert.h>
 
-// REQUIRES: kind
-// UNSUPPORTED: kind-naive
+// REQUIRES: unbounded
 // RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out
 // RUN: sb -out-dir=%t-out %opts %t.bc &>%t.log

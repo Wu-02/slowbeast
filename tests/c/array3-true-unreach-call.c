@@ -1,7 +1,7 @@
 #include <assert.h>
 
 // We do not handle symbolic pointers in kind yet
-// REQUIRES: nokind
+// REQUIRES: bounded
 //
 // RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out
