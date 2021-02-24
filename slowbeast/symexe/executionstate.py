@@ -154,12 +154,8 @@ class SEState(ExecutionState):
             self._nondets = copy(self._nondets)
             self._nondets_ro = False
         # we can have only one nonded for a given allocation
-        assert not n.is_nondet_load() or all(
-            map(
-                lambda x: x.alloc != n.alloc,
-                (l for l in self._nondets if l.is_nondet_load()),
-            )
-        ), f"n:{n}, nondets: {self._nondets}"
+        if n.is_nondet_load() and self.getNondetLoadOf(n.alloc) is not None:
+            raise RuntimeError(f"Multiple nondets of the same load unsupported atm: n:{n}, nondets: {self._nondets}")
         self._nondets.append(n)
 
     def nondets(self):
