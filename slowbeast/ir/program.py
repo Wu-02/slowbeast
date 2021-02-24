@@ -57,7 +57,7 @@ class ProgramElement:
 
     elemsCounter = 0
 
-    __slots__ = ["_metadata", "_id"]
+    __slots__ = "_metadata", "_id"
 
     def __init__(self):
         """

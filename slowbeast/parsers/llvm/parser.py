@@ -1,6 +1,7 @@
 from slowbeast.domains.concrete import ConcreteVal, ConcreteInt
 from slowbeast.ir.program import Program
 from slowbeast.ir.function import Function
+from slowbeast.ir.argument import Argument
 
 from slowbeast.ir.types import *
 from slowbeast.ir.instruction import *
@@ -764,7 +765,8 @@ class Parser:
                 raise NotImplementedError(
                     "Cannot parse function return type: {0}".format(f.type.element_type)
                 )
-            self.program.add_fun(Function(f.name, len(list(f.arguments)), retty))
+            args = [Argument(get_sb_type(self.llvmmodule, a.type)) for a in f.arguments]
+            self.program.add_fun(Function(f.name, args, retty))
 
         for f in m.functions:
             if f.name in special_functions:

@@ -143,7 +143,7 @@ def get_sb_type(m, ty):
         return PointerType()
 
     sty = str(ty)
-    if sty == "void":
+    if sty in ("void", "metadata"):
         return None
 
     ts = type_size_in_bits(m, ty)

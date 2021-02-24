@@ -5,14 +5,16 @@ from .program import ProgramElement
 
 class Function(ProgramElement):
 
-    __slots__ = ["_name", "_bblocks", "_arguments", "_retty"]
+    __slots__ = "_name", "_bblocks", "_arguments", "_retty"
 
-    def __init__(self, name, argNum=0, retty=None):
+    def __init__(self, name, args, retty=None):
         super().__init__()
         self._name = name
         self._bblocks = []
-        self._arguments = [Argument() for x in range(0, argNum)]
+        self._arguments = args or []
         self._retty = retty
+
+        assert all(map(lambda a: isinstance(a, Argument), args))
 
     def __eq__(self, other):
         assert self._name != other._name or self.get_id() == other.get_id()
