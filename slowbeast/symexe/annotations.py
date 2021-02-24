@@ -301,12 +301,20 @@ def and_annotations(EM, toassert, *annots):
 def state_to_annotation(state, toassert=False):
     EM = state.expr_manager()
     Ctor = AssertAnnotation if toassert else AssumeAnnotation
-    return AssumeAnnotation(
+    return Ctor(
         state.getConstraintsObj().as_formula(EM),
         {l: l.load for l in state.getNondetLoads()},
         EM,
     )
 
+def state_to_neg_annotation(state, toassert=False):
+    EM = state.expr_manager()
+    Ctor = AssertAnnotation if toassert else AssumeAnnotation
+    return Ctor(
+        EM.Not(state.getConstraintsObj().as_formula(EM)),
+        {l: l.load for l in state.getNondetLoads()},
+        EM,
+    )
 
 def states_to_annotation(states):
     a = None

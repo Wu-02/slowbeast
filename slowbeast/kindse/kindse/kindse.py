@@ -8,7 +8,8 @@ from slowbeast.analysis.loops import Loop
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
-    state_to_annotation
+    state_to_annotation,
+    state_to_neg_annotation
 )
 
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
@@ -215,24 +216,26 @@ class KindSEChecker(BaseKindSE):
         dbg_sec()
         return result, states
 
-    def unwind(self, paths, maxk):
-        assert maxk
-        k = 0
-        dbg("Unwinding the loop...")
-        while paths and k < maxk:
-            newpaths = []
-            for p in paths:
-                r, states = self.check_path(p)
-                if r is Result.UNSAFE:
-                    # we hit real unsafe path - return it so that the main executor
-                    # will re-execute it and report
-                    return Result.UNSAFE, [p]
-                # otherwise just prolong the paths that failed
-                if states.errors:
-                     newpaths.extend(self.extend_paths(p, None))
-            paths = newpaths
-            k += 1
-        return Result.UNKNOWN if paths else Result.SAFE, paths
+   #def unwind(self, paths, maxk):
+   #    assert maxk
+   #    k = 0
+   #    dbg("Unwinding the loop...")
+   #    while paths and k < maxk:
+   #        newpaths = []
+   #        for p, st in paths:
+   #            print(p, st)
+   #            p.add_annot_after(state_to_neg_annotation(st, toassert=True))
+   #            r, states = self.check_path(p)
+   #            if r is Result.UNSAFE:
+   #                # we hit real unsafe path - return it so that the main executor
+   #                # will re-execute it and report
+   #                return Result.UNSAFE, [p]
+   #            # otherwise just prolong the paths that failed
+   #            if states.errors:
+   #                 newpaths.extend(self.extend_paths(p, states.errors))
+   #        paths = newpaths
+   #        k += 1
+   #    return Result.UNKNOWN if paths else Result.SAFE, paths
 
     def handle_loop(self, loc, path, states):
         assert (
@@ -245,31 +248,32 @@ class KindSEChecker(BaseKindSE):
 
         #   # first try to unroll it in the case the loop is easy to verify
         #   kindse = BaseKindSE(self.getProgram())
-        maxk = 15
-        dbg_sec("Running nested KindSE")
-        res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
-        dbg_sec()
-        if res is Result.SAFE:
-           print_stdout(
-               f"Loop {loc} proved by unwinding", color="GREEN"
-           )
-           return res, []
-        elif res is Result.UNSAFE:
-           self.no_sum_loops.add(loc)
-           return res, [path]  # found an error
+       #maxk = 15
+       #dbg_sec("Running nested KindSE")
+       #res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
+       #dbg_sec()
+       #if res is Result.SAFE:
+       #   print_stdout(
+       #       f"Loop {loc} proved by unwinding", color="GREEN"
+       #   )
+       #   return res, []
+       #elif res is Result.UNSAFE:
+       #   self.no_sum_loops.add(loc)
+       #   return res, [path]  # found an error
 
+        assert states.errors, "States in fold loop are not error states"
         L = self.get_loop(loc)
         if L is None:
             print_stdout("Was not able to construct the loop info")
             print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
             self.no_sum_loops.add(loc)
-            return Result.UNKNOWN, self.extend_paths(path, None)
+            return Result.UNKNOWN, self.extend_paths(path, states.errors)
 
         if self.fold_loop(path, loc, L, unsafe):
             return Result.SAFE, []
         else:
-            return Result.UNKNOWN, unwoundloop
-            #return self.unfold_loop(path, loc, indset=None)
+            return Result.UNKNOWN, self.extend_paths(path, states.errors)
+            #return Result.UNKNOWN, unwoundloop
 
     def extend_seq(self, seq, target0, E, L):
         """
@@ -726,34 +730,39 @@ class KindSEChecker(BaseKindSE):
 
     def get_path_to_run(self):
         ready = self.readypaths
+        # FIXME: use BFS
         if ready:
-            if len(ready) % 4 == 0:
+            if len(ready) % 2 == 0:
                 # do not run DFS so that we do not starve
                 # some path indefinitely, but prefer the
                 # lastly added paths...
                 ready[-1], ready[0] = ready[0], ready[-1]
             return ready.pop()
-        return None
+        return None, None
 
     def is_loop_header(self, loc):
         return loc in self.programstructure.get_loop_headers()
 
     def queue_paths(self, paths):
         assert isinstance(paths, list), paths
+        assert (all(map(lambda x: isinstance(x, tuple), paths))), paths
         self.readypaths.extend(paths)
 
     def extend_paths(self, path, states):
+        assert states
         step = self.getOptions().step
         invpoints = self.programstructure.get_loop_headers()
-        return self.extend_path(
+        exts = self.get_path_extensions(
             path,
             states,
             steps=step,
             atmost=step != 1,
             stoppoints=invpoints,
         )
+        return [(p, s)  for p in exts for s in states]
 
     def extend_and_queue_paths(self, path, states):
+        assert states
         self.queue_paths(self.extend_paths(path, states))
 
     def check(self, onlyedges=None):
@@ -762,16 +771,24 @@ class KindSEChecker(BaseKindSE):
         for edge in onlyedges if onlyedges else loc.predecessors():
             path = AnnotatedCFAPath([edge])
             path.add_annot_after(self.assertion)
-            self.extend_and_queue_paths(path, states=None)
+            res, states = self.check_path(path)
+            if res is Result.UNSAFE:
+                return res, states
+            if states.errors:
+                self.extend_and_queue_paths(path, states.errors)
 
         while True:
-            path = self.get_path_to_run()
+            path, state = self.get_path_to_run()
             if path is None:
+                assert state is None
                 return (
                     Result.UNKNOWN if (self.problematic_paths) else Result.SAFE
                 ), self.problematic_paths_as_result()
 
-            ldbgv("Main loop: check path {0}", (path,))
+            postcond = state_to_neg_annotation(state, toassert=True)
+            if __debug__:
+                ldbgv("Main loop: check path {0}{1}", (path, postcond))
+            path.add_annot_after(postcond)
             r, states = self.check_path(path)
 
             if r is Result.UNSAFE:
@@ -790,9 +807,9 @@ class KindSEChecker(BaseKindSE):
                         self.queue_paths(newpaths)
                 else:
                     # normal path or a loop that we cannot summarize
-                    self.extend_and_queue_paths(path, states)
+                    self.extend_and_queue_paths(path, states.errors)
             else:
-                dbgv(f"Safe path: {path}")
+                dbgv(f"Safe path: {path}{postcond}")
 
         raise RuntimeError("Unreachable")
 

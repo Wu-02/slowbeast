@@ -7,6 +7,7 @@ from slowbeast.symexe.symbolicexecution import (
 )
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
+from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 
@@ -230,6 +231,94 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             worklist = newworklist
 
         return newpaths
+
+    def get_path_extensions(self, path, states, steps=-1, atmost=False, stoppoints=[]):
+        """
+        Take a path and extend it by prepending one or more
+        predecessors.
+
+        \param steps     Number of predecessors to prepend.
+                         Values less or equal to 0 have a special
+                         meaning:
+                           0  -> prepend until a join is find
+                           -1 -> prepend until a branch is find
+        \param atmost    if set to True, we allow to extend
+                         less than the specified number of steps
+                         if there are no predecessors.
+                         If set to False, the path is dropped
+                         if it cannot be extended (there are
+                         not enough predecessors)
+        """
+
+        assert states, "Got no states"
+
+        num = 0
+        newpaths = []
+        worklist = [[path[-1]]]
+        while worklist:
+            num += 1
+            newworklist = []
+
+            for p in worklist:
+                front = p[-1]  # the list is reversed, so the front is at the end
+                preds = front.source().predecessors()
+                predsnum = len(preds)
+
+                # no predecessors, we're done with this path
+                if atmost and predsnum == 0:
+                    if len(path) == len(p) and states:
+                        # we did not extend the path at all, so this
+                        # is a path that ends in the entry block and
+                        # we already processed it...
+                        dbg("Extending a path to the caller")
+                        np = self.extend_to_caller(path, states)
+                        newpaths += np
+                    else:
+                        # FIXME: do not do this reverse, rather execute in reverse
+                        # order (do a reverse iterator?)
+                        newpaths.append(p)
+                    continue
+
+                for pred in preds:
+                    newpath = p[:]
+                    newpath.append(pred)
+
+                    # if this is the initial path and we are not stepping by 1,
+                    # we must add it too, otherwise we could miss such paths
+                    # (note that this is not covered by 'predsnum == 0',
+                    # because init may have predecessors)
+                    added = False
+                    if atmost and steps != 1 and self._is_init(pred.source()):
+                        added = True
+                        tmp = newpath[:]
+                        newpaths.append(tmp)
+                        # fall-through to further extending this path
+
+                    assert all(map(lambda x: isinstance(x, CFA.Location), stoppoints))
+                    if pred in stoppoints:
+                        newpaths.append(newpath)
+                    elif steps > 0 and num != steps:
+                        newworklist.append(newpath)
+                    elif steps == 0 and predsnum <= 1:
+                        newworklist.append(newpath)
+                    elif steps == -1 and len(pred.source().successors()) > 1:
+                        newworklist.append(newpath)
+                    else:  # we're done with this path
+                        if not added:
+                            newpaths.append(newpath)
+
+            worklist = newworklist
+
+        # strip the first edge that should not be there and transform to AnnotatedCFAPath
+        finalpaths = []
+        for p in newpaths:
+            p.reverse()
+            p.pop()
+            for r in states:
+                n = AnnotatedCFAPath(p)
+                finalpaths.append(n)
+        return finalpaths
+
 
     def report(self, n, fn=print_stderr):
         if n.hasError():
