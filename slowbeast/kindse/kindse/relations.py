@@ -112,6 +112,7 @@ def get_var_diff_relations(state):
         # check equalities to other loads: l1 - l2 = k*l3
         for l3 in state.getNondetLoads():
             l3bw = l3.type().bitwidth()
+            l3name = l3.rhs_repr()
             bw = max(l3bw, bw)
             if l1bw != bw:
                 l1 = EM.SExt(l1, ConcreteInt(bw, bw))
@@ -126,7 +127,7 @@ def get_var_diff_relations(state):
                 if state.is_sat(EM.Ne(EM.Sub(l1, l2), l3)) is False:
                     yield AssertAnnotation(EM.Eq(EM.Sub(l1, l2), l3), subs, EM)
                 else:
-                    c = EM.Var(f"c_diff_{l1name}_{l2name}", IntType(bw))
+                    c = EM.Var(f"c_mul_{l1name}{l2name}{l3name}", IntType(bw))
                     expr = EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3))
                     c_concr = state.concretize_with_assumptions([expr], c)
                     if c_concr is not None:
