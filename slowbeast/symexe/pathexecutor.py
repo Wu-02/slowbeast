@@ -101,18 +101,19 @@ class Executor(SExecutor):
         source = edge.source()
         ready, nonready = states, []
         # annotations before taking the edge (proably an invariant)
+        execannot = self.execute_annotations
         if pre:
-            ready, tu = self.execute_annotations(ready, pre)
+            ready, tu = execannot(ready, pre)
             nonready += tu
         # annotations before source
         locannot = path.annot_before_loc(source) if path else None
         if locannot:
-            ready, tu = self.execute_annotations(ready, locannot)
+            ready, tu = execannot(ready, locannot)
             nonready += tu
         # annotations after source
         locannot = path.annot_after_loc(source) if path else None
         if locannot:
-            ready, tu = self.execute_annotations(ready, locannot)
+            ready, tu = execannot(ready, locannot)
             nonready += tu
 
         # execute the instructions from the edge
