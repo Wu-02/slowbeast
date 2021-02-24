@@ -56,7 +56,7 @@ def get_initial_seq2(unsafe, path, L):
     if not E.is_concrete():
         E = conjunction(*remove_implied_literals(E.to_cnf().children()))
 
-    subs = {l: l.load for l in unsafe[0].getNondetLoads()}
+    subs = {n: n.instruction() for n in unsafe[0].nondets()}
     Sa = AssertAnnotation(S, subs, EM)
     Se = AssertAnnotation(E, subs, EM)
 
@@ -397,7 +397,7 @@ class KindSEChecker(BaseKindSE):
         if not E.is_concrete():
             E = conjunction(*remove_implied_literals(E.to_cnf().children()))
 
-        subs = {l: l.load for l in unsafe[0].getNondetLoads()}
+        subs = {n: n.instruction() for n in unsafe[0].nondets()}
         Sa = AssertAnnotation(S, subs, EM)
         Se = AssertAnnotation(E, subs, EM)
 

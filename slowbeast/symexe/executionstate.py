@@ -161,6 +161,9 @@ class SEState(ExecutionState):
     def nondets(self):
         return self._nondets
 
+    def nondets_substitutions(self):
+        return {n: n.instruction() for n in self._nondets}
+
     def getNondetLoads(self):
         return (l for l in self._nondets if l.is_nondet_load())
 

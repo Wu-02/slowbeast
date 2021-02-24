@@ -3,17 +3,18 @@ from slowbeast.ir.instruction import Instruction, Load
 from slowbeast.ir.types import IntType
 from slowbeast.domains.concrete import ConcreteVal
 
+def _get_cannonic_var(EM, val, x):
+    if isinstance(x, Load):
+        name = f"L({x.operand(0).as_value()})"
+    else:
+        name = x.as_value()
+    return EM.Var(name, val.type())
+
+
 
 def _createCannonical(expr, subs, EM):
-    def get_cannonic_var(val, x):
-        if isinstance(x, Load):
-            name = f"L({x.operand(0).as_value()})"
-        else:
-            name = x.as_value()
-        return EM.Var(name, IntType(val.bitwidth()))
-
     return EM.substitute(
-        expr, *((val, get_cannonic_var(val, x)) for (val, x) in subs.items())
+        expr, *((val, _get_cannonic_var(EM, val, x)) for (val, x) in subs.items())
     )
 
 
@@ -43,8 +44,8 @@ class StateDescription:
         # state.eval(instruction) should be put on the
         # place of the key expression
         assert isinstance(subs, dict)
-        assert all(map(lambda k: isinstance(k, Expr), subs.keys()))
-        assert all(map(lambda k: isinstance(k, Instruction), subs.values()))
+        assert all(map(lambda k: isinstance(k, Expr), subs.keys())), subs
+        assert all(map(lambda k: isinstance(k, Instruction), subs.values())), subs
         self._subs = subs
 
     def cannonical(self, EM):
@@ -149,7 +150,7 @@ def state_to_description(state):
     EM = state.expr_manager()
     return StateDescription(
         state.getConstraintsObj().as_formula(EM),
-        {l: l.load for l in state.getNondetLoads()},
+        {n: n.instruction() for n in state.nondets()},
     )
 
 
