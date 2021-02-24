@@ -1,6 +1,5 @@
 from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Instruction, Load
-from slowbeast.ir.types import IntType
 from slowbeast.domains.concrete import ConcreteVal
 
 def _get_cannonic_var(EM, val, x):
