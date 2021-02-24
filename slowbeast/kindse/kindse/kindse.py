@@ -481,8 +481,7 @@ class KindSEChecker(BaseKindSE):
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
 
-        FIXME: we actually do not use the assertion at all right now,
-        only implicitly as it is contained in the paths...
+        FIXME: this does basically the same as cond_exit
         """
 
         create_set = self.create_set
