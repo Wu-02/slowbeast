@@ -244,6 +244,8 @@ def get_relations_to_prev_states(state, prev):
 
 
 def get_safe_relations(safe, unsafe, prevsafe=None):
+    if not hasattr(safe, '__iter__'):
+        safe = (safe,)
     for s in safe:
         # get and filter out those relations that make the state safe
         yield from get_var_diff_relations(s)

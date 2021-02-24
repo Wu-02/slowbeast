@@ -14,13 +14,6 @@ int main() {
                 ++x;
         }
 
-        /*
-        if (c) {
-                ++i;
-                ++x;
-        }
-        */
-
         assert (x == i);
 
 	// CHECK-NOT: assertion failed!
