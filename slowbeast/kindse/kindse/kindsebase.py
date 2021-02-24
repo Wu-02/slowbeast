@@ -248,7 +248,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         return None
 
-    def checkInitialPath(self, path):
+    def check_initial_error_path(self, path):
         """
         Execute a path from initial states
         \requires an initial path

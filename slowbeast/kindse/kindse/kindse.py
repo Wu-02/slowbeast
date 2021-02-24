@@ -674,7 +674,7 @@ class KindSEChecker(BaseKindSE):
     def check_path(self, path):
         first_loc = path[0]
         if self._is_init(first_loc.source()):
-            r, states = self.checkInitialPath(path)
+            r, states = self.check_initial_error_path(path)
             if r is Result.UNSAFE:
                 self.reportfn(f"Error path: {path}", color="red")
                 return r, states  # found a real error
