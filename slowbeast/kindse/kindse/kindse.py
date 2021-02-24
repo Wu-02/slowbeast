@@ -271,62 +271,6 @@ class KindSEChecker(BaseKindSE):
             return Result.UNKNOWN, unwoundloop
             #return self.unfold_loop(path, loc, indset=None)
 
-    def unfold_loop(self, path, loc, indset):
-        """
-        Take path and loop for which we failed to create an invariant and unwind the loop as far as we can
-        such that we avoid the safe sets that we computed.
-        """
-
-        return Result.UNKNOWN, self.extend_paths(path, None)
-
-        # We do not unfold the loops right now
-       ## unwind the paths and check subsumption
-       #dbg(f"Unfolding the loop {loc}")
-       #if __debug__:
-       #    dump_inductive_sets(self, loc)
-
-       #paths = self.extend_paths(path, None)
-       #if not indset:
-       #    return Result.UNKNOWN, paths
-
-       #finalpaths = []
-       #newpaths = []
-       #create_set = self.create_set
-       #subsumed = indset.includes
-       ## fixme: the state inside set should use incremental solver to speed-up solving... after all, it is a place
-       ## where we add formulas monotonically.
-
-       #while paths:
-       #    dbg("Next iteration of unfolding the loop...")
-       #    for p in paths:
-       #        r, states = self.check_path(p)
-       #        if r is Result.UNSAFE:
-       #            # we hit real unsafe path - return it so that the main executor
-       #            # will re-execute it and report
-       #            if __debug__:
-       #                tmp = create_set(states.errors[0])
-       #                assert intersection(
-       #                    indset.I, tmp
-       #                ).is_empty(), "Error state is subsumed..."
-       #            return Result.UNSAFE, [p]
-       #        # otherwise just prolong the paths that failed the induction step
-       #        # and that are not subsumed
-       #        assert states.errors is None or len(states.errors) == 1
-       #        errst = states.errors[0] if states.errors else None
-       #        if errst:
-       #            tmp = create_set(errst)
-       #            if not subsumed(tmp):
-       #                # not subsumed
-       #                # FIXME: some overapproximation of the complement of the intersection and add it to the path
-       #                finalpaths.append(p)
-       #            else:
-       #                # errst is subsumed and subsumed paths need to be prolonged
-       #                newpaths += self.extend_paths(p, None)
-       #    paths = newpaths
-
-       ## TODO: we could return SAFE when finalpaths is empty
-       #return Result.UNKNOWN, finalpaths
-
     def extend_seq(self, seq, target0, E, L):
         """
         Compute the precondition for reaching S and overapproximate it
