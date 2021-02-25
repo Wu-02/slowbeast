@@ -571,7 +571,7 @@ def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True):
             expressions.add(c)
 
     newclauses = list(expressions)
-    newS = S.copy()
+    #newS = S.copy()
     for c in expressions:
         if nodrop_safe and safesolver.is_sat(c) is False:
             # do not drop clauses that refute the error states,
@@ -595,11 +595,11 @@ def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True):
         if safesolver.is_sat(tmpexpr) is not False:
             continue  # unsafe overapprox
 
-        # == over-approximation check
-        X = newS.copy()
+        X = S.copy()
         X.reset_expr(tmpexpr)
-        if not is_overapprox_of(newS, X):
-            continue
+       ## == over-approximation check: not needed
+       #if not is_overapprox_of(newS, X):
+       #    continue
 
         # == inductivity check
         r = check_paths(executor, lpaths, pre=X, post=union(X, target))
@@ -608,7 +608,7 @@ def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True):
             return newclauses
         if r.errors is None and r.ready:
             newclauses = tmp
-            newS.reset_expr(conjunction(*tmp))
+            #newS.reset_expr(conjunction(*tmp))
             dbg(f"  dropped {c}...")
 
     return newclauses
