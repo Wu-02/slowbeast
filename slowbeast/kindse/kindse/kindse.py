@@ -87,6 +87,12 @@ def strip_last_assume_edge(path: AnnotatedCFAPath):
     assert idx is not None and idx + 1 < len(path)
     return path.subpath(0, idx - 1)
 
+def suffixes_starting_with(paths, loc):
+    for path in paths:
+        for idx in range(len(path)):
+            if path[idx].source() == loc:
+                yield path.subpath(idx)
+
 def postcondition_expr(s):
     return state_to_annotation(s).do_substitutions(s)
 
@@ -338,7 +344,7 @@ class KindSEChecker(BaseKindSE):
         only implicitly as it is contained in the paths...
         """
 
-        create_set = self.create_set
+        dbg("Obtaining states from last safe iterations")
         I = self.safe_path_with_last_iter(E, path, L)
         if I is None:
             return None
@@ -384,6 +390,7 @@ class KindSEChecker(BaseKindSE):
                 assert seq0 and is_seq_inductive(seq0, None, self, L),\
                        "Failed getting init seq for first iteration"
             else:
+                dbg("Initial sequence is NOT inductive, fixing it", color="wine")
                 seq0 = self.strengthen_initial_seq(seq0, E, path, L)
 
         assert seq0 is None or is_seq_inductive(seq0, None, self, L)
