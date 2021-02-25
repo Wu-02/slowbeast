@@ -501,6 +501,10 @@ def break_eqs(expr):
     # break equalities that have a constant on one side,
     # so that we can generalize them
     for c in expr.children():
+        if c.isNot():
+            d = next(c.children())
+            if d.isEq():
+                clauses.append(EM.Or(*(EM.Not(x) for x in break_eq(d))))
         if c.isEq():
             clauses.extend(break_eq(c))
         else:
@@ -670,7 +674,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     if expr.is_concrete():
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
-    expr = expr.to_cnf()
+    expr = expr.rewrite_and_simplify().to_cnf()
     # break equalities to <= && >= so that we can overapproximate them
     #expr = replace_constants(expr, EM)
     clauses = break_eqs(expr)
@@ -734,7 +738,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     # drop clauses once more
     newclauses = drop_clauses_fixpoint(newclauses, S, None, safesolver, data)
     clauses = remove_implied_literals(newclauses)
-    S.reset_expr(EM.conjunction(*clauses))
+    S.reset_expr(EM.conjunction(*clauses).rewrite_and_simplify())
 
     assert intersection(
         unsafe, create_set(S)
