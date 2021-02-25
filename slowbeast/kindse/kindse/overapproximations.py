@@ -4,7 +4,7 @@ from slowbeast.util.debugging import dbg, dbgv
 from slowbeast.solvers.expressions import em_optimize_expressions
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 
-from slowbeast.symexe.statesset import union, intersection
+from slowbeast.symexe.statesset import union, intersection, complement
 from .inductivesequence import InductiveSequence
 
 from slowbeast.core.executor import PathExecutionResult
@@ -538,6 +538,9 @@ def _get_pre_post_states(executor, paths):
         return None, None
     return executor.ind_executor().createCleanState(), r.ready
 
+def is_overapprox_of(A, B):
+    """ Return true if A is overapproximation of B """
+    return intersection(complement(B), A).is_empty()
 
 def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=False):
     "no_vars_eq: do not drop equalities between variables"
@@ -605,7 +608,6 @@ def drop_clauses_fixpoint(clauses, S, safesolver, data, nodrop_safe=True, no_var
     dbgv(" ... done droping clauses")
     return newclauses
 
-
 def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     """
     drop_only - only try to drop clauses, not to extend them
@@ -669,14 +671,11 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
             # newclauses.append(newclause)
             # FIXME: this check should be
             # assertion, overapprox_clause should not give us such clauses
-            tmp = R.copy()
-            tmp.intersect(newclause)
             assert intersection(
-                tmp, unsafe
+                R, unsafe
             ).is_empty(), f"Overapprox clause: got unsafe set {c} --> {newclause}"
-            tmp.complement()
             # assert intersection(tmp, S).is_empty()
-            if intersection(tmp, S).is_empty():
+            if is_overapprox_of(R, S):
                 # new clause makes S to be an overapproximation, good
                 newclauses.append(newclause)
             else:
