@@ -573,10 +573,11 @@ def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True):
     newclauses = list(expressions)
     #newS = S.copy()
     for c in expressions:
-        if nodrop_safe and safesolver.is_sat(c) is False:
-            # do not drop clauses that refute the error states,
-            # those may be useful
-            continue
+# This sometimes helps very much and sometimes it does not. Usually, it just takes time.
+#       if nodrop_safe and safesolver.is_sat(c) is False:
+#           # do not drop clauses that refute the error states,
+#           # those may be useful
+#           continue
 
         assert not c.is_concrete(), c
         # create a temporary formula without the given clause
