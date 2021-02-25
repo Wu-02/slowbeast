@@ -6,6 +6,7 @@ from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.analysis.loops import Loop
+from slowbeast.analysis.dfs import DFSVisitor
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
@@ -87,11 +88,31 @@ def strip_last_assume_edge(path: AnnotatedCFAPath):
     assert idx is not None and idx + 1 < len(path)
     return path.subpath(0, idx - 1)
 
+def strip_last_exit_edge(path: AnnotatedCFAPath, exits):
+    idx = path.last_edge_of_idx(exits)
+    # we use this func only on loop edges, so it must contain the entry condition
+    assert idx is not None and idx + 1 < len(path), idx
+    return path.subpath(0, idx - 1)
+
+
 def suffixes_starting_with(paths, loc):
     for path in paths:
         for idx in range(len(path)):
             if path[idx].source() == loc:
                 yield path.subpath(idx)
+
+# def can_reach_header(loc, header, headers):
+#     " headers - other loop headers, we stop there"
+#
+#     hit_headers = set()
+#     def processedge(edge, dfstype):
+#         t = edge.target()
+#         if t in headers:
+#             hit_headers.add(t)
+#
+#     DFSVisitor(stop_vertices=headers).foreachedge(loc, processedge)
+#     return header in hit_headers
+
 
 def postcondition_expr(s):
     return state_to_annotation(s).do_substitutions(s)
@@ -155,6 +176,7 @@ class KindSEChecker(BaseKindSE):
         self.toplevel_executor = toplevel_executor
         self.create_set = self.ind_executor().create_states_set
         self.get_loop = toplevel_executor.programstructure.get_loop
+        self.get_loop_headers= self.programstructure.get_loop_headers
 
         # paths to still search
         self.readypaths = []
@@ -422,9 +444,8 @@ class KindSEChecker(BaseKindSE):
             return seq
         return seq0
 
-    def safe_paths_from_iterations(self, E, path, L):
+    def _safe_paths_err_outside(self, E, path, L):
         EM = getGlobalExprManager()
-
         create_set = self.create_set
         added = False
         I = create_set()
@@ -452,6 +473,46 @@ class KindSEChecker(BaseKindSE):
 
         return None
 
+    def _safe_paths_err_inside(self, E, path, L):
+        create_set = self.create_set
+        is_error_loc = L.cfa().is_err
+        added = False
+        I = create_set()
+
+        prefix = strip_last_exit_edge(path, L.exits())
+        middle = L.paths_to_header(prefix.last_loc())
+        suffix = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
+
+        paths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suffix)
+
+        for suffix in suffixes_starting_with(paths, L.header()):
+            # execute the safe path that avoids error and then jumps out of the loop
+            # and also only paths that jump out of the loop, so that the set is inductive
+            r = check_paths(self, [suffix])
+            if not r.ready:
+                continue
+            for s in r.ready:
+                if intersection(create_set(s), E).is_empty():
+                    I.add(s)
+                    added = True
+
+        if added:
+            return I
+
+        return None
+
+
+    def safe_paths_from_iterations(self, E, path, L):
+        # FIXME: do a proper analysis of whether the error loc is inside or outside the loop
+        # instead of trying blindly
+        I = self._safe_paths_err_outside(E, path, L)
+        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), None, self, L):
+            return I
+
+        I = self._safe_paths_err_inside(E, path, L)
+        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), None, self, L):
+            return I
+        return None
 
     def safe_path_with_last_iter(self, E, path, L: Loop):
         """
@@ -464,7 +525,7 @@ class KindSEChecker(BaseKindSE):
 
         is_error_loc = L.cfa().is_err
 
-        prefix = strip_last_assume_edge(path)
+        prefix = strip_last_exit_edge(path, L.exits())
         middle = L.paths_to_header(prefix.last_loc())
         suffix = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
 
@@ -573,7 +634,7 @@ class KindSEChecker(BaseKindSE):
         print_stdout(str(seq0[0]) if seq0 else str(target0), color="white")
         print_stdout(f"and errors : {errs0}")
 
-        max_seq_len = 2*len(L.paths())
+        max_seq_len = 2#2*len(L.paths())
         while True:
             print_stdout(
                 f"Got {len(sequences)} abstract path(s) of loop " f"{loc}",

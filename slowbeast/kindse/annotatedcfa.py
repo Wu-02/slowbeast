@@ -88,6 +88,26 @@ class AnnotatedCFAPath:
                     return idx
         return None
 
+    def last_edge_of_idx(self, elem):
+        if not hasattr(elem, '__iter__'):
+            elem = (elem,)
+        edges = self._edges
+        for idx in range(-1, -(len(edges)+1), -1):
+            if edges[idx] in elem:
+                return idx
+        return None
+
+    def last_loc_of_idx(self, elem):
+        if not hasattr(elem, '__iter__'):
+            elem = (elem,)
+        edges = self._edges
+        for idx in range(-1, -(len(edges)+1), -1):
+            e = edges[idx]
+            if e.target() in elem or e.source() in elem:
+                return idx
+        return None
+
+
     def edges(self):
         return self._edges
 

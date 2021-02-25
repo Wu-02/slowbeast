@@ -41,17 +41,19 @@ class DFSVisitor:
     Visit edges in the DFS order and run a user-specified function on them.
     """
 
-    def __init__(self, vertices=None):
+    def __init__(self, vertices=None, stop_vertices=None):
         self._data = {}
         self._dfscounter = 0
         # traverse only these vertices
         self._vertices = vertices
+        self._stop_vertices = stop_vertices
 
     def _getdata(self, node):
         return self._data.setdefault(node, DFSData())
 
     def foreachedge(self, startnode, fun, backtrackfun=None):
         assert self._vertices is None or startnode in self._vertices
+        assert self._stop_vertices is None or startnode not in self._stop_vertices
 
         counter = DFSCounter()
         if isinstance(startnode, CFA.Location):
@@ -68,6 +70,7 @@ class DFSVisitor:
         nddata.innum = counter.counter
 
         only_vertices = self._vertices
+        stop_verts = self._stop_vertices
         for succ in node.getSuccessors():
             if only_vertices and succ not in only_vertices:
                 continue
@@ -88,7 +91,8 @@ class DFSVisitor:
                     fun(node, succ, DFSEdgeType.FORWARD)
             else:
                 fun(node, succ, DFSEdgeType.TREE)
-                self._foreachedge_cfg(fun, backtrackfun, node, succ, counter)
+                if not (stop_verts and succ in stop_verts):
+                    self._foreachedge_cfg(fun, backtrackfun, node, succ, counter)
 
         counter.counter += 1
         nddata.outnum = counter.counter
@@ -105,6 +109,7 @@ class DFSVisitor:
         nddata.innum = counter.counter
 
         only_vertices = self._vertices
+        stop_verts = self._stop_vertices
         for succedge in loc.successors():
             succ = succedge.target()
             assert succedge.source() is loc
@@ -128,7 +133,8 @@ class DFSVisitor:
                     fun(succedge, DFSEdgeType.FORWARD)
             else:
                 fun(succedge, DFSEdgeType.TREE)
-                self._foreachedge_cfa(fun, backtrackfun, succedge, succ, counter)
+                if not (stop_verts and succ in stop_verts):
+                    self._foreachedge_cfa(fun, backtrackfun, succedge, succ, counter)
 
         counter.counter += 1
         nddata.outnum = counter.counter
