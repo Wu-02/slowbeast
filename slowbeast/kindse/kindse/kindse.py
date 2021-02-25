@@ -420,7 +420,7 @@ class KindSEChecker(BaseKindSE):
                 seq0 = self.initial_seq_from_last_iter(E, path, L)
                 assert seq0 and is_seq_inductive(seq0, None, self, L),\
                        "Failed getting init seq for first iteration"
-                seqs = [seq0]
+                seqs = [seq0] if seq0 else None
             else:
                 dbg("Initial sequence is NOT inductive, fixing it", color="wine")
                 seqs = self.strengthen_initial_seq(seq0, E, path, L)
@@ -572,7 +572,7 @@ class KindSEChecker(BaseKindSE):
 
         dbg("Checking inductive sets")
         ret = []
-        for I in isets:
+        for I in isets or ():
             if intersection(I.I, E).is_empty():
                 frame = seq0[-1].toassert()
                 # first check whether the frame is included in our inductive sequences.
