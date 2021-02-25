@@ -180,6 +180,9 @@ class KindSEChecker(BaseKindSE):
         self.get_loop = toplevel_executor.programstructure.get_loop
         self.get_loop_headers= self.programstructure.get_loop_headers
 
+        # use the whole sequence in induction checks
+        self._target_is_whole_seq = False
+
         # paths to still search
         self.readypaths = []
         # inductive sets that we generated
@@ -287,7 +290,10 @@ class KindSEChecker(BaseKindSE):
         S - target states
         E - error states
         """
-        target = self.create_set(seq[-1].toassert()) if seq else target0
+        if self._target_is_whole_seq:
+            target = self.create_set(seq[-1].toassert()) if seq else target0
+        else:
+            target = self.create_set(seq.toannotation(True)) if seq else target0
         r = check_paths(self, L.paths(), post=target)
         if not r.ready:  # cannot step into this frame...
             dbg("Infeasible frame...")
