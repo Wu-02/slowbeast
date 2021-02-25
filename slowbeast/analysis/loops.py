@@ -81,7 +81,7 @@ class Loop:
             queue = newqueue
         return result
 
-    def get_exit_paths(self) -> list:
+    def get_exit_paths(self):
         """
         All paths from header to exit edge
         """
