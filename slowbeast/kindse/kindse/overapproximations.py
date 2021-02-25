@@ -1,8 +1,9 @@
 from functools import partial
-from slowbeast.domains.concrete import ConcreteInt, dom_is_concrete
-from slowbeast.util.debugging import dbg, dbgv
+from slowbeast.domains.concrete import ConcreteInt
+from slowbeast.util.debugging import dbg, dbgv, ldbgv
 from slowbeast.solvers.expressions import em_optimize_expressions
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
+from .relations import get_const_cmp_relations, get_var_relations
 
 from slowbeast.symexe.statesset import union, intersection, complement
 from .inductivesequence import InductiveSequence
@@ -539,11 +540,14 @@ def _get_pre_post_states(executor, paths):
     return executor.ind_executor().createCleanState(), r.ready
 
 def is_overapprox_of(A, B):
-    """ Return true if A is overapproximation of B """
+    """ Return true if B is overapproximation of A """
     return intersection(complement(B), A).is_empty()
 
-def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=False):
-    "no_vars_eq: do not drop equalities between variables"
+def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True, no_vars_eq=False):
+    """
+    no_vars_eq: do not drop equalities between variables"
+    assumptions are clauses that we do not try to drop
+    """
     target, executor = data.target, data.executor
 
     # we start with all clauses
@@ -561,6 +565,7 @@ def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=Fals
             expressions.add(c)
 
     newclauses = list(expressions)
+    newS = S.copy()
     for c in expressions:
         if nodrop_safe and safesolver.is_sat(c) is False:
             # do not drop clauses that refute the error states,
@@ -578,31 +583,43 @@ def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=Fals
         tmp.remove(c)
 
         # check whether we can get rid of the clause
-        tmpexpr = conjunction(*tmp)
+        if assumptions:
+            tmpexpr = conjunction(*tmp, assumptions.as_expr())
+        else:
+            tmpexpr = conjunction(*tmp)
         if tmpexpr.is_concrete():
             continue  # either False or True are bad for us
+
+        # == safety check
         if safesolver.is_sat(tmpexpr) is not False:
             continue  # unsafe overapprox
-        X = S.copy()
+
+        # == over-approximation check
+        X = newS.copy()
         X.reset_expr(tmpexpr)
+        if not is_overapprox_of(newS, X):
+            continue
+
+        # == inductivity check
         r = check_paths(executor, lpaths, pre=X, post=union(X, target))
         for s in r.killed():
             dbg("Killed a state")
             return newclauses
         if r.errors is None and r.ready:
             newclauses = tmp
+            newS.reset_expr(conjunction(*tmp))
             dbg(f"  dropped {c}...")
 
     return newclauses
 
 
-def drop_clauses_fixpoint(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=False):
+def drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe=True, no_vars_eq=False):
     """ Drop clauses until fixpoint """
     newclauses = clauses
     while True:
         dbgv(" ... droping clauses (starting iteration)")
         oldlen = len(newclauses)
-        newclauses = drop_clauses(newclauses, S, safesolver, data, nodrop_safe, no_vars_eq)
+        newclauses = drop_clauses(newclauses, S, assumptions, safesolver, data, nodrop_safe, no_vars_eq)
         if oldlen == len(newclauses):
             break
     dbgv(" ... done droping clauses")
@@ -627,6 +644,26 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
 
+    # add relations
+    for rel in get_const_cmp_relations(S.get_se_state()):
+        ldbgv("  Adding relation {0}", (rel,))
+        S.intersect(rel)
+        assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+        assert intersection(
+            S, unsafe
+        ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
+
+    have_assumptions = False
+    assumptions = create_set()
+    for rel in get_var_relations([S.get_se_state()], prevsafe=target):
+        have_assumptions = True
+        ldbgv("  Adding assumption {0}", (rel,))
+        assumptions.intersect(rel)
+        assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+        assert intersection(
+            assumptions, S, unsafe
+        ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
+
     data = OverapproximationData(executor, target, unsafe, L, EM)
 
     expr = S.as_expr()
@@ -642,17 +679,18 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     safesolver.add(unsafe.as_expr())
 
     # can we drop some clause True?
-    newclauses = drop_clauses_fixpoint(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=True)
+    newclauses = drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe=True, no_vars_eq=True)
+    # new add the assumptions (without them the formula is not equivalent to expr now)
+    if have_assumptions:
+        newclauses.extend(break_eqs(assumptions.as_expr().to_cnf()))
     clauses = remove_implied_literals(newclauses)
 
     assert intersection(
         unsafe, create_set(EM.conjunction(*clauses))
     ).is_empty(), f"Dropping clauses made the set unsafe"
 
-    # FIXME: THIS WORKS GOOD!
+    # NOTE: this works good alone sometimes
     if drop_only:
-        # newclauses = drop_clauses_fixpoint(clauses, S, safesolver, data)
-        # clauses = remove_implied_literals(newclauses)
         S.reset_expr(EM.conjunction(*clauses))
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
@@ -672,7 +710,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
             # FIXME: this check should be
             # assertion, overapprox_clause should not give us such clauses
             # assert intersection(tmp, S).is_empty()
-            if is_overapprox_of(R, S):
+            if is_overapprox_of(S, intersection(R, newclause)):
                 # new clause makes S to be an overapproximation, good
                 newclauses.append(newclause)
             else:
@@ -694,8 +732,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
         ).is_empty(), f"Overapproxmating clauses made the set unsafe"
 
     # drop clauses once more
-    newclauses = drop_clauses_fixpoint(newclauses, S, safesolver, data)
-
+    newclauses = drop_clauses_fixpoint(newclauses, S, None, safesolver, data)
     clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses))
 

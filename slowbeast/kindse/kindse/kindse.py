@@ -16,8 +16,7 @@ from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 
 from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
-from .overapproximations import remove_implied_literals, overapprox_set
-from .relations import get_safe_relations
+from .overapproximations import overapprox_set
 
 
 def _dump_inductive_sets(checker, loc):
@@ -64,14 +63,6 @@ def overapprox(executor, s, E, target, L):
     #           f"-- CTI: --\n{r.errors[0].model()}"
 
     assert not S.is_empty(), "Infeasible states given to overapproximate"
-    for rel in get_safe_relations([s], unsafe=None, prevsafe=target):
-        ldbgv("  Adding relation {0}", (rel,))
-        S.intersect(rel)
-        assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
-        assert intersection(
-            S, E
-        ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
-
     return overapprox_set(executor, s.expr_manager(), S, E, target, L)
 
 
@@ -410,7 +401,9 @@ class KindSEChecker(BaseKindSE):
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
         S = create_set(seq0.toannotation(True))
-        assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
+        #assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
+        if S.is_empty():
+            return None
         EM = getGlobalExprManager()
         seq = InductiveSequence(
             overapprox_set(
@@ -604,10 +597,14 @@ class KindSEChecker(BaseKindSE):
                 # FIXME: we usually need seq[-1] as annotation, or not?
                 new_frames_complements = []
                 for A in self.extend_seq(seq, target0, E, L):
+                    drop = False
                     for C in new_frames_complements:
                         if intersection(C, A).is_empty():
                             print(f"Did not extended with: {A} (already has same or bigger frame)")
-                            continue
+                            drop = True
+                            break
+                    if drop:
+                        continue
                     new_frames_complements.append(complement(A))
 
                     print_stdout(f"Extended with: {A}", color="BROWN")
