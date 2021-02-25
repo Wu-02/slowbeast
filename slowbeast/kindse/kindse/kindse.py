@@ -647,7 +647,14 @@ class KindSEChecker(BaseKindSE):
 
                 dbg("Extending the sequence")
                 # FIXME: we usually need seq[-1] as annotation, or not?
+                new_frames_complements = []
                 for A in self.extend_seq(seq, target0, E, L):
+                    for C in new_frames_complements:
+                        if intersection(C, A).is_empty():
+                            print(f"Did not extended with: {A} (already has same or bigger frame)")
+                            continue
+                    new_frames_complements.append(complement(A))
+
                     print_stdout(f"Extended with: {A}", color="BROWN")
                     tmp = seq.copy() if seq else InductiveSequence()
                     tmp.append(A.as_assert_annotation(), None)
