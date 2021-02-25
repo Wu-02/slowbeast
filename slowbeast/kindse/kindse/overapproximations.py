@@ -435,6 +435,9 @@ def overapprox_clause(c, R, data):
     """
     EM = data.expr_mgr
 
+    if c.is_concrete():
+        return c
+
     assert intersection(
         R, c, data.unsafe
     ).is_empty(), f"{R} \cap {c} \cap {data.unsafe}"
