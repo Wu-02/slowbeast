@@ -159,6 +159,7 @@ def offset_of_struct_elem(llvmmodule, ty, cval):
 
     return off
 
+unsupported_funs=["memmove","llvm.memmove.p0i8.p0i8.i32","llvm.memmove.p0i8.p0i8.i64"]
 
 class Parser:
     def __init__(self, error_funs=None):
@@ -435,6 +436,9 @@ class Parser:
 
         if fun.startswith("llvm.dbg"):
             return []
+
+        if fun in unsupported_funs:
+            raise NotImplementedError("Unsupported function: {0}".format(fun))
 
         if fun in special_functions or fun in self.error_funs:
             return self._createSpecialCall(inst, fun)
