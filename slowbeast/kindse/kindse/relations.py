@@ -124,20 +124,17 @@ def get_var_diff_relations(state):
             if state.is_sat(EM.Ne(EM.Sub(l2, l1), l3)) is False:
                 yield AssertAnnotation(EM.Eq(EM.Sub(l2, l1), l3), subs, EM)
             else:
-                if state.is_sat(EM.Ne(EM.Sub(l1, l2), l3)) is False:
-                    yield AssertAnnotation(EM.Eq(EM.Sub(l1, l2), l3), subs, EM)
-                else:
-                    c = EM.Var(f"c_mul_{l1name}{l2name}{l3name}", IntType(bw))
-                    #expr = EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3))
-                    expr = EM.And(EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3)), EM.Ne(c, ConcreteInt(0, bw)))
-                    c_concr = state.concretize_with_assumptions([expr], c)
-                    if c_concr is not None:
-                        # is c unique?
-                        cval = c_concr[0]
-                        if state.is_sat(EM.substitute(expr, (c, cval))) is False:
-                            yield AssertAnnotation(
-                                EM.simplify(EM.Eq(EM.Add(l1, l2), EM.Mul(cval, l3))), subs, EM
-                            )
+                c = EM.Var(f"c_mul_{l1name}{l2name}{l3name}", IntType(bw))
+                #expr = EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3))
+                expr = EM.And(EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3)), EM.Ne(c, ConcreteInt(0, bw)))
+                c_concr = state.concretize_with_assumptions([expr], c)
+                if c_concr is not None:
+                    # is c unique?
+                    cval = c_concr[0]
+                    if state.is_sat(EM.substitute(expr, (c, cval))) is False:
+                        yield AssertAnnotation(
+                            EM.simplify(EM.Eq(EM.Add(l1, l2), EM.Mul(cval, l3))), subs, EM
+                        )
 
 
 def _compare_two_loads(state, l1, l2):
