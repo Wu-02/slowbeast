@@ -549,7 +549,7 @@ def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=Fals
     # we start with all clauses
     conjunction = data.expr_mgr.conjunction
     lpaths = data.loop.paths()
-    expressions = []
+    expressions = set()
     for c in clauses:
         if c.is_concrete():
             if c.value() is False:
@@ -558,9 +558,9 @@ def drop_clauses(clauses, S, safesolver, data, nodrop_safe=True, no_vars_eq=Fals
             else:
                 dbg("  ... dropping True clause")
         else:
-            expressions.append(c)
+            expressions.add(c)
 
-    newclauses = expressions.copy()
+    newclauses = list(expressions)
     for c in expressions:
         if nodrop_safe and safesolver.is_sat(c) is False:
             # do not drop clauses that refute the error states,
