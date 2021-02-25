@@ -550,9 +550,8 @@ def is_overapprox_of(A, B):
     """ Return true if B is overapproximation of A """
     return intersection(complement(B), A).is_empty()
 
-def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True, no_vars_eq=False):
+def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True):
     """
-    no_vars_eq: do not drop equalities between variables"
     assumptions are clauses that we do not try to drop
     """
     target, executor = data.target, data.executor
@@ -578,11 +577,6 @@ def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True, no
             # do not drop clauses that refute the error states,
             # those may be useful
             continue
-
-        if no_vars_eq and c.isEq():
-            chld = c.children()
-            if not next(chld).is_concrete() and not next(chld).is_concrete():
-                continue
 
         assert not c.is_concrete(), c
         # create a temporary formula without the given clause
@@ -620,13 +614,13 @@ def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True, no
     return newclauses
 
 
-def drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe=True, no_vars_eq=False):
+def drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe=True):
     """ Drop clauses until fixpoint """
     newclauses = clauses
     while True:
         dbgv(" ... droping clauses (starting iteration)")
         oldlen = len(newclauses)
-        newclauses = drop_clauses(newclauses, S, assumptions, safesolver, data, nodrop_safe, no_vars_eq)
+        newclauses = drop_clauses(newclauses, S, assumptions, safesolver, data, nodrop_safe)
         if oldlen == len(newclauses):
             break
     dbgv(" ... done droping clauses")
@@ -686,7 +680,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     safesolver.add(unsafe.as_expr())
 
     # can we drop some clause True?
-    newclauses = drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe=True, no_vars_eq=True)
+    newclauses = drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe=True)
     # new add the assumptions (without them the formula is not equivalent to expr now)
     if have_assumptions:
         newclauses.extend(break_eqs(assumptions.as_expr().to_cnf()))
