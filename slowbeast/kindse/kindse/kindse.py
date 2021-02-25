@@ -151,6 +151,8 @@ class InductiveSet:
             cI.add(complement(elem).as_expr())
 
     def includes(self, elem):
+        if isinstance(elem, InductiveSet):
+            elem = elem.I
         # intersection(complement(self.I), elem).is_empty()
         return self.cI.is_sat(elem.as_expr()) is False
 
@@ -557,28 +559,32 @@ class KindSEChecker(BaseKindSE):
         # get the inductive sets that we have created for this header.
         # Since we go iteration over iteration, adding this sequence
         # to the previous ones must yield an inductive sequence
-        IS = self.inductive_sets.get(L.header())
-        assert IS, "No inductive sequence for non-first iteration"
+        isets = self.inductive_sets.get(L.header())
+        assert isets, "No inductive sequence for non-first iteration"
 
-        if intersection(IS.I, E).is_empty():
-            frame = seq0[-1].toassert()
-            # first check whether the frame is included in our inductive sequences.
-            # If so, we'll just add relations from it to the sequences
-            # (for boosing over-approximations) instead of adding it whole.
-            frameset = self.create_set(frame)
-            if IS.includes(frameset):
-                dbg("States are included, continuing with previous sequences")
-                F = IS.I.copy()
+        dbg("Checking inductive sets")
+        for I in isets:
+            if intersection(I.I, E).is_empty():
+                frame = seq0[-1].toassert()
+                # first check whether the frame is included in our inductive sequences.
+                # If so, we'll just add relations from it to the sequences
+                # (for boosing over-approximations) instead of adding it whole.
+                frameset = self.create_set(frame)
+                if I.includes(frameset):
+                    dbg("States are included, continuing with previous sequences")
+                    F = I.I.copy()
+                else:
+                    dbg("States not included in previous sequences, trying to extend it")
+                    F = union(I.I, frame)
+                tmp = InductiveSequence(F.as_assert_annotation())
+                # FIXME: simplify as much as you can before using it
+                if is_seq_inductive(tmp, None, self, L):
+                    dbg("Joining with previous sequences did the trick")
+                    return tmp
             else:
-                dbg("States not included in previous sequences")
-                F = union(IS.I, frame)
-            tmp = InductiveSequence(F.as_assert_annotation())
-            # FIXME: simplify as much as you can before using it
-            if is_seq_inductive(tmp, None, self, L):
-                dbg("Joining with previous sequences did the trick")
-                return tmp
-        else:
-            dbg("Inductive sequence is unsafe")
+                dbg("Inductive sequence is unsafe")
+
+        dbg("Creating new inductive sequence")
         # this must be assertion inside the loop -- we must simulate that the path
         # passes the assertion and jumps out of the loop
         I = self.safe_paths_from_iterations(E, path, L)
@@ -608,14 +614,6 @@ class KindSEChecker(BaseKindSE):
             )
             # FIXME: the initial element must be inductive, otherwise we do not know whether
             # an error state is unreachable from it...
-
-            # store the non-inductive sequence -- in the future,
-            # these states may be necessary when doing the set
-            # inductive
-            newi = create_set(target0.as_assert_annotation())
-            I = self.inductive_sets.setdefault(loc, InductiveSet())
-            I.add(newi)
-
             return False
         assert seq0
 
@@ -634,7 +632,7 @@ class KindSEChecker(BaseKindSE):
         print_stdout(str(seq0[0]) if seq0 else str(target0), color="white")
         print_stdout(f"and errors : {errs0}")
 
-        max_seq_len = 2#2*len(L.paths())
+        max_seq_len = 2*len(L.paths())
         while True:
             print_stdout(
                 f"Got {len(sequences)} abstract path(s) of loop " f"{loc}",
@@ -647,9 +645,16 @@ class KindSEChecker(BaseKindSE):
                     S = seq.toannotation(True)
                     res, _ = self.check_loop_precondition(L, S)
 
-                    newi = create_set(seq[-1].toassume())
-                    I = self.inductive_sets.setdefault(loc, InductiveSet())
-                    I.add(newi)
+                    I = InductiveSet(create_set(S))
+                    seqs = self.inductive_sets.setdefault(loc, [])
+                    seqsid = id(seqs)
+                    oldseqs = seqs.copy()
+                    seqs.clear()
+                    for olds in oldseqs:
+                        if not I.includes(olds):
+                            seqs.append(olds)
+                    assert seqsid == id(seqs)
+                    seqs.append(I)
 
                     if res is Result.SAFE:
                         invs = self.invariant_sets.setdefault(loc, [])
