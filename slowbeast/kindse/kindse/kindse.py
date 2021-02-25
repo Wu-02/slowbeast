@@ -128,7 +128,6 @@ class InductiveSet:
             # the elem is not a subset of current set
             if I:
                 I.add(elem)
-                I.reset_expr(I.as_expr().rewrite_and_simplify())
             else:
                 self.I = elem
             cI.add(complement(elem).as_expr())
@@ -339,7 +338,7 @@ class KindSEChecker(BaseKindSE):
    #    # FIXME: we are still precise, use abstraction here...
    #    return seq
 
-    def initial_seq_from_last_iter(self, E: StatesSet, L: Loop):
+    def initial_seq_from_last_iter(self, E: StatesSet, path, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -349,55 +348,11 @@ class KindSEChecker(BaseKindSE):
         """
 
         create_set = self.create_set
-        is_error_loc = L.cfa().is_err
-        # get the safe states that jump out of the loop after one iteration - for safety
-        # (these will include conditions from passed assertions)
-        r = check_paths(
-            self,
-            (p for p in L.last_iteration_paths() if not is_error_loc(p.last_loc())),
-        )
-        ready = r.ready
-        assert ready, "Loop has only infeasible paths"
-        for s in r.killed():
-            dbg("Killed a state")
-            self.report(s)
+        I = self.safe_path_with_last_iter(E, path, L)
+        if I is None:
             return None
-        R = create_set()
-        rempty = True
 
-        # FIXME: we can use only a subset of the states, wouldn't that be better?
-
-        for r in ready:
-            tmp = R.copy()
-            tmp.add(r)
-            tmpseq = InductiveSequence(tmp.as_assert_annotation())
-            # failure may mean that the assertion in fact does not hold
-            if is_seq_inductive(tmpseq, None, self, L):
-                rempty = False
-                R.add(r)
-
-        if rempty:
-            r = check_paths(
-                self,
-                (p for p in L.get_exit_paths() if not is_error_loc(p[-1].target())),
-            )
-            if r.ready is None:
-                return None
-
-            I = create_set()
-            I.add(r.ready)
-            assert is_seq_inductive(InductiveSequence(I.as_assert_annotation()), None, self, L)
-            R.add(I)
-            assert is_seq_inductive(InductiveSequence(R.as_assert_annotation()), None, self, L)
-
-        if not intersection(R, E).is_empty():
-            dbg("... (intersection with unsafe states is non-empty)")
-            dbg("   trying to fix it")
-            R.intersect(complement(E))
-            if R.is_empty():
-                return None
-
-        seq0 = InductiveSequence(R.as_assert_annotation())
+        seq0 = InductiveSequence(I.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
         if is_seq_inductive(seq0, None, self, L):
             return seq0
@@ -434,7 +389,7 @@ class KindSEChecker(BaseKindSE):
             if isfirst:
                 # FIXME: return sets
                 dbg("Getting the initial sequence from the last iteration")
-                seq0 = self.initial_seq_from_last_iter(E, L)
+                seq0 = self.initial_seq_from_last_iter(E, path, L)
                 assert seq0 and is_seq_inductive(seq0, None, self, L),\
                        "Failed getting init seq for first iteration"
             else:
@@ -492,17 +447,18 @@ class KindSEChecker(BaseKindSE):
             return None
 
         I = create_set()
-        I.add(r.ready)
-        if not intersection(I, E).is_empty():
-            dbg("... (intersection with unsafe states is non-empty)")
-            dbg("   trying to fix it")
-            I.intersect(complement(E))
-            if I.is_empty():
-                return None
+        added = False
+        for s in r.ready:
+            if intersection(create_set(s), E).is_empty():
+                I.add(s)
+                added = True
 
-        return I
+        if added:
+            return I
 
-    def strengthen_initial_seq(self, seq0, errs0, unsafe, path, L: Loop):
+        return None
+
+    def strengthen_initial_seq(self, seq0, E, path, L: Loop):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
 
@@ -513,7 +469,6 @@ class KindSEChecker(BaseKindSE):
             return None
 
         S = create_set(seq0.toannotation())
-        S.reset_expr(S.as_expr().rewrite_and_simplify())
         dbg("Initial sequence is NOT inductive, fixing it", color="wine")
 
         # get the inductive sets that we have created for this header.
