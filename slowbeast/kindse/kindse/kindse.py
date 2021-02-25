@@ -166,7 +166,7 @@ class KindSEChecker(BaseKindSE):
     It inherits from BaseKindSE to have the capabilities to execute paths.
     """
 
-    def __init__(self, toplevel_executor, loc, A, invariants=None):
+    def __init__(self, toplevel_executor, loc, A, invariants=None, indsets=None, fold_loops=True):
         super().__init__(
             toplevel_executor.getProgram(),
             ohandler=None,
@@ -188,7 +188,7 @@ class KindSEChecker(BaseKindSE):
         # inductive sets that we generated
         self.invariant_sets = {} if invariants is None else invariants
         # inductive sets for deriving starting sequences
-        self.inductive_sets = {}
+        self.inductive_sets = indsets or {}
 
         if __debug__ and invariants:
             dbg("Have these invariants at hand:")
@@ -220,6 +220,7 @@ class KindSEChecker(BaseKindSE):
             self.toplevel_executor,
             loc,
             A,
+            indsets=self.inductive_sets,
             invariants=self.invariant_sets
         )
         result, states = checker.check(L.entries())
@@ -867,9 +868,10 @@ class KindSymbolicExecutor(BaseKindSE):
     and keep BaseKindSE a class that just takes care for executing paths.
     """
 
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions(),fold_loops=True):
         super().__init__(prog=prog, ohandler=ohandler, opts=opts)
         self.invariants = {}
+        self._fold_loops = fold_loops
 
     def _get_possible_errors(self):
         EM = getGlobalExprManager()
@@ -889,7 +891,7 @@ class KindSymbolicExecutor(BaseKindSE):
         has_unknown = False
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = KindSEChecker(self, loc, A, invariants=self.invariants)
+            checker = KindSEChecker(self, loc, A, invariants=self.invariants, fold_loops=self._fold_loops)
             result, states = checker.check()
             if result is Result.UNSAFE:
                 assert states.errors, "No errors in unsafe result"
