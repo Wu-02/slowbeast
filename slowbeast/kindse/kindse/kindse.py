@@ -492,9 +492,9 @@ class KindSEChecker(BaseKindSE):
 
         prefix = strip_last_exit_edge(path, L.exits())
         middle = L.paths_to_header(prefix.last_loc())
-        suffix = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
+        suff = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
 
-        paths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suffix)
+        paths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suff)
 
         for suffix in suffixes_starting_with(paths, L.header()):
             # execute the safe path that avoids error and then jumps out of the loop
@@ -538,14 +538,14 @@ class KindSEChecker(BaseKindSE):
 
         prefix = strip_last_exit_edge(path, L.exits())
         middle = L.paths_to_header(prefix.last_loc())
-        suffix = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
+        suff = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
 
-        invpaths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suffix)
+        invpaths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suff)
 
         create_set = self.create_set
         # execute the safe path that avoids error and then jumps out of the loop
         # and also only paths that jump out of the loop, so that the set is inductive
-        r = check_paths(self, chain(invpaths, iter(suffix)))
+        r = check_paths(self, chain(invpaths, iter(suff)))
         if r.ready is None:
             return None
 

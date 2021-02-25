@@ -210,7 +210,7 @@ def _execute_expr_annotation(executor, states, annot):
     states = []
     for s in ready:
         expr = annot.do_substitutions(s)
-        ldbgv("Executing annotation\n{0}\n==>\n{0}", (annot, expr), verbose_lvl=3)
+        ldbgv("Executing annotation\n{0}\n==>\n{1}", (annot, expr), verbose_lvl=3)
         if isassume:
             s = executor.assume(s, expr)
             if s:
