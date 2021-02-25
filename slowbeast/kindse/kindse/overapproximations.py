@@ -504,8 +504,11 @@ def break_eqs(expr):
         if c.isNot():
             d = next(c.children())
             if d.isEq():
-                clauses.append(EM.Or(*(EM.Not(x) for x in break_eq(d))))
-        if c.isEq():
+                cls = break_eq(d)
+                clauses.append(EM.disjunction(*(EM.Not(x) for x in cls)) if cls else c)
+            else:
+                clauses.append(c)
+        elif c.isEq():
             clauses.extend(break_eq(c))
         else:
             clauses.append(c)
