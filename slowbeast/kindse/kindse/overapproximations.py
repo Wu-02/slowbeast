@@ -671,9 +671,6 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
             # newclauses.append(newclause)
             # FIXME: this check should be
             # assertion, overapprox_clause should not give us such clauses
-            assert intersection(
-                R, unsafe
-            ).is_empty(), f"Overapprox clause: got unsafe set {c} --> {newclause}"
             # assert intersection(tmp, S).is_empty()
             if is_overapprox_of(R, S):
                 # new clause makes S to be an overapproximation, good
