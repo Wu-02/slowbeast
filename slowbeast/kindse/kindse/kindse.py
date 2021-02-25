@@ -439,10 +439,12 @@ class KindSEChecker(BaseKindSE):
             for e in r.errors:
                 C = e.getConstraints()
                 # negate the last constraint on the path
+                tmp = create_set(e)
                 expr = EM.conjunction(*C[:-1], EM.Not(C[-1]))
+                tmp.reset_expr(expr)
 
-                if intersection(E, expr).is_empty():
-                    I.add(expr)
+                if intersection(E, tmp).is_empty():
+                    I.add(tmp)
                     added = True
 
         if added:
@@ -512,6 +514,7 @@ class KindSEChecker(BaseKindSE):
             tmp = InductiveSequence(F.as_assert_annotation())
             # FIXME: simplify as much as you can before using it
             if is_seq_inductive(tmp, None, self, L):
+                dbg("Joining with previous sequences did the trick")
                 return tmp
         else:
             dbg("Inductive sequence is unsafe")
