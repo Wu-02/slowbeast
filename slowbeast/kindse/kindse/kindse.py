@@ -422,6 +422,35 @@ class KindSEChecker(BaseKindSE):
             return seq
         return seq0
 
+    def safe_paths_from_iterations(self, E, path, L):
+        EM = getGlobalExprManager()
+
+        create_set = self.create_set
+        added = False
+        I = create_set()
+
+        for suffix in suffixes_starting_with([path], L.header()):
+            # execute the safe path that avoids error and then jumps out of the loop
+            # and also only paths that jump out of the loop, so that the set is inductive
+            r = check_paths(self, [suffix])
+            if r.errors is None:
+                continue
+
+            for e in r.errors:
+                C = e.getConstraints()
+                # negate the last constraint on the path
+                expr = EM.conjunction(*C[:-1], EM.Not(C[-1]))
+
+                if intersection(E, expr).is_empty():
+                    I.add(expr)
+                    added = True
+
+        if added:
+            return I
+
+        return None
+
+
     def safe_path_with_last_iter(self, E, path, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
@@ -462,50 +491,41 @@ class KindSEChecker(BaseKindSE):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
 
-        create_set = self.create_set
-        # FIXME: do we need this check?
-        if create_set(seq0.toannotation(True)).is_empty():
-            dbg("Initial sequence is empty", color="wine")
-            return None
-
-        S = create_set(seq0.toannotation())
-        dbg("Initial sequence is NOT inductive, fixing it", color="wine")
-
         # get the inductive sets that we have created for this header.
         # Since we go iteration over iteration, adding this sequence
         # to the previous ones must yield an inductive sequence
         IS = self.inductive_sets.get(L.header())
         assert IS, "No inductive sequence for non-first iteration"
 
-        if not intersection(IS.I, E).is_empty():
-            dbg("The inductive sets are not disjunctive with error states")
-            return None
-
-        frame = seq0[-1].toassert()
-        # first check whether the frame is included in our inductive sequences.
-        # If so, we'll just add relations from it to the sequences
-        # (for boosing over-approximations) instead of adding it whole.
-        frameset = create_set(frame)
-        if IS.includes(frameset):
-            dbg("States are included, continuing with previous sequences")
-            F = IS.I.copy()
+        if intersection(IS.I, E).is_empty():
+            frame = seq0[-1].toassert()
+            # first check whether the frame is included in our inductive sequences.
+            # If so, we'll just add relations from it to the sequences
+            # (for boosing over-approximations) instead of adding it whole.
+            frameset = self.create_set(frame)
+            if IS.includes(frameset):
+                dbg("States are included, continuing with previous sequences")
+                F = IS.I.copy()
+            else:
+                dbg("States not included in previous sequences")
+                F = union(IS.I, frame)
+            tmp = InductiveSequence(F.as_assert_annotation())
+            # FIXME: simplify as much as you can before using it
+            if is_seq_inductive(tmp, None, self, L):
+                return tmp
         else:
-            F = union(IS.I, frame)
-        tmp = InductiveSequence(union(F).as_assert_annotation())
-        # FIXME: simplify as much as you can before using it
-        if is_seq_inductive(tmp, None, self, L):
-            return tmp
+            dbg("Inductive sequence is unsafe")
         # this must be assertion inside the loop -- we must simulate that the path
         # passes the assertion and jumps out of the loop
-        I = self.safe_path_with_last_iter(E, path, L)
+        I = self.safe_paths_from_iterations(E, path, L)
         if I is None:
             return None
 
-        tmp = InductiveSequence(union(I, frame).as_assert_annotation())
+        tmp = InductiveSequence(I.as_assert_annotation())
         # FIXME: simplify as much as you can before using
         if is_seq_inductive(tmp, None, self, L):
             return tmp
-        dbg("Failed strengthening the initial sequence with last iteration")
+        dbg("Failed strengthening the initial sequence")
         return None
 
     def fold_loop(self, path, loc, L: Loop, unsafe):
