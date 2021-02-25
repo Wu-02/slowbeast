@@ -9,7 +9,7 @@ def _createCannonical(expr, subs, EM):
             name = f"L({x.operand(0).as_value()})"
         else:
             name = x.as_value()
-        return EM.Var(name, IntType(val.bitwidth()))
+        return EM.Var(name, val.type())
 
     return EM.substitute(
         expr, *((val, get_cannonic_var(val, x)) for (val, x) in subs.items())
