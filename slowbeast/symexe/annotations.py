@@ -303,9 +303,10 @@ def state_to_annotation(state, toassert=False):
     Ctor = AssertAnnotation if toassert else AssumeAnnotation
     return AssumeAnnotation(
         state.getConstraintsObj().as_formula(EM),
-        {n: n.instruction() for n in state.nondets()},
+        {l: l.load for l in state.getNondetLoads()},
         EM,
     )
+
 
 def states_to_annotation(states):
     a = None

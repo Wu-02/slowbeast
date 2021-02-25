@@ -238,7 +238,7 @@ class Expr(Value):
     # FIXME: get rid of the magic constant
     KIND = 2
 
-    __slots__ = "_expr"
+    __slots__ = ["_expr"]
 
     def __init__(self, e, t):
         assert not isinstance(e, int), e
@@ -367,6 +367,28 @@ class Expr(Value):
         return "<{0}:{1}>".format(self._expr, self.type())
 
 
+class NondetLoad(Expr):
+    __slots__ = "load", "alloc"
+
+    def __init__(self, e, t, load, alloc):
+        super().__init__(e, t)
+        self.load = load
+        self.alloc = alloc
+
+    def is_nondet_load(self):
+        return True
+
+    def fromExpr(expr, load, alloc):
+        assert isinstance(expr, Expr)
+        return NondetLoad(expr.unwrap(), expr.type(), load, alloc)
+
+    def rhs_repr(self):
+        return Expr.__repr__(self)
+
+    def __repr__(self):
+        return f"L({self.alloc.as_value()})={Expr.__repr__(self)}"
+
+
 class NondetInstrResult(Expr):
     """ Expression representing a result of instruction that is unknown - non-deterministic """
 
@@ -382,37 +404,12 @@ class NondetInstrResult(Expr):
     def instruction(self):
         return self._instr
 
-    def fromExpr(expr, instr, *args):
+    def fromExpr(expr, instr):
         assert isinstance(expr, Expr)
         return NondetInstrResult(expr.unwrap(), expr.type(), instr)
 
     def __repr__(self):
         return f"{self._instr.as_value()}={Expr.__repr__(self)}"
-
-
-class NondetLoad(NondetInstrResult):
-    __slots__ = "alloc"
-
-    def __init__(self, e, t, load, alloc):
-        super().__init__(e, t, load)
-        self.alloc = alloc
-
-    def is_nondet_load(self):
-        return True
-
-    def load(self):
-        return self._instr
-
-    def fromExpr(expr, load, *args):
-        assert isinstance(expr, Expr)
-        assert len(args) == 1
-        return NondetLoad(expr.unwrap(), expr.type(), load, args[0])
-
-    def rhs_repr(self):
-        return Expr.__repr__(self)
-
-    def __repr__(self):
-        return f"L({self.alloc.as_value()})={Expr.__repr__(self)}"
 
 
 class Future(Expr):
