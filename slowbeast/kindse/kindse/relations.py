@@ -201,6 +201,14 @@ def get_const_cmp_relations(state):
         yield AssertAnnotation(EM.Eq(l, cval), subs, EM)
 
 
+def get_const_cmp_ineq_relations(state):
+    EM = state.expr_manager()
+    subs = get_subs(state)
+    for l, cval in _get_const_cmp_relations(state):
+        yield AssertAnnotation(EM.Le(l, cval), subs, EM)
+        yield AssertAnnotation(EM.Ge(l, cval), subs, EM)
+
+
 def get_relations_to_prev_states(state, prev):
     subs = get_subs(state)
     EM = state.expr_manager()

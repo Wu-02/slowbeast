@@ -6,6 +6,7 @@ from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )
 from slowbeast.core.executor import PathExecutionResult
+from slowbeast.symexe.statesset import StatesSet
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
@@ -17,10 +18,10 @@ def check_paths(executor, paths, pre=None, post=None):
         p = path.copy()
         # the post-condition is the whole frame
         if post:
-            p.add_annot_after(post.as_assert_annotation())
+            p.add_annot_after(post.as_assert_annotation() if isinstance(post, StatesSet) else post)
 
         if pre:
-            p.add_annot_before(pre.as_assume_annotation())
+            p.add_annot_before(pre.as_assume_annotation() if isinstance(post, StatesSet) else pre)
 
         r = executor.executePath(p)
         result.merge(r)

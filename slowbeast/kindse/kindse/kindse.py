@@ -6,7 +6,6 @@ from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.analysis.loops import Loop
-from slowbeast.analysis.dfs import DFSVisitor
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
@@ -18,6 +17,7 @@ from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 from .overapproximations import overapprox_set
+from .relations import get_var_cmp_relations, get_const_cmp_ineq_relations
 
 
 def _dump_inductive_sets(checker, loc):
@@ -310,6 +310,24 @@ class KindSEChecker(BaseKindSE):
                 dbg("Pre-image is not safe...")
                 # FIXME: should we do the intersection with complement of E?
                 continue
+
+            for rel in chain(get_var_cmp_relations(s),get_const_cmp_ineq_relations(s)):
+                r = check_paths(self, L.paths(), pre=rel.toAssume(getGlobalExprManager()), post=rel)
+                if r.errors is None and r.ready:
+                    print("Inductive set:", rel)
+                    res, _ = self.check_loop_precondition(L, rel)
+                    if res is Result.SAFE:
+                        loc = L.header()
+                        invs = self.invariant_sets.setdefault(loc, [])
+                        inv = seq.toannotation(False)
+                        invs.append(inv)
+                        # FIXME: check that the invariant gives us a new information
+                        # I = create_set() # FIXME: cache the union of invariants
+                        # I.add(invs)
+                        # I.intersect()
+                        print_stdout(f"{rel} holds on {loc}", color="BLUE")
+                        return True
+
             A = overapprox(self, s, E, target, L)
             if A is None:
                 dbg("Overapproximation failed...")
