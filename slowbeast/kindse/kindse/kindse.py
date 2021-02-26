@@ -402,12 +402,6 @@ class KindSEChecker(BaseKindSE):
         S.reset_expr(EM.conjunction(*C[:-1], EM.Not(C[-1])))
         target0 = S.copy()
 
-        if isfirst:
-            # last constraint is the failed assertion
-            # first constraint is the loop exit condition
-            S.intersect(unsafe[0].getConstraints()[0])
-            # if the assertion is after the loop, the set is now inductive
-
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
         errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
         seqs = [seq0]
