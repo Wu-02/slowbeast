@@ -8,7 +8,8 @@ from slowbeast.symexe.symbolicexecution import (
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
+from slowbeast.kindse.naive.naivekindse import Result
+from slowbeast.kindse import KindSEOptions
 
 
 def check_paths(executor, paths, pre=None, post=None):
@@ -30,7 +31,7 @@ def check_paths(executor, paths, pre=None, post=None):
 
 class KindSymbolicExecutor(SymbolicInterpreter):
     def __init__(
-        self, prog, ohandler=None, opts=KindSeOptions(), programstructure=None
+        self, prog, ohandler=None, opts=KindSEOptions(), programstructure=None
     ):
         super().__init__(
             P=prog, ohandler=ohandler, opts=opts, ExecutorClass=PathExecutor
@@ -293,7 +294,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             if oth and any(map(lambda s: s.wasKilled(), oth)):
                 return Result.UNKNOWN, oth
 
-            step = self.getOptions().step
+            step = -1 #self.getOptions().step
             if r.errors:
                 has_err = True
                 newpaths += self.extend_path(path, r, steps=step, atmost=step != 1)

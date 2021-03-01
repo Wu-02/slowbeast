@@ -6,7 +6,7 @@ from .executor import Executor as SExecutor
 
 class SEOptions(ExecutionOptions):
     def __init__(self, opts=None):
-        super(SEOptions, self).__init__(opts)
+        super().__init__(opts)
         if opts:
             self.incremental_solving = opts.incremental_solving
             self.replay_errors = opts.replay_errors

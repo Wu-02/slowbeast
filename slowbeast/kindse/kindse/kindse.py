@@ -3,7 +3,8 @@ from itertools import chain
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv
 
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
-from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
+from slowbeast.kindse.naive.naivekindse import Result
+from slowbeast.kindse import KindSEOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.analysis.loops import Loop
 
@@ -18,6 +19,22 @@ from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 from .overapproximations import overapprox_set
 
+class BSELFOptions(KindSEOptions):
+    def __init__(self, copyopts=None):
+        super().__init__(copyopts)
+        if copyopts:
+            self.fold_loops = copyopts.fold_loops = True
+            self.simple_sis = copyopts.simple_sis = False
+            self.target_is_whole_seq = copyopts.target_is_whole_seq = True
+        else:
+            self.fold_loops = True
+            self.simple_sis = False
+            self.target_is_whole_seq = True
+
+    def default(self, parentopts=None):
+        n = BSELFOptions()
+        if parentopts:
+            super(self).__init__(parentopts)
 
 def _dump_inductive_sets(checker, loc):
     dbg(f"With this INVARIANT set at loc {loc}:", color="dark_green")
@@ -871,13 +888,12 @@ class KindSEChecker(BaseKindSE):
             heappush(readyp, p)
 
     def extend_paths(self, path, states):
-        step = self.getOptions().step
         invpoints = self.programstructure.get_loop_headers()
         return self.extend_path(
             path,
             states,
-            steps=step,
-            atmost=step != 1,
+            steps=-1,
+            atmost=True,
             stoppoints=invpoints,
         )
 

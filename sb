@@ -367,8 +367,6 @@ def main():
         from slowbeast.kindse import KindSEOptions
         opts = KindSEOptions()
 
-        opts.step = args.kind_step
-
         if args.kind_naive:
             from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor
         elif args.kind_naive_impr:

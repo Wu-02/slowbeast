@@ -24,6 +24,9 @@ class ExecutionOptions:
         self.step = ExecutionOptions.BLOCK_STEP
         return self
 
+    def __str__(self):
+        return f"{self.__repr__()}\n" + "\n".join(f"  {k} = {v}" for k, v in self.__dict__.items())
+
 
 # dummy class used as a program counter during initialization
 # of global variables
