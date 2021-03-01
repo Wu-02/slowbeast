@@ -1,12 +1,11 @@
 from heapq import heappush, heappop
 from itertools import chain
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv, ldbg
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv
 
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.analysis.loops import Loop
-from slowbeast.analysis.dfs import DFSVisitor
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
