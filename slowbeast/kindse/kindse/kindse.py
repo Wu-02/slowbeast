@@ -949,7 +949,8 @@ class KindSymbolicExecutor(BaseKindSE):
     and keep BaseKindSE a class that just takes care for executing paths.
     """
 
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions(),fold_loops=True):
+    def __init__(self, prog, ohandler=None, opts=BSELFOptions(),fold_loops=True):
+        assert isinstance(opts, BSELFOptions), opts
         super().__init__(prog=prog, ohandler=ohandler, opts=opts)
         self.invariants = {}
         self._fold_loops = fold_loops

@@ -374,7 +374,9 @@ def main():
         elif args.kind_noinv:
             from slowbeast.kindse.legacy.noinvkindse import KindSymbolicExecutor
         else:
-            from slowbeast.kindse.kindse.kindse import KindSymbolicExecutor
+            from slowbeast.kindse.kindse.kindse import KindSymbolicExecutor, BSELFOptions
+            opts = BSELFOptions()
+
         interpreter = KindSymbolicExecutor(P, ohandler, opts)
     elif args.se:
         opts = SEOptions()
