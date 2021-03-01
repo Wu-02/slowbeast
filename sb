@@ -364,8 +364,8 @@ def main():
         from slowbeast.ai.abstractinterpreter import AbstractInterpreter
         interpreter = AbstractInterpreter(P, ohandler)
     elif args.kind:
-        from slowbeast.kindse.naive.naivekindse import KindSeOptions
-        opts = KindSeOptions()
+        from slowbeast.kindse import KindSEOptions
+        opts = KindSEOptions()
 
         opts.step = args.kind_step
 
