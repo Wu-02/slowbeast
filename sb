@@ -357,9 +357,7 @@ def main():
 
     if args.bself:
         args.bse = True
-    if args.bse: # for now we implement it together
-        args.kind = True
-    if args.kind: # kind implies se
+    if args.kind or args.bse: # kind implies se
         args.se = True
 
     if args.ai and args.se:
@@ -379,18 +377,20 @@ def main():
             from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor
         elif args.kind_naive_impr:
             from slowbeast.kindse.naive.naiveimprkindse import KindSymbolicExecutor
-        elif args.kind_noinv:
+        else: # the default: if args.kind_noinv
             from slowbeast.kindse.legacy.noinvkindse import KindSymbolicExecutor
-        else:
-            from slowbeast.kindse.kindse.kindse import KindSymbolicExecutor, BSELFOptions
-            opts = BSELFOptions()
-            if args.bse and not args.bself:
-                opts.fold_loops = False
-            if args.bself_simple_sis:
-                opts.simple_sis = True
-            if args.bself_til:
-                opts.target_is_whole_seq = False
-
+            # NOTE: now, -kind is the same as -bse. We must implement -bse
+            # with precondition computation of every single step
+        interpreter = KindSymbolicExecutor(P, ohandler, opts)
+    elif args.bse:
+        from slowbeast.kindse.kindse.kindse import KindSymbolicExecutor, BSELFOptions
+        opts = BSELFOptions()
+        if args.bse and not args.bself:
+            opts.fold_loops = False
+        if args.bself_simple_sis:
+            opts.simple_sis = True
+        if args.bself_til:
+            opts.target_is_whole_seq = False
         interpreter = KindSymbolicExecutor(P, ohandler, opts)
     elif args.se:
         opts = SEOptions()

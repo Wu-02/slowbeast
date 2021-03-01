@@ -182,25 +182,26 @@ class KindSEChecker(BaseKindSE):
     It inherits from BaseKindSE to have the capabilities to execute paths.
     """
 
-    def __init__(self, toplevel_executor, loc, A,
-                 invariants=None, indsets=None,
-                 fold_loops=True, simple_sis=False):
+    def __init__(self, opts, toplevel_executor, loc, A,
+                 invariants=None, indsets=None):
         super().__init__(
             toplevel_executor.getProgram(),
             ohandler=None,
-            opts=toplevel_executor.getOptions(),
+            opts=opts,
             programstructure=toplevel_executor.programstructure,
         )
+        assert isinstance(opts, BSELFOptions), opts
         self.location = loc
         self.assertion = A
+
         self.toplevel_executor = toplevel_executor
+        self._target_is_whole_seq = opts.target_is_whole_seq
+        self._simple_sis = opts.simple_sis
+
         self.create_set = self.ind_executor().create_states_set
         self.get_loop = toplevel_executor.programstructure.get_loop
         self.get_loop_headers= self.programstructure.get_loop_headers
 
-        # use the whole sequence in induction checks
-        self._target_is_whole_seq = True
-        self._simple_sis = simple_sis
 
         # paths to still search
         self.readypaths = []
@@ -236,12 +237,12 @@ class KindSEChecker(BaseKindSE):
 
         # run recursively KindSEChecker with already computed inductive sets
         checker = KindSEChecker(
+            self.getOptions(),
             self.toplevel_executor,
             loc,
             A,
             indsets=self.inductive_sets,
             invariants=self.invariant_sets,
-            simple_sis=self._simple_sis
         )
         result, states = checker.check(L.entries())
         dbg_sec()
@@ -908,6 +909,7 @@ class KindSEChecker(BaseKindSE):
             path.add_annot_after(self.assertion)
             self.extend_and_queue_paths(path, states=None)
 
+        opt_fold_loops = self.getOptions().fold_loops
         while True:
             path = self.get_path_to_run()
             if path is None:
@@ -922,19 +924,19 @@ class KindSEChecker(BaseKindSE):
                 return r, states
             elif states.errors:  # got error states that may not be real
                 assert r is None
-                # is this a path starting at a loop header?
-                fl = path[0].source()
-                if fl not in self.no_sum_loops and self.is_loop_header(fl):
-                    res, newpaths = self.handle_loop(fl, path, states)
-                    if res is Result.SAFE:
-                        assert not newpaths
-                        dbg(f"Path with loop {fl} proved safe", color="dark_green")
-                    else:
-                        assert newpaths, newpaths
-                        self.queue_paths(newpaths)
-                else:
-                    # normal path or a loop that we cannot summarize
-                    self.extend_and_queue_paths(path, states)
+                if opt_fold_loops:
+                    # is this a path starting at a loop header?
+                    fl = path[0].source()
+                    if fl not in self.no_sum_loops and self.is_loop_header(fl):
+                        res, newpaths = self.handle_loop(fl, path, states)
+                        if res is Result.SAFE:
+                            assert not newpaths
+                            dbg(f"Path with loop {fl} proved safe", color="dark_green")
+                        else:
+                            assert newpaths, newpaths
+                            self.queue_paths(newpaths)
+                        continue
+                self.extend_and_queue_paths(path, states)
             else:
                 dbgv(f"Safe path: {path}")
 
@@ -953,8 +955,6 @@ class KindSymbolicExecutor(BaseKindSE):
         assert isinstance(opts, BSELFOptions), opts
         super().__init__(prog=prog, ohandler=ohandler, opts=opts)
         self.invariants = {}
-        self._fold_loops = fold_loops
-        self._simple_sis = True
 
     def _get_possible_errors(self):
         EM = getGlobalExprManager()
@@ -972,12 +972,11 @@ class KindSymbolicExecutor(BaseKindSE):
 
     def run(self):
         has_unknown = False
+        opts = self.getOptions()
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = KindSEChecker(self, loc, A,
-                                    invariants=self.invariants,
-                                    fold_loops=self._fold_loops,
-                                    simple_sis=self._simple_sis)
+            checker = KindSEChecker(opts, self, loc, A,
+                                    invariants=self.invariants)
             result, states = checker.check()
             if result is Result.UNSAFE:
                 assert states.errors, "No errors in unsafe result"

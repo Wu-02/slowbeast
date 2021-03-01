@@ -4,14 +4,15 @@ from slowbeast.kindse.annotatedcfg import CFG, CFGPath
 from slowbeast.kindse.naive.naivekindse import (
     KindSymbolicExecutor as BasicKindSymbolicExecutor,
 )
-from slowbeast.kindse.naive.naivekindse import Result, KindSeOptions
+from slowbeast.kindse.naive.naivekindse import Result
+from slowbeast.kindse import KindSEOptions
 from slowbeast.kindse.naive.inductionpath import InductionPath
 
 from copy import copy
 
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
+    def __init__(self, prog, ohandler=None, opts=KindSEOptions()):
         super(KindSymbolicExecutor, self).__init__(prog, opts)
 
         self.cfgs = {}
