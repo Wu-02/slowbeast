@@ -555,6 +555,47 @@ class KindSEChecker(BaseKindSE):
 
         return None
 
+    def initial_set_from_exits(self, E, path, L: Loop):
+        """
+        Strengthen the initial sequence through obtaining the
+        last safe iteration of the loop.
+
+        FIXME: we actually do not use the assertion at all right now,
+        only implicitly as it is contained in the paths...
+        """
+
+        is_error_loc = L.cfa().is_err
+        create_set = self.create_set
+        # execute the safe path that avoids error and then jumps out of the loop
+        # and also only paths that jump out of the loop, so that the set is inductive
+        r = check_paths(self, [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())])
+        assert r.ready is not None, "Infeasible exit paths from loop"
+
+        I = create_set()
+        I.add(r.ready)
+        I.intersect(complement(E))
+        return I
+
+    def initial_set_from_is(self, E, L):
+        # get the inductive sets that we have created for this header.
+        # Since we go iteration over iteration, adding this sequence
+        # to the previous ones must yield an inductive sequence
+        isets = self.inductive_sets.get(L.header())
+        if isets is None:
+            return None
+        R = self.create_set()
+        added = False
+
+        dbg("Checking inductive sets")
+        for I in isets:
+            if intersection(I.I, E).is_empty():
+                R.add(I.I)
+                added = True
+        if added:
+            return R
+        return None
+
+
     def strengthen_initial_seq(self, seq0, E, path, L: Loop):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
