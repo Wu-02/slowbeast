@@ -166,7 +166,9 @@ class KindSEChecker(BaseKindSE):
     It inherits from BaseKindSE to have the capabilities to execute paths.
     """
 
-    def __init__(self, toplevel_executor, loc, A, invariants=None, indsets=None, fold_loops=True):
+    def __init__(self, toplevel_executor, loc, A,
+                 invariants=None, indsets=None,
+                 fold_loops=True, simple_sis=False):
         super().__init__(
             toplevel_executor.getProgram(),
             ohandler=None,
@@ -182,6 +184,7 @@ class KindSEChecker(BaseKindSE):
 
         # use the whole sequence in induction checks
         self._target_is_whole_seq = True
+        self._simple_sis = simple_sis
 
         # paths to still search
         self.readypaths = []
@@ -221,7 +224,8 @@ class KindSEChecker(BaseKindSE):
             loc,
             A,
             indsets=self.inductive_sets,
-            invariants=self.invariant_sets
+            invariants=self.invariant_sets,
+            simple_sis=self._simple_sis
         )
         result, states = checker.check(L.entries())
         dbg_sec()
@@ -387,10 +391,30 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
+    def get_simple_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
+        E = self.create_set(unsafe[0])
 
-    def get_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
-        assert len(unsafe) == 1, "One path raises multiple unsafe states"
+        S = E.copy()
+        S.complement()
+        target0 = S.copy()
 
+        seq0 = InductiveSequence(S.as_assert_annotation(), None)
+        if not is_seq_inductive(seq0, None, self, L):
+            I = self.initial_set_from_is(E, L)
+            if I is None:
+                I = self.initial_set_from_exits(E, path, L)
+            if I:
+                seq0 = InductiveSequence(I.as_assert_annotation(), None)
+        if is_seq_inductive(seq0, None, self, L):
+            seqs = [seq0]
+        else:
+            seqs = None
+
+        errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
+        return target0, seqs, errs0
+
+
+    def get_acc_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
         # TODO: self-loops? Those are probably OK as that would be only assume edge
         errstate = unsafe[0]
         EM = errstate.expr_manager()
@@ -403,7 +427,6 @@ class KindSEChecker(BaseKindSE):
         target0 = S.copy()
 
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
-        errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
         seqs = [seq0]
 
         if not is_seq_inductive(seq0, None, self, L):
@@ -420,8 +443,16 @@ class KindSEChecker(BaseKindSE):
                 dbg("Initial sequence is NOT inductive, fixing it", color="wine")
                 seqs = self.strengthen_initial_seq(seq0, E, path, L)
 
-        #assert seq0 is None or is_seq_inductive(seq0, None, self, L)
+        errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
+        return target0, seqs, errs0
 
+    def get_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
+        assert len(unsafe) == 1, "One path raises multiple unsafe states"
+
+        if self._simple_sis:
+            target0, seqs, errs0 = self.get_simple_initial_seqs(unsafe, path, L)
+        else:
+            target0, seqs, errs0 = self.get_acc_initial_seqs(unsafe, path, L)
         # reduce and over-approximate the initial sequence
         if seqs:
             seqs = [self.overapprox_init_seq(seq, errs0, L) for seq in seqs]
@@ -907,6 +938,7 @@ class KindSymbolicExecutor(BaseKindSE):
         super().__init__(prog=prog, ohandler=ohandler, opts=opts)
         self.invariants = {}
         self._fold_loops = fold_loops
+        self._simple_sis = True
 
     def _get_possible_errors(self):
         EM = getGlobalExprManager()
@@ -926,7 +958,10 @@ class KindSymbolicExecutor(BaseKindSE):
         has_unknown = False
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = KindSEChecker(self, loc, A, invariants=self.invariants, fold_loops=self._fold_loops)
+            checker = KindSEChecker(self, loc, A,
+                                    invariants=self.invariants,
+                                    fold_loops=self._fold_loops,
+                                    simple_sis=self._simple_sis)
             result, states = checker.check()
             if result is Result.UNSAFE:
                 assert states.errors, "No errors in unsafe result"
