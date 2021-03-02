@@ -383,7 +383,7 @@ def main():
             # with precondition computation of every single step
         interpreter = KindSymbolicExecutor(P, ohandler, opts)
     elif args.bse:
-        from slowbeast.kindse.kindse.kindse import KindSymbolicExecutor, BSELFOptions
+        from slowbeast.kindse.kindse.kindse import BSELF, BSELFOptions
         opts = BSELFOptions()
         if args.bse and not args.bself:
             opts.fold_loops = False
@@ -391,7 +391,7 @@ def main():
             opts.simple_sis = True
         if args.bself_til:
             opts.target_is_whole_seq = False
-        interpreter = KindSymbolicExecutor(P, ohandler, opts)
+        interpreter = BSELF(P, ohandler, opts)
     elif args.se:
         opts = SEOptions()
 

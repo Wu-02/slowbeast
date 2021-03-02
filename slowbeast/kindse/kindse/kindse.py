@@ -279,7 +279,7 @@ class BSELFChecker(BaseKindSE):
         #   # first try to unroll it in the case the loop is easy to verify
         #   kindse = BaseKindSE(self.getProgram())
         maxk = 15
-        dbg_sec("Running nested KindSE")
+        dbg_sec(f"Unwinding the loop {maxk} steps")
         res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
         dbg_sec()
         if res is Result.SAFE:
@@ -943,7 +943,7 @@ class BSELFChecker(BaseKindSE):
         raise RuntimeError("Unreachable")
 
 
-class KindSymbolicExecutor(BaseKindSE):
+class BSELF(BaseKindSE):
     """
     The main class for KindSE that divides and conquers the tasks.
     It inherits from BaseKindSE to have program structure and such,
