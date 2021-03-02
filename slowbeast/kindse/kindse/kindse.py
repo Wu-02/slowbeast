@@ -182,25 +182,26 @@ class BSELFChecker(BaseKindSE):
     It inherits from BaseKindSE to have the capabilities to execute paths.
     """
 
-    def __init__(self, opts, toplevel_executor, loc, A,
+    def __init__(self, loc, A, program, programstructure, opts,
                  invariants=None, indsets=None):
         super().__init__(
-            toplevel_executor.getProgram(),
+            program,
             ohandler=None,
             opts=opts,
-            programstructure=toplevel_executor.programstructure,
+            programstructure=programstructure,
         )
         assert isinstance(opts, BSELFOptions), opts
+        self.program = program
         self.location = loc
         self.assertion = A
 
-        self.toplevel_executor = toplevel_executor
+        self.options = opts
         self._target_is_whole_seq = opts.target_is_whole_seq
         self._simple_sis = opts.simple_sis
 
         self.create_set = self.ind_executor().create_states_set
-        self.get_loop = toplevel_executor.programstructure.get_loop
-        self.get_loop_headers= self.programstructure.get_loop_headers
+        self.get_loop = programstructure.get_loop
+        self.get_loop_headers= programstructure.get_loop_headers
 
 
         # paths to still search
@@ -237,10 +238,11 @@ class BSELFChecker(BaseKindSE):
 
         # run recursively BSELFChecker with already computed inductive sets
         checker = BSELFChecker(
-            self.getOptions(),
-            self.toplevel_executor,
             loc,
             A,
+            self.program,
+            self.programstructure,
+            self.options,
             indsets=self.inductive_sets,
             invariants=self.invariant_sets,
         )
@@ -880,7 +882,7 @@ class BSELFChecker(BaseKindSE):
         return None
 
     def is_loop_header(self, loc):
-        return loc in self.programstructure.get_loop_headers()
+        return loc in self.get_loop_headers()
 
     def queue_paths(self, paths):
         assert isinstance(paths, list), paths
@@ -889,7 +891,7 @@ class BSELFChecker(BaseKindSE):
             heappush(readyp, p)
 
     def extend_paths(self, path, states):
-        invpoints = self.programstructure.get_loop_headers()
+        invpoints = self.get_loop_headers()
         return self.extend_path(
             path,
             states,
@@ -975,7 +977,8 @@ class BSELF(BaseKindSE):
         opts = self.getOptions()
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = BSELFChecker(opts, self, loc, A,
+            checker = BSELFChecker(loc, A,
+                                   self.getProgram(), self.programstructure, opts,
                                    invariants=self.invariants)
             result, states = checker.check()
             if result is Result.UNSAFE:
