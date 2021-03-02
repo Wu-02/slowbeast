@@ -121,14 +121,16 @@ class LazySymbolicMemoryModel(CoreMM):
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
-        if ptr.is_pointer() and ptr.offset().is_concrete():
-            err = state.memory.write(ptr, val)
-            if err and self._overapprox_unsupported and err.isUnsupported():
-                err = self._havoc_ptr_target(state, ptr)
-        elif self._overapprox_unsupported:
-            err = self._havoc_ptr_target(state, ptr)
-
+        assert ptr.is_pointer() and ptr.offset().is_concrete(), ptr
+        err = state.memory.write(ptr, val)
         return val, err
+
+    def _nondet_value(self, state, frm, ptr, bitsnum):
+        if ptr.is_pointer() and ptr.offset().is_concrete():
+            return self.uninitializedRead(state, frm, ptr, bitsnum)
+        # return val, err
+        # FIXME: it is not always int type... we should at least use bytes type
+        return state.solver().fresh_value(f"uninit_{frm.as_value()}", IntType(bitsnum)), None
 
     def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
         """
@@ -157,7 +159,7 @@ class LazySymbolicMemoryModel(CoreMM):
                 frm = state.get(fromOp)
 
         if not frm.is_pointer() and self._overapprox_unsupported:
-            val, err = self.uninitializedRead(
+            val, err = self._nondet_value(
                 state, fromOp, frm, bitsnum or bytesNum * 8
             )
             if err:
@@ -169,7 +171,7 @@ class LazySymbolicMemoryModel(CoreMM):
             assert frm.is_pointer(), frm
         if not frm.offset().is_concrete():
             if self._overapprox_unsupported:
-                val, err = self.uninitializedRead(
+                val, err = self._nondet_value(
                     state, fromOp, frm, bitsnum or bytesNum * 8
                 )
                 if err:
@@ -190,7 +192,7 @@ class LazySymbolicMemoryModel(CoreMM):
                 assert isinstance(toOp, Load)
                 state.addNondet(NondetLoad.fromExpr(val, toOp, fromOp))
             elif err.isUnsupported() and self._overapprox_unsupported:
-                val, err = self.uninitializedRead(
+                val, err = self._nondet_value(
                     state, fromOp, frm, bitsnum or bytesNum * 8
                 )
         if err:

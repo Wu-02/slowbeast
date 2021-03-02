@@ -620,7 +620,7 @@ class BVSymbolicDomain:
         assert b.is_concrete(), b
         assert b.is_int(), b
         bw = b.value()
-        assert a.bitwidth() <= bw, "Invalid sext argument"
+        assert a.bitwidth() <= bw, f"Invalid sext argument: {a} to {bw} bits"
 
         ae = to_bv(a) if a.is_float() else boolToBV(a)
         return Expr(BVSExt(bw - a.bitwidth(), ae), IntType(bw))
