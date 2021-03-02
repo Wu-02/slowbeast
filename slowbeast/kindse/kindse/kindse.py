@@ -434,13 +434,18 @@ class BSELFChecker(BaseKindSE):
 
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
         if not is_seq_inductive(seq0, None, self, L):
-            I = self.initial_set_from_is(E, L)
-            if I is None:
-                I = self.initial_set_from_exits(E, path, L)
-            if I:
-                seq0 = InductiveSequence(I.as_assert_annotation(), None)
-        if is_seq_inductive(seq0, None, self, L):
-            seqs = [seq0]
+            seqs = []
+            Is = self.initial_sets_from_is(E, L)
+            if not Is:
+                Is = self.initial_sets_from_exits(E, path, L)
+            if Is:
+                for s in (InductiveSequence(I.as_assert_annotation(), None) for I in Is):
+                    # should be inductive from construction
+                    assert is_seq_inductive(s, None, self, L), 'seq is not inductive'
+                    seqs.append(s)
+                   #if is_seq_inductive(s, None, self, L):
+                   #    seqs.append(s)
+            seqs = seqs or None
         else:
             seqs = None
 
@@ -620,7 +625,7 @@ class BSELFChecker(BaseKindSE):
 
         return None
 
-    def initial_set_from_exits(self, E, path, L: Loop):
+    def initial_sets_from_exits(self, E, path, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -633,15 +638,19 @@ class BSELFChecker(BaseKindSE):
         create_set = self.create_set
         # execute the safe path that avoids error and then jumps out of the loop
         # and also only paths that jump out of the loop, so that the set is inductive
-        r = check_paths(self, [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())])
-        assert r.ready is not None, "Infeasible exit paths from loop"
+        cE = complement(E)
+        sets = []
+        for p in (p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())):
+            r = check_paths(self, [p])
+            assert r.ready is not None, "Infeasible exit paths from loop"
 
-        I = create_set()
-        I.add(r.ready)
-        I.intersect(complement(E))
-        return I
+            tmp = create_set()
+            tmp.add(r.ready)
+            tmp.intersect(cE)
+            sets.append(tmp)
+        return sets
 
-    def initial_set_from_is(self, E, L):
+    def initial_sets_from_is(self, E, L):
         # get the inductive sets that we have created for this header.
         # Since we go iteration over iteration, adding this sequence
         # to the previous ones must yield an inductive sequence
@@ -657,7 +666,7 @@ class BSELFChecker(BaseKindSE):
                 R.add(I.I)
                 added = True
         if added:
-            return R
+            return [R]
         return None
 
 
