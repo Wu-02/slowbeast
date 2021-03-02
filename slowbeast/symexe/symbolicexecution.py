@@ -33,6 +33,13 @@ class SEStats:
         self.terminated_paths = 0
         self.errors = 0
 
+    def add(self, rhs):
+        self.paths = rhs.paths
+        self.exited_paths = rhs.exited_paths
+        self.killed_paths = rhs.killed_paths
+        self.terminated_paths = rhs.terminated_paths
+        self.errors = rhs.errors
+
 
 class SymbolicExecutor(Interpreter):
     def __init__(
@@ -48,6 +55,8 @@ class SymbolicExecutor(Interpreter):
     def set_input_vector(self, ivec):
         self._executor.set_input_vector(ivec)
 
+    # FIXME: make this a method of output handler or some function (get rid of 'self')
+    # after all, we want such functionality with every analysis
     def new_output_file(self, name):
         odir = self.ohandler.outdir if self.ohandler else None
         return open("{0}/{1}".format(odir or ".", name), "w")

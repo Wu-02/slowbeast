@@ -92,14 +92,42 @@ def parseArgs():
     return args
 
 def print_stats(engine):
-    print_stdout(
-        "Executed steps till branch: {0}".format(
-            engine.executor().getExecStepNum()),
-        color='CYAN')
-    print_stdout(
-        "Executed instructions: {0}".format(
-            engine.executor().getExecInstrNum()),
-        color='CYAN')
+    if hasattr(engine, 'executor'):
+        executor = engine.executor()
+        print_stdout(
+            "Executed steps till branch: {0}".format(
+                executor.getExecStepNum()),
+            color='CYAN')
+        print_stdout(
+            "Executed instructions: {0}".format(
+                executor.getExecInstrNum()),
+            color='CYAN')
+        print_stdout(
+            "Executed branch instructions: {0}".format(
+                executor.stats.branchings),
+            color='CYAN')
+        print_stdout(
+            "Number of forks on branches: {0} (forked on {1}% of branches)".format(
+                executor.stats.branch_forks,
+                0 if executor.stats.branchings == 0 else
+                100 *
+                float(
+                    executor.stats.branch_forks) /
+                executor.stats.branchings),
+            color='CYAN')
+        # this includes e.g. forks on assertions/memory resolution/etc.
+        print_stdout(
+            "Number of all forks: {0} (from {1} calls ({2}%) to fork())".format(
+                executor.stats.forks,
+                executor.stats.fork_calls,
+                0 if executor.stats.fork_calls == 0 else
+                100 *
+                float(
+                    executor.stats.forks) /
+                executor.stats.fork_calls),
+            color='CYAN')
+
+
     print_stdout(
         "Executed paths: {0}".format(
             engine.stats.paths),
@@ -113,31 +141,7 @@ def print_stats(engine):
             engine.stats.terminated_paths),
         color='CYAN')
     print_stdout(
-        "Killed paths: {0}".format( engine.stats.killed_paths), color='CYAN')
-    print_stdout(
-        "Executed branch instructions: {0}".format(
-            engine.executor().stats.branchings),
-        color='CYAN')
-    print_stdout(
-        "Number of forks on branches: {0} (forked on {1}% of branches)".format(
-            engine.executor().stats.branch_forks,
-            0 if engine.executor().stats.branchings == 0 else
-            100 *
-            float(
-                engine.executor().stats.branch_forks) /
-            engine.executor().stats.branchings),
-        color='CYAN')
-    # this includes e.g. forks on assertions/memory resolution/etc.
-    print_stdout(
-        "Number of all forks: {0} (from {1} calls ({2}%) to fork())".format(
-            engine.executor().stats.forks,
-            engine.executor().stats.fork_calls,
-            0 if engine.executor().stats.fork_calls == 0 else
-            100 *
-            float(
-                engine.executor().stats.forks) /
-            engine.executor().stats.fork_calls),
-        color='CYAN')
+        "Killed paths: {0}".format(engine.stats.killed_paths), color='CYAN')
     print_stdout(
         "Found errors: {0}".format(
             engine.stats.errors),

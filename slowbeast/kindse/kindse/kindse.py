@@ -1,12 +1,14 @@
 from heapq import heappush, heappop
 from itertools import chain
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, dbgv, ldbgv
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec, dbgv, ldbgv
 
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
+from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.analysis.loops import Loop
+from slowbeast.kindse.kindse.programstructure import ProgramStructure
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
@@ -82,12 +84,25 @@ def overapprox(executor, s, E, target, L):
     assert not S.is_empty(), "Infeasible states given to overapproximate"
     return overapprox_set(executor, s.expr_manager(), S, E, target, L)
 
+def report_state(stats, n, fn=print_stderr):
+    if n.hasError():
+        if fn:
+            fn(
+                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.getError()),
+                color="RED",
+            )
+        stats.errors += 1
+    elif n.wasKilled():
+        if fn:
+            fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
+        stats.killed_paths += 1
+
 
 def is_seq_inductive(seq, target, executor, L, has_ready=False):
     r = seq.check_ind_on_paths(executor, L.paths(), target)
     for s in r.killed():
         dbg("Killed a state")
-        executor.report(s)
+        report_state(executor.stats, s)
         return False
     return r.errors is None and (r.ready or not has_ready)
 
@@ -325,7 +340,7 @@ class BSELFChecker(BaseKindSE):
             return
         for s in r.killed():
             dbg("Killed a state")
-            self.report(s)
+            report_state(self.stats, s)
             return
 
         for s in r.ready:
@@ -835,7 +850,7 @@ class BSELFChecker(BaseKindSE):
                 return None, states  # this path is safe
             elif r is Result.UNKNOWN:
                 for s in states.killed():
-                    self.report(s, self.reportfn)
+                    report_state(self.stats, s, self.reportfn)
                 # dbgv(f"Inconclusive (init) path: {path}")
                 self.problematic_paths.append(path)
                 # there is a problem with this path,
@@ -862,16 +877,9 @@ class BSELFChecker(BaseKindSE):
         # problem = False
         for s in chain(killed1, killed2):
             # problem = True
-            self.report(s, fn=self.reportfn)
+            report_state(self.stats, s, fn=self.reportfn)
             self.reportfn(f"Killed states when executing {path}")
             self.problematic_paths.append(path)
-
-        # if r.errors:
-        #    self.reportfn(f"Possibly error path: {path}", color="ORANGE")
-        # elif problem:
-        #    self.reportfn(f"Problem path: {path}", color="PURPLE")
-        # else:
-        #    self.reportfn(f"Safe path: {path}", color="DARK_GREEN")
 
         return None, r
 
@@ -945,7 +953,7 @@ class BSELFChecker(BaseKindSE):
         raise RuntimeError("Unreachable")
 
 
-class BSELF(BaseKindSE):
+class BSELF:
     """
     The main class for KindSE that divides and conquers the tasks.
     It inherits from BaseKindSE to have program structure and such,
@@ -953,10 +961,27 @@ class BSELF(BaseKindSE):
     and keep BaseKindSE a class that just takes care for executing paths.
     """
 
-    def __init__(self, prog, ohandler=None, opts=BSELFOptions(),fold_loops=True):
+    def __init__(self, prog, ohandler=None, opts=BSELFOptions()):
         assert isinstance(opts, BSELFOptions), opts
-        super().__init__(prog=prog, ohandler=ohandler, opts=opts)
+        self.program = prog
+        self.ohandler = ohandler
+        self.options = opts
+
+        programstructure = ProgramStructure(prog, self.new_output_file)
+        self.get_cfa = programstructure.cfas.get
+        self.programstructure = programstructure
+
+        self.stats = SEStats()
+
         self.invariants = {}
+
+
+    # FIXME: make this a method of output handler or some function (get rid of 'self')
+    # after all, we want such functionality with every analysis
+    # FIXME: copied from BaseKindSE
+    def new_output_file(self, name):
+        odir = self.ohandler.outdir if self.ohandler else None
+        return open("{0}/{1}".format(odir or ".", name), "w")
 
     def _get_possible_errors(self):
         EM = getGlobalExprManager()
@@ -974,17 +999,17 @@ class BSELF(BaseKindSE):
 
     def run(self):
         has_unknown = False
-        opts = self.getOptions()
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
             checker = BSELFChecker(loc, A,
-                                   self.getProgram(), self.programstructure, opts,
+                                   self.program, self.programstructure, self.options,
                                    invariants=self.invariants)
             result, states = checker.check()
+            self.stats.add(checker.stats)
             if result is Result.UNSAFE:
                 assert states.errors, "No errors in unsafe result"
                 for s in states.errors:
-                    self.report(s)
+                    report_state(self.stats, s)
                 print_stdout("Error found.", color="redul")
                 return result
             elif result is Result.SAFE:

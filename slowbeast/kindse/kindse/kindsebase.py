@@ -11,6 +11,18 @@ from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
 
+def report_state(stats, n, fn=print_stderr):
+    if n.hasError():
+        if fn:
+            fn(
+                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.getError()),
+                color="RED",
+            )
+        stats.errors += 1
+    elif n.wasKilled():
+        if fn:
+            fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
+        stats.killed_paths += 1
 
 def check_paths(executor, paths, pre=None, post=None):
     result = PathExecutionResult()
@@ -46,11 +58,10 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         self._indexecutor = indexecutor
 
         if programstructure is None:
-            self.programstructure = ProgramStructure(prog, self.new_output_file)
-        else:
-            self.programstructure = programstructure
+            programstructure = ProgramStructure(prog, self.new_output_file)
+        self.programstructure = programstructure
 
-        self._entry_loc = self.programstructure.entry_loc
+        self._entry_loc = programstructure.entry_loc
         # paths to run
         self.paths = []
         # as we run the executor in nested manners,
@@ -231,23 +242,6 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             worklist = newworklist
 
         return newpaths
-
-    def report(self, n, fn=print_stderr):
-        if n.hasError():
-            if fn:
-                fn(
-                    "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.getError()),
-                    color="RED",
-                )
-            self.stats.errors += 1
-            return Result.UNSAFE
-        elif n.wasKilled():
-            if fn:
-                fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
-            self.stats.killed_paths += 1
-            return Result.UNKNOWN
-
-        return None
 
     def check_initial_error_path(self, path):
         """
