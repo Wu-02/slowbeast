@@ -21,7 +21,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def getCFG(self, F):
         return self.cfgs.setdefault(F, CFG(F))
 
-    def executePath(self, path, fromInit=False):
+    def execute_path(self, path, fromInit=False):
         if fromInit:
             if not self.states:
                 self.prepare()
@@ -40,7 +40,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         assert states
 
-        ready, notready = executor.executePath(states, path)
+        ready, notready = executor.execute_path(states, path)
         self.stats.paths += 1
         return ready, notready
 
@@ -139,7 +139,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             first_loc = path.first()
             if self._is_init(first_loc):
                 # try executing the path from initial states
-                _, notready = self.executePath(path, fromInit=True)
+                _, notready = self.execute_path(path, fromInit=True)
                 if not notready:
                     if len(first_loc.getPredecessors()) == 0:
                         # this path is safe and we do not need to extend it
@@ -154,7 +154,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         if n.wasKilled():
                             return self.report(n)
 
-            _, notready = self.executePath(path)
+            _, notready = self.execute_path(path)
 
             step = self.getOptions().step
             for n in notready:

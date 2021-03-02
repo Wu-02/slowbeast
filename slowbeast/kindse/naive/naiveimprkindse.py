@@ -28,9 +28,9 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 return True
         return False
 
-    def executePath(self, path):
+    def execute_path(self, path):
         print_stdout("Executing path: {0}".format(path), color="ORANGE")
-        ready, notready = self.ind_executor().executePath(
+        ready, notready = self.ind_executor().execute_path(
             path.getState(), path.getPath()
         )
         return ready, notready
@@ -53,7 +53,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             # this path may reach an assert
             # so we must really execute it and get those
             # states that do no violate the assert
-            ready, notready = self.executePath(p)
+            ready, notready = self.execute_path(p)
 
             newpaths += [InductionPath(r) for r in ready]
 

@@ -553,7 +553,7 @@ class Executor:
         assert not readystates
         return finalstates
 
-    def executePath(self, state, path):
+    def execute_path(self, state, path):
         """
         Execute the given path through CFG. Return two lists of states.
         The first list contains the resulting states that reaches the

@@ -233,11 +233,11 @@ class BSELFChecker(BaseKindSE):
 
         self.no_sum_loops = set()
 
-    def executePath(self, path, fromInit=False):
+    def execute_path(self, path, fromInit=False):
         """
-        Override executePath such that it uses invariants that we have
+        Override execute_path such that it uses invariants that we have
         """
-        return super().executePath(
+        return super().execute_path(
             path, fromInit=fromInit, invariants=self.invariant_sets
         )
 
@@ -862,7 +862,7 @@ class BSELFChecker(BaseKindSE):
                 return None, states
             assert r is None, r
 
-        r = self.executePath(path)
+        r = self.execute_path(path)
 
         killed1 = (s for s in r.other if s.wasKilled()) if r.other else ()
         killed2 = (

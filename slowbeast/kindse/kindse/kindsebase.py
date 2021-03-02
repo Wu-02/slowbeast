@@ -35,7 +35,7 @@ def check_paths(executor, paths, pre=None, post=None):
         if pre:
             p.add_annot_before(pre.as_assume_annotation())
 
-        r = executor.executePath(p)
+        r = executor.execute_path(p)
         result.merge(r)
 
     return result
@@ -91,7 +91,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         """
         return self.return_states
 
-    def executePath(self, path, fromInit=False, invariants=None):
+    def execute_path(self, path, fromInit=False, invariants=None):
         """
         Execute the given path. The path is such that
         it ends one step before possible error.
@@ -249,7 +249,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         \requires an initial path
         """
 
-        r = self.executePath(path, fromInit=True)
+        r = self.execute_path(path, fromInit=True)
         if not r.errors:
             killed = any(True for s in r.early if s.wasKilled()) if r.early else None
             if killed:
@@ -282,7 +282,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                     continue  # this path is safe
                 assert r is None
 
-            r = self.executePath(path)
+            r = self.execute_path(path)
 
             oth = r.other
             if oth and any(map(lambda s: s.wasKilled(), oth)):
