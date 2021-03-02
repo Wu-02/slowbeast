@@ -166,6 +166,8 @@ class ExprManager:
         assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
             return ConcreteDomain.getTrue()
+        elif len(args) == 1:
+            return args[0]
         if ConcreteDomain.belongto(*args):
             return ConcreteDomain.conjunction(*args)
         lift = self.lift
@@ -181,6 +183,8 @@ class ExprManager:
         assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
             return ConcreteDomain.getFalse()
+        elif len(args) == 1:
+            return args[0]
         if ConcreteDomain.belongto(*args):
             return ConcreteDomain.disjunction(*args)
         lift = self.lift
