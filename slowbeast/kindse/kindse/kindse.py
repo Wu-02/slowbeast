@@ -176,7 +176,7 @@ class InductiveSet:
         return self.I.__repr__()
 
 
-class KindSEChecker(BaseKindSE):
+class BSELFChecker(BaseKindSE):
     """
     An executor that recursively checks the validity of one particular assertion.
     It inherits from BaseKindSE to have the capabilities to execute paths.
@@ -235,8 +235,8 @@ class KindSEChecker(BaseKindSE):
         # def reportfn(msg, *args, **kwargs):
         #     print_stdout(f"> {msg}", *args, **kwargs)
 
-        # run recursively KindSEChecker with already computed inductive sets
-        checker = KindSEChecker(
+        # run recursively BSELFChecker with already computed inductive sets
+        checker = BSELFChecker(
             self.getOptions(),
             self.toplevel_executor,
             loc,
@@ -975,8 +975,8 @@ class KindSymbolicExecutor(BaseKindSE):
         opts = self.getOptions()
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = KindSEChecker(opts, self, loc, A,
-                                    invariants=self.invariants)
+            checker = BSELFChecker(opts, self, loc, A,
+                                   invariants=self.invariants)
             result, states = checker.check()
             if result is Result.UNSAFE:
                 assert states.errors, "No errors in unsafe result"
