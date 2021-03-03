@@ -751,6 +751,14 @@ class BSELFChecker(BaseKindSE):
             return False
         assert seqs0
 
+        if __debug__:
+            for seq0 in seqs0:
+                assert (
+                    intersection(
+                        create_set(seq0.toannotation()), errs0.toassert()
+                    ).is_empty()
+                ), "Initial sequence contains error states"
+
         # now we do not support empty sequences
         assert all(map(lambda s: s is not None, seqs0)), "A sequence is none"
 
