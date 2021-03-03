@@ -12,7 +12,8 @@ from slowbeast.kindse.kindse.programstructure import ProgramStructure
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
-    state_to_annotation
+    state_to_annotation,
+    execute_annotation_substitutions
 )
 
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
@@ -121,16 +122,6 @@ def report_state(stats, n, fn=print_stderr):
             fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
 
-
-def is_seq_inductive(seq, target, executor, L, has_ready=False):
-    r = seq.check_ind_on_paths(executor, L.paths(), target)
-    for s in r.killed():
-        dbg("Killed a state")
-        report_state(executor.stats, s)
-        return False
-    return r.errors is None and (r.ready or not has_ready)
-
-
 def strip_first_assume_edge(path: AnnotatedCFAPath):
     idx = path.first_assume_edge_idx()
     # we use this func only on loop edges, so it must contain the entry condition
@@ -223,11 +214,80 @@ class LoopInfo:
         self.get_exit_paths = loop.get_exit_paths
         self.paths_to_header = loop.paths_to_header
 
-        self.prestates = executor.create_set()
-        self.poststates = check_paths(executor, loop.paths())
+        self.indexecutor = executor.ind_executor()
+
+        self.prestate = executor.ind_executor().createCleanState()
+        poststates = check_paths(executor, loop.paths()).ready
+        assert poststates, "Loop has no infeasible path"
+        self.poststates = poststates
 
     def paths(self):
         return self.loop.paths()
+
+    def set_is_inductive(self, S):
+        em = getGlobalExprManager()
+        solver = IncrementalSolver()
+
+        annot = S.as_assume_annotation()
+        solver.add(annot.do_substitutions(self.prestate))
+
+        poststates, _ = execute_annotation_substitutions(
+            self.indexecutor, self.poststates, annot
+        )
+        Not = em.Not
+        for s in poststates:
+            solver.push()
+            solver.add(s.path_condition())
+            expr = annot.do_substitutions(s)
+            if solver.is_sat(Not(expr)) is True:
+                solver.pop()
+                return False
+            solver.pop()
+
+        return True
+
+    def set_is_inductive_towards(self, S, target):
+        em = getGlobalExprManager()
+        solver = IncrementalSolver()
+
+        preannot = S.as_assume_annotation()
+        postannot = union(S, target).as_assume_annotation()
+        solver.add(preannot.do_substitutions(self.prestate))
+
+        poststates, _ = execute_annotation_substitutions(
+            self.indexecutor, self.poststates, postannot
+        )
+        Not = em.Not
+        has_feasible = False
+        for s in poststates:
+            solver.push()
+            solver.add(s.path_condition())
+            if solver.is_sat() is False:
+                solver.pop()
+                continue # infeasible path
+            has_feasible = True
+            expr = postannot.do_substitutions(s)
+            if solver.is_sat(Not(expr)) is True:
+                solver.pop()
+                return False
+            solver.pop()
+
+        return has_feasible
+
+
+def is_seq_inductive(seq, executor, L : LoopInfo):
+    return L.set_is_inductive(executor.create_set(seq.toannotation()))
+   #r = seq.check_ind_on_paths(executor, L.paths())
+   #for s in r.killed():
+   #    dbg("Killed a state")
+   #    report_state(executor.stats, s)
+   #    return False
+   #res = r.errors is None
+   #if r.errors:
+   #    print(r.errors[0].path_condition())
+   #lres = L.set_is_inductive(executor.create_set(seq.toannotation()))
+   #assert res == lres, f"{res} != {lres}"
+   #return res
 
 class BSELFChecker(BaseKindSE):
     """
@@ -470,7 +530,7 @@ class BSELFChecker(BaseKindSE):
 
         seq0 = InductiveSequence(I.as_assert_annotation())
         # this may mean that the assertion in fact does not hold
-        if is_seq_inductive(seq0, None, self, L):
+        if is_seq_inductive(seq0, self, L):
             return seq0
         dbg("... (got non-inductive set)")
         return None
@@ -486,7 +546,7 @@ class BSELFChecker(BaseKindSE):
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
         if S.is_empty():
             return target0, seqs, errs0
-        if not is_seq_inductive(seq0, None, self, L):
+        if not is_seq_inductive(seq0, self, L):
             dbg("... (complement not inductive)")
             seqs = []
             Is = self.initial_sets_from_is(E, L)
@@ -497,9 +557,9 @@ class BSELFChecker(BaseKindSE):
                 for s in (InductiveSequence(I.as_assert_annotation(), None) for I in Is):
                     dbg("... (got first IS)")
                     # should be inductive from construction
-                    assert is_seq_inductive(s, None, self, L), 'seq is not inductive'
+                    assert is_seq_inductive(s, self, L), 'seq is not inductive'
                     seqs.append(s)
-                   #if is_seq_inductive(s, None, self, L):
+                   #if is_seq_inductive(s, self, L):
                    #    seqs.append(s)
             seqs = seqs or None
         else:
@@ -529,14 +589,14 @@ class BSELFChecker(BaseKindSE):
 
         seqs = [seq0]
 
-        if not is_seq_inductive(seq0, None, self, L):
+        if not is_seq_inductive(seq0, self, L):
             # the initial sequence may not be inductive (usually when the assertion
             # is inside the loop, so we must strenghten it in that case
             if isfirst:
                 # FIXME: return sets
                 dbg("Getting the initial sequence from the last iteration")
                 seq0 = self.initial_seq_from_last_iter(E, path, L)
-                assert seq0 and is_seq_inductive(seq0, None, self, L),\
+                assert seq0 and is_seq_inductive(seq0, self, L),\
                        "Failed getting init seq for first iteration"
                 seqs = [seq0] if seq0 else []
             else:
@@ -561,7 +621,7 @@ class BSELFChecker(BaseKindSE):
         return target0, seqs, errs0
 
     def overapprox_init_seq(self, seq0, errs0, L):
-        assert is_seq_inductive(seq0, None, self, L), "seq is not inductive"
+        assert is_seq_inductive(seq0, self, L), "seq is not inductive"
 
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
@@ -597,7 +657,7 @@ class BSELFChecker(BaseKindSE):
             ).as_assert_annotation()
         )
 
-        if is_seq_inductive(seq, None, self, L):
+        if is_seq_inductive(seq, self, L):
             return seq
         return seq0
 
@@ -663,11 +723,11 @@ class BSELFChecker(BaseKindSE):
         # FIXME: do a proper analysis of whether the error loc is inside or outside the loop
         # instead of trying blindly
         I = self._safe_paths_err_outside(E, path, L)
-        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), None, self, L):
+        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), self, L):
             return I
 
         I = self._safe_paths_err_inside(E, path, L)
-        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), None, self, L):
+        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), self, L):
             return I
         return None
 
@@ -781,7 +841,7 @@ class BSELFChecker(BaseKindSE):
                     F = union(I.I, frame)
                 tmp = InductiveSequence(F.as_assert_annotation())
                 # FIXME: simplify as much as you can before using it
-                if is_seq_inductive(tmp, None, self, L):
+                if is_seq_inductive(tmp, self, L):
                     #dbg("Joining with previous sequences did the trick")
                     print_stdout("Succeeded joining with a previous sequence")
                     ret.append(tmp)
@@ -799,7 +859,7 @@ class BSELFChecker(BaseKindSE):
 
         tmp = InductiveSequence(I.as_assert_annotation())
         # FIXME: simplify as much as you can before using
-        if is_seq_inductive(tmp, None, self, L):
+        if is_seq_inductive(tmp, self, L):
             return [tmp]
         dbg("Failed strengthening the initial sequence")
         return []
@@ -888,9 +948,6 @@ class BSELFChecker(BaseKindSE):
                             create_set(seq.toannotation(True)), errs0.toassert()
                         ).is_empty()
                     ), "Sequence is not safe"
-                    assert seq is None or is_seq_inductive(
-                        seq, target0, self, L
-                    ), "seq is not inductive"
 
                 if seq and len(seq) >= max_seq_len:
                     dbg("Give up extending the sequence, it is too long")
@@ -914,10 +971,7 @@ class BSELFChecker(BaseKindSE):
                     tmp = seq.copy() if seq else InductiveSequence()
                     tmp.append(A.as_assert_annotation(), None)
                     if __debug__:
-                        r = tmp.check_ind_on_paths(self, L.paths(), target0)
-                        assert (
-                            r.errors is None
-                        ), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
+                        assert is_seq_inductive(tmp, self, L), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
 
                     # extended.append(self.abstract_seq(e, errs0, L))
                     extended.append(tmp)
