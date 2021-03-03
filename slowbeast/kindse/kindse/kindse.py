@@ -646,7 +646,8 @@ class BSELFChecker(BaseKindSE):
         sets = []
         for p in (p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())):
             r = check_paths(self, [p])
-            assert r.ready is not None, "Infeasible exit paths from loop"
+            if not r.ready:
+                continue
 
             tmp = create_set()
             tmp.add(r.ready)
