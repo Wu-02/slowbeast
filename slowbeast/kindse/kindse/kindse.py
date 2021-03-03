@@ -759,7 +759,6 @@ class BSELFChecker(BaseKindSE):
                     #dbg("Joining with previous sequences did the trick")
                     print_stdout("Succeeded joining with a previous sequence")
                     ret.append(tmp)
-                    break
             else:
                 dbg("Inductive sequence is unsafe")
         if ret:
