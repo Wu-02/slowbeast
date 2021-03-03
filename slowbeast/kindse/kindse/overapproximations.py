@@ -536,24 +536,11 @@ def replace_constants(expr, EM):
 
     return EM.conjunction(expr, *added)
 
-def _get_pre_post_states(executor, paths):
-    """
-    Return states from before and after executing paths.
-    These states can be used to get pre/post conditions of the path
-    using Annotations (do_substitutions()) and then checking along
-    with that path_condition.
-    """
-    r = check_paths(executor, paths)
-    for s in r.killed():
-        dbg("Killed a state")
-        return None, None
-    return executor.ind_executor().createCleanState(), r.ready
-
 def is_overapprox_of(A, B):
     """ Return true if B is overapproximation of A """
     return intersection(complement(B), A).is_empty()
 
-def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True):
+def drop_clauses(clauses, S, assumptions, safesolver, data, loop):
     """
     assumptions are clauses that we do not try to drop
     """
@@ -606,25 +593,29 @@ def drop_clauses(clauses, S, assumptions, safesolver, data, nodrop_safe=True):
        #    continue
 
         # == inductivity check
-        r = check_paths(executor, lpaths, pre=X, post=union(X, target))
-        for s in r.killed():
-            dbg("Killed a state")
-            return newclauses
-        if r.errors is None and r.ready:
+       #r = check_paths(executor, lpaths, pre=X, post=union(X, target))
+       #for s in r.killed():
+       #    dbg("Killed a state")
+       #    return newclauses
+       #if r.errors is None and r.ready:
+       #    assert loop.set_is_inductive_towards(X, target) is True
+       #    newclauses = tmp
+       #    #newS.reset_expr(conjunction(*tmp))
+       #    dbg(f"  dropped {c}...")
+        if loop.set_is_inductive_towards(X, target):
             newclauses = tmp
-            #newS.reset_expr(conjunction(*tmp))
             dbg(f"  dropped {c}...")
 
     return newclauses
 
 
-def drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe=True):
+def drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, loop):
     """ Drop clauses until fixpoint """
     newclauses = clauses
     while True:
         dbgv(" ... droping clauses (starting iteration)")
         oldlen = len(newclauses)
-        newclauses = drop_clauses(newclauses, S, assumptions, safesolver, data, nodrop_safe)
+        newclauses = drop_clauses(newclauses, S, assumptions, safesolver, data, loop)
         if oldlen == len(newclauses):
             break
     dbgv(" ... done droping clauses")
@@ -664,7 +655,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, assumptions, L, drop_on
     safesolver.add(unsafe.as_expr())
 
     # can we drop some clause True?
-    newclauses = drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe=True)
+    newclauses = drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, L)
     # new add the assumptions (without them the formula is not equivalent to expr now)
     if assumptions:
         newclauses.extend(break_eqs(assumptions.as_expr().to_cnf()))
@@ -717,7 +708,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, assumptions, L, drop_on
         ).is_empty(), f"Overapproxmating clauses made the set unsafe"
 
     # drop clauses once more
-    newclauses = drop_clauses_fixpoint(newclauses, S, None, safesolver, data)
+    newclauses = drop_clauses_fixpoint(newclauses, S, None, safesolver, data, L)
     clauses = remove_implied_literals(newclauses)
     S.reset_expr(EM.conjunction(*clauses).rewrite_and_simplify())
 
