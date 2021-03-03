@@ -250,7 +250,7 @@ class LoopInfo:
 
         return True
 
-    def set_is_inductive_towards(self, S, target):
+    def set_is_inductive_towards(self, S, target, allow_infeasible_only=False):
         em = getGlobalExprManager()
         solver = IncrementalSolver()
 
@@ -281,7 +281,7 @@ class LoopInfo:
                 return False
             solver.pop()
 
-        return has_feasible
+        return has_feasible or allow_infeasible_only
 
 
 def is_seq_inductive(seq, executor, L : LoopInfo):

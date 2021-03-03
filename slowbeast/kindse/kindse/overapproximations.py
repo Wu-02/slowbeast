@@ -444,12 +444,13 @@ def overapprox_clause(c, R, data):
     if __debug__:
         X = R.copy()
         X.intersect(c)
-        r = check_paths(
-            data.executor, data.loop.paths(), pre=X, post=union(X, data.target)
-        )
-        assert (
-            r.errors is None
-        ), f"Input state is not inductive (CTI: {r.errors[0].model()})"
+        assert data.loop.set_is_inductive_towards(X, data.target, allow_infeasible_only=True)
+    #r = check_paths(
+       #    data.executor, data.loop.paths(), pre=X, post=union(X, data.target)
+       #)
+       #assert (
+       #    r.errors is None
+       #), f"Input state is not inductive (CTI: {r.errors[0].model()})"
 
     newc = []
     lits = list(literals(c))
@@ -470,16 +471,17 @@ def overapprox_clause(c, R, data):
                     *(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))
                 )
             )
-            r = check_paths(
-                data.executor, data.loop.paths(), pre=X, post=union(X, data.target)
-            )
-            if r.errors:
-                print("States:", X)
-                print("Target:", target)
-                print(r.errors[0].path_condition())
-            assert (
-                r.errors is None
-            ), f"Extended literal renders state non-inductive (CTI: {r.errors[0].model()})"
+            assert data.loop.set_is_inductive_towards(X, data.target, allow_infeasible_only=True)
+        #r = check_paths(
+           #    data.executor, data.loop.paths(), pre=X, post=union(X, data.target)
+           #)
+           #if r.errors:
+           #    print("States:", X)
+           #    print("Target:", target)
+           #    print(r.errors[0].path_condition())
+           #assert (
+           #    r.errors is None
+           #), f"Extended literal renders state non-inductive (CTI: {r.errors[0].model()})"
 
     if len(newc) == 1:
         return newc[0]
@@ -632,10 +634,11 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, assumptions, L, drop_on
         S, unsafe
     ).is_empty(), f"Whata? Unsafe states among one-step reachable safe states:\nS = {S},\nunsafe = {unsafe}"
     if __debug__:
-        r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
-        assert (
-            r.errors is None
-        ), f"Input set is not inductive (CTI: {r.errors[0].model()})"
+       #r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
+       #assert (
+       #    r.errors is None
+       #), f"Input set is not inductive (CTI: {r.errors[0].model()})"
+        assert L.set_is_inductive_towards(S, target, allow_infeasible_only=True), f"{S} -> {target}"
 
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
