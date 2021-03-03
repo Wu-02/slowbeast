@@ -214,6 +214,20 @@ class InductiveSet:
     def __repr__(self):
         return self.I.__repr__()
 
+class LoopInfo:
+    def __init__(self, executor, loop):
+        self.loop = loop
+        self.cfa = loop.cfa
+        self.header = loop.header
+        self.entries = loop.entries
+        self.get_exit_paths = loop.get_exit_paths
+        self.paths_to_header = loop.paths_to_header
+
+        self.prestates = executor.create_set()
+        self.poststates = check_paths(executor, loop.paths())
+
+    def paths(self):
+        return self.loop.paths()
 
 class BSELFChecker(BaseKindSE):
     """
@@ -239,8 +253,9 @@ class BSELFChecker(BaseKindSE):
         self._simple_sis = opts.simple_sis
 
         self.create_set = self.ind_executor().create_states_set
-        self.get_loop = programstructure.get_loop
         self.get_loop_headers= programstructure.get_loop_headers
+
+        self.loop_info = {}
 
 
         # paths to still search
@@ -256,6 +271,17 @@ class BSELFChecker(BaseKindSE):
                 dbg(f"  @ {loc}: {invs}")
 
         self.no_sum_loops = set()
+
+    def get_loop(self, loc):
+        L = self.loop_info.get(loc)
+        if L is None:
+            loop = self.programstructure.get_loop(loc)
+            if loop is None:
+                return None
+
+            L = LoopInfo(self, loop)
+            self.loop_info[loc] = L
+        return L
 
     def execute_path(self, path, fromInit=False):
         """
