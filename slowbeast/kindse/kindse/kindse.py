@@ -415,7 +415,7 @@ class BSELFChecker(BaseKindSE):
 
         dbg("Obtaining states from last safe iterations")
         I = self.safe_path_with_last_iter(E, path, L)
-        if I is None:
+        if I is None or I.is_empty():
             return None
 
         seq0 = InductiveSequence(I.as_assert_annotation())
@@ -432,7 +432,10 @@ class BSELFChecker(BaseKindSE):
         S.complement()
         target0 = S.copy()
 
+        errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
+        if S.is_empty():
+            return target0, seqs, errs0
         if not is_seq_inductive(seq0, None, self, L):
             dbg("... (complement not inductive)")
             seqs = []
@@ -453,7 +456,6 @@ class BSELFChecker(BaseKindSE):
             dbg("... (complement is inductive)")
             seqs = [seq0]
 
-        errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
         return target0, seqs, errs0
 
 
@@ -470,6 +472,11 @@ class BSELFChecker(BaseKindSE):
         target0 = S.copy()
 
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
+        errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
+
+        if S.is_empty():
+            return target0, [], errs0
+
         seqs = [seq0]
 
         if not is_seq_inductive(seq0, None, self, L):
@@ -481,12 +488,11 @@ class BSELFChecker(BaseKindSE):
                 seq0 = self.initial_seq_from_last_iter(E, path, L)
                 assert seq0 and is_seq_inductive(seq0, None, self, L),\
                        "Failed getting init seq for first iteration"
-                seqs = [seq0] if seq0 else None
+                seqs = [seq0] if seq0 else []
             else:
                 dbg("Initial sequence is NOT inductive, fixing it", color="wine")
                 seqs = self.strengthen_initial_seq(seq0, E, path, L)
 
-        errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
         return target0, seqs, errs0
 
     def get_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
@@ -498,6 +504,7 @@ class BSELFChecker(BaseKindSE):
             target0, seqs, errs0 = self.get_acc_initial_seqs(unsafe, path, L)
         # reduce and over-approximate the initial sequence
         if seqs:
+            dbg(f'Got {len(seqs)} starting inductive sequence(s)')
             seqs = [self.overapprox_init_seq(seq, errs0, L) for seq in seqs]
 
         # inductive sequence is either inductive now, or it is None and we'll use non-inductive E
@@ -509,9 +516,7 @@ class BSELFChecker(BaseKindSE):
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
         S = create_set(seq0.toannotation(True))
-        #assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
-        if S.is_empty():
-            return None
+        assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
         EM = getGlobalExprManager()
         seq = InductiveSequence(
             overapprox_set(
@@ -652,7 +657,8 @@ class BSELFChecker(BaseKindSE):
             tmp = create_set()
             tmp.add(r.ready)
             tmp.intersect(cE)
-            sets.append(tmp)
+            if not tmp.is_empty():
+                sets.append(tmp)
         return sets
 
     def initial_sets_from_is(self, E, L):
@@ -717,14 +723,14 @@ class BSELFChecker(BaseKindSE):
         # passes the assertion and jumps out of the loop
         I = self.safe_paths_from_iterations(E, path, L)
         if I is None:
-            return None
+            return []
 
         tmp = InductiveSequence(I.as_assert_annotation())
         # FIXME: simplify as much as you can before using
         if is_seq_inductive(tmp, None, self, L):
             return [tmp]
         dbg("Failed strengthening the initial sequence")
-        return None
+        return []
 
     def fold_loop(self, path, loc, L: Loop, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
@@ -736,7 +742,7 @@ class BSELFChecker(BaseKindSE):
 
         dbg(f"Getting initial sequence for loop {loc}")
         target0, seqs0, errs0 = self.get_initial_seqs(unsafe, path, L)
-        if seqs0 is None:
+        if not seqs0:
             print_stdout(
                 f"Failed getting initial inductive sequence for loop {loc}", color="red"
             )
@@ -745,13 +751,8 @@ class BSELFChecker(BaseKindSE):
             return False
         assert seqs0
 
-       #if __debug__:
-       #    assert (
-       #        seq0 is None
-       #        or intersection(
-       #            create_set(seq0.toannotation()), errs0.toassert()
-       #        ).is_empty()
-       #    ), "Initial sequence contains error states"
+        # now we do not support empty sequences
+        assert all(map(lambda s: s is not None, seqs0)), "A sequence is none"
 
         sequences = seqs0
         E = create_set(errs0.toassert())
