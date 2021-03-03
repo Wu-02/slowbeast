@@ -1,6 +1,6 @@
 from heapq import heappush, heappop
 from itertools import chain
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec, dbgv, ldbgv
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec, dbgv, ldbg, ldbgv
 
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result
@@ -20,6 +20,7 @@ from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 from .overapproximations import overapprox_set
+from .relations import get_const_cmp_relations, get_var_relations
 
 class BSELFOptions(KindSEOptions):
     def __init__(self, copyopts=None):
@@ -55,7 +56,8 @@ def _dump_inductive_sets(checker, loc):
 
 
 def overapprox(executor, s, E, target, L):
-    S = executor.create_set(s)
+    create_set = executor.create_set
+    S = create_set(s)
 
     # FIXME: this is a workaround until we support nondet() calls in lazy execution
     r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
@@ -81,8 +83,30 @@ def overapprox(executor, s, E, target, L):
     #           f"-- error states --:\n{r.errors[0].path_condition()}\n"\
     #           f"-- CTI: --\n{r.errors[0].model()}"
 
+    # add relations
+    for rel in get_const_cmp_relations(S.get_se_state()):
+        ldbg("  Adding relation {0}", (rel,))
+        S.intersect(rel)
+        assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+        assert intersection(
+            S, E
+        ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
+
+    have_assumptions = False
+    assumptions = create_set()
+    for rel in get_var_relations([S.get_se_state()], prevsafe=target):
+        have_assumptions = True
+        ldbg("  Adding assumption {0}", (rel,))
+        assumptions.intersect(rel)
+        assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+        assert intersection(
+            assumptions, S, E
+        ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
+
+
     assert not S.is_empty(), "Infeasible states given to overapproximate"
-    return overapprox_set(executor, s.expr_manager(), S, E, target, L)
+    return overapprox_set(executor, s.expr_manager(), S, E, target,
+                          assumptions if have_assumptions else None, L)
 
 def report_state(stats, n, fn=print_stderr):
     if n.hasError():
@@ -515,12 +539,35 @@ class BSELFChecker(BaseKindSE):
 
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
+        unsafe = create_set(errs0.toassert())
         S = create_set(seq0.toannotation(True))
         assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
         EM = getGlobalExprManager()
+
+        # add relations
+        for rel in get_const_cmp_relations(S.get_se_state()):
+            ldbg("  Adding relation {0}", (rel,))
+            S.intersect(rel)
+            assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+            assert intersection(
+                S, unsafe
+            ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
+
+        have_assumptions = False
+        assumptions = create_set()
+        for rel in get_var_relations([S.get_se_state()], prevsafe=target):
+            have_assumptions = True
+            ldbg("  Adding assumption {0}", (rel,))
+            assumptions.intersect(rel)
+            assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+            assert intersection(
+                assumptions, S, unsafe
+            ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
+
         seq = InductiveSequence(
             overapprox_set(
-                self, EM, S, errs0.toassert(), target, L
+                self, EM, S, errs0.toassert(), target,
+                assumptions if have_assumptions else None, L
             ).as_assert_annotation()
         )
 

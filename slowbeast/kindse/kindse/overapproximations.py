@@ -1,6 +1,6 @@
 from functools import partial
 from slowbeast.domains.concrete import ConcreteInt
-from slowbeast.util.debugging import dbg, dbgv, ldbgv
+from slowbeast.util.debugging import dbg, dbgv, ldbg
 from slowbeast.solvers.expressions import em_optimize_expressions
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 from .relations import get_const_cmp_relations, get_var_relations
@@ -630,7 +630,7 @@ def drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe
     dbgv(" ... done droping clauses")
     return newclauses
 
-def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
+def overapprox_set(executor, EM, S, unsafeAnnot, target, assumptions, L, drop_only=False):
     """
     drop_only - only try to drop clauses, not to extend them
     """
@@ -649,26 +649,6 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
 
-    # add relations
-    for rel in get_const_cmp_relations(S.get_se_state()):
-        ldbgv("  Adding relation {0}", (rel,))
-        S.intersect(rel)
-        assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
-        assert intersection(
-            S, unsafe
-        ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
-
-    have_assumptions = False
-    assumptions = create_set()
-    for rel in get_var_relations([S.get_se_state()], prevsafe=target):
-        have_assumptions = True
-        ldbgv("  Adding assumption {0}", (rel,))
-        assumptions.intersect(rel)
-        assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
-        assert intersection(
-            assumptions, S, unsafe
-        ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
-
     data = OverapproximationData(executor, target, unsafe, L, EM)
 
     expr = S.as_expr()
@@ -686,7 +666,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, L, drop_only=False):
     # can we drop some clause True?
     newclauses = drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, nodrop_safe=True)
     # new add the assumptions (without them the formula is not equivalent to expr now)
-    if have_assumptions:
+    if assumptions:
         newclauses.extend(break_eqs(assumptions.as_expr().to_cnf()))
     clauses = remove_implied_literals(newclauses)
 

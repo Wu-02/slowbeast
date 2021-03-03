@@ -91,6 +91,17 @@ def get_var_diff_relations(state):
                 yield AssertAnnotation(
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
+        expr = EM.Eq(EM.Add(l2, l1), c)
+        c_concr = state.concretize_with_assumptions([expr], c)
+        if c_concr is not None:
+            # is c unique?
+            cval = c_concr[0]
+            nonunique = state.is_sat(expr, EM.Ne(c, cval))
+            if nonunique is False:
+                yield AssertAnnotation(
+                    EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
+                )
+ 
            #else:
            #    # check d*l1 + e+l2 = c
            #    d = EM.Var(f"c_{l1name}", IntType(bw))
