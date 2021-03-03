@@ -92,21 +92,21 @@ def overapprox(executor, s, E, target, L):
             S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
-    have_assumptions = False
-    assumptions = create_set()
     for rel in get_var_relations([S.get_se_state()], prevsafe=target):
-        have_assumptions = True
-        ldbg("  Adding assumption {0}", (rel,))
-        assumptions.intersect(rel)
+        ldbg("  Using assumption {0}", (rel,))
+        assumptions = create_set(rel)
         assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
         assert intersection(
             assumptions, S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
+        assert not S.is_empty(), "Infeasible states given to overapproximate"
+        yield overapprox_set(executor, s.expr_manager(),
+                             S, E, target, assumptions, L)
 
+    #try without any relation
     assert not S.is_empty(), "Infeasible states given to overapproximate"
-    return overapprox_set(executor, s.expr_manager(), S, E, target,
-                          assumptions if have_assumptions else None, L)
+    yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
 
 def report_state(stats, n, fn=print_stderr):
     if n.hasError():
@@ -372,21 +372,21 @@ class BSELFChecker(BaseKindSE):
                 dbg("Pre-image is not safe...")
                 # FIXME: should we do the intersection with complement of E?
                 continue
-            A = overapprox(self, s, E, target, L)
-            if A is None:
-                dbg("Overapproximation failed...")
-                continue
+            for A in overapprox(self, s, E, target, L):
+                if A is None:
+                    dbg("Overapproximation failed...")
+                    continue
 
-            if __debug__:
-                assert (
-                    seq is None or intersection(A, E).is_empty()
-                ), f"Overapproximation is not safe: {A}"
-            # FIXME: intersect with all inductive sets?
-            if seq and intersection(A, complement(target)).is_empty():
-                dbg("Did not extend (got included elem...)")
-                continue
+                if __debug__:
+                    assert (
+                        seq is None or intersection(A, E).is_empty()
+                    ), f"Overapproximation is not safe: {A}"
+                # FIXME: intersect with all inductive sets?
+                if seq and intersection(A, complement(target)).is_empty():
+                    dbg("Did not extend (got included elem...)")
+                    continue
 
-            yield A
+                yield A
 
    #def abstract_seq(self, seq, errs0, L):
    #    # don't try with short sequences
