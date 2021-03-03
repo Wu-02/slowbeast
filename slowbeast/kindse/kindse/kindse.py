@@ -229,7 +229,11 @@ class LoopInfo:
         solver = IncrementalSolver()
 
         annot = S.as_assume_annotation()
-        solver.add(annot.do_substitutions(self.prestate))
+        prestates, _ = execute_annotation_substitutions(
+            self.indexecutor, [self.prestate], annot
+        )
+        assert len(prestates) == 1, prestates
+        solver.add(annot.do_substitutions(prestates[0]))
 
         poststates, _ = execute_annotation_substitutions(
             self.indexecutor, self.poststates, annot
@@ -252,11 +256,16 @@ class LoopInfo:
 
         preannot = S.as_assume_annotation()
         postannot = union(S, target).as_assume_annotation()
-        solver.add(preannot.do_substitutions(self.prestate))
-
+        prestates, _ = execute_annotation_substitutions(
+            self.indexecutor, [self.prestate], preannot
+        )
         poststates, _ = execute_annotation_substitutions(
             self.indexecutor, self.poststates, postannot
         )
+
+        assert len(prestates) == 1, prestates
+        solver.add(preannot.do_substitutions(prestates[0]))
+
         Not = em.Not
         has_feasible = False
         for s in poststates:
