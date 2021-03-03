@@ -434,12 +434,15 @@ class BSELFChecker(BaseKindSE):
 
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
         if not is_seq_inductive(seq0, None, self, L):
+            dbg("... (complement not inductive)")
             seqs = []
             Is = self.initial_sets_from_is(E, L)
             if not Is:
+                dbg("... (no match in inductive sets)")
                 Is = self.initial_sets_from_exits(E, path, L)
             if Is:
                 for s in (InductiveSequence(I.as_assert_annotation(), None) for I in Is):
+                    dbg("... (got first IS)")
                     # should be inductive from construction
                     assert is_seq_inductive(s, None, self, L), 'seq is not inductive'
                     seqs.append(s)
@@ -447,7 +450,8 @@ class BSELFChecker(BaseKindSE):
                    #    seqs.append(s)
             seqs = seqs or None
         else:
-            seqs = None
+            dbg("... (complement is inductive)")
+            seqs = [seq0]
 
         errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
         return target0, seqs, errs0
