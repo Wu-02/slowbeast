@@ -103,28 +103,33 @@ if _use_z3:
 
         return vals
 
-    def _is_sat(solver, *args):
+    def _is_sat(solver, timeout, *args):
         if solver is None:
             solver = Z3Solver()
-        r = solver.check(*args)
+
+        if timeout:
+            solver.set("timeout", timeout)
+            r = solver.check(*args)
+            solver.set("timeout", 4294967295) #default value
+        else:
+            r = solver.check(*args)
+
         if r == sat:
             return True
         elif r == unsat:
             return False
         elif r == unknown:
             reason = solver.reason_unknown()
-            if reason == "canceled" or reason == "interrupted from keyboard":
+            if reason == "interrupted from keyboard":
                 # If the user interrupted the computation,
                 # re-raise the interrupt if it was consumed
                 # in the solver so that the rest of the code
                 # can react on it
                 raise KeyboardInterrupt
-            return reason
-
         return None
 
     def is_sat(*args):
-        return _is_sat(Z3Solver(), *args)
+        return _is_sat(Z3Solver(), None, *args)
 
 
 else:
@@ -156,6 +161,9 @@ class SolverIntf:
     def is_sat(self, *e):
         raise NotImplementedError("Must be overriden")
 
+    def try_is_sat(self, timeout, *e):
+        raise NotImplementedError("Must be overriden")
+
     def fresh_value(self, name, ty):
         """ ty = type """
         return self._exprmanager.fresh_value(name, ty)
@@ -184,6 +192,9 @@ class ConcreteSolver(SolverIntf):
        #        return False
        #return True
 
+    def try_is_sat(self, timeout, *e):
+        assert all(map(lambda x: x.is_bool() and isinstance(x.value(), bool), e)), e
+        return all(map(lambda x: x.value()))
 
 def map_model(m, e):
     if m is None:  # unsat
@@ -226,6 +237,12 @@ class SymbolicSolver(SolverIntf):
             return False
         return is_sat(*(x.unwrap() for x in e if not x.is_concrete()))
 
+    def try_is_sat(self, timeout, *e):
+        if any(map(lambda x: is_false(x) or (x.is_concrete() and x.value() is False), e)):
+            return False
+        return _is_sat(Z3Solver(), timeout, *(x.unwrap() for x in e if not x.is_concrete()))
+
+
     def concretize(self, assumpt, *e):
         assert all(
             map(lambda x: not x.is_concrete(), e)
@@ -257,7 +274,12 @@ class IncrementalSolver(SymbolicSolver):
     def is_sat(self, *e):
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
             return False
-        return _is_sat(self._solver, *(x.unwrap() for x in e if not x.is_concrete()))
+        return _is_sat(self._solver, timeout, *(x.unwrap() for x in e if not x.is_concrete()))
+
+    def try_is_sat(self, timeout, *e):
+        if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
+            return False
+        return _is_sat(self._solver, timeout, *(x.unwrap() for x in e if not x.is_concrete()))
 
     def copy(self):
         s = IncrementalSolver()
