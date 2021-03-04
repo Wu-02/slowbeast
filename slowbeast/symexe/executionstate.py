@@ -81,7 +81,9 @@ class SEState(ExecutionState):
 
         expr = self.expr_manager().conjunction(*self.getConstraints(), *e)
         for bw in (1, 2, 4, 8, 16):
-            rexpr = expr.reduce_arith_bitwidth(1)
+            rexpr = expr.reduce_arith_bitwidth(bw)
+            if rexpr is None:
+                break
             if self._solver.is_sat(rexpr.rewrite_and_simplify()) is False:
                #print("Unsat with reduced bitwidth")
                #print(expr)
