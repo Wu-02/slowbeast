@@ -74,7 +74,21 @@ class SEState(ExecutionState):
                 symb.append(x)
         if not symb:
             return True
-        return self._solver.is_sat(*self.getConstraints(), *e)
+
+        r = self._solver.try_is_sat(3000, *self.getConstraints(), *e)
+        if r is not None:
+            return r
+
+        expr = self.expr_manager().conjunction(*self.getConstraints(), *e)
+        for bw in (1, 2, 4, 8, 16):
+            rexpr = expr.reduce_arith_bitwidth(1)
+            if self._solver.is_sat(rexpr.rewrite_and_simplify()) is False:
+               #print("Unsat with reduced bitwidth")
+               #print(expr)
+               #print(rexpr)
+                return False
+        # Fall-back to normal solving
+        return self._solver.is_sat(expr)
 
     def isfeasible(self):
         """
