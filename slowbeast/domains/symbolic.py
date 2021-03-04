@@ -30,7 +30,8 @@ if _use_z3:
         Concat as BVConcat,
         LShR as BVLShR,
     )
-    from z3 import is_bv, is_bv_value, is_bool, is_and, is_or, is_not
+    from z3 import is_const, is_bv, is_bv_value, is_bool, is_and, is_or, is_not
+    from z3 import is_mul, is_add, is_sub, is_div, is_eq, is_distinct
     from z3 import (
         is_app_of,
         Z3_OP_SLEQ,
@@ -43,6 +44,11 @@ if _use_z3:
         Z3_OP_UGEQ,
         Z3_OP_EQ,
         Z3_OP_BMUL,
+        Z3_OP_BADD,
+        Z3_OP_BSUB,
+        Z3_OP_ZERO_EXT,
+        Z3_OP_ITE,
+        Z3_OP_SIGN_EXT,
     )
     from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic, Then, With, Repeat, OrElse
@@ -172,6 +178,84 @@ if _use_z3:
             yield from subexpressions(c)
         yield expr
 
+    def _reduce_bitwidth(expr, bw, variables):
+        if is_const(expr):
+            if is_bv_value(expr):
+                return bv_const(expr.as_long(), bw) if expr.size() > bw else expr
+            else:
+                if not is_bool(expr) and expr.size() > bw:
+                    return variables.setdefault(expr, bv(f"{expr.sexpr()}_r{bw}", bw))
+                return expr
+        chld = expr.children()
+        if is_not(expr):
+            return Not(_reduce_bitwidth(chld[0], bw, variables))
+        elif is_and(expr):
+            return And(*(_reduce_bitwidth(c, bw, variables) for c in chld))
+        elif is_or(expr):
+            return Or(*(_reduce_bitwidth(c, bw, variables) for c in chld))
+        elif is_eq(expr):
+            return _reduce_bitwidth(chld[0], bw, variables) ==\
+                   _reduce_bitwidth(chld[1], bw, variables) 
+        elif is_app_of(expr, Z3_OP_SGT):
+            return _reduce_bitwidth(chld[0], bw, variables) >\
+                   _reduce_bitwidth(chld[1], bw, variables) 
+        elif is_app_of(expr, Z3_OP_UGT):
+            return BVUGT(_reduce_bitwidth(chld[0], bw, variables),
+                         _reduce_bitwidth(chld[1], bw, variables)) 
+        elif is_app_of(expr, Z3_OP_SLT):
+            return _reduce_bitwidth(chld[0], bw, variables) <\
+                   _reduce_bitwidth(chld[1], bw, variables) 
+        elif is_app_of(expr, Z3_OP_ULT):
+            return BVULT(_reduce_bitwidth(chld[0], bw, variables),
+                         _reduce_bitwidth(chld[1], bw, variables)) 
+        elif is_app_of(expr, Z3_OP_SGE):
+            return _reduce_bitwidth(chld[0], bw, variables) >=\
+                   _reduce_bitwidth(chld[1], bw, variables) 
+        elif is_app_of(expr, Z3_OP_UGE):
+            return BVUGE(_reduce_bitwidth(chld[0], bw, variables),
+                         _reduce_bitwidth(chld[1], bw, variables)) 
+        elif is_app_of(expr, Z3_OP_SLE):
+            return _reduce_bitwidth(chld[0], bw, variables) <=\
+                   _reduce_bitwidth(chld[1], bw, variables) 
+        elif is_app_of(expr, Z3_OP_ULE):
+            return BVULE(_reduce_bitwidth(chld[0], bw, variables),
+                         _reduce_bitwidth(chld[1], bw, variables)) 
+        elif is_app_of(expr, Z3_OP_BADD):
+            return _reduce_bitwidth(chld[0], bw, variables) +\
+                   _reduce_bitwidth(chld[1], bw, variables) 
+        elif is_app_of(expr, Z3_OP_BSUB):
+            return _reduce_bitwidth(chld[0], bw, variables) -\
+                   _reduce_bitwidth(chld[1], bw, variables) 
+        elif is_app_of(expr, Z3_OP_BMUL):
+            return _reduce_bitwidth(chld[0], bw, variables) *\
+                   _reduce_bitwidth(chld[1], bw, variables) 
+        elif is_distinct(expr):
+            return _reduce_bitwidth(chld[0], bw, variables) !=\
+                   _reduce_bitwidth(chld[1], bw, variables) 
+        elif is_app_of(expr, Z3_OP_ZERO_EXT):
+            if chld[0].size() < bw:
+                return BVZExt(bw - chld[0].size(), _reduce_bitwidth(chld[0], bw, variables))
+            return _reduce_bitwidth(chld[0], bw, variables)
+        elif is_app_of(expr, Z3_OP_SIGN_EXT):
+            if chld[0].size() < bw:
+                return BVSExt(bw - chld[0].size(), _reduce_bitwidth(chld[0], bw, variables))
+            return _reduce_bitwidth(chld[0], bw, variables)
+        elif is_app_of(expr, Z3_OP_ITE):
+            return If(_reduce_bitwidth(chld[0], bw, variables),
+                      _reduce_bitwidth(chld[1], bw, variables),
+                      _reduce_bitwidth(chld[2], bw, variables))
+        else:
+            raise ValueError(f"Unsupported expression: {expr} >>> {expr.sexpr()}")
+
+
+    def reduce_bitwidth(expr, bw):
+        variables = {}
+        #return _reduce_bitwidth(expr, bw, variables)
+        try:
+            return _reduce_bitwidth(expr, bw, variables)
+        except ValueError:
+            return None
+
     def to_cnf(*exprs):
         g = Goal()
         g.add(*exprs)
@@ -200,7 +284,7 @@ if _use_z3:
     def solver_to_sb_type(s):
         if is_bv(s):
             return IntType(s.sort().size())
-        assert is_bool(s), "Unhandled expression"
+        assert is_bool(s), f"Unhandled expression: {s}"
         return BoolType()
 
     def get_fp_sort(bw):
@@ -238,7 +322,7 @@ class Expr(Value):
     # FIXME: get rid of the magic constant
     KIND = 2
 
-    __slots__ = ["_expr"]
+    __slots__ = "_expr"
 
     def __init__(self, e, t):
         assert not isinstance(e, int), e
@@ -305,6 +389,21 @@ class Expr(Value):
         Get the expression in CNF form.
         """
         return Expr(Or(*(And(*c) for c in split_clauses(self._expr))), self.type())
+
+    def reduce_bitwidth(self, bw):
+        """
+        Reduce the maximal bitwith of variables and constants to 'bw'
+        (return new expression).
+        \return None on failure (e.g., unsupported expression)
+        """
+        assert self.bitwidth() < bw
+
+        expr = reduce_bitwidth(self.unwrap(), bw)
+        if expr is None:
+            return None
+        ty = solver_to_sb_type(expr)
+        assert ty.bitwidth() <= bw
+        return Expr(expr, ty)
 
     def isAnd(self):
         return is_and(self.unwrap())

@@ -88,7 +88,8 @@ class ExprManager:
     def subexpressions(self, expr):
         if expr.is_concrete():
             yield expr
-        return SymbolicDomain.subexpressions(expr)
+        else:
+            yield from SymbolicDomain.subexpressions(expr)
 
     def simplify(self, expr):
         if expr.is_concrete():
