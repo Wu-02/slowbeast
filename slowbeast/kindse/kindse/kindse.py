@@ -213,6 +213,7 @@ class LoopInfo:
         self.entries = loop.entries
         self.get_exit_paths = loop.get_exit_paths
         self.paths_to_header = loop.paths_to_header
+        self.exits = loop.exits
 
         self.indexecutor = executor.ind_executor()
 
