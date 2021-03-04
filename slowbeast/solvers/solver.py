@@ -175,12 +175,14 @@ class ConcreteSolver(SolverIntf):
         super(ConcreteSolver, self).__init__(em)
 
     def is_sat(self, *e):
-        for x in e:
-            assert x.is_bool()
-            assert isinstance(x.value(), bool)
-            if x.value() is False:
-                return False
-        return True
+        assert all(map(lambda x: x.is_bool() and isinstance(x.value(), bool), e)), e
+        return all(map(lambda x: x.value()))
+       #for x in e:
+       #    assert x.is_bool()
+       #    assert isinstance(x.value(), bool)
+       #    if x.value() is False:
+       #        return False
+       #return True
 
 
 def map_model(m, e):
@@ -220,7 +222,7 @@ class SymbolicSolver(SolverIntf):
         super().__init__(em)
 
     def is_sat(self, *e):
-        if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
+        if any(map(lambda x: is_false(x) or (x.is_concrete() and x.value() is False), e)):
             return False
         return is_sat(*(x.unwrap() for x in e if not x.is_concrete()))
 
