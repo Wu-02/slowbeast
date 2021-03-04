@@ -274,7 +274,7 @@ class IncrementalSolver(SymbolicSolver):
     def is_sat(self, *e):
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
             return False
-        return _is_sat(self._solver, timeout, *(x.unwrap() for x in e if not x.is_concrete()))
+        return _is_sat(self._solver, None, *(x.unwrap() for x in e if not x.is_concrete()))
 
     def try_is_sat(self, timeout, *e):
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
