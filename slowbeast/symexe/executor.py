@@ -124,13 +124,13 @@ class Executor(ConcreteExecutor):
         csat = state.is_sat(cond)
         if csat is None:
             T = state.copy()
-            T.setKilled("Solver failure: {0}".format(r))
+            T.setKilled("Solver failure: {0}".format(ncsat))
 
         ncond = state.expr_manager().Not(cond)
         ncsat = state.is_sat(ncond)
         if ncsat is None:
             F = state.copy()
-            F.setKilled("Solver failure: {0}".format(r))
+            F.setKilled("Solver failure: {0}".format(ncsat))
 
         # is one of the conditions implied?
         # in that case we do not need to add any constraint

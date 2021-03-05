@@ -10,6 +10,8 @@ if _use_z3:
         If,
         Or,
         And,
+        Sum,
+        Product,
         Xor,
         Not,
         Bool,
@@ -178,37 +180,76 @@ if _use_z3:
             yield from subexpressions(c)
         yield expr
 
-    def _rdw(expr, bw):
-        oldbw = expr.size()
-        return BVZExt(oldbw - bw, BVExtract(bw-1, 0, expr))
+   #def _replace_arith_ops(expr, bw):
+   #    if is_const(expr):
+   #        return expr
+   #    chld = expr.children()
+   #    if is_eq(expr):
+   #        return simplify(
+   #               BVExtract(bw-1, 0, _replace_arith_ops(chld[0], bw)) ==\
+   #               BVExtract(bw-1, 0, _replace_arith_ops(chld[1], bw))) 
+   #    elif is_app_of(expr, Z3_OP_BADD):
+   #        return simplify(
+   #               _replace_arith_ops(chld[0], bw) +\
+   #               _replace_arith_ops(chld[1], bw))
+   #    elif is_app_of(expr, Z3_OP_BSUB):
+   #        return simplify(
+   #                _replace_arith_ops(chld[0], bw) -\
+   #                _replace_arith_ops(chld[1], bw)) 
+   #    elif is_app_of(expr, Z3_OP_BMUL):
+   #        return simplify(
+   #                _replace_arith_ops(chld[0], bw) *\
+   #                _replace_arith_ops(chld[1], bw))
+   #    else:
+   #        red = (_replace_arith_ops(c, bw) for c in chld)
+   #        if is_and(expr): return And(*red)
+   #        elif is_or(expr): return Or(*red)
+   #        return expr.decl()(*red)
 
-    def _reduce_arith_bitwidth(expr, bw):
+
+    def replace_arith_ops(expr, bw):
+        """
+        Replace arithmetical operations with a fresh uninterpreted symbol.
+        Return a mapping from new symbols to replaced expressions.
+        Note: performs formula rewritings before the replacement.
+        """
+        return None
+       #try:
+       #    return _replace_arith_ops(expr, bw)
+       #except ValueError:
+       #    return None
+
+
+
+    def _reduce_eq_bitwidth(expr, bw):
         if is_const(expr):
             return expr
         chld = expr.children()
-        if is_app_of(expr, Z3_OP_BADD):
-            return simplify(
-                   _rdw(_reduce_arith_bitwidth(chld[0], bw), bw) +\
-                   _rdw(_reduce_arith_bitwidth(chld[1], bw), bw)) 
-        elif is_app_of(expr, Z3_OP_BSUB):
-            return simplify(
-                    _rdw(_reduce_arith_bitwidth(chld[0], bw), bw) -\
-                    _rdw(_reduce_arith_bitwidth(chld[1], bw), bw)) 
-        elif is_app_of(expr, Z3_OP_BMUL):
-            return simplify(
-                    _rdw(_reduce_arith_bitwidth(chld[0], bw), bw) *\
-                    _rdw(_reduce_arith_bitwidth(chld[1], bw), bw)) 
+        # Do we want to recurse also into operands of == and !=?
+        if is_eq(expr):
+            return (BVExtract(bw-1, 0, chld[0]) ==\
+                    BVExtract(bw-1, 0, chld[1])) 
+        elif is_not(expr):
+            # do not dive into negations - negation of overapproximation
+            # is underapproximation
+            return expr
         else:
-            red = (_reduce_arith_bitwidth(c, bw) for c in chld)
+            red = (_reduce_eq_bitwidth(c, bw) for c in chld)
             if is_and(expr): return And(*red)
             elif is_or(expr): return Or(*red)
-            return expr.decl()(*red)
+           #elif is_add(expr): return Sum(*red)
+           #elif is_mul(expr): return Product(*red)
+            else: return expr.decl()(*red)
 
 
-    def reduce_arith_bitwidth(expr, bw):
-        #return _reduce_arith_bitwidth(expr, bw, variables)
+    def reduce_eq_bitwidth(expr, bw):
+        #return _reduce_eq_bitwidth(expr, bw, variables)
         try:
-            return _reduce_arith_bitwidth(expr, bw)
+            # we need the expr in NNF
+            expr_nnf = Tactic("nnf")(expr)
+            assert len(expr_nnf) == 1, expr_nnf
+            print(expr_nnf)
+            return _reduce_eq_bitwidth(And(*expr_nnf[0]), bw)
         except ValueError:
             return None
 
@@ -216,6 +257,14 @@ if _use_z3:
         g = Goal()
         g.add(*exprs)
         t = Tactic("tseitin-cnf")
+        goal = t(g)
+        assert len(goal) == 1
+        return goal[0]
+
+    def to_nnf(*exprs):
+        g = Goal()
+        g.add(*exprs)
+        t = Tactic("nnf")
         goal = t(g)
         assert len(goal) == 1
         return goal[0]
@@ -346,14 +395,14 @@ class Expr(Value):
         """
         return Expr(Or(*(And(*c) for c in split_clauses(self._expr))), self.type())
 
-    def reduce_arith_bitwidth(self, bw):
+    def reduce_eq_bitwidth(self, bw):
         """
         Reduce the maximal bitwith of arithmetic operations to 'bw'
         (return new expression). The resulting expression is
         overapproximation of the original one.
         \return None on failure (e.g., unsupported expression)
         """
-        expr = reduce_arith_bitwidth(self.unwrap(), bw)
+        expr = reduce_eq_bitwidth(self.unwrap(), bw)
         if expr is None:
             return None
         ty = solver_to_sb_type(expr)

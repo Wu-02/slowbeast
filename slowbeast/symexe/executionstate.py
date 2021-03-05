@@ -75,20 +75,26 @@ class SEState(ExecutionState):
         if not symb:
             return True
 
-        r = self._solver.try_is_sat(3000, *self.getConstraints(), *e)
+        r = self._solver.try_is_sat(1000, *self.getConstraints(), *e)
         if r is not None:
             return r
 
         expr = self.expr_manager().conjunction(*self.getConstraints(), *e)
         for bw in (1, 2, 4, 8, 16):
-            rexpr = expr.reduce_arith_bitwidth(bw)
+            rexpr = expr.reduce_eq_bitwidth(bw)
             if rexpr is None:
                 break
-            if self._solver.is_sat(rexpr.rewrite_and_simplify()) is False:
+            rexpr = rexpr.rewrite_and_simplify()
+            #print(rexpr)
+           #if self._solver.is_sat(rexpr.rewrite_and_simplify()) is False:
+           #   #print("Unsat with reduced bitwidth")
+            #rexpr = rexpr.rewrite_and_simplify()
+            if self._solver.is_sat(rexpr) is False:
                #print("Unsat with reduced bitwidth")
-               #print(expr)
                #print(rexpr)
                 return False
+           #else:
+           #    print('Sat for bw', bw)
         # Fall-back to normal solving
         return self._solver.is_sat(expr)
 
