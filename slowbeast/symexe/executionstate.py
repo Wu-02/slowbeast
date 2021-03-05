@@ -3,9 +3,38 @@ from slowbeast.core.executionstate import ExecutionState
 from slowbeast.util.debugging import warn, ldbgv
 from slowbeast.ir.instruction import Alloc, GlobalVariable
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
+from slowbeast.solvers.solver import IncrementalSolver
 from copy import copy
 from sys import stdout
 
+def _sort_subs(subs):
+    """
+    Return multiplication of two variables later than other expressions
+    """
+    #FIXME: not very efficient
+    V = []
+    for k, v in subs.items():
+        for c in k.children():
+            if c.is_concrete():
+                yield (k, v)
+            else:
+                V.append((k, v))
+    for k, v in V:
+        yield (k, v)
+
+def try_solve_incrementally(expr, em):
+    # First try abstractions
+    rexpr, subs = expr.replace_arith_ops()
+    if rexpr:
+        solver = IncrementalSolver()
+        solver.add(rexpr.rewrite_and_simplify())
+        for placeholder, e in _sort_subs(subs):
+            if solver.is_sat() is False:
+                return False
+            solver.add(em.Eq(e, placeholder))
+    # FIXME try reduced bitwidth and propagating back models
+    return None
+ 
 
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
@@ -75,27 +104,14 @@ class SEState(ExecutionState):
         if not symb:
             return True
 
-        r = self._solver.try_is_sat(1000, *self.getConstraints(), *e)
+        r = self._solver.try_is_sat(5000, *self.getConstraints(), *e)
         if r is not None:
             return r
 
         expr = self.expr_manager().conjunction(*self.getConstraints(), *e)
-        for bw in (1, 2, 4, 8, 16):
-            rexpr = expr.reduce_eq_bitwidth(bw)
-            if rexpr is None:
-                break
-            rexpr = rexpr.rewrite_and_simplify()
-            #print(rexpr)
-           #if self._solver.is_sat(rexpr.rewrite_and_simplify()) is False:
-           #   #print("Unsat with reduced bitwidth")
-            #rexpr = rexpr.rewrite_and_simplify()
-            if self._solver.is_sat(rexpr) is False:
-               #print("Unsat with reduced bitwidth")
-               #print(rexpr)
-                return False
-           #else:
-           #    print('Sat for bw', bw)
-        # Fall-back to normal solving
+        r = try_solve_incrementally(expr, self.expr_manager())
+        if r is not None:
+            return r
         return self._solver.is_sat(expr)
 
     def isfeasible(self):

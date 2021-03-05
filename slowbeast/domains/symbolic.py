@@ -180,44 +180,36 @@ if _use_z3:
             yield from subexpressions(c)
         yield expr
 
-   #def _replace_arith_ops(expr, bw):
-   #    if is_const(expr):
-   #        return expr
-   #    chld = expr.children()
-   #    if is_eq(expr):
-   #        return simplify(
-   #               BVExtract(bw-1, 0, _replace_arith_ops(chld[0], bw)) ==\
-   #               BVExtract(bw-1, 0, _replace_arith_ops(chld[1], bw))) 
-   #    elif is_app_of(expr, Z3_OP_BADD):
-   #        return simplify(
-   #               _replace_arith_ops(chld[0], bw) +\
-   #               _replace_arith_ops(chld[1], bw))
-   #    elif is_app_of(expr, Z3_OP_BSUB):
-   #        return simplify(
-   #                _replace_arith_ops(chld[0], bw) -\
-   #                _replace_arith_ops(chld[1], bw)) 
-   #    elif is_app_of(expr, Z3_OP_BMUL):
-   #        return simplify(
-   #                _replace_arith_ops(chld[0], bw) *\
-   #                _replace_arith_ops(chld[1], bw))
-   #    else:
-   #        red = (_replace_arith_ops(c, bw) for c in chld)
-   #        if is_and(expr): return And(*red)
-   #        elif is_or(expr): return Or(*red)
-   #        return expr.decl()(*red)
+    def _get_replacable(expr, atoms):
+        chld = expr.children()
+        if is_app_of(expr, Z3_OP_BMUL):
+            if is_const(chld[0]) and is_const(chld[1]):
+                v = atoms.setdefault(expr, 0)
+                atoms[expr] = v + 1
+                return
+        for c in chld:
+           _get_replacable(c, atoms)
 
-
-    def replace_arith_ops(expr, bw):
+    def replace_arith_ops(expr):
         """
         Replace arithmetical operations with a fresh uninterpreted symbol.
         Return a mapping from new symbols to replaced expressions.
         Note: performs formula rewritings before the replacement.
         """
-        return None
-       #try:
-       #    return _replace_arith_ops(expr, bw)
-       #except ValueError:
-       #    return None
+        try:
+            atoms = {}
+            expr = And(*Then("tseitin-cnf",
+                             With("simplify", som=True))(expr)[0])
+           #assert len(expr_mod) == 1, expr_mod
+           #expr = And(*expr_mod[0])
+            _get_replacable(expr, atoms)
+            subs = {}
+            for e, num in atoms.items():
+                if num < 1: continue
+                subs[e] = BitVec(f"r_{hash(e)}", e.size())
+            return substitute(expr, *subs.items()), subs
+        except ValueError:
+            return None, None
 
 
 
@@ -248,7 +240,6 @@ if _use_z3:
             # we need the expr in NNF
             expr_nnf = Tactic("nnf")(expr)
             assert len(expr_nnf) == 1, expr_nnf
-            print(expr_nnf)
             return _reduce_eq_bitwidth(And(*expr_nnf[0]), bw)
         except ValueError:
             return None
@@ -408,6 +399,19 @@ class Expr(Value):
         ty = solver_to_sb_type(expr)
         assert ty.bitwidth() <= bw
         return Expr(expr, ty)
+
+    def replace_arith_ops(self):
+        """
+        Reduce the maximal bitwith of arithmetic operations to 'bw'
+        (return new expression). The resulting expression is
+        overapproximation of the original one.
+        \return None on failure (e.g., unsupported expression)
+        """
+        expr, subs = replace_arith_ops(self.unwrap())
+        if expr is None:
+            return None, None
+        return Expr(expr, self.type()),\
+               {Expr(k, solver_to_sb_type(k)) : Expr(v, solver_to_sb_type(v)) for k, v in subs.items()}
 
     def isAnd(self):
         return is_and(self.unwrap())
