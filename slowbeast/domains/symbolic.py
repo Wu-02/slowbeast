@@ -51,6 +51,8 @@ if _use_z3:
         Z3_OP_ZERO_EXT,
         Z3_OP_ITE,
         Z3_OP_SIGN_EXT,
+        Z3_OP_CONCAT,
+        Z3_OP_EXTRACT,
     )
     from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic, Then, With, Repeat, OrElse
@@ -180,10 +182,17 @@ if _use_z3:
             yield from subexpressions(c)
         yield expr
 
+    def is_lit(e):
+        return is_const(e) or\
+                ((is_app_of(e, Z3_OP_ZERO_EXT) or\
+                  is_app_of(e, Z3_OP_SIGN_EXT) or\
+                  is_app_of(e, Z3_OP_CONCAT) or\
+                  is_app_of(e, Z3_OP_EXTRACT)) and is_const(e.children()[0]))
+
     def _get_replacable(expr, atoms):
         chld = expr.children()
         if is_app_of(expr, Z3_OP_BMUL):
-            if is_const(chld[0]) and is_const(chld[1]):
+            if is_lit(chld[0]) and is_lit(chld[1]):
                 v = atoms.setdefault(expr, 0)
                 atoms[expr] = v + 1
                 return

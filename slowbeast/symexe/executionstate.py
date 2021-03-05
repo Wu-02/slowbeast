@@ -14,11 +14,11 @@ def _sort_subs(subs):
     #FIXME: not very efficient
     V = []
     for k, v in subs.items():
-        for c in k.children():
-            if c.is_concrete():
-                yield (k, v)
-            else:
-                V.append((k, v))
+        s = sum(map(lambda c: not c.is_concrete(), k.children()))
+        if s > 1:
+            V.append((k, v))
+        else:
+            yield (k,v)
     for k, v in V:
         yield (k, v)
 
