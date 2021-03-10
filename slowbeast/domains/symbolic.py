@@ -1,8 +1,294 @@
+from functools import reduce
 from slowbeast.domains.value import Value
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.types import Type, IntType, BoolType, FloatType
 from slowbeast.ir.instruction import FpOp
 from slowbeast.util.debugging import FIXME
+
+#FIXME move to its own file
+
+def _distribute_two(c1, c2, mk_add, mk_mul):
+    assert c1, c2
+    if c1.is_add():
+        if c2.is_add():
+            return mk_add(*(mk_mul(a, b) for a in c1._children for b in c2._children))
+        else:
+            return mk_add(*(mk_mul(a, c2) for a in c1._children))
+    elif c2.is_add():
+        assert not c1.is_add()
+        return mk_add(*(mk_mul(c1, a) for a in c2._children))
+    return mk_mul(c1, c2)
+
+class Monomial:
+    def __init__(self, coef, *variables):
+        assert coef != 0
+        self.coef = coef
+        self.vars = {v : e for v,e in variables if e != 0}
+
+    def create(expr):
+        raise NotImplementedError("Must be overridden")
+
+    def _is_same(self, rhs):
+        RV = rhs.vars
+        for v, e in self.vars:
+            assert e != 0, self.vars
+            re = RV.get(v)
+            if re is None or re != e:
+                return False
+        return False
+
+    def is_same(self, rhs):
+        return self._is_same(rhs) and rhs._is_same(self)
+
+    def mul(self, *rhss):
+        for m in rhss:
+            assert isinstance(m, Monomial), m
+            coef = self.coef
+            V = self.vars
+            for v, e in m.vars.items():
+                # increase exponent
+                lv = V.setdefault(v, 0)
+                if lv + e != 0:
+                    V[v] = lv + e
+                else:
+                    V.remove(v)
+                coef *= m.coef
+
+    def __repr__(self):
+        coef = self.coef
+        r = "" if coef == 1 else "-" if coef == -1 else str(coef)
+        for v, e in self.vars.items():
+            r += f"{v}^{e}" if e != 1 else str(v)
+        return r
+
+class Polynomial:
+    def __init__(self, *monomials):
+        print(monomials)
+        self.monomials = {}
+        self.add(*monomials)
+
+    def add(self, *m):
+        M = self.monomials
+        for r in m:
+            handled = False
+            for l in M:
+                if l.is_same(r):
+                    l.add_coef(r.coef)
+                    handled = True
+            if not handled:
+                M.append(r)
+
+    def mul(self, *m):
+        M = self.monomials
+        for l in M:
+            for r in m:
+                l.mul(r)
+
+    def create(expr):
+        raise NotImplementedError("Must be overridden")
+
+    def __repr__(self):
+        return " + ".join(self.monomials)
+    
+class ArithFormula:
+    """
+    Helper class for representing formulas in LIA or BV theory.
+    This class makes it easy to work with commutative expressions
+    by merging the operands into sets (if the operation is commutative).
+    """
+    # commutative operations
+    AND = 1
+    OR  = 2
+    EQ  = 6
+
+    # non-commutative operations
+    MT_NON_COMMUTATIVE=39
+    MT_NON_ASSOCIATIVE=49
+    # non-associative operations
+    NOT = 51
+    SLE = 52
+    SLT = 53 
+    ULT = 54 
+    ULE = 55 
+    SGE = 56
+    SGT = 57 
+    UGT = 58 
+    UGE = 59 
+
+    # variables, constants
+    MT_VALUES = 100
+    POLYNOM = 101
+
+    def __init__(self, ty, value, *operands):
+        print('<<FORMULA', ty, value, operands)
+        assert value is None or ty > ArithFormula.MT_VALUES
+        self._ty = ty
+        self._value = value
+        self._children = []
+
+        # flatter the expression already here
+        isac = ArithFormula.op_is_assoc_and_comm(ty)
+        for o in operands:
+            if isac and o._ty == ty:
+                assert o.children(), o
+                self.add_child(*o.children())
+                print('  add chlds')
+            elif ty == ArithFormula.ADD and o.value_equals(0):
+                continue
+            elif ty == ArithFormula.MUL and o.value_equals(1):
+                continue
+            else:
+                print('  add norm')
+                self.add_child(o)
+
+
+        if len(self._children) == 1 and ty != ArithFormula.NOT:
+            elem = self._children.pop()
+            self._value = elem._value
+            self._ty = elem._ty
+
+        #print('FORMULA>>', self)
+
+    def add_child(self, *args):
+        assert self._value is None, "Adding child to var/const"
+        self._children.extend(args)
+
+    def op_is_associative(op):
+        return op <= ArithFormula.MT_NON_ASSOCIATIVE
+
+    def op_is_commutative(op):
+        return op <= ArithFormula.MT_NON_COMMUTATIVE
+
+    def op_is_assoc_and_comm(op):
+        return op <= ArithFormula.MT_NON_ASSOCIATIVE
+
+    def __op_to_str(op):
+        if op == ArithFormula.AND: return "∧"
+        if op == ArithFormula.OR  : return "∨"
+        if op == ArithFormula.NOT : return "not"
+        if op == ArithFormula.EQ  : return "="
+        if op == ArithFormula.SLE : return "<="
+        if op == ArithFormula.SLT : return "<" 
+        if op == ArithFormula.ULT : return "<u" 
+        if op == ArithFormula.ULE : return "<=u" 
+        if op == ArithFormula.SGE : return ">="
+        if op == ArithFormula.SGT : return ">" 
+        if op == ArithFormula.UGT : return ">u" 
+        if op == ArithFormula.UGE : return ">=u" 
+        return None
+
+    def type(self):
+        return self._ty
+
+    def value(self):
+        return self._value
+
+    def value_equals(self):
+        raise NotImplementedError("Must be overridden")
+
+    def __iter__(self):
+        return self._children.__iter__()
+
+    def children(self):
+        return self._children
+
+    def create(expr):
+        raise NotImplementedError("Must be overridden")
+
+    def expr(self):
+        "Convert this object into expression for solver"
+        raise NotImplementedError("Must be overridden")
+
+    def is_eq(self): return self._ty == ArithFormula.EQ
+    def is_not(self): return self._ty == ArithFormula.NOT
+
+    def substitute_inplace(self, *subs):
+        """ Return True if the formula gets modified """
+        changed = False
+        newchldrn = []
+        for op in self._children:
+            changed |= op.substitute_inplace(*subs)
+
+            for s, to in subs:
+                # should substitute?
+                if s == op:
+                    if self._ty == to._ty and ArithFormula.op_is_assoc_and_comm(to._ty):
+                        newchldrn.extend(to.children())
+                    else:
+                        newchldrn.append(to)
+                    changed = True
+                else:
+                    newchldrn.append(op)
+        self._children = newchldrn
+        return changed
+
+    def distribute_inplace(self, *subs):
+        """ Return True if the formula gets modified """
+        changed = False
+        for op in self._children:
+            changed |= op.distribute_inplace(*subs)
+
+        if not self.is_mul():
+            return changed
+
+        chlds = list(self._children)
+        oldlen = len(chlds)
+        c1 = chlds.pop()
+        c2 = chlds.pop()
+
+        mk_add = lambda *args: type(self)(ArithFormula.ADD, None, *args)
+        mk_mul = lambda *args: type(self)(ArithFormula.MUL, None, *args)
+
+        newf = _distribute_two(c1, c2, mk_add, mk_mul)
+        while chlds:
+            c = chlds.pop()
+            newf = _distribute_two(newf, c, mk_add, mk_mul)
+
+        self._ty = newf._ty
+        self._children = newf._children
+        assert len(self._children) >= oldlen, f"{len(self._children)}, {oldlen}"
+        return len(self._children) != oldlen
+
+
+    def __eq__(self, rhs):
+        return isinstance(rhs, ArithFormula) and\
+                self._ty == rhs._ty and\
+                self._value == rhs._value and\
+                self._children == rhs._children
+
+    # FIXME: not efficient
+    def __hash__(self):
+        v = self._value
+        if v is not None: return hash(v)
+        return hash(self._ty)# ^ reduce(lambda a, b: hash(a) ^ hash(b), self._children)
+
+    def __repr__(self):
+        ty = self._ty
+        if ty == ArithFormula.NOT:
+            assert len(self._children) == 1
+            return f"¬({self._children[0]})"
+        elif ty > ArithFormula.MT_VALUES:
+            assert len(self._children) == 0
+            return str(self._value)
+        op = ArithFormula.__op_to_str(ty)
+        assert op
+        return "({0})".format(op.join(map(str, self._children)))
+
+
+    def __str__(self):
+        ty = self._ty
+        if ty == ArithFormula.NOT:
+            assert len(self._children) == 1, self._children
+            if self._children[0]._ty == ArithFormula.EQ:
+                return "({0})".format("≠".join(map(str, self._children[0]._children)))
+            return f"¬({self._children[0]})"
+        elif ty > ArithFormula.MT_VALUES:
+            assert len(self._children) == 0
+            return str(self._value)
+        op = ArithFormula.__op_to_str(ty)
+        assert op
+        return "({0})".format(op.join(map(str, self._children)))
+
 
 _use_z3 = True
 if _use_z3:
@@ -48,6 +334,8 @@ if _use_z3:
         Z3_OP_BMUL,
         Z3_OP_BADD,
         Z3_OP_BSUB,
+        Z3_OP_BUDIV,
+        Z3_OP_BSDIV,
         Z3_OP_ZERO_EXT,
         Z3_OP_ITE,
         Z3_OP_SIGN_EXT,
@@ -176,6 +464,103 @@ if _use_z3:
     def bv_size(bw):
         return bw.sort().size()
 
+
+    def _expr_op_to_formula_op(expr):
+        if is_and(expr): return ArithFormula.AND
+        if is_or(expr): return ArithFormula.OR
+        if is_not(expr): return ArithFormula.NOT
+
+        if is_eq(expr): return ArithFormula.EQ
+        if is_app_of(expr, Z3_OP_SLEQ): return ArithFormula.SLE
+        if is_app_of(expr, Z3_OP_SLT): return ArithFormula.SLT
+        if is_app_of(expr, Z3_OP_ULEQ): return ArithFormula.ULE
+        if is_app_of(expr, Z3_OP_ULT): return ArithFormula.ULT
+        if is_app_of(expr, Z3_OP_SGEQ): return ArithFormula.SGE
+        if is_app_of(expr, Z3_OP_SGT): return ArithFormula.SGT
+        if is_app_of(expr, Z3_OP_UGEQ): return ArithFormula.UGE
+        if is_app_of(expr, Z3_OP_UGT): return ArithFormula.UGT
+
+        #raise NotImplementedError(f"Unhandled operation: {expr}")
+        return None
+
+    class BVMonomial(Monomial):
+        """
+        Helper class for representing formulas in LIA or BV theory.
+        This class makes it easy to work with commutative expressions
+        by merging the operands into sets (if the operation is commutative).
+        """
+        def __init__(self, coef, *variabl):
+            super().__init__(coef, *variabl)
+
+        def create(expr):
+            raise NotImplementedError("Must be overridden")
+
+    class BVPolynomial(Polynomial):
+        """
+        Helper class for representing formulas in LIA or BV theory.
+        This class makes it easy to work with commutative expressions
+        by merging the operands into sets (if the operation is commutative).
+        """
+        def __init__(self, *monomials):
+            super().__init__(*monomials)
+
+        def create(expr):
+            print(expr)
+            P = BVPolynomial()
+            if is_app_of(expr, Z3_OP_BADD):
+                P.add(*(BVPolynomial.create(e) for e in expr.children()))
+            elif is_app_of(expr, Z3_OP_BMUL):
+                P.mul(*(BVPolynomial.create(e) for e in expr.children()))
+            elif is_const(expr):
+                if is_bv_value(expr):
+                    return BVPolynomial(BVMonomial(expr.as_long()))
+                return BVPolynomial(BVMonomial(1, (expr, 1)))
+            print(P)
+            return P
+            raise NotImplementedError("Must be overridden")
+
+    class BVFormula(ArithFormula):
+        """
+        Helper class for representing formulas in LIA or BV theory.
+        This class makes it easy to work with commutative expressions
+        by merging the operands into sets (if the operation is commutative).
+        """
+        def __init__(self, ty, *operands):
+            super().__init__(ty, *operands)
+
+        def create(expr):
+            chlds = expr.children()
+            op = _expr_op_to_formula_op(expr)
+            if chlds:
+                if op is None:
+                    # it is a polynomial
+                    P = BVPolynomial.create(expr)
+                    return BVFormula(ArithFormula.POLYNOM, P)
+                isac = ArithFormula.op_is_assoc_and_comm(op)
+                formula = BVFormula(op, None)
+                for c in chlds:
+                    if isac and op == _expr_op_to_formula_op(c):
+                        formula.add_child(*(BVFormula.create(c).children()))
+                    else:
+                        formula.add_child(BVFormula.create(c))
+                return formula
+               #return BVFormula(_expr_op_to_formula_op(expr), None,
+               #                 *(BVFormula.create(c) for c in chlds))
+            assert op >= ArithFormula.MT_VALUES, expr
+            return BVFormula(op, expr)
+
+        def value_equals(self, x):
+            v = self._value
+            if v is None:
+                return False
+            return is_bv_value(v) and v.as_long() == x
+
+        def expr(self):
+            "Convert this object into expression for solver"
+            raise NotImplementedError("Must be overridden")
+
+
+
     def subexpressions(expr):
         children = expr.children()
         for c in children:
@@ -187,17 +572,60 @@ if _use_z3:
                 ((is_app_of(e, Z3_OP_ZERO_EXT) or\
                   is_app_of(e, Z3_OP_SIGN_EXT) or\
                   is_app_of(e, Z3_OP_CONCAT) or\
-                  is_app_of(e, Z3_OP_EXTRACT)) and is_const(e.children()[0]))
+                  is_app_of(e, Z3_OP_EXTRACT)) and is_lit(e.children()[0]))
+
+    def _is_const_mul(expr):
+        chld = expr.children()
+        return is_app_of(expr, Z3_OP_BMUL) and is_lit(chld[0]) and is_lit(chld[1])
 
     def _get_replacable(expr, atoms):
         chld = expr.children()
-        if is_app_of(expr, Z3_OP_BMUL):
-            if is_lit(chld[0]) and is_lit(chld[1]):
-                v = atoms.setdefault(expr, 0)
-                atoms[expr] = v + 1
-                return
+        if _is_const_mul(expr):
+            v = atoms.setdefault(expr, 0)
+            atoms[expr] = v + 1
+            return
         for c in chld:
            _get_replacable(c, atoms)
+
+    def replace_common_subexprs(expr_to, exprs_from):
+        """
+        Replace arithmetical operations with a fresh uninterpreted symbol.
+        Return a mapping from new symbols to replaced expressions.
+        Note: performs formula rewritings before the replacement.
+        """
+        if not exprs_from:
+            return expr_to
+
+        try:
+            to_formula = BVFormula.create(expr_to)
+            print('TO', to_formula)
+            while to_formula.distribute_inplace():
+                print('TO d', to_formula)
+                pass
+            print('TO fin', to_formula)
+
+            subs = []
+            for e in exprs_from:
+                e_formula = BVFormula.create(e)
+                if e_formula.is_eq():
+                    chlds = list(e_formula.children())
+                    if chlds[0].is_mul():
+                        subs.append((chlds[0], chlds[1]))
+                    elif chlds[1].is_mul():
+                        subs.append((chlds[1], chlds[0]))
+
+            if not subs:
+                return expr_to
+
+            print('orig F', to_formula)
+            while to_formula.substitute_inplace(*subs):
+                print('F', to_formula)
+                to_formula.distribute_inplace()
+                print('F distr', to_formula)
+            print('RESULT', to_formula)
+            return to_formula.expr()
+        except ValueError:
+            return None, None
 
     def replace_arith_ops(expr):
         """
@@ -408,6 +836,14 @@ class Expr(Value):
         ty = solver_to_sb_type(expr)
         assert ty.bitwidth() <= bw
         return Expr(expr, ty)
+
+    def replace_common_subexprs(self, from_exprs):
+        expr = replace_common_subexprs(self.unwrap(), map(lambda x: x.unwrap(), from_exprs))
+        if expr is None:
+            return None
+        return Expr(expr, self.type())
+
+
 
     def replace_arith_ops(self):
         """

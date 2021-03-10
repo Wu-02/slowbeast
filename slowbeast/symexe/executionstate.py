@@ -22,8 +22,22 @@ def _sort_subs(subs):
     for k, v in V:
         yield (k, v)
 
-def try_solve_incrementally(expr, em):
-    # First try abstractions
+def try_solve_incrementally(assumptions, exprs, em):
+    if assumptions:
+        # First try to rewrite the formula into simpler form
+        expr1 = em.conjunction(*exprs).replace_common_subexprs(assumptions)
+        print('ASSUMPTIONS', assumptions)
+        print('SIMPLIFIED', expr1)
+        r = IncrementalSolver().try_is_sat(1000, *assumptions, expr1)
+        if r is not None:
+            return r
+        expr = em.conjunction(*assumptions, expr1)
+    else:
+        expr = em.conjunction(*assumptions, *exprs)
+
+    print('GOT TO ABSTRACTIONS')
+    print(expr)
+    # Now try abstractions
     rexpr, subs = expr.replace_arith_ops()
     if rexpr:
         solver = IncrementalSolver()
@@ -104,12 +118,18 @@ class SEState(ExecutionState):
         if not symb:
             return True
 
-        r = self._solver.try_is_sat(5000, *self.getConstraints(), *e)
+        r = self._solver.try_is_sat(500, *self.getConstraints(), *e)
         if r is not None:
             return r
 
-        expr = self.expr_manager().conjunction(*self.getConstraints(), *e)
-        r = try_solve_incrementally(expr, self.expr_manager())
+        print('------')
+        print('A', self.getConstraints())
+        print('B', e)
+        conj = self.expr_manager().conjunction
+        assumptions = conj(*self.getConstraints())
+        expr = conj(*e)
+        r = try_solve_incrementally(self.getConstraints(), e, self.expr_manager())
+        print('------')
         if r is not None:
             return r
         return self._solver.is_sat(expr)
