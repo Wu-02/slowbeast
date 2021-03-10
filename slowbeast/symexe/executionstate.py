@@ -1,4 +1,4 @@
-from slowbeast.domains.symbolic import NondetInstrResult
+from slowbeast.domains.symbolic import NondetInstrResult, _desimplify_ext
 from slowbeast.core.executionstate import ExecutionState
 from slowbeast.util.debugging import warn, ldbgv
 from slowbeast.ir.instruction import Alloc, GlobalVariable
@@ -25,18 +25,24 @@ def _sort_subs(subs):
 def try_solve_incrementally(assumptions, exprs, em):
     if assumptions:
         # First try to rewrite the formula into simpler form
+        #print('------')
+        #print('ASSUMPTIONS', assumptions)
         expr1 = em.conjunction(*exprs).replace_common_subexprs(assumptions)
-        print('ASSUMPTIONS', assumptions)
-        print('SIMPLIFIED', expr1)
-        r = IncrementalSolver().try_is_sat(1000, *assumptions, expr1)
+        A = []
+        for i in range(len(assumptions)):
+            a = assumptions[i]
+            A.append(a.replace_common_subexprs([x for n, x in enumerate(assumptions) if n != i]))
+        assumptions = A
+       #print('SIMPLIFIED', expr1)
+       #print('ASSUMPTIONS', assumptions)
+        #print('------')
+        r = IncrementalSolver().try_is_sat(3000, *assumptions, expr1)
         if r is not None:
             return r
         expr = em.conjunction(*assumptions, expr1)
     else:
         expr = em.conjunction(*assumptions, *exprs)
 
-    print('GOT TO ABSTRACTIONS')
-    print(expr)
     # Now try abstractions
     rexpr, subs = expr.replace_arith_ops()
     if rexpr:
@@ -46,6 +52,8 @@ def try_solve_incrementally(assumptions, exprs, em):
             if solver.is_sat() is False:
                 return False
             solver.add(em.Eq(e, placeholder))
+        # solve the un-abstracted expression
+        return solver.try_is_sat(1000)
     # FIXME try reduced bitwidth and propagating back models
     return None
  
@@ -118,18 +126,14 @@ class SEState(ExecutionState):
         if not symb:
             return True
 
-        r = self._solver.try_is_sat(500, *self.getConstraints(), *e)
+        r = self._solver.try_is_sat(1000, *self.getConstraints(), *e)
         if r is not None:
             return r
 
-        print('------')
-        print('A', self.getConstraints())
-        print('B', e)
         conj = self.expr_manager().conjunction
         assumptions = conj(*self.getConstraints())
         expr = conj(*e)
         r = try_solve_incrementally(self.getConstraints(), e, self.expr_manager())
-        print('------')
         if r is not None:
             return r
         return self._solver.is_sat(expr)

@@ -20,75 +20,255 @@ def _distribute_two(c1, c2, mk_add, mk_mul):
     return mk_mul(c1, c2)
 
 class Monomial:
-    def __init__(self, coef, *variables):
-        assert coef != 0
-        self.coef = coef
+    """ Monomial (power product) """
+
+    def __init__(self, *variables):
         self.vars = {v : e for v,e in variables if e != 0}
 
+    def __getitem__(self, item):
+        return self.vars.get(item)
+
+    def copy(self):
+        M = type(self)()
+        M.vars = self.vars.copy()
+        return M
+
     def create(expr):
         raise NotImplementedError("Must be overridden")
 
-    def _is_same(self, rhs):
-        RV = rhs.vars
-        for v, e in self.vars:
-            assert e != 0, self.vars
-            re = RV.get(v)
-            if re is None or re != e:
-                return False
-        return False
+    def degree(self):
+        return sum(self.vars.values())
 
-    def is_same(self, rhs):
-        return self._is_same(rhs) and rhs._is_same(self)
+    def multiplied(self, *rhss):
+        """ product of self and monomials in rhss. Returns a new object """
 
-    def mul(self, *rhss):
+        V = self.vars
+        newV = {}
         for m in rhss:
             assert isinstance(m, Monomial), m
-            coef = self.coef
-            V = self.vars
             for v, e in m.vars.items():
                 # increase exponent
-                lv = V.setdefault(v, 0)
-                if lv + e != 0:
-                    V[v] = lv + e
+                lv = V.get(v)
+                exp = (lv or 0) + e
+                if exp != 0:
+                    newV[v] = exp
+        # fill-in the rest of V
+        for v, e in V.items():
+            if newV.get(v) is None:
+                newV[v] = e
+
+        newMon = type(self)()
+        newMon.vars = newV
+        return newMon
+
+    def divided(self, *rhss):
+        newV = self.vars.copy()
+        for m in rhss:
+            assert isinstance(m, Monomial), m
+            for v, e in m.vars.items():
+                lv = newV.get(v)
+                # decrease exponent
+                if lv is None:
+                    newV[v] = -e
                 else:
-                    V.remove(v)
-                coef *= m.coef
+                    # lv - e == 0
+                    if lv == e:
+                        newV.pop(v)
+                    else:
+                        newV[v] = lv - e
+        newMon = type(self)()
+        newMon.vars = newV
+        return newMon
+
+    def is_constant(self):
+        return not self.vars
+
+    def divides(self, rhs):
+        RV = rhs.vars
+        for v, e in self.vars.items():
+            assert e != 0, self
+            re = RV.get(v)
+            if re is None:
+                return False
+            if re < e:
+                return False
+        return True
 
     def __repr__(self):
-        coef = self.coef
-        r = "" if coef == 1 else "-" if coef == -1 else str(coef)
-        for v, e in self.vars.items():
-            r += f"{v}^{e}" if e != 1 else str(v)
-        return r
+        V = self.vars
+        if not V:
+            return "[1]"
+        return "[{0}]".format("·".join(f"{v}^{e}" if e != 1 else str(v) for v, e in V.items()))
 
 class Polynomial:
-    def __init__(self, *monomials):
-        print(monomials)
+    def __init__(self, *elems):
+        # mapping from monomials to their coefficient
         self.monomials = {}
-        self.add(*monomials)
+        self.add(*elems)
 
-    def add(self, *m):
+    def __getitem__(self, item):
+        return self.monomials.get(item)
+
+    def copy(self):
+        P = type(self)()
+        P.monomials = {m.copy() : c for m, c in self.monomials.items()}
+        return P
+
+    def clean_copy(self):
+        return type(self)()
+
+    def _create_coefficient(self, c, m):
+        """
+        Create a coefficient 'c' to monomial 'm'.
+        This method can be overriden, e.g., to have the
+        coefficients modulo something.
+        """
+        return c
+
+    def _coefficient_is_zero(self, c):
+        """
+        Check whether the coefficient is zero.
+        This method can be overriden.
+        """
+        return c == 0
+
+    def _coefficient_is_one(self, c):
+        """
+        Check whether the coefficient is zero.
+        This method can be overriden.
+        """
+        return c == 1
+
+    def _coefficient_is_minus_one(self, c):
+        """
+        Check whether the coefficient is zero.
+        This method can be overriden.
+        """
+        return c == -1
+
+    def _simplify_coefficient(self, c):
+        """
+        Simplify the given coefficient.
+        This method can be overriden.
+        """
+        return c
+
+    def __iter__(self):
+        return iter(self.monomials.items())
+
+    def _add_monomial(self, r, coef=1):
         M = self.monomials
-        for r in m:
-            handled = False
-            for l in M:
-                if l.is_same(r):
-                    l.add_coef(r.coef)
-                    handled = True
-            if not handled:
-                M.append(r)
+        cur = M.get(r)
+        if cur is None:
+            M[r] = self._create_coefficient(coef, r)
+        else:
+            assert not self._coefficient_is_zero(cur)
+            newcoef = self._simplify_coefficient(cur + self._create_coefficient(coef, r))
+            if self._coefficient_is_zero(newcoef):
+                M.pop(r)
+            else:
+                M[r] = newcoef
 
+    def add(self, *elems):
+        M = self.monomials
+        for r in elems:
+            if isinstance(r, Monomial):
+                self._add_monomial(r)
+            elif isinstance(r, Polynomial):
+                for rhsm, rhsc in r:
+                    assert not self._coefficient_is_zero(rhsc), r
+                    self._add_monomial(rhsm, rhsc)
+            elif isinstance(r, tuple): # tuple of coef and monomial 
+                self._add_monomial(r[1], r[0])
+            else:
+                raise NotImplementedError(f"Unhandled polynomial expression: {r}")
+
+    def split(self, mons):
+        """
+        Put monomials from 'self' that match 'mons' to one polynom
+        and the rest to other polynom
+        """
+        P1 = self.clean_copy()
+        P2 = self.clean_copy()
+        for m, c in self.monomials.items():
+            if m in mons:
+                P1.add((c, m))
+            else:
+                P2.add((c, m))
+        return P1, P2
+
+    def _mul_monomials(self, newP, lhsm, lhsc, rhsm, rhsc=None):
+        newm = lhsm.multiplied(rhsm)
+        newP[newm] = self._simplify_coefficient(lhsc * (self._create_coefficient(1, newm) if rhsc is None else rhsc))
+ 
     def mul(self, *m):
-        M = self.monomials
-        for l in M:
+        newP = {}
+        for lhsm, lhsc in self.monomials.items():
+            assert not self._coefficient_is_zero(lhsc)
             for r in m:
-                l.mul(r)
+                if isinstance(r, Monomial):
+                    self._mul_monomials(newP, lhsm, lhsc, r)
+                elif isinstance(r, Polynomial):
+                    for rhsm, rhsc in r:
+                        assert not self._coefficient_is_zero(rhsc), r
+                        self._mul_monomials(newP, lhsm, lhsc, rhsm, rhsc)
+                elif isinstance(r, tuple):
+                    self._mul_monomials(newP, lhsm, lhsc, r[1], r[0])
+                else:
+                    raise NotImplementedError(f"Unhandled polynomial expression: {r}")
+        self.monomials = newP
+
+    def change_sign(self):
+        newP = {}
+        cc = self._create_coefficient
+        sc = self._simplify_coefficient
+        for m, c in self.monomials.items():
+            newP[m] = sc(c*cc(-1, m))
+        self.monomials = newP
+
+    def max_degree(self):
+        return max(self.monomials.keys())
+
+    def get_coef(self, m):
+        return self.monomials.get(m)
+
+    def coef_is_one(self, m):
+        return self._coefficient_is_one(self.monomials.get(m))
+
+    def coef_is_minus_one(self, m):
+        return self._coefficient_is_minus_one(self.monomials.get(m))
+
+    def is_normed(self, m):
+        x = self.monomials.get(m)
+        if x is None:
+            return False
+        return self._coefficient_is_one(x) or self._coefficient_is_minus_one(x)
+
+    def max_degree_elems(self):
+        md = -1
+        elems = []
+        for m, c in self.monomials.items():
+            d = m.degree()
+            if d > md:
+                elems = [m]
+                md = d
+            elif d == md:
+                elems.append(m)
+        return elems
+
+    def pop(self, *ms):
+        for m in ms:
+            assert isinstance(m, Monomial), m
+            self.monomials.pop(m)
 
     def create(expr):
         raise NotImplementedError("Must be overridden")
 
     def __repr__(self):
-        return " + ".join(self.monomials)
+        return str(self.monomials)
+
+    def __str__(self):
+        return " + ".join(map(lambda x: f"{x[1]}·{x[0]}", self.monomials.items()))
     
 class ArithFormula:
     """
@@ -120,7 +300,6 @@ class ArithFormula:
     POLYNOM = 101
 
     def __init__(self, ty, value, *operands):
-        print('<<FORMULA', ty, value, operands)
         assert value is None or ty > ArithFormula.MT_VALUES
         self._ty = ty
         self._value = value
@@ -132,13 +311,11 @@ class ArithFormula:
             if isac and o._ty == ty:
                 assert o.children(), o
                 self.add_child(*o.children())
-                print('  add chlds')
             elif ty == ArithFormula.ADD and o.value_equals(0):
                 continue
             elif ty == ArithFormula.MUL and o.value_equals(1):
                 continue
             else:
-                print('  add norm')
                 self.add_child(o)
 
 
@@ -147,7 +324,13 @@ class ArithFormula:
             self._value = elem._value
             self._ty = elem._ty
 
-        #print('FORMULA>>', self)
+
+    def __getitem__(self, item):
+        if self._children:
+            assert item < len(self._children)
+            return self._children[item]
+        assert item == 0
+        return self._value
 
     def add_child(self, *args):
         assert self._value is None, "Adding child to var/const"
@@ -167,14 +350,14 @@ class ArithFormula:
         if op == ArithFormula.OR  : return "∨"
         if op == ArithFormula.NOT : return "not"
         if op == ArithFormula.EQ  : return "="
-        if op == ArithFormula.SLE : return "<="
+        if op == ArithFormula.SLE : return "≤"
         if op == ArithFormula.SLT : return "<" 
         if op == ArithFormula.ULT : return "<u" 
-        if op == ArithFormula.ULE : return "<=u" 
-        if op == ArithFormula.SGE : return ">="
+        if op == ArithFormula.ULE : return "≤u" 
+        if op == ArithFormula.SGE : return "≥"
         if op == ArithFormula.SGT : return ">" 
         if op == ArithFormula.UGT : return ">u" 
-        if op == ArithFormula.UGE : return ">=u" 
+        if op == ArithFormula.UGE : return "≥u" 
         return None
 
     def type(self):
@@ -201,6 +384,7 @@ class ArithFormula:
 
     def is_eq(self): return self._ty == ArithFormula.EQ
     def is_not(self): return self._ty == ArithFormula.NOT
+    def is_poly(self): return self._ty == ArithFormula.POLYNOM
 
     def substitute_inplace(self, *subs):
         """ Return True if the formula gets modified """
@@ -221,34 +405,6 @@ class ArithFormula:
                     newchldrn.append(op)
         self._children = newchldrn
         return changed
-
-    def distribute_inplace(self, *subs):
-        """ Return True if the formula gets modified """
-        changed = False
-        for op in self._children:
-            changed |= op.distribute_inplace(*subs)
-
-        if not self.is_mul():
-            return changed
-
-        chlds = list(self._children)
-        oldlen = len(chlds)
-        c1 = chlds.pop()
-        c2 = chlds.pop()
-
-        mk_add = lambda *args: type(self)(ArithFormula.ADD, None, *args)
-        mk_mul = lambda *args: type(self)(ArithFormula.MUL, None, *args)
-
-        newf = _distribute_two(c1, c2, mk_add, mk_mul)
-        while chlds:
-            c = chlds.pop()
-            newf = _distribute_two(newf, c, mk_add, mk_mul)
-
-        self._ty = newf._ty
-        self._children = newf._children
-        assert len(self._children) >= oldlen, f"{len(self._children)}, {oldlen}"
-        return len(self._children) != oldlen
-
 
     def __eq__(self, rhs):
         return isinstance(rhs, ArithFormula) and\
@@ -489,11 +645,28 @@ if _use_z3:
         This class makes it easy to work with commutative expressions
         by merging the operands into sets (if the operation is commutative).
         """
-        def __init__(self, coef, *variabl):
-            super().__init__(coef, *variabl)
+        def __init__(self, *variabl):
+            super().__init__(*variabl)
 
         def create(expr):
             raise NotImplementedError("Must be overridden")
+
+        def expr(self):
+            " Transform to Z3 expressions "
+            V = self.vars
+            if not V:
+                return None
+            it = iter(V.items())
+            m, c = next(it)
+            expr = m
+            while c > 1:
+                expr = expr * m
+                c -= 1
+            for m, c in it:
+                while c > 0:
+                    expr = expr * m
+                    c -= 1
+            return simplify(expr)
 
     class BVPolynomial(Polynomial):
         """
@@ -501,23 +674,103 @@ if _use_z3:
         This class makes it easy to work with commutative expressions
         by merging the operands into sets (if the operation is commutative).
         """
-        def __init__(self, *monomials):
-            super().__init__(*monomials)
+        def __init__(self, bw, *elems):
+            self._bw = bw #bitwidth
+            super().__init__(*elems)
+
+        def bitwidth(self):
+            return self._bw
+
+        def copy(self):
+            P = type(self)(self._bw)
+            P.monomials = {m.copy() : c for m, c in self.monomials.items()}
+            return P
+
+        def clean_copy(self):
+            return type(self)(self._bw)
+
+        def _create_coefficient(self, c, m):
+            """
+            Create a coefficient 'c' to monomial 'm'.
+            This method can be overriden, e.g., to have the
+            coefficients modulo something.
+            """
+            if is_bv(c):
+                return c
+            return bv_const(c, self._bw)
+
+        def _coefficient_is_zero(self, c):
+            """
+            Check whether the coefficient is zero.
+            This method can be overriden.
+            """
+            assert is_bv(c), c
+            val = simplify(c == 0)
+            assert is_bool(val), val
+            return val.__bool__()
+
+        def _coefficient_is_one(self, c):
+            """
+            Check whether the coefficient is zero.
+            This method can be overriden.
+            """
+            assert is_bv(c), c
+            val = simplify(c == 1)
+            assert is_bool(val), val
+            return val.__bool__()
+
+        def _coefficient_is_minus_one(self, c):
+            """
+            Check whether the coefficient is zero.
+            This method can be overriden.
+            """
+            assert is_bv(c), c
+            val = simplify(c == -1)
+            assert is_bool(val), val
+            return val.__bool__()
+
+        def _simplify_coefficient(self, c):
+            """
+            Check whether the coefficient is zero.
+            This method can be overriden.
+            """
+            return simplify(c)
 
         def create(expr):
-            print(expr)
-            P = BVPolynomial()
+            bw = expr.size()
             if is_app_of(expr, Z3_OP_BADD):
-                P.add(*(BVPolynomial.create(e) for e in expr.children()))
+                return BVPolynomial(bw, *(BVPolynomial.create(e) for e in expr.children()))
             elif is_app_of(expr, Z3_OP_BMUL):
-                P.mul(*(BVPolynomial.create(e) for e in expr.children()))
+                pols = [BVPolynomial.create(e) for e in expr.children()]
+                P = pols[0]
+                for i in range(1, len(pols)):
+                    P.mul(pols[i])
+                return P
+            elif is_app_of(expr, Z3_OP_CONCAT) or\
+                    is_app_of(expr, Z3_OP_SIGN_EXT) or\
+                    is_app_of(expr, Z3_OP_ZERO_EXT):
+                # TODO: check that these operations are applied to const?
+                return BVPolynomial(bw, BVMonomial((expr, 1)))
             elif is_const(expr):
                 if is_bv_value(expr):
-                    return BVPolynomial(BVMonomial(expr.as_long()))
-                return BVPolynomial(BVMonomial(1, (expr, 1)))
-            print(P)
-            return P
-            raise NotImplementedError("Must be overridden")
+                    return BVPolynomial(bw, (expr, BVMonomial()))
+                return BVPolynomial(bw, BVMonomial((expr, 1)))
+            raise NotImplementedError(f"Unhandeld expression: {expr}")
+
+        def expr(self):
+            " Transform to Z3 expressions "
+            M = self.monomials
+            if not M:
+                return None
+
+            it = iter(M.items())
+            m, c = next(it)
+            mexpr = m.expr()
+            expr = c if mexpr is None else c*mexpr
+            for m, c in it:
+                mexpr = m.expr()
+                expr += c if mexpr is None else c*mexpr
+            return simplify(expr)
 
     class BVFormula(ArithFormula):
         """
@@ -534,8 +787,8 @@ if _use_z3:
             if chlds:
                 if op is None:
                     # it is a polynomial
-                    P = BVPolynomial.create(expr)
-                    return BVFormula(ArithFormula.POLYNOM, P)
+                    return BVFormula(ArithFormula.POLYNOM,
+                                     BVPolynomial.create(expr))
                 isac = ArithFormula.op_is_assoc_and_comm(op)
                 formula = BVFormula(op, None)
                 for c in chlds:
@@ -546,8 +799,8 @@ if _use_z3:
                 return formula
                #return BVFormula(_expr_op_to_formula_op(expr), None,
                #                 *(BVFormula.create(c) for c in chlds))
-            assert op >= ArithFormula.MT_VALUES, expr
-            return BVFormula(op, expr)
+            return BVFormula(ArithFormula.POLYNOM,
+                             BVPolynomial.create(expr))
 
         def value_equals(self, x):
             v = self._value
@@ -557,9 +810,36 @@ if _use_z3:
 
         def expr(self):
             "Convert this object into expression for solver"
-            raise NotImplementedError("Must be overridden")
+            ty = self._ty
+            if ty == ArithFormula.POLYNOM:
+                return self._value.expr()
+            if ty == ArithFormula.AND:
+                return And(*(c.expr() for c in self._children))
+            if ty == ArithFormula.OR:
+                return Or(*(c.expr() for c in self._children))
+            if ty == ArithFormula.NOT:
+                assert len(self._children) == 1
+                return Not(self._children[0].expr())
 
-
+            chlds = self._children
+            if len(chlds) != 2:
+                raise NotImplementedError(f"Not implemented yet: {self}")
+                return None
+            if ty == ArithFormula.EQ:
+                return chlds[0].expr() == chlds[1].expr()
+            if ty == ArithFormula.SLE:
+                return chlds[0].expr() <= chlds[1].expr()
+            if ty == ArithFormula.SLT:
+                return chlds[0].expr() < chlds[1].expr()
+       #if ty == ArithFormula.ULE
+       #if ty == ArithFormula.ULT
+       #if ty == ArithFormula.SGE
+       #if ty == ArithFormula.SGT
+       #if ty == ArithFormula.UGE
+       #if ty == ArithFormula.UGT
+ 
+            raise NotImplementedError(f"Not implemented yet: {self}")
+            return None
 
     def subexpressions(expr):
         children = expr.children()
@@ -587,6 +867,124 @@ if _use_z3:
         for c in chld:
            _get_replacable(c, atoms)
 
+    def _desimplify_ext(expr):
+        " replace concat with singext if possible -- due to debugging "
+        if is_const(expr):
+            return expr
+        chld = expr.children()
+        # Do we want to recurse also into operands of == and !=?
+        if is_app_of(expr, Z3_OP_CONCAT):
+            c0 = chld[0]
+            if is_app_of(c0, Z3_OP_EXTRACT):
+                params = c0.params()
+                if params[0] == params[1] == (chld[-1].size() - 1) and c0.children()[0] == chld[-1]:
+                    if all(map(lambda e: e == c0, chld[1:-1])):
+                        return BVSExt(expr.size() - chld[-1].size(), chld[-1])
+        else:
+            red = [_desimplify_ext(c) for c in chld]
+            if is_and(expr): return And(*red)
+            elif is_or(expr): return Or(*red)
+            elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
+            else:
+                if len(red) > 2:
+                    e = expr.decl()(red[0], red[1])
+                    for i in range(2, len(red)):
+                        e = expr.decl()(e, red[i])
+                    return e
+                else:
+                    return expr.decl()(*red)
+
+    def _rewrite_sext(expr):
+        " replace sext(x + c) with sext(x) + c if possible "
+        if is_const(expr):
+            return expr
+        chld = expr.children()
+        # Do we want to recurse also into operands of == and !=?
+        if is_app_of(expr, Z3_OP_SIGN_EXT):
+            c0 = chld[0]
+            if is_app_of(c0, Z3_OP_BADD):
+                c0chld = c0.children()
+                if len(c0chld) == 2:
+                    c, x = c0chld[0], c0chld[1]
+                    if not is_bv_value(c):
+                        c, x = x, c
+                    if is_bv_value(c) and is_const(x):
+                        # expr = sext(x + c)
+                        bw = c.size()
+                        ebw = expr.size()
+                        # expr = sext(x + 1)
+                        if simplify(c == 1).__bool__():
+                            return If(x != 2**(bw-1)-1,
+                                      #BVSExt(ebw - bw, x) + BVZExt(ebw - bw, c),
+                                      #expr)
+                                      BVSExt(ebw - bw, x) + bv_const(1, ebw),
+                                      simplify(BVSExt(ebw - bw,
+                                                      bv_const(2**bw-1, bw) + 1))
+                                        )
+                        # expr = sext(x + (-1))
+                        elif simplify(c == -1).__bool__():
+                            return If(x != 2**(bw-1),
+                                      #BVSExt(ebw - bw, x) + BVSExt(ebw - bw, c),
+                                      #expr)
+                                      BVSExt(ebw - bw, x) + bv_const(-1, ebw),
+                                      simplify(BVSExt(ebw - bw,
+                                                      bv_const(2**bw-1, bw) -
+                                                      1))
+                                      )
+                        # FIXME: do this for generic values
+            return expr
+        else:
+            red = [_rewrite_sext(c) for c in chld]
+            if is_and(expr): return And(*red)
+            elif is_or(expr): return Or(*red)
+            elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
+            else:
+                if len(red) > 2:
+                    e = expr.decl()(red[0], red[1])
+                    for i in range(2, len(red)):
+                        e = expr.decl()(e, red[i])
+                    return e
+                else:
+                    return expr.decl()(*red)
+
+
+    def _simplify_polynomial_formula(formula, polynoms):
+        assert formula.is_poly(), formula
+        for p in polynoms:
+            me = p.max_degree_elems()
+            if len(me) != 1:
+                continue
+            # the rest of the polynomial must have a lesser degree now
+            mme = me[0]
+            P = formula[0]
+            for monomial, coef in P:
+                if not P.is_normed(monomial):
+                    continue #FOR NOW
+                if mme.divides(monomial):
+                    # FIXME: multiply with the coefficient!
+                    r = BVPolynomial(P.bitwidth(), monomial.divided(mme))
+                    #print('-- REPLACING --')
+                    p1, p2 = p.split(me)
+                   #print('  < ', p1)
+                   #print('  > ', p2)
+                   #print('  in ', monomial)
+                    p2.change_sign()
+                    r.mul(p2) # do the substitution
+                    P.pop(monomial)
+                    P.add(r)
+                    # we changed the polynomial, we cannot iterate any further.
+                    # just return and we can simplify again
+                    return True
+        return False
+
+    def simplify_polynomial_formula(formula, polynoms):
+        changed = False
+        for c in formula.children():
+            changed |= simplify_polynomial_formula(c, polynoms)
+        if formula.is_poly():
+            changed |= _simplify_polynomial_formula(formula, polynoms)
+        return changed
+
     def replace_common_subexprs(expr_to, exprs_from):
         """
         Replace arithmetical operations with a fresh uninterpreted symbol.
@@ -597,35 +995,47 @@ if _use_z3:
             return expr_to
 
         try:
+            re = Tactic("elim-term-ite")(_rewrite_sext(_desimplify_ext(expr_to)))
+            assert len(re) == 1, re
+            expr_to = _desimplify_ext(simplify(And(*re[0])))
             to_formula = BVFormula.create(expr_to)
-            print('TO', to_formula)
-            while to_formula.distribute_inplace():
-                print('TO d', to_formula)
-                pass
-            print('TO fin', to_formula)
-
-            subs = []
+            simple_poly = []
             for e in exprs_from:
-                e_formula = BVFormula.create(e)
+                e_formula = BVFormula.create(_desimplify_ext(e))
                 if e_formula.is_eq():
                     chlds = list(e_formula.children())
-                    if chlds[0].is_mul():
-                        subs.append((chlds[0], chlds[1]))
-                    elif chlds[1].is_mul():
-                        subs.append((chlds[1], chlds[0]))
+                    if len(chlds) == 2 and chlds[0].is_poly() and chlds[1].is_poly():
+                        P1 = chlds[0][0]
+                        P2 = chlds[1][0]
+                        P2.change_sign()
+                        P1.add(P2)
+                        if simple_poly:
+                            simple_poly.append(P1.copy())
+                            P = BVFormula(ArithFormula.POLYNOM, P1)
+                            while simplify_polynomial_formula(P, simple_poly):
+                                pass
+                            simple_poly.append(P[0])
+                        else:
+                            simple_poly.append(P1)
 
-            if not subs:
+            if not simple_poly:
                 return expr_to
 
-            print('orig F', to_formula)
-            while to_formula.substitute_inplace(*subs):
-                print('F', to_formula)
-                to_formula.distribute_inplace()
-                print('F distr', to_formula)
-            print('RESULT', to_formula)
-            return to_formula.expr()
+           #for p in simple_poly:
+           #    print('>ASSUM', _desimplify_ext(simplify(p.expr())))
+           #print('--------')
+           #print('>ORIG', _desimplify_ext(simplify(to_formula.expr())))
+           #print('--------')
+            while simplify_polynomial_formula(to_formula, simple_poly):
+           #     print('>SIMPL', _desimplify_ext(simplify(to_formula.expr())))
+                pass
+            e = _desimplify_ext(simplify(to_formula.expr()))
+           #print('   --   ')
+           #print('>FINAL', e)
+           #print('--------')
+            return e
         except ValueError:
-            return None, None
+            return None
 
     def replace_arith_ops(expr):
         """
