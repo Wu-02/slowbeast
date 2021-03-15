@@ -8,7 +8,7 @@ from slowbeast.kindse import KindSEOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.analysis.loops import Loop
-from slowbeast.kindse.kindse.programstructure import ProgramStructure
+from slowbeast.kindse.programstructure import ProgramStructure
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
@@ -19,9 +19,9 @@ from slowbeast.symexe.annotations import (
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 
 from .bse import check_paths, KindSymbolicExecutor as BaseKindSE
-from slowbeast.kindse.kindse.inductivesequence import InductiveSequence
-from slowbeast.kindse.kindse.overapproximations import overapprox_set
-from slowbeast.kindse.kindse.relations import get_const_cmp_relations, get_var_relations
+from slowbeast.kindse.inductivesequence import InductiveSequence
+from slowbeast.kindse.overapproximations import overapprox_set
+from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
 
 class BSELFOptions(KindSEOptions):
     def __init__(self, copyopts=None):

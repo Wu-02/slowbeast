@@ -8,7 +8,7 @@ from slowbeast.kindse import KindSEOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.analysis.loops import Loop
-from slowbeast.kindse.kindse.programstructure import ProgramStructure
+from slowbeast.kindse.programstructure import ProgramStructure
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,

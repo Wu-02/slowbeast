@@ -1,5 +1,5 @@
-from slowbeast.kindse.kindse.programstructure import ProgramStructure
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg, ldbgv
+from slowbeast.kindse.programstructure import ProgramStructure
+from slowbeast.util.debugging import print_stdout, dbg, ldbgv
 
 from slowbeast.analysis.cfa import CFA
 from slowbeast.symexe.symbolicexecution import (
