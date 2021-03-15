@@ -160,7 +160,9 @@ class Polynomial:
         M = self.monomials
         cur = M.get(r)
         if cur is None:
-            M[r] = self._create_coefficient(coef, r)
+            addcoef = self._create_coefficient(coef, r)
+            if not self._coefficient_is_zero(addcoef):
+                M[r] = addcoef
         else:
             assert not self._coefficient_is_zero(cur)
             newcoef = self._simplify_coefficient(cur + self._create_coefficient(coef, r))
@@ -492,6 +494,10 @@ if _use_z3:
         Z3_OP_BSUB,
         Z3_OP_BUDIV,
         Z3_OP_BSDIV,
+        Z3_OP_BUREM,
+        Z3_OP_BUREM_I,
+        Z3_OP_BSREM,
+        Z3_OP_BSREM_I,
         Z3_OP_ZERO_EXT,
         Z3_OP_ITE,
         Z3_OP_SIGN_EXT,
@@ -761,6 +767,12 @@ if _use_z3:
                     is_app_of(expr, Z3_OP_ZERO_EXT):
                 # TODO: check that these operations are applied to const?
                 return BVPolynomial(bw, BVMonomial((expr, 1)))
+            elif is_app_of(expr, Z3_OP_BUREM) or\
+                    is_app_of(expr, Z3_OP_BUREM_I) or\
+                    is_app_of(expr, Z3_OP_BSREM) or\
+                    is_app_of(expr, Z3_OP_BSREM_I):
+                # TODO: check that these operations are applied to const?
+                return BVPolynomial(bw, BVMonomial((expr, 1)))
             elif is_const(expr):
                 if is_bv_value(expr):
                     return BVPolynomial(bw, (expr, BVMonomial()))
@@ -771,7 +783,7 @@ if _use_z3:
             " Transform to Z3 expressions "
             M = self.monomials
             if not M:
-                return None
+                return bv_const(0, self._bw)
 
             it = iter(M.items())
             m, c = next(it)
