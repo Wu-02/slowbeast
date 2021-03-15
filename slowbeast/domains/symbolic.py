@@ -1013,7 +1013,7 @@ if _use_z3:
                 # FIXME: we should keep track of polynomials that we substitued
                 # to not to get into a cycle
                 common = _get_common_monomials(p, P, same_coef=True)
-                if common and all(map(lambda c: c in common, me)):
+                if common:# and all(map(lambda c: c in common, me)):
                     p1, p2 = p.split(common)
                     p1.change_sign()
                     P.add(p1)
@@ -1022,7 +1022,7 @@ if _use_z3:
                 mP = P.copy()
                 mP.change_sign()
                 common = _get_common_monomials(p, mP, same_coef=True)
-                if common and all(map(lambda c: c in common, me)):
+                if common:# and all(map(lambda c: c in common, me)):
                     p1, p2 = p.split(common)
                     p2.change_sign()
                     P.add(p1)
