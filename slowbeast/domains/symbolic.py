@@ -599,6 +599,22 @@ if _use_z3:
             return e[0]
         return And(*e)
 
+    def mk_add(*e):
+        if len(red) < 2:
+            return e
+        e = e[0] + e[1]
+        for i in range(2, len(red)):
+            e = e + red[i]
+        return e
+
+    def mk_mul(*e):
+        if len(red) < 2:
+            return e
+        e = e[0] * e[1]
+        for i in range(2, len(red)):
+            e = e * red[i]
+        return e
+
     def eliminate_common_subexpr(expr):
         # XXX: not efficient, it is rather
         # to prettify expressions while debugging
@@ -765,7 +781,7 @@ if _use_z3:
             return simplify(c)
 
         def create(expr):
-            bw = expr.size()
+            bw = 1 if is_bool(expr) else expr.size()
             if is_app_of(expr, Z3_OP_BADD):
                 return BVPolynomial(bw, *(BVPolynomial.create(e) for e in expr.children()))
             elif is_app_of(expr, Z3_OP_BMUL):
@@ -774,27 +790,29 @@ if _use_z3:
                 for i in range(1, len(pols)):
                     P.mul(pols[i])
                 return P
-            elif is_app_of(expr, Z3_OP_CONCAT) or\
-                    is_app_of(expr, Z3_OP_SIGN_EXT) or\
-                    is_app_of(expr, Z3_OP_ZERO_EXT) or\
-                    is_app_of(expr, Z3_OP_EXTRACT):
-                # TODO: check that these operations are applied to const?
-                return BVPolynomial(bw, BVMonomial((expr, 1)))
-            elif is_app_of(expr, Z3_OP_BUREM) or\
-                    is_app_of(expr, Z3_OP_BUREM_I) or\
-                    is_app_of(expr, Z3_OP_BSREM) or\
-                    is_app_of(expr, Z3_OP_BSREM_I) or\
-                    is_app_of(expr, Z3_OP_BUDIV) or\
-                    is_app_of(expr, Z3_OP_BSDIV) or\
-                    is_app_of(expr, Z3_OP_BUDIV_I) or\
-                    is_app_of(expr, Z3_OP_BSDIV_I):
-                # TODO: check that these operations are applied to const?
-                return BVPolynomial(bw, BVMonomial((expr, 1)))
+           #elif is_app_of(expr, Z3_OP_CONCAT) or\
+           #        is_app_of(expr, Z3_OP_SIGN_EXT) or\
+           #        is_app_of(expr, Z3_OP_ZERO_EXT) or\
+           #        is_app_of(expr, Z3_OP_EXTRACT):
+           #    # TODO: check that these operations are applied to const?
+           #    return BVPolynomial(bw, BVMonomial((expr, 1)))
+           #elif is_app_of(expr, Z3_OP_BUREM) or\
+           #        is_app_of(expr, Z3_OP_BUREM_I) or\
+           #        is_app_of(expr, Z3_OP_BSREM) or\
+           #        is_app_of(expr, Z3_OP_BSREM_I) or\
+           #        is_app_of(expr, Z3_OP_BUDIV) or\
+           #        is_app_of(expr, Z3_OP_BSDIV) or\
+           #        is_app_of(expr, Z3_OP_BUDIV_I) or\
+           #        is_app_of(expr, Z3_OP_BSDIV_I):
+           #    # TODO: check that these operations are applied to const?
+           #    return BVPolynomial(bw, BVMonomial((expr, 1)))
             elif is_const(expr):
                 if is_bv_value(expr):
                     return BVPolynomial(bw, (expr, BVMonomial()))
                 return BVPolynomial(bw, BVMonomial((expr, 1)))
-            raise NotImplementedError(f"Unhandeld expression: {expr}")
+
+            return BVPolynomial(bw, BVMonomial((expr, 1)))
+            #raise NotImplementedError(f"Unhandeld expression: {expr}")
 
         def expr(self):
             " Transform to Z3 expressions "
@@ -927,18 +945,13 @@ if _use_z3:
                         return BVSExt(expr.size() - chld[-1].size(), chld[-1])
             return expr
         else:
-            red = [_desimplify_ext(c) for c in chld]
+            red = (_desimplify_ext(c) for c in chld)
             if is_and(expr): return mk_and(*red)
             elif is_or(expr): return mk_or(*red)
             elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
-            else:
-                if len(red) > 2:
-                    e = expr.decl()(red[0], red[1])
-                    for i in range(2, len(red)):
-                        e = expr.decl()(e, red[i])
-                    return e
-                else:
-                    return expr.decl()(*red)
+            elif is_app_of(expr, Z3_OP_BADD): return mk_add(*red)
+            elif is_app_of(expr, Z3_OP_BMUL): return mk_mul(*red)
+            else: return expr
 
     def _rewrite_sext(expr):
         " replace sext(x + c) with sext(x) + c if possible "
@@ -980,18 +993,14 @@ if _use_z3:
                         # FIXME: do this for generic values
             return expr
         else:
-            red = [_rewrite_sext(c) for c in chld]
+            red = (_rewrite_sext(c) for c in chld)
             if is_and(expr): return mk_and(*red)
             elif is_or(expr): return mk_or(*red)
             elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
+            elif is_app_of(expr, Z3_OP_BADD): return mk_add(*red)
+            elif is_app_of(expr, Z3_OP_BMUL): return mk_mul(*red)
             else:
-                if len(red) > 2:
-                    e = expr.decl()(red[0], red[1])
-                    for i in range(2, len(red)):
-                        e = expr.decl()(e, red[i])
-                    return e
-                else:
-                    return expr.decl()(*red)
+                return expr
 
     def _get_common_monomials(P1, P2, same_coef=False):
         monomials = []
