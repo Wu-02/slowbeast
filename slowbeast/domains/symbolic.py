@@ -902,6 +902,7 @@ if _use_z3:
                 if params[0] == params[1] == (chld[-1].size() - 1) and c0.children()[0] == chld[-1]:
                     if all(map(lambda e: e == c0, chld[1:-1])):
                         return BVSExt(expr.size() - chld[-1].size(), chld[-1])
+            return expr
         else:
             red = [_desimplify_ext(c) for c in chld]
             if is_and(expr): return mk_and(*red)
