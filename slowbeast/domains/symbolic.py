@@ -5,20 +5,6 @@ from slowbeast.ir.types import Type, IntType, BoolType, FloatType
 from slowbeast.ir.instruction import FpOp
 from slowbeast.util.debugging import FIXME
 
-#FIXME move to its own file
-
-def _distribute_two(c1, c2, mk_add, mk_mul):
-    assert c1, c2
-    if c1.is_add():
-        if c2.is_add():
-            return mk_add(*(mk_mul(a, b) for a in c1._children for b in c2._children))
-        else:
-            return mk_add(*(mk_mul(a, c2) for a in c1._children))
-    elif c2.is_add():
-        assert not c1.is_add()
-        return mk_add(*(mk_mul(c1, a) for a in c2._children))
-    return mk_mul(c1, c2)
-
 class Monomial:
     """ Monomial (power product) """
 
@@ -614,25 +600,6 @@ if _use_z3:
         for i in range(2, len(e)):
             expr = expr * e[i]
         return expr
-
-    def eliminate_common_subexpr(expr):
-        # XXX: not efficient, it is rather
-        # to prettify expressions while debugging
-        if is_and(expr):
-            subexp = [eliminate_common_subexpr(c) for c in expr.children()]
-            n = 0
-            for idx in range(0, len(subexp)):
-                c = subexp[idx]
-                subs = [(s, BoolVal(True)) for (i, s) in enumerate(subexp) if i != n]
-                subexp[idx] = simplify(substitute(c, *subs))
-                n += 1
-            return mk_and(*subexp)
-        elif is_or(expr):
-            return mk_or(*(eliminate_common_subexpr(c) for c in expr.children()))
-        elif is_not(expr):
-            return Not(*(eliminate_common_subexpr(c) for c in expr.children()))
-        else:
-            return expr
 
     def TRUE():
         return BoolVal(True)
