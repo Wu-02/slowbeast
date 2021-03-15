@@ -571,6 +571,16 @@ if _use_z3:
 
         return x.unwrap()
 
+    def mk_or(*e):
+        if len(e) == 1:
+            return e[0]
+        return Or(*e)
+
+    def mk_and(*e):
+        if len(e) == 1:
+            return e[0]
+        return And(*e)
+
     def eliminate_common_subexpr(expr):
         # XXX: not efficient, it is rather
         # to prettify expressions while debugging
@@ -582,9 +592,9 @@ if _use_z3:
                 subs = [(s, BoolVal(True)) for (i, s) in enumerate(subexp) if i != n]
                 subexp[idx] = simplify(substitute(c, *subs))
                 n += 1
-            return And(*subexp)
+            return mk_and(*subexp)
         elif is_or(expr):
-            return Or(*(eliminate_common_subexpr(c) for c in expr.children()))
+            return mk_or(*(eliminate_common_subexpr(c) for c in expr.children()))
         elif is_not(expr):
             return Not(*(eliminate_common_subexpr(c) for c in expr.children()))
         else:
@@ -814,9 +824,9 @@ if _use_z3:
             if ty == ArithFormula.POLYNOM:
                 return self._value.expr()
             if ty == ArithFormula.AND:
-                return And(*(c.expr() for c in self._children))
+                return mk_and(*(c.expr() for c in self._children))
             if ty == ArithFormula.OR:
-                return Or(*(c.expr() for c in self._children))
+                return mk_or(*(c.expr() for c in self._children))
             if ty == ArithFormula.NOT:
                 assert len(self._children) == 1
                 return Not(self._children[0].expr())
@@ -882,8 +892,8 @@ if _use_z3:
                         return BVSExt(expr.size() - chld[-1].size(), chld[-1])
         else:
             red = [_desimplify_ext(c) for c in chld]
-            if is_and(expr): return And(*red)
-            elif is_or(expr): return Or(*red)
+            if is_and(expr): return mk_and(*red)
+            elif is_or(expr): return mk_or(*red)
             elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
             else:
                 if len(red) > 2:
@@ -935,8 +945,8 @@ if _use_z3:
             return expr
         else:
             red = [_rewrite_sext(c) for c in chld]
-            if is_and(expr): return And(*red)
-            elif is_or(expr): return Or(*red)
+            if is_and(expr): return mk_and(*red)
+            elif is_or(expr): return mk_or(*red)
             elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
             else:
                 if len(red) > 2:
@@ -997,7 +1007,7 @@ if _use_z3:
         try:
             re = Tactic("elim-term-ite")(_rewrite_sext(_desimplify_ext(expr_to)))
             assert len(re) == 1, re
-            expr_to = _desimplify_ext(simplify(And(*re[0])))
+            expr_to = _desimplify_ext(simplify(mk_and(*re[0])))
             to_formula = BVFormula.create(expr_to)
             simple_poly = []
             for e in exprs_from:
@@ -1044,7 +1054,7 @@ if _use_z3:
         """
         try:
             atoms = {}
-            expr = And(*Then("tseitin-cnf",
+            expr = mk_and(*Then("tseitin-cnf",
                              With("simplify", som=True))(expr)[0])
            #assert len(expr_mod) == 1, expr_mod
            #expr = And(*expr_mod[0])
@@ -1073,8 +1083,8 @@ if _use_z3:
             return expr
         else:
             red = (_reduce_eq_bitwidth(c, bw) for c in chld)
-            if is_and(expr): return And(*red)
-            elif is_or(expr): return Or(*red)
+            if is_and(expr): return mk_and(*red)
+            elif is_or(expr): return mk_or(*red)
            #elif is_add(expr): return Sum(*red)
            #elif is_mul(expr): return Product(*red)
             else: return expr.decl()(*red)
@@ -1086,7 +1096,7 @@ if _use_z3:
             # we need the expr in NNF
             expr_nnf = Tactic("nnf")(expr)
             assert len(expr_nnf) == 1, expr_nnf
-            return _reduce_eq_bitwidth(And(*expr_nnf[0]), bw)
+            return _reduce_eq_bitwidth(mk_and(*expr_nnf[0]), bw)
         except ValueError:
             return None
 
@@ -1224,13 +1234,13 @@ class Expr(Value):
         """
         Get the expression in CNF form.
         """
-        return Expr(Or(*(And(*c) for c in rewrite_simplify(self._expr))), self.type())
+        return Expr(mk_or(*(And(*c) for c in rewrite_simplify(self._expr))), self.type())
 
     def split_clauses(self):
         """
         Get the expression in CNF form.
         """
-        return Expr(Or(*(And(*c) for c in split_clauses(self._expr))), self.type())
+        return Expr(mk_or(*(And(*c) for c in split_clauses(self._expr))), self.type())
 
     def reduce_eq_bitwidth(self, bw):
         """
