@@ -1013,17 +1013,16 @@ if _use_z3:
                             simple_poly.append(P1.copy())
                             P = BVFormula(ArithFormula.POLYNOM, P1)
                             while simplify_polynomial_formula(P, simple_poly):
-                                pass
-                            simple_poly.append(P[0])
+                                simple_poly.append(P[0])
                         else:
                             simple_poly.append(P1)
 
             if not simple_poly:
                 return expr_to
 
-           #for p in simple_poly:
-           #    print('>ASSUM', _desimplify_ext(simplify(p.expr())))
            #print('--------')
+           #for p in simple_poly:
+           #    print('  > ASSUM', _desimplify_ext(simplify(p.expr())))
            #print('>ORIG', _desimplify_ext(simplify(to_formula.expr())))
            #print('--------')
             while simplify_polynomial_formula(to_formula, simple_poly):
