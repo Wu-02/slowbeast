@@ -869,12 +869,18 @@ if _use_z3:
                 return chlds[0].expr() <= chlds[1].expr()
             if ty == ArithFormula.SLT:
                 return chlds[0].expr() < chlds[1].expr()
-       #if ty == ArithFormula.ULE
-       #if ty == ArithFormula.ULT
-       #if ty == ArithFormula.SGE
-       #if ty == ArithFormula.SGT
-       #if ty == ArithFormula.UGE
-       #if ty == ArithFormula.UGT
+            if ty == ArithFormula.SGE:
+                return chlds[0].expr() >= chlds[1].expr()
+            if ty == ArithFormula.SGT:
+                return chlds[0].expr() > chlds[1].expr()
+            if ty == ArithFormula.ULE:
+                return BVULE(chlds[0].expr(), chlds[1].expr())
+            if ty == ArithFormula.ULT:
+                return BVULT(chlds[0].expr(), chlds[1].expr())
+            if ty == ArithFormula.UGE:
+                return BVUGE(chlds[0].expr(), chlds[1].expr())
+            if ty == ArithFormula.UGT:
+                return BVUGT(chlds[0].expr(), chlds[1].expr())
  
             raise NotImplementedError(f"Not implemented yet: {self}")
             return None
