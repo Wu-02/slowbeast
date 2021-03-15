@@ -998,7 +998,8 @@ if _use_z3:
             c2 = P2.get_coef(p1m)
             if c2 is None:
                 continue
-            if not same_coef or c1 == c2:
+            if not same_coef or\
+                (c1.size() == c2.size() and simplify(c1 == c2).__bool__()):
                 monomials.append(p1m)
         return monomials
 
