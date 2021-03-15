@@ -33,7 +33,6 @@ def try_solve_incrementally(assumptions, exprs, em):
             a = assumptions[i]
             A.append(a.replace_common_subexprs([x for n, x in enumerate(assumptions) if n != i]))
         assumptions = A
-       #print('SIMPLIFIED', expr1)
        #print('ASSUMPTIONS', assumptions)
         #print('------')
         r = IncrementalSolver().try_is_sat(3000, *assumptions, expr1)

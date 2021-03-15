@@ -94,6 +94,13 @@ class Monomial:
                 return False
         return True
 
+    def __eq__(self, rhs):
+        return self.vars == rhs.vars
+
+    def __hash__(self):
+        #FIXME: we probably want some better hash
+        return hash(sum(self.vars.values()))^hash(len(self.vars))
+
     def __repr__(self):
         V = self.vars
         if not V:
@@ -230,6 +237,9 @@ class Polynomial:
 
     def max_degree(self):
         return max(self.monomials.keys())
+
+    def has(self, m):
+        return self.monomials.get(m) is not None
 
     def get_coef(self, m):
         return self.monomials.get(m)
@@ -970,24 +980,55 @@ if _use_z3:
                 else:
                     return expr.decl()(*red)
 
+    def _get_common_monomials(P1, P2, same_coef=False):
+        monomials = []
+        for p1m, c1 in P1.monomials.items():
+            c2 = P2.get_coef(p1m)
+            if c2 is None:
+                continue
+            if not same_coef or c1 == c2:
+                monomials.append(p1m)
+        return monomials
 
     def _simplify_polynomial_formula(formula, polynoms):
         assert formula.is_poly(), formula
+        P = formula[0]
         for p in polynoms:
             me = p.max_degree_elems()
             if len(me) != 1:
+                # FIXME: we should keep track of polynomials that we substitued
+                # to not to get into a cycle
+                common = _get_common_monomials(p, P, same_coef=True)
+                if common and all(map(lambda c: c in common, me)):
+                    p1, p2 = p.split(common)
+                    p1.change_sign()
+                    P.add(p1)
+                    P.add(p2)
+                    continue
+                mP = P.copy()
+                mP.change_sign()
+                common = _get_common_monomials(p, mP, same_coef=True)
+                if common and all(map(lambda c: c in common, me)):
+                    p1, p2 = p.split(common)
+                    p2.change_sign()
+                    P.add(p1)
+                    P.add(p2)
+                    continue
                 continue
             # the rest of the polynomial must have a lesser degree now
+            # so perform the substitution of the monomial with the maximal
+            # degree
             mme = me[0]
-            P = formula[0]
             for monomial, coef in P:
+               #mc = P.get_coef(monomial)
+               #mec = p.get_coef(mme)
                 if not P.is_normed(monomial):
-                    continue #FOR NOW
+                    continue # FOR NOW
                 if mme.divides(monomial):
                     # FIXME: multiply with the coefficient!
                     r = BVPolynomial(P.bitwidth(), monomial.divided(mme))
                     #print('-- REPLACING --')
-                    p1, p2 = p.split(me)
+                    p1, p2 = p.split([mme])
                    #print('  < ', p1)
                    #print('  > ', p2)
                    #print('  in ', monomial)
