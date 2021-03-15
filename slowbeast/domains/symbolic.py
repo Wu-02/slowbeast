@@ -600,20 +600,20 @@ if _use_z3:
         return And(*e)
 
     def mk_add(*e):
-        if len(red) < 2:
-            return e
-        e = e[0] + e[1]
-        for i in range(2, len(red)):
-            e = e + red[i]
-        return e
+        if len(e) < 2:
+            return e[0]
+        expr = e[0] + e[1]
+        for i in range(2, len(e)):
+            expr = expr + e[i]
+        return expr
 
     def mk_mul(*e):
-        if len(red) < 2:
-            return e
-        e = e[0] * e[1]
-        for i in range(2, len(red)):
-            e = e * red[i]
-        return e
+        if len(e) < 2:
+            return e[0]
+        expr = e[0] * e[1]
+        for i in range(2, len(e)):
+            expr = expr * e[i]
+        return expr
 
     def eliminate_common_subexpr(expr):
         # XXX: not efficient, it is rather
@@ -999,8 +999,7 @@ if _use_z3:
             elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
             elif is_app_of(expr, Z3_OP_BADD): return mk_add(*red)
             elif is_app_of(expr, Z3_OP_BMUL): return mk_mul(*red)
-            else:
-                return expr
+            else: return expr
 
     def _get_common_monomials(P1, P2, same_coef=False):
         monomials = []
