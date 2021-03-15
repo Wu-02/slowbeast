@@ -504,6 +504,8 @@ if _use_z3:
         Z3_OP_BSUB,
         Z3_OP_BUDIV,
         Z3_OP_BSDIV,
+        Z3_OP_BUDIV_I,
+        Z3_OP_BSDIV_I,
         Z3_OP_BUREM,
         Z3_OP_BUREM_I,
         Z3_OP_BSREM,
@@ -780,7 +782,11 @@ if _use_z3:
             elif is_app_of(expr, Z3_OP_BUREM) or\
                     is_app_of(expr, Z3_OP_BUREM_I) or\
                     is_app_of(expr, Z3_OP_BSREM) or\
-                    is_app_of(expr, Z3_OP_BSREM_I):
+                    is_app_of(expr, Z3_OP_BSREM_I) or\
+                    is_app_of(expr, Z3_OP_BUDIV) or\
+                    is_app_of(expr, Z3_OP_BSDIV) or\
+                    is_app_of(expr, Z3_OP_BUDIV_I) or\
+                    is_app_of(expr, Z3_OP_BSDIV_I):
                 # TODO: check that these operations are applied to const?
                 return BVPolynomial(bw, BVMonomial((expr, 1)))
             elif is_const(expr):
