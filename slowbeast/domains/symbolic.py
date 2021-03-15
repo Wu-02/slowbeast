@@ -776,7 +776,8 @@ if _use_z3:
                 return P
             elif is_app_of(expr, Z3_OP_CONCAT) or\
                     is_app_of(expr, Z3_OP_SIGN_EXT) or\
-                    is_app_of(expr, Z3_OP_ZERO_EXT):
+                    is_app_of(expr, Z3_OP_ZERO_EXT) or\
+                    is_app_of(expr, Z3_OP_EXTRACT):
                 # TODO: check that these operations are applied to const?
                 return BVPolynomial(bw, BVMonomial((expr, 1)))
             elif is_app_of(expr, Z3_OP_BUREM) or\
