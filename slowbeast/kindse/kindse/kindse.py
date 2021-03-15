@@ -624,8 +624,12 @@ class BSELFChecker(BaseKindSE):
             target0, seqs, errs0 = self.get_acc_initial_seqs(unsafe, path, L)
         # reduce and over-approximate the initial sequence
         if seqs:
+            tmp = []
             dbg(f'Got {len(seqs)} starting inductive sequence(s)')
-            seqs = [self.overapprox_init_seq(seq, errs0, L) for seq in seqs]
+            for seq in seqs:
+                tmp.extend(self.overapprox_init_seq(seq, errs0, L))
+            if tmp:
+                seqs = tmp
 
         # inductive sequence is either inductive now, or it is None and we'll use non-inductive E
         return target0, seqs, errs0
@@ -649,27 +653,36 @@ class BSELFChecker(BaseKindSE):
                 S, unsafe
             ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
-        have_assumptions = False
         assumptions = create_set()
         for rel in get_var_relations([S.get_se_state()], prevsafe=target):
-            have_assumptions = True
-            ldbg("  Adding assumption {0}", (rel,))
+            ldbg("  Using assumption {0}", (rel,))
             assumptions.intersect(rel)
             assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
             assert intersection(
                 assumptions, S, unsafe
             ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
+            seq = InductiveSequence(
+                overapprox_set(
+                    self, EM, S, errs0.toassert(), target,
+                    assumptions, L
+                ).as_assert_annotation()
+            )
+
+            if is_seq_inductive(seq, self, L):
+                yield seq
+
+        # try without relations
         seq = InductiveSequence(
             overapprox_set(
                 self, EM, S, errs0.toassert(), target,
-                assumptions if have_assumptions else None, L
+                None, L
             ).as_assert_annotation()
         )
 
         if is_seq_inductive(seq, self, L):
-            return seq
-        return seq0
+            yield seq
+
 
     def _safe_paths_err_outside(self, E, path, L):
         EM = getGlobalExprManager()
