@@ -54,8 +54,6 @@ def _dump_inductive_sets(checker, loc):
     else:
         dbg(" ∅", color="dark_green")
 
-
-
 def overapprox(executor, s, E, target, L):
     create_set = executor.create_set
     S = create_set(s)
@@ -683,10 +681,8 @@ class BSELFChecker(BaseBSE):
 
 class BSELF:
     """
-    The main class for BaseBSE that divides and conquers the tasks.
-    It inherits from BaseBSE to have program structure and such,
-    TODO but we should change that, build program structure here,
-    and keep BaseBSE a class that just takes care for executing paths.
+    The main class for BSE and BSELF (BSE is a BSELF without loop folding)
+    that divides and conquers the tasks.
     """
 
     def __init__(self, prog, ohandler=None, opts=BSELFOptions()):
