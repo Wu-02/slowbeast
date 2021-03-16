@@ -5,7 +5,7 @@ from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec, d
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
-from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
+from slowbeast.symexe.statesset import intersection, union, complement
 from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.analysis.loops import Loop
 from slowbeast.kindse.programstructure import ProgramStructure
@@ -22,6 +22,8 @@ from .bse import check_paths, BackwardSymbolicInterpreter as BaseBSE
 from slowbeast.kindse.inductivesequence import InductiveSequence
 from slowbeast.kindse.overapproximations import overapprox_set
 from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
+from .inductiveset import InductiveSet
+
 
 class BSELFOptions(KindSEOptions):
     def __init__(self, copyopts=None):
@@ -124,47 +126,6 @@ def report_state(stats, n, fn=print_stderr):
 def postcondition_expr(s):
     return state_to_annotation(s).do_substitutions(s)
 
-class InductiveSet:
-    """
-    Class representing an inductive set that we derive for a loop header.
-    """
-
-    def __init__(self, initial_set: StatesSet = None):
-        assert initial_set is None or isinstance(initial_set, StatesSet)
-        if initial_set:
-            self.I = initial_set
-            cI = IncrementalSolver()
-            cI.add(complement(initial_set).as_expr())
-            self.cI = cI
-            # track all added sets
-            self.sets = [initial_set]
-        else:
-            self.I = None
-            self.cI = IncrementalSolver()
-            self.sets = []
-
-    def add(self, elem):
-        self.sets.append(elem)
-        I = self.I
-        cI = self.cI
-        expr = elem.as_expr()
-        if cI.is_sat(expr):
-            assert I is None or not intersection(complement(I), elem).is_empty()
-            # the elem is not a subset of current set
-            if I:
-                I.add(elem)
-            else:
-                self.I = elem
-            cI.add(complement(elem).as_expr())
-
-    def includes(self, elem):
-        if isinstance(elem, InductiveSet):
-            elem = elem.I
-        # intersection(complement(self.I), elem).is_empty()
-        return self.cI.is_sat(elem.as_expr()) is False
-
-    def __repr__(self):
-        return self.I.__repr__()
 
 class LoopInfo:
     def __init__(self, executor, loop):
