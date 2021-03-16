@@ -56,7 +56,6 @@ def createArgParser():
                         help='Set the step for k-induction, positive number is a number of basic blocks by which to extend in each iteration, 0 is extend the paths until a join, -1 is extend the paths until a branch (default)', default=-1)
     parser.add_argument('-bse', action='store_true', help='Do backward symbolic execution')
     parser.add_argument('-bself', action='store_true', help='Do backward symbolic execution with loops folding')
-    parser.add_argument('-bself-simple-sis', action='store_true', help='Use simple starting inductive sets in BSELF')
     parser.add_argument('-bself-til', action='store_true', help='Target towards induction is the last element in BSELF')
     parser.add_argument('-se', action='store_true', default=False,
                         help='Perform symbolic execution.')
@@ -391,8 +390,6 @@ def main():
         opts = BSELFOptions()
         if args.bse and not args.bself:
             opts.fold_loops = False
-        if args.bself_simple_sis:
-            opts.simple_sis = True
         if args.bself_til:
             opts.target_is_whole_seq = False
         interpreter = BSELF(P, ohandler, opts)

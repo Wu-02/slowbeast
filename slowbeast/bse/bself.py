@@ -28,11 +28,9 @@ class BSELFOptions(KindSEOptions):
         super().__init__(copyopts)
         if copyopts:
             self.fold_loops = copyopts.fold_loops = True
-            self.simple_sis = copyopts.simple_sis = False
             self.target_is_whole_seq = copyopts.target_is_whole_seq = True
         else:
             self.fold_loops = True
-            self.simple_sis = False
             self.target_is_whole_seq = True
 
     def default(self, parentopts=None):
@@ -320,7 +318,6 @@ class BSELFChecker(BaseKindSE):
 
         self.options = opts
         self._target_is_whole_seq = opts.target_is_whole_seq
-        self._simple_sis = opts.simple_sis
 
         self.create_set = self.ind_executor().create_states_set
         self.get_loop_headers= programstructure.get_loop_headers
@@ -484,67 +481,6 @@ class BSELFChecker(BaseKindSE):
 
                 yield A
 
-   #def abstract_seq(self, seq, errs0, L):
-   #    # don't try with short sequences
-   #    if len(seq) < 5:
-   #        return seq
-
-   #    # try to merge last two frames
-   #    assert len(seq) >= 2
-   #    A1 = seq[-1].toassume()
-   #    A2 = seq[-2].toassume()
-   #    e1 = A1.expr().to_cnf()
-   #    e2 = A2.expr().to_cnf()
-
-   #    C1 = set(e1.children())
-   #    C = set()
-   #    N1 = set()
-   #    N2 = set()
-   #    for c in e2.children():
-   #        if c in C1:
-   #            C.add(c)
-   #        else:
-   #            N2.add(c)
-   #    for c in C1:
-   #        if c not in C:
-   #            N1.add(c)
-
-   #    if not C:
-   #        return seq
-
-   #    # replace last two frames with one merged frame
-   #    EM = getGlobalExprManager()
-   #    seq.pop()
-
-   #    seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.substitutions(), EM)
-   #    S1 = AssertAnnotation(EM.conjunction(*N1), A1.substitutions(), EM)
-   #    S2 = AssertAnnotation(EM.conjunction(*N2), A2.substitutions(), EM)
-   #    seq[-1].strengthening = or_annotations(EM, True, S1, S2)
-
-   #    # FIXME: we are still precise, use abstraction here...
-   #    return seq
-
-    def initial_seq_from_last_iter(self, E: StatesSet, path, L: Loop):
-        """
-        Strengthen the initial sequence through obtaining the
-        last safe iteration of the loop.
-
-        FIXME: we actually do not use the assertion at all right now,
-        only implicitly as it is contained in the paths...
-        """
-
-        dbg("Obtaining states from last safe iterations")
-        I = self.safe_path_with_last_iter(E, path, L)
-        if I is None or I.is_empty():
-            return None
-
-        seq0 = InductiveSequence(I.as_assert_annotation())
-        # this may mean that the assertion in fact does not hold
-        if is_seq_inductive(seq0, self, L):
-            return seq0
-        dbg("... (got non-inductive set)")
-        return None
-
     def get_simple_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
         E = self.create_set(unsafe[0])
 
@@ -555,7 +491,7 @@ class BSELFChecker(BaseKindSE):
         errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
         if S.is_empty():
-            return target0, seqs, errs0
+            return target0, None, errs0
         if not is_seq_inductive(seq0, self, L):
             dbg("... (complement not inductive)")
             seqs = []
@@ -578,50 +514,10 @@ class BSELFChecker(BaseKindSE):
 
         return target0, seqs, errs0
 
-
-    def get_acc_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
-        # TODO: self-loops? Those are probably OK as that would be only assume edge
-        errstate = unsafe[0]
-        EM = errstate.expr_manager()
-        isfirst = path.num_of_occurences(L.header()) == 1
-        E = self.create_set(errstate)
-
-        S = E.copy()
-        C = errstate.getConstraints()
-        S.reset_expr(EM.conjunction(*C[:-1], EM.Not(C[-1])))
-        target0 = S.copy()
-
-        seq0 = InductiveSequence(S.as_assert_annotation(), None)
-        errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
-
-        if S.is_empty():
-            return target0, [], errs0
-
-        seqs = [seq0]
-
-        if not is_seq_inductive(seq0, self, L):
-            # the initial sequence may not be inductive (usually when the assertion
-            # is inside the loop, so we must strenghten it in that case
-            if isfirst:
-                # FIXME: return sets
-                dbg("Getting the initial sequence from the last iteration")
-                seq0 = self.initial_seq_from_last_iter(E, path, L)
-                assert seq0 and is_seq_inductive(seq0, self, L),\
-                       "Failed getting init seq for first iteration"
-                seqs = [seq0] if seq0 else []
-            else:
-                dbg("Initial sequence is NOT inductive, fixing it", color="wine")
-                seqs = self.strengthen_initial_seq(seq0, E, path, L)
-
-        return target0, seqs, errs0
-
     def get_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
         assert len(unsafe) == 1, "One path raises multiple unsafe states"
 
-        if self._simple_sis:
-            target0, seqs, errs0 = self.get_simple_initial_seqs(unsafe, path, L)
-        else:
-            target0, seqs, errs0 = self.get_acc_initial_seqs(unsafe, path, L)
+        target0, seqs, errs0 = self.get_simple_initial_seqs(unsafe, path, L)
         # reduce and over-approximate the initial sequence
         if seqs:
             tmp = []
@@ -683,113 +579,6 @@ class BSELFChecker(BaseKindSE):
         if is_seq_inductive(seq, self, L):
             yield seq
 
-
-    def _safe_paths_err_outside(self, E, path, L):
-        EM = getGlobalExprManager()
-        create_set = self.create_set
-        added = False
-        I = create_set()
-
-        for suffix in suffixes_starting_with([path], L.header()):
-            # execute the safe path that avoids error and then jumps out of the loop
-            # and also only paths that jump out of the loop, so that the set is inductive
-            r = check_paths(self, [suffix])
-            if r.errors is None:
-                continue
-
-            for e in r.errors:
-                C = e.getConstraints()
-                # negate the last constraint on the path
-                tmp = create_set(e)
-                expr = EM.conjunction(*C[:-1], EM.Not(C[-1]))
-                tmp.reset_expr(expr)
-
-                if intersection(E, tmp).is_empty():
-                    I.add(tmp)
-                    added = True
-
-        if added:
-            return I
-
-        return None
-
-    def _safe_paths_err_inside(self, E, path, L):
-        create_set = self.create_set
-        is_error_loc = L.cfa().is_err
-        added = False
-        I = create_set()
-
-        prefix = strip_last_exit_edge(path, L.exits())
-        middle = L.paths_to_header(prefix.last_loc())
-        suff = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
-
-        paths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suff)
-
-        for suffix in suffixes_starting_with(paths, L.header()):
-            # execute the safe path that avoids error and then jumps out of the loop
-            # and also only paths that jump out of the loop, so that the set is inductive
-            r = check_paths(self, [suffix])
-            if not r.ready:
-                continue
-            for s in r.ready:
-                if intersection(create_set(s), E).is_empty():
-                    I.add(s)
-                    added = True
-
-        if added:
-            return I
-
-        return None
-
-
-    def safe_paths_from_iterations(self, E, path, L):
-        # FIXME: do a proper analysis of whether the error loc is inside or outside the loop
-        # instead of trying blindly
-        I = self._safe_paths_err_outside(E, path, L)
-        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), self, L):
-            return I
-
-        I = self._safe_paths_err_inside(E, path, L)
-        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), self, L):
-            return I
-        return None
-
-    def safe_path_with_last_iter(self, E, path, L: Loop):
-        """
-        Strengthen the initial sequence through obtaining the
-        last safe iteration of the loop.
-
-        FIXME: we actually do not use the assertion at all right now,
-        only implicitly as it is contained in the paths...
-        """
-
-        is_error_loc = L.cfa().is_err
-
-        prefix = strip_last_exit_edge(path, L.exits())
-        middle = L.paths_to_header(prefix.last_loc())
-        suff = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
-
-        invpaths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suff)
-
-        create_set = self.create_set
-        # execute the safe path that avoids error and then jumps out of the loop
-        # and also only paths that jump out of the loop, so that the set is inductive
-        r = check_paths(self, chain(invpaths, iter(suff)))
-        if r.ready is None:
-            return None
-
-        I = create_set()
-        added = False
-        for s in r.ready:
-            if intersection(create_set(s), E).is_empty():
-                I.add(s)
-                added = True
-
-        if added:
-            return I
-
-        return None
-
     def initial_sets_from_exits(self, E, path, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
@@ -836,56 +625,6 @@ class BSELFChecker(BaseKindSE):
             return [R]
         return None
 
-
-    def strengthen_initial_seq(self, seq0, E, path, L: Loop):
-        assert path[0].source() is L.header()
-        assert len(seq0) == 1
-
-        # get the inductive sets that we have created for this header.
-        # Since we go iteration over iteration, adding this sequence
-        # to the previous ones must yield an inductive sequence
-        isets = self.inductive_sets.get(L.header())
-        assert isets, "No inductive sequence for non-first iteration"
-
-        dbg("Checking inductive sets")
-        ret = []
-        for I in isets or ():
-            if intersection(I.I, E).is_empty():
-                frame = seq0[-1].toassert()
-                # first check whether the frame is included in our inductive sequences.
-                # If so, we'll just add relations from it to the sequences
-                # (for boosing over-approximations) instead of adding it whole.
-                frameset = self.create_set(frame)
-                if I.includes(frameset):
-                    dbg("States are included, continuing with previous sequences")
-                    F = I.I.copy()
-                else:
-                    dbg("States not included in previous sequences, trying to extend it")
-                    F = union(I.I, frame)
-                tmp = InductiveSequence(F.as_assert_annotation())
-                # FIXME: simplify as much as you can before using it
-                if is_seq_inductive(tmp, self, L):
-                    #dbg("Joining with previous sequences did the trick")
-                    print_stdout("Succeeded joining with a previous sequence")
-                    ret.append(tmp)
-            else:
-                dbg("Inductive sequence is unsafe")
-        if ret:
-            return ret
-
-        print_stdout("Creating new inductive sequence")
-        # this must be assertion inside the loop -- we must simulate that the path
-        # passes the assertion and jumps out of the loop
-        I = self.safe_paths_from_iterations(E, path, L)
-        if I is None:
-            return []
-
-        tmp = InductiveSequence(I.as_assert_annotation())
-        # FIXME: simplify as much as you can before using
-        if is_seq_inductive(tmp, self, L):
-            return [tmp]
-        dbg("Failed strengthening the initial sequence")
-        return []
 
     def fold_loop(self, path, loc, L: Loop, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
