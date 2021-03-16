@@ -32,7 +32,7 @@ if _use_z3:
         LShR as BVLShR,
     )
     from z3 import is_const, is_bv, is_bv_value, is_bool, is_and, is_or, is_not
-    from z3 import is_eq
+    from z3 import is_eq, is_distinct
     from z3 import (
         is_app_of,
         Z3_OP_SLEQ,
@@ -446,26 +446,31 @@ if _use_z3:
 
     def _desimplify_ext(expr):
         " replace concat with singext if possible -- due to debugging "
-        if is_const(expr):
-            return expr
-        chld = expr.children()
-        # Do we want to recurse also into operands of == and !=?
         if is_app_of(expr, Z3_OP_CONCAT):
+            chld = expr.children()
             c0 = chld[0]
             if is_app_of(c0, Z3_OP_EXTRACT):
                 params = c0.params()
                 if params[0] == params[1] == (chld[-1].size() - 1) and c0.children()[0] == chld[-1]:
                     if all(map(lambda e: e == c0, chld[1:-1])):
                         return BVSExt(expr.size() - chld[-1].size(), chld[-1])
-            return expr
+            return BVConcat((_desimplify_ext(c) for c in chld))
         else:
-            red = (_desimplify_ext(c) for c in chld)
-            if is_and(expr): return mk_and(*red)
-            elif is_or(expr): return mk_or(*red)
-            elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
-            elif is_app_of(expr, Z3_OP_BADD): return mk_add(*red)
-            elif is_app_of(expr, Z3_OP_BMUL): return mk_mul(*red)
-            else: return expr
+            if is_and(expr): return mk_and(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_or(expr): return mk_or(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_not(expr): return Not(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_app_of(expr, Z3_OP_BADD): return mk_add(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_app_of(expr, Z3_OP_BMUL): return mk_mul(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_eq(expr):
+                dc = (_desimplify_ext(c) for c in expr.children())
+                return next(dc) == next(dc)
+            elif is_distinct(expr):
+                dc = (_desimplify_ext(c) for c in expr.children())
+                return next(dc) != next(dc)
+            else:
+                assert not is_app_of(expr, Z3_OP_CONCAT), expr
+                return expr
 
     def _rewrite_sext(expr):
         " replace sext(x + c) with sext(x) + c if possible "
@@ -510,9 +515,12 @@ if _use_z3:
             red = (_rewrite_sext(c) for c in chld)
             if is_and(expr): return mk_and(*red)
             elif is_or(expr): return mk_or(*red)
+            elif is_not(expr): return Not(*red)
             elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
             elif is_app_of(expr, Z3_OP_BADD): return mk_add(*red)
             elif is_app_of(expr, Z3_OP_BMUL): return mk_mul(*red)
+            elif is_eq(expr): return next(red) == next(red)
+            elif is_distinct(expr): return next(red) != next(red)
             else: return expr
 
     def _get_common_monomials(P1, P2, same_coef=False):
@@ -526,66 +534,102 @@ if _use_z3:
                 monomials.append(p1m)
         return monomials
 
-    def _simplify_polynomial_formula(formula, polynoms):
-        assert formula.is_poly(), formula
-        P = formula[0]
-        for p in polynoms:
-            me = p.max_degree_elems()
-            if len(me) != 1:
-                # FIXME: we should keep track of polynomials that we substitued
-                # to not to get into a cycle
-                common = _get_common_monomials(p, P, same_coef=True)
-                if common:# and all(map(lambda c: c in common, me)):
-                    p1, p2 = p.split(common)
-                    p1.change_sign()
-                    P.add(p1)
-                    P.add(p2)
+
+    class PolynomialSimplifier:
+        def __init__(self, *args):
+            # these polynomials we'll use to simplify the given formula
+            self.polynomials = [*args]
+            # index of a polynomial and polynomials that we substitued into other polynomials -- to prevent cycles
+            # FIXME: we do not use it right now...
+            self.used = {}
+
+        def add_poly(self, *ps):
+            self.polynomials.extend(*ps)
+
+        def _simplify_polynomial_formula(self, formula):
+           #print("> SIMPLIFY", formula)
+           #print("> WITH")
+           #for p in self.polynomials:
+           #    print('  ', p)
+           #print('---')
+            polynoms = self.polynomials
+            assert formula.is_poly(), formula
+            P = formula[0]
+            for p in polynoms:
+                me = p.max_degree_elems()
+                if len(me) != 1:
+                    # FIXME: we should keep track of polynomials that we substitued
+                    # to not to get into a cycle
+                    common = _get_common_monomials(p, P, same_coef=True)
+                    if common:# and all(map(lambda c: c in common, me)):
+                        p1, p2 = p.split(common)
+                        p1.change_sign()
+                        P.add(p1)
+                        P.add(p2)
+                        continue
+                    mP = P.copy()
+                    mP.change_sign()
+                    common = _get_common_monomials(p, mP, same_coef=True)
+                    if common:# and all(map(lambda c: c in common, me)):
+                        p1, p2 = p.split(common)
+                        p2.change_sign()
+                        P.add(p1)
+                        P.add(p2)
+                        continue
                     continue
-                mP = P.copy()
-                mP.change_sign()
-                common = _get_common_monomials(p, mP, same_coef=True)
-                if common:# and all(map(lambda c: c in common, me)):
-                    p1, p2 = p.split(common)
-                    p2.change_sign()
-                    P.add(p1)
-                    P.add(p2)
-                    continue
-                continue
-            # the rest of the polynomial must have a lesser degree now
-            # so perform the substitution of the monomial with the maximal
-            # degree
-            mme = me[0]
-            for monomial, coef in P:
-               #mc = P.get_coef(monomial)
-               #mec = p.get_coef(mme)
-                if not P.is_normed(monomial):
-                    continue # FOR NOW
-                if mme.divides(monomial):
-                    # FIXME: multiply with the coefficient!
-                    r = BVPolynomial(P.bitwidth(), monomial.divided(mme))
-                    #print('-- REPLACING --')
-                    p1, p2 = p.split([mme])
-                   #print('  < ', p1)
-                   #print('  > ', p2)
-                   #print('  in ', monomial)
-                    p2.change_sign()
-                    r.mul(p2) # do the substitution
-                    P.pop(monomial)
-                    P.add(r)
-                    # we changed the polynomial, we cannot iterate any further.
-                    # just return and we can simplify again
-                    return True
-        return False
+                # the rest of the polynomial must have a lesser degree now
+                # so perform the substitution of the monomial with the maximal
+                # degree
+                mme = me[0]
+                for monomial, coef in P:
+                   #mc = P.get_coef(monomial)
+                   #mec = p.get_coef(mme)
+                    if not P.is_normed(monomial):
+                        continue # FOR NOW
+                    if mme.divides(monomial):
+                        # FIXME: multiply with the coefficient!
+                        r = BVPolynomial(P.bitwidth(), monomial.divided(mme))
+                        p1, p2 = p.split([mme])
+                        p2.change_sign()
+                        r.mul(p2) # do the substitution
+                        P.pop(monomial)
+                        P.add(r)
+                        # we changed the polynomial, we cannot iterate any further.
+                        # just return and we can simplify again
+                        return True
+            return False
+
+        def simplify_formula(self, formula):
+            changed = False
+            # flatten equalities
+            if formula.is_eq():
+                chld = formula.children()
+                if len(chld) == 2 and chld[0].is_poly() and chld[1].is_poly():
+                    chld[1][0].change_sign()
+                    chld[0][0].add(chld[1][0])
+                    changed |= self._simplify_polynomial_formula(chld[0])
+                    formula.replace_with(BVFormula(ArithFormula.EQ, None,
+                                                   chld[0],
+                                                   BVFormula.create(bv_const(0, chld[0][0].bitwidth()))
+                                                   )
+                                         )
+                else:
+                    for c in formula.children():
+                        changed |= self.simplify_formula(c)
+            elif formula.is_poly():
+                changed |= self._simplify_polynomial_formula(formula)
+            else:
+                for c in formula.children():
+                    changed |= self.simplify_formula(c)
+            return changed
+
 
     def simplify_polynomial_formula(formula, polynoms):
-        changed = False
-        for c in formula.children():
-            changed |= simplify_polynomial_formula(c, polynoms)
-        if formula.is_poly():
-            changed |= _simplify_polynomial_formula(formula, polynoms)
-        return changed
+        simplifier = PolynomialSimplifier(*polynoms)
+        while simplifier.simplify_formula(formula):
+            pass
 
-    def replace_common_subexprs(expr_to, exprs_from):
+    def rewrite_polynomials(expr_to, exprs_from):
         """
         Replace arithmetical operations with a fresh uninterpreted symbol.
         Return a mapping from new symbols to replaced expressions.
@@ -609,13 +653,7 @@ if _use_z3:
                         P2 = chlds[1][0]
                         P2.change_sign()
                         P1.add(P2)
-                        if simple_poly:
-                            simple_poly.append(P1.copy())
-                            P = BVFormula(ArithFormula.POLYNOM, P1)
-                            while simplify_polynomial_formula(P, simple_poly):
-                                simple_poly.append(P[0])
-                        else:
-                            simple_poly.append(P1)
+                        simple_poly.append(P1)
 
             if not simple_poly:
                 return expr_to
@@ -625,9 +663,8 @@ if _use_z3:
            #    print('  > ASSUM', _desimplify_ext(simplify(p.expr())))
            #print('>ORIG', _desimplify_ext(simplify(to_formula.expr())))
            #print('--------')
-            while simplify_polynomial_formula(to_formula, simple_poly):
+            simplify_polynomial_formula(to_formula, simple_poly)
            #     print('>SIMPL', _desimplify_ext(simplify(to_formula.expr())))
-                pass
             e = _desimplify_ext(simplify(to_formula.expr()))
            #print('   --   ')
            #print('>FINAL', e)
@@ -846,13 +883,11 @@ class Expr(Value):
         assert ty.bitwidth() <= bw
         return Expr(expr, ty)
 
-    def replace_common_subexprs(self, from_exprs):
-        expr = replace_common_subexprs(self.unwrap(), map(lambda x: x.unwrap(), from_exprs))
+    def rewrite_polynomials(self, from_exprs):
+        expr = rewrite_polynomials(self.unwrap(), map(lambda x: x.unwrap(), from_exprs))
         if expr is None:
             return None
         return Expr(expr, self.type())
-
-
 
     def replace_arith_ops(self):
         """

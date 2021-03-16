@@ -304,19 +304,18 @@ class ArithFormula:
             if isac and o._ty == ty:
                 assert o.children(), o
                 self.add_child(*o.children())
-            elif ty == ArithFormula.ADD and o.value_equals(0):
-                continue
-            elif ty == ArithFormula.MUL and o.value_equals(1):
-                continue
             else:
                 self.add_child(o)
-
 
         if len(self._children) == 1 and ty != ArithFormula.NOT:
             elem = self._children.pop()
             self._value = elem._value
             self._ty = elem._ty
 
+    def replace_with(self, F):
+        self._ty = F._ty
+        self._value = F._value
+        self._children = F._children
 
     def __getitem__(self, item):
         if self._children:

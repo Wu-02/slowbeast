@@ -25,16 +25,12 @@ def _sort_subs(subs):
 def try_solve_incrementally(assumptions, exprs, em):
     if assumptions:
         # First try to rewrite the formula into simpler form
-        #print('------')
-        #print('ASSUMPTIONS', assumptions)
-        expr1 = em.conjunction(*exprs).replace_common_subexprs(assumptions)
+        expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions)
         A = []
         for i in range(len(assumptions)):
             a = assumptions[i]
-            A.append(a.replace_common_subexprs([x for n, x in enumerate(assumptions) if n != i]))
+            A.append(a.rewrite_polynomials([x for n, x in enumerate(assumptions) if n != i]))
         assumptions = A
-       #print('ASSUMPTIONS', assumptions)
-        #print('------')
         r = IncrementalSolver().try_is_sat(3000, *assumptions, expr1)
         if r is not None:
             return r
@@ -42,7 +38,9 @@ def try_solve_incrementally(assumptions, exprs, em):
     else:
         expr = em.conjunction(*assumptions, *exprs)
 
+    ###
     # Now try abstractions
+    #
     rexpr, subs = expr.replace_arith_ops()
     if rexpr:
         solver = IncrementalSolver()
