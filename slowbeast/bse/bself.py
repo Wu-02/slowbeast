@@ -18,7 +18,7 @@ from slowbeast.symexe.annotations import (
 
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 
-from .bse import check_paths, BackwardSymbolicExecutor as BaseKindSE
+from .bse import check_paths, BackwardSymbolicInterpreter as BaseBSE
 from slowbeast.kindse.inductivesequence import InductiveSequence
 from slowbeast.kindse.overapproximations import overapprox_set
 from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
@@ -297,10 +297,10 @@ def is_seq_inductive(seq, executor, L : LoopInfo):
    #assert res == lres, f"{res} != {lres}"
    #return res
 
-class BSELFChecker(BaseKindSE):
+class BSELFChecker(BaseBSE):
     """
     An executor that recursively checks the validity of one particular assertion.
-    It inherits from BaseKindSE to have the capabilities to execute paths.
+    It inherits from BaseBSE to have the capabilities to execute paths.
     """
 
     def __init__(self, loc, A, program, programstructure, opts,
@@ -411,7 +411,6 @@ class BSELFChecker(BaseKindSE):
         assert unsafe, "No unsafe states, we should not get here at all"
 
         #   # first try to unroll it in the case the loop is easy to verify
-        #   kindse = BaseKindSE(self.getProgram())
         maxk = 15
         dbg_sec(f"Unwinding the loop {maxk} steps")
         res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
@@ -865,10 +864,10 @@ class BSELFChecker(BaseKindSE):
 
 class BSELF:
     """
-    The main class for KindSE that divides and conquers the tasks.
-    It inherits from BaseKindSE to have program structure and such,
+    The main class for BaseBSE that divides and conquers the tasks.
+    It inherits from BaseBSE to have program structure and such,
     TODO but we should change that, build program structure here,
-    and keep BaseKindSE a class that just takes care for executing paths.
+    and keep BaseBSE a class that just takes care for executing paths.
     """
 
     def __init__(self, prog, ohandler=None, opts=BSELFOptions()):
