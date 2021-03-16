@@ -863,7 +863,6 @@ class BSELFChecker(BaseKindSE):
 
         raise RuntimeError("Unreachable")
 
-
 class BSELF:
     """
     The main class for KindSE that divides and conquers the tasks.
