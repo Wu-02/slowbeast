@@ -28,7 +28,7 @@ def check_paths(executor, paths, pre=None, post=None):
     return result
 
 
-class KindSymbolicExecutor(SymbolicInterpreter):
+class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def __init__(
         self, prog, ohandler=None, opts=KindSEOptions(), programstructure=None
     ):
