@@ -120,43 +120,6 @@ def report_state(stats, n, fn=print_stderr):
             fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
 
-def strip_first_assume_edge(path: AnnotatedCFAPath):
-    idx = path.first_assume_edge_idx()
-    # we use this func only on loop edges, so it must contain the entry condition
-    assert idx is not None and idx + 1 < len(path)
-    return path.subpath(idx + 1)
-
-def strip_last_assume_edge(path: AnnotatedCFAPath):
-    idx = path.last_assume_edge_idx()
-    # we use this func only on loop edges, so it must contain the entry condition
-    assert idx is not None and idx + 1 < len(path)
-    return path.subpath(0, idx - 1)
-
-def strip_last_exit_edge(path: AnnotatedCFAPath, exits):
-    idx = path.last_edge_of_idx(exits)
-    # we use this func only on loop edges, so it must contain the entry condition
-    assert idx is not None and idx + 1 < len(path), idx
-    return path.subpath(0, idx - 1)
-
-
-def suffixes_starting_with(paths, loc):
-    for path in paths:
-        for idx in range(len(path)):
-            if path[idx].source() == loc:
-                yield path.subpath(idx)
-
-# def can_reach_header(loc, header, headers):
-#     " headers - other loop headers, we stop there"
-#
-#     hit_headers = set()
-#     def processedge(edge, dfstype):
-#         t = edge.target()
-#         if t in headers:
-#             hit_headers.add(t)
-#
-#     DFSVisitor(stop_vertices=headers).foreachedge(loc, processedge)
-#     return header in hit_headers
-
 
 def postcondition_expr(s):
     return state_to_annotation(s).do_substitutions(s)
@@ -861,6 +824,7 @@ class BSELFChecker(BaseBSE):
                 dbgv(f"Safe path: {path}")
 
         raise RuntimeError("Unreachable")
+
 
 class BSELF:
     """
