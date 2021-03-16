@@ -18,7 +18,7 @@ from slowbeast.symexe.annotations import (
 
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 
-from .bse import check_paths, KindSymbolicExecutor as BaseKindSE
+from .bse import check_paths, BackwardSymbolicExecutor as BaseKindSE
 from slowbeast.kindse.inductivesequence import InductiveSequence
 from slowbeast.kindse.overapproximations import overapprox_set
 from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
