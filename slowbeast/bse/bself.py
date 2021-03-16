@@ -72,18 +72,6 @@ def overapprox(executor, s, E, target, L):
         dbg("Starting sequence is empty")
         return None
 
-    # if __debug__:
-    #    r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
-    #    if r.errors:
-    #        print(r.errors[0].path_condition())
-    #    assert (
-    #        r.errors is None
-    #        ), f"Pre-image with sequence is not inductive\n"\
-    #           f"-- pre-image --:\n{S}\n"\
-    #           f"-- target --:\n{target}\n"\
-    #           f"-- error states --:\n{r.errors[0].path_condition()}\n"\
-    #           f"-- CTI: --\n{r.errors[0].model()}"
-
     # add relations
     for rel in get_const_cmp_relations(S.get_se_state()):
         ldbg("  Adding relation {0}", (rel,))
@@ -129,17 +117,6 @@ def postcondition_expr(s):
 
 def is_seq_inductive(seq, executor, L : LoopInfo):
     return L.set_is_inductive(executor.create_set(seq.toannotation()))
-   #r = seq.check_ind_on_paths(executor, L.paths())
-   #for s in r.killed():
-   #    dbg("Killed a state")
-   #    report_state(executor.stats, s)
-   #    return False
-   #res = r.errors is None
-   #if r.errors:
-   #    print(r.errors[0].path_condition())
-   #lres = L.set_is_inductive(executor.create_set(seq.toannotation()))
-   #assert res == lres, f"{res} != {lres}"
-   #return res
 
 class BSELFChecker(BaseBSE):
     """
@@ -208,9 +185,6 @@ class BSELFChecker(BaseBSE):
     def check_loop_precondition(self, L, A):
         loc = L.header()
         dbg_sec(f"Checking if {A} holds on {loc}")
-
-        # def reportfn(msg, *args, **kwargs):
-        #     print_stdout(f"> {msg}", *args, **kwargs)
 
         # run recursively BSELFChecker with already computed inductive sets
         checker = BSELFChecker(
