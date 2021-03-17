@@ -42,8 +42,8 @@ class StateDescription:
         # state.eval(instruction) should be put on the
         # place of the key expression
         assert isinstance(subs, dict)
-        assert all(map(lambda k: isinstance(k, Expr), subs.keys()))
-        assert all(map(lambda k: isinstance(k, Instruction), subs.values()))
+        assert all(map(lambda k: isinstance(k, Expr), subs.keys())), subs
+        assert all(map(lambda k: isinstance(k, Instruction), subs.values())), subs
         self._subs = subs
 
     def cannonical(self, EM):
@@ -150,7 +150,7 @@ def state_to_description(state):
     EM = state.expr_manager()
     return StateDescription(
         state.getConstraintsObj().as_formula(EM),
-        {l: l.load for l in state.getNondetLoads()},
+        {l: l.load() for l in state.getNondetLoads()},
     )
 
 
