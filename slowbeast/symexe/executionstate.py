@@ -277,7 +277,7 @@ class LazySEState(SEState):
         # on the inputs. But when inputs are created dynamically during
         # the execution, we must put constraints on them once they are
         # created. Those are these constraints.
-        self._future_nondets = {}  # instr -> [expr]
+        self._future_nondets = {}
 
     def get_nondet_instr_result(self):
         return (l for l in self._nondets if l.is_nondet_instr_result())
@@ -302,7 +302,6 @@ class LazySEState(SEState):
             self._nondets = newnl
         else:
             self._nondets = []
-
 
     def eval(self, v):
         value = self.try_eval(v)

@@ -71,7 +71,7 @@ class CFA:
             return self._target.successors()
 
         def predecessors(self):
-            return self._target.predecessors()
+            return self._source.predecessors()
 
         def type(self):
             return self._type

@@ -72,11 +72,11 @@ class Executor(SExecutor):
         for elem in edge:
             newstates = []
             for r in states:
-                cond = r.try_eval(elem)
-                if cond is None:
-                    r.setTerminated(f"Invalid assume edge: {elem}")
-                    nonready.append(r)
-                    continue
+                cond = r.eval(elem)
+               #if cond is None:
+               #    r.setTerminated(f"Invalid assume edge: {elem}")
+               #    nonready.append(r)
+               #    continue
                 ldbgv(
                     "assume {0}{1}",
                     ("not " if isnot else "", cond),
@@ -123,7 +123,7 @@ class Executor(SExecutor):
         elif edge.is_call() and not edge.called_function().isUndefined():
             fn = edge.called_function().name()
             for s in ready:
-                s.setTerminated("Called function {fn} on intraprocedural path")
+                s.setTerminated(f"Called function {fn} on intraprocedural path")
                 return [], nonready + ready
             raise NotImplementedError("Call edges not implemented")
         else:

@@ -1,6 +1,4 @@
-from heapq import heappush, heappop
-from itertools import chain
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec, dbgv, ldbg, ldbgv
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg, ldbgv
 
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result
@@ -17,7 +15,7 @@ from slowbeast.symexe.annotations import (
 
 from slowbeast.solvers.solver import getGlobalExprManager
 
-from .bse import check_paths, BackwardSymbolicInterpreter as BaseBSE
+from .bse import BackwardSymbolicInterpreter as BaseBSE, BSEContext, report_state, check_paths
 from slowbeast.kindse.inductivesequence import InductiveSequence
 from slowbeast.kindse.overapproximations import overapprox_set
 from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
@@ -39,6 +37,7 @@ class BSELFOptions(KindSEOptions):
         n = BSELFOptions()
         if parentopts:
             super(self).__init__(parentopts)
+
 
 def _dump_inductive_sets(checker, loc):
     dbg(f"With this INVARIANT set at loc {loc}:", color="dark_green")
@@ -95,19 +94,6 @@ def overapprox(executor, s, E, target, L):
     assert not S.is_empty(), "Infeasible states given to overapproximate"
     yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
 
-def report_state(stats, n, fn=print_stderr):
-    if n.hasError():
-        if fn:
-            fn(
-                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.getError()),
-                color="RED",
-            )
-        stats.errors += 1
-    elif n.wasKilled():
-        if fn:
-            fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
-        stats.killed_paths += 1
-
 
 def postcondition_expr(s):
     return state_to_annotation(s).do_substitutions(s)
@@ -119,6 +105,8 @@ def is_seq_inductive(seq, executor, L : LoopInfo):
 class BSELFChecker(BaseBSE):
     """
     An executor that recursively checks the validity of one particular assertion.
+    In particular, it checks whether the given assertion holds when entering the
+    given location.
     It inherits from BaseBSE to have the capabilities to execute paths.
     """
 
@@ -143,9 +131,6 @@ class BSELFChecker(BaseBSE):
 
         self.loop_info = {}
 
-
-        # paths to still search
-        self.readypaths = []
         # inductive sets that we generated
         self.invariant_sets = {} if invariants is None else invariants
         # inductive sets for deriving starting sequences
@@ -169,16 +154,13 @@ class BSELFChecker(BaseBSE):
             self.loop_info[loc] = L
         return L
 
-    def execute_path(self, path, fromInit=False):
+    def _execute_edge(self, bsectx, fromInit=False):
         """
         Override execute_path such that it uses invariants that we have
         """
-        return super().execute_path(
-            path, fromInit=fromInit, invariants=self.invariant_sets
+        return super()._execute_edge(
+            bsectx, fromInit=fromInit, invariants=self.invariant_sets
         )
-
-    def unfinished_paths(self):
-        return self.readypaths
 
     def check_loop_precondition(self, L, A):
         loc = L.header()
@@ -440,7 +422,6 @@ class BSELFChecker(BaseBSE):
             return [R]
         return None
 
-
     def fold_loop(self, path, loc, L: Loop, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
         if __debug__:
@@ -564,105 +545,36 @@ class BSELFChecker(BaseBSE):
 
             sequences = extended
 
-    def check_path(self, path):
-        first_loc = path[0]
-        if self._is_init(first_loc.source()):
-            r, states = self.check_initial_error_path(path)
-            if r is Result.UNSAFE:
-                self.reportfn(f"Error path: {path}", color="red")
-                return r, states  # found a real error
-            elif r is Result.SAFE:
-                # dbgv(f"Safe (init) path: {path}", color="dark_green")
-                return None, states  # this path is safe
-            elif r is Result.UNKNOWN:
-                for s in states.killed():
-                    report_state(self.stats, s, self.reportfn)
-                # dbgv(f"Inconclusive (init) path: {path}")
-                self.problematic_paths.append(path)
-                # there is a problem with this path,
-                # but we can still find an error
-                # on some different path
-                # FIXME: keep it in queue so that
-                # we can rule out this path by
-                # annotations from other paths?
-                return None, states
-            assert r is None, r
-
-        r = self.execute_path(path)
-
-        killed1 = (s for s in r.other if s.wasKilled()) if r.other else ()
-        killed2 = (
-            (
-                s
-                for s in r.early
-                if s.wasKilled() or (s.hasError() and s.getError().isMemError())
-            )
-            if r.early
-            else ()
-        )
-        # problem = False
-        for s in chain(killed1, killed2):
-            # problem = True
-            report_state(self.stats, s, fn=self.reportfn)
-            self.reportfn(f"Killed states when executing {path}")
-            self.problematic_paths.append(path)
-
-        return None, r
-
-    def get_path_to_run(self):
-        ready = self.readypaths
-        if ready:
-            return heappop(ready)
-        return None
-
     def is_loop_header(self, loc):
         return loc in self.get_loop_headers()
-
-    def queue_paths(self, paths):
-        assert isinstance(paths, list), paths
-        readyp = self.readypaths
-        for p in paths:
-            heappush(readyp, p)
-
-    def extend_paths(self, path, states):
-        invpoints = self.get_loop_headers()
-        return self.extend_path(
-            path,
-            states,
-            steps=-1,
-            atmost=True,
-            stoppoints=invpoints,
-        )
-
-    def extend_and_queue_paths(self, path, states):
-        self.queue_paths(self.extend_paths(path, states))
 
     def check(self, onlyedges=None):
         # the initial error path that we check
         loc = self.location
+        em = getGlobalExprManager()
         for edge in onlyedges if onlyedges else loc.predecessors():
-            path = AnnotatedCFAPath([edge])
-            path.add_annot_after(self.assertion)
-            self.extend_and_queue_paths(path, states=None)
+            self.queue_state(BSEContext(edge, self.assertion.assume_not(em)))
 
         opt_fold_loops = self.getOptions().fold_loops
         while True:
-            path = self.get_path_to_run()
-            if path is None:
+            bsectx = self.get_next_state()
+            if bsectx is None:
                 return (
-                    Result.UNKNOWN if (self.problematic_paths) else Result.SAFE
+                    Result.UNKNOWN if (self.problematic_states) else Result.SAFE
                 ), self.problematic_paths_as_result()
 
-            ldbgv("Main loop: check path {0}", (path,))
-            r, states = self.check_path(path)
-
-            if r is Result.UNSAFE:
-                return r, states
-            elif states.errors:  # got error states that may not be real
-                assert r is None
+            #ldbgv("Main loop state: {0}", (bsectx,))
+            r, pre = self.precondition(bsectx)
+            if r is Result.SAFE:
+                assert pre is None, "Feasible precondition for infeasible error path"
+                continue # infeasible path
+            elif r is Result.UNSAFE: # real error
+                return r, pre
+            else:  #  the error path is feasible, but the errors may not be real
+                assert r is Result.UNKNOWN
                 if opt_fold_loops:
                     # is this a path starting at a loop header?
-                    fl = path[0].source()
+                    fl = bsectx.edge.source()
                     if fl not in self.no_sum_loops and self.is_loop_header(fl):
                         res, newpaths = self.handle_loop(fl, path, states)
                         if res is Result.SAFE:
@@ -670,11 +582,9 @@ class BSELFChecker(BaseBSE):
                             dbg(f"Path with loop {fl} proved safe", color="dark_green")
                         else:
                             assert newpaths, newpaths
-                            self.queue_paths(newpaths)
+                            self.queue_state(newpaths)
                         continue
-                self.extend_and_queue_paths(path, states)
-            else:
-                dbgv(f"Safe path: {path}")
+                self.extend_state(bsectx, pre)
 
         raise RuntimeError("Unreachable")
 
@@ -731,9 +641,7 @@ class BSELF:
             result, states = checker.check()
             self.stats.add(checker.stats)
             if result is Result.UNSAFE:
-                assert states.errors, "No errors in unsafe result"
-                for s in states.errors:
-                    report_state(self.stats, s)
+                print_stdout(str(states), color="wine")
                 print_stdout("Error found.", color="redul")
                 return result
             elif result is Result.SAFE:
@@ -743,10 +651,10 @@ class BSELF:
             elif result is Result.UNKNOWN:
                 print_stdout(f"Checking {A} at {loc} was unsuccessful.", color="yellow")
                 has_unknown = True
-                assert checker.problematic_paths, "Unknown with no problematic paths?"
-                for p in checker.problematic_paths:
+                assert checker.problematic_states, "Unknown with no problematic paths?"
+                for p in checker.problematic_states:
                     self.stats.killed_paths += 1
-                    print_stdout(f"Killed path: {p}")
+                    report_state(self.stats, p)
 
         if has_unknown:
             print_stdout("Failed deciding the result.", color="orangeul")

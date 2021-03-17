@@ -3,6 +3,27 @@ from slowbeast.core.executor import split_ready_states
 from .statedescription import StateDescription, unify_state_descriptions
 from copy import copy
 
+from slowbeast.ir.instruction import Load
+
+# we want our annotations to talk about memory
+# and if they talk about the same memory, to look the same
+# So for every load X, we create a unique load X that we use
+# instead. In other words, we map all the x1 = load X,
+# x2 = load X, x3 = load X, ... to one x = load X
+cannonic_loads = {}
+
+def get_subs(state):
+    global cannonic_loads
+    subs = {}
+    for nd in state.nondets():
+        if nd.is_nondet_load():
+            alloc = nd.load().pointer_operand()
+            instr = cannonic_loads.setdefault(alloc, Load(alloc, nd.type()))
+        else:
+            instr = nd.instruction()
+        subs[nd] = instr
+
+    return subs
 
 class Annotation:
     """
@@ -135,8 +156,11 @@ class AssertAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
         super().__init__(Annotation.ASSERT, expr, subs, EM)
 
-    def toAssume(self, EM):
+    def to_assume(self, EM):
         return AssumeAnnotation(self.expr(), self.substitutions(), EM)
+
+    def assume_not(self, EM):
+        return AssumeAnnotation(EM.Not(self.expr()), self.substitutions(), EM)
 
     def __repr__(self):
         return f"@[assert {ExprAnnotation.__repr__(self)}]"
@@ -301,9 +325,9 @@ def and_annotations(EM, toassert, *annots):
 def state_to_annotation(state, toassert=False):
     EM = state.expr_manager()
     Ctor = AssertAnnotation if toassert else AssumeAnnotation
-    return AssumeAnnotation(
+    return Ctor(
         state.getConstraintsObj().as_formula(EM),
-        {l: l.load() for l in state.getNondetLoads()},
+        get_subs(state),
         EM,
     )
 
@@ -319,3 +343,5 @@ def states_to_annotation(states):
             state_to_annotation(s),
         )
     return a
+
+
