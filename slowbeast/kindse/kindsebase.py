@@ -35,7 +35,7 @@ def check_paths(executor, paths, pre=None, post=None):
         if pre:
             p.add_annot_before(pre.as_assume_annotation())
 
-        r = executor.execute_path(p)
+        r = executor.execute_edge(p)
         result.merge(r)
 
     return result

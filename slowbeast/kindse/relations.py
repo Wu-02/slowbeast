@@ -1,27 +1,9 @@
 from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.types import IntType
-from slowbeast.ir.instruction import Load
-from slowbeast.symexe.annotations import AssertAnnotation
+from slowbeast.symexe.annotations import AssertAnnotation, get_subs
 
 from slowbeast.solvers.solver import Solver
 
-# we want our annotations to talk about memory
-# and if they talk about the same memory, to look the same
-# So for every load X, we create a unique load X that we use
-# instead. In other words, we map all the x1 = load X,
-# x2 = load X, x3 = load X, ... to one x = load X
-cannonic_loads = {}
-
-
-def get_subs(state):
-    global cannonic_loads
-    subs = {}
-    for l in state.getNondetLoads():
-        alloc = l.load().pointer_operand()
-        load = cannonic_loads.setdefault(alloc, Load(alloc, l.type()))
-        subs[l] = load
-
-    return subs
 
 
 def get_safe_subexpressions(state, unsafe):

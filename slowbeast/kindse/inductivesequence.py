@@ -148,7 +148,7 @@ class InductiveSequence:
             if pre:
                 p.add_annot_before(pre.as_assume_annotation())
 
-            r = executor.execute_path(p)
+            r = executor.execute_edge(p)
             result.merge(r)
 
         self.frames = oldframes
@@ -173,7 +173,7 @@ class InductiveSequence:
             for e in pre:
                 p.addPrecondition(e)
 
-            r = executor.execute_path(p)
+            r = executor.execute_edge(p)
             result.merge(r)
 
         # if r.ready:

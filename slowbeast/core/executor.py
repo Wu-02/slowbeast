@@ -153,7 +153,7 @@ class Executor:
         assert self.memorymodel is not None
         return self.memorymodel
 
-    def createState(pc=None, m=None):
+    def createState(self, pc=None, m=None):
         """
         Create a state that can be processed by this executor.
         """

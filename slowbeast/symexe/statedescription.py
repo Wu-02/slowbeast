@@ -150,7 +150,7 @@ def state_to_description(state):
     EM = state.expr_manager()
     return StateDescription(
         state.getConstraintsObj().as_formula(EM),
-        {l: l.load() for l in state.getNondetLoads()},
+        {l: l.instruction() for l in state.nondets()},
     )
 
 

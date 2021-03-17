@@ -86,7 +86,7 @@ def postimage(executor, paths, pre=None):
             p.add_annot_before(pre.as_assume_annotation())
 
         # FIXME do not branch on last here, its add useless states
-        r = executor.execute_path(p)
+        r = executor.execute_edge(p)
         result.merge(r)
 
     assert result.errors is None

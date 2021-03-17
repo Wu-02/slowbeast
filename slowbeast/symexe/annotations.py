@@ -3,6 +3,8 @@ from slowbeast.core.executor import split_ready_states
 from .statedescription import StateDescription, unify_state_descriptions
 from copy import copy
 
+def get_subs(state):
+    return {nd : nd.instruction() for nd in state.nondets()}
 
 class Annotation:
     """
@@ -13,7 +15,7 @@ class Annotation:
     ASSERT = 2
     INSTRS = 3
 
-    __slots__ = ["type"]
+    __slots__ = "type"
 
     def __init__(self, ty):
         assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
@@ -135,8 +137,11 @@ class AssertAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
         super().__init__(Annotation.ASSERT, expr, subs, EM)
 
-    def toAssume(self, EM):
+    def to_assume(self, EM):
         return AssumeAnnotation(self.expr(), self.substitutions(), EM)
+
+    def assume_not(self, EM):
+        return AssumeAnnotation(EM.Not(self.expr()), self.substitutions(), EM)
 
     def __repr__(self):
         return f"@[assert {ExprAnnotation.__repr__(self)}]"
@@ -231,6 +236,7 @@ def execute_annotation(executor, states, annot):
     assert isinstance(annot, Annotation), annot
     assert all(map(lambda s: s.isReady(), states))
 
+    ldbgv("{0}", (annot,), verbose_lvl=3)
     # dbgv_sec(f"executing annotation:\n{annot}")
 
     if annot.isInstrs():
@@ -251,7 +257,6 @@ def execute_annotations(executor, s, annots):
 
     ready, nonready = [s], []
     for annot in annots:
-        ldbgv("{0}", (annot,), verbose_lvl=3)
         ready, nr = execute_annotation(executor, ready, annot)
         nonready += nr
 
@@ -301,9 +306,9 @@ def and_annotations(EM, toassert, *annots):
 def state_to_annotation(state, toassert=False):
     EM = state.expr_manager()
     Ctor = AssertAnnotation if toassert else AssumeAnnotation
-    return AssumeAnnotation(
+    return Ctor(
         state.getConstraintsObj().as_formula(EM),
-        {l: l.load() for l in state.getNondetLoads()},
+        get_subs(state),
         EM,
     )
 
@@ -319,3 +324,5 @@ def states_to_annotation(states):
             state_to_annotation(s),
         )
     return a
+
+

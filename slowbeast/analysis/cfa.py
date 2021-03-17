@@ -24,6 +24,12 @@ class CFA:
         def predecessors(self):
             return self._predecessors
 
+        def has_predecessors(self):
+            return len(self._predecessors) > 0
+
+        def has_successors(self):
+            return len(self._successors) > 0
+
         def elem(self):
             return self._elem
 
@@ -71,7 +77,13 @@ class CFA:
             return self._target.successors()
 
         def predecessors(self):
-            return self._target.predecessors()
+            return self._source.predecessors()
+
+        def has_predecessors(self):
+            return len(self._source._predecessors) > 0
+
+        def has_successors(self):
+            return len(self._target._successors) > 0
 
         def type(self):
             return self._type
