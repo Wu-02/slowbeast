@@ -45,7 +45,7 @@ class Executor(SExecutor):
                 assert val.type() == retTy
             else:
                 val = state.solver().fresh_value(name, retTy)
-            state.addNondet(NondetInstrResult.fromExpr(val, instr))
+            state.add_nondet(NondetInstrResult.fromExpr(val, instr))
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
         return [state]

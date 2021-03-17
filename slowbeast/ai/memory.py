@@ -210,7 +210,7 @@ class AIMemoryModel(MemoryModel):
                 if err.isUninitRead():
                     val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
                     assert isinstance(toOp, Load)
-                    state.addNondet(NondetLoad.fromExpr(val, toOp, fromOp))
+                    state.add_nondet(NondetLoad.fromExpr(val, toOp, fromOp))
 
         except NotImplementedError as e:
             state.setKilled(str(e))

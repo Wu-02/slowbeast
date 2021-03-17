@@ -208,7 +208,7 @@ class SEState(ExecutionState):
     def getWarnings(self, msg):
         return self._warnings
 
-    def addNondet(self, n):
+    def add_nondet(self, n):
         if self._nondets_ro:
             self._nondets = copy(self._nondets)
             self._nondets_ro = False
@@ -324,5 +324,5 @@ class LazySEState(SEState):
                 color="dark_blue",
             )
             self.set(v, value)
-            self.addNondet(NondetInstrResult.fromExpr(value, v))
+            self.add_nondet(NondetInstrResult.fromExpr(value, v))
         return value
