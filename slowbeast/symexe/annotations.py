@@ -3,27 +3,8 @@ from slowbeast.core.executor import split_ready_states
 from .statedescription import StateDescription, unify_state_descriptions
 from copy import copy
 
-from slowbeast.ir.instruction import Load
-
-# we want our annotations to talk about memory
-# and if they talk about the same memory, to look the same
-# So for every load X, we create a unique load X that we use
-# instead. In other words, we map all the x1 = load X,
-# x2 = load X, x3 = load X, ... to one x = load X
-cannonic_loads = {}
-
 def get_subs(state):
-    global cannonic_loads
-    subs = {}
-    for nd in state.nondets():
-        if nd.is_nondet_load():
-            alloc = nd.load().pointer_operand()
-            instr = cannonic_loads.setdefault(alloc, Load(alloc, nd.type()))
-        else:
-            instr = nd.instruction()
-        subs[nd] = instr
-
-    return subs
+    return {nd : nd.instruction() for nd in state.nondets()}
 
 class Annotation:
     """
@@ -34,7 +15,7 @@ class Annotation:
     ASSERT = 2
     INSTRS = 3
 
-    __slots__ = ["type"]
+    __slots__ = "type"
 
     def __init__(self, ty):
         assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
@@ -255,6 +236,7 @@ def execute_annotation(executor, states, annot):
     assert isinstance(annot, Annotation), annot
     assert all(map(lambda s: s.isReady(), states))
 
+    ldbgv("{0}", (annot,), verbose_lvl=3)
     # dbgv_sec(f"executing annotation:\n{annot}")
 
     if annot.isInstrs():
@@ -275,7 +257,6 @@ def execute_annotations(executor, s, annots):
 
     ready, nonready = [s], []
     for annot in annots:
-        ldbgv("{0}", (annot,), verbose_lvl=3)
         ready, nr = execute_annotation(executor, ready, annot)
         nonready += nr
 

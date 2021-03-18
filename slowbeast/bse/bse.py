@@ -1,4 +1,5 @@
 from queue import Queue as FIFOQueue
+from typing import Optional #, Union
 
 from slowbeast.kindse.programstructure import ProgramStructure
 from slowbeast.symexe.annotations import AssumeAnnotation
@@ -8,9 +9,8 @@ from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )
 from slowbeast.core.executor import PathExecutionResult
-from .bseexecutor import Executor as BSEExecutor
-from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.symexe.annotations import states_to_annotation
+from .bseexecutor import Executor as BSEExecutor, BSEState
+from slowbeast.bse.memorymodel import BSEMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
 
@@ -55,25 +55,25 @@ class BSEContext:
         edge  - edge after which the error should be infeasible
         error - error condition
         """
-        assert isinstance(err, AssumeAnnotation), err
+        assert isinstance(err, (AssumeAnnotation, BSEState)), err
         self.edge = edge
         self.err = err
 
     def __repr__(self):
-        return f"BSE-ctx[{self.edge}:{self.err.expr()}]"
+        err = self.err
+        return f"BSE-ctx[{self.edge}:{err}]"
 
 class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def __init__(
-        self, prog, ohandler=None, opts=KindSEOptions(), programstructure=None
+        self, prog, ohandler=None, opts=KindSEOptions(), programstructure=None, invariants=None
     ):
         super().__init__(
             P=prog, ohandler=ohandler, opts=opts, ExecutorClass=BSEExecutor
         )
 
         # the executor for induction checks -- we need lazy memory access
-        memorymodel = LazySymbolicMemoryModel(opts)
+        memorymodel = BSEMemoryModel(opts)
         indexecutor = BSEExecutor(self.solver(), opts, memorymodel)
-        # add error funs and forbid defined calls...
         dbg("Forbidding calls in BSE executor for now")
         indexecutor.forbid_calls()
         self._indexecutor = indexecutor
@@ -81,6 +81,8 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         if programstructure is None:
             programstructure = ProgramStructure(prog, self.new_output_file)
         self.programstructure = programstructure
+
+        self.invariant_sets = {} if invariants is None else invariants
 
         self._entry_loc = programstructure.entry_loc
         # as we run the executor in nested manners,
@@ -144,27 +146,35 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
-        ready, nonready = executor.execute_edge(states, bsectx.edge, post=[bsectx.err], annot_before_loc=invariants)
+        ready, nonready = executor.execute_edge(states, bsectx.edge, invariants=invariants)
         for s in (s for s in nonready if s.wasKilled() or s.hasError()):
             report_state(self.stats, s, self.reportfn)
             self.problematic_states.append(s)
 
-        return ready or None
+        poststate = bsectx.err
+        prestates = []
+        for r in ready:
+            prestates.extend(r.apply_postcondition(poststate))
+        return prestates
 
-    def precondition(self, bsectx : BSEContext):
+    def precondition(self, bsectx : BSEContext) -> (Result, Optional[BSEState]):
         """ Compute precondition of the given BSEContext. """
         edge = bsectx.edge
 
         if edge.source() is self._entry_loc:
             prestates = self._execute_edge(bsectx, fromInit=True)
+            assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
             if prestates:
                 self.reportfn(f"Error: {bsectx}", color="red")
                 # found a real error
-                return Result.UNSAFE, states_to_annotation(prestates)
+                return Result.UNSAFE, prestates[0]
+            if not self._entry_loc.has_predecessors():
+                return Result.SAFE, None
 
-        prestates = self._execute_edge(bsectx)
+        prestates = self._execute_edge(bsectx, invariants=self.invariant_sets)
+        assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
         if prestates:
-            return Result.UNKNOWN, states_to_annotation(prestates)
+            return Result.UNKNOWN, prestates[0]
         return Result.SAFE, None
 
     def get_next_state(self):

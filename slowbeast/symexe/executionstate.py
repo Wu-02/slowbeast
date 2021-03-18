@@ -53,7 +53,22 @@ def try_solve_incrementally(assumptions, exprs, em):
         return solver.try_is_sat(1000)
     # FIXME try reduced bitwidth and propagating back models
     return None
- 
+
+class Nondet:
+    __slots__ = "instruction", "value"
+
+    def __init__(self, instr, val):
+        self.instruction = instr
+        self.value = val
+
+    def is_nondet_call(self):
+        return False
+
+    def is_nondet_load(self):
+        return False
+
+    def is_nondet_instr(self):
+        return True
 
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
@@ -208,7 +223,11 @@ class SEState(ExecutionState):
     def getWarnings(self, msg):
         return self._warnings
 
+    def create_nondet(self, instr, val):
+        self.add_nondet(Nondet(instr, val))
+
     def add_nondet(self, n):
+        assert isinstance(n, Nondet), n
         if self._nondets_ro:
             self._nondets = copy(self._nondets)
             self._nondets_ro = False
@@ -313,9 +332,9 @@ class LazySEState(SEState):
                 ):  # FIXME: this is hack, do it generally for pointers
                     self.executor().memorymodel.lazyAllocate(self, v)
                     return self.try_eval(v)
-                name = f"nondet_ptr_{v.as_value()}"
+                name = f"unknown_ptr_{v.as_value()}"
             else:
-                name = f"nondet_{v.as_value()}"
+                name = f"unknown_{v.as_value()}"
             value = self.solver().Var(name, v.type())
             ldbgv(
                 "Created new nondet value {0} = {1}",
@@ -323,5 +342,5 @@ class LazySEState(SEState):
                 color="dark_blue",
             )
             self.set(v, value)
-            self.add_nondet(NondetInstrResult.fromExpr(value, v))
+            self.create_nondet(v, value)
         return value

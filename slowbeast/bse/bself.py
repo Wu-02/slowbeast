@@ -1,4 +1,4 @@
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg, ldbgv
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg
 
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result
@@ -8,10 +8,7 @@ from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.analysis.loops import Loop
 from slowbeast.kindse.programstructure import ProgramStructure
 
-from slowbeast.symexe.annotations import (
-    AssertAnnotation,
-    state_to_annotation
-)
+from slowbeast.symexe.annotations import AssertAnnotation
 
 from slowbeast.solvers.solver import getGlobalExprManager
 
@@ -95,10 +92,6 @@ def overapprox(executor, s, E, target, L):
     yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
 
 
-def postcondition_expr(s):
-    return state_to_annotation(s).do_substitutions(s)
-
-
 def is_seq_inductive(seq, executor, L : LoopInfo):
     return L.set_is_inductive(executor.create_set(seq.toannotation()))
 
@@ -117,6 +110,7 @@ class BSELFChecker(BaseBSE):
             ohandler=None,
             opts=opts,
             programstructure=programstructure,
+            invariants=invariants
         )
         assert isinstance(opts, BSELFOptions), opts
         self.program = program
@@ -131,8 +125,6 @@ class BSELFChecker(BaseBSE):
 
         self.loop_info = {}
 
-        # inductive sets that we generated
-        self.invariant_sets = {} if invariants is None else invariants
         # inductive sets for deriving starting sequences
         self.inductive_sets = indsets or {}
 
@@ -153,14 +145,6 @@ class BSELFChecker(BaseBSE):
             L = LoopInfo(self, loop)
             self.loop_info[loc] = L
         return L
-
-    def _execute_edge(self, bsectx, fromInit=False):
-        """
-        Override execute_path such that it uses invariants that we have
-        """
-        return super()._execute_edge(
-            bsectx, fromInit=fromInit, invariants=self.invariant_sets
-        )
 
     def check_loop_precondition(self, L, A):
         loc = L.header()
