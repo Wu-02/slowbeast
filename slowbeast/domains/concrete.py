@@ -113,7 +113,7 @@ class ConcreteVal(Value):
 
     KIND = 1
 
-    __slots__ = ["_value"]
+    __slots__ = "_value"
 
     def __init__(self, c, ty):
         assert isinstance(c, (int, bool, float)), f"Invalid constant: {c} {type(c)}"
