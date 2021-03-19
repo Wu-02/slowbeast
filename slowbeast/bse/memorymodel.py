@@ -47,7 +47,7 @@ class BSEMemory(SEMemory):
         state.set(toOp, val)
         self._unknown_ptrs[ptr] = val
 
-    def symbolic_read(self, state, ptr, valinst, bytesNum):
+    def _symbolic_read(self, state, ptr, valinst, bytesNum):
         val = self._unknown_ptrs.get(ptr)
         if val:
             if val.bytewidth() != bytesNum:
@@ -60,8 +60,22 @@ class BSEMemory(SEMemory):
             state.create_nondet(valinst, val)
             self._unknown_ptrs[ptr] =  val
             return val, None
+        raise NotImplementedError("Not implemented")
         # concrete read
-        return self.read(ptr, bytesNum)
+
+    def read(self, ptr, bytesNum):
+        if ptr.is_concrete():
+            return super().read(ptr, bytesNum)
+        v = self._unknown_ptrs.get(ptr)
+        if v is None:
+            return None, MemError(
+                MemError.UNSUPPORTED, f"Read of unknown value; pointer: {ptr}"
+            )
+        if v.bytewidth() != bytesNum:
+            return None, MemError(
+                MemError.UNSUPPORTED, f"Read of value with different sizes: {v} {bytesNum}"
+            )
+        return v, None
 
     def write_unknown_ptr(self, state, toOp, value):
         assert not self._unknown_ptrs.get(toOp), toOp
@@ -168,7 +182,7 @@ class BSEMemoryModel(CoreMM):
             return [state]
 
         assert frm.is_pointer(), frm
-        val, err = M.symbolic_read(state, frm, toOp, bytesNum)
+        val, err = M._symbolic_read(state, frm, toOp, bytesNum)
         if err:
             assert err.isMemError(), err
             state.setError(err)
