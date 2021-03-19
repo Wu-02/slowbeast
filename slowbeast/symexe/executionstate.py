@@ -70,6 +70,9 @@ class Nondet:
     def is_nondet_instr(self):
         return True
 
+    def __repr__(self):
+        return f"{self.instruction.as_value()} = {self.value}"
+
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
 
@@ -161,11 +164,12 @@ class SEState(ExecutionState):
         return self._solver.concretize(self.getConstraints(), *e)
 
     def input_vector(self):
-        return self.concretize(*self.nondets())
+        return self.concretize(*self.nondet_values())
 
     def model(self):
         return {
-            x: c for (x, c) in zip(self.nondets(), self.concretize(*self.nondets()))
+            x : c for (x, c) in zip(self.nondet_values(),
+                                    self.concretize(*self.nondet_values()))
         }
 
     def concretize_with_assumptions(self, assumptions, *e):
@@ -238,6 +242,9 @@ class SEState(ExecutionState):
 
     def nondets(self):
         return self._nondets
+
+    def nondet_values(self):
+        return (nd.value for nd in self._nondets)
 
     def getNondetLoads(self):
         return (l for l in self._nondets if l.is_nondet_load())
