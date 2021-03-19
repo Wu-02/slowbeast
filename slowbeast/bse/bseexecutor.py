@@ -70,7 +70,6 @@ class BSEState(LazySEState):
 
         M = self.memory
         aM = poststate.memory
-        UP = M._unknown_ptrs
         pUP = aM._unknown_ptrs
         if ptr_subs:
             print('pointer subs')
@@ -79,10 +78,11 @@ class BSEState(LazySEState):
                 new_ptr_subs = []
                 for oldptr, newptr in ptr_subs:
                     print(oldptr, '->', newptr)
+                    print('NPTR', type(newptr.object()), type(newptr.offset()))
                     # do we have loads from these pointers?
                     load_optr = pUP.get(oldptr)
                     if load_optr:
-                        load_nptr = UP.get(newptr)
+                        load_nptr, _ = M.read(newptr, load_optr.bytewidth())
                         if load_nptr:
                             if load_nptr.is_pointer():
                                 assert load_optr.is_pointer()
@@ -94,16 +94,26 @@ class BSEState(LazySEState):
                 ptr_subs = new_ptr_subs
             ptr_subs = list(_break_ptr_substitutions(all_ptr_subs))
 
+        print('PTR SUBS', ptr_subs)
 
-        for ptr, val in pUP.items():
-            if ptr_subs:
-                ptr = Pointer(substitute(ptr.object(), *ptr_subs), substitute(ptr.offset(), *ptr_subs))
-                val = Pointer(substitute(val.object(), *ptr_subs), substitute(val.offset(), *ptr_subs)) \
-                    if val.is_pointer() else substitute(val, *ptr_subs)
-                newval = UP.get(ptr)
-                if newval and (type(newval) is not type(val) or newval != val):
-                    subs.append((val, newval))
-            UP[ptr] = val
+        changed = True
+        while changed:
+            changed = False
+            for ptr, val in pUP.items():
+                if ptr_subs:
+                    ptr = Pointer(substitute(ptr.object(), *ptr_subs, *subs), substitute(ptr.offset(), *ptr_subs, *subs))
+                    val = Pointer(substitute(val.object(), *ptr_subs, *subs), substitute(val.offset(), *ptr_subs, *subs)) \
+                        if val.is_pointer() else substitute(val, *ptr_subs, *subs)
+                    print('PTR', ptr)
+                    print(type(ptr.object()), type(ptr.offset()))
+                    newval, _ = M.read(ptr, val.bytewidth())
+                    if newval and (type(newval) is not type(val) or newval != val):
+                        subs.append((val, newval))
+                        changed = True
+
+                # FIXME do not touch protected members...
+                if hasattr(M, '_unknown_ptrs'):
+                    M._unknown_ptrs[ptr] = val
 
         print(subs)
         add_pc = poststate.path_condition()
