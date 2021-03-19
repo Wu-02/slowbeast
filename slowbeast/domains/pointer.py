@@ -19,7 +19,7 @@ class Pointer(Value):
         assert not self.is_bool(), "Incorrectly constructed pointer"
 
     def __repr__(self):
-        return "({0}, {1})".format(self._object.as_value(), self._offset)
+        return "ptr({0}, {1})".format(self._object.as_value(), self._offset)
 
     def object(self):
         return self._object

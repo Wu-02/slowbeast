@@ -24,6 +24,10 @@ def _substitute_unknown_ptrs(substitute, subs, M):
         newM[ptr] = val
     return newM, eqs
 
+def _break_ptr_substitutions(subs):
+    for o, n in subs:
+        yield (o.object(), n.object())
+        yield (o.offset(), n.offset())
 
 class BSEState(LazySEState):
     def __init__(self, executor, pc, m, solver, constraints=None):
@@ -53,84 +57,85 @@ class BSEState(LazySEState):
     def _apply_postcondition_state(self, poststate):
         print('-- Applying post')
         print("State:", self)
-        print("Post-state:", poststate)
         print('-- --')
+        print("Post-state:", poststate)
+        print('-- -- --')
         ###
         # apply postcondition to constraints
-        M = self.memory
-        aM = poststate.memory
-        inputs = poststate.nondets()
-        try_eval = self.try_eval
-        add_input = self.add_nondet
         add_constr = self.addConstraint
         em = self.expr_manager()
         substitute = em.substitute
 
+        ptr_subs, subs = self._get_inputs_substitutions(poststate.nondets())
+
+        M = self.memory
+        aM = poststate.memory
+        UP = M._unknown_ptrs
+        pUP = aM._unknown_ptrs
+        if ptr_subs:
+            print('pointer subs')
+            all_ptr_subs = ptr_subs
+            while ptr_subs:
+                new_ptr_subs = []
+                for oldptr, newptr in ptr_subs:
+                    print(oldptr, '->', newptr)
+                    # do we have loads from these pointers?
+                    load_optr = pUP.get(oldptr)
+                    if load_optr:
+                        load_nptr = UP.get(newptr)
+                        if load_nptr:
+                            if load_nptr.is_pointer():
+                                assert load_optr.is_pointer()
+                                print('new', load_optr, '->', load_nptr)
+                                new_ptr_subs.append((load_optr, load_nptr))
+                            else:
+                                subs.append((load_optr, load_nptr))
+                all_ptr_subs += new_ptr_subs
+                ptr_subs = new_ptr_subs
+            ptr_subs = list(_break_ptr_substitutions(all_ptr_subs))
+
+
+        for ptr, val in pUP.items():
+            if ptr_subs:
+                ptr = Pointer(substitute(ptr.object(), *ptr_subs), substitute(ptr.offset(), *ptr_subs))
+                val = Pointer(substitute(val.object(), *ptr_subs), substitute(val.offset(), *ptr_subs)) \
+                    if val.is_pointer() else substitute(val, *ptr_subs)
+                newval = UP.get(ptr)
+                if newval and (type(newval) is not type(val) or newval != val):
+                    subs.append((val, newval))
+            UP[ptr] = val
+
+        print(subs)
         add_pc = poststate.path_condition()
-        post_ptrs = aM._unknown_ptrs
-        for inp in inputs:
-            val = try_eval(inp.instruction)
-            if val:
-                oldvalue = inp.value
-                if oldvalue.is_pointer():
-                    assert val.is_pointer(), val
-                    subs =  [(oldvalue.object(), val.object()), (oldvalue.offset(), val.offset())]
-                    post_ptrs, eqs = _substitute_unknown_ptrs(substitute, subs, post_ptrs)
-                    if eqs: # some merged values have two different values
-                        print(eqs)
-                        raise NotImplementedError("Not implemented yet")
-
-                else:
-                    assert not oldvalue.is_pointer()
-                    assert not val.is_pointer()
-                    subs = [(oldvalue, val)]
-                add_pc = substitute(add_pc, *subs)
-            else:
-                # unmatched, we must propagate it further
-                add_input(inp)
-
-        # FIXME
-        if hasattr(M, '_unknown_ptrs'):
-            ###
-            # create a new state of memory. In post_ptrs we have state of memory from poststate
-            # that is mapped to variables from this state.
-            new_ptrs = M._unknown_ptrs
-            subs = []
-            for ptr, val in post_ptrs.items():
-                v = new_ptrs.get(ptr)
-                if v:
-                    print('CONFLICT on', ptr)
-                    print('old', val)
-                    print('new', v)
-                    # we will need to substitute the old values for new values
-                    if val.is_pointer():
-                        assert v.is_pointer(), v
-                        subs += [(val.object(), v.object()), (val.offset(), v.offset())]
-                    else:
-                        subs += [(val, v)]
-                        # FIXME: here we should also state that the values are equal or remove the old input...
-                else:
-                    new_ptrs[ptr] = val
-
-            # now do the substitutions if needed
-            print(subs)
-            if subs:
-                add_pc = substitute(add_pc, *subs)
-                new_ptrs, eqs = _substitute_unknown_ptrs(substitute, subs, new_ptrs)
-                if eqs:  # some merged values have two different values
-                    print(eqs)
-                    for e in eqs:
-                        # FIXME: if one of these is a constant, do substitution
-                        add_constr(em.Eq(e[0], e[1]))
-            M._unknown_ptrs = new_ptrs
-
-        add_constr(add_pc)
+        add_constr(substitute(add_pc, *subs))
 
         print("Pre-state:", self)
         print('-- Applying post finished')
         if self.isfeasible():
             return [self]
         return []
+
+    def _get_inputs_substitutions(self, inputs):
+        try_eval = self.try_eval
+        add_input = self.add_nondet
+        ptr_subs = []
+        subs = []
+        for inp in inputs:
+            val = try_eval(inp.instruction)
+            if val:
+                print('HIT INP', inp.instruction, val)
+                oldvalue = inp.value
+                if oldvalue.is_pointer():
+                    assert val.is_pointer(), val
+                    ptr_subs.append((oldvalue, val))
+                else:
+                    assert not oldvalue.is_pointer()
+                    assert not val.is_pointer()
+                    subs.append((oldvalue, val))
+            else:
+                # unmatched, we must propagate it further
+                add_input(inp)
+        return ptr_subs, subs
 
     def __repr__(self):
         s = f"{self.getConstraints()}\n"
