@@ -1045,6 +1045,28 @@ def sext_expr(a, bw):
     return BVSExt(bw - a.bitwidth(), boolToBV(a))
 
 
+def python_constant(val):
+    """
+    Take a symbolic constant and get a python constant for it.
+    Return None if the given expression is not a constant number
+    or boolean
+    """
+    if is_bv_value(val):
+        return val.as_long()
+    elif is_true(val):
+        return True
+    elif is_false(val):
+        return False
+    return None
+
+def python_to_sb_type(val, bw):
+    if isinstance(val, bool):
+        assert bw == 1
+        return BoolType()
+    if isinstance(val, int): return IntType(bw)
+    if isinstance(val, float): return FloatType(bw)
+    return None
+
 class BVSymbolicDomain:
     """
     Takes care of handling symbolic computations
@@ -1078,26 +1100,15 @@ class BVSymbolicDomain:
             simplify(expr.unwrap(), arith_ineq_lhs=True, sort_sums=True), expr.type()
         )
 
-    def substitute(expr, *what):
-        return Expr(
-            substitute(expr.unwrap(), *((a.unwrap(), b.unwrap()) for (a, b) in what)),
-            expr.type(),
-        )
-
     def pythonConstant(expr):
-        """Take a symbolic constant and get a python constant for it.
-        Return None if the given expression is not a constant number
-        or boolean
-        """
-        val = expr.unwrap()
-        if is_bv_value(val):
-            return val.as_long()
-        elif is_true(val):
-            return True
-        elif is_false(val):
-            return False
+        return python_constant(expr.unwrap())
 
-        return None
+    def substitute(expr, *what):
+        e = simplify(substitute(expr.unwrap(), *((a.unwrap(), b.unwrap()) for (a, b) in what)))
+        c = python_constant(e)
+        if c:
+            return ConcreteVal(c, python_to_sb_type(c, expr.type().bitwidth()))
+        return Expr(e, expr.type())
 
     def Constant(c, ty):
         bw = ty.bitwidth()
