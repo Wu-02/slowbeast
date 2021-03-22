@@ -1408,6 +1408,8 @@ class BVSymbolicDomain:
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
+        if a.is_bool() and b.is_bool():
+            return Expr(a == b, BoolType())
         return Expr(to_bv(a) == to_bv(b), BoolType())
 
     def Ne(a, b, unsigned=False, floats=False):
@@ -1419,6 +1421,8 @@ class BVSymbolicDomain:
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
             return Expr(expr, BoolType())
+        if a.is_bool() and b.is_bool():
+            return Expr(a != b, BoolType())
         return Expr(to_bv(a) != to_bv(b), BoolType())
 
     ##
