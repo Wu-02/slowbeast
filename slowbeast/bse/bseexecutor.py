@@ -6,15 +6,16 @@ from slowbeast.ir.instruction import Load
 from slowbeast.util.debugging import ldbgv
 from .memorymodel import BSEMemoryModel, _nondet_value
 
-def _break_ptr_substitutions(*subs):
-    for o, n in subs:
-        yield (o.object(), n.object())
-        yield (o.offset(), n.offset())
-
 def _subst_val(substitute, val, subs):
+    assert isinstance(subs, tuple), subs
+    assert len(subs) == 2, subs
     if subs[0].is_pointer():
+        assert subs[1].is_pointer(), subs
         subs = ((subs[0].object(), subs[1].object()),
                 (subs[0].offset(), subs[1].offset()))
+    else:
+        assert not subs[1].is_pointer(), subs
+        subs = (subs,)
     if val.is_pointer():
         return Pointer(substitute(val.object(), *subs),
                        substitute(val.offset(), *subs))
@@ -53,11 +54,11 @@ class BSEState(LazySEState):
         if val.is_pointer():
             # if the value is pointer, we must substitute it also in the state of the memory
             assert newval.is_pointer(), newval
-            self._replace_value_in_memory(new_repl, newval, prestate, substitute, val)
             pc = substitute(pc, (val.object(), newval.object()), (val.offset(), newval.offset()))
         else:
             # FIXME: we should replace the value also in memory, shouldn't we?
             pc = substitute(pc, (val, newval))
+        self._replace_value_in_memory(new_repl, newval, prestate, substitute, val)
         self.setConstraints(pc)
 
         return new_repl
@@ -83,43 +84,15 @@ class BSEState(LazySEState):
             nptr = _subst_val(substitute, cptr, (val, newval))
             nval = _subst_val(substitute, cval, (val, newval))
 
-            # check whether we have a collision in the state (it may happen with multiple
-            # substitutions from the state)
-            curval, _ = self.memory.read(nptr, nval.bytewidth())
-            if curval and curval != nval:
+            curval = nUP.get(nptr)
+            if curval:
                 new_repl.append((curval, nval))
-            preval, _ = prestate.memory.read(nptr, nval.bytewidth())
-            if preval and preval != nval:
-                new_repl.append((nval, preval))
-                # do not add any pointer to nUP in this case -- we have its value in prestate
-                # and we are going to copy whole memory from prestate
-            if not preval:
-                # assert nUP.get(nptr) is None, nptr
-                nUP[nptr] = nval
+            nUP[nptr] = nval
+
         self.memory._reads = nUP
 
     def _replace_input_memory(self, new_repl, newval, prestate, substitute, val):
-        return
-        UP = self.memory._reads
-        nUP = {}
-        for cptr, cval in UP.items():
-            nptr = _subst_val(substitute, cptr, (val, newval))
-            nval = _subst_val(substitute, cval, (val, newval))
-
-            # check whether we have a collision in the state (it may happen with multiple
-            # substitutions from the state)
-            curval, _ = self.memory.read(nptr, nval.bytewidth())
-            if curval and curval != nval:
-                new_repl.append((curval, nval))
-            preval, _ = prestate.memory.read(nptr, nval.bytewidth())
-            if preval and preval != nval:
-                new_repl.append((nval, preval))
-                # do not add any pointer to nUP in this case -- we have its value in prestate
-                # and we are going to copy whole memory from prestate
-            if not preval:
-                # assert nUP.get(nptr) is None, nptr
-                nUP[nptr] = nval
-        self.memory._reads = nUP
+        pass
 
     def _get_symbols(self):
         symbols = set(s for e in self.getConstraints() for s in e.symbols() if not e.is_concrete())
@@ -149,7 +122,6 @@ class BSEState(LazySEState):
                 addrop = instr.operand(0)
                 addr = try_eval(addrop)
                 if addr:
-                    print('Prestate has addr', addr)
                     val, _ = prestate.memory.read(addr, inp.value.bytewidth())
                     if val:
                         print('REPL from memory', inp.value, val)
@@ -169,11 +141,11 @@ class BSEState(LazySEState):
         ### copy the data from pre-state
         # add memory state from pre-state
         # FIXME: do not touch the internal attributes
-        # the pointers should be disjunctive now
-        assert all(map(lambda x: x not in self.memory._reads, prestate.memory._reads.keys()))
-        self.memory._reads.update(prestate.memory._reads)
-        assert all(map(lambda x: x not in self.memory._input_reads, prestate.memory._input_reads.keys()))
-        self.memory._input_reads.update(prestate.memory._input_reads)
+        for k, v in prestate.memory._reads.items():
+            if k not in self.memory._reads:
+                self.memory._reads[k] = v
+       #assert all(map(lambda x: x not in self.memory._input_reads, prestate.memory._input_reads.keys()))
+       #self.memory._input_reads.update(prestate.memory._input_reads)
         # add new inputs from pre-state
         for inp in prestate.nondets():
             add_input(inp)

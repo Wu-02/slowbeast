@@ -54,6 +54,7 @@ if _use_z3:
     from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic, Then, With, Repeat, OrElse
     from z3 import (
+        is_fp,
         FP,
         Float32,
         Float64,
@@ -775,6 +776,9 @@ if _use_z3:
     def solver_to_sb_type(s):
         if is_bv(s):
             return IntType(s.sort().size())
+        if is_fp(s):
+            srt = s.sort()
+            return FloatType(srt.ebits() + srt.sbits())
         assert is_bool(s), f"Unhandled expression: {s}"
         return BoolType()
 

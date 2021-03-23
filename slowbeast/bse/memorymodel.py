@@ -22,8 +22,9 @@ def _nondet_value(fresh, op, bitsnum):
 class BSEMemory(SEMemory):
     def __init__(self):
         super().__init__()
-        # read from these instructions yields the mapped value
+        # input state of memory
         self._input_reads = {}
+        # output state of memory
         self._reads = {}
 
     def read_symbolic_ptr(self, state, toOp, fromOp, bitsnum=None):
@@ -70,6 +71,18 @@ class BSEMemory(SEMemory):
 
     def read(self, ptr, bytesNum):
         v = self._reads.get(ptr)
+        if v is None:
+            return None, MemError(
+                MemError.UNSUPPORTED, f"Read of unknown value; pointer: {ptr}"
+            )
+        if v.bytewidth() != bytesNum:
+            return None, MemError(
+                MemError.UNSUPPORTED, f"Read of value with different sizes: {v} {bytesNum}"
+            )
+        return v, None
+
+    def input_read(self, ptr, bytesNum):
+        v = self._input_reads.get(ptr)
         if v is None:
             return None, MemError(
                 MemError.UNSUPPORTED, f"Read of unknown value; pointer: {ptr}"
