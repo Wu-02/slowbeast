@@ -1,6 +1,7 @@
 #include <assert.h>
 
 // for now it is unsupported
+// UNSUPPORTED: bse
 // UNSUPPORTED: unbounded
 // RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out

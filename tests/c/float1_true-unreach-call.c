@@ -1,5 +1,6 @@
 #include <assert.h>
 
+// UNSUPPORTED: bse
 // REQUIRES: bounded
 // RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out
