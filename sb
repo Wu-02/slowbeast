@@ -52,6 +52,9 @@ def createArgParser():
                         help='Use naive k-induction on CFG without any improvements')
     parser.add_argument('-kind-naive-impr', action='store_true',
                         help='Use improved naive k-induction')
+    parser.add_argument('-kindse', action='store_true',
+                        help='Use symbolic execution with k-induction and loop folding.')
+    parser.add_argument('-kindse-til', action='store_true', help='Target towards induction is the last element in KindSE')
     parser.add_argument('-kind-step', type=int,
                         help='Set the step for k-induction, positive number is a number of basic blocks by which to extend in each iteration, 0 is extend the paths until a join, -1 is extend the paths until a branch (default)', default=-1)
     parser.add_argument('-bse', action='store_true', help='Do backward symbolic execution')
@@ -360,6 +363,8 @@ def main():
 
     if args.bself:
         args.bse = True
+    if args.kindse:
+        args.kind = True
     if args.kind or args.bse: # kind implies se
         args.se = True
 
@@ -376,7 +381,13 @@ def main():
         from slowbeast.kindse import KindSEOptions
         opts = KindSEOptions()
 
-        if args.kind_naive:
+        if args.kindse:
+            from slowbeast.kindse.kindse import KindSEOptions
+            opts = KindSEOptions()
+            if args.kindse_til:
+                opts.target_is_whole_seq = False
+            from slowbeast.kindse.kindse import KindSE as KindSymbolicExecutor
+        elif args.kind_naive:
             from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor
         elif args.kind_naive_impr:
             from slowbeast.kindse.naive.naiveimprkindse import KindSymbolicExecutor
