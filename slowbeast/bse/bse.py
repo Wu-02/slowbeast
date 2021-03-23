@@ -29,22 +29,6 @@ def report_state(stats, n, fn=print_stderr):
         stats.killed_paths += 1
 
 
-def check_paths(executor, paths, pre=None, post=None):
-    result = PathExecutionResult()
-    for path in paths:
-        p = path.copy()
-        # the post-condition is the whole frame
-        if post:
-            p.add_annot_after(post.as_assert_annotation())
-
-        if pre:
-            p.add_annot_before(pre.as_assume_annotation())
-
-        r = executor.execute_annotated_path(p)
-        result.merge(r)
-
-    return result
-
 class BSEContext:
     """ Class that keeps the state of BSE search """
 
@@ -197,3 +181,20 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         for edge in bsectx.edge.predecessors():
             self.queue_state(BSEContext(edge, postcondition.copy() if had_one else postcondition))
             had_one = True
+
+
+def check_paths(executor, paths, pre=None, post=None):
+    result = PathExecutionResult()
+    for path in paths:
+        p = path.copy()
+        # the post-condition is the whole frame
+        if post:
+            p.add_annot_after(post.as_assert_annotation())
+
+        if pre:
+            p.add_annot_before(pre.as_assume_annotation())
+
+        r = executor.execute_path(p)
+        result.merge(r)
+
+    return result

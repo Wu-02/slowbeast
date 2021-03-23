@@ -40,7 +40,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         assert states
 
-        ready, notready = executor.execute_edge(states, path)
+        ready, notready = executor.execute_path(states, path)
         self.stats.paths += 1
         return ready, notready
 

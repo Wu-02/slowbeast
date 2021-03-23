@@ -1,4 +1,4 @@
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg, ldbgv
 
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result
@@ -164,61 +164,83 @@ class BSELFChecker(BaseBSE):
         dbg_sec()
         return result, states
 
-    def unwind(self, paths, maxk):
-        assert maxk
-        k = 0
-        dbg("Unwinding the loop...")
-        while paths and k < maxk:
-            newpaths = []
-            for p in paths:
-                r, states = self.check_path(p)
-                if r is Result.UNSAFE:
-                    # we hit real unsafe path - return it so that the main executor
-                    # will re-execute it and report
-                    return Result.UNSAFE, [p]
-                # otherwise just prolong the paths that failed
-                if states.errors:
-                     newpaths.extend(self.extend_paths(p, None))
-            paths = newpaths
-            k += 1
-        return Result.UNKNOWN if paths else Result.SAFE, paths
+    def execute_path(self, path, fromInit=False, invariants=None):
+        """
+        Execute the given path. The path is such that
+        it ends one step before possible error.
+        That is, after executing the path we must
+        perform one more step to check whether the
+        error is reachable
+        """
+        if fromInit:
+            # we must execute without lazy memory
+            executor = self.executor()
 
-    def handle_loop(self, loc, path, states):
+            if not self.states:
+                self.prepare()
+            states = [s.copy() for s in self.states]
+            assert states
+
+            ldbgv("Executing (init) path: {0}", (path,), fn=self.reportfn)
+        else:
+            executor = self.ind_executor()
+
+            s = executor.createCleanState()
+            states = [s]
+
+            ldbgv("Executing path: {0}", (path,), fn=self.reportfn, color="orange")
+
+        assert all(
+            map(lambda s: not s.getConstraints(), states)
+        ), "The state is not clean"
+
+        # execute the annotated error path and generate also
+        # the states that can avoid the error at the end of the path
+        r = executor.execute_annotated_path(states, path, invariants)
+        self.stats.paths += 1
+
+        earl = r.early
+        if fromInit and earl:
+            # this is an initial path, so every error is taken as real
+            errs = r.errors or []
+            for e in (e for e in earl if e.hasError()):
+                errs.append(e)
+            r.errors = errs
+
+        return r
+
+
+    def handle_loop(self, loc, errpre):
         assert (
             loc not in self.no_sum_loops
         ), "Handling a loop that should not be handled"
 
-        # check subsumption by inductive sets
-        unsafe = states.errors
-        assert unsafe, "No unsafe states, we should not get here at all"
+        assert errpre, "No unsafe states, we should not get here at all"
+        unsafe = [errpre]
 
         #   # first try to unroll it in the case the loop is easy to verify
-        maxk = 15
-        dbg_sec(f"Unwinding the loop {maxk} steps")
-        res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
-        dbg_sec()
-        if res is Result.SAFE:
-           print_stdout(
-               f"Loop {loc} proved by unwinding", color="GREEN"
-           )
-           return res, []
-        elif res is Result.UNSAFE:
-           self.no_sum_loops.add(loc)
-           return res, [path]  # found an error
+       #maxk = 15
+       #dbg_sec(f"Unwinding the loop {maxk} steps")
+       #res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
+       #dbg_sec()
+       #if res is Result.SAFE:
+       #   print_stdout(
+       #       f"Loop {loc} proved by unwinding", color="GREEN"
+       #   )
+       #   return res, []
+       #elif res is Result.UNSAFE:
+       #   self.no_sum_loops.add(loc)
+       #   return res, [path]  # found an error
 
         L = self.get_loop(loc)
         if L is None:
             print_stdout("Was not able to construct the loop info")
             print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
             self.no_sum_loops.add(loc)
-            return Result.UNKNOWN, unwoundloop
+            #return Result.UNKNOWN, unwoundloop
+            return False
 
-        if self.fold_loop(path, loc, L, unsafe):
-            return Result.SAFE, []
-        else:
-            # NOTE: do not return unwoundloop, we must not return more
-            # than one iteration to preserve the initial sets inductive
-            return Result.UNKNOWN, self.extend_paths(path, None)
+        return self.fold_loop(loc, L, unsafe)
 
     def extend_seq(self, seq, target0, E, L):
         """
@@ -262,7 +284,7 @@ class BSELFChecker(BaseBSE):
 
                 yield A
 
-    def get_simple_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
+    def get_simple_initial_seqs(self, unsafe : list, L : Loop):
         E = self.create_set(unsafe[0])
 
         S = E.copy()
@@ -279,12 +301,12 @@ class BSELFChecker(BaseBSE):
             Is = self.initial_sets_from_is(E, L)
             if not Is:
                 dbg("... (no match in inductive sets)")
-                Is = self.initial_sets_from_exits(E, path, L)
+                Is = self.initial_sets_from_exits(E, L)
             if Is:
                 for s in (InductiveSequence(I.as_assert_annotation(), None) for I in Is):
                     dbg("... (got first IS)")
                     # should be inductive from construction
-                    assert is_seq_inductive(s, self, L), 'seq is not inductive'
+                    assert is_seq_inductive(s, self, L), f'seq is not inductive: {s}'
                     seqs.append(s)
                    #if is_seq_inductive(s, self, L):
                    #    seqs.append(s)
@@ -295,10 +317,10 @@ class BSELFChecker(BaseBSE):
 
         return target0, seqs, errs0
 
-    def get_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
+    def get_initial_seqs(self, unsafe : list, L : Loop):
         assert len(unsafe) == 1, "One path raises multiple unsafe states"
 
-        target0, seqs, errs0 = self.get_simple_initial_seqs(unsafe, path, L)
+        target0, seqs, errs0 = self.get_simple_initial_seqs(unsafe, L)
         # reduce and over-approximate the initial sequence
         if seqs:
             tmp = []
@@ -360,7 +382,7 @@ class BSELFChecker(BaseBSE):
         if is_seq_inductive(seq, self, L):
             yield seq
 
-    def initial_sets_from_exits(self, E, path, L: Loop):
+    def initial_sets_from_exits(self, E, L: Loop):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -406,7 +428,7 @@ class BSELFChecker(BaseBSE):
             return [R]
         return None
 
-    def fold_loop(self, path, loc, L: Loop, unsafe):
+    def fold_loop(self, loc, L: Loop, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
         if __debug__:
             _dump_inductive_sets(self, loc)
@@ -415,7 +437,7 @@ class BSELFChecker(BaseBSE):
         create_set = self.create_set
 
         dbg(f"Getting initial sequence for loop {loc}")
-        target0, seqs0, errs0 = self.get_initial_seqs(unsafe, path, L)
+        target0, seqs0, errs0 = self.get_initial_seqs(unsafe, L)
         if not seqs0:
             print_stdout(
                 f"Failed getting initial inductive sequence for loop {loc}", color="red"
@@ -563,13 +585,10 @@ class BSELFChecker(BaseBSE):
                     # is this a path starting at a loop header?
                     fl = bsectx.edge.source()
                     if fl not in self.no_sum_loops and self.is_loop_header(fl):
-                        res, newpaths = self.handle_loop(fl, path, states)
-                        if res is Result.SAFE:
-                            assert not newpaths
+                        if self.handle_loop(fl, pre):
                             dbg(f"Path with loop {fl} proved safe", color="dark_green")
                         else:
-                            assert newpaths, newpaths
-                            self.queue_state(newpaths)
+                            self.extend_state(bsectx, pre)
                         continue
                 self.extend_state(bsectx, pre)
 
