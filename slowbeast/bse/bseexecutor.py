@@ -2,6 +2,7 @@ from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.executionstate import LazySEState
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.domains.pointer import Pointer
+from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.instruction import Load
 from slowbeast.util.debugging import ldbgv
 from .memorymodel import BSEMemoryModel, _nondet_value
@@ -45,9 +46,16 @@ class BSEState(LazySEState):
         raise NotImplementedError(f"Invalid post-condition: {postcondition}")
 
     def _replace_value(self, prestate, val, newval):
-        print('REPLACING', val, 'WITH', newval)
-        # FIXME: use incremental solver
         em = self.expr_manager()
+        #print('REPLACING', val, 'WITH', newval)
+
+        # coerce the values
+        if not val.is_bool() and newval.is_bool():
+            assert val.bitwidth() == 1, val
+            newval = em.Ite(newval, ConcreteInt(1, 1), ConcreteInt(0, 1))
+
+        assert val.type() == newval.type(), f"{val} -- {newval}"
+        # FIXME: use incremental solver
         substitute = em.substitute
         new_repl = []
         pc = self.path_condition()
@@ -103,11 +111,11 @@ class BSEState(LazySEState):
 
     def join_prestate(self, prestate):
         assert isinstance(prestate, BSEState), type(prestate)
-        print('-- Joining with pre-state')
-        print("Pre-state:", prestate)
-        print('-- --')
-        print("State:", self)
-        print('-- -- --')
+       #print('-- Joining with pre-state')
+       #print("Pre-state:", prestate)
+       #print('-- --')
+       #print("State:", self)
+       #print('-- -- --')
         ###
         em = self.expr_manager()
         try_eval = prestate.try_eval
@@ -124,12 +132,12 @@ class BSEState(LazySEState):
                 if addr:
                     val, _ = prestate.memory.read(addr, inp.value.bytewidth())
                     if val:
-                        print('REPL from memory', inp.value, val)
+                        #print('REPL from memory', inp.value, val)
                         replace_value(prestate, inp.value, val)
             else:
                 preval = try_eval(inp.instruction)
                 if preval:
-                    print('REPL from reg', inp.value, preval)
+                    #print('REPL from reg', inp.value, preval)
                     replace_value(prestate, inp.value, preval)
 
         # filter the inputs that still need to be found
@@ -151,9 +159,9 @@ class BSEState(LazySEState):
             add_input(inp)
         self.addConstraint(*prestate.getConstraints())
 
-        print("==Pre+state ==")
-        print(self)
-        print("==============")
+        #print("==Pre+state ==")
+        #print(self)
+        #print("==============")
         if self.isfeasible():
             return [self]
         return []
