@@ -213,9 +213,14 @@ class SEState(ExecutionState):
         for c in C:
             self._constraints.add(c)
 
-    def setConstraints(self, C):
-        self._constraints = C
-        self._constraints_ro = False
+    def setConstraints(self, *C):
+        if len(C) == 1 and isinstance(C[0], ConstraintsSet):
+            self._constraints = C[0]
+            self._constraints_ro = False
+        else:
+            self._constraints = type(self._constraints)()
+            self._constraints_ro = False
+            self.addConstraint(*C)
 
     def addWarning(self, msg):
         warn(msg)
@@ -228,6 +233,7 @@ class SEState(ExecutionState):
         return self._warnings
 
     def create_nondet(self, instr, val):
+        #self.add_nondet(Nondet(instr, NondetInstrResult.fromExpr(val, instr)))
         self.add_nondet(Nondet(instr, val))
 
     def add_nondet(self, n):
@@ -239,6 +245,9 @@ class SEState(ExecutionState):
         if n.is_nondet_load() and self.getNondetLoadOf(n.alloc) is not None:
             raise RuntimeError(f"Multiple nondets of the same load unsupported atm: n:{n}, nondets: {self._nondets}")
         self._nondets.append(n)
+
+    def has_nondets(self):
+        return len(self._nondets) > 0
 
     def nondets(self):
         return self._nondets

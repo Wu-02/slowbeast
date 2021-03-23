@@ -536,8 +536,11 @@ class BSELFChecker(BaseBSE):
         # the initial error path that we check
         loc = self.location
         em = getGlobalExprManager()
+        notA = self.assertion.assume_not(em)
         for edge in onlyedges if onlyedges else loc.predecessors():
-            self.queue_state(BSEContext(edge, self.assertion.assume_not(em)))
+            state = self.ind_executor().createCleanState()
+            state.apply_postcondition(notA)
+            self.queue_state(BSEContext(edge, state))
 
         opt_fold_loops = self.getOptions().fold_loops
         while True:
@@ -627,6 +630,7 @@ class BSELF:
             if result is Result.UNSAFE:
                 print_stdout(str(states), color="wine")
                 print_stdout("Error found.", color="redul")
+                self.stats.errors += 1
                 return result
             elif result is Result.SAFE:
                 print_stdout(

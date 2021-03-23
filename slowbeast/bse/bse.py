@@ -151,11 +151,16 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             report_state(self.stats, s, self.reportfn)
             self.problematic_states.append(s)
 
-        poststate = bsectx.err
-        prestates = []
-        for r in ready:
-            prestates.extend(r.apply_postcondition(poststate))
-        return prestates
+        state = bsectx.err
+        assert len(ready) <= 1, "We support only one pre-state"
+        if ready:
+            if state.join_prestate(ready[0]):
+                return [state]
+        return []
+        #prestates = []
+        #for r in ready:
+        #    prestates.extend(r.apply_postcondition(poststate))
+        #return prestates
 
     def precondition(self, bsectx : BSEContext) -> (Result, Optional[BSEState]):
         """ Compute precondition of the given BSEContext. """
@@ -188,5 +193,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
     def extend_state(self, bsectx, postcondition):
         assert postcondition, postcondition
+        had_one : bool = False
         for edge in bsectx.edge.predecessors():
-            self.queue_state(BSEContext(edge, postcondition))
+            self.queue_state(BSEContext(edge, postcondition.copy() if had_one else postcondition))
+            had_one = True

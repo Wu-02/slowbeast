@@ -9,7 +9,7 @@ int main(void) {
 	int a = nondet_int();
 	int b = 4;
 	assert(a + b == 7);
-	// CHECK: assertion failure
+	// CHECK: Error found.
 	// CHECK: Found errors: 1
 	return 0;
 }

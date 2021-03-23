@@ -22,17 +22,21 @@ def _nondet_value(fresh, op, bitsnum):
 class BSEMemory(SEMemory):
     def __init__(self):
         super().__init__()
-        # read from these instructions yields the mapped value
-        self._unknown_ptrs = {}
+        # input state of memory
+        self._input_reads = {}
+        # output state of memory
+        self._reads = {}
 
     def read_symbolic_ptr(self, state, toOp, fromOp, bitsnum=None):
+        raise NotImplemented("Not implemented yet")
         val = _nondet_value(state.solver().fresh_value, toOp, bitsnum)
         state.create_nondet(toOp, val)
         state.set(toOp, val)
-        self._unknown_ptrs[fromOp] = val
+        self._reads[fromOp] = val
+        self._input_reads[fromOp] = val
 
     def read_unknown_ptr(self, state, toOp, fromOp, bitsnum=None):
-        assert not self._unknown_ptrs.get(fromOp), fromOp
+        assert not self._reads.get(fromOp), fromOp
         fresh = state.solver().fresh_value
 
         # FIXME: we can do the allocation if the fromOp is allocation inst
@@ -45,10 +49,11 @@ class BSEMemory(SEMemory):
         val = _nondet_value(fresh, toOp, bitsnum)
         state.create_nondet(toOp, val)
         state.set(toOp, val)
-        self._unknown_ptrs[ptr] = val
+        self._reads[ptr] = val
+        self._input_reads[ptr] = val
 
     def _symbolic_read(self, state, ptr, valinst, bytesNum):
-        val = self._unknown_ptrs.get(ptr)
+        val = self._reads.get(ptr)
         if val:
             if val.bytewidth() != bytesNum:
                 return None, MemError(
@@ -58,15 +63,26 @@ class BSEMemory(SEMemory):
         if not ptr.object().is_concrete() or not ptr.offset().is_concrete():
             val = _nondet_value(state.solver().fresh_value, valinst, bytesNum * 8)
             state.create_nondet(valinst, val)
-            self._unknown_ptrs[ptr] =  val
+            self._reads[ptr] =  val
+            self._input_reads[ptr] = val
             return val, None
         raise NotImplementedError("Not implemented")
         # concrete read
 
     def read(self, ptr, bytesNum):
-        if ptr.is_concrete():
-            return super().read(ptr, bytesNum)
-        v = self._unknown_ptrs.get(ptr)
+        v = self._reads.get(ptr)
+        if v is None:
+            return None, MemError(
+                MemError.UNSUPPORTED, f"Read of unknown value; pointer: {ptr}"
+            )
+        if v.bytewidth() != bytesNum:
+            return None, MemError(
+                MemError.UNSUPPORTED, f"Read of value with different sizes: {v} {bytesNum}"
+            )
+        return v, None
+
+    def input_read(self, ptr, bytesNum):
+        v = self._input_reads.get(ptr)
         if v is None:
             return None, MemError(
                 MemError.UNSUPPORTED, f"Read of unknown value; pointer: {ptr}"
@@ -78,7 +94,7 @@ class BSEMemory(SEMemory):
         return v, None
 
     def write_unknown_ptr(self, state, toOp, value):
-        assert not self._unknown_ptrs.get(toOp), toOp
+        assert not self._reads.get(toOp), toOp
         fresh = state.solver().fresh_value
 
         # FIXME: we can do the allocation if the fromOp is allocation inst
@@ -89,17 +105,16 @@ class BSEMemory(SEMemory):
         state.create_nondet(toOp, ptr)
 
         # reading from this pointer must equal value in the future
-        self._unknown_ptrs[ptr] = value
+        self._reads[ptr] = value
 
     def write_symbolic_ptr(self, state, toOp, value):
+        raise NotImplemented("Not implemented yet")
         # reading from this pointer must equal value in the future
-        self._unknown_ptrs[toOp] = value
+        self._reads[toOp] = value
 
     def symbolic_write(self, state, ptr, ptrOp, value):
-        if not ptr.object().is_concrete() or not ptr.offset().is_concrete():
-            self._unknown_ptrs[ptr] = value
-            return None
-        return self.write(ptr, value)
+        self._reads[ptr] = value
+        return None
 
 
 
@@ -124,20 +139,19 @@ class BSEMemoryModel(CoreMM):
         several new states, e.g., one where the allocation succeeds,
         one where it fails, etc.).
         """
-        raise NotImplementedError("Not implemented yet")
-       #if isinstance(instr, (Alloc, GlobalVariable)):
-       #    size = instr.size()
-       #elif self._overapprox_unsupported:
-       #    size = state.solver().Var(
-       #        f"ndt_size_{instr.as_value()}", IntType(POINTER_BIT_WIDTH)
-       #    )
-       #size = state.try_eval(size)
-       #if instr.is_global():
-       #    ptr = state.memory.allocateGlobal(instr)
-       #else:
-       #    ptr = state.memory.allocate(size, instr)
-       #state.set(instr, ptr)
-       #return [state]
+        if isinstance(instr, (Alloc, GlobalVariable)):
+            size = instr.size()
+        else:
+            size = state.solver().Var(
+                f"ndt_size_{instr.as_value()}", IntType(POINTER_BIT_WIDTH)
+            )
+        size = state.try_eval(size)
+        if instr.is_global():
+            ptr = state.memory.allocateGlobal(instr)
+        else:
+            ptr = state.memory.allocate(size, instr)
+        state.set(instr, ptr)
+        return [state]
 
     def write(self, state, instr, valueOp, toOp):
         M = state.memory
