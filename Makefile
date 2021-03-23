@@ -19,6 +19,7 @@ autopep:
 check:
 	lit --path=$(shell pwd) -D OPTS="-se-step=block" tests/
 	lit --path=$(shell pwd) -D OPTS="-se-incremental-solving" tests/
+	lit --path=$(shell pwd) -D OPTS="-se -bse" tests/
 	lit --path=$(shell pwd) -D OPTS="-se -bself" tests/
 
 #check-kind:

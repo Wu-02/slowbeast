@@ -135,6 +135,9 @@ class ConcreteVal(Value):
     def is_concrete(self):
         return True
 
+    def symbols(self):
+        return ()
+
     def is_zero(self):
         return self._value == 0
 
@@ -148,8 +151,7 @@ class ConcreteVal(Value):
         return self._value
 
     def __eq__(self, rhs):
-        assert isinstance(rhs, ConcreteVal), rhs
-        return self.value() == rhs.value() and self.type() == rhs.type()
+        return False if not isinstance(rhs, ConcreteVal) else self.value() == rhs.value() and self.type() == rhs.type()
 
 
 class ConcreteBool(ConcreteVal):

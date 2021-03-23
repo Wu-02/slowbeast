@@ -424,6 +424,18 @@ if _use_z3:
             yield from subexpressions(c)
         yield expr
 
+    def _symbols(expr, ret : set):
+        if is_const(expr) and not is_bv_value(expr):
+            ret.add(expr)
+        else:
+            for c in expr.children():
+                _symbols(c, ret)
+
+    def symbols(expr):
+        ret = set()
+        _symbols(expr, ret)
+        return ret
+
     def is_lit(e):
         return is_const(e) or\
                 ((is_app_of(e, Z3_OP_ZERO_EXT) or\
@@ -851,6 +863,17 @@ class Expr(Value):
             for s in self.unwrap().children()
         )
 
+    def symbols(self):
+        """
+        Get the symbols used in this expression.
+        E.g. for And(a, 3*b) this method returns [a, b].
+        """
+        return (
+            Expr(s, solver_to_sb_type(s))
+            for s in symbols(self.unwrap())
+        )
+
+
     def to_cnf(self):
         """
         Get the expression in CNF form.
@@ -957,7 +980,7 @@ class Expr(Value):
         return self._expr.__hash__()
 
     def __eq__(self, rhs):
-        return self._expr == rhs._expr
+        return self._expr == rhs._expr if isinstance(rhs, Expr) else False
 
     def __repr__(self):
         return "<{0}:{1}>".format(self._expr, self.type())
@@ -1106,7 +1129,7 @@ class BVSymbolicDomain:
     def substitute(expr, *what):
         e = simplify(substitute(expr.unwrap(), *((a.unwrap(), b.unwrap()) for (a, b) in what)))
         c = python_constant(e)
-        if c:
+        if c is not None:
             return ConcreteVal(c, python_to_sb_type(c, expr.type().bitwidth()))
         return Expr(e, expr.type())
 

@@ -24,7 +24,7 @@ int main()
     }
 
     assert(parity2 == 1);
-    // CHECK: assertion failure
+    // CHECK: Error found.
 
     return 0;
 }

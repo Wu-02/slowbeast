@@ -17,7 +17,7 @@ class Executor(SExecutor):
     """
 
     def __init__(self, solver, opts, memorymodel=None):
-        super(Executor, self).__init__(solver, opts, memorymodel)
+        super().__init__(solver, opts, memorymodel)
 
     def createState(self, pc=None, m=None):
         """

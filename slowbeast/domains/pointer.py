@@ -36,6 +36,10 @@ class Pointer(Value):
     def is_null(self):
         return self.is_concrete() and self._object.is_zero() and self._offset.is_zero()
 
+    def symbols(self):
+        yield from self._object.symbols()
+        yield from self._offset.symbols()
+
     def __eq__(self, oth):
         return self._object == oth._object and self._offset == oth._offset
 
