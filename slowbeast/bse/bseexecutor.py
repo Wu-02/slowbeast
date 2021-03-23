@@ -2,6 +2,7 @@ from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.executionstate import LazySEState
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.domains.pointer import Pointer
+from slowbeast.ir.instruction import Load
 from slowbeast.util.debugging import ldbgv
 from .memorymodel import BSEMemoryModel, _nondet_value
 
@@ -55,6 +56,7 @@ class BSEState(LazySEState):
             self._replace_value_in_memory(new_repl, newval, prestate, substitute, val)
             pc = substitute(pc, (val.object(), newval.object()), (val.offset(), newval.offset()))
         else:
+            # FIXME: we should replace the value also in memory, shouldn't we?
             pc = substitute(pc, (val, newval))
         self.setConstraints(pc)
 
@@ -141,9 +143,22 @@ class BSEState(LazySEState):
         ### modify the state according to the pre-state
         replace_value = self.replace_value
         for inp in self.nondets():
-           preval = try_eval(inp.instruction)
-           if preval:
-               replace_value(prestate, inp.value, preval)
+            instr = inp.instruction
+            if isinstance(instr, Load):
+                # try read the memory if it is written in the state
+                addrop = instr.operand(0)
+                addr = try_eval(addrop)
+                if addr:
+                    print('Prestate has addr', addr)
+                    val, _ = prestate.memory.read(addr, inp.value.bytewidth())
+                    if val:
+                        print('REPL from memory', inp.value, val)
+                        replace_value(prestate, inp.value, val)
+            else:
+                preval = try_eval(inp.instruction)
+                if preval:
+                    print('REPL from reg', inp.value, preval)
+                    replace_value(prestate, inp.value, preval)
 
         # filter the inputs that still need to be found
         symbols = set(self._get_symbols())
@@ -157,6 +172,8 @@ class BSEState(LazySEState):
         # the pointers should be disjunctive now
         assert all(map(lambda x: x not in self.memory._reads, prestate.memory._reads.keys()))
         self.memory._reads.update(prestate.memory._reads)
+        assert all(map(lambda x: x not in self.memory._input_reads, prestate.memory._input_reads.keys()))
+        self.memory._input_reads.update(prestate.memory._input_reads)
         # add new inputs from pre-state
         for inp in prestate.nondets():
             add_input(inp)
@@ -170,10 +187,13 @@ class BSEState(LazySEState):
         return []
 
     def __repr__(self):
-        s = f"pc: {self.getConstraints()}\n"
-        s += "\n".join(f"-L({p.as_value()})={x}" for p, x in self.memory._input_reads.items())
-        s += "\n"+"\n".join(f"+L({p.as_value()})={x}" for p, x in self.memory._reads.items())
-        s += "\n"+"\n".join(f"{nd.instruction.as_value()}={nd.value}" for nd in self._nondets)
+        s = f"pc: {self.getConstraints()}"
+        if self.memory._input_reads:
+            s += "\n"+"\n".join(f"-L({p.as_value()})={x}" for p, x in self.memory._input_reads.items())
+        if self.memory._reads:
+            s += "\n"+"\n".join(f"+L({p.as_value()})={x}" for p, x in self.memory._reads.items())
+        if self._nondets:
+            s += "\n"+"\n".join(f"{nd.instruction.as_value()}={nd.value}" for nd in self._nondets)
         return s
 
 class Executor(PathExecutor):
