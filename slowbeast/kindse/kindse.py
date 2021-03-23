@@ -23,7 +23,7 @@ from .inductivesequence import InductiveSequence
 from .overapproximations import overapprox_set
 from .relations import get_const_cmp_relations, get_var_relations
 
-class BSELFOptions(KindSEOptions):
+class KindSEOptions(KindSEOptions):
     def __init__(self, copyopts=None):
         super().__init__(copyopts)
         if copyopts:
@@ -36,7 +36,7 @@ class BSELFOptions(KindSEOptions):
             self.target_is_whole_seq = True
 
     def default(self, parentopts=None):
-        n = BSELFOptions()
+        n = KindSEOptions()
         if parentopts:
             super(self).__init__(parentopts)
 
@@ -299,7 +299,7 @@ def is_seq_inductive(seq, executor, L : LoopInfo):
    #assert res == lres, f"{res} != {lres}"
    #return res
 
-class BSELFChecker(BaseKindSE):
+class KindSEChecker(BaseKindSE):
     """
     An executor that recursively checks the validity of one particular assertion.
     It inherits from BaseKindSE to have the capabilities to execute paths.
@@ -313,7 +313,7 @@ class BSELFChecker(BaseKindSE):
             opts=opts,
             programstructure=programstructure,
         )
-        assert isinstance(opts, BSELFOptions), opts
+        assert isinstance(opts, KindSEOptions), opts
         self.program = program
         self.location = loc
         self.assertion = A
@@ -371,8 +371,8 @@ class BSELFChecker(BaseKindSE):
         # def reportfn(msg, *args, **kwargs):
         #     print_stdout(f"> {msg}", *args, **kwargs)
 
-        # run recursively BSELFChecker with already computed inductive sets
-        checker = BSELFChecker(
+        # run recursively KindSEChecker with already computed inductive sets
+        checker = KindSEChecker(
             loc,
             A,
             self.program,
@@ -1125,7 +1125,7 @@ class BSELFChecker(BaseKindSE):
         raise RuntimeError("Unreachable")
 
 
-class BSELF:
+class KindSE:
     """
     The main class for KindSE that divides and conquers the tasks.
     It inherits from BaseKindSE to have program structure and such,
@@ -1133,8 +1133,8 @@ class BSELF:
     and keep BaseKindSE a class that just takes care for executing paths.
     """
 
-    def __init__(self, prog, ohandler=None, opts=BSELFOptions()):
-        assert isinstance(opts, BSELFOptions), opts
+    def __init__(self, prog, ohandler=None, opts=KindSEOptions()):
+        assert isinstance(opts, KindSEOptions), opts
         self.program = prog
         self.ohandler = ohandler
         self.options = opts
@@ -1173,7 +1173,7 @@ class BSELF:
         has_unknown = False
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = BSELFChecker(loc, A,
+            checker = KindSEChecker(loc, A,
                                    self.program, self.programstructure, self.options,
                                    invariants=self.invariants)
             result, states = checker.check()
