@@ -27,6 +27,10 @@ def report_state(stats, n, fn=print_stderr):
         if fn:
             fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
+    elif n.isTerminated():
+        if fn:
+            fn(n.getStatusDetail(), prefix="TERMINATED STATE: ", color="orange")
+        stats.terminated_paths += 1
 
 
 class BSEContext:
@@ -178,9 +182,21 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def extend_state(self, bsectx, postcondition):
         assert postcondition, postcondition
         had_one : bool = False
-        for edge in bsectx.edge.predecessors():
-            self.queue_state(BSEContext(edge, postcondition.copy() if had_one else postcondition))
-            had_one = True
+        edge = bsectx.edge
+        if edge.has_predecessors():
+            for pedge in bsectx.edge.predecessors():
+                self.queue_state(BSEContext(pedge, postcondition.copy() if had_one else postcondition))
+                had_one = True
+        elif edge.cfa().is_init(edge):
+            # This is entry to procedure. It cannot be the main procedure, otherwise
+            # we would either report safe or unsafe, so this is a call of subprocedure
+            # that we do not support atm
+            postcondition.setTerminated("Calls unsupported in BSE atm.")
+            report_state(self.stats, postcondition, self.reportfn)
+            self.problematic_states.append(postcondition)
+        # else: dead code, we're fine
+
+
 
 
 def check_paths(executor, paths, pre=None, post=None):
