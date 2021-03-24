@@ -54,7 +54,7 @@ if _use_z3:
     from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic, Then, With, Repeat, OrElse
     from z3 import (
-        is_fp,
+        is_fp, is_fp_value, is_fprm_value,
         FP,
         Float32,
         Float64,
@@ -426,7 +426,10 @@ if _use_z3:
         yield expr
 
     def _symbols(expr, ret : set):
-        if is_const(expr) and not is_bv_value(expr):
+        if is_const(expr) and\
+                not is_bv_value(expr) and\
+                not is_fp_value(expr) and\
+                not is_fprm_value(expr):
             ret.add(expr)
         else:
             for c in expr.children():
