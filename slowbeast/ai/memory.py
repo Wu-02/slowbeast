@@ -53,7 +53,7 @@ class AIMemoryObject:
     def setAllocation(self, a):
         self._allocation = a
 
-    def write(self, x, off=ConcreteVal(0, OffsetType)):
+    def write(self, x, off=None):
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
@@ -61,18 +61,18 @@ class AIMemoryObject:
         assert isinstance(x, Value)
         assert self._ro is False, "Writing read-only object (COW bug)"
 
-        offval = off.value()
+        offval = 0 if off is None else off.value()
         # self._values.setdefault(offval, set()).add(x)
         self._values[offval] = x
         return None
 
-    def read(self, bts, off=ConcreteVal(0, OffsetType)):
+    def read(self, bts, off=None):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)
         """
 
-        offval = off.value()
+        offval = 0 if off is None else off.value()
         val = self._values.get(offval)
         if val is None:
             return None, MemError(
