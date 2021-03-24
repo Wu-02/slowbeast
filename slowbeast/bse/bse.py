@@ -199,7 +199,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
 
 
-def check_paths(executor, paths, pre=None, post=None):
+def check_paths(checker, paths, pre=None, post=None):
     result = PathExecutionResult()
     for path in paths:
         p = path.copy()
@@ -210,7 +210,7 @@ def check_paths(executor, paths, pre=None, post=None):
         if pre:
             p.add_annot_before(pre.as_assume_annotation())
 
-        r = executor.execute_path(p)
+        r = checker.execute_path(p)
         result.merge(r)
 
     return result

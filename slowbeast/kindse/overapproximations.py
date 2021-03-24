@@ -650,6 +650,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, assumptions, L, drop_on
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     expr = expr.rewrite_and_simplify().to_cnf()
+
     # break equalities to <= && >= so that we can overapproximate them
     #expr = replace_constants(expr, EM)
     clauses = break_eqs(expr)
