@@ -50,6 +50,7 @@ class Pointer(Value):
         print(self)
 
 
-NullPointer = Pointer(
-    ConcreteInt(0, get_offset_type_size()), ConcreteInt(0, get_offset_type_size())
-)
+def get_null_pointer():
+    return Pointer(
+        ConcreteInt(0, get_offset_type_size()), ConcreteInt(0, get_offset_type_size())
+    )
