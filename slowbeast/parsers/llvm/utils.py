@@ -3,7 +3,7 @@ from struct import unpack, pack
 from slowbeast.util.debugging import warn
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.domains.pointer import NullPointer
+from slowbeast.domains.pointer import get_null_pointer
 from slowbeast.ir.types import IntType, FloatType, PointerType
 
 
@@ -214,7 +214,7 @@ def getConstantPtr(val):
         return None
 
     if str(val).endswith("null"):
-        return NullPointer
+        return get_null_pointer()
 
     # FIXME
     return None
