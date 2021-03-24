@@ -72,7 +72,7 @@ class MemoryObject:
         sz = self._size
         return sz is None or bytesnum > sz.value() + offval
 
-    def write(self, x, off=ConcreteVal(0, get_offset_type())):
+    def write(self, x, off=None):
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
@@ -89,8 +89,7 @@ class MemoryObject:
             return MemError(
                 MemError.UNSUPPORTED, "Write to symbolic-sized objects not implemented"
             )
-
-        offval = off.value()
+        offval = 0 if off is None else off.value()
         if offval != 0:
             # FIXME: not efficient...
             bw = x.bytewidth()
@@ -111,12 +110,14 @@ class MemoryObject:
         self._values[offval] = x
         return None
 
-    def read(self, bts, off=ConcreteVal(0, get_offset_type())):
+    def read(self, bts, off=None):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)
         """
         assert isinstance(bts, int), "Read non-constant number of bytes"
+        if off is None:
+            off = ConcreteVal(0, get_offset_type())
 
         if not off.is_concrete():
             raise NotImplementedError("Read from non-constant offset not supported")

@@ -68,12 +68,14 @@ MAX_BYTES_SIZE = 64
 
 class MemoryObject(CoreMO):
     # FIXME: refactor
-    def read(self, bts, off=ConcreteVal(0, get_offset_type())):
+    def read(self, bts, off=None):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)
         """
         assert isinstance(bts, int), "Read non-constant number of bytes"
+        if off is None:
+            off = ConcreteVal(0, get_offset_type())
 
         if not off.is_concrete():
             return None, MemError(
@@ -136,13 +138,16 @@ class MemoryObject(CoreMO):
         # FIXME: make me return Bytes objects (a sequence of bytes)
         return val, None
 
-    def write(self, x, off=ConcreteVal(0, get_offset_type())):
+    def write(self, x, off=None):
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
         """
         assert isinstance(x, Value)
         assert self._ro is False, "Writing read-only object (COW bug)"
+
+        if off is None:
+            off = ConcreteVal(0, get_offset_type())
 
         if not off.is_concrete():
             return MemError(
