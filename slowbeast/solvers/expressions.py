@@ -54,22 +54,13 @@ class ExprManager:
     SMT formulas, but we'll be ready for the future :)
     """
 
-    __slots__ = ["_names"]
+    __slots__ = "_names"
 
     def __init__(self):
         self._names = {}
 
     def ConcreteVal(self, c, bw):
         return ConcreteDomain.Value(c, bw)
-
-    def Bool(self, name):
-        assert isinstance(name, str)
-        names = self._names
-        s = names.get(name)
-        if s is None:
-            s = SymbolicDomain.Bool(name)
-            names[name] = s
-        return s
 
     def Var(self, name, ty):
         assert isinstance(name, str)
@@ -84,6 +75,9 @@ class ExprManager:
             names[name] = s
         assert s, "No var was created"
         return s
+
+    def Bool(self, name):
+        return self.Var(name, BoolType())
 
     def subexpressions(self, expr):
         if expr.is_concrete():
