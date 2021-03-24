@@ -85,6 +85,10 @@ class CFA:
         def has_successors(self):
             return len(self._target._successors) > 0
 
+        def cfa(self):
+            assert self._target._cfa is self._source._cfa
+            return self._source._cfa
+
         def type(self):
             return self._type
 
@@ -185,6 +189,9 @@ class CFA:
         self._errors.add(l)
 
     def is_init(self, l):
+        if isinstance(l, CFA.Edge):
+            return l.source() == self._entry
+        assert isinstance(l, CFA.Location), l
         return l == self._entry
 
     def is_err(self, l):
