@@ -5,11 +5,17 @@
 // RUN: sb -out-dir=%t-out %opts %t.bc &>%t.log
 // RUN: cat %t.log | FileCheck %s
 
-int main() {
-	int array[10];
-	int n = 7;
-	array[n] = 1;
-	assert(array[n] == 1);
+
+
+extern unsigned long input(void);
+
+int main(void) {
+    unsigned long n = input();
+    int array[10];
+    array[0] = 0;
+    if (n == 0)
+        assert(array[n] == 0);
+
 	// CHECK-NOT: assertion failed!
 	// CHECK-NOT: Error found.
 	// CHECK: Found errors: 0
