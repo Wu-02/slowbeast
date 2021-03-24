@@ -1,4 +1,4 @@
-from slowbeast.ir.types import OffsetType, IntType, Bytes
+from slowbeast.ir.types import IntType, Bytes, get_offset_type
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.core.errors import MemError
@@ -12,8 +12,8 @@ def get_byte(EM, x, bw, i):
     off = 8 * i
     b = EM.Extract(
         x,
-        ConcreteVal(off, OffsetType),
-        ConcreteVal(off + 7, OffsetType),
+        ConcreteVal(off, get_offset_type()),
+        ConcreteVal(off + 7, get_offset_type()),
     )
     assert b.bitwidth() == 8
     return b
@@ -68,7 +68,7 @@ MAX_BYTES_SIZE = 64
 
 class MemoryObject(CoreMO):
     # FIXME: refactor
-    def read(self, bts, off=ConcreteVal(0, OffsetType)):
+    def read(self, bts, off=ConcreteVal(0, get_offset_type())):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)
@@ -136,7 +136,7 @@ class MemoryObject(CoreMO):
         # FIXME: make me return Bytes objects (a sequence of bytes)
         return val, None
 
-    def write(self, x, off=ConcreteVal(0, OffsetType)):
+    def write(self, x, off=ConcreteVal(0, get_offset_type())):
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error

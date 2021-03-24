@@ -1,9 +1,7 @@
-from slowbeast.util.debugging import dbgv
 from slowbeast.domains.value import Value
 from slowbeast.domains.pointer import Pointer
-from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
-from slowbeast.ir.types import IntType, BoolType, POINTER_BIT_WIDTH
-from slowbeast.domains.symbolic import NondetLoad
+from slowbeast.ir.instruction import Alloc, GlobalVariable
+from slowbeast.ir.types import IntType, BoolType, get_offset_type, get_size_type
 from slowbeast.core.errors import MemError
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
 from slowbeast.symexe.memory import Memory as SEMemory
@@ -12,8 +10,8 @@ def _nondet_value(fresh, op, bitsnum):
     if op.type().is_bool():
         return fresh(f"unknown_bool_{op.as_value()}", BoolType())
     if op.type().is_pointer():
-        ptrobj = fresh(f"unknown_obj_{op.as_value()}", IntType(POINTER_BIT_WIDTH))
-        ptroff = fresh(f"unknown_off_{op.as_value()}", IntType(POINTER_BIT_WIDTH))
+        ptrobj = fresh(f"unknown_obj_{op.as_value()}", get_offset_type())
+        ptroff = fresh(f"unknown_off_{op.as_value()}", get_offset_type())
         return Pointer(ptrobj, ptroff)
     else:
         return fresh(f"uninit_{op.as_value()}", IntType(bitsnum))
@@ -40,8 +38,8 @@ class BSEMemory(SEMemory):
         fresh = state.solver().fresh_value
 
         # FIXME: we can do the allocation if the fromOp is allocation inst
-        ptrobj = fresh(f"unknown_obj_{fromOp.as_value()}", IntType(POINTER_BIT_WIDTH))
-        ptroff = fresh(f"unknown_off_{fromOp.as_value()}", IntType(POINTER_BIT_WIDTH))
+        ptrobj = fresh(f"unknown_obj_{fromOp.as_value()}", get_offset_type())
+        ptroff = fresh(f"unknown_off_{fromOp.as_value()}", get_offset_type())
         ptr = Pointer(ptrobj, ptroff)
         state.create_nondet(fromOp, ptr)
         state.set(fromOp, ptr)
@@ -98,8 +96,8 @@ class BSEMemory(SEMemory):
         fresh = state.solver().fresh_value
 
         # FIXME: we can do the allocation if the fromOp is allocation inst
-        ptrobj = fresh(f"unknown_obj_{toOp.as_value()}", IntType(POINTER_BIT_WIDTH))
-        ptroff = fresh(f"unknown_off_{toOp.as_value()}", IntType(POINTER_BIT_WIDTH))
+        ptrobj = fresh(f"unknown_obj_{toOp.as_value()}", get_offset_type())
+        ptroff = fresh(f"unknown_off_{toOp.as_value()}", get_offset_type())
         ptr = Pointer(ptrobj, ptroff)
         state.set(toOp, ptr)
         state.create_nondet(toOp, ptr)
@@ -143,7 +141,7 @@ class BSEMemoryModel(CoreMM):
             size = instr.size()
         else:
             size = state.solver().Var(
-                f"ndt_size_{instr.as_value()}", IntType(POINTER_BIT_WIDTH)
+                f"ndt_size_{instr.as_value()}", get_size_type()
             )
         size = state.try_eval(size)
         if instr.is_global():
