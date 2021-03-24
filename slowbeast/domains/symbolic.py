@@ -1431,7 +1431,7 @@ class BVSymbolicDomain:
 
     def Eq(a, b, unsigned=False, floats=False):
         assert BVSymbolicDomain.belongto(a, b)
-        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        assert a.bitwidth() == b.bitwidth(), f"{a} != {b}"
         if floats:
             a, b = castToFP(a), castToFP(b)
             expr = fpEQ(a, b)
