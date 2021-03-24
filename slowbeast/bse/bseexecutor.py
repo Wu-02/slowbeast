@@ -53,6 +53,9 @@ class BSEState(LazySEState):
         if not val.is_bool() and newval.is_bool():
             assert val.bitwidth() == 1, val
             newval = em.Ite(newval, ConcreteInt(1, 1), ConcreteInt(0, 1))
+        if not val.is_float() and newval.is_float():
+            assert val.bitwidth() == newval.bitwidth()
+            newval = em.Cast(newval, val.type())
 
         assert val.type() == newval.type(), f"{val} -- {newval}"
         # FIXME: use incremental solver
