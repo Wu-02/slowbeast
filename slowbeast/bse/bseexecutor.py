@@ -39,6 +39,25 @@ class BSEState(LazySEState):
             self.create_nondet(v, value)
         return value
 
+    def memory_constraints(self):
+        M = self.memory._reads
+        em = self.expr_manager()
+        Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
+        reads = list(M.items())
+        constraints = []
+        for idx1 in range(0, len(reads)):
+            ptr1, val1 = reads[idx1]
+            for idx2 in range(idx1 + 1, len(reads)):
+                ptr2, val2 = reads[idx2]
+                if val1 is val2 or val1.bitwidth() != val2.bitwidth():
+                    continue
+                # if the pointers are the same, the values must be the same
+                c = Or(Not(And(Eq(ptr1.object(), ptr2.object()), Eq(ptr1.offset(), ptr2.offset()))), Eq(val1, val2))
+                if c.is_concrete() and bool(c.value()):
+                    continue
+                constraints.append(c)
+        return constraints
+
     def apply_postcondition(self, postcondition):
         if isinstance(postcondition, ExprAnnotation):
             good, _ = execute_annotation(self.executor(), [self], postcondition)

@@ -158,8 +158,12 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             prestates = self._execute_edge(bsectx, fromInit=True)
             assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
             if prestates:
+                prestate = prestates[0]
+                #FIXME: can we somehow easily check that we do not have to do this?
                 # found a real error
-                return Result.UNSAFE, prestates[0]
+                prestate.addConstraint(*prestate.memory_constraints())
+                if prestate.isfeasible():
+                    return Result.UNSAFE, prestates[0]
             if not self._entry_loc.has_predecessors():
                 return Result.SAFE, None
 
