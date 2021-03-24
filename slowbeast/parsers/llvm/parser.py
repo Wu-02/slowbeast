@@ -206,6 +206,7 @@ class Parser:
         if isinstance(num, ValueInstruction):  # VLA
             retlist = []
             bytewidth = type_size(self.llvmmodule, operands[0].type)
+            SizeType = get_size_type()
             if bytewidth != SizeType.bytewidth():
                 N = ZExt(num, ConcreteVal(SizeType.bitwidth(), SizeType))
                 retlist.append(N)
@@ -562,6 +563,7 @@ class Parser:
 
                 mulbw = type_size_in_bits(self.llvmmodule, idx.type)
                 assert 0 < mulbw <= 64, "Invalid type size: {mulbw}"
+                SizeType = get_size_type()
                 if mulbw != SizeType.bitwidth():
                     C = ZExt(var, ConcreteVal(SizeType.bitwidth(), SizeType))
                     varIdx.append(C)
@@ -601,14 +603,14 @@ class Parser:
                 self._addMapping(inst, mem)
                 return []
             else:
-                A = Add(mem, ConcreteVal(shift, SizeType))
+                A = Add(mem, ConcreteVal(shift, get_size_type()))
                 self._addMapping(inst, A)
         return [A]
 
     def _handlePhi(self, inst):
         operands = getLLVMOperands(inst)
         bnum = type_size(self.llvmmodule, inst.type)
-        phivar = Alloc(ConcreteVal(bnum, SizeType))
+        phivar = Alloc(ConcreteVal(bnum, get_size_type()))
         L = Load(phivar, get_sb_type(self.llvmmodule, inst.type))
         self._addMapping(inst, L)
         self.phis.append((inst, phivar, L))
@@ -739,7 +741,7 @@ class Parser:
             # FIXME: check and set whether it is a constant
             ts = type_size(self.llvmmodule, g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
-            G = GlobalVariable(ConcreteVal(ts, SizeType), g.name)
+            G = GlobalVariable(ConcreteVal(ts, get_size_type()), g.name)
             c = getConstant(g.initializer)
             if c:
                 # FIXME: add composed instruction

@@ -5,7 +5,7 @@ from slowbeast.ir.types import IntType
 from slowbeast.domains.symbolic import NondetLoad
 from slowbeast.symexe.memory import Memory
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
-from slowbeast.ir.types import POINTER_BIT_WIDTH, PointerType
+from slowbeast.ir.types import get_size_type
 
 
 class SymbolicMemoryModel(CoreMM):
@@ -44,7 +44,7 @@ class LazySymbolicMemoryModel(CoreMM):
             size = instr.size()
         elif self._overapprox_unsupported:
             size = state.solver().Var(
-                f"ndt_size_{instr.as_value()}", IntType(POINTER_BIT_WIDTH)
+                f"ndt_size_{instr.as_value()}", get_size_type()
             )
         size = state.try_eval(size)
         if instr.is_global():

@@ -1,8 +1,33 @@
 ##
-# We have three sorts of values:
+# We have five sorts of values:
 # boolean
 # value with a specified bitwidth
-# a pointer to a value (not boolean)
+# floating-point value
+# a sequence of bytes
+# and a pointer to a value (not boolean)
+
+POINTER_BIT_WIDTH = 64
+
+def get_pointer_bitwidth():
+    return POINTER_BIT_WIDTH
+
+def get_size_type():
+    return IntType(POINTER_BIT_WIDTH)
+
+def get_offset_type():
+    return IntType(POINTER_BIT_WIDTH)
+
+def get_size_type_size():
+    return POINTER_BIT_WIDTH
+
+def get_offset_type_size():
+    return POINTER_BIT_WIDTH
+
+def sb_set_pointer_width(width):
+    global POINTER_BIT_WIDTH
+    assert width % 8 == 0
+    POINTER_BIT_WIDTH = width
+    # we must reset the types that use POINTER_BIT_WIDTH
 
 
 class Type:
@@ -59,13 +84,13 @@ class Type:
 
 #  FIXME: add type manager that will manage the types,
 #  mainly, we will not create a new object for every value,
-#  but the types will be share (and thus we can also modify them
+#  but the types will be shared (and thus we can also modify them
 #  easily)
 
 
 class PointerType(Type):
     def __init__(self):
-        Type.__init__(self, POINTER_BIT_WIDTH)
+        Type.__init__(self, get_pointer_bitwidth())
 
     def is_pointer(self):
         return True
@@ -102,18 +127,3 @@ class Bytes(Type):
     def is_bytes(self):
         return True
 
-
-POINTER_BIT_WIDTH = 64
-SizeType = IntType(POINTER_BIT_WIDTH)
-OffsetType = SizeType
-
-
-def sb_set_pointer_width(width):
-    global POINTER_BIT_WIDTH
-    assert width % 8 == 0
-    POINTER_BIT_WIDTH = width
-    # we must reset the types that use POINTER_BIT_WIDTH
-    global SizeType
-    global OffsetType
-    SizeType = IntType(POINTER_BIT_WIDTH)
-    OffsetType = SizeType

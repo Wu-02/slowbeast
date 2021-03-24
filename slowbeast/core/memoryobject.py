@@ -3,9 +3,9 @@ from copy import copy
 from ..util.debugging import FIXME
 
 from slowbeast.domains.value import Value
-from ..domains.concrete import ConcreteVal
-from ..ir.types import OffsetType
-from ..core.errors import MemError
+from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.ir.types import get_offset_type
+from slowbeast.core.errors import MemError
 
 
 class MemoryObject:
@@ -72,7 +72,7 @@ class MemoryObject:
         sz = self._size
         return sz is None or bytesnum > sz.value() + offval
 
-    def write(self, x, off=ConcreteVal(0, OffsetType)):
+    def write(self, x, off=ConcreteVal(0, get_offset_type())):
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
@@ -111,7 +111,7 @@ class MemoryObject:
         self._values[offval] = x
         return None
 
-    def read(self, bts, off=ConcreteVal(0, OffsetType)):
+    def read(self, bts, off=ConcreteVal(0, get_offset_type())):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)

@@ -5,7 +5,7 @@ from slowbeast.core.callstack import CallStack
 from slowbeast.core.errors import MemError
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.ir.types import SizeType
+from slowbeast.ir.types import get_size_type
 
 from .memoryobject import MemoryObject
 
@@ -114,7 +114,7 @@ class Memory:
         assert self._objects.get(o.get_id()) is None
         self._objects[o.get_id()] = o
 
-        return Pointer(ConcreteVal(o.get_id(), SizeType))
+        return Pointer(ConcreteVal(o.get_id(), get_size_type()))
 
     def allocateGlobal(self, G, objid=None):
         """ Allocate a new memory object and return a pointer to it """
@@ -131,7 +131,7 @@ class Memory:
         self._globs_bindings_reown()
         assert self._glob_bindings_ro is False
         assert self._glob_bindings.get(G) is None
-        ptr = Pointer(ConcreteVal(o.get_id(), SizeType))
+        ptr = Pointer(ConcreteVal(o.get_id(), get_size_type()))
         self._glob_bindings[G] = ptr
 
         return ptr

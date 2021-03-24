@@ -11,7 +11,7 @@ from slowbeast.ir.instruction import (
 )
 from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from ...domains.concrete import ConcreteVal
-from slowbeast.ir.types import FloatType, IntType, SizeType
+from slowbeast.ir.types import FloatType, IntType, get_size_type
 from .utils import getLLVMOperands, type_size_in_bits, to_float_ty
 
 # FIXME: turn to a dict with separate handlers
@@ -114,7 +114,7 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.operand(getLLVMOperands(inst)[0]))
         O = FpOp(FpOp.IS_INF, val)
-        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type), SizeType))
+        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type), get_size_type()))
         return P, [O, P]
     elif fun in "nan":
         I = Cast(ConcreteVal(float("NaN"), FloatType(64)), FloatType(64))
@@ -123,7 +123,7 @@ def create_special_fun(parser, inst, fun, error_funs):
         val = to_float_ty(parser.operand(getLLVMOperands(inst)[0]))
         O = FpOp(FpOp.IS_NAN, val)
         # the functions return int
-        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type), SizeType))
+        P = ZExt(O, ConcreteVal(type_size_in_bits(module, inst.type), get_size_type()))
         return P, [O, P]
     elif fun in ("__fpclassify", "__fpclassifyf", "__fpclassifyl"):
         val = to_float_ty(parser.operand(getLLVMOperands(inst)[0]))
