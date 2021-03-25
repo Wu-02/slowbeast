@@ -105,7 +105,6 @@ class BSEState(LazySEState):
 
     def _replace_value_in_memory(self, new_repl, newval, prestate, substitute, val):
         self._replace_final_memory(new_repl, newval, prestate, substitute, val)
-        self._replace_input_memory(new_repl, newval, prestate, substitute, val)
 
     def _replace_final_memory(self, new_repl, newval, prestate, substitute, val):
         UP = self.memory._reads
@@ -120,9 +119,6 @@ class BSEState(LazySEState):
             nUP[nptr] = nval
 
         self.memory._reads = nUP
-
-    def _replace_input_memory(self, new_repl, newval, prestate, substitute, val):
-        pass
 
     def _get_symbols(self):
         symbols = set(s for e in self.getConstraints() for s in e.symbols() if not e.is_concrete())
@@ -174,8 +170,6 @@ class BSEState(LazySEState):
         for k, v in prestate.memory._reads.items():
             if k not in self.memory._reads:
                 self.memory._reads[k] = v
-       #assert all(map(lambda x: x not in self.memory._input_reads, prestate.memory._input_reads.keys()))
-       #self.memory._input_reads.update(prestate.memory._input_reads)
         # add new inputs from pre-state
         for inp in prestate.nondets():
             add_input(inp)
@@ -190,8 +184,6 @@ class BSEState(LazySEState):
 
     def __repr__(self):
         s = f"pc: {self.getConstraints()}"
-        if self.memory._input_reads:
-            s += "\n"+"\n".join(f"-L({p.as_value()})={x}" for p, x in self.memory._input_reads.items())
         if self.memory._reads:
             s += "\n"+"\n".join(f"+L({p.as_value()})={x}" for p, x in self.memory._reads.items())
         if self._nondets:
