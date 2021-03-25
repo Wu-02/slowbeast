@@ -222,7 +222,7 @@ class Executor(PathExecutor):
         # annotations before taking the edge (proably an invariant)
         execannot = self.execute_annotations
         # annotations before source
-        locannot = invariants(source) if invariants else None
+        locannot = invariants.get(source) if invariants else None
         if locannot:
             ready, tu = execannot(ready, locannot)
             nonready += tu
@@ -242,7 +242,7 @@ class Executor(PathExecutor):
             nonready += tmpnonready
 
         # annotations before target
-        locannot = invariants(target) if invariants else None
+        locannot = invariants.get(target) if invariants else None
         if locannot:
             ready, tu = execannot(ready, locannot)
             nonready += tu

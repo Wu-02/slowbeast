@@ -109,6 +109,26 @@ class StatesSet:
         expr = eval_state_description(state.executor(), state, sd)
         state.addConstraint(expr)
 
+    def translate(self, S):
+        """
+        Make the set use internally the same variables as 'S'
+        """
+        selfsd = state_to_description(self._state)
+        state = S._state.copy()
+        self._state = state
+        newexpr = eval_state_description(state.executor(), state, selfsd)
+        state.setConstraints(ConstraintsSet((newexpr,)))
+
+    def translated(self, S):
+        """
+        Make the set use internally the same variables as 'S'
+        """
+        selfsd = state_to_description(self._state)
+        state = S._state.copy()
+        newexpr = eval_state_description(state.executor(), state, selfsd)
+        state.setConstraints(ConstraintsSet((newexpr,)))
+        return StatesSet(state)
+
     def complement(self):
         state = self._state
         EM = state.expr_manager()

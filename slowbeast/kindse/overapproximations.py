@@ -623,12 +623,17 @@ def drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, loop):
     dbgv(" ... done droping clauses")
     return newclauses
 
-def overapprox_set(executor, EM, S, unsafeAnnot, target, assumptions, L, drop_only=False):
+def overapprox_set(executor, EM, goal, unsafeAnnot, indtarget, assumptions, L, drop_only=False):
     """
+    goal - the set to be overapproxiamted
     drop_only - only try to drop clauses, not to extend them
     """
     create_set = executor.create_set
     unsafe = create_set(unsafeAnnot)
+    # unify variables in goal, target, and unsafe
+    S = goal.translated(unsafe)
+    target = indtarget.translated(unsafe)
+
     assert not S.is_empty(), "Overapproximating empty set"
     assert intersection(
         S, unsafe
@@ -638,7 +643,7 @@ def overapprox_set(executor, EM, S, unsafeAnnot, target, assumptions, L, drop_on
        #assert (
        #    r.errors is None
        #), f"Input set is not inductive (CTI: {r.errors[0].model()})"
-        assert L.set_is_inductive_towards(S, target, allow_infeasible_only=True), f"{S} -> {target}"
+       assert L.set_is_inductive_towards(S, target, allow_infeasible_only=True), f"{S} -> {target}"
 
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")

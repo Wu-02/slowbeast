@@ -26,7 +26,7 @@ class LoopInfo:
         return self.loop.paths()
 
     def set_is_inductive(self, S):
-        r = check_paths(self.checker, self.loop.paths(), pre=S, post=complement(S))
+        r = check_paths(self.checker, self.loop.paths(), pre=S, post=S)
         if r.errors:
             return False
         return True
@@ -57,7 +57,7 @@ class LoopInfo:
        #return True
 
     def set_is_inductive_towards(self, S, target, allow_infeasible_only=False):
-        r = check_paths(self.checker, self.loop.paths(), pre=S, post=complement(union(S, target)))
+        r = check_paths(self.checker, self.loop.paths(), pre=S, post=union(S, target))
         if r.errors:
             return False
         return bool(r.ready) or allow_infeasible_only

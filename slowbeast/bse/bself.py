@@ -535,7 +535,7 @@ class BSELFChecker(BaseBSE):
                     tmp = seq.copy() if seq else InductiveSequence()
                     tmp.append(A.as_assert_annotation(), None)
                     if __debug__:
-                        assert is_seq_inductive(tmp, self, L), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
+                        assert is_seq_inductive(tmp, self, L), f"Extended sequence is not inductive)"
 
                     # extended.append(self.abstract_seq(e, errs0, L))
                     extended.append(tmp)
