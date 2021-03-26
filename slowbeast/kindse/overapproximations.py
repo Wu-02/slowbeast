@@ -633,6 +633,8 @@ def overapprox_set(executor, EM, goal, unsafeAnnot, indtarget, assumptions, L, d
     # unify variables in goal, target, and unsafe
     S = goal.translated(unsafe)
     target = indtarget.translated(unsafe)
+    if assumptions:
+        assumptions = assumptions.translated(unsafe)
 
     assert not S.is_empty(), "Overapproximating empty set"
     assert intersection(
