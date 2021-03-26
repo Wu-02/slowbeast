@@ -120,13 +120,13 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             states = [s.copy() for s in self.states]
             assert states
 
-            ldbgv("Computing (init) precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
+            #ldbgv("Computing (init) precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
         else:
             executor = self.ind_executor()
             s = executor.createCleanState()
             states = [s]
 
-            ldbgv("Computing precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
+            #ldbgv("Computing precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
 
         assert all(
             map(lambda s: not s.getConstraints(), states)
