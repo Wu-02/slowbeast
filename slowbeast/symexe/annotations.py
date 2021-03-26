@@ -4,7 +4,7 @@ from .statedescription import StateDescription, unify_state_descriptions
 from copy import copy
 
 def get_subs(state):
-    return {nd.value : nd.instruction for nd in state.nondets()}
+    return {nd.value : nd.instruction for nd in state.getNondetLoads()}
 
 class Annotation:
     """

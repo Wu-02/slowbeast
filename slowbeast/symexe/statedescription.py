@@ -1,4 +1,5 @@
 from slowbeast.domains.symbolic import Expr
+from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import Instruction, Load
 from slowbeast.domains.concrete import ConcreteVal
 
@@ -42,7 +43,7 @@ class StateDescription:
         # state.eval(instruction) should be put on the
         # place of the key expression
         assert isinstance(subs, dict)
-        assert all(map(lambda k: isinstance(k, Expr), subs.keys())), subs
+        assert all(map(lambda k: isinstance(k, (Expr, Pointer)), subs.keys())), subs
         assert all(map(lambda k: isinstance(k, Instruction), subs.values())), subs
         self._subs = subs
 

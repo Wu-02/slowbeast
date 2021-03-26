@@ -39,7 +39,7 @@ def get_safe_subexpressions(state, unsafe):
                     yield AssertAnnotation(sub, subs, EM)
 
 
-def iter_load_pairs(state):
+def iter_nondet_load_pairs(state):
     loads = list(state.getNondetLoads())
     for i in range(0, len(loads)):
         for j in range(i + 1, len(loads)):
@@ -51,10 +51,11 @@ def get_var_diff_relations(state):
     EM = state.expr_manager()
 
     # relation between loads of the type l1 - l2 = constant
-    for l1, l2 in iter_load_pairs(state):
+    for nd1, nd2 in iter_nondet_load_pairs(state):
+        l1, l2 = nd1.value, nd2.value
         assert l1 is not l2
 
-        l1name, l2name = l1.rhs_repr(), l2.rhs_repr()
+        l1name, l2name = nd1.instruction.as_value(), nd2.instruction.as_value()
         l1bw = l1.type().bitwidth()
         l2bw = l2.type().bitwidth()
 
@@ -105,11 +106,12 @@ def get_var_diff_relations(state):
 
 
         # check equalities to other loads: l1 - l2 = k*l3
-        for l3 in state.getNondetLoads():
+        for nd3 in state.getNondetLoads():
+            l3 = nd3.value
             if l3 is l1 or l3 is l2:
                 continue
             l3bw = l3.type().bitwidth()
-            l3name = l3.rhs_repr()
+            l3name = nd3.instruction.as_value()
             bw = max(l3bw, bw)
             if l1bw != bw:
                 l1 = EM.SExt(l1, ConcreteInt(bw, bw))
@@ -167,20 +169,21 @@ def _compare_two_loads(state, l1, l2):
             else:
                 yield AssertAnnotation(simpl(EM.Le(l1, l2)), subs, EM)
 
-def get_var_cmp_relations(state):
-
-    # comparision relations between loads
-    for l1, l2 in iter_load_pairs(state):
-       yield from _compare_two_loads(state, l1, l2)
+# def get_var_cmp_relations(state):
+#
+#     # comparision relations between loads
+#     for l1, l2 in iter_load_pairs(state):
+#        yield from _compare_two_loads(state, l1, l2)
 
 
 def _get_const_cmp_relations(state):
     EM = state.expr_manager()
 
     # equalities with constants
-    for l in state.getNondetLoads():
+    for nd in state.getNondetLoads():
+        l = nd.value
         lbw = l.type().bitwidth()
-        c = EM.Var(f"c_coef_{l.rhs_repr()}", IntType(lbw))
+        c = EM.Var(f"c_coef_{nd.instruction.as_value()}", IntType(lbw))
         expr = EM.Eq(l, c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
@@ -208,9 +211,9 @@ def get_relations_to_prev_states(state, prev):
     for l, cval in _get_const_cmp_relations(state):
         bw = l.bitwidth()
         # l2bw = l2.type().bitwidth()
-        oldl = EM.Var(f"old{l.rhs_repr()}", IntType(bw))
+        oldl = EM.Var(f"old_{l}", IntType(bw))
         oldpc = EM.substitute(prevexpr, (l, oldl))
-        diff = EM.Var(f"c_diff_{l.rhs_repr()}", IntType(bw))
+        diff = EM.Var(f"c_diff_{l}", IntType(bw))
         expr = EM.Eq(EM.Sub(oldl, l), diff)
         diff_concr = state.concretize_with_assumptions([oldpc, expr], diff)
         if diff_concr is not None:

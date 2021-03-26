@@ -1,7 +1,6 @@
-from slowbeast.domains.symbolic import NondetInstrResult, _desimplify_ext
 from slowbeast.core.executionstate import ExecutionState
 from slowbeast.util.debugging import warn, ldbgv
-from slowbeast.ir.instruction import Alloc, GlobalVariable
+from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
 from slowbeast.solvers.solver import IncrementalSolver
 from copy import copy
@@ -256,9 +255,10 @@ class SEState(ExecutionState):
         return (nd.value for nd in self._nondets)
 
     def getNondetLoads(self):
-        return (l for l in self._nondets if l.is_nondet_load())
+        return (l for l in self._nondets if isinstance(l.instruction, Load))
 
     def getNondetLoadOf(self, alloc):
+        raise NotImplemented("Not Implemented")
         for n in self._nondets:
             if n.is_nondet_load() and n.alloc == alloc:
                 return n
