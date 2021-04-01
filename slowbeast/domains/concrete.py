@@ -254,10 +254,13 @@ class ConcreteDomain:
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        sb = 1 << (b.value() - 1)
-        aval = to_bv(a, unsigned=False)
-        val = (aval & (sb - 1)) - (aval & sb)
-        return ConcreteInt(val, b.value())
+        assert a.is_int(), a
+        #FIXME: support bytes...
+       #sb = 1 << (b.value() - 1)
+       #aval = to_bv(a, unsigned=False)
+       #val = (aval & (sb - 1)) - (aval & sb)
+       #return ConcreteInt(val, b.value())
+        return ConcreteInt(a.value(), b.value())
 
     def Cast(a: ConcreteVal, ty: Type):
         """
