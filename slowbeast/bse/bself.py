@@ -1,3 +1,4 @@
+from slowbeast.core.errors import AssertFailError
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg, ldbgv
 
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
@@ -562,7 +563,8 @@ class BSELFChecker(BaseBSE):
         for edge in onlyedges if onlyedges else loc.predecessors():
             state = self.ind_executor().createCleanState()
             state.apply_postcondition(notA)
-            self.queue_state(BSEContext(edge, state))
+            self.queue_state(BSEContext(edge, state,
+                                        AssertFailError(f"{loc} reachable.")))
 
         opt_fold_loops = self.getOptions().fold_loops
         while True:
@@ -647,6 +649,8 @@ class BSELF:
             result, states = checker.check()
             self.stats.add(checker.stats)
             if result is Result.UNSAFE:
+                # FIXME: report the error from bsecontext
+                print_stdout(f"{states.get_id()}: [assertion error]: {loc} reachable.", color="redul")
                 print_stdout(str(states), color="wine")
                 print_stdout("Error found.", color="redul")
                 self.stats.errors += 1

@@ -31,13 +31,13 @@ class Error:
     def __repr__(self):
         ty = self._type
         if ty == Error.UNKNOWN:
-            detail = "unknown error"
+            detail = "[unknown error]"
         elif ty == Error.ASSERTION_FAIL:
-            detail = "assertion failure"
+            detail = "[assertion error]"
         elif ty == Error.MEM_ERROR:
-            detail = "memory error"
+            detail = "[memory error]"
         elif ty == Error.GENERIC:
-            detail = "error"
+            detail = "[generic error]"
         else:
             raise RuntimeError("Invalid error type")
         return detail
@@ -101,7 +101,7 @@ class MemError(Error):
         else:
             raise RuntimeError("Invalid memory error type")
 
-        return "memory error - {1}".format(super(MemError, self).__repr__(), detail)
+        return "[memory error] - {1}".format(super(MemError, self).__repr__(), detail)
 
     def __str__(self):
         return "{0} ({1})".format(self.__repr__(), self.getDescr())

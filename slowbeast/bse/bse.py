@@ -36,20 +36,20 @@ def report_state(stats, n, fn=print_stderr):
 class BSEContext:
     """ Class that keeps the state of BSE search """
 
-    __slots__ = "edge", "err"
+    __slots__ = "edge", "errorstate", "errordescr"
 
-    def __init__(self, edge, err):
+    def __init__(self, edge, errstate, errdescr=None):
         """
         edge  - edge after which the error should be infeasible
         error - error condition
         """
-        assert isinstance(err, (AssumeAnnotation, BSEState)), err
+        assert isinstance(errstate, (AssumeAnnotation, BSEState)), errstate
         self.edge = edge
-        self.err = err
+        self.errorstate = errstate
+        self.errordescr = errdescr
 
     def __repr__(self):
-        err = self.err
-        return f"BSE-ctx[{self.edge}:{err}]"
+        return f"BSE-ctx[{self.edge}:{self.errorstate}]"
 
 class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def __init__(
@@ -139,7 +139,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             report_state(self.stats, s, self.reportfn)
             self.problematic_states.append(s)
 
-        state = bsectx.err
+        state = bsectx.errorstate
         assert len(ready) <= 1, "We support only one pre-state"
         if ready:
             if state.join_prestate(ready[0]):
@@ -189,7 +189,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         edge = bsectx.edge
         if edge.has_predecessors():
             for pedge in bsectx.edge.predecessors():
-                self.queue_state(BSEContext(pedge, postcondition.copy() if had_one else postcondition))
+                self.queue_state(BSEContext(pedge,
+                                            postcondition.copy() if had_one else postcondition,
+                                            bsectx.errordescr))
                 had_one = True
         elif edge.cfa().is_init(edge):
             # This is entry to procedure. It cannot be the main procedure, otherwise

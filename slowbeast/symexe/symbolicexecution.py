@@ -94,7 +94,7 @@ class SymbolicExecutor(Interpreter):
             self.states.append(s)
         elif s.hasError():
             print_stderr(
-                "{0}: {1}, {2}".format(s.get_id(), s.pc, s.getError()), color="redul"
+                "{0}: {1} @ {2}".format(s.get_id(), s.getError(), s.pc), color="redul"
             )
             print_stderr("Error found.", color="red")
             stats.errors += 1
