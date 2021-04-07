@@ -631,24 +631,6 @@ def break_eqs(expr):
 
     return clauses
 
-def replace_constants(expr, EM):
-    "Assume the expr is in CNF"
-    added = []
-    # FIXME: this is veeery inefficient
-    muls = [c for c in expr.subexpressions() if not c.is_concrete() and c.isMul()]
-    for m in muls:
-        chld = list(m.children())
-        if chld[0].is_concrete():
-            r = EM.fresh_value("const_repl", chld[0].type())
-            added.append(EM.Eq(r, chld[0]))
-            expr = EM.substitute(expr, (m, EM.Mul(r, chld[1])))
-        if chld[1].is_concrete():
-            r = EM.fresh_value("const_repl", chld[1].type())
-            added.append(EM.Eq(r, chld[1]))
-            expr = EM.substitute(expr, (m, EM.Mul(chld[0], r)))
-
-    return EM.conjunction(expr, *added)
-
 def is_overapprox_of(A, B):
     """ Return true if B is overapproximation of A """
     return intersection(complement(B), A).is_empty()
