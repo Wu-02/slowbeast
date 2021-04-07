@@ -470,7 +470,10 @@ if _use_z3:
                 if params[0] == params[1] == (chld[-1].size() - 1) and c0.children()[0] == chld[-1]:
                     if all(map(lambda e: e == c0, chld[1:-1])):
                         return BVSExt(expr.size() - chld[-1].size(), chld[-1])
-            return BVConcat((_desimplify_ext(c) for c in chld))
+            des = [_desimplify_ext(c) for c in chld]
+            assert len(des) == len(chld)
+            assert len(des) > 1
+            return BVConcat(des)
         else:
             if is_and(expr): return mk_and(*(_desimplify_ext(c) for c in expr.children()))
             elif is_or(expr): return mk_or(*(_desimplify_ext(c) for c in expr.children()))
