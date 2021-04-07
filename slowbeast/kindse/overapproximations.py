@@ -317,7 +317,7 @@ class LoopStateOverapproximation:
         self.loop = loop
         self.expr_mgr = expr_mgr
 
-        self.S = S
+        self.goal = S
         # clauses are our internal working structure. Any change that we do is not visible until we do commit().
         # Note: break equalities to <= && >= so that we can overapproximate them
         self.clauses = break_eqs(S.as_expr().rewrite_and_simplify().to_cnf())
@@ -349,7 +349,7 @@ class LoopStateOverapproximation:
         newclauses = list(expressions)
         # newS = S.copy()
         safesolver = self.safesolver
-        S = self.S
+        S = self.goal
         loop = self.loop
         for c in expressions:
             assert not c.is_concrete(), c
@@ -402,7 +402,7 @@ class LoopStateOverapproximation:
         ).is_empty(), f"Dropping clauses made the set unsafe"
 
     def commit(self):
-        S = self.S
+        S = self.goal
         S.reset_expr(self.expr_mgr.conjunction(*self.clauses).rewrite_and_simplify())
         return S
 
@@ -411,7 +411,7 @@ class LoopStateOverapproximation:
         conjunction = self.expr_mgr.conjunction
         overapprox_clause = self.overapprox_clause
         clauses, newclauses = self.clauses, []
-        S = self.S
+        S = self.goal
         for n in range(len(clauses)):
             assert len(newclauses) == n
             c = clauses[n]
