@@ -303,19 +303,259 @@ def extend_literal(ldata, EM):
     raise RuntimeError("Unreachable")
 
 
-class OverapproximationData:
+class LoopStateOverapproximation:
     """
-    Structure holding information needed for over-approximations
+    Structure taking care for over-approximations of states
     """
 
-    __slots__ = "executor", "target", "unsafe", "loop", "expr_mgr"
+    #__slots__ = "executor", "clauses", "target", "unsafe", "loop", "expr_mgr"
 
-    def __init__(self, executor, target, unsafe, loop, expr_mgr):
+    def __init__(self, S, executor, target, unsafe, loop, expr_mgr):
         self.executor = executor
         self.target = target
         self.unsafe = unsafe
         self.loop = loop
         self.expr_mgr = expr_mgr
+
+        self.S = S
+        # clauses are our internal working structure. Any change that we do is not visible until we do commit().
+        # Note: break equalities to <= && >= so that we can overapproximate them
+        self.clauses = break_eqs(S.as_expr().rewrite_and_simplify().to_cnf())
+
+        safesolver = IncrementalSolver()
+        safesolver.add(unsafe.as_expr())
+        self.safesolver = safesolver
+
+    def _drop_clauses(self, clauses, assumptions):
+        """
+        assumptions are clauses that we do not try to drop
+        """
+        target, executor = self.target, self.executor
+
+        # we start with all clauses
+        em = self.expr_mgr
+        conjunction = em.conjunction
+        expressions = set()
+        for c in clauses:
+            if c.is_concrete():
+                if c.value() is False:
+                    dbg("  ... got FALSE in clauses, returning FALSE")
+                    return [em.getFalse()]
+                else:
+                    dbg("  ... dropping True clause")
+            else:
+                expressions.add(c)
+
+        newclauses = list(expressions)
+        # newS = S.copy()
+        safesolver = self.safesolver
+        S = self.S
+        loop = self.loop
+        for c in expressions:
+            assert not c.is_concrete(), c
+            # create a temporary formula without the given clause
+            tmp = newclauses.copy()
+            tmp.remove(c)
+
+            # check whether we can get rid of the clause
+            if assumptions:
+                tmpexpr = conjunction(*tmp, assumptions.as_expr())
+            else:
+                tmpexpr = conjunction(*tmp)
+            if tmpexpr.is_concrete():
+                continue  # either False or True are bad for us
+
+            # == safety check
+            if safesolver.is_sat(tmpexpr) is not False:
+                continue  # unsafe overapprox
+
+            X = S.copy()
+            X.reset_expr(tmpexpr)
+            if loop.set_is_inductive_towards(X, target):
+                newclauses = tmp
+                dbg(f"  dropped {c}...")
+
+        return newclauses
+
+    def _drop_clauses_fixpoint(self, assumptions):
+        """ Drop clauses until fixpoint """
+        newclauses = self.clauses
+        _drop_clauses = self._drop_clauses
+        while True:
+            dbgv(" ... droping clauses (starting iteration)")
+            oldlen = len(newclauses)
+            newclauses = _drop_clauses(newclauses, assumptions)
+            if oldlen == len(newclauses):
+                break
+        dbgv(" ... done droping clauses")
+        return newclauses
+
+    def drop_clauses(self, assumptions=None):
+        newclauses = self._drop_clauses_fixpoint(assumptions)
+        # new add the assumptions (without them the formula is not equivalent to expr now)
+        if assumptions:
+            newclauses.extend(break_eqs(assumptions.as_expr().to_cnf()))
+        self.clauses = remove_implied_literals(newclauses)
+
+        assert intersection(
+            self.unsafe, self.executor.create_set(self.expr_mgr.conjunction(*self.clauses))
+        ).is_empty(), f"Dropping clauses made the set unsafe"
+
+    def commit(self):
+        S = self.S
+        S.reset_expr(self.expr_mgr.conjunction(*self.clauses).rewrite_and_simplify())
+        return S
+
+    def overapproximate(self):
+        # Now take every clause c and try to overapproximate it
+        conjunction = self.expr_mgr.conjunction
+        overapprox_clause = self.overapprox_clause
+        clauses, newclauses = self.clauses, []
+        S = self.S
+        for n in range(len(clauses)):
+            assert len(newclauses) == n
+            c = clauses[n]
+            # R is the rest of the actual formula without the clause c
+            R = S.copy()  # copy the substitutions
+            R.reset_expr(conjunction(*newclauses, *clauses[n + 1 :]))
+
+            newclause = overapprox_clause(c, R)
+            if newclause:
+                # newclauses.append(newclause)
+                # FIXME: this check should be
+                # assertion, overapprox_clause should not give us such clauses
+                # assert intersection(tmp, S).is_empty()
+                if is_overapprox_of(S, intersection(R, newclause)):
+                    # new clause makes S to be an overapproximation, good
+                    newclauses.append(newclause)
+                else:
+                    newclauses.append(c)
+            else:
+                newclauses.append(c)
+
+            if __debug__:
+                R.intersect(newclauses[-1])
+                assert not R.is_empty()
+                R.intersect(self.unsafe)
+                assert R.is_empty(), f"Overapproxmating clause made the set unsafe: {c}"
+
+        if __debug__:
+            S.reset_expr(self.expr_mgr.conjunction(*newclauses))
+            assert not S.is_empty()
+            assert intersection(
+                self.unsafe, S
+            ).is_empty(), f"Overapproxmating clauses made the set unsafe"
+
+        self.clauses = newclauses
+
+    def overapprox_clause(self, c, R):
+        """
+        c - the clause
+        R - rest of clauses of the formula
+        """
+        if c.is_concrete():
+            return c
+
+        assert intersection(
+            R, c, self.unsafe
+        ).is_empty(), f"{R} \cap {c} \cap {self.unsafe}"
+        if __debug__:
+            X = R.copy()
+            X.intersect(c)
+            assert self.loop.set_is_inductive_towards(X, self.target, allow_infeasible_only=True)
+
+        newc = []
+        lits = list(literals(c))
+        simplify = self.expr_mgr.simplify
+
+        overapprox_lit = self.overapprox_literal
+        for l in lits:
+            newl = simplify(overapprox_lit(l, lits, R))
+            newc.append(newl)
+            dbg(
+                f"  Overapproximated {l} --> {newl}",
+                color="gray",
+            )
+
+            if __debug__:
+                X = R.copy()
+                X.intersect(
+                    self.expr_mgr.disjunction(
+                        *(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))
+                    )
+                )
+                assert self.loop.set_is_inductive_towards(X, self.target, allow_infeasible_only=True)
+
+        if len(newc) == 1:
+            return newc[0]
+
+        return self.expr_mgr.disjunction(*newc)
+
+    def overapprox_literal(self, l, rl, S):
+        """
+        l - literal
+        rl - list of all literals in the clause
+        S - rest of clauses of the formula except for 'rl'
+        unsafe - set of unsafe states
+        target - set of safe states that we want to keep reachable
+        """
+        assert not l.isAnd() and not l.isOr(), f"Input is not a literal: {l}"
+        assert intersection(S, l, self.unsafe).is_empty(), "Unsafe states in input"
+
+        dliteral = DecomposedLiteral(l)
+        if not dliteral:
+            return l
+
+        assert dliteral.toformula() == l
+        EM = self.expr_mgr
+        executor = self.executor
+
+        # create a fresh literal that we use as a placeholder instead of our literal during extending
+        placeholder = EM.Bool("litext")
+        # X is the original formula with 'placeholder' instead of 'l'
+        clause_without_lit = list(x for x in rl if x != l)
+        X = intersection(S, EM.disjunction(placeholder, *clause_without_lit))
+        assert not X.is_empty(), f"S: {S}, l: {l}, rl: {rl}"
+        post = postimage(executor, self.loop.paths(), pre=X)
+        if not post:
+            return l
+        # U is allowed reachable set of states
+        U = union(self.target, X)
+        indset_with_placeholder = U.as_assume_annotation()
+        # execute the instructions from annotations, so that the substitutions have up-to-date value
+        poststates_with_placeholder, nonr = execute_annotation_substitutions(
+            executor.ind_executor(), post, indset_with_placeholder
+        )
+        assert not nonr, f"Got errors while processing annotations: {nonr}"
+
+        # we always check S && unsafe && new_clause, so we can keep S  and unsafe
+        # in the solver all the time
+        safety_solver = self.safesolver
+        safety_solver.push()
+        safety_solver.add(S.as_expr())
+
+        solver = IncrementalSolver()
+
+        ldata = LiteralOverapproximationData(
+            l,
+            dliteral,
+            rl,
+            clause_without_lit,
+            indset_with_placeholder,
+            placeholder,
+            safety_solver,
+            solver,
+            poststates_with_placeholder,
+        )
+        assert isinstance(ldata.decomposed_literal, DecomposedLiteral)
+
+        em_optimize_expressions(False)
+        # the optimizer could make And or Or from the literal, we do not want that...
+        l = extend_literal(ldata, EM)
+        em_optimize_expressions(True)
+
+        safety_solver.pop()
+        return l
 
 
 class LiteralOverapproximationData:
@@ -359,135 +599,6 @@ class LiteralOverapproximationData:
         self.solver = solver
         # also with placeholder
         self.loop_poststates = loop_poststates
-
-
-def overapprox_literal(l, rl, S, data):
-    """
-    l - literal
-    rl - list of all literals in the clause
-    S - rest of clauses of the formula except for 'rl'
-    unsafe - set of unsafe states
-    target - set of safe states that we want to keep reachable
-    """
-    assert not l.isAnd() and not l.isOr(), f"Input is not a literal: {l}"
-    assert intersection(S, l, data.unsafe).is_empty(), "Unsafe states in input"
-
-    dliteral = DecomposedLiteral(l)
-    if not dliteral:
-        return l
-
-    assert dliteral.toformula() == l
-    EM = data.expr_mgr
-    executor = data.executor
-
-    # create a fresh literal that we use as a placeholder instead of our literal during extending
-    placeholder = EM.Bool("litext")
-    # X is the original formula with 'placeholder' instead of 'l'
-    clause_without_lit = list(x for x in rl if x != l)
-    X = intersection(S, EM.disjunction(placeholder, *clause_without_lit))
-    assert not X.is_empty(), f"S: {S}, l: {l}, rl: {rl}"
-    post = postimage(executor, data.loop.paths(), pre=X)
-    if not post:
-        return l
-    # U is allowed reachable set of states
-    U = union(data.target, X)
-    indset_with_placeholder = U.as_assume_annotation()
-    # execute the instructions from annotations, so that the substitutions have up-to-date value
-    poststates_with_placeholder, nonr = execute_annotation_substitutions(
-        executor.ind_executor(), post, indset_with_placeholder
-    )
-    assert not nonr, f"Got errors while processing annotations: {nonr}"
-
-    # we always check S && unsafe && new_clause, so we can keep S  and unsafe
-    # in the solver all the time
-    safety_solver = IncrementalSolver()
-    safety_solver.add(S.as_expr())
-    safety_solver.add(data.unsafe.as_expr())
-
-    solver = IncrementalSolver()
-
-    ldata = LiteralOverapproximationData(
-        l,
-        dliteral,
-        rl,
-        clause_without_lit,
-        indset_with_placeholder,
-        placeholder,
-        safety_solver,
-        solver,
-        poststates_with_placeholder,
-    )
-    assert isinstance(ldata.decomposed_literal, DecomposedLiteral)
-
-    em_optimize_expressions(False)
-    # the optimizer could make And or Or from the literal, we do not want that...
-    l = extend_literal(ldata, EM)
-    em_optimize_expressions(True)
-
-    return l
-
-
-def overapprox_clause(c, R, data):
-    """c - the clause
-    R - rest of clauses of the formula
-    unsafe - unsafe states
-    target - safe states that should be reachable from c \cap R
-    """
-    EM = data.expr_mgr
-
-    if c.is_concrete():
-        return c
-
-    assert intersection(
-        R, c, data.unsafe
-    ).is_empty(), f"{R} \cap {c} \cap {data.unsafe}"
-    if __debug__:
-        X = R.copy()
-        X.intersect(c)
-        assert data.loop.set_is_inductive_towards(X, data.target, allow_infeasible_only=True)
-    #r = check_paths(
-       #    data.executor, data.loop.paths(), pre=X, post=union(X, data.target)
-       #)
-       #assert (
-       #    r.errors is None
-       #), f"Input state is not inductive (CTI: {r.errors[0].model()})"
-
-    newc = []
-    lits = list(literals(c))
-    simplify = EM.simplify
-
-    for l in lits:
-        newl = simplify(overapprox_literal(l, lits, R, data))
-        newc.append(newl)
-        dbg(
-            f"  Overapproximated {l} --> {newl}",
-            color="gray",
-        )
-
-        if __debug__:
-            X = R.copy()
-            X.intersect(
-                EM.disjunction(
-                    *(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))
-                )
-            )
-            assert data.loop.set_is_inductive_towards(X, data.target, allow_infeasible_only=True)
-        #r = check_paths(
-           #    data.executor, data.loop.paths(), pre=X, post=union(X, data.target)
-           #)
-           #if r.errors:
-           #    print("States:", X)
-           #    print("Target:", target)
-           #    print(r.errors[0].path_condition())
-           #assert (
-           #    r.errors is None
-           #), f"Extended literal renders state non-inductive (CTI: {r.errors[0].model()})"
-
-    if len(newc) == 1:
-        return newc[0]
-
-    return EM.disjunction(*newc)
-
 
 def break_eqs(expr):
     EM = getGlobalExprManager()
@@ -542,86 +653,6 @@ def is_overapprox_of(A, B):
     """ Return true if B is overapproximation of A """
     return intersection(complement(B), A).is_empty()
 
-def drop_clauses(clauses, S, assumptions, safesolver, data, loop):
-    """
-    assumptions are clauses that we do not try to drop
-    """
-    target, executor = data.target, data.executor
-
-    # we start with all clauses
-    conjunction = data.expr_mgr.conjunction
-    lpaths = data.loop.paths()
-    expressions = set()
-    for c in clauses:
-        if c.is_concrete():
-            if c.value() is False:
-                dbg("  ... got FALSE in clauses, returning FALSE")
-                return [data.expr_mgr.getFalse()]
-            else:
-                dbg("  ... dropping True clause")
-        else:
-            expressions.add(c)
-
-    newclauses = list(expressions)
-    #newS = S.copy()
-    for c in expressions:
-# This sometimes helps very much and sometimes it does not. Usually, it just takes time.
-#       if nodrop_safe and safesolver.is_sat(c) is False:
-#           # do not drop clauses that refute the error states,
-#           # those may be useful
-#           continue
-
-        assert not c.is_concrete(), c
-        # create a temporary formula without the given clause
-        tmp = newclauses.copy()
-        tmp.remove(c)
-
-        # check whether we can get rid of the clause
-        if assumptions:
-            tmpexpr = conjunction(*tmp, assumptions.as_expr())
-        else:
-            tmpexpr = conjunction(*tmp)
-        if tmpexpr.is_concrete():
-            continue  # either False or True are bad for us
-
-        # == safety check
-        if safesolver.is_sat(tmpexpr) is not False:
-            continue  # unsafe overapprox
-
-        X = S.copy()
-        X.reset_expr(tmpexpr)
-       ## == over-approximation check: not needed
-       #if not is_overapprox_of(newS, X):
-       #    continue
-
-        # == inductivity check
-       #r = check_paths(executor, lpaths, pre=X, post=union(X, target))
-       #for s in r.killed():
-       #    dbg("Killed a state")
-       #    return newclauses
-       #if r.errors is None and r.ready:
-       #    assert loop.set_is_inductive_towards(X, target) is True
-       #    newclauses = tmp
-       #    #newS.reset_expr(conjunction(*tmp))
-       #    dbg(f"  dropped {c}...")
-        if loop.set_is_inductive_towards(X, target):
-            newclauses = tmp
-            dbg(f"  dropped {c}...")
-
-    return newclauses
-
-
-def drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, loop):
-    """ Drop clauses until fixpoint """
-    newclauses = clauses
-    while True:
-        dbgv(" ... droping clauses (starting iteration)")
-        oldlen = len(newclauses)
-        newclauses = drop_clauses(newclauses, S, assumptions, safesolver, data, loop)
-        if oldlen == len(newclauses):
-            break
-    dbgv(" ... done droping clauses")
-    return newclauses
 
 def overapprox_set(executor, EM, goal, unsafeAnnot, indtarget, assumptions, L, drop_only=False):
     """
@@ -650,78 +681,23 @@ def overapprox_set(executor, EM, goal, unsafeAnnot, indtarget, assumptions, L, d
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
 
-    data = OverapproximationData(executor, target, unsafe, L, EM)
-
     expr = S.as_expr()
     if expr.is_concrete():
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
-    expr = expr.rewrite_and_simplify().to_cnf()
-
-    # break equalities to <= && >= so that we can overapproximate them
-    #expr = replace_constants(expr, EM)
-    clauses = break_eqs(expr)
-
-    safesolver = IncrementalSolver()
-    safesolver.add(unsafe.as_expr())
-
-    # can we drop some clause True?
-    newclauses = drop_clauses_fixpoint(clauses, S, assumptions, safesolver, data, L)
-    # new add the assumptions (without them the formula is not equivalent to expr now)
-    if assumptions:
-        newclauses.extend(break_eqs(assumptions.as_expr().to_cnf()))
-    clauses = remove_implied_literals(newclauses)
-
-    assert intersection(
-        unsafe, create_set(EM.conjunction(*clauses))
-    ).is_empty(), f"Dropping clauses made the set unsafe"
+    data = LoopStateOverapproximation(S, executor, target, unsafe, L, EM)
+    data.drop_clauses(assumptions)
 
     # NOTE: this works good alone sometimes
     if drop_only:
-        S.reset_expr(EM.conjunction(*clauses))
+        S = data.commit()
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
-    # Now take every clause c and try to overapproximate it
-    conjunction = EM.conjunction
-    newclauses = []
-    for n in range(len(clauses)):
-        assert len(newclauses) == n
-        c = clauses[n]
-        # R is the rest of the actual formula without the clause c
-        R = S.copy()  # copy the substitutions
-        R.reset_expr(conjunction(*newclauses, *clauses[n + 1 :]))
-
-        newclause = overapprox_clause(c, R, data)
-        if newclause:
-            # newclauses.append(newclause)
-            # FIXME: this check should be
-            # assertion, overapprox_clause should not give us such clauses
-            # assert intersection(tmp, S).is_empty()
-            if is_overapprox_of(S, intersection(R, newclause)):
-                # new clause makes S to be an overapproximation, good
-                newclauses.append(newclause)
-            else:
-                newclauses.append(c)
-        else:
-            newclauses.append(c)
-
-        if __debug__:
-            R.intersect(newclauses[-1])
-            assert not R.is_empty()
-            R.intersect(unsafe)
-            assert R.is_empty(), f"Overapproxmating clause made the set unsafe: {c}"
-
-    if __debug__:
-        S.reset_expr(EM.conjunction(*newclauses))
-        assert not S.is_empty()
-        assert intersection(
-            unsafe, S
-        ).is_empty(), f"Overapproxmating clauses made the set unsafe"
+    data.overapproximate()
 
     # drop clauses once more
-    newclauses = drop_clauses_fixpoint(newclauses, S, None, safesolver, data, L)
-    clauses = remove_implied_literals(newclauses)
-    S.reset_expr(EM.conjunction(*clauses).rewrite_and_simplify())
+    data.drop_clauses(None)
+    S = data.commit()
 
     assert intersection(
         unsafe, create_set(S)
