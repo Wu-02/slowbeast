@@ -667,19 +667,19 @@ def overapprox_set(executor, EM, goal, unsafeAnnot, indtarget, assumptions, L, d
     if expr.is_concrete():
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
-    data = LoopStateOverapproximation(S, executor, target, unsafe, L, EM)
-    data.drop_clauses(assumptions)
+    overapprox = LoopStateOverapproximation(S, executor, target, unsafe, L, EM)
+    overapprox.drop_clauses(assumptions)
 
     # NOTE: this works good alone sometimes
     if drop_only:
-        S = data.commit()
+        S = overapprox.commit()
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
-    data.overapproximate()
+    overapprox.overapproximate()
 
     # drop clauses once more
-    data.drop_clauses(None)
-    S = data.commit()
+    overapprox.drop_clauses(None)
+    S = overapprox.commit()
 
     assert intersection(
         unsafe, create_set(S)
