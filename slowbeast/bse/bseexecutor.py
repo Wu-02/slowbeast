@@ -183,7 +183,7 @@ class BSEState(LazySEState):
         return []
 
     def __repr__(self):
-        s = f"pc: {self.getConstraints()}"
+        s = f"BSEState: {self.getConstraints()}"
         if self.memory._reads:
             s += "\n"+"\n".join(f"+L({p.as_value()})={x}" for p, x in self.memory._reads.items())
         if self._nondets:

@@ -65,7 +65,7 @@ def remove_implied_literals(clauses):
     return singletons + newclauses
 
 
-def postimage(executor, paths, prestate):
+def poststates(executor, paths, prestate):
     """
     Return states after executing paths with precondition 'pre'
     extended by the postcondition 'post'. We do not evaluate the
@@ -508,7 +508,7 @@ class LoopStateOverapproximation:
         clause_without_lit = list(x for x in rl if x != l)
         X = intersection(S, EM.disjunction(placeholder, *clause_without_lit))
         assert not X.is_empty(), f"S: {S}, l: {l}, rl: {rl}"
-        post = postimage(executor, self.loop.paths(), X.get_se_state())
+        post = poststates(executor, self.loop.paths(), X.get_se_state())
         if not post:
             return l
 
