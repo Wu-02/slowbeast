@@ -232,16 +232,17 @@ def get_relations_to_prev_states(state, prev):
                 continue  # we do not need to replace these
             nonunique = state.is_sat(expr, oldpc, EM.Ne(diff, dval))
             if nonunique is False:
-                if vdval > 0:  # old value is higher
+                if vdval > 0:  # old value (in later iteration) is higher
                     expr = EM.conjunction(
                         EM.Ge(l, cval),
                         EM.Le(l, EM.Add(cval, dval)),
                         EM.Eq(EM.Rem(l, dval), EM.Rem(cval, dval)),
                     )
                 else:
+                    dval = ConcreteInt(-vdval, dval.bitwidth()) # change sign
                     expr = EM.conjunction(
-                        EM.Ge(l, cval),
-                        EM.Le(l, EM.Sub(cval, dval)),
+                        EM.Ge(l, EM.Sub(cval, dval)),
+                        EM.Le(l, cval),
                         EM.Eq(EM.Rem(l, dval), EM.Rem(cval, dval)),
                     )
                 yield AssertAnnotation(expr, subs, EM)
