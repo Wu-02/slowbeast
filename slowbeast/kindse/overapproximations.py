@@ -70,7 +70,7 @@ def remove_implied_literals(clauses):
     return singletons + newclauses
 
 
-def postimage(executor, paths, pre=None):
+def postimage(executor, paths, prestate):
     """
     Return states after executing paths with precondition 'pre'
     extended by the postcondition 'post'. We do not evaluate the
@@ -79,14 +79,16 @@ def postimage(executor, paths, pre=None):
     simplify it to false, which is undesired here
     """
     result = PathExecutionResult()
+    indexecutor = executor.ind_executor()
     for path in paths:
         p = path.copy()
         # the post-condition is the whole frame
-        if pre:
-            p.add_annot_before(pre.as_assume_annotation())
+       #if pre:
+       #    p.add_annot_before(pre.as_assume_annotation())
 
-        # FIXME do not branch on last here, its add useless states
-        r = executor.execute_path(p)
+        # execute the annotated error path and generate also
+        # the states that can avoid the error at the end of the path
+        r = indexecutor.execute_annotated_path([prestate.copy()], path)
         result.merge(r)
 
     assert result.errors is None
@@ -407,11 +409,11 @@ class LoopStateOverapproximation:
         return S
 
     def overapproximate(self):
-        # Now take every clause c and try to overapproximate it
         conjunction = self.expr_mgr.conjunction
         overapprox_clause = self.overapprox_clause
         clauses, newclauses = self.clauses, []
         S = self.goal
+        # Now take every clause c and try to overapproximate it
         for n in range(len(clauses)):
             assert len(newclauses) == n
             c = clauses[n]
@@ -484,7 +486,7 @@ class LoopStateOverapproximation:
                         *(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))
                     )
                 )
-                assert self.loop.set_is_inductive_towards(X, self.target, allow_infeasible_only=True)
+                assert self.loop.set_is_inductive_towards(X, self.target, allow_infeasible_only=True), f"X: {X}, target: {self.target}"
 
         if len(newc) == 1:
             return newc[0]
@@ -502,11 +504,6 @@ class LoopStateOverapproximation:
         assert not l.isAnd() and not l.isOr(), f"Input is not a literal: {l}"
         assert intersection(S, l, self.unsafe).is_empty(), "Unsafe states in input"
 
-        dliteral = DecomposedLiteral(l)
-        if not dliteral:
-            return l
-
-        assert dliteral.toformula() == l
         EM = self.expr_mgr
         executor = self.executor
 
@@ -516,9 +513,10 @@ class LoopStateOverapproximation:
         clause_without_lit = list(x for x in rl if x != l)
         X = intersection(S, EM.disjunction(placeholder, *clause_without_lit))
         assert not X.is_empty(), f"S: {S}, l: {l}, rl: {rl}"
-        post = postimage(executor, self.loop.paths(), pre=X)
+        post = postimage(executor, self.loop.paths(), X.get_se_state())
         if not post:
             return l
+
         # U is allowed reachable set of states
         U = union(self.target, X)
         indset_with_placeholder = U.as_assume_annotation()
@@ -536,6 +534,11 @@ class LoopStateOverapproximation:
 
         solver = IncrementalSolver()
 
+        dliteral = DecomposedLiteral(l)
+        if not dliteral:
+            return l
+
+        assert dliteral.toformula() == l
         ldata = LiteralOverapproximationData(
             l,
             dliteral,
