@@ -1,3 +1,4 @@
+from sys import stdout
 from slowbeast.domains.value import Value
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import Alloc, GlobalVariable
@@ -96,6 +97,24 @@ class BSEMemory(SEMemory):
     def symbolic_write(self, state, ptr, ptrOp, value):
         self._reads[ptr] = value
         return None
+
+    def dump(self, stream=stdout):
+        stream.write("-- Global objects:\n")
+        for o in self._glob_objects.values():
+            o.dump(stream)
+        stream.write("-- Global bindings:\n")
+        for g, v in self._glob_bindings.items():
+            stream.write("{0} -> {1}\n".format(g.as_value(), v.as_value()))
+        stream.write("-- Objects:\n")
+        for o in self._objects.values():
+            o.dump(stream)
+        stream.write("-- Reads:\n")
+        if self._reads:
+            for p, x in self._reads.items():
+                stream.write(f"+L({p.as_value()})={x}\n")
+        stream.write("-- Call stack:\n")
+        self._cs.dump(stream)
+
 
 
 
