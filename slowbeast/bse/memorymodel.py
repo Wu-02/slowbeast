@@ -24,6 +24,11 @@ class BSEMemory(SEMemory):
         # output state of memory
         self._reads = {}
 
+    def copyTo(self, new):
+        super().copyTo(new)
+        new._reads = self._reads.copy()
+        return new
+
     def read_symbolic_ptr(self, state, toOp, fromOp, bitsnum=None):
         raise NotImplemented("Not implemented yet")
         val = _nondet_value(state.solver().fresh_value, toOp, bitsnum)

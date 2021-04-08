@@ -50,18 +50,8 @@ class Memory:
         return new
 
     def copy(self):
-        new = copy(self)
-        new._objects_ro = True
-        self._objects_ro = True
-        new._glob_objects_ro = True
-        self._glob_objects_ro = True
-        new._glob_bindings_ro = True
-        self._glob_bindings_ro = True
-        for o in self._objects.values():
-            o._setRO()
-        for o in self._glob_objects.values():
-            o._setRO()
-        new._cs = self._cs.copy()
+        new = type(self)()
+        self.copyTo(new)
         return new
 
     def createMO(self, size, nm=None, objid=None):
