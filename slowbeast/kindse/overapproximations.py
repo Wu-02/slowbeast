@@ -3,14 +3,9 @@ from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.util.debugging import dbg, dbgv, ldbg
 from slowbeast.solvers.expressions import em_optimize_expressions
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
-from .relations import get_const_cmp_relations, get_var_relations
-
 from slowbeast.symexe.statesset import union, intersection, complement
 from .inductivesequence import InductiveSequence
-
 from slowbeast.core.executor import PathExecutionResult
-from .kindsebase import check_paths
-
 
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
