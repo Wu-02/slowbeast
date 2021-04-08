@@ -11,7 +11,6 @@ class Result:
     UNSAFE = 2
 
 
-
 class KindSymbolicExecutor(SymbolicExecutor):
     def __init__(self, prog, ohandler=None, opts=KindSEOptions()):
         super(KindSymbolicExecutor, self).__init__(P=prog, ohandler=ohandler, opts=opts)

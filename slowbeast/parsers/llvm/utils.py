@@ -198,6 +198,7 @@ def getConstant(val):
 
     return ConcreteVal(c, FloatType(bw) if isfloating else IntType(bw))
 
+
 def bvToBoolElseId(bv):
     if bv.is_concrete():
         if bv.value() == 0:

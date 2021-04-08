@@ -1,5 +1,5 @@
 from queue import Queue as FIFOQueue
-from typing import Optional #, Union
+from typing import Optional  # , Union
 
 from slowbeast.kindse.programstructure import ProgramStructure
 from slowbeast.symexe.annotations import AssumeAnnotation
@@ -51,9 +51,15 @@ class BSEContext:
     def __repr__(self):
         return f"BSE-ctx[{self.edge}:{self.errorstate}]"
 
+
 class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def __init__(
-        self, prog, ohandler=None, opts=KindSEOptions(), programstructure=None, invariants=None
+        self,
+        prog,
+        ohandler=None,
+        opts=KindSEOptions(),
+        programstructure=None,
+        invariants=None,
     ):
         super().__init__(
             P=prog, ohandler=ohandler, opts=opts, ExecutorClass=BSEExecutor
@@ -120,13 +126,13 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             states = [s.copy() for s in self.states]
             assert states
 
-            #ldbgv("Computing (init) precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
+            # ldbgv("Computing (init) precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
         else:
             executor = self.ind_executor()
             s = executor.createCleanState()
             states = [s]
 
-            #ldbgv("Computing precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
+            # ldbgv("Computing precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
 
         assert all(
             map(lambda s: not s.getConstraints(), states)
@@ -134,7 +140,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
-        ready, nonready = executor.execute_edge(states, bsectx.edge, invariants=invariants)
+        ready, nonready = executor.execute_edge(
+            states, bsectx.edge, invariants=invariants
+        )
         for s in (s for s in nonready if s.wasKilled() or s.hasError()):
             report_state(self.stats, s, self.reportfn)
             self.problematic_states.append(s)
@@ -145,12 +153,12 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             if state.join_prestate(ready[0]):
                 return [state]
         return []
-        #prestates = []
-        #for r in ready:
+        # prestates = []
+        # for r in ready:
         #    prestates.extend(r.apply_postcondition(poststate))
-        #return prestates
+        # return prestates
 
-    def precondition(self, bsectx : BSEContext) -> (Result, Optional[BSEState]):
+    def precondition(self, bsectx: BSEContext) -> (Result, Optional[BSEState]):
         """ Compute precondition of the given BSEContext. """
         edge = bsectx.edge
 
@@ -159,7 +167,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
             if prestates:
                 prestate = prestates[0]
-                #FIXME: can we somehow easily check that we do not have to do this?
+                # FIXME: can we somehow easily check that we do not have to do this?
                 # found a real error
                 prestate.addConstraint(*prestate.memory_constraints())
                 if prestate.isfeasible():
@@ -185,13 +193,17 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
     def extend_state(self, bsectx, postcondition):
         assert postcondition, postcondition
-        had_one : bool = False
+        had_one: bool = False
         edge = bsectx.edge
         if edge.has_predecessors():
             for pedge in bsectx.edge.predecessors():
-                self.queue_state(BSEContext(pedge,
-                                            postcondition.copy() if had_one else postcondition,
-                                            bsectx.errordescr))
+                self.queue_state(
+                    BSEContext(
+                        pedge,
+                        postcondition.copy() if had_one else postcondition,
+                        bsectx.errordescr,
+                    )
+                )
                 had_one = True
         elif edge.cfa().is_init(edge):
             # This is entry to procedure. It cannot be the main procedure, otherwise
@@ -201,8 +213,6 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             report_state(self.stats, postcondition, self.reportfn)
             self.problematic_states.append(postcondition)
         # else: dead code, we're fine
-
-
 
 
 def check_paths(checker, paths, pre=None, post=None):

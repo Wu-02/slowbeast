@@ -11,6 +11,7 @@ from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
 
+
 def report_state(stats, n, fn=print_stderr):
     if n.hasError():
         if fn:
@@ -23,6 +24,7 @@ def report_state(stats, n, fn=print_stderr):
         if fn:
             fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
+
 
 def check_paths(executor, paths, pre=None, post=None):
     result = PathExecutionResult()
@@ -288,7 +290,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             if oth and any(map(lambda s: s.wasKilled(), oth)):
                 return Result.UNKNOWN, oth
 
-            step = -1 #self.getOptions().step
+            step = -1  # self.getOptions().step
             if r.errors:
                 has_err = True
                 newpaths += self.extend_path(path, r, steps=step, atmost=step != 1)

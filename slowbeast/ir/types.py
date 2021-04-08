@@ -8,20 +8,26 @@
 
 POINTER_BIT_WIDTH = 64
 
+
 def get_pointer_bitwidth():
     return POINTER_BIT_WIDTH
+
 
 def get_size_type():
     return IntType(POINTER_BIT_WIDTH)
 
+
 def get_offset_type():
     return IntType(POINTER_BIT_WIDTH)
+
 
 def get_size_type_size():
     return POINTER_BIT_WIDTH
 
+
 def get_offset_type_size():
     return POINTER_BIT_WIDTH
+
 
 def sb_set_pointer_width(width):
     global POINTER_BIT_WIDTH
@@ -126,4 +132,3 @@ class Bytes(Type):
 
     def is_bytes(self):
         return True
-

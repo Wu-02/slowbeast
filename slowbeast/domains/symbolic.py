@@ -54,7 +54,9 @@ if _use_z3:
     from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic, Then, With, Repeat, OrElse
     from z3 import (
-        is_fp, is_fp_value, is_fprm_value,
+        is_fp,
+        is_fp_value,
+        is_fprm_value,
         FP,
         Float32,
         Float64,
@@ -179,23 +181,34 @@ if _use_z3:
     def bv_size(bw):
         return bw.sort().size()
 
-
     def _expr_op_to_formula_op(expr):
-        if is_and(expr): return ArithFormula.AND
-        if is_or(expr): return ArithFormula.OR
-        if is_not(expr): return ArithFormula.NOT
+        if is_and(expr):
+            return ArithFormula.AND
+        if is_or(expr):
+            return ArithFormula.OR
+        if is_not(expr):
+            return ArithFormula.NOT
 
-        if is_eq(expr): return ArithFormula.EQ
-        if is_app_of(expr, Z3_OP_SLEQ): return ArithFormula.SLE
-        if is_app_of(expr, Z3_OP_SLT): return ArithFormula.SLT
-        if is_app_of(expr, Z3_OP_ULEQ): return ArithFormula.ULE
-        if is_app_of(expr, Z3_OP_ULT): return ArithFormula.ULT
-        if is_app_of(expr, Z3_OP_SGEQ): return ArithFormula.SGE
-        if is_app_of(expr, Z3_OP_SGT): return ArithFormula.SGT
-        if is_app_of(expr, Z3_OP_UGEQ): return ArithFormula.UGE
-        if is_app_of(expr, Z3_OP_UGT): return ArithFormula.UGT
+        if is_eq(expr):
+            return ArithFormula.EQ
+        if is_app_of(expr, Z3_OP_SLEQ):
+            return ArithFormula.SLE
+        if is_app_of(expr, Z3_OP_SLT):
+            return ArithFormula.SLT
+        if is_app_of(expr, Z3_OP_ULEQ):
+            return ArithFormula.ULE
+        if is_app_of(expr, Z3_OP_ULT):
+            return ArithFormula.ULT
+        if is_app_of(expr, Z3_OP_SGEQ):
+            return ArithFormula.SGE
+        if is_app_of(expr, Z3_OP_SGT):
+            return ArithFormula.SGT
+        if is_app_of(expr, Z3_OP_UGEQ):
+            return ArithFormula.UGE
+        if is_app_of(expr, Z3_OP_UGT):
+            return ArithFormula.UGT
 
-        #raise NotImplementedError(f"Unhandled operation: {expr}")
+        # raise NotImplementedError(f"Unhandled operation: {expr}")
         return None
 
     class BVMonomial(Monomial):
@@ -204,6 +217,7 @@ if _use_z3:
         This class makes it easy to work with commutative expressions
         by merging the operands into sets (if the operation is commutative).
         """
+
         def __init__(self, *variabl):
             super().__init__(*variabl)
 
@@ -233,8 +247,9 @@ if _use_z3:
         This class makes it easy to work with commutative expressions
         by merging the operands into sets (if the operation is commutative).
         """
+
         def __init__(self, bw, *elems):
-            self._bw = bw #bitwidth
+            self._bw = bw  # bitwidth
             super().__init__(*elems)
 
         def bitwidth(self):
@@ -242,7 +257,7 @@ if _use_z3:
 
         def copy(self):
             P = type(self)(self._bw)
-            P.monomials = {m.copy() : c for m, c in self.monomials.items()}
+            P.monomials = {m.copy(): c for m, c in self.monomials.items()}
             return P
 
         def clean_copy(self):
@@ -298,36 +313,38 @@ if _use_z3:
         def create(expr):
             bw = 1 if is_bool(expr) else expr.size()
             if is_app_of(expr, Z3_OP_BADD):
-                return BVPolynomial(bw, *(BVPolynomial.create(e) for e in expr.children()))
+                return BVPolynomial(
+                    bw, *(BVPolynomial.create(e) for e in expr.children())
+                )
             elif is_app_of(expr, Z3_OP_BMUL):
                 pols = [BVPolynomial.create(e) for e in expr.children()]
                 P = pols[0]
                 for i in range(1, len(pols)):
                     P.mul(pols[i])
                 return P
-           #elif is_app_of(expr, Z3_OP_CONCAT) or\
-           #        is_app_of(expr, Z3_OP_SIGN_EXT) or\
-           #        is_app_of(expr, Z3_OP_ZERO_EXT) or\
-           #        is_app_of(expr, Z3_OP_EXTRACT):
-           #    # TODO: check that these operations are applied to const?
-           #    return BVPolynomial(bw, BVMonomial((expr, 1)))
-           #elif is_app_of(expr, Z3_OP_BUREM) or\
-           #        is_app_of(expr, Z3_OP_BUREM_I) or\
-           #        is_app_of(expr, Z3_OP_BSREM) or\
-           #        is_app_of(expr, Z3_OP_BSREM_I) or\
-           #        is_app_of(expr, Z3_OP_BUDIV) or\
-           #        is_app_of(expr, Z3_OP_BSDIV) or\
-           #        is_app_of(expr, Z3_OP_BUDIV_I) or\
-           #        is_app_of(expr, Z3_OP_BSDIV_I):
-           #    # TODO: check that these operations are applied to const?
-           #    return BVPolynomial(bw, BVMonomial((expr, 1)))
+            # elif is_app_of(expr, Z3_OP_CONCAT) or\
+            #        is_app_of(expr, Z3_OP_SIGN_EXT) or\
+            #        is_app_of(expr, Z3_OP_ZERO_EXT) or\
+            #        is_app_of(expr, Z3_OP_EXTRACT):
+            #    # TODO: check that these operations are applied to const?
+            #    return BVPolynomial(bw, BVMonomial((expr, 1)))
+            # elif is_app_of(expr, Z3_OP_BUREM) or\
+            #        is_app_of(expr, Z3_OP_BUREM_I) or\
+            #        is_app_of(expr, Z3_OP_BSREM) or\
+            #        is_app_of(expr, Z3_OP_BSREM_I) or\
+            #        is_app_of(expr, Z3_OP_BUDIV) or\
+            #        is_app_of(expr, Z3_OP_BSDIV) or\
+            #        is_app_of(expr, Z3_OP_BUDIV_I) or\
+            #        is_app_of(expr, Z3_OP_BSDIV_I):
+            #    # TODO: check that these operations are applied to const?
+            #    return BVPolynomial(bw, BVMonomial((expr, 1)))
             elif is_const(expr):
                 if is_bv_value(expr):
                     return BVPolynomial(bw, (expr, BVMonomial()))
                 return BVPolynomial(bw, BVMonomial((expr, 1)))
 
             return BVPolynomial(bw, BVMonomial((expr, 1)))
-            #raise NotImplementedError(f"Unhandeld expression: {expr}")
+            # raise NotImplementedError(f"Unhandeld expression: {expr}")
 
         def expr(self):
             " Transform to Z3 expressions "
@@ -338,10 +355,10 @@ if _use_z3:
             it = iter(M.items())
             m, c = next(it)
             mexpr = m.expr()
-            expr = c if mexpr is None else c*mexpr
+            expr = c if mexpr is None else c * mexpr
             for m, c in it:
                 mexpr = m.expr()
-                expr += c if mexpr is None else c*mexpr
+                expr += c if mexpr is None else c * mexpr
             return simplify(expr)
 
     class BVFormula(ArithFormula):
@@ -350,6 +367,7 @@ if _use_z3:
         This class makes it easy to work with commutative expressions
         by merging the operands into sets (if the operation is commutative).
         """
+
         def __init__(self, ty, *operands):
             super().__init__(ty, *operands)
 
@@ -359,8 +377,7 @@ if _use_z3:
             if chlds:
                 if op is None:
                     # it is a polynomial
-                    return BVFormula(ArithFormula.POLYNOM,
-                                     BVPolynomial.create(expr))
+                    return BVFormula(ArithFormula.POLYNOM, BVPolynomial.create(expr))
                 isac = ArithFormula.op_is_assoc_and_comm(op)
                 formula = BVFormula(op, None)
                 for c in chlds:
@@ -369,10 +386,9 @@ if _use_z3:
                     else:
                         formula.add_child(BVFormula.create(c))
                 return formula
-               #return BVFormula(_expr_op_to_formula_op(expr), None,
-               #                 *(BVFormula.create(c) for c in chlds))
-            return BVFormula(ArithFormula.POLYNOM,
-                             BVPolynomial.create(expr))
+            # return BVFormula(_expr_op_to_formula_op(expr), None,
+            #                 *(BVFormula.create(c) for c in chlds))
+            return BVFormula(ArithFormula.POLYNOM, BVPolynomial.create(expr))
 
         def value_equals(self, x):
             v = self._value
@@ -415,7 +431,7 @@ if _use_z3:
                 return BVUGE(chlds[0].expr(), chlds[1].expr())
             if ty == ArithFormula.UGT:
                 return BVUGT(chlds[0].expr(), chlds[1].expr())
- 
+
             raise NotImplementedError(f"Not implemented yet: {self}")
             return None
 
@@ -425,11 +441,13 @@ if _use_z3:
             yield from subexpressions(c)
         yield expr
 
-    def _symbols(expr, ret : set):
-        if is_const(expr) and\
-                not is_bv_value(expr) and\
-                not is_fp_value(expr) and\
-                not is_fprm_value(expr):
+    def _symbols(expr, ret: set):
+        if (
+            is_const(expr)
+            and not is_bv_value(expr)
+            and not is_fp_value(expr)
+            and not is_fprm_value(expr)
+        ):
             ret.add(expr)
         else:
             for c in expr.children():
@@ -441,11 +459,15 @@ if _use_z3:
         return ret
 
     def is_lit(e):
-        return is_const(e) or\
-                ((is_app_of(e, Z3_OP_ZERO_EXT) or\
-                  is_app_of(e, Z3_OP_SIGN_EXT) or\
-                  is_app_of(e, Z3_OP_CONCAT) or\
-                  is_app_of(e, Z3_OP_EXTRACT)) and is_lit(e.children()[0]))
+        return is_const(e) or (
+            (
+                is_app_of(e, Z3_OP_ZERO_EXT)
+                or is_app_of(e, Z3_OP_SIGN_EXT)
+                or is_app_of(e, Z3_OP_CONCAT)
+                or is_app_of(e, Z3_OP_EXTRACT)
+            )
+            and is_lit(e.children()[0])
+        )
 
     def _is_const_mul(expr):
         chld = expr.children()
@@ -458,7 +480,7 @@ if _use_z3:
             atoms[expr] = v + 1
             return
         for c in chld:
-           _get_replacable(c, atoms)
+            _get_replacable(c, atoms)
 
     def _desimplify_ext(expr):
         " replace concat with singext if possible -- due to debugging "
@@ -467,7 +489,10 @@ if _use_z3:
             c0 = chld[0]
             if is_app_of(c0, Z3_OP_EXTRACT):
                 params = c0.params()
-                if params[0] == params[1] == (chld[-1].size() - 1) and c0.children()[0] == chld[-1]:
+                if (
+                    params[0] == params[1] == (chld[-1].size() - 1)
+                    and c0.children()[0] == chld[-1]
+                ):
                     if all(map(lambda e: e == c0, chld[1:-1])):
                         return BVSExt(expr.size() - chld[-1].size(), chld[-1])
             des = [_desimplify_ext(c) for c in chld]
@@ -475,12 +500,18 @@ if _use_z3:
             assert len(des) > 1
             return BVConcat(des)
         else:
-            if is_and(expr): return mk_and(*(_desimplify_ext(c) for c in expr.children()))
-            elif is_or(expr): return mk_or(*(_desimplify_ext(c) for c in expr.children()))
-            elif is_not(expr): return Not(*(_desimplify_ext(c) for c in expr.children()))
-            elif is_app_of(expr, Z3_OP_BADD): return mk_add(*(_desimplify_ext(c) for c in expr.children()))
-            elif is_app_of(expr, Z3_OP_BMUL): return mk_mul(*(_desimplify_ext(c) for c in expr.children()))
-            elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*(_desimplify_ext(c) for c in expr.children()))
+            if is_and(expr):
+                return mk_and(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_or(expr):
+                return mk_or(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_not(expr):
+                return Not(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_app_of(expr, Z3_OP_BADD):
+                return mk_add(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_app_of(expr, Z3_OP_BMUL):
+                return mk_mul(*(_desimplify_ext(c) for c in expr.children()))
+            elif is_app_of(expr, Z3_OP_CONCAT):
+                return BVConcat(*(_desimplify_ext(c) for c in expr.children()))
             elif is_eq(expr):
                 dc = (_desimplify_ext(c) for c in expr.children())
                 return next(dc) == next(dc)
@@ -511,36 +542,48 @@ if _use_z3:
                         ebw = expr.size()
                         # expr = sext(x + 1)
                         if simplify(c == 1).__bool__():
-                            return If(x != 2**(bw-1)-1,
-                                      #BVSExt(ebw - bw, x) + BVZExt(ebw - bw, c),
-                                      #expr)
-                                      BVSExt(ebw - bw, x) + bv_const(1, ebw),
-                                      simplify(BVSExt(ebw - bw,
-                                                      bv_const(2**bw-1, bw) + 1))
-                                        )
+                            return If(
+                                x != 2 ** (bw - 1) - 1,
+                                # BVSExt(ebw - bw, x) + BVZExt(ebw - bw, c),
+                                # expr)
+                                BVSExt(ebw - bw, x) + bv_const(1, ebw),
+                                simplify(
+                                    BVSExt(ebw - bw, bv_const(2 ** bw - 1, bw) + 1)
+                                ),
+                            )
                         # expr = sext(x + (-1))
                         elif simplify(c == -1).__bool__():
-                            return If(x != 2**(bw-1),
-                                      #BVSExt(ebw - bw, x) + BVSExt(ebw - bw, c),
-                                      #expr)
-                                      BVSExt(ebw - bw, x) + bv_const(-1, ebw),
-                                      simplify(BVSExt(ebw - bw,
-                                                      bv_const(2**bw-1, bw) -
-                                                      1))
-                                      )
+                            return If(
+                                x != 2 ** (bw - 1),
+                                # BVSExt(ebw - bw, x) + BVSExt(ebw - bw, c),
+                                # expr)
+                                BVSExt(ebw - bw, x) + bv_const(-1, ebw),
+                                simplify(
+                                    BVSExt(ebw - bw, bv_const(2 ** bw - 1, bw) - 1)
+                                ),
+                            )
                         # FIXME: do this for generic values
             return expr
         else:
             red = (_rewrite_sext(c) for c in chld)
-            if is_and(expr): return mk_and(*red)
-            elif is_or(expr): return mk_or(*red)
-            elif is_not(expr): return Not(*red)
-            elif is_app_of(expr, Z3_OP_CONCAT): return BVConcat(*red)
-            elif is_app_of(expr, Z3_OP_BADD): return mk_add(*red)
-            elif is_app_of(expr, Z3_OP_BMUL): return mk_mul(*red)
-            elif is_eq(expr): return next(red) == next(red)
-            elif is_distinct(expr): return next(red) != next(red)
-            else: return expr
+            if is_and(expr):
+                return mk_and(*red)
+            elif is_or(expr):
+                return mk_or(*red)
+            elif is_not(expr):
+                return Not(*red)
+            elif is_app_of(expr, Z3_OP_CONCAT):
+                return BVConcat(*red)
+            elif is_app_of(expr, Z3_OP_BADD):
+                return mk_add(*red)
+            elif is_app_of(expr, Z3_OP_BMUL):
+                return mk_mul(*red)
+            elif is_eq(expr):
+                return next(red) == next(red)
+            elif is_distinct(expr):
+                return next(red) != next(red)
+            else:
+                return expr
 
     def _get_common_monomials(P1, P2, same_coef=False):
         monomials = []
@@ -548,11 +591,11 @@ if _use_z3:
             c2 = P2.get_coef(p1m)
             if c2 is None:
                 continue
-            if not same_coef or\
-                (c1.size() == c2.size() and simplify(c1 == c2).__bool__()):
+            if not same_coef or (
+                c1.size() == c2.size() and simplify(c1 == c2).__bool__()
+            ):
                 monomials.append(p1m)
         return monomials
-
 
     class PolynomialSimplifier:
         def __init__(self, *args):
@@ -566,11 +609,11 @@ if _use_z3:
             self.polynomials.extend(*ps)
 
         def _simplify_polynomial_formula(self, formula):
-           #print("> SIMPLIFY", formula)
-           #print("> WITH")
-           #for p in self.polynomials:
-           #    print('  ', p)
-           #print('---')
+            # print("> SIMPLIFY", formula)
+            # print("> WITH")
+            # for p in self.polynomials:
+            #    print('  ', p)
+            # print('---')
             polynoms = self.polynomials
             assert formula.is_poly(), formula
             P = formula[0]
@@ -580,7 +623,7 @@ if _use_z3:
                     # FIXME: we should keep track of polynomials that we substitued
                     # to not to get into a cycle
                     common = _get_common_monomials(p, P, same_coef=True)
-                    if common:# and all(map(lambda c: c in common, me)):
+                    if common:  # and all(map(lambda c: c in common, me)):
                         p1, p2 = p.split(common)
                         p1.change_sign()
                         P.add(p1)
@@ -589,7 +632,7 @@ if _use_z3:
                     mP = P.copy()
                     mP.change_sign()
                     common = _get_common_monomials(p, mP, same_coef=True)
-                    if common:# and all(map(lambda c: c in common, me)):
+                    if common:  # and all(map(lambda c: c in common, me)):
                         p1, p2 = p.split(common)
                         p2.change_sign()
                         P.add(p1)
@@ -601,16 +644,16 @@ if _use_z3:
                 # degree
                 mme = me[0]
                 for monomial, coef in P:
-                   #mc = P.get_coef(monomial)
-                   #mec = p.get_coef(mme)
+                    # mc = P.get_coef(monomial)
+                    # mec = p.get_coef(mme)
                     if not P.is_normed(monomial):
-                        continue # FOR NOW
+                        continue  # FOR NOW
                     if mme.divides(monomial):
                         # FIXME: multiply with the coefficient!
                         r = BVPolynomial(P.bitwidth(), monomial.divided(mme))
                         p1, p2 = p.split([mme])
                         p2.change_sign()
-                        r.mul(p2) # do the substitution
+                        r.mul(p2)  # do the substitution
                         P.pop(monomial)
                         P.add(r)
                         # we changed the polynomial, we cannot iterate any further.
@@ -627,11 +670,14 @@ if _use_z3:
                     chld[1][0].change_sign()
                     chld[0][0].add(chld[1][0])
                     changed |= self._simplify_polynomial_formula(chld[0])
-                    formula.replace_with(BVFormula(ArithFormula.EQ, None,
-                                                   chld[0],
-                                                   BVFormula.create(bv_const(0, chld[0][0].bitwidth()))
-                                                   )
-                                         )
+                    formula.replace_with(
+                        BVFormula(
+                            ArithFormula.EQ,
+                            None,
+                            chld[0],
+                            BVFormula.create(bv_const(0, chld[0][0].bitwidth())),
+                        )
+                    )
                 else:
                     for c in formula.children():
                         changed |= self.simplify_formula(c)
@@ -641,7 +687,6 @@ if _use_z3:
                 for c in formula.children():
                     changed |= self.simplify_formula(c)
             return changed
-
 
     def simplify_polynomial_formula(formula, polynoms):
         simplifier = PolynomialSimplifier(*polynoms)
@@ -677,17 +722,17 @@ if _use_z3:
             if not simple_poly:
                 return expr_to
 
-           #print('--------')
-           #for p in simple_poly:
-           #    print('  > ASSUM', _desimplify_ext(simplify(p.expr())))
-           #print('>ORIG', _desimplify_ext(simplify(to_formula.expr())))
-           #print('--------')
+            # print('--------')
+            # for p in simple_poly:
+            #    print('  > ASSUM', _desimplify_ext(simplify(p.expr())))
+            # print('>ORIG', _desimplify_ext(simplify(to_formula.expr())))
+            # print('--------')
             simplify_polynomial_formula(to_formula, simple_poly)
-           #     print('>SIMPL', _desimplify_ext(simplify(to_formula.expr())))
+            #     print('>SIMPL', _desimplify_ext(simplify(to_formula.expr())))
             e = _desimplify_ext(simplify(to_formula.expr()))
-           #print('   --   ')
-           #print('>FINAL', e)
-           #print('--------')
+            # print('   --   ')
+            # print('>FINAL', e)
+            # print('--------')
             return e
         except ValueError:
             return None
@@ -700,20 +745,18 @@ if _use_z3:
         """
         try:
             atoms = {}
-            expr = mk_and(*Then("tseitin-cnf",
-                             With("simplify", som=True))(expr)[0])
-           #assert len(expr_mod) == 1, expr_mod
-           #expr = And(*expr_mod[0])
+            expr = mk_and(*Then("tseitin-cnf", With("simplify", som=True))(expr)[0])
+            # assert len(expr_mod) == 1, expr_mod
+            # expr = And(*expr_mod[0])
             _get_replacable(expr, atoms)
             subs = {}
             for e, num in atoms.items():
-                if num < 1: continue
+                if num < 1:
+                    continue
                 subs[e] = BitVec(f"r_{hash(e)}", e.size())
             return substitute(expr, *subs.items()), subs
         except ValueError:
             return None, None
-
-
 
     def _reduce_eq_bitwidth(expr, bw):
         if is_const(expr):
@@ -721,23 +764,24 @@ if _use_z3:
         chld = expr.children()
         # Do we want to recurse also into operands of == and !=?
         if is_eq(expr):
-            return (BVExtract(bw-1, 0, chld[0]) ==\
-                    BVExtract(bw-1, 0, chld[1])) 
+            return BVExtract(bw - 1, 0, chld[0]) == BVExtract(bw - 1, 0, chld[1])
         elif is_not(expr):
             # do not dive into negations - negation of overapproximation
             # is underapproximation
             return expr
         else:
             red = (_reduce_eq_bitwidth(c, bw) for c in chld)
-            if is_and(expr): return mk_and(*red)
-            elif is_or(expr): return mk_or(*red)
-           #elif is_add(expr): return Sum(*red)
-           #elif is_mul(expr): return Product(*red)
-            else: return expr.decl()(*red)
-
+            if is_and(expr):
+                return mk_and(*red)
+            elif is_or(expr):
+                return mk_or(*red)
+            # elif is_add(expr): return Sum(*red)
+            # elif is_mul(expr): return Product(*red)
+            else:
+                return expr.decl()(*red)
 
     def reduce_eq_bitwidth(expr, bw):
-        #return _reduce_eq_bitwidth(expr, bw, variables)
+        # return _reduce_eq_bitwidth(expr, bw, variables)
         try:
             # we need the expr in NNF
             expr_nnf = Tactic("nnf")(expr)
@@ -765,18 +809,19 @@ if _use_z3:
     def rewrite_simplify(*exprs):
         g = Goal()
         g.add(*exprs)
-        t = Then(With('simplify', arith_lhs=True, som=True),
-                 Tactic('propagate-ineqs'),
-                 Tactic('normalize-bounds'),
-                 Tactic('propagate-values'),
-                 Tactic('simplify'))
+        t = Then(
+            With("simplify", arith_lhs=True, som=True),
+            Tactic("propagate-ineqs"),
+            Tactic("normalize-bounds"),
+            Tactic("propagate-values"),
+            Tactic("simplify"),
+        )
         return t(g)
 
     def split_clauses(*exprs):
         g = Goal()
         g.add(*exprs)
-        t = Repeat(OrElse(Tactic('split-clause'),
-                          Tactic('skip')))
+        t = Repeat(OrElse(Tactic("split-clause"), Tactic("skip")))
         return t(g)
 
     def solver_to_sb_type(s):
@@ -878,11 +923,7 @@ class Expr(Value):
         Get the symbols used in this expression.
         E.g. for And(a, 3*b) this method returns [a, b].
         """
-        return (
-            Expr(s, solver_to_sb_type(s))
-            for s in symbols(self.unwrap())
-        )
-
+        return (Expr(s, solver_to_sb_type(s)) for s in symbols(self.unwrap()))
 
     def to_cnf(self):
         """
@@ -894,7 +935,9 @@ class Expr(Value):
         """
         Get the expression in CNF form.
         """
-        return Expr(mk_or(*(And(*c) for c in rewrite_simplify(self._expr))), self.type())
+        return Expr(
+            mk_or(*(And(*c) for c in rewrite_simplify(self._expr))), self.type()
+        )
 
     def split_clauses(self):
         """
@@ -932,8 +975,10 @@ class Expr(Value):
         expr, subs = replace_arith_ops(self.unwrap())
         if expr is None:
             return None, None
-        return Expr(expr, self.type()),\
-               {Expr(k, solver_to_sb_type(k)) : Expr(v, solver_to_sb_type(v)) for k, v in subs.items()}
+        return Expr(expr, self.type()), {
+            Expr(k, solver_to_sb_type(k)): Expr(v, solver_to_sb_type(v))
+            for k, v in subs.items()
+        }
 
     def isAnd(self):
         return is_and(self.unwrap())
@@ -984,7 +1029,7 @@ class Expr(Value):
         return is_app_of(self._expr, Z3_OP_UGT)
 
     def isMul(self):
-        return is_app_of(self._expr, Z3_OP_BMUL)# or is_app_of(self._expr, Z3_OP_MUL)
+        return is_app_of(self._expr, Z3_OP_BMUL)  # or is_app_of(self._expr, Z3_OP_MUL)
 
     def __hash__(self):
         return self._expr.__hash__()
@@ -994,6 +1039,7 @@ class Expr(Value):
 
     def __repr__(self):
         return "<{0}:{1}>".format(self._expr, self.type())
+
 
 class NondetInstrResult(Expr):
     """ Expression representing a result of instruction that is unknown - non-deterministic """
@@ -1016,6 +1062,7 @@ class NondetInstrResult(Expr):
 
     def __repr__(self):
         return f"{self._instr.as_value()}={Expr.__repr__(self)}"
+
 
 class NondetLoad(NondetInstrResult):
     __slots__ = "alloc"
@@ -1092,13 +1139,17 @@ def python_constant(val):
         return False
     return None
 
+
 def python_to_sb_type(val, bw):
     if isinstance(val, bool):
         assert bw == 1
         return BoolType()
-    if isinstance(val, int): return IntType(bw)
-    if isinstance(val, float): return FloatType(bw)
+    if isinstance(val, int):
+        return IntType(bw)
+    if isinstance(val, float):
+        return FloatType(bw)
     return None
+
 
 class BVSymbolicDomain:
     """
@@ -1137,7 +1188,9 @@ class BVSymbolicDomain:
         return python_constant(expr.unwrap())
 
     def substitute(expr, *what):
-        e = simplify(substitute(expr.unwrap(), *((a.unwrap(), b.unwrap()) for (a, b) in what)))
+        e = simplify(
+            substitute(expr.unwrap(), *((a.unwrap(), b.unwrap()) for (a, b) in what))
+        )
         c = python_constant(e)
         if c is not None:
             return ConcreteVal(c, python_to_sb_type(c, expr.type().bitwidth()))

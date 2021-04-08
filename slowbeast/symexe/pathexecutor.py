@@ -73,10 +73,10 @@ class Executor(SExecutor):
             newstates = []
             for r in states:
                 cond = r.eval(elem)
-               #if cond is None:
-               #    r.setTerminated(f"Invalid assume edge: {elem}")
-               #    nonready.append(r)
-               #    continue
+                # if cond is None:
+                #    r.setTerminated(f"Invalid assume edge: {elem}")
+                #    nonready.append(r)
+                #    continue
                 ldbgv(
                     "assume {0}{1}",
                     ("not " if isnot else "", cond),

@@ -3,8 +3,8 @@ from .program import ProgramElement
 
 class Argument(ProgramElement):
     def __init__(self, ty):
-       super().__init__()
-       self._type = ty
+        super().__init__()
+        self._type = ty
 
     def type(self):
         return self._type

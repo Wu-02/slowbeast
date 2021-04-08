@@ -2,7 +2,7 @@ class Monomial:
     """ Monomial (power product) """
 
     def __init__(self, *variables):
-        self.vars = {v : e for v,e in variables if e != 0}
+        self.vars = {v: e for v, e in variables if e != 0}
 
     def __getitem__(self, item):
         return self.vars.get(item)
@@ -77,14 +77,16 @@ class Monomial:
         return self.vars == rhs.vars
 
     def __hash__(self):
-        #FIXME: we probably want some better hash
-        return hash(sum(self.vars.values()))^hash(len(self.vars))
+        # FIXME: we probably want some better hash
+        return hash(sum(self.vars.values())) ^ hash(len(self.vars))
 
     def __repr__(self):
         V = self.vars
         if not V:
             return "[1]"
-        return "[{0}]".format("·".join(f"{v}^{e}" if e != 1 else str(v) for v, e in V.items()))
+        return "[{0}]".format(
+            "·".join(f"{v}^{e}" if e != 1 else str(v) for v, e in V.items())
+        )
 
 
 class Polynomial:
@@ -98,7 +100,7 @@ class Polynomial:
 
     def copy(self):
         P = type(self)()
-        P.monomials = {m.copy() : c for m, c in self.monomials.items()}
+        P.monomials = {m.copy(): c for m, c in self.monomials.items()}
         return P
 
     def clean_copy(self):
@@ -152,7 +154,9 @@ class Polynomial:
                 M[r] = addcoef
         else:
             assert not self._coefficient_is_zero(cur)
-            newcoef = self._simplify_coefficient(cur + self._create_coefficient(coef, r))
+            newcoef = self._simplify_coefficient(
+                cur + self._create_coefficient(coef, r)
+            )
             if self._coefficient_is_zero(newcoef):
                 M.pop(r)
             else:
@@ -167,7 +171,7 @@ class Polynomial:
                 for rhsm, rhsc in r:
                     assert not self._coefficient_is_zero(rhsc), r
                     self._add_monomial(rhsm, rhsc)
-            elif isinstance(r, tuple): # tuple of coef and monomial
+            elif isinstance(r, tuple):  # tuple of coef and monomial
                 self._add_monomial(r[1], r[0])
             else:
                 raise NotImplementedError(f"Unhandled polynomial expression: {r}")
@@ -188,7 +192,9 @@ class Polynomial:
 
     def _mul_monomials(self, newP, lhsm, lhsc, rhsm, rhsc=None):
         newm = lhsm.multiplied(rhsm)
-        newP[newm] = self._simplify_coefficient(lhsc * (self._create_coefficient(1, newm) if rhsc is None else rhsc))
+        newP[newm] = self._simplify_coefficient(
+            lhsc * (self._create_coefficient(1, newm) if rhsc is None else rhsc)
+        )
 
     def mul(self, *m):
         newP = {}
@@ -212,7 +218,7 @@ class Polynomial:
         cc = self._create_coefficient
         sc = self._simplify_coefficient
         for m, c in self.monomials.items():
-            newP[m] = sc(c*cc(-1, m))
+            newP[m] = sc(c * cc(-1, m))
         self.monomials = newP
 
     def max_degree(self):
@@ -269,14 +275,15 @@ class ArithFormula:
     This class makes it easy to work with commutative expressions
     by merging the operands into sets (if the operation is commutative).
     """
+
     # commutative operations
     AND = 1
-    OR  = 2
-    EQ  = 6
+    OR = 2
+    EQ = 6
 
     # non-commutative operations
-    MT_NON_COMMUTATIVE=39
-    MT_NON_ASSOCIATIVE=49
+    MT_NON_COMMUTATIVE = 39
+    MT_NON_ASSOCIATIVE = 49
     # non-associative operations
     NOT = 51
     SLE = 52
@@ -338,18 +345,30 @@ class ArithFormula:
         return op <= ArithFormula.MT_NON_ASSOCIATIVE
 
     def __op_to_str(op):
-        if op == ArithFormula.AND: return "∧"
-        if op == ArithFormula.OR  : return "∨"
-        if op == ArithFormula.NOT : return "not"
-        if op == ArithFormula.EQ  : return "="
-        if op == ArithFormula.SLE : return "≤"
-        if op == ArithFormula.SLT : return "<"
-        if op == ArithFormula.ULT : return "<u"
-        if op == ArithFormula.ULE : return "≤u"
-        if op == ArithFormula.SGE : return "≥"
-        if op == ArithFormula.SGT : return ">"
-        if op == ArithFormula.UGT : return ">u"
-        if op == ArithFormula.UGE : return "≥u"
+        if op == ArithFormula.AND:
+            return "∧"
+        if op == ArithFormula.OR:
+            return "∨"
+        if op == ArithFormula.NOT:
+            return "not"
+        if op == ArithFormula.EQ:
+            return "="
+        if op == ArithFormula.SLE:
+            return "≤"
+        if op == ArithFormula.SLT:
+            return "<"
+        if op == ArithFormula.ULT:
+            return "<u"
+        if op == ArithFormula.ULE:
+            return "≤u"
+        if op == ArithFormula.SGE:
+            return "≥"
+        if op == ArithFormula.SGT:
+            return ">"
+        if op == ArithFormula.UGT:
+            return ">u"
+        if op == ArithFormula.UGE:
+            return "≥u"
         return None
 
     def type(self):
@@ -374,9 +393,14 @@ class ArithFormula:
         "Convert this object into expression for solver"
         raise NotImplementedError("Must be overridden")
 
-    def is_eq(self): return self._ty == ArithFormula.EQ
-    def is_not(self): return self._ty == ArithFormula.NOT
-    def is_poly(self): return self._ty == ArithFormula.POLYNOM
+    def is_eq(self):
+        return self._ty == ArithFormula.EQ
+
+    def is_not(self):
+        return self._ty == ArithFormula.NOT
+
+    def is_poly(self):
+        return self._ty == ArithFormula.POLYNOM
 
     def substitute_inplace(self, *subs):
         """ Return True if the formula gets modified """
@@ -399,16 +423,21 @@ class ArithFormula:
         return changed
 
     def __eq__(self, rhs):
-        return isinstance(rhs, ArithFormula) and\
-                self._ty == rhs._ty and\
-                self._value == rhs._value and\
-                self._children == rhs._children
+        return (
+            isinstance(rhs, ArithFormula)
+            and self._ty == rhs._ty
+            and self._value == rhs._value
+            and self._children == rhs._children
+        )
 
     # FIXME: not efficient
     def __hash__(self):
         v = self._value
-        if v is not None: return hash(v)
-        return hash(self._ty)# ^ reduce(lambda a, b: hash(a) ^ hash(b), self._children)
+        if v is not None:
+            return hash(v)
+        return hash(
+            self._ty
+        )  # ^ reduce(lambda a, b: hash(a) ^ hash(b), self._children)
 
     def __repr__(self):
         ty = self._ty
@@ -421,7 +450,6 @@ class ArithFormula:
         op = ArithFormula.__op_to_str(ty)
         assert op
         return "({0})".format(op.join(map(str, self._children)))
-
 
     def __str__(self):
         ty = self._ty

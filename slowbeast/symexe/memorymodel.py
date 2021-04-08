@@ -43,9 +43,7 @@ class LazySymbolicMemoryModel(CoreMM):
         if isinstance(instr, (Alloc, GlobalVariable)):
             size = instr.size()
         elif self._overapprox_unsupported:
-            size = state.solver().Var(
-                f"ndt_size_{instr.as_value()}", get_size_type()
-            )
+            size = state.solver().Var(f"ndt_size_{instr.as_value()}", get_size_type())
         size = state.try_eval(size)
         if instr.is_global():
             ptr = state.memory.allocateGlobal(instr)
@@ -130,7 +128,10 @@ class LazySymbolicMemoryModel(CoreMM):
             return self.uninitializedRead(state, frm, ptr, bitsnum)
         # return val, err
         # FIXME: it is not always int type... we should at least use bytes type
-        return state.solver().fresh_value(f"uninit_{frm.as_value()}", IntType(bitsnum)), None
+        return (
+            state.solver().fresh_value(f"uninit_{frm.as_value()}", IntType(bitsnum)),
+            None,
+        )
 
     def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
         """
@@ -159,9 +160,7 @@ class LazySymbolicMemoryModel(CoreMM):
                 frm = state.get(fromOp)
 
         if not frm.is_pointer() and self._overapprox_unsupported:
-            val, err = self._nondet_value(
-                state, fromOp, frm, bitsnum or bytesNum * 8
-            )
+            val, err = self._nondet_value(state, fromOp, frm, bitsnum or bytesNum * 8)
             if err:
                 state.setError(err)
             else:

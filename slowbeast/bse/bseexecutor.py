@@ -7,20 +7,23 @@ from slowbeast.ir.instruction import Load
 from slowbeast.util.debugging import ldbgv
 from .memorymodel import BSEMemoryModel, _nondet_value
 
+
 def _subst_val(substitute, val, subs):
     assert isinstance(subs, tuple), subs
     assert len(subs) == 2, subs
     if subs[0].is_pointer():
         assert subs[1].is_pointer(), subs
-        subs = ((subs[0].object(), subs[1].object()),
-                (subs[0].offset(), subs[1].offset()))
+        subs = (
+            (subs[0].object(), subs[1].object()),
+            (subs[0].offset(), subs[1].offset()),
+        )
     else:
         assert not subs[1].is_pointer(), subs
         subs = (subs,)
     if val.is_pointer():
-        return Pointer(substitute(val.object(), *subs),
-                       substitute(val.offset(), *subs))
+        return Pointer(substitute(val.object(), *subs), substitute(val.offset(), *subs))
     return substitute(val, *subs)
+
 
 class BSEState(LazySEState):
     def __init__(self, executor, pc, m, solver, constraints=None):
@@ -52,7 +55,15 @@ class BSEState(LazySEState):
                 if val1 is val2 or val1.bitwidth() != val2.bitwidth():
                     continue
                 # if the pointers are the same, the values must be the same
-                c = Or(Not(And(Eq(ptr1.object(), ptr2.object()), Eq(ptr1.offset(), ptr2.offset()))), Eq(val1, val2))
+                c = Or(
+                    Not(
+                        And(
+                            Eq(ptr1.object(), ptr2.object()),
+                            Eq(ptr1.offset(), ptr2.offset()),
+                        )
+                    ),
+                    Eq(val1, val2),
+                )
                 if c.is_concrete() and bool(c.value()):
                     continue
                 constraints.append(c)
@@ -66,7 +77,7 @@ class BSEState(LazySEState):
 
     def _replace_value(self, prestate, val, newval):
         em = self.expr_manager()
-        #print('REPLACING', val, 'WITH', newval)
+        # print('REPLACING', val, 'WITH', newval)
 
         # coerce the values
         if not val.is_bool() and newval.is_bool():
@@ -84,7 +95,9 @@ class BSEState(LazySEState):
         if val.is_pointer():
             # if the value is pointer, we must substitute it also in the state of the memory
             assert newval.is_pointer(), newval
-            pc = substitute(pc, (val.object(), newval.object()), (val.offset(), newval.offset()))
+            pc = substitute(
+                pc, (val.object(), newval.object()), (val.offset(), newval.offset())
+            )
         else:
             # FIXME: we should replace the value also in memory, shouldn't we?
             pc = substitute(pc, (val, newval))
@@ -121,7 +134,9 @@ class BSEState(LazySEState):
         self.memory._reads = nUP
 
     def _get_symbols(self):
-        symbols = set(s for e in self.getConstraints() for s in e.symbols() if not e.is_concrete())
+        symbols = set(
+            s for e in self.getConstraints() for s in e.symbols() if not e.is_concrete()
+        )
         for ptr, val in self.memory._reads.items():
             symbols.update(ptr.symbols())
             symbols.update(val.symbols())
@@ -129,11 +144,11 @@ class BSEState(LazySEState):
 
     def join_prestate(self, prestate):
         assert isinstance(prestate, BSEState), type(prestate)
-       #print('-- Joining with pre-state')
-       #print("Pre-state:", prestate)
-       #print('-- --')
-       #print("State:", self)
-       #print('-- -- --')
+        # print('-- Joining with pre-state')
+        # print("Pre-state:", prestate)
+        # print('-- --')
+        # print("State:", self)
+        # print('-- -- --')
         ###
         em = self.expr_manager()
         try_eval = prestate.try_eval
@@ -150,19 +165,23 @@ class BSEState(LazySEState):
                 if addr:
                     val, _ = prestate.memory.read(addr, inp.value.bytewidth())
                     if val:
-                        #print('REPL from memory', inp.value, val)
+                        # print('REPL from memory', inp.value, val)
                         replace_value(prestate, inp.value, val)
             else:
                 preval = try_eval(inp.instruction)
                 if preval:
-                    #print('REPL from reg', inp.value, preval)
+                    # print('REPL from reg', inp.value, preval)
                     replace_value(prestate, inp.value, preval)
 
         # filter the inputs that still need to be found
         symbols = set(self._get_symbols())
-        self._nondets = [inp for inp in self.nondets() if not symbols.isdisjoint(inp.value.symbols())]
+        self._nondets = [
+            inp for inp in self.nondets() if not symbols.isdisjoint(inp.value.symbols())
+        ]
         assert len(self._nondets) <= len(symbols)
-        assert len(set(inp.instruction for inp in self._nondets)) == len(self._nondets), "Repeated value for an instruction"
+        assert len(set(inp.instruction for inp in self._nondets)) == len(
+            self._nondets
+        ), "Repeated value for an instruction"
 
         ### copy the data from pre-state
         # add memory state from pre-state
@@ -175,9 +194,9 @@ class BSEState(LazySEState):
             add_input(inp)
         self.addConstraint(*prestate.getConstraints())
 
-        #print("==Pre+state ==")
-        #print(self)
-        #print("==============")
+        # print("==Pre+state ==")
+        # print(self)
+        # print("==============")
         if self.isfeasible():
             return [self]
         return []
@@ -185,10 +204,15 @@ class BSEState(LazySEState):
     def __repr__(self):
         s = f"BSEState: {self.getConstraints()}"
         if self.memory._reads:
-            s += "\n"+"\n".join(f"+L({p.as_value()})={x}" for p, x in self.memory._reads.items())
+            s += "\n" + "\n".join(
+                f"+L({p.as_value()})={x}" for p, x in self.memory._reads.items()
+            )
         if self._nondets:
-            s += "\n"+"\n".join(f"{nd.instruction.as_value()}={nd.value}" for nd in self._nondets)
+            s += "\n" + "\n".join(
+                f"{nd.instruction.as_value()}={nd.value}" for nd in self._nondets
+            )
         return s
+
 
 class Executor(PathExecutor):
     """
@@ -250,9 +274,15 @@ class Executor(PathExecutor):
 
         return ready, nonready
 
-    def execute_annotated_edge(self, states, edge,
-                     pre=None, post=None,
-                     annot_before_loc=None, annot_after_loc=None):
+    def execute_annotated_edge(
+        self,
+        states,
+        edge,
+        pre=None,
+        post=None,
+        annot_before_loc=None,
+        annot_after_loc=None,
+    ):
         """
         states - pre-condition states (execute from these states)
         """
@@ -305,4 +335,3 @@ class Executor(PathExecutor):
             nonready += tu
 
         return ready, nonready
-

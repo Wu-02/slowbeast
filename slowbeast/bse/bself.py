@@ -13,7 +13,12 @@ from slowbeast.symexe.annotations import AssertAnnotation
 
 from slowbeast.solvers.solver import getGlobalExprManager
 
-from .bse import BackwardSymbolicInterpreter as BaseBSE, BSEContext, report_state, check_paths
+from .bse import (
+    BackwardSymbolicInterpreter as BaseBSE,
+    BSEContext,
+    report_state,
+    check_paths,
+)
 from slowbeast.kindse.inductivesequence import InductiveSequence
 from slowbeast.kindse.overapproximations import overapprox_set
 from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
@@ -51,6 +56,7 @@ def _dump_inductive_sets(checker, loc):
     else:
         dbg(" ∅", color="dark_green")
 
+
 def overapprox(executor, s, E, target, L):
     create_set = executor.create_set
     S = create_set(s)
@@ -71,7 +77,9 @@ def overapprox(executor, s, E, target, L):
     for rel in get_const_cmp_relations(S.get_se_state()):
         ldbg("  Adding relation {0}", (rel,))
         S.intersect(rel)
-        assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+        assert (
+            not S.is_empty()
+        ), f"Added realtion {rel} rendered the set infeasible\n{S}"
         assert intersection(
             S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
@@ -79,22 +87,24 @@ def overapprox(executor, s, E, target, L):
     for rel in get_var_relations([S.get_se_state()], prevsafe=target):
         ldbg("  Using assumption {0}", (rel,))
         assumptions = create_set(rel)
-        assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+        assert not intersection(
+            assumptions, S
+        ).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
         assert intersection(
             assumptions, S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
         assert not S.is_empty(), "Infeasible states given to overapproximate"
-        yield overapprox_set(executor, s.expr_manager(),
-                             S, E, target, assumptions, L)
+        yield overapprox_set(executor, s.expr_manager(), S, E, target, assumptions, L)
 
-    #try without any relation
+    # try without any relation
     assert not S.is_empty(), "Infeasible states given to overapproximate"
     yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
 
 
-def is_seq_inductive(seq, executor, L : LoopInfo):
+def is_seq_inductive(seq, executor, L: LoopInfo):
     return L.set_is_inductive(executor.create_set(seq.toannotation()))
+
 
 class BSELFChecker(BaseBSE):
     """
@@ -104,14 +114,15 @@ class BSELFChecker(BaseBSE):
     It inherits from BaseBSE to have the capabilities to execute paths.
     """
 
-    def __init__(self, loc, A, program, programstructure, opts,
-                 invariants=None, indsets=None):
+    def __init__(
+        self, loc, A, program, programstructure, opts, invariants=None, indsets=None
+    ):
         super().__init__(
             program,
             ohandler=None,
             opts=opts,
             programstructure=programstructure,
-            invariants=invariants
+            invariants=invariants,
         )
         assert isinstance(opts, BSELFOptions), opts
         self.program = program
@@ -122,7 +133,7 @@ class BSELFChecker(BaseBSE):
         self._target_is_whole_seq = opts.target_is_whole_seq
 
         self.create_set = self.ind_executor().create_states_set
-        self.get_loop_headers= programstructure.get_loop_headers
+        self.get_loop_headers = programstructure.get_loop_headers
 
         self.loop_info = {}
 
@@ -210,7 +221,6 @@ class BSELFChecker(BaseBSE):
 
         return r
 
-
     def handle_loop(self, loc, errpre):
         assert (
             loc not in self.no_sum_loops
@@ -220,25 +230,25 @@ class BSELFChecker(BaseBSE):
         unsafe = [errpre]
 
         #   # first try to unroll it in the case the loop is easy to verify
-       #maxk = 15
-       #dbg_sec(f"Unwinding the loop {maxk} steps")
-       #res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
-       #dbg_sec()
-       #if res is Result.SAFE:
-       #   print_stdout(
-       #       f"Loop {loc} proved by unwinding", color="GREEN"
-       #   )
-       #   return res, []
-       #elif res is Result.UNSAFE:
-       #   self.no_sum_loops.add(loc)
-       #   return res, [path]  # found an error
+        # maxk = 15
+        # dbg_sec(f"Unwinding the loop {maxk} steps")
+        # res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
+        # dbg_sec()
+        # if res is Result.SAFE:
+        #   print_stdout(
+        #       f"Loop {loc} proved by unwinding", color="GREEN"
+        #   )
+        #   return res, []
+        # elif res is Result.UNSAFE:
+        #   self.no_sum_loops.add(loc)
+        #   return res, [path]  # found an error
 
         L = self.get_loop(loc)
         if L is None:
             print_stdout("Was not able to construct the loop info")
             print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
             self.no_sum_loops.add(loc)
-            #return Result.UNKNOWN, unwoundloop
+            # return Result.UNKNOWN, unwoundloop
             return False
 
         return self.fold_loop(loc, L, unsafe)
@@ -285,7 +295,7 @@ class BSELFChecker(BaseBSE):
 
                 yield A
 
-    def get_simple_initial_seqs(self, unsafe : list, L : Loop):
+    def get_simple_initial_seqs(self, unsafe: list, L: Loop):
         E = self.create_set(unsafe[0])
 
         S = E.copy()
@@ -304,13 +314,15 @@ class BSELFChecker(BaseBSE):
                 dbg("... (no match in inductive sets)")
                 Is = self.initial_sets_from_exits(E, L)
             if Is:
-                for s in (InductiveSequence(I.as_assert_annotation(), None) for I in Is):
+                for s in (
+                    InductiveSequence(I.as_assert_annotation(), None) for I in Is
+                ):
                     dbg("... (got first IS)")
                     # should be inductive from construction
-                    assert is_seq_inductive(s, self, L), f'seq is not inductive: {s}'
+                    assert is_seq_inductive(s, self, L), f"seq is not inductive: {s}"
                     seqs.append(s)
-                   #if is_seq_inductive(s, self, L):
-                   #    seqs.append(s)
+                # if is_seq_inductive(s, self, L):
+                #    seqs.append(s)
             seqs = seqs or None
         else:
             dbg("... (complement is inductive)")
@@ -318,14 +330,14 @@ class BSELFChecker(BaseBSE):
 
         return target0, seqs, errs0
 
-    def get_initial_seqs(self, unsafe : list, L : Loop):
+    def get_initial_seqs(self, unsafe: list, L: Loop):
         assert len(unsafe) == 1, "One path raises multiple unsafe states"
 
         target0, seqs, errs0 = self.get_simple_initial_seqs(unsafe, L)
         # reduce and over-approximate the initial sequence
         if seqs:
             tmp = []
-            dbg(f'Got {len(seqs)} starting inductive sequence(s)')
+            dbg(f"Got {len(seqs)} starting inductive sequence(s)")
             for seq in seqs:
                 tmp.extend(self.overapprox_init_seq(seq, errs0, L))
             if tmp:
@@ -348,7 +360,9 @@ class BSELFChecker(BaseBSE):
         for rel in get_const_cmp_relations(S.get_se_state()):
             ldbg("  Adding relation {0}", (rel,))
             S.intersect(rel)
-            assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+            assert (
+                not S.is_empty()
+            ), f"Added realtion {rel} rendered the set infeasible\n{S}"
             assert intersection(
                 S, unsafe
             ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
@@ -357,15 +371,16 @@ class BSELFChecker(BaseBSE):
         for rel in get_var_relations([S.get_se_state()], prevsafe=target):
             ldbg("  Using assumption {0}", (rel,))
             assumptions.intersect(rel)
-            assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+            assert not intersection(
+                assumptions, S
+            ).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
             assert intersection(
                 assumptions, S, unsafe
             ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
             seq = InductiveSequence(
                 overapprox_set(
-                    self, EM, S, errs0.toassert(), target,
-                    assumptions, L
+                    self, EM, S, errs0.toassert(), target, assumptions, L
                 ).as_assert_annotation()
             )
 
@@ -375,8 +390,7 @@ class BSELFChecker(BaseBSE):
         # try without relations
         seq = InductiveSequence(
             overapprox_set(
-                self, EM, S, errs0.toassert(), target,
-                None, L
+                self, EM, S, errs0.toassert(), target, None, L
             ).as_assert_annotation()
         )
 
@@ -450,11 +464,9 @@ class BSELFChecker(BaseBSE):
 
         if __debug__:
             for seq0 in seqs0:
-                assert (
-                    intersection(
-                        create_set(seq0.toannotation()), errs0.toassert()
-                    ).is_empty()
-                ), "Initial sequence contains error states"
+                assert intersection(
+                    create_set(seq0.toannotation()), errs0.toassert()
+                ).is_empty(), "Initial sequence contains error states"
 
         # now we do not support empty sequences
         assert all(map(lambda s: s is not None, seqs0)), "A sequence is none"
@@ -464,7 +476,7 @@ class BSELFChecker(BaseBSE):
 
         print_stdout(f"Folding loop {loc} with errors {errs0}", color="white")
 
-        max_seq_len = 2*len(L.paths())
+        max_seq_len = 2 * len(L.paths())
         while True:
             print_stdout(
                 f"Got {len(sequences)} abstract path(s) of loop " f"{loc}",
@@ -499,7 +511,6 @@ class BSELFChecker(BaseBSE):
                         print_stdout(f"{S} holds on {loc}", color="BLUE")
                         return True
 
-
             extended = []
             for seq in sequences:
                 print_stdout(
@@ -525,7 +536,9 @@ class BSELFChecker(BaseBSE):
                     drop = False
                     for C in new_frames_complements:
                         if intersection(C, A).is_empty():
-                            print(f"Did not extended with: {A} (already has same or bigger frame)")
+                            print(
+                                f"Did not extended with: {A} (already has same or bigger frame)"
+                            )
                             drop = True
                             break
                     if drop:
@@ -536,7 +549,9 @@ class BSELFChecker(BaseBSE):
                     tmp = seq.copy() if seq else InductiveSequence()
                     tmp.append(A.as_assert_annotation(), None)
                     if __debug__:
-                        assert is_seq_inductive(tmp, self, L), f"Extended sequence is not inductive)"
+                        assert is_seq_inductive(
+                            tmp, self, L
+                        ), f"Extended sequence is not inductive)"
 
                     # extended.append(self.abstract_seq(e, errs0, L))
                     extended.append(tmp)
@@ -563,8 +578,9 @@ class BSELFChecker(BaseBSE):
         for edge in onlyedges if onlyedges else loc.predecessors():
             state = self.ind_executor().createCleanState()
             state.apply_postcondition(notA)
-            self.queue_state(BSEContext(edge, state,
-                                        AssertFailError(f"{loc} reachable.")))
+            self.queue_state(
+                BSEContext(edge, state, AssertFailError(f"{loc} reachable."))
+            )
 
         opt_fold_loops = self.getOptions().fold_loops
         while True:
@@ -574,12 +590,12 @@ class BSELFChecker(BaseBSE):
                     Result.UNKNOWN if (self.problematic_states) else Result.SAFE
                 ), self.problematic_paths_as_result()
 
-            #ldbgv("Main loop state: {0}", (bsectx,))
+            # ldbgv("Main loop state: {0}", (bsectx,))
             r, pre = self.precondition(bsectx)
             if r is Result.SAFE:
                 assert pre is None, "Feasible precondition for infeasible error path"
-                continue # infeasible path
-            elif r is Result.UNSAFE: # real error
+                continue  # infeasible path
+            elif r is Result.UNSAFE:  # real error
                 return r, pre
             else:  #  the error path is feasible, but the errors may not be real
                 assert r is Result.UNKNOWN
@@ -617,7 +633,6 @@ class BSELF:
 
         self.invariants = {}
 
-
     # FIXME: make this a method of output handler or some function (get rid of 'self')
     # after all, we want such functionality with every analysis
     # FIXME: copied from BaseKindSE
@@ -643,14 +658,22 @@ class BSELF:
         has_unknown = False
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = BSELFChecker(loc, A,
-                                   self.program, self.programstructure, self.options,
-                                   invariants=self.invariants)
+            checker = BSELFChecker(
+                loc,
+                A,
+                self.program,
+                self.programstructure,
+                self.options,
+                invariants=self.invariants,
+            )
             result, states = checker.check()
             self.stats.add(checker.stats)
             if result is Result.UNSAFE:
                 # FIXME: report the error from bsecontext
-                print_stdout(f"{states.get_id()}: [assertion error]: {loc} reachable.", color="redul")
+                print_stdout(
+                    f"{states.get_id()}: [assertion error]: {loc} reachable.",
+                    color="redul",
+                )
                 print_stdout(str(states), color="wine")
                 print_stdout("Error found.", color="redul")
                 self.stats.errors += 1

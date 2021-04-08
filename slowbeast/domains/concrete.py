@@ -151,7 +151,11 @@ class ConcreteVal(Value):
         return self._value
 
     def __eq__(self, rhs):
-        return False if not isinstance(rhs, ConcreteVal) else self.value() == rhs.value() and self.type() == rhs.type()
+        return (
+            False
+            if not isinstance(rhs, ConcreteVal)
+            else self.value() == rhs.value() and self.type() == rhs.type()
+        )
 
 
 class ConcreteBool(ConcreteVal):
@@ -255,11 +259,11 @@ class ConcreteDomain:
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         assert a.is_int(), a
-        #FIXME: support bytes...
-       #sb = 1 << (b.value() - 1)
-       #aval = to_bv(a, unsigned=False)
-       #val = (aval & (sb - 1)) - (aval & sb)
-       #return ConcreteInt(val, b.value())
+        # FIXME: support bytes...
+        # sb = 1 << (b.value() - 1)
+        # aval = to_bv(a, unsigned=False)
+        # val = (aval & (sb - 1)) - (aval & sb)
+        # return ConcreteInt(val, b.value())
         return ConcreteInt(a.value(), b.value())
 
     def Cast(a: ConcreteVal, ty: Type):

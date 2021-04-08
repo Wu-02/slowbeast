@@ -7,6 +7,7 @@ from slowbeast.core.errors import MemError
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
 from slowbeast.symexe.memory import Memory as SEMemory
 
+
 def _nondet_value(fresh, op, bitsnum):
     if op.type().is_bool():
         return fresh(f"unknown_bool_{op.as_value()}", BoolType())
@@ -16,6 +17,7 @@ def _nondet_value(fresh, op, bitsnum):
         return Pointer(ptrobj, ptroff)
     else:
         return fresh(f"uninit_{op.as_value()}", IntType(bitsnum))
+
 
 # FIXME: do we need to inherit from SEMemory?
 class BSEMemory(SEMemory):
@@ -57,13 +59,14 @@ class BSEMemory(SEMemory):
         if val:
             if val.bytewidth() != bytesNum:
                 return None, MemError(
-                    MemError.UNSUPPORTED, f"Read of value with different sizes: {val} {bytesNum}"
+                    MemError.UNSUPPORTED,
+                    f"Read of value with different sizes: {val} {bytesNum}",
                 )
             return val, None
         if not ptr.object().is_concrete() or not ptr.offset().is_concrete():
             val = _nondet_value(state.solver().fresh_value, valinst, bytesNum * 8)
             state.create_nondet(valinst, val)
-            self._reads[ptr] =  val
+            self._reads[ptr] = val
             return val, None
         raise NotImplementedError("Not implemented")
         # concrete read
@@ -76,7 +79,8 @@ class BSEMemory(SEMemory):
             )
         if v.bytewidth() != bytesNum:
             return None, MemError(
-                MemError.UNSUPPORTED, f"Read of value with different sizes: {v} {bytesNum}"
+                MemError.UNSUPPORTED,
+                f"Read of value with different sizes: {v} {bytesNum}",
             )
         return v, None
 
@@ -121,8 +125,6 @@ class BSEMemory(SEMemory):
         self._cs.dump(stream)
 
 
-
-
 # BSESymbolicMemoryModel inherints from CoreMM intentionally (
 # symexe.Memory overrides uninitialized reads in the Memory() object
 # in a way that is not suitable for lazy memory
@@ -147,9 +149,7 @@ class BSEMemoryModel(CoreMM):
         if isinstance(instr, (Alloc, GlobalVariable)):
             size = instr.size()
         else:
-            size = state.solver().Var(
-                f"ndt_size_{instr.as_value()}", get_size_type()
-            )
+            size = state.solver().Var(f"ndt_size_{instr.as_value()}", get_size_type())
         size = state.try_eval(size)
         if instr.is_global():
             ptr = state.memory.allocateGlobal(instr)

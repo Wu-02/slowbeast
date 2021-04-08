@@ -73,7 +73,7 @@ class Loop:
             for path in queue:
                 for succedge in path[-1].successors():
                     if succedge in self._exits:
-                        pass #drop
+                        pass  # drop
                     elif succedge in self._backedges:
                         result.append(path.copyandappend(succedge))
                     else:

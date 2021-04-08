@@ -6,20 +6,22 @@ from slowbeast.solvers.solver import IncrementalSolver
 from copy import copy
 from sys import stdout
 
+
 def _sort_subs(subs):
     """
     Return multiplication of two variables later than other expressions
     """
-    #FIXME: not very efficient
+    # FIXME: not very efficient
     V = []
     for k, v in subs.items():
         s = sum(map(lambda c: not c.is_concrete(), k.children()))
         if s > 1:
             V.append((k, v))
         else:
-            yield (k,v)
+            yield (k, v)
     for k, v in V:
         yield (k, v)
+
 
 def try_solve_incrementally(assumptions, exprs, em):
     if assumptions:
@@ -28,7 +30,9 @@ def try_solve_incrementally(assumptions, exprs, em):
         A = []
         for i in range(len(assumptions)):
             a = assumptions[i]
-            A.append(a.rewrite_polynomials([x for n, x in enumerate(assumptions) if n != i]))
+            A.append(
+                a.rewrite_polynomials([x for n, x in enumerate(assumptions) if n != i])
+            )
         assumptions = A
         r = IncrementalSolver().try_is_sat(3000, *assumptions, expr1)
         if r is not None:
@@ -53,6 +57,7 @@ def try_solve_incrementally(assumptions, exprs, em):
     # FIXME try reduced bitwidth and propagating back models
     return None
 
+
 class Nondet:
     __slots__ = "instruction", "value"
 
@@ -71,6 +76,7 @@ class Nondet:
 
     def __repr__(self):
         return f"{self.instruction.as_value()} = {self.value}"
+
 
 class SEState(ExecutionState):
     """ Execution state of symbolic execution """
@@ -167,8 +173,10 @@ class SEState(ExecutionState):
 
     def model(self):
         return {
-            x : c for (x, c) in zip(self.nondet_values(),
-                                    self.concretize(*self.nondet_values()))
+            x: c
+            for (x, c) in zip(
+                self.nondet_values(), self.concretize(*self.nondet_values())
+            )
         }
 
     def concretize_with_assumptions(self, assumptions, *e):
@@ -232,7 +240,7 @@ class SEState(ExecutionState):
         return self._warnings
 
     def create_nondet(self, instr, val):
-        #self.add_nondet(Nondet(instr, NondetInstrResult.fromExpr(val, instr)))
+        # self.add_nondet(Nondet(instr, NondetInstrResult.fromExpr(val, instr)))
         self.add_nondet(Nondet(instr, val))
 
     def add_nondet(self, n):
@@ -242,7 +250,9 @@ class SEState(ExecutionState):
             self._nondets_ro = False
         # we can have only one nonded for a given allocation
         if n.is_nondet_load() and self.getNondetLoadOf(n.alloc) is not None:
-            raise RuntimeError(f"Multiple nondets of the same load unsupported atm: n:{n}, nondets: {self._nondets}")
+            raise RuntimeError(
+                f"Multiple nondets of the same load unsupported atm: n:{n}, nondets: {self._nondets}"
+            )
         self._nondets.append(n)
 
     def has_nondets(self):

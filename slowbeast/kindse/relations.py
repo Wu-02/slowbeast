@@ -5,7 +5,6 @@ from slowbeast.symexe.annotations import AssertAnnotation, get_subs
 from slowbeast.solvers.solver import Solver
 
 
-
 def get_safe_subexpressions(state, unsafe):
     subs = get_subs(state)
     EM = state.expr_manager()
@@ -86,24 +85,21 @@ def get_var_diff_relations(state):
                 yield AssertAnnotation(
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
- 
-           #else:
-           #    # check d*l1 + e+l2 = c
-           #    d = EM.Var(f"c_{l1name}", IntType(bw))
-           #    e = EM.Var(f"c_{l2name}", IntType(bw))
-           #    expr = EM.Eq(EM.Add(EM.Mul(d, l1), EM.Mul(e, l2)), c)
-           #    # we do not want the trivial solution
-           #    exprchk = EM.And(EM.Or(EM.Ne(d, ConcreteInt(0, bw)), EM.Ne(e, ConcreteInt(0, bw))), expr)
-           #    c_concr = state.concretize_with_assumptions([exprchk], c, d, e)
-           #    if state.is_sat(exprchk, EM.Ne(c, c_concr[0])) is False and\
-           #       state.is_sat(exprchk, EM.Ne(d, c_concr[1])) is False and\
-           #       state.is_sat(exprchk, EM.Ne(e, c_concr[2])) is False:
-           #        yield AssertAnnotation(
-           #            EM.simplify(EM.substitute(expr, zip((d, e, c), c_concr))), subs, EM
-           #        )
 
-
-
+        # else:
+        #    # check d*l1 + e+l2 = c
+        #    d = EM.Var(f"c_{l1name}", IntType(bw))
+        #    e = EM.Var(f"c_{l2name}", IntType(bw))
+        #    expr = EM.Eq(EM.Add(EM.Mul(d, l1), EM.Mul(e, l2)), c)
+        #    # we do not want the trivial solution
+        #    exprchk = EM.And(EM.Or(EM.Ne(d, ConcreteInt(0, bw)), EM.Ne(e, ConcreteInt(0, bw))), expr)
+        #    c_concr = state.concretize_with_assumptions([exprchk], c, d, e)
+        #    if state.is_sat(exprchk, EM.Ne(c, c_concr[0])) is False and\
+        #       state.is_sat(exprchk, EM.Ne(d, c_concr[1])) is False and\
+        #       state.is_sat(exprchk, EM.Ne(e, c_concr[2])) is False:
+        #        yield AssertAnnotation(
+        #            EM.simplify(EM.substitute(expr, zip((d, e, c), c_concr))), subs, EM
+        #        )
 
         # check equalities to other loads: l1 - l2 = k*l3
         for nd3 in state.getNondetLoads():
@@ -124,22 +120,30 @@ def get_var_diff_relations(state):
                 yield AssertAnnotation(EM.Eq(EM.Sub(l2, l1), l3), subs, EM)
             else:
                 c = EM.fresh_value(f"c_mul_{l1name}{l2name}{l3name}", IntType(bw))
-                #expr = EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3))
-                expr = EM.And(EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3)), EM.Ne(c, ConcreteInt(0, bw)))
+                # expr = EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3))
+                expr = EM.And(
+                    EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3)), EM.Ne(c, ConcreteInt(0, bw))
+                )
                 c_concr = state.concretize_with_assumptions([expr], c)
                 if c_concr is not None:
                     # is c unique?
                     cval = c_concr[0]
                     if state.is_sat(EM.substitute(expr, (c, cval))) is False:
                         yield AssertAnnotation(
-                            EM.simplify(EM.Eq(EM.Add(l1, l2), EM.Mul(cval, l3))), subs, EM
+                            EM.simplify(EM.Eq(EM.Add(l1, l2), EM.Mul(cval, l3))),
+                            subs,
+                            EM,
                         )
 
 
 def _compare_two_loads(state, l1, l2):
     subs = get_subs(state)
     EM = state.expr_manager()
-    Lt, Gt, Eq, = EM.Lt, EM.Gt, EM.Eq
+    Lt, Gt, Eq, = (
+        EM.Lt,
+        EM.Gt,
+        EM.Eq,
+    )
     simpl = EM.simplify
 
     l1bw = l1.type().bitwidth()
@@ -156,7 +160,7 @@ def _compare_two_loads(state, l1, l2):
 
     if lt is False:  # l1 >= l2
         if gt is False:  # l1 <= l2
-            yield AssertAnnotation(simpl(Eq(l1, l2)), subs, EM )
+            yield AssertAnnotation(simpl(Eq(l1, l2)), subs, EM)
         elif gt is True:  # l1 >= l2
             if state.is_sat(Eq(l1, l2)) is False:
                 yield AssertAnnotation(simpl(Gt(l1, l2)), subs, EM)
@@ -168,6 +172,7 @@ def _compare_two_loads(state, l1, l2):
                 yield AssertAnnotation(simpl(Lt(l1, l2)), subs, EM)
             else:
                 yield AssertAnnotation(simpl(EM.Le(l1, l2)), subs, EM)
+
 
 # def get_var_cmp_relations(state):
 #
@@ -243,23 +248,24 @@ def get_relations_to_prev_states(state, prev):
 
 
 def get_safe_relations(safe, unsafe, prevsafe=None):
-    if not hasattr(safe, '__iter__'):
+    if not hasattr(safe, "__iter__"):
         safe = (safe,)
     for s in safe:
         # get and filter out those relations that make the state safe
         yield from get_var_diff_relations(s)
-        #yield from get_var_cmp_relations(s)
+        # yield from get_var_cmp_relations(s)
 
         yield from get_const_cmp_relations(s)
         if prevsafe:
             yield from get_relations_to_prev_states(s, prevsafe)
 
+
 def get_var_relations(safe, prevsafe=None):
-    if not hasattr(safe, '__iter__'):
+    if not hasattr(safe, "__iter__"):
         safe = (safe,)
     for s in safe:
         # get and filter out those relations that make the state safe
         yield from get_var_diff_relations(s)
-        #yield from get_var_cmp_relations(s)
+        # yield from get_var_cmp_relations(s)
         if prevsafe:
             yield from get_relations_to_prev_states(s, prevsafe)

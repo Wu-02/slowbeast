@@ -44,7 +44,9 @@ class Pointer(Value):
         return self._object == oth._object and self._offset == oth._offset
 
     def __hash__(self):
-        return (hash(self._object) & 0xffffff) ^ ((hash(self._offset) << 32) & 0xffffffff00000000)
+        return (hash(self._object) & 0xFFFFFF) ^ (
+            (hash(self._offset) << 32) & 0xFFFFFFFF00000000
+        )
 
     def dump(self):
         print(self)

@@ -83,30 +83,29 @@ class AnnotatedCFAPath:
     def last_assume_edge_idx(self):
         edges = self._edges
         if edges:
-            for idx in range(-1, -(len(edges)+1), -1):
+            for idx in range(-1, -(len(edges) + 1), -1):
                 if edges[idx].is_assume():
                     return idx
         return None
 
     def last_edge_of_idx(self, elem):
-        if not hasattr(elem, '__iter__'):
+        if not hasattr(elem, "__iter__"):
             elem = (elem,)
         edges = self._edges
-        for idx in range(-1, -(len(edges)+1), -1):
+        for idx in range(-1, -(len(edges) + 1), -1):
             if edges[idx] in elem:
                 return idx
         return None
 
     def last_loc_of_idx(self, elem):
-        if not hasattr(elem, '__iter__'):
+        if not hasattr(elem, "__iter__"):
             elem = (elem,)
         edges = self._edges
-        for idx in range(-1, -(len(edges)+1), -1):
+        for idx in range(-1, -(len(edges) + 1), -1):
             e = edges[idx]
             if e.target() in elem or e.source() in elem:
                 return idx
         return None
-
 
     def edges(self):
         return self._edges
@@ -129,7 +128,7 @@ class AnnotatedCFAPath:
     def last_idx_of(self, elem):
         edges = self._edges
         if isinstance(elem, CFA.Edge):
-            for idx in range(-1, -(len(edges)+1), -1):
+            for idx in range(-1, -(len(edges) + 1), -1):
                 if edges[idx] == elem:
                     return idx
         else:

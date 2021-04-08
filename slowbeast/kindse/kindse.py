@@ -1,6 +1,14 @@
 from heapq import heappush, heappop
 from itertools import chain
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg, dbg_sec, dbgv, ldbg, ldbgv
+from slowbeast.util.debugging import (
+    print_stderr,
+    print_stdout,
+    dbg,
+    dbg_sec,
+    dbgv,
+    ldbg,
+    ldbgv,
+)
 
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.naive.naivekindse import Result
@@ -13,7 +21,7 @@ from slowbeast.kindse.programstructure import ProgramStructure
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
     state_to_annotation,
-    execute_annotation_substitutions
+    execute_annotation_substitutions,
 )
 
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
@@ -22,6 +30,7 @@ from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
 from .overapproximations import overapprox_set
 from .relations import get_const_cmp_relations, get_var_relations
+
 
 class KindSEOptions(KindSEOptions):
     def __init__(self, copyopts=None):
@@ -40,6 +49,7 @@ class KindSEOptions(KindSEOptions):
         if parentopts:
             super(self).__init__(parentopts)
 
+
 def _dump_inductive_sets(checker, loc):
     dbg(f"With this INVARIANT set at loc {loc}:", color="dark_green")
     IS = checker.invariant_sets.get(loc)
@@ -53,7 +63,6 @@ def _dump_inductive_sets(checker, loc):
         dbg(f"\n{IS}", color="dark_green")
     else:
         dbg(" ∅", color="dark_green")
-
 
 
 def overapprox(executor, s, E, target, L):
@@ -88,7 +97,9 @@ def overapprox(executor, s, E, target, L):
     for rel in get_const_cmp_relations(S.get_se_state()):
         ldbg("  Adding relation {0}", (rel,))
         S.intersect(rel)
-        assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+        assert (
+            not S.is_empty()
+        ), f"Added realtion {rel} rendered the set infeasible\n{S}"
         assert intersection(
             S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
@@ -96,18 +107,20 @@ def overapprox(executor, s, E, target, L):
     for rel in get_var_relations([S.get_se_state()], prevsafe=target):
         ldbg("  Using assumption {0}", (rel,))
         assumptions = create_set(rel)
-        assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+        assert not intersection(
+            assumptions, S
+        ).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
         assert intersection(
             assumptions, S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
         assert not S.is_empty(), "Infeasible states given to overapproximate"
-        yield overapprox_set(executor, s.expr_manager(),
-                             S, E, target, assumptions, L)
+        yield overapprox_set(executor, s.expr_manager(), S, E, target, assumptions, L)
 
-    #try without any relation
+    # try without any relation
     assert not S.is_empty(), "Infeasible states given to overapproximate"
     yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
+
 
 def report_state(stats, n, fn=print_stderr):
     if n.hasError():
@@ -122,17 +135,20 @@ def report_state(stats, n, fn=print_stderr):
             fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
 
+
 def strip_first_assume_edge(path: AnnotatedCFAPath):
     idx = path.first_assume_edge_idx()
     # we use this func only on loop edges, so it must contain the entry condition
     assert idx is not None and idx + 1 < len(path)
     return path.subpath(idx + 1)
 
+
 def strip_last_assume_edge(path: AnnotatedCFAPath):
     idx = path.last_assume_edge_idx()
     # we use this func only on loop edges, so it must contain the entry condition
     assert idx is not None and idx + 1 < len(path)
     return path.subpath(0, idx - 1)
+
 
 def strip_last_exit_edge(path: AnnotatedCFAPath, exits):
     idx = path.last_edge_of_idx(exits)
@@ -146,6 +162,7 @@ def suffixes_starting_with(paths, loc):
         for idx in range(len(path)):
             if path[idx].source() == loc:
                 yield path.subpath(idx)
+
 
 # def can_reach_header(loc, header, headers):
 #     " headers - other loop headers, we stop there"
@@ -162,6 +179,7 @@ def suffixes_starting_with(paths, loc):
 
 def postcondition_expr(s):
     return state_to_annotation(s).do_substitutions(s)
+
 
 class InductiveSet:
     """
@@ -204,6 +222,7 @@ class InductiveSet:
 
     def __repr__(self):
         return self.I.__repr__()
+
 
 class LoopInfo:
     def __init__(self, executor, loop):
@@ -274,7 +293,7 @@ class LoopInfo:
             solver.add(s.path_condition())
             if solver.is_sat() is False:
                 solver.pop()
-                continue # infeasible path
+                continue  # infeasible path
             has_feasible = True
             expr = postannot.do_substitutions(s)
             if solver.is_sat(Not(expr)) is True:
@@ -285,19 +304,22 @@ class LoopInfo:
         return has_feasible or allow_infeasible_only
 
 
-def is_seq_inductive(seq, executor, L : LoopInfo):
+def is_seq_inductive(seq, executor, L: LoopInfo):
     return L.set_is_inductive(executor.create_set(seq.toannotation()))
-   #r = seq.check_ind_on_paths(executor, L.paths())
-   #for s in r.killed():
-   #    dbg("Killed a state")
-   #    report_state(executor.stats, s)
-   #    return False
-   #res = r.errors is None
-   #if r.errors:
-   #    print(r.errors[0].path_condition())
-   #lres = L.set_is_inductive(executor.create_set(seq.toannotation()))
-   #assert res == lres, f"{res} != {lres}"
-   #return res
+
+
+# r = seq.check_ind_on_paths(executor, L.paths())
+# for s in r.killed():
+#    dbg("Killed a state")
+#    report_state(executor.stats, s)
+#    return False
+# res = r.errors is None
+# if r.errors:
+#    print(r.errors[0].path_condition())
+# lres = L.set_is_inductive(executor.create_set(seq.toannotation()))
+# assert res == lres, f"{res} != {lres}"
+# return res
+
 
 class KindSEChecker(BaseKindSE):
     """
@@ -305,8 +327,9 @@ class KindSEChecker(BaseKindSE):
     It inherits from BaseKindSE to have the capabilities to execute paths.
     """
 
-    def __init__(self, loc, A, program, programstructure, opts,
-                 invariants=None, indsets=None):
+    def __init__(
+        self, loc, A, program, programstructure, opts, invariants=None, indsets=None
+    ):
         super().__init__(
             program,
             ohandler=None,
@@ -323,10 +346,9 @@ class KindSEChecker(BaseKindSE):
         self._simple_sis = opts.simple_sis
 
         self.create_set = self.ind_executor().create_states_set
-        self.get_loop_headers= programstructure.get_loop_headers
+        self.get_loop_headers = programstructure.get_loop_headers
 
         self.loop_info = {}
-
 
         # paths to still search
         self.readypaths = []
@@ -399,7 +421,7 @@ class KindSEChecker(BaseKindSE):
                     return Result.UNSAFE, [p]
                 # otherwise just prolong the paths that failed
                 if states.errors:
-                     newpaths.extend(self.extend_paths(p, None))
+                    newpaths.extend(self.extend_paths(p, None))
             paths = newpaths
             k += 1
         return Result.UNKNOWN if paths else Result.SAFE, paths
@@ -420,13 +442,11 @@ class KindSEChecker(BaseKindSE):
         res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
         dbg_sec()
         if res is Result.SAFE:
-           print_stdout(
-               f"Loop {loc} proved by unwinding", color="GREEN"
-           )
-           return res, []
+            print_stdout(f"Loop {loc} proved by unwinding", color="GREEN")
+            return res, []
         elif res is Result.UNSAFE:
-           self.no_sum_loops.add(loc)
-           return res, [path]  # found an error
+            self.no_sum_loops.add(loc)
+            return res, [path]  # found an error
 
         L = self.get_loop(loc)
         if L is None:
@@ -484,45 +504,45 @@ class KindSEChecker(BaseKindSE):
 
                 yield A
 
-   #def abstract_seq(self, seq, errs0, L):
-   #    # don't try with short sequences
-   #    if len(seq) < 5:
-   #        return seq
+    # def abstract_seq(self, seq, errs0, L):
+    #    # don't try with short sequences
+    #    if len(seq) < 5:
+    #        return seq
 
-   #    # try to merge last two frames
-   #    assert len(seq) >= 2
-   #    A1 = seq[-1].toassume()
-   #    A2 = seq[-2].toassume()
-   #    e1 = A1.expr().to_cnf()
-   #    e2 = A2.expr().to_cnf()
+    #    # try to merge last two frames
+    #    assert len(seq) >= 2
+    #    A1 = seq[-1].toassume()
+    #    A2 = seq[-2].toassume()
+    #    e1 = A1.expr().to_cnf()
+    #    e2 = A2.expr().to_cnf()
 
-   #    C1 = set(e1.children())
-   #    C = set()
-   #    N1 = set()
-   #    N2 = set()
-   #    for c in e2.children():
-   #        if c in C1:
-   #            C.add(c)
-   #        else:
-   #            N2.add(c)
-   #    for c in C1:
-   #        if c not in C:
-   #            N1.add(c)
+    #    C1 = set(e1.children())
+    #    C = set()
+    #    N1 = set()
+    #    N2 = set()
+    #    for c in e2.children():
+    #        if c in C1:
+    #            C.add(c)
+    #        else:
+    #            N2.add(c)
+    #    for c in C1:
+    #        if c not in C:
+    #            N1.add(c)
 
-   #    if not C:
-   #        return seq
+    #    if not C:
+    #        return seq
 
-   #    # replace last two frames with one merged frame
-   #    EM = getGlobalExprManager()
-   #    seq.pop()
+    #    # replace last two frames with one merged frame
+    #    EM = getGlobalExprManager()
+    #    seq.pop()
 
-   #    seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.substitutions(), EM)
-   #    S1 = AssertAnnotation(EM.conjunction(*N1), A1.substitutions(), EM)
-   #    S2 = AssertAnnotation(EM.conjunction(*N2), A2.substitutions(), EM)
-   #    seq[-1].strengthening = or_annotations(EM, True, S1, S2)
+    #    seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.substitutions(), EM)
+    #    S1 = AssertAnnotation(EM.conjunction(*N1), A1.substitutions(), EM)
+    #    S2 = AssertAnnotation(EM.conjunction(*N2), A2.substitutions(), EM)
+    #    seq[-1].strengthening = or_annotations(EM, True, S1, S2)
 
-   #    # FIXME: we are still precise, use abstraction here...
-   #    return seq
+    #    # FIXME: we are still precise, use abstraction here...
+    #    return seq
 
     def initial_seq_from_last_iter(self, E: StatesSet, path, L: Loop):
         """
@@ -545,7 +565,7 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
-    def get_simple_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
+    def get_simple_initial_seqs(self, unsafe: list, path: AnnotatedCFAPath, L: Loop):
         E = self.create_set(unsafe[0])
 
         S = E.copy()
@@ -564,13 +584,15 @@ class KindSEChecker(BaseKindSE):
                 dbg("... (no match in inductive sets)")
                 Is = self.initial_sets_from_exits(E, path, L)
             if Is:
-                for s in (InductiveSequence(I.as_assert_annotation(), None) for I in Is):
+                for s in (
+                    InductiveSequence(I.as_assert_annotation(), None) for I in Is
+                ):
                     dbg("... (got first IS)")
                     # should be inductive from construction
-                    assert is_seq_inductive(s, self, L), 'seq is not inductive'
+                    assert is_seq_inductive(s, self, L), "seq is not inductive"
                     seqs.append(s)
-                   #if is_seq_inductive(s, self, L):
-                   #    seqs.append(s)
+                # if is_seq_inductive(s, self, L):
+                #    seqs.append(s)
             seqs = seqs or None
         else:
             dbg("... (complement is inductive)")
@@ -578,8 +600,7 @@ class KindSEChecker(BaseKindSE):
 
         return target0, seqs, errs0
 
-
-    def get_acc_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
+    def get_acc_initial_seqs(self, unsafe: list, path: AnnotatedCFAPath, L: Loop):
         # TODO: self-loops? Those are probably OK as that would be only assume edge
         errstate = unsafe[0]
         EM = errstate.expr_manager()
@@ -606,8 +627,9 @@ class KindSEChecker(BaseKindSE):
                 # FIXME: return sets
                 dbg("Getting the initial sequence from the last iteration")
                 seq0 = self.initial_seq_from_last_iter(E, path, L)
-                assert seq0 and is_seq_inductive(seq0, self, L),\
-                       "Failed getting init seq for first iteration"
+                assert seq0 and is_seq_inductive(
+                    seq0, self, L
+                ), "Failed getting init seq for first iteration"
                 seqs = [seq0] if seq0 else []
             else:
                 dbg("Initial sequence is NOT inductive, fixing it", color="wine")
@@ -615,7 +637,7 @@ class KindSEChecker(BaseKindSE):
 
         return target0, seqs, errs0
 
-    def get_initial_seqs(self, unsafe : list, path : AnnotatedCFAPath, L : Loop):
+    def get_initial_seqs(self, unsafe: list, path: AnnotatedCFAPath, L: Loop):
         assert len(unsafe) == 1, "One path raises multiple unsafe states"
 
         if self._simple_sis:
@@ -625,7 +647,7 @@ class KindSEChecker(BaseKindSE):
         # reduce and over-approximate the initial sequence
         if seqs:
             tmp = []
-            dbg(f'Got {len(seqs)} starting inductive sequence(s)')
+            dbg(f"Got {len(seqs)} starting inductive sequence(s)")
             for seq in seqs:
                 tmp.extend(self.overapprox_init_seq(seq, errs0, L))
             if tmp:
@@ -648,7 +670,9 @@ class KindSEChecker(BaseKindSE):
         for rel in get_const_cmp_relations(S.get_se_state()):
             ldbg("  Adding relation {0}", (rel,))
             S.intersect(rel)
-            assert not S.is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+            assert (
+                not S.is_empty()
+            ), f"Added realtion {rel} rendered the set infeasible\n{S}"
             assert intersection(
                 S, unsafe
             ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
@@ -657,15 +681,16 @@ class KindSEChecker(BaseKindSE):
         for rel in get_var_relations([S.get_se_state()], prevsafe=target):
             ldbg("  Using assumption {0}", (rel,))
             assumptions.intersect(rel)
-            assert not intersection(assumptions, S).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
+            assert not intersection(
+                assumptions, S
+            ).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
             assert intersection(
                 assumptions, S, unsafe
             ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
             seq = InductiveSequence(
                 overapprox_set(
-                    self, EM, S, errs0.toassert(), target,
-                    assumptions, L
+                    self, EM, S, errs0.toassert(), target, assumptions, L
                 ).as_assert_annotation()
             )
 
@@ -675,14 +700,12 @@ class KindSEChecker(BaseKindSE):
         # try without relations
         seq = InductiveSequence(
             overapprox_set(
-                self, EM, S, errs0.toassert(), target,
-                None, L
+                self, EM, S, errs0.toassert(), target, None, L
             ).as_assert_annotation()
         )
 
         if is_seq_inductive(seq, self, L):
             yield seq
-
 
     def _safe_paths_err_outside(self, E, path, L):
         EM = getGlobalExprManager()
@@ -723,7 +746,11 @@ class KindSEChecker(BaseKindSE):
         middle = L.paths_to_header(prefix.last_loc())
         suff = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
 
-        paths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suff)
+        paths = (
+            AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges())
+            for m in middle
+            for s in suff
+        )
 
         for suffix in suffixes_starting_with(paths, L.header()):
             # execute the safe path that avoids error and then jumps out of the loop
@@ -741,16 +768,19 @@ class KindSEChecker(BaseKindSE):
 
         return None
 
-
     def safe_paths_from_iterations(self, E, path, L):
         # FIXME: do a proper analysis of whether the error loc is inside or outside the loop
         # instead of trying blindly
         I = self._safe_paths_err_outside(E, path, L)
-        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), self, L):
+        if I and is_seq_inductive(
+            InductiveSequence(I.as_assert_annotation(), None), self, L
+        ):
             return I
 
         I = self._safe_paths_err_inside(E, path, L)
-        if I and is_seq_inductive(InductiveSequence(I.as_assert_annotation(), None), self, L):
+        if I and is_seq_inductive(
+            InductiveSequence(I.as_assert_annotation(), None), self, L
+        ):
             return I
         return None
 
@@ -769,7 +799,11 @@ class KindSEChecker(BaseKindSE):
         middle = L.paths_to_header(prefix.last_loc())
         suff = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
 
-        invpaths = (AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges()) for m in middle for s in suff)
+        invpaths = (
+            AnnotatedCFAPath(prefix.edges() + m.edges() + s.edges())
+            for m in middle
+            for s in suff
+        )
 
         create_set = self.create_set
         # execute the safe path that avoids error and then jumps out of the loop
@@ -836,7 +870,6 @@ class KindSEChecker(BaseKindSE):
             return [R]
         return None
 
-
     def strengthen_initial_seq(self, seq0, E, path, L: Loop):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
@@ -860,12 +893,14 @@ class KindSEChecker(BaseKindSE):
                     dbg("States are included, continuing with previous sequences")
                     F = I.I.copy()
                 else:
-                    dbg("States not included in previous sequences, trying to extend it")
+                    dbg(
+                        "States not included in previous sequences, trying to extend it"
+                    )
                     F = union(I.I, frame)
                 tmp = InductiveSequence(F.as_assert_annotation())
                 # FIXME: simplify as much as you can before using it
                 if is_seq_inductive(tmp, self, L):
-                    #dbg("Joining with previous sequences did the trick")
+                    # dbg("Joining with previous sequences did the trick")
                     print_stdout("Succeeded joining with a previous sequence")
                     ret.append(tmp)
             else:
@@ -908,11 +943,9 @@ class KindSEChecker(BaseKindSE):
 
         if __debug__:
             for seq0 in seqs0:
-                assert (
-                    intersection(
-                        create_set(seq0.toannotation()), errs0.toassert()
-                    ).is_empty()
-                ), "Initial sequence contains error states"
+                assert intersection(
+                    create_set(seq0.toannotation()), errs0.toassert()
+                ).is_empty(), "Initial sequence contains error states"
 
         # now we do not support empty sequences
         assert all(map(lambda s: s is not None, seqs0)), "A sequence is none"
@@ -922,7 +955,7 @@ class KindSEChecker(BaseKindSE):
 
         print_stdout(f"Folding loop {loc} with errors {errs0}", color="white")
 
-        max_seq_len = 2*len(L.paths())
+        max_seq_len = 2 * len(L.paths())
         while True:
             print_stdout(
                 f"Got {len(sequences)} abstract path(s) of loop " f"{loc}",
@@ -957,7 +990,6 @@ class KindSEChecker(BaseKindSE):
                         print_stdout(f"{S} holds on {loc}", color="BLUE")
                         return True
 
-
             extended = []
             for seq in sequences:
                 print_stdout(
@@ -983,7 +1015,9 @@ class KindSEChecker(BaseKindSE):
                     drop = False
                     for C in new_frames_complements:
                         if intersection(C, A).is_empty():
-                            print(f"Did not extended with: {A} (already has same or bigger frame)")
+                            print(
+                                f"Did not extended with: {A} (already has same or bigger frame)"
+                            )
                             drop = True
                             break
                     if drop:
@@ -994,7 +1028,9 @@ class KindSEChecker(BaseKindSE):
                     tmp = seq.copy() if seq else InductiveSequence()
                     tmp.append(A.as_assert_annotation(), None)
                     if __debug__:
-                        assert is_seq_inductive(tmp, self, L), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
+                        assert is_seq_inductive(
+                            tmp, self, L
+                        ), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
 
                     # extended.append(self.abstract_seq(e, errs0, L))
                     extended.append(tmp)
@@ -1147,7 +1183,6 @@ class KindSE:
 
         self.invariants = {}
 
-
     # FIXME: make this a method of output handler or some function (get rid of 'self')
     # after all, we want such functionality with every analysis
     # FIXME: copied from BaseKindSE
@@ -1173,9 +1208,14 @@ class KindSE:
         has_unknown = False
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = KindSEChecker(loc, A,
-                                   self.program, self.programstructure, self.options,
-                                   invariants=self.invariants)
+            checker = KindSEChecker(
+                loc,
+                A,
+                self.program,
+                self.programstructure,
+                self.options,
+                invariants=self.invariants,
+            )
             result, states = checker.check()
             self.stats.add(checker.stats)
             if result is Result.UNSAFE:

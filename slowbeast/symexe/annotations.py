@@ -3,8 +3,10 @@ from slowbeast.core.executor import split_ready_states
 from .statedescription import StateDescription, unify_state_descriptions
 from copy import copy
 
+
 def get_subs(state):
-    return {nd.value : nd.instruction for nd in state.getNondetLoads()}
+    return {nd.value: nd.instruction for nd in state.getNondetLoads()}
+
 
 class Annotation:
     """

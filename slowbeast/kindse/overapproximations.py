@@ -78,8 +78,8 @@ def poststates(executor, paths, prestate):
     for path in paths:
         p = path.copy()
         # the post-condition is the whole frame
-       #if pre:
-       #    p.add_annot_before(pre.as_assume_annotation())
+        # if pre:
+        #    p.add_annot_before(pre.as_assume_annotation())
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
@@ -305,7 +305,7 @@ class LoopStateOverapproximation:
     Structure taking care for over-approximations of states
     """
 
-    #__slots__ = "executor", "clauses", "target", "unsafe", "loop", "expr_mgr"
+    # __slots__ = "executor", "clauses", "target", "unsafe", "loop", "expr_mgr"
 
     def __init__(self, S, executor, target, unsafe, loop, expr_mgr):
         self.executor = executor
@@ -460,7 +460,9 @@ class LoopStateOverapproximation:
         if __debug__:
             X = R.copy()
             X.intersect(c)
-            assert self.loop.set_is_inductive_towards(X, self.target, allow_infeasible_only=True)
+            assert self.loop.set_is_inductive_towards(
+                X, self.target, allow_infeasible_only=True
+            )
 
         newc = []
         lits = list(literals(c))
@@ -479,10 +481,15 @@ class LoopStateOverapproximation:
                 X = R.copy()
                 X.intersect(
                     self.expr_mgr.disjunction(
-                        *(newc[i] if i < len(newc) else lits[i] for i in range(len(lits)))
+                        *(
+                            newc[i] if i < len(newc) else lits[i]
+                            for i in range(len(lits))
+                        )
                     )
                 )
-                assert self.loop.set_is_inductive_towards(X, self.target, allow_infeasible_only=True), f"X: {X}, target: {self.target}"
+                assert self.loop.set_is_inductive_towards(
+                    X, self.target, allow_infeasible_only=True
+                ), f"X: {X}, target: {self.target}"
 
         if len(newc) == 1:
             return newc[0]
@@ -599,6 +606,7 @@ class LiteralOverapproximationData:
         # also with placeholder
         self.loop_poststates = loop_poststates
 
+
 def break_eqs(expr):
     EM = getGlobalExprManager()
     clauses = []
@@ -630,12 +638,15 @@ def break_eqs(expr):
 
     return clauses
 
+
 def is_overapprox_of(A, B):
     """ Return true if B is overapproximation of A """
     return intersection(complement(B), A).is_empty()
 
 
-def overapprox_set(executor, EM, goal, unsafeAnnot, indtarget, assumptions, L, drop_only=False):
+def overapprox_set(
+    executor, EM, goal, unsafeAnnot, indtarget, assumptions, L, drop_only=False
+):
     """
     goal - the set to be overapproxiamted
     drop_only - only try to drop clauses, not to extend them
@@ -653,11 +664,13 @@ def overapprox_set(executor, EM, goal, unsafeAnnot, indtarget, assumptions, L, d
         S, unsafe
     ).is_empty(), f"Whata? Unsafe states among one-step reachable safe states:\nS = {S},\nunsafe = {unsafe}"
     if __debug__:
-       #r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
-       #assert (
-       #    r.errors is None
-       #), f"Input set is not inductive (CTI: {r.errors[0].model()})"
-       assert L.set_is_inductive_towards(S, target, allow_infeasible_only=True), f"{S} -> {target}"
+        # r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
+        # assert (
+        #    r.errors is None
+        # ), f"Input set is not inductive (CTI: {r.errors[0].model()})"
+        assert L.set_is_inductive_towards(
+            S, target, allow_infeasible_only=True
+        ), f"{S} -> {target}"
 
     dbg(f"Overapproximating {S}", color="dark_blue")
     dbg(f"  with unsafe states: {unsafe}", color="dark_blue")

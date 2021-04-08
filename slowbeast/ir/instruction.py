@@ -537,8 +537,9 @@ class ExtractBits(UnaryOperation):
     def __init__(self, val, start, end):
         assert start.is_concrete(), "Invalid bitwidth to extend"
         assert end.is_concrete(), "Invalid bitwidth to extend"
-        super().__init__(UnaryOperation.EXTRACT, val,
-                         ty=IntType(end.value() - start.value() + 1))
+        super().__init__(
+            UnaryOperation.EXTRACT, val, ty=IntType(end.value() - start.value() + 1)
+        )
         self._start = start
         self._end = end
 
