@@ -39,9 +39,8 @@ check-all:
 	lit --path=$(shell pwd) -D OPTS="-se -kindse" tests/
 
 check-v:
-	lit --path=$(shell pwd) -vv -D OPTS="-se-step=block" tests/
-	lit --path=$(shell pwd) -vv -D OPTS="-se-incremental-solving" tests/
-	lit --path=$(shell pwd) -vv -D OPTS="-se -bself" tests/
-	lit --path=$(shell pwd) -vv -D OPTS="-se -kindse" tests/
+	lit --path=$(shell pwd) -vv -D tests/
+	lit --path=$(shell pwd) -vv -D OPTS="-bself" tests/
+	lit --path=$(shell pwd) -vv -D OPTS="-kindse" tests/
 
 .PHONY: all pylint black autopep check check-bself check-all check-v
