@@ -392,11 +392,12 @@ class LoopStateOverapproximation:
         # new add the assumptions (without them the formula is not equivalent to expr now)
         if assumptions:
             newclauses.extend(break_eqs(assumptions.as_expr().to_cnf()))
-        self.clauses = remove_implied_literals(newclauses)
+        clauses = remove_implied_literals(newclauses)
 
         assert intersection(
-            self.unsafe, self.executor.create_set(self.expr_mgr.conjunction(*self.clauses))
-        ).is_empty(), f"Dropping clauses made the set unsafe"
+            self.unsafe, self.executor.create_set(self.expr_mgr.conjunction(*clauses))
+        ).is_empty(), f"Dropping clauses made the set unsafe:\n{self.clauses}\nvvv new clauses vvv\n{clauses}\nvvv with unsafe vvv:\n{self.unsafe}"
+        self.clauses = clauses
 
     def commit(self):
         S = self.goal

@@ -330,5 +330,3 @@ def states_to_annotation(states):
             state_to_annotation(s),
         )
     return a
-
-
