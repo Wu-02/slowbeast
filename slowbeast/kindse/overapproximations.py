@@ -529,7 +529,6 @@ class LoopStateOverapproximation:
         )
         assert not nonr, f"Got errors while processing annotations: {nonr}"
 
-
         dliteral = DecomposedLiteral(l)
         if not dliteral:
             return l

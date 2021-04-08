@@ -239,7 +239,7 @@ def get_relations_to_prev_states(state, prev):
                         EM.Eq(EM.Rem(l, dval), EM.Rem(cval, dval)),
                     )
                 else:
-                    dval = ConcreteInt(-vdval, dval.bitwidth()) # change sign
+                    dval = ConcreteInt(-vdval, dval.bitwidth())  # change sign
                     expr = EM.conjunction(
                         EM.Ge(l, EM.Sub(cval, dval)),
                         EM.Le(l, cval),
