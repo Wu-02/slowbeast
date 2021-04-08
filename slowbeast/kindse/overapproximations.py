@@ -529,19 +529,20 @@ class LoopStateOverapproximation:
         )
         assert not nonr, f"Got errors while processing annotations: {nonr}"
 
+
+        dliteral = DecomposedLiteral(l)
+        if not dliteral:
+            return l
+        assert dliteral.toformula() == l
+
         # we always check S && unsafe && new_clause, so we can keep S  and unsafe
         # in the solver all the time
         safety_solver = self.safesolver
         safety_solver.push()
         safety_solver.add(S.as_expr())
-
+        # induction solver
         solver = IncrementalSolver()
 
-        dliteral = DecomposedLiteral(l)
-        if not dliteral:
-            return l
-
-        assert dliteral.toformula() == l
         ldata = LiteralOverapproximationData(
             l,
             dliteral,
