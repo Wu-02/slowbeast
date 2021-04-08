@@ -211,7 +211,7 @@ def get_relations_to_prev_states(state, prev):
     EM = state.expr_manager()
 
     # relation between loads
-    prevexpr = prev.as_expr()
+    prevexpr = prev.translated(state).as_expr()
     # for l in state.getNondetLoads():
     for l, cval in _get_const_cmp_relations(state):
         bw = l.bitwidth()
