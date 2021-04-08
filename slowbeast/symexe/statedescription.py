@@ -82,6 +82,26 @@ class StateDescription:
             EM.substitute(expr, *((val, curval) for (val, curval) in subs if curval))
         )
 
+    def eval_input_subs(self, state):
+        ndts = {nd.instruction : nd.value for nd in state.nondets()}
+        get = ndts.get
+        return ((v, get(x)) for (v, x) in self._subs.items() if get(x) is not None)
+
+    def do_input_substitutions(self, state):
+        """
+        Return the expression after substitutions of nondeterministic (input) values
+        in the given state. The difference is that do_substitutions takes the output
+        values (registers) and this method takes the input values (nondets).
+        """
+        assert all(map(lambda x: x[0].type() == x[1].type(),
+                       self.eval_input_subs(state)))
+
+        EM = state.expr_manager()
+        return EM.simplify(
+            EM.substitute(self._expr, *((val, curval) for (val, curval) in self.eval_input_subs(state) if curval))
+        )
+
+
     def __repr__(self):
         return "{0}[{1}]".format(
             self._expr,

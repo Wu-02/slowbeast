@@ -98,8 +98,14 @@ class ExprAnnotation(Annotation):
     def do_substitutions(self, state):
         return self._sd.do_substitutions(state)
 
+    def do_input_substitutions(self, state):
+        return self._sd.do_input_substitutions(state)
+
     def eval_subs(self, state):
         return self._sd.eval_subs(state)
+
+    def eval_input_subs(self, state):
+        return self._sd.eval_input_subs(state)
 
     def __eq__(self, rhs):
         return self.cannonical == rhs.cannonical
