@@ -49,7 +49,6 @@ def get_var_diff_relations(state):
     subs = get_subs(state)
     EM = state.expr_manager()
 
-    # relation between loads of the type l1 - l2 = constant
     for nd1, nd2 in iter_nondet_load_pairs(state):
         l1, l2 = nd1.value, nd2.value
         assert l1 is not l2
@@ -67,6 +66,7 @@ def get_var_diff_relations(state):
         if l2bw != bw:
             l2 = EM.SExt(l2, ConcreteInt(bw, bw))
 
+        # relation between loads of the type l1 - l2 = constant
         c = EM.Var(f"c_diff_{l1name}_{l2name}", IntType(bw))
         expr = EM.Eq(EM.Sub(l2, l1), c)
         c_concr = state.concretize_with_assumptions([expr], c)
@@ -78,6 +78,8 @@ def get_var_diff_relations(state):
                 yield AssertAnnotation(
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
+
+        # relation between loads of the type l1 + l2 = constant
         expr = EM.Eq(EM.Add(l2, l1), c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
@@ -88,6 +90,30 @@ def get_var_diff_relations(state):
                 yield AssertAnnotation(
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
+
+        # relation between loads of the type l1 = c*l2
+        expr = EM.Eq(EM.Mul(c, l1), l2)
+        c_concr = state.concretize_with_assumptions([expr, EM.Ne(c, ConcreteInt(0, bw))], c)
+        if c_concr is not None:
+            # is c unique?
+            cval = c_concr[0]
+            nonunique = state.is_sat(expr, EM.Ne(c, cval))
+            if nonunique is False:
+                yield AssertAnnotation(
+                    EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
+                )
+        # relation between loads of the type l2 = c*l1
+        expr = EM.Eq(EM.Mul(c, l2), l1)
+        c_concr = state.concretize_with_assumptions([expr, EM.Ne(c, ConcreteInt(0, bw))], c)
+        if c_concr is not None:
+            # is c unique?
+            cval = c_concr[0]
+            nonunique = state.is_sat(expr, EM.Ne(c, cval))
+            if nonunique is False:
+                yield AssertAnnotation(
+                    EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
+                )
+
 
         # else:
         #    # check d*l1 + e+l2 = c
