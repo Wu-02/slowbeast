@@ -3,17 +3,17 @@ from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import Instruction, Load
 from slowbeast.domains.concrete import ConcreteVal
 
+def _get_cannonic_var(val, x, EM):
+    if isinstance(x, Load):
+        name = f"L({x.operand(0).as_value()})"
+    else:
+        name = x.as_value()
+    return EM.Var(name, val.type())
 
 def _createCannonical(expr, subs, EM):
-    def get_cannonic_var(val, x):
-        if isinstance(x, Load):
-            name = f"L({x.operand(0).as_value()})"
-        else:
-            name = x.as_value()
-        return EM.Var(name, val.type())
-
+    get_cannonic_var = _get_cannonic_var
     return EM.substitute(
-        expr, *((val, get_cannonic_var(val, x)) for (val, x) in subs.items())
+        expr, *((val, get_cannonic_var(val, x, EM)) for (val, x) in subs.items() if not val.is_pointer())
     )
 
 
@@ -62,7 +62,17 @@ class StateDescription:
 
     def eval_subs(self, state):
         get = state.get
-        return ((v, get(x)) for (v, x) in self._subs.items())
+        for v, x in self._subs.items():
+            xx = get(x)
+            if v == xx:
+                continue # don't need to substitute
+            print(v, xx)
+            if xx.is_pointer():
+                assert v.is_pointer(), v
+                yield (v.object(), xx.object())
+                yield (v.offset(), xx.offset())
+            else:
+                yield (v, xx)
 
     def do_substitutions(self, state):
         """
@@ -70,20 +80,16 @@ class StateDescription:
         in the given state.
         """
         EM = state.expr_manager()
-        get = state.get
-        expr = self._expr
-        # for (x, val) in self.subs.items():
-        subs = ((v, get(x)) for (v, x) in self._subs.items())
+        subs = self.eval_subs(state)
 
         # we must do all the substitution at once!
         assert all(
             map(
-                lambda x: x[0].type() == x[1].type(),
-                ((v, get(x)) for (v, x) in self._subs.items()),
+                lambda x: x[0].type() == x[1].type(), self.eval_subs(state)
             )
         ), self._subs
         return EM.simplify(
-            EM.substitute(expr, *((val, curval) for (val, curval) in subs if curval))
+            EM.substitute(self._expr, *((val, curval) for (val, curval) in subs if curval))
         )
 
     def eval_input_subs(self, state):
@@ -117,7 +123,7 @@ class StateDescription:
         return "{0}[{1}]".format(
             self._expr,
             ", ".join(
-                f"{x.as_value()}->{val.unwrap()}" for (val, x) in self._subs.items()
+                f"{x.as_value()}->{val}" for (val, x) in self._subs.items()
             ),
         )
 

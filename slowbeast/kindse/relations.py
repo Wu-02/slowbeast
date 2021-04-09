@@ -54,6 +54,9 @@ def get_var_diff_relations(state):
         l1, l2 = nd1.value, nd2.value
         assert l1 is not l2
 
+        if l1.is_pointer() or l2.is_pointer():
+            continue
+
         l1name, l2name = nd1.instruction.as_value(), nd2.instruction.as_value()
         l1bw = l1.type().bitwidth()
         l2bw = l2.type().bitwidth()
@@ -104,7 +107,7 @@ def get_var_diff_relations(state):
         # check equalities to other loads: l1 - l2 = k*l3
         for nd3 in state.getNondetLoads():
             l3 = nd3.value
-            if l3 is l1 or l3 is l2:
+            if l3 is l1 or l3 is l2 or l3.is_pointer():
                 continue
             l3bw = l3.type().bitwidth()
             l3name = nd3.instruction.as_value()
@@ -187,6 +190,8 @@ def _get_const_cmp_relations(state):
     # equalities with constants
     for nd in state.getNondetLoads():
         l = nd.value
+        if l.is_pointer():
+            continue
         lbw = l.type().bitwidth()
         c = EM.Var(f"c_coef_{nd.instruction.as_value()}", IntType(lbw))
         expr = EM.Eq(l, c)
