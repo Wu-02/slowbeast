@@ -221,6 +221,34 @@ class BSELFChecker(BaseBSE):
 
         return r
 
+    def unwind(self, loc, errpre, maxk=None):
+        queue = []
+        for edge in loc.predecessors():
+            queue.append(BSEContext(edge, errpre))
+
+        k = 1
+        while queue:
+            ldbgv("Unwinding step {0}", (k,))
+            newst = []
+            for bsectx in queue:
+                r, pre = self.precondition(bsectx)
+                if r is Result.SAFE:
+                    continue
+                elif r is Result.UNSAFE:
+                    return Result.UNSAFE
+
+                newst.append((pre, bsectx.edge))
+
+            k += 1
+            if k <= maxk:
+                queue = [BSEContext(pedge, pre.copy()) for pre, edge in newst for pedge in edge.predecessors()]
+            else:
+                return Result.UNKNOWN
+
+        #if queue is empty, we're safe!
+        assert not queue, "Queue is not empty"
+        return Result.SAFE
+
     def handle_loop(self, loc, errpre):
         assert (
             loc not in self.no_sum_loops
@@ -229,26 +257,25 @@ class BSELFChecker(BaseBSE):
         assert errpre, "No unsafe states, we should not get here at all"
         unsafe = [errpre]
 
-        #   # first try to unroll it in the case the loop is easy to verify
-        # maxk = 15
-        # dbg_sec(f"Unwinding the loop {maxk} steps")
-        # res, unwoundloop = self.unwind([path.copy()], maxk=maxk)
-        # dbg_sec()
-        # if res is Result.SAFE:
-        #   print_stdout(
-        #       f"Loop {loc} proved by unwinding", color="GREEN"
-        #   )
-        #   return res, []
-        # elif res is Result.UNSAFE:
-        #   self.no_sum_loops.add(loc)
-        #   return res, [path]  # found an error
+        # first try to unroll it in the case the loop is easy to verify
+        maxk = 15
+        dbg_sec(f"Unwinding the loop {maxk} steps")
+        res = self.unwind(loc, errpre, maxk=maxk)
+        dbg_sec()
+        if res is Result.SAFE:
+          print_stdout(
+              f"Loop {loc} proved by unwinding", color="GREEN"
+          )
+          return True
+        elif res is Result.UNSAFE:
+          self.no_sum_loops.add(loc)
+          return False
 
         L = self.get_loop(loc)
         if L is None:
             print_stdout("Was not able to construct the loop info")
             print_stdout(f"Falling back to unwinding loop {loc}", color="BROWN")
             self.no_sum_loops.add(loc)
-            # return Result.UNKNOWN, unwoundloop
             return False
 
         return self.fold_loop(loc, L, unsafe)
