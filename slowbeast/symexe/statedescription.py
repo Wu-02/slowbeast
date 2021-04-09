@@ -66,7 +66,6 @@ class StateDescription:
             xx = get(x)
             if v == xx:
                 continue # don't need to substitute
-            print(v, xx)
             if xx.is_pointer():
                 assert v.is_pointer(), v
                 yield (v.object(), xx.object())
