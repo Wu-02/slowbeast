@@ -194,7 +194,7 @@ def check_literal(EM, lit, ldata):
         return False
 
     # safety check
-    if not ldata.safety_solver.is_sat(EM.disjunction(lit, *ldata.clause)) is False:
+    if not ldata.safety_solver.try_is_sat(500, EM.disjunction(lit, *ldata.clause)) is False:
         return False
 
     have_feasible = False
@@ -211,8 +211,11 @@ def check_literal(EM, lit, ldata):
         solver.push()
         pathcond = substitute(s.path_condition(), (placeholder, lit))
         solver.add(pathcond)
-        if solver.is_sat() is not True:
+        feasible = solver.try_is_sat(500)
+        if feasible is not True:
             solver.pop()
+            if feasible is None: # solver t-outed/failed
+                return False
             continue
         # feasible means ok, but we want at least one feasible path
         # FIXME: do we?
@@ -221,7 +224,7 @@ def check_literal(EM, lit, ldata):
         # inductivity check
         hasnocti = A.do_substitutions(s)
         # we have got pathcond in solver already
-        if solver.is_sat(EM.Not(hasnocti)) is not False:  # there exist CTI
+        if solver.try_is_sat(500, EM.Not(hasnocti)) is not False:  # there exist CTI
             solver.pop()
             return False
         solver.pop()
