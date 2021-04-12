@@ -220,6 +220,8 @@ def map_model(m, e):
                             f = float("inf")
                     else:
                         f = float(eval(str(val)))
+                else:
+                    raise RuntimeError(f"Invalid model type: {v}")
                 ret.append(ConcreteVal(f, v.type()))
             else:
                 ret.append(ConcreteVal(m[n].as_long(), v.type()))
