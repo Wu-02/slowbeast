@@ -99,7 +99,7 @@ class BSEMemory(SEMemory):
         self._reads[ptr] = value
 
     def write_symbolic_ptr(self, state, toOp, value):
-        raise NotImplemented("Not implemented yet")
+        raise NotImplementedError("Not implemented yet")
         # reading from this pointer must equal value in the future
         self._reads[toOp] = value
 

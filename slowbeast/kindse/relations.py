@@ -113,8 +113,6 @@ def get_var_diff_relations(state):
                 yield AssertAnnotation(
                     EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
-
-
         # else:
         #    # check d*l1 + e+l2 = c
         #    d = EM.Var(f"c_{l1name}", IntType(bw))
