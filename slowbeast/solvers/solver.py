@@ -149,7 +149,7 @@ def getGlobalExprManager():
 class SolverIntf:
     """ Interface of solvers """
 
-    __slots__ = ["_exprmanager"]
+    __slots__ = "_exprmanager"
 
     def __init__(self, em=global_expr_manager):
         # for now we use a global expr manager
@@ -184,7 +184,7 @@ class ConcreteSolver(SolverIntf):
 
     def is_sat(self, *e):
         assert all(map(lambda x: x.is_bool() and isinstance(x.value(), bool), e)), e
-        return all(map(lambda x: x.value()))
+        return all(map(lambda x: x.value(), e))
 
     # for x in e:
     #    assert x.is_bool()
@@ -195,7 +195,7 @@ class ConcreteSolver(SolverIntf):
 
     def try_is_sat(self, timeout, *e):
         assert all(map(lambda x: x.is_bool() and isinstance(x.value(), bool), e)), e
-        return all(map(lambda x: x.value()))
+        return all(map(lambda x: x.value(), e))
 
 
 def map_model(m, e):
