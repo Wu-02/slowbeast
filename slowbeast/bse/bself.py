@@ -467,6 +467,7 @@ class BSELFChecker(BaseBSE):
                 R.add(I.I)
                 added = True
         if added:
+            R.add(*self.initial_sets_from_exits(E, L))
             return [R]
         return None
 
@@ -552,7 +553,7 @@ class BSELFChecker(BaseBSE):
                         ).is_empty()
                     ), "Sequence is not safe"
 
-                if seq and len(seq) >= max_seq_len:
+                if seq and len(seq) >= 2:#>= max_seq_len:
                     dbg("Give up extending the sequence, it is too long")
                     continue
 
