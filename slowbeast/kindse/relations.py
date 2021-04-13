@@ -234,6 +234,17 @@ def get_const_cmp_relations(state):
     for l, cval in _get_const_cmp_relations(state):
         yield AssertAnnotation(EM.Eq(l, cval), subs, EM)
 
+def get_const_subs_relations(state):
+    EM = state.expr_manager()
+    subs = get_subs(state)
+    C = state.getConstraints()
+    substitute = EM.substitute
+    for l, cval in _get_const_cmp_relations(state):
+        for expr in C:
+            nexpr = substitute(expr, (cval, l))
+            if not nexpr.is_concrete() and expr != nexpr:
+                yield AssertAnnotation(nexpr, subs, EM)
+
 
 def get_relations_to_prev_states(state, prev):
     subs = get_subs(state)
@@ -296,6 +307,7 @@ def get_var_relations(safe, prevsafe=None):
     for s in safe:
         # get and filter out those relations that make the state safe
         yield from get_var_diff_relations(s)
+        # yield from get_const_subs_relations(s)
         # yield from get_var_cmp_relations(s)
         if prevsafe:
             yield from get_relations_to_prev_states(s, prevsafe)
