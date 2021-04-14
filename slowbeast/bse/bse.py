@@ -223,7 +223,14 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         PS = self.programstructure
         cgnode = PS.callgraph.getNode(fun)
         for callerfun, callsite in cgnode.getCallers():
-            for pedge in PS.calls[callsite].predecessors():
+            calledge = PS.calls[callsite]
+            if not calledge.has_predecessors():
+                state = postcondition.copy()
+                state.setTerminated("Function with only return edge unsupported in BSE atm.")
+                report_state(self.stats, state, self.reportfn)
+                self.problematic_states.append(state)
+                continue
+            for pedge in calledge.predecessors():
                 state = postcondition.copy()
                 n = 0
                 # map the arguments to the operands
@@ -257,13 +264,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 opval = state.eval(op)
                 state.replace_value(retval, opval)
             retedge = PS.rets[ret]
-            if not retedge.has_predecessors():
-                state.setTerminated("Function with only return edge unsupported in BSE atm.")
-                report_state(self.stats, state, self.reportfn)
-                self.problematic_states.append(state)
-                continue
-            for pedge in retedge.predecessors():
-                self.queue_state(BSEContext(pedge, state, bsectx.errordescr))
+            self.queue_state(BSEContext(retedge, state, bsectx.errordescr))
 
 
 

@@ -259,6 +259,9 @@ class Executor(PathExecutor):
         if edge.is_assume():
             ready, tmpnonready = self._exec_assume_edge(ready, edge)
             nonready += tmpnonready
+        elif edge.is_ret():
+            # we handle passing return values manually in BSE, so just skip the return
+            ldbgv("Skipping ret edge: {0}", (edge[0],))
         elif edge.is_call() and not edge.called_function().is_undefined():
             fn = edge.called_function().name()
             for s in ready:
