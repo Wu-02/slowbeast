@@ -41,7 +41,7 @@ class Function(ProgramElement):
     def type(self):
         return self._retty
 
-    def addBBlock(self, bb):
+    def add_bblock(self, bb):
         self._bblocks.append(bb)
         bb.set_fun(self)
 

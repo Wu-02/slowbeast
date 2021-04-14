@@ -11,7 +11,7 @@ class BBlock(ProgramElement):
         self._instructions = []
         self._function = None
         if f:
-            f.addBBlock(self)
+            f.add_bblock(self)
 
     def append(self, i):
         i.set_bblock(self, len(self._instructions))
