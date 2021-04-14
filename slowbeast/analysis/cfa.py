@@ -1,6 +1,6 @@
 from slowbeast.ir.program import Program
 from slowbeast.ir.function import Function
-from slowbeast.ir.instruction import Branch, Call, Assert
+from slowbeast.ir.instruction import Branch, Call, Assert, Return
 
 
 class CFA:
@@ -57,7 +57,8 @@ class CFA:
         REGULAR = 1
         ASSUME = 2
         CALL = 4
-        SUMMARY = 5
+        RET = 5
+        SUMMARY = 6
 
         def __init__(self, ty, s, t, elem=None):
             self._type = ty
@@ -97,6 +98,9 @@ class CFA:
 
         def is_call(self):
             return self._type == CFA.Edge.CALL
+
+        def is_ret(self):
+            return self._type == CFA.Edge.RET
 
         def is_summary(self):
             return self._type == CFA.Edge.SUMMARY
@@ -159,6 +163,15 @@ class CFA:
 
         def called_function(self):
             return self._elems[0].called_function()
+
+    class RetEdge(Edge):
+        def __init__(self, s, t, retinst):
+            super().__init__(CFA.Edge.RET, s, t, retinst)
+            self._elems.append(retinst)
+
+        def ret(self):
+            return self._elems[0]
+
 
     def __init__(self, fun: Function):
         assert isinstance(fun, Function)
@@ -248,6 +261,17 @@ class CFA:
                     tmp = self.create_loc(B)
                     e = CFA.Edge(CFA.Edge.REGULAR, loc2, tmp, B)
                     loc2 = tmp
+                elif isinstance(i, Return):
+                    if e.is_noop():
+                        e = CFA.RetEdge(e.source(), e.target(), i)  # replace the edge
+                    else:
+                        self._add_edge(e)
+                        assert not e.is_noop()
+                        # create the call edge
+                        tmp = self.create_loc(B)
+                        e = CFA.RetEdge(loc2, tmp, i)
+                        loc2 = tmp
+                    assert not e.is_noop()
                 # break on assert
                 elif isinstance(i, Assert):
                     err = self.create_loc(i)
