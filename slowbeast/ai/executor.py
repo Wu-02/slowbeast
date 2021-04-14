@@ -278,9 +278,9 @@ class Executor(ConcreteExecutor):
             return [state]
 
         # map values to arguments
-        assert len(instr.operands()) == len(fun.getArguments())
+        assert len(instr.operands()) == len(fun.arguments())
         mapping = {
-            x: state.eval(y) for (x, y) in zip(fun.getArguments(), instr.operands())
+            x: state.eval(y) for (x, y) in zip(fun.arguments(), instr.operands())
         }
         state.pushCall(instr, fun, mapping)
         return [state]

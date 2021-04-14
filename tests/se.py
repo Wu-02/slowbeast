@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     A = Alloc(Constant(4))
     B0.append(A)
-    B0.append(Store(FOO.getArgument(0), FOO.getArgument(1)))
+    B0.append(Store(FOO.argument(0), FOO.argument(1)))
     B0.append(Return(None))
 
     P.add_fun(FOO)

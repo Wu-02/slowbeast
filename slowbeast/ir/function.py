@@ -28,11 +28,11 @@ class Function(ProgramElement):
     def name(self):
         return self._name
 
-    def getArgument(self, idx):
+    def argument(self, idx):
         assert idx < len(self._arguments)
         return self._arguments[idx]
 
-    def getArguments(self):
+    def arguments(self):
         return self._arguments
 
     def getReturnType(self):

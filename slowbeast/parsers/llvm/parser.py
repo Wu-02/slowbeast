@@ -718,7 +718,7 @@ class Parser:
 
         # add mapping to arguments of the function
         for n, a in enumerate(f.arguments):
-            self._addMapping(a, F.getArgument(n))
+            self._addMapping(a, F.argument(n))
 
         # first create blocks as these can be operands to br instructions
         for b in f.blocks:
