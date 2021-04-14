@@ -197,22 +197,50 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         edge = bsectx.edge
         if edge.has_predecessors():
             for pedge in bsectx.edge.predecessors():
-                self.queue_state(
-                    BSEContext(
-                        pedge,
-                        postcondition.copy() if had_one else postcondition,
-                        bsectx.errordescr,
+                # if is call edge...
+                if pedge.is_call() and not pedge.called_function().is_undefined():
+                    state = postcondition.copy()
+                    state.setTerminated("Calls unsupported in BSE atm.")
+                    report_state(self.stats, state, self.reportfn)
+                    self.problematic_states.append(state)
+                else:
+                    self.queue_state(
+                        BSEContext(
+                            pedge,
+                            postcondition.copy() if had_one else postcondition,
+                            bsectx.errordescr,
+                        )
                     )
-                )
-                had_one = True
+                    had_one = True
         elif edge.cfa().is_init(edge):
             # This is entry to procedure. It cannot be the main procedure, otherwise
             # we would either report safe or unsafe, so this is a call of subprocedure
             # that we do not support atm
-            postcondition.setTerminated("Calls unsupported in BSE atm.")
-            report_state(self.stats, postcondition, self.reportfn)
-            self.problematic_states.append(postcondition)
-        # else: dead code, we're fine
+            self.extend_to_callers(edge.cfa(), bsectx, postcondition)
+        # else: dead code, we have nothing to exted
+
+    def extend_to_callers(self, cfa, bsectx, postcondition):
+        fun = cfa.fun()
+        PS = self.programstructure
+        cgnode = PS.callgraph.getNode(fun)
+        for callerfun, callsite in cgnode.getCallers():
+            for pedge in PS.calls[callsite].predecessors():
+                state = postcondition.copy()
+                n = 0
+                # map the arguments to the operands
+                for op in callsite.operands():
+                    arg = fun.argument(n)
+                    val = state.eval(op)
+                    argval = state.nondet(arg)
+                    if argval is None:
+                        n += 1
+                        continue
+                    state.replace_value(argval.value, val)
+                    n += 1
+                self.queue_state(BSEContext(pedge, state, bsectx.errordescr))
+       #postcondition.setTerminated("Calls unsupported in BSE atm.")
+       #report_state(self.stats, postcondition, self.reportfn)
+       #self.problematic_states.append(postcondition)
 
 
 def check_paths(checker, paths, pre=None, post=None):

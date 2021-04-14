@@ -258,6 +258,11 @@ class SEState(ExecutionState):
     def has_nondets(self):
         return len(self._nondets) > 0
 
+    def nondet(self, x):
+        for nd in self._nondets:
+            if nd.instruction == x: return nd
+        return None
+
     def nondets(self):
         return self._nondets
 
