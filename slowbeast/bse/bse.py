@@ -68,7 +68,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         # the executor for induction checks -- we need lazy memory access
         memorymodel = BSEMemoryModel(opts)
         indexecutor = BSEExecutor(self.solver(), opts, memorymodel)
-        dbg("Forbidding calls in BSE executor for now")
+        # we handle calls explicitely here, so set this to true to catch problems
         indexecutor.forbid_calls()
         self._indexecutor = indexecutor
 
@@ -198,20 +198,19 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         if edge.has_predecessors():
             for pedge in bsectx.edge.predecessors():
                 # if is call edge...
-                if pedge.is_call() and not pedge.called_function().is_undefined():
-                    state = postcondition.copy()
-                    state.setTerminated("Calls unsupported in BSE atm.")
-                    report_state(self.stats, state, self.reportfn)
-                    self.problematic_states.append(state)
-                else:
-                    self.queue_state(
-                        BSEContext(
-                            pedge,
-                            postcondition.copy() if had_one else postcondition,
-                            bsectx.errordescr,
-                        )
+                if pedge.is_call():
+                    if not pedge.called_function().is_undefined():
+                        self.extend_to_call(pedge, bsectx, postcondition)
+                        continue
+                    # fall-through
+                self.queue_state(
+                    BSEContext(
+                        pedge,
+                        postcondition.copy() if had_one else postcondition,
+                        bsectx.errordescr,
                     )
-                    had_one = True
+                )
+                had_one = True
         elif edge.cfa().is_init(edge):
             # This is entry to procedure. It cannot be the main procedure, otherwise
             # we would either report safe or unsafe, so this is a call of subprocedure
@@ -241,6 +240,31 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
        #postcondition.setTerminated("Calls unsupported in BSE atm.")
        #report_state(self.stats, postcondition, self.reportfn)
        #self.problematic_states.append(postcondition)
+
+    def extend_to_call(self, edge, bsectx, postcondition):
+        PS = self.programstructure
+        fun = edge.called_function()
+        retval = None
+        retnd =  postcondition.nondet(edge[0])
+        if retnd is not None:
+            retval = retnd.value
+            assert fun.return_type() is not None, fun
+        for B in fun.ret_bblocks():
+            state = postcondition.copy()
+            ret = B[-1]
+            if retval:
+                op = ret.operand(0)
+                opval = state.eval(op)
+                state.replace_value(retval, opval)
+            retedge = PS.rets[ret]
+            if not retedge.has_predecessors():
+                state.setTerminated("Function with only return edge unsupported in BSE atm.")
+                report_state(self.stats, state, self.reportfn)
+                self.problematic_states.append(state)
+                continue
+            for pedge in retedge.predecessors():
+                self.queue_state(BSEContext(pedge, state, bsectx.errordescr))
+
 
 
 def check_paths(checker, paths, pre=None, post=None):
