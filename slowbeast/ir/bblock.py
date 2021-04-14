@@ -30,6 +30,10 @@ class BBlock(ProgramElement):
             for n, inst in enumerate(self._instructions):
                 assert inst.bblock_idx() == n, "Invalid insertion of instruction"
 
+    def __getitem__(self, item):
+        assert len(self._instructions) > item
+        return self._instructions[item]
+
     def first(self):
         assert len(self._instructions) > 0
         return self._instructions[0]

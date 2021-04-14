@@ -30,8 +30,11 @@ class ProgramStructure:
                     cfa.dump(f)
         self.cfas = cfas
         # gather mapping from calls to call-edges
-        self.calls = calls = {
+        self.calls = {
             e.elems()[0]: e for cfa in cfas.values() for e in cfa.edges() if e.is_call()
+        }
+        self.rets = {
+            e.elems()[0]: e for cfa in cfas.values() for e in cfa.edges() if e.is_ret()
         }
         # entry location of the whole program
         self.entry_loc = cfas[prog.entry()].entry()

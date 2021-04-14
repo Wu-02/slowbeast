@@ -1,6 +1,7 @@
 from sys import stdout
 from .argument import Argument
 from .program import ProgramElement
+from .instruction import Return
 
 
 class Function(ProgramElement):
@@ -51,6 +52,9 @@ class Function(ProgramElement):
 
     def bblocks(self):
         return self._bblocks
+
+    def ret_bblocks(self):
+        return [b for b in self._bblocks if isinstance(b[-1], Return)]
 
     def __iter__(self):
         return self._bblocks.__iter__()
