@@ -55,6 +55,18 @@ class BSEState(LazySEState):
                 if val1 is val2 or val1.bitwidth() != val2.bitwidth():
                     continue
                 # if the pointers are the same, the values must be the same
+                if val1.is_pointer():
+                    if val2.is_concrete() and val2.value() == 0: # comparison to null
+                        expr = And(Eq(val1.object(), val2), Eq(val1.offset(), val2))
+                    else:
+                        raise NotImplementedError('Comparison of symbolic addreses not implemented')
+                elif val2.is_pointer():
+                    if val1.is_concrete() and val1.value() == 0: # comparison to null
+                        expr = And(Eq(val2.object(), val1), Eq(val2.offset(), val1))
+                    else:
+                        raise NotImplementedError('Comparison of symbolic addreses not implemented')
+                else:
+                    expr = Eq(val1, val2)
                 c = Or(
                     Not(
                         And(
@@ -62,7 +74,7 @@ class BSEState(LazySEState):
                             Eq(ptr1.offset(), ptr2.offset()),
                         )
                     ),
-                    Eq(val1, val2),
+                    expr
                 )
                 if c.is_concrete() and bool(c.value()):
                     continue
