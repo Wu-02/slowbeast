@@ -75,7 +75,7 @@ class BSEState(LazySEState):
             return good
         raise NotImplementedError(f"Invalid post-condition: {postcondition}")
 
-    def _replace_value(self, prestate, val, newval):
+    def _replace_value(self, val, newval):
         em = self.expr_manager()
         # print('REPLACING', val, 'WITH', newval)
 
@@ -101,25 +101,25 @@ class BSEState(LazySEState):
         else:
             # FIXME: we should replace the value also in memory, shouldn't we?
             pc = substitute(pc, (val, newval))
-        self._replace_value_in_memory(new_repl, newval, prestate, substitute, val)
+        self._replace_value_in_memory(new_repl, newval, substitute, val)
         self.setConstraints(pc)
 
         return new_repl
 
-    def replace_value(self, prestate, val, newval):
+    def replace_value(self, val, newval):
         # recursively handle the implied equalities
         replace_value = self._replace_value
-        new_repl = replace_value(prestate, val, newval)
+        new_repl = replace_value(val, newval)
         while new_repl:
             tmp = []
             for r in new_repl:
-                tmp += replace_value(prestate, r[0], r[1])
+                tmp += replace_value(r[0], r[1])
             new_repl = tmp
 
-    def _replace_value_in_memory(self, new_repl, newval, prestate, substitute, val):
-        self._replace_final_memory(new_repl, newval, prestate, substitute, val)
+    def _replace_value_in_memory(self, new_repl, newval, substitute, val):
+        self._replace_final_memory(new_repl, newval, substitute, val)
 
-    def _replace_final_memory(self, new_repl, newval, prestate, substitute, val):
+    def _replace_final_memory(self, new_repl, newval, substitute, val):
         UP = self.memory._reads
         nUP = {}
         for cptr, cval in UP.items():
@@ -143,6 +143,10 @@ class BSEState(LazySEState):
         return symbols
 
     def join_prestate(self, prestate):
+        """
+        Update this state with information from prestate. That is, simulate
+        that this state is executed after prestate.
+        """
         assert isinstance(prestate, BSEState), type(prestate)
         # print('-- Joining with pre-state')
         # print("Pre-state:", prestate)
@@ -166,12 +170,12 @@ class BSEState(LazySEState):
                     val, _ = prestate.memory.read(addr, inp.value.bytewidth())
                     if val:
                         # print('REPL from memory', inp.value, val)
-                        replace_value(prestate, inp.value, val)
+                        replace_value(inp.value, val)
             else:
                 preval = try_eval(inp.instruction)
                 if preval:
                     # print('REPL from reg', inp.value, preval)
-                    replace_value(prestate, inp.value, preval)
+                    replace_value(inp.value, preval)
 
         # filter the inputs that still need to be found
         symbols = set(self._get_symbols())
