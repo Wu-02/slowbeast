@@ -363,7 +363,7 @@ class Executor(ConcreteExecutor):
             state.setTerminated("Aborted via an abort() call")
             return [state]
 
-        retTy = fun.getReturnType()
+        retTy = fun.return_type()
         if retTy:
             if self.getOptions().concretize_nondets:
                 val = ConcreteVal(getrandbits(32), retTy)

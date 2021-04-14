@@ -35,7 +35,7 @@ class Function(ProgramElement):
     def arguments(self):
         return self._arguments
 
-    def getReturnType(self):
+    def return_type(self):
         return self._retty
 
     def type(self):

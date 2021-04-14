@@ -291,7 +291,7 @@ class Executor(ConcreteExecutor):
             state.setTerminated("Aborted via an abort() call")
             return [state]
 
-        retTy = fun.getReturnType()
+        retTy = fun.return_type()
         if retTy:
             val = Domain.Var(retTy)
             # state.addNondet(val)

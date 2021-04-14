@@ -37,7 +37,7 @@ class Executor(SExecutor):
             state.setTerminated("Aborted via an abort() call")
             return [state]
 
-        retTy = fun.getReturnType()
+        retTy = fun.return_type()
         if retTy:
             val = state.get_future_nondet(instr)
             if val:

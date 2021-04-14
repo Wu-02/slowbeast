@@ -35,7 +35,7 @@ class FutureExecutor(SExecutor):
             state.pushCall(instr, fun, mapping)
             return [state]
         else:
-            retTy = fun.getReturnType()
+            retTy = fun.return_type()
             futureval = state.expr_manager().fresh_value("future", retTy)
             future = Future(futureval.unwrap(), futureval.type(), instr, state)
             newstate = state.copy()
