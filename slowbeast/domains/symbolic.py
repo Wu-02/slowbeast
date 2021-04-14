@@ -1207,7 +1207,7 @@ class BVSymbolicDomain:
 
     ##
     # variables
-    def Var(name, ty):
+    def Var(name : str, ty):
         if ty.is_float():
             return Expr(FP(name, get_fp_sort(ty.bitwidth())), ty)
         elif ty.is_bool():
