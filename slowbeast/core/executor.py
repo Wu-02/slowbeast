@@ -381,7 +381,7 @@ class Executor:
 
         fun = instr.called_function()
         ldbgv("-- CALL {0} --", (fun.name()))
-        if fun.isUndefined():
+        if fun.is_undefined():
             state.setError(
                 GenericError("Called undefined function: {0}".format(fun.name()))
             )

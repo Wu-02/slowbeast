@@ -670,7 +670,7 @@ class BSELF:
     def _get_possible_errors(self):
         EM = getGlobalExprManager()
         for F in self.programstructure.callgraph.funs():
-            if F.isUndefined():
+            if F.is_undefined():
                 continue
 
             cfa = self.get_cfa(F)

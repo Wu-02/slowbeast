@@ -269,7 +269,7 @@ class Executor(ConcreteExecutor):
             state.setError(AssertFailError(f"Called '{fun.name()}'"))
             return [state]
 
-        if fun.isUndefined():
+        if fun.is_undefined():
             return self.execUndefFun(state, instr, fun)
 
         if self.callsForbidden():

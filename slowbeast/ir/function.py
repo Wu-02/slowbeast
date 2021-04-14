@@ -22,7 +22,7 @@ class Function(ProgramElement):
 
     __hash__ = ProgramElement.__hash__
 
-    def isUndefined(self):
+    def is_undefined(self):
         return self._bblocks == []
 
     def name(self):
