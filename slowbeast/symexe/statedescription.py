@@ -63,9 +63,11 @@ class StateDescription:
     def eval_subs(self, state):
         get = state.get
         for v, x in self._subs.items():
+            assert v, (v, x)
             xx = get(x)
-            if v == xx:
-                continue # don't need to substitute
+            if xx is None or v == xx:
+                continue # cannot or don't need to substitute
+            assert xx.type() == v.type(), (xx, v)
             if xx.is_pointer():
                 assert v.is_pointer(), v
                 yield (v.object(), xx.object())
