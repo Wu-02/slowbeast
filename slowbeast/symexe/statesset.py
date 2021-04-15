@@ -155,6 +155,12 @@ class StatesSet:
         """ Check whether the set is empty. Involves a solver call """
         return not self._state.isfeasible()
 
+    def contains(self, S):
+        X = self.copy()
+        X.complement()
+        X.intersect(S)
+        return X.is_empty()
+
     def __repr__(self):
         return f"{{{self.as_description().__repr__()}}}"
 

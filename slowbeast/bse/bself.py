@@ -301,6 +301,7 @@ class BSELFChecker(BaseBSE):
             report_state(self.stats, s)
             return
 
+        yielded = []
         for s in r.ready:
             if not intersection(E, s).is_empty():
                 dbg("Pre-image is not safe...")
@@ -315,11 +316,23 @@ class BSELFChecker(BaseBSE):
                     assert (
                         seq is None or intersection(A, E).is_empty()
                     ), f"Overapproximation is not safe: {A}"
+
+                yield_seq = True
+                for y in yielded:
+                    if y.contains(A):
+                        # seq is useless...
+                        yield_seq = False
+                        break
+                if not yield_seq:
+                    dbg("Subsumed an overapproximation...")
+                    continue
+
                 # FIXME: intersect with all inductive sets?
-                if seq and intersection(A, complement(target)).is_empty():
+                if target.contains(A):
                     dbg("Did not extend (got included elem...)")
                     continue
 
+                yielded.append(A)
                 yield A
 
     def get_simple_initial_seqs(self, unsafe: list, L: Loop):
@@ -417,7 +430,7 @@ class BSELFChecker(BaseBSE):
                 yield_seq = True
                 seqa = seq.toannotation()
                 for s in yielded_seqs:
-                    if intersection(complement(s), seqa).is_empty():
+                    if s.contains(seqa):
                         # seq is useless...
                         yield_seq = False
                         break
@@ -437,7 +450,7 @@ class BSELFChecker(BaseBSE):
             yield_seq = True
             seqa = seq.toannotation()
             for s in yielded_seqs:
-                if intersection(complement(s), seqa).is_empty():
+                if s.contains(seqa):
                     # seq is useless...
                     yield_seq = False
                     break
