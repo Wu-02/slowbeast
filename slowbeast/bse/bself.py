@@ -395,6 +395,7 @@ class BSELFChecker(BaseBSE):
             ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
         assumptions = create_set()
+        yielded_seqs = []
         for rel in get_var_relations([S.get_se_state()], prevsafe=target):
             ldbg("  Using assumption {0}", (rel,))
             assumptions.intersect(rel)
@@ -412,7 +413,17 @@ class BSELFChecker(BaseBSE):
             )
 
             if is_seq_inductive(seq, self, L):
-                yield seq
+                # check if seq is a subset of some previously yielded sequence
+                yield_seq = True
+                seqa = seq.toannotation()
+                for s in yielded_seqs:
+                    if intersection(complement(s), seqa).is_empty():
+                        # seq is useless...
+                        yield_seq = False
+                        break
+                if yield_seq:
+                    yielded_seqs.append(create_set(seqa))
+                    yield seq
 
         # try without relations
         seq = InductiveSequence(
@@ -422,7 +433,16 @@ class BSELFChecker(BaseBSE):
         )
 
         if is_seq_inductive(seq, self, L):
-            yield seq
+            # check if seq is a subset of some previously yielded sequence
+            yield_seq = True
+            seqa = seq.toannotation()
+            for s in yielded_seqs:
+                if intersection(complement(s), seqa).is_empty():
+                    # seq is useless...
+                    yield_seq = False
+                    break
+            if yield_seq:
+                yield seq
 
     def initial_sets_from_exits(self, E, L: Loop):
         """
