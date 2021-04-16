@@ -267,10 +267,10 @@ class BSELFChecker(BaseBSE):
         res = self.unwind(loc, errpre, maxk=maxk)
         dbg_sec()
         if res is Result.SAFE:
-          print_stdout(
-              f"Loop {loc} proved by unwinding", color="GREEN"
-          )
-          return True
+            print_stdout(
+                f"Loop {loc} proved by unwinding", color="GREEN"
+            )
+            return True
         elif res is Result.UNSAFE:
           self.no_sum_loops.add(loc)
           return False

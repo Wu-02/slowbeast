@@ -15,8 +15,7 @@ def _nondet_value(fresh, op, bitsnum):
         ptrobj = fresh(f"unknown_obj_{op.as_value()}", get_offset_type())
         ptroff = fresh(f"unknown_off_{op.as_value()}", get_offset_type())
         return Pointer(ptrobj, ptroff)
-    else:
-        return fresh(f"uninit_{op.as_value()}", IntType(bitsnum))
+    return fresh(f"uninit_{op.as_value()}", IntType(bitsnum))
 
 
 # FIXME: do we need to inherit from SEMemory?
