@@ -3,16 +3,16 @@ from typing import Optional  # , Union
 
 from slowbeast.kindse.programstructure import ProgramStructure
 from slowbeast.symexe.annotations import AssumeAnnotation
-from slowbeast.util.debugging import print_stdout, dbg, ldbgv, print_stderr
-
+from slowbeast.util.debugging import print_stdout, print_stderr
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )
 from slowbeast.core.executor import PathExecutionResult
-from .bseexecutor import Executor as BSEExecutor, BSEState
 from slowbeast.bse.memorymodel import BSEMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
+
+from .bseexecutor import Executor as BSEExecutor, BSEState
 
 
 def report_state(stats, n, msg=None, fn=print_stderr):
@@ -220,8 +220,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def extend_to_callers(self, cfa, bsectx, postcondition):
         fun = cfa.fun()
         PS = self.programstructure
-        cgnode = PS.callgraph.getNode(fun)
-        for callerfun, callsite in cgnode.getCallers():
+        for _, callsite in PS.callgraph.getNode(fun).getCallers():
             calledge = PS.calls[callsite]
             if not calledge.has_predecessors():
                 state = postcondition.copy()
