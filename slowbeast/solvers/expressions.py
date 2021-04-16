@@ -1,6 +1,6 @@
-from slowbeast.domains.concrete import ConcreteDomain
-from slowbeast.domains.symbolic import *
-from slowbeast.ir.types import Type, IntType
+from slowbeast.domains.concrete import ConcreteDomain, ConcreteVal
+from slowbeast.domains.symbolic import SymbolicDomain
+from slowbeast.ir.types import Type, IntType, BoolType
 from slowbeast.domains.value import Value
 
 optimize_exprs = True
@@ -79,11 +79,11 @@ class ExprManager:
     def Bool(self, name):
         return self.Var(name, BoolType())
 
-    def subexpressions(self, expr):
-        if expr.is_concrete():
-            yield expr
-        else:
-            yield from SymbolicDomain.subexpressions(expr)
+   #def subexpressions(self, expr):
+   #    if expr.is_concrete():
+   #        yield expr
+   #    else:
+   #        yield from SymbolicDomain.subexpressions(expr)
 
     def simplify(self, expr):
         if expr.is_concrete():
@@ -162,7 +162,7 @@ class ExprManager:
         assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
             return ConcreteDomain.getTrue()
-        elif len(args) == 1:
+        if len(args) == 1:
             return args[0]
         if ConcreteDomain.belongto(*args):
             return ConcreteDomain.conjunction(*args)
@@ -179,7 +179,7 @@ class ExprManager:
         assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
             return ConcreteDomain.getFalse()
-        elif len(args) == 1:
+        if len(args) == 1:
             return args[0]
         if ConcreteDomain.belongto(*args):
             return ConcreteDomain.disjunction(*args)
@@ -191,10 +191,10 @@ class ExprManager:
             cval = c.value()
             if cval is True:
                 return a
-            elif cval is False:
+            if cval is False:
                 return b
             raise RuntimeError(f"Invalid bool: {cval}")
-            return ConcreteDomain.And(a, b)
+            #return ConcreteDomain.And(a, b)
         lift = self.lift
         return opt(SymbolicDomain.Ite(lift(c), lift(a), lift(b)))
 
@@ -368,7 +368,7 @@ class ExprManager:
         if ConcreteDomain.belongto(a):
             if a.value() == 0:
                 return a
-            elif a.value() == 1:
+            if a.value() == 1:
                 return b
             if ConcreteDomain.belongto(b):
                 if b.value() == 0:

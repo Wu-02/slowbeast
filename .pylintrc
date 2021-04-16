@@ -58,6 +58,7 @@ disable=no-self-argument,
         fixme,
         missing-docstring, # can be split to missing-class-docstring and missing-function-docstring
         invalid-name,
+        single-string-used-for-slots,
         global-statement
 
 # Enable the message, report, category or checker with the given id(s). You can

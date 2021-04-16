@@ -1,13 +1,11 @@
+from slowbeast.domains.symbolic import _use_z3
+from slowbeast.domains.concrete import ConcreteVal
 from .expressions import ExprManager
-from ..domains.symbolic import _use_z3
-from ..domains.concrete import ConcreteVal
-from ..util.debugging import FIXME
 
 if _use_z3:
-    from z3 import Solver as Z3Solver, Context as Z3Context
+    from z3 import Solver as Z3Solver
     from z3 import sat, unsat, unknown
-    from z3 import BitVecVal, BoolVal, is_bv_value, BitVecNumRef, FPNumRef, is_false
-    from z3 import fpIsNaN, simplify, fpToIEEEBV
+    from z3 import BitVecVal, BoolVal, BitVecNumRef, FPNumRef, is_false
 
     def models(assumpt, *args):
         s = Z3Solver()
@@ -53,56 +51,6 @@ if _use_z3:
         solver.pop()
         return vals
 
-    def smallmodels(assumpt, *args):
-        s = Z3Solver()
-        for a in assumpt:
-            s.add(a.unwrap())
-        r = s.check()
-        if r != sat:
-            return None
-
-        # minimize the model
-        FIXME("Add timeout to solver when minimizing model")
-        vals = []
-        for a in args:
-            s.push()
-            s.add(a.unwrap() == 0)
-            if s.check() == sat:
-                continue
-            else:
-                s.pop()
-
-            # try to obtain a small cex
-            s.push()
-            s.add(a.unwrap() > 0)
-            if s.check() == sat:
-                mx = 1000
-            else:
-                mx = -1000
-                s.pop()
-                s.add(a.unwrap() <= 0)
-
-            while True:
-                s.push()
-                if mx > 0:
-                    s.add(a.unwrap() < mx)
-                else:
-                    s.add(a.unwrap() > mx)
-
-                if s.check() == sat:
-                    mx = int(mx / 2)
-                else:
-                    s.pop()
-                    break
-
-        s.check()
-        m = s.model()
-        vals = []
-        for a in args:
-            vals.append(m[a.unwrap()])
-
-        return vals
-
     def _is_sat(solver, timeout, *args):
         if solver is None:
             solver = Z3Solver()
@@ -116,9 +64,9 @@ if _use_z3:
 
         if r == sat:
             return True
-        elif r == unsat:
+        if r == unsat:
             return False
-        elif r == unknown:
+        if r == unknown:
             reason = solver.reason_unknown()
             if reason == "interrupted from keyboard":
                 # If the user interrupted the computation,
@@ -180,7 +128,7 @@ class ConcreteSolver(SolverIntf):
     """
 
     def __init__(self, em=ExprManager()):
-        super(ConcreteSolver, self).__init__(em)
+        super().__init__(em)
 
     def is_sat(self, *e):
         assert all(map(lambda x: x.is_bool() and isinstance(x.value(), bool), e)), e
@@ -258,7 +206,6 @@ class SymbolicSolver(SolverIntf):
         ), "ConcreteVal instead of symbolic value"
         if any(map(lambda x: x.is_concrete() and x.value() is False, assumpt)):
             return None
-        # m = smallmodels(assumpt, *e)
         m = models(assumpt, *e)
         return map_model(m, e)
 
