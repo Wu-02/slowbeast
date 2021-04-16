@@ -1,16 +1,16 @@
 from slowbeast.core.errors import AssertFailError
 from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg, ldbgv
 
-from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
-from slowbeast.kindse.naive.naivekindse import Result
-from slowbeast.kindse import KindSEOptions
 from slowbeast.symexe.statesset import intersection, union, complement
 from slowbeast.symexe.symbolicexecution import SEStats
-from slowbeast.analysis.loops import Loop
-from slowbeast.kindse.programstructure import ProgramStructure
-
 from slowbeast.symexe.annotations import AssertAnnotation
-
+from slowbeast.kindse.programstructure import ProgramStructure
+from slowbeast.kindse.naive.naivekindse import Result
+from slowbeast.kindse import KindSEOptions
+from slowbeast.kindse.inductivesequence import InductiveSequence
+from slowbeast.kindse.overapproximations import overapprox_set
+from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
+from slowbeast.analysis.loops import Loop
 from slowbeast.solvers.solver import getGlobalExprManager
 
 from .bse import (
@@ -19,9 +19,6 @@ from .bse import (
     report_state,
     check_paths,
 )
-from slowbeast.kindse.inductivesequence import InductiveSequence
-from slowbeast.kindse.overapproximations import overapprox_set
-from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
 from .inductiveset import InductiveSet
 from .loopinfo import LoopInfo
 
@@ -35,11 +32,6 @@ class BSELFOptions(KindSEOptions):
         else:
             self.fold_loops = True
             self.target_is_whole_seq = True
-
-    def default(self, parentopts=None):
-        n = BSELFOptions()
-        if parentopts:
-            super(self).__init__(parentopts)
 
 
 def _dump_inductive_sets(checker, loc):
@@ -67,11 +59,11 @@ def overapprox(executor, s, E, target, L):
         dbg(
             "FIXME: pre-image is not inductive cause we do not support nondets() in lazy execution yet"
         )
-        return None
+        return
     # --- workaround ends here...
     if S.is_empty():
         dbg("Starting sequence is empty")
-        return None
+        return
 
     # add relations
     for rel in get_const_cmp_relations(S.get_se_state()):
@@ -150,8 +142,8 @@ class BSELFChecker(BaseBSE):
 
         if __debug__ and invariants:
             dbg("Have these invariants at hand:")
-            for loc, invs in invariants.items():
-                dbg(f"  @ {loc}: {invs}")
+            for iloc, invs in invariants.items():
+                dbg(f"  @ {iloc}: {invs}")
 
         self.no_sum_loops = set()
         self._loop_hits = {}
@@ -639,7 +631,7 @@ class BSELFChecker(BaseBSE):
                     if __debug__:
                         assert is_seq_inductive(
                             tmp, self, L
-                        ), f"Extended sequence is not inductive)"
+                        ), "Extended sequence is not inductive"
 
                     # extended.append(self.abstract_seq(e, errs0, L))
                     extended.append(tmp)
@@ -685,33 +677,33 @@ class BSELFChecker(BaseBSE):
             if r is Result.SAFE:
                 assert pre is None, "Feasible precondition for infeasible error path"
                 continue  # infeasible path
-            elif r is Result.UNSAFE:  # real error
+            if r is Result.UNSAFE:  # real error
                 return r, pre
-            else:  #  the error path is feasible, but the errors may not be real
-                assert r is Result.UNKNOWN
-                if opt_fold_loops:
-                    # is this a path starting at a loop header?
-                    fl = bsectx.edge.source()
-                    if self.is_loop_header(fl):
-                        # check whether we are not told to give up when hitting this loop this time
-                        mlh = self._max_loop_hits
-                        if mlh:
-                            lnm = self._loop_hits.setdefault(fl, 1)
-                            if lnm > self._max_loop_hits:
-                                dbg("Hit limit of visits to a loop")
-                                return Result.UNKNOWN, pre
-                            self._loop_hits[fl] += 1
+            #  the error path is feasible, but the errors may not be real
+            assert r is Result.UNKNOWN
+            if opt_fold_loops:
+                # is this a path starting at a loop header?
+                fl = bsectx.edge.source()
+                if self.is_loop_header(fl):
+                    # check whether we are not told to give up when hitting this loop this time
+                    mlh = self._max_loop_hits
+                    if mlh:
+                        lnm = self._loop_hits.setdefault(fl, 1)
+                        if lnm > self._max_loop_hits:
+                            dbg("Hit limit of visits to a loop")
+                            return Result.UNKNOWN, pre
+                        self._loop_hits[fl] += 1
 
-                        if fl not in self.no_sum_loops:
-                            if self.handle_loop(fl, pre):
-                                dbg(
-                                    f"Path with loop {fl} proved safe",
-                                    color="dark_green",
-                                )
-                            else:
-                                self.extend_state(bsectx, pre)
-                            continue
-                self.extend_state(bsectx, pre)
+                    if fl not in self.no_sum_loops:
+                        if self.handle_loop(fl, pre):
+                            dbg(
+                                f"Path with loop {fl} proved safe",
+                                color="dark_green",
+                            )
+                        else:
+                            self.extend_state(bsectx, pre)
+                        continue
+            self.extend_state(bsectx, pre)
 
         raise RuntimeError("Unreachable")
 
@@ -781,7 +773,7 @@ class BSELF:
                 print_stdout("Error found.", color="redul")
                 self.stats.errors += 1
                 return result
-            elif result is Result.SAFE:
+            if result is Result.SAFE:
                 print_stdout(
                     f"Error condition {A.expr()} at {loc} is safe!.", color="green"
                 )

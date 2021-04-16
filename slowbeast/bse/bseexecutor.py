@@ -48,6 +48,7 @@ class BSEState(LazySEState):
         Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
         reads = list(M.items())
         constraints = []
+        # FIXME: use enumerate()
         for idx1 in range(0, len(reads)):
             ptr1, val1 = reads[idx1]
             for idx2 in range(idx1 + 1, len(reads)):
@@ -170,7 +171,6 @@ class BSEState(LazySEState):
         # print("State:", self)
         # print('-- -- --')
         ###
-        em = self.expr_manager()
         try_eval = prestate.try_eval
         add_input = self.add_nondet
 
