@@ -28,7 +28,7 @@ class SEStats:
         self.forks = 0
 
 
-def addPointerWithConstant(E, op1, op2):
+def add_pointer_with_constant(E, op1, op2):
     return Pointer(op1.object(), E.Add(op1.offset(), op2))
 
 
@@ -49,7 +49,7 @@ def condition_to_bool(cond, EM):
     return cval
 
 
-def evalCond(state, cond):
+def eval_condition(state, cond):
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
     c = state.eval(cond)
     assert isinstance(c, Value)
@@ -184,7 +184,7 @@ class Executor(ConcreteExecutor):
         self.stats.branchings += 1
 
         cond = instr.condition()
-        cval = evalCond(state, cond)
+        cval = eval_condition(state, cond)
 
         succ = None
         if to is True:
@@ -210,7 +210,7 @@ class Executor(ConcreteExecutor):
         self.stats.branchings += 1
 
         cond = instr.condition()
-        cval = evalCond(state, cond)
+        cval = eval_condition(state, cond)
 
         trueBranch, falseBranch = self.fork(state, cval)
         # at least one must be feasable...
@@ -393,7 +393,7 @@ class Executor(ConcreteExecutor):
         op2ptr = op2.is_pointer()
         if op1ptr:
             if not op2ptr:
-                r = addPointerWithConstant(E, op1, op2)
+                r = add_pointer_with_constant(E, op1, op2)
             else:
                 state.setKilled(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
@@ -401,7 +401,7 @@ class Executor(ConcreteExecutor):
                 return [state]
         elif op2ptr:
             if not op1ptr:
-                r = addPointerWithConstant(E, op2, op1)
+                r = add_pointer_with_constant(E, op2, op1)
             else:
                 state.setKilled(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
