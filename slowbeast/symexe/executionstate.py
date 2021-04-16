@@ -249,7 +249,7 @@ class SEState(ExecutionState):
             self._nondets = copy(self._nondets)
             self._nondets_ro = False
         # we can have only one nonded for a given allocation
-        if n.is_nondet_load() and self.getNondetLoadOf(n.alloc) is not None:
+        if n.is_nondet_load() and self.nondet_load_of(n.alloc) is not None:
             raise RuntimeError(
                 f"Multiple nondets of the same load unsupported atm: n:{n}, nondets: {self._nondets}"
             )
@@ -269,10 +269,10 @@ class SEState(ExecutionState):
     def nondet_values(self):
         return (nd.value for nd in self._nondets)
 
-    def getNondetLoads(self):
+    def nondet_loads(self):
         return (l for l in self._nondets if isinstance(l.instruction, Load))
 
-    def getNondetLoadOf(self, alloc):
+    def nondet_load_of(self, alloc):
         raise NotImplemented("Not Implemented")
         for n in self._nondets:
             if n.is_nondet_load() and n.alloc == alloc:

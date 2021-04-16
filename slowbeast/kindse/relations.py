@@ -39,7 +39,7 @@ def get_safe_subexpressions(state, unsafe):
 
 
 def iter_nondet_load_pairs(state):
-    loads = list(state.getNondetLoads())
+    loads = list(state.nondet_loads())
     for i in range(0, len(loads)):
         for j in range(i + 1, len(loads)):
             yield loads[i], loads[j]
@@ -129,7 +129,7 @@ def get_var_diff_relations(state):
         #        )
 
         # check equalities to other loads: l1 - l2 = k*l3
-        for nd3 in state.getNondetLoads():
+        for nd3 in state.nondet_loads():
             l3 = nd3.value
             if l3 is l1 or l3 is l2 or l3.is_pointer():
                 continue
@@ -212,7 +212,7 @@ def _get_const_cmp_relations(state):
     EM = state.expr_manager()
 
     # equalities with constants
-    for nd in state.getNondetLoads():
+    for nd in state.nondet_loads():
         l = nd.value
         if l.is_pointer():
             continue
@@ -252,7 +252,7 @@ def get_relations_to_prev_states(state, prev):
 
     # relation between loads
     prevexpr = prev.translated(state).as_expr()
-    # for l in state.getNondetLoads():
+    # for l in state.nondet_loads():
     for l, cval in _get_const_cmp_relations(state):
         bw = l.bitwidth()
         # l2bw = l2.type().bitwidth()

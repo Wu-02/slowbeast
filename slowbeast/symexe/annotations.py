@@ -5,7 +5,7 @@ from copy import copy
 
 
 def get_subs(state):
-    return {nd.value: nd.instruction for nd in state.getNondetLoads()}
+    return {nd.value: nd.instruction for nd in state.nondet_loads()}
 
 
 class Annotation:
