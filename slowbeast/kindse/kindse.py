@@ -236,7 +236,7 @@ class LoopInfo:
 
         self.indexecutor = executor.ind_executor()
 
-        self.prestate = executor.ind_executor().createCleanState()
+        self.prestate = executor.ind_executor().create_clean_state()
         poststates = check_paths(executor, loop.paths()).ready
         assert poststates, "Loop has no infeasible path"
         self.poststates = poststates

@@ -153,7 +153,7 @@ class Executor:
         assert self.memorymodel is not None
         return self.memorymodel
 
-    def createState(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None):
         """
         Create a state that can be processed by this executor.
         """
@@ -207,7 +207,7 @@ class Executor:
                 s.pc = s.pc.get_next_inst()
         return states
 
-    def execCmp(self, state, instr):
+    def exec_cmp(self, state, instr):
         assert isinstance(instr, Cmp)
         op1 = state.eval(instr.operand(0))
         op2 = state.eval(instr.operand(1))
@@ -255,7 +255,7 @@ class Executor:
 
         return [state]
 
-    def execBranch(self, state, instr):
+    def exec_branch(self, state, instr):
         assert isinstance(instr, Branch)
         c = instr.condition()
         assert isinstance(c, ValueInstruction) or c.is_concrete()
@@ -276,7 +276,7 @@ class Executor:
 
         return [state]
 
-    def execAssert(self, state, instr):
+    def exec_assert(self, state, instr):
         assert isinstance(instr, Assert)
         for o in instr.operands():
             v = state.eval(o)
@@ -292,7 +292,7 @@ class Executor:
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def execAssume(self, state, instr):
+    def exec_assume(self, state, instr):
         assert isinstance(instr, Assume)
         state.pc = state.pc.get_next_inst()
         for o in instr.operands():
@@ -306,10 +306,10 @@ class Executor:
 
         return [state]
 
-    def execUnaryOp(self, state, instr):
+    def exec_unary_op(self, state, instr):
         raise NotImplementedError("Concrete executor does not implement unary op yet")
 
-    def execBinaryOp(self, state, instr):
+    def exec_binary_op(self, state, instr):
         assert isinstance(instr, BinaryOperation)
         op1c = state.eval(instr.operand(0))
         op2c = state.eval(instr.operand(1))
@@ -369,10 +369,10 @@ class Executor:
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def execIte(self, state, instr):
+    def exec_ite(self, state, instr):
         raise NotImplementedError("Ite not implemented in core")
 
-    def execCall(self, state, instr):
+    def exec_call(self, state, instr):
         assert isinstance(instr, Call)
 
         if self.callsForbidden():
@@ -448,23 +448,23 @@ class Executor:
         elif isinstance(instr, Alloc):
             states = self.execAlloc(state, instr)
         elif isinstance(instr, Cmp):
-            states = self.execCmp(state, instr)
+            states = self.exec_cmp(state, instr)
         elif isinstance(instr, Print):
             states = self.execPrint(state, instr)
         elif isinstance(instr, Branch):
-            states = self.execBranch(state, instr)
+            states = self.exec_branch(state, instr)
         elif isinstance(instr, Assert):
-            states = self.execAssert(state, instr)
+            states = self.exec_assert(state, instr)
         elif isinstance(instr, Assume):
-            states = self.execAssume(state, instr)
+            states = self.exec_assume(state, instr)
         elif isinstance(instr, UnaryOperation):
-            states = self.execUnaryOp(state, instr)
+            states = self.exec_unary_op(state, instr)
         elif isinstance(instr, BinaryOperation):
-            states = self.execBinaryOp(state, instr)
+            states = self.exec_binary_op(state, instr)
         elif isinstance(instr, Ite):
-            states = self.execIte(state, instr)
+            states = self.exec_ite(state, instr)
         elif isinstance(instr, Call):
-            states = self.execCall(state, instr)
+            states = self.exec_call(state, instr)
         elif isinstance(instr, Return):
             states = self.execRet(state, instr)
         else:
@@ -593,7 +593,7 @@ class Executor:
                 assert followsucc or curbb.last().false_successor() == succbb
                 for s in states:
                     assert s.isReady()
-                    newstates += self.execBranchTo(s, s.pc, followsucc)
+                    newstates += self.exec_branch_to(s, s.pc, followsucc)
             else:  # this is the last location on path,
                 # so just normally execute the block instructions
                 newstates = self.executeTillBranch(states)

@@ -9,7 +9,7 @@ from .executor import Executor as SExecutor
 
 
 class FutureExecutor(SExecutor):
-    def execCall(self, state, instr):
+    def exec_call(self, state, instr):
         assert isinstance(instr, Call)
         fun = instr.called_function()
         if self.is_error_fn(fun):
@@ -17,7 +17,7 @@ class FutureExecutor(SExecutor):
             return [state]
 
         if fun.is_undefined():
-            return self.execUndefFun(state, instr, fun)
+            return self.exec_undef_fun(state, instr, fun)
 
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?

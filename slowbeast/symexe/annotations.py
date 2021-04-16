@@ -236,7 +236,7 @@ def _execute_expr_annotation(executor, states, annot):
                 states.append(s)
         else:
             assert annot.isAssert()
-            tmp = executor.execAssertExpr(s, expr)
+            tmp = executor.exec_assert_expr(s, expr)
             tr, tu = split_ready_states(tmp)
             states += tr
             nonready += tu

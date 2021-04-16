@@ -128,7 +128,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             # ldbgv("Computing (init) precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
         else:
             executor = self.ind_executor()
-            s = executor.createCleanState()
+            s = executor.create_clean_state()
             states = [s]
 
             # ldbgv("Computing precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")

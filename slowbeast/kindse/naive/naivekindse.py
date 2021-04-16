@@ -118,7 +118,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         entry = self.getProgram().entry()
         append = ind.append
         for b in bblocks:
-            s = executor.createState()
+            s = executor.create_state()
             s.pushCall(None, entry)
             s.pc = b.first()
             append(s)

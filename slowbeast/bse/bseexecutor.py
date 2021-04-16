@@ -239,7 +239,7 @@ class Executor(PathExecutor):
     def __init__(self, solver, opts, memorymodel=None):
         super().__init__(solver, opts, memorymodel or BSEMemoryModel(opts))
 
-    def createState(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None):
         """
         Overridden method for creating states.
         Since the path may not be initial, we must use states

@@ -201,7 +201,7 @@ class BSELFChecker(BaseBSE):
         else:
             executor = self.ind_executor()
 
-            s = executor.createCleanState()
+            s = executor.create_clean_state()
             states = [s]
 
             ldbgv("Executing path: {0}", (path,), fn=self.reportfn, color="orange")
@@ -650,7 +650,7 @@ class BSELFChecker(BaseBSE):
         em = getGlobalExprManager()
         notA = self.assertion.assume_not(em)
         for edge in onlyedges if onlyedges else loc.predecessors():
-            state = self.ind_executor().createCleanState()
+            state = self.ind_executor().create_clean_state()
             state.apply_postcondition(notA)
             self.queue_state(
                 BSEContext(edge, state, AssertFailError(f"{loc} reachable."))

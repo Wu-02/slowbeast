@@ -114,7 +114,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         else:
             executor = self.ind_executor()
 
-            s = executor.createCleanState()
+            s = executor.create_clean_state()
             states = [s]
 
             ldbgv("Executing path: {0}", (path,), fn=self.reportfn, color="orange")

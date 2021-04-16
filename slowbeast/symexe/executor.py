@@ -82,7 +82,7 @@ class Executor(ConcreteExecutor):
         # reverse the vector so thawe can pop from it
         self._input_vector.reverse()
 
-    def createState(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None):
         if m is None:
             m = self.getMemoryModel().createMemory()
         if self.getOptions().incremental_solving:
@@ -93,13 +93,13 @@ class Executor(ConcreteExecutor):
         assert not s.constraints(), "the state is not clean"
         return s
 
-    def createCleanState(self, pc=None, m=None):
-        s = self.createState(pc, m)
+    def create_clean_state(self, pc=None, m=None):
+        s = self.create_state(pc, m)
         s.pushCall(None)
         return s
 
     def create_states_set(self, S=None):
-        ss = StatesSet(self.createCleanState())
+        ss = StatesSet(self.create_clean_state())
         if S:
             # set the set to be S
             ss.intersect(S)
@@ -173,7 +173,7 @@ class Executor(ConcreteExecutor):
             return state
         return None
 
-    def execBranchTo(self, state, instr, to):
+    def exec_branch_to(self, state, instr, to):
         """
         Execute a branch instruction and follow the given successor
         (True or False successor).
@@ -205,7 +205,7 @@ class Executor(ConcreteExecutor):
 
         return [s]
 
-    def execBranch(self, state, instr):
+    def exec_branch(self, state, instr):
         assert isinstance(instr, Branch)
         self.stats.branchings += 1
 
@@ -229,7 +229,7 @@ class Executor(ConcreteExecutor):
 
         return states
 
-    def cmpValues(self, E, p, op1, op2, unsgn, flt=False):
+    def compare_values(self, E, p, op1, op2, unsgn, flt=False):
         if p == Cmp.LE:
             return E.Le(op1, op2, unsgn, flt)
         elif p == Cmp.LT:
@@ -245,7 +245,7 @@ class Executor(ConcreteExecutor):
         else:
             raise RuntimeError("Invalid comparison")
 
-    def cmpPointers(self, state, instr, p1, p2):
+    def compare_pointers(self, state, instr, p1, p2):
         mo1id = p1.object()
         mo2id = p2.object()
         if is_symbolic(mo1id) or is_symbolic(mo2id):
@@ -259,7 +259,7 @@ class Executor(ConcreteExecutor):
         if mo1id == mo2id:
             state.set(
                 instr,
-                self.cmpValues(E, p, p1.offset(), p2.offset(), instr.is_unsigned()),
+                self.compare_values(E, p, p1.offset(), p2.offset(), instr.is_unsigned()),
             )
             state.pc = state.pc.get_next_inst()
             return [state]
@@ -277,7 +277,7 @@ class Executor(ConcreteExecutor):
         state.setKilled("Invalid pointer comparison")
         return [state]
 
-    def execCmp(self, state, instr):
+    def exec_cmp(self, state, instr):
         assert isinstance(instr, Cmp)
         seval = state.eval
         getop = instr.operand
@@ -288,14 +288,14 @@ class Executor(ConcreteExecutor):
         op2isptr = op2.is_pointer()
         if op1isptr or op2isptr:
             if op1isptr and op2isptr:
-                return self.cmpPointers(state, instr, op1, op2)
+                return self.compare_pointers(state, instr, op1, op2)
             else:
                 # we handle only comparison of symbolic constant (pointer) to null
                 if op1isptr and op1.is_null():
                     E = state.expr_manager()
                     state.set(
                         instr,
-                        self.cmpValues(
+                        self.compare_values(
                             E,
                             instr.predicate(),
                             E.ConcreteVal(0, op1.bitwidth()),
@@ -307,7 +307,7 @@ class Executor(ConcreteExecutor):
                     E = state.expr_manager()
                     state.set(
                         instr,
-                        self.cmpValues(
+                        self.compare_values(
                             E,
                             instr.predicate(),
                             op1,
@@ -321,7 +321,7 @@ class Executor(ConcreteExecutor):
                     )
                 return [state]
 
-        x = self.cmpValues(
+        x = self.compare_values(
             state.expr_manager(),
             instr.predicate(),
             op1,
@@ -334,7 +334,7 @@ class Executor(ConcreteExecutor):
 
         return [state]
 
-    def execCall(self, state, instr):
+    def exec_call(self, state, instr):
         assert isinstance(instr, Call)
         fun = instr.called_function()
         if self.is_error_fn(fun):
@@ -342,7 +342,7 @@ class Executor(ConcreteExecutor):
             return [state]
 
         if fun.is_undefined():
-            return self.execUndefFun(state, instr, fun)
+            return self.exec_undef_fun(state, instr, fun)
 
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
@@ -357,7 +357,7 @@ class Executor(ConcreteExecutor):
         state.pushCall(instr, fun, mapping)
         return [state]
 
-    def execUndefFun(self, state, instr, fun):
+    def exec_undef_fun(self, state, instr, fun):
         name = fun.name()
         if name == "abort":
             state.setTerminated("Aborted via an abort() call")
@@ -378,7 +378,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def execBinaryOp(self, state, instr):
+    def exec_binary_op(self, state, instr):
         assert isinstance(instr, BinaryOperation)
         seval = state.eval
         getop = instr.operand
@@ -455,7 +455,7 @@ class Executor(ConcreteExecutor):
         states.append(state)
         return states
 
-    def execIte(self, state, instr):
+    def exec_ite(self, state, instr):
         cond = state.eval(instr.condition())
         assert cond.is_bool(), cond
         if cond.is_concrete():
@@ -474,7 +474,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def execUnaryOp(self, state, instr):
+    def exec_unary_op(self, state, instr : UnaryOperation):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
         opcode = instr.operation()
@@ -510,7 +510,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def execAssumeExpr(self, state, v):
+    def exec_assume_expr(self, state, v):
         v = condition_to_bool(v, state.expr_manager())
         assert v.is_bool(), v
         if v.is_concrete():
@@ -525,7 +525,7 @@ class Executor(ConcreteExecutor):
 
         return [state]
 
-    def execAssume(self, state, instr):
+    def exec_assume(self, state, instr):
         assert isinstance(instr, Assume)
         for o in instr.operands():
             v = state.eval(o)
@@ -546,7 +546,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def execAssertExpr(self, state, v, msg=""):
+    def exec_assert_expr(self, state, v, msg=""):
         states = []
         assert v.is_bool()
         if v.is_concrete():
@@ -565,7 +565,7 @@ class Executor(ConcreteExecutor):
         assert states, "Generated no states"
         return states
 
-    def execAssert(self, state, instr):
+    def exec_assert(self, state, instr):
         assert isinstance(instr, Assert)
         o = instr.condition()
         msg = instr.msg()
@@ -591,12 +591,6 @@ class Executor(ConcreteExecutor):
 
         assert states, "Generated no states"
         return states
-
-    def toUnique(self, state, val):
-        if val.is_concrete():
-            return val
-
-        return state.solver().toUnique(val, *state.constraints())
 
     def concretize(self, state, val):
         if val.is_concrete():

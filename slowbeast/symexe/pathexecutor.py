@@ -19,7 +19,7 @@ class Executor(SExecutor):
     def __init__(self, solver, opts, memorymodel=None):
         super().__init__(solver, opts, memorymodel)
 
-    def createState(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None):
         """
         Overridden method for creating states.
         Since the path may not be initial, we must use states
@@ -31,7 +31,7 @@ class Executor(SExecutor):
         assert not s.constraints(), "the state is not clean"
         return s
 
-    def execUndefFun(self, state, instr, fun):
+    def exec_undef_fun(self, state, instr, fun):
         name = fun.name()
         if name == "abort":
             state.setTerminated("Aborted via an abort() call")
@@ -83,7 +83,7 @@ class Executor(SExecutor):
                     verbose_lvl=3,
                     color="dark_green",
                 )
-                tmp = self.execAssumeExpr(
+                tmp = self.exec_assume_expr(
                     r, r.expr_manager().Not(cond) if isnot else cond
                 )
                 for t in tmp:
@@ -361,7 +361,7 @@ class CFGExecutor(SExecutor):
                     newstates = []
                     assert followsucc or curbb.last().false_successor() == succbb
                     for s in ready:
-                        newstates += self.execBranchTo(s, s.pc, followsucc)
+                        newstates += self.exec_branch_to(s, s.pc, followsucc)
             else:  # this is the last location on path,
                 # so just normally execute the branch instruction in the block
                 newstates = self.executeTillBranch(ready)

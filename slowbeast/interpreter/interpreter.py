@@ -64,7 +64,7 @@ class Interpreter:
         Get state(s) from which to start execution.
         May be overriden by child classes
         """
-        return [self._executor.createState()]
+        return [self._executor.create_state()]
 
     def getNextState(self):
         if not self.states:
