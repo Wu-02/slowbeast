@@ -10,70 +10,71 @@ class ExecutionStatus:
     # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
     KILLED = 5
 
-    __slots__ = "value", "detail"
+    __slots__ = "_status", "_detail"
 
     def __init__(self, st=READY):
-        self.value = st
-        self.detail = None
+        self._status = st
+        self._detail = None
 
     def copy(self):
         return deepcopy(self)
 
     def __eq__(self, rhs):
-        return self.value == rhs.value and self.detail == rhs.detail
+        return self._status == rhs._status and self._detail == rhs._detail
 
     def __hash__(self):
-        return hash(self.detail) ^ hash(self.value)
+        return hash(self._detail) ^ hash(self._status)
 
     def getStatus(self):
-        return self.value
+        return self._status
 
     def getDetail(self):
-        return self.detail
+        return self._detail
 
     def setError(self, e):
-        self.detail = e
-        self.value = ExecutionStatus.ERROR
+        self._detail = e
+        self._status = ExecutionStatus.ERROR
 
     def setKilled(self, e):
         # raise RuntimeError(e) # for debugging
-        self.detail = e
-        self.value = ExecutionStatus.KILLED
+        self._detail = e
+        self._status = ExecutionStatus.KILLED
 
     def setExited(self, ec):
-        self.detail = ec
-        self.value = ExecutionStatus.EXITED
+        self._detail = ec
+        self._status = ExecutionStatus.EXITED
 
     def setTerminated(self, reason):
         # The state terminated for some other reason than regular exit
-        self.detail = reason
-        self.value = ExecutionStatus.TERMINATED
+        self._detail = reason
+        self._status = ExecutionStatus.TERMINATED
 
     def isError(self):
-        return self.value == ExecutionStatus.ERROR
+        return self._status == ExecutionStatus.ERROR
 
     def isKilled(self):
-        return self.value == ExecutionStatus.KILLED
+        return self._status == ExecutionStatus.KILLED
 
     def isExited(self):
-        return self.value == ExecutionStatus.EXITED
+        return self._status == ExecutionStatus.EXITED
 
     def isTerminated(self):
-        return self.value == ExecutionStatus.TERMINATED
+        return self._status == ExecutionStatus.TERMINATED
 
     def isReady(self):
-        return self.value == ExecutionStatus.READY
+        return self._status == ExecutionStatus.READY
 
     def __repr__(self):
-        if self.value == ExecutionStatus.READY:
+        val = self._status
+        if val == ExecutionStatus.READY:
             return "READY"
-        elif self.value == ExecutionStatus.ERROR:
+        if val == ExecutionStatus.ERROR:
             return "ERROR"
-        elif self.value == ExecutionStatus.EXITED:
+        if val == ExecutionStatus.EXITED:
             return "EXITED"
-        elif self.value == ExecutionStatus.TERMINATED:
+        if val == ExecutionStatus.TERMINATED:
             return "TERMINATED"
-        elif self.value == ExecutionStatus.KILLED:
+        elif val == ExecutionStatus.KILLED:
             return "KILLED"
         raise RuntimeError("Invalid state status")
 
