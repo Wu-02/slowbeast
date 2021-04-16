@@ -45,9 +45,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             elif ns.was_killed():
                 self.stats.paths += 1
                 self.stats.killed_paths += 1
-                print_stderr(
-                    ns.status_detail(), prefix="KILLED STATE: ", color="WINE"
-                )
+                print_stderr(ns.status_detail(), prefix="KILLED STATE: ", color="WINE")
                 return Result.UNKNOWN
             else:
                 assert ns.exited()
@@ -79,9 +77,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             elif ns.is_terminated():
                 print_stderr(ns.get_error(), color="BROWN")
             elif ns.was_killed():
-                print_stderr(
-                    ns.status_detail(), prefix="KILLED STATE: ", color="WINE"
-                )
+                print_stderr(ns.status_detail(), prefix="KILLED STATE: ", color="WINE")
                 return Result.UNKNOWN
             else:
                 assert ns.exited()
@@ -104,9 +100,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
                 )
                 break
             elif ns.was_killed():
-                print_stderr(
-                    ns.status_detail(), prefix="KILLED STATE: ", color="WINE"
-                )
+                print_stderr(ns.status_detail(), prefix="KILLED STATE: ", color="WINE")
                 return Result.UNKNOWN
 
         return Result.UNSAFE if has_error else Result.SAFE

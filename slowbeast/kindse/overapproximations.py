@@ -12,6 +12,7 @@ from slowbeast.symexe.annotations import (
 
 from .inductivesequence import InductiveSequence
 
+
 def remove_implied_literals(clauses):
     """
     Returns an equivalent but possibly smaller formula
@@ -458,9 +459,7 @@ class LoopStateOverapproximation:
         if c.is_concrete():
             return c
 
-        assert intersection(
-            R, c, self.unsafe
-        ).is_empty(), f"{R} & {c} & {self.unsafe}"
+        assert intersection(R, c, self.unsafe).is_empty(), f"{R} & {c} & {self.unsafe}"
         if __debug__:
             X = R.copy()
             X.intersect(c)

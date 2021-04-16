@@ -3,6 +3,7 @@ from sys import stdout
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import Call
 
+
 class CallGraph:
     class Node:
         __slots__ = "_fun", "callsites", "callers"

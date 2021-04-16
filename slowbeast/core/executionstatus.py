@@ -7,7 +7,7 @@ class ExecutionStatus:
     EXITED = 2  # normally exited
     TERMINATED = 3  # terminated by instruction (abort, etc.)
     ERROR = 4  # hit an error (violated assertion, oob access, etc.)
-    KILLED = 5 # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
+    KILLED = 5  # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
 
     __slots__ = "_status", "_detail"
 

@@ -21,7 +21,9 @@ class FutureExecutor(SExecutor):
 
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.set_killed("calling '{0}', but calls are forbidden".format(fun.name()))
+            state.set_killed(
+                "calling '{0}', but calls are forbidden".format(fun.name())
+            )
             return [state]
 
         nexti = instr.get_next_inst()

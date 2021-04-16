@@ -216,7 +216,7 @@ class CFA:
         """
         assert isinstance(prog, Program)
         # build a CFA for each function and then connect them with call edges
-        cfas = {fun : CFA(fun) for fun in prog.funs() if not fun.is_undefined()}
+        cfas = {fun: CFA(fun) for fun in prog.funs() if not fun.is_undefined()}
         # FIXME: populate call edges
         return cfas
 
