@@ -162,7 +162,7 @@ class BSELFChecker(BaseBSE):
 
     def check_loop_precondition(self, L, A):
         loc = L.header()
-        dbg_sec(f"Checking if {A} holds on {loc}")
+        print_stdout(f"Checking if {str(A)} holds on {loc}", color="purple")
 
         # run recursively BSELFChecker with already computed inductive sets
         checker = BSELFChecker(
@@ -176,7 +176,8 @@ class BSELFChecker(BaseBSE):
             max_loop_hits=1
         )
         result, states = checker.check(L.entries())
-        dbg_sec()
+        print_stdout(f"Checking if {A} holds on {loc} finished")
+        #dbg_sec()
         return result, states
 
     def execute_path(self, path, fromInit=False, invariants=None):
@@ -385,7 +386,7 @@ class BSELFChecker(BaseBSE):
         # reduce and over-approximate the initial sequence
         if seqs:
             tmp = []
-            dbg(f"Got {len(seqs)} starting inductive sequence(s)")
+            print_stdout(f"Got {len(seqs)} starting inductive sequence(s)", color="dark_blue")
             for seq in seqs:
                 tmp.extend(self.overapprox_init_seq(seq, errs0, L))
             if tmp:
