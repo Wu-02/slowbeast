@@ -1,8 +1,5 @@
 from slowbeast.bse.bse import check_paths
-from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
-from slowbeast.symexe.annotations import execute_annotation_substitutions
 from slowbeast.symexe.statesset import union
-
 
 class LoopInfo:
     def __init__(self, executor, loop):
@@ -99,4 +96,3 @@ class LoopInfo:
         ind_on_some_path = bool(r.ready)
         ind_on_all_paths = not bool(r.errors)
         return ind_on_some_path, ind_on_all_paths
-
