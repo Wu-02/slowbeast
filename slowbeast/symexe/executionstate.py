@@ -229,14 +229,14 @@ class SEState(ExecutionState):
             self._constraints_ro = False
             self.add_constraint(*C)
 
-    def addWarning(self, msg):
+    def add_warning(self, msg):
         warn(msg)
         if self._warnings_ro:
             self._warnings = copy(self._warnings)
             self._warnings_ro = False
         self._warnings.append(msg)
 
-    def getWarnings(self, msg):
+    def warnings(self, msg):
         return self._warnings
 
     def create_nondet(self, instr, val):
