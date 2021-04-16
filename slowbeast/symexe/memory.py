@@ -215,7 +215,7 @@ class MemoryObject(CoreMO):
 
 
 class Memory(CoreMemory):
-    def createMO(self, size, nm=None, objid=None):
+    def create_memory_object(self, size, nm=None, objid=None):
         """
         Create a new memory object -- may be overridden
         by child classes to create a different type of

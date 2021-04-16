@@ -29,7 +29,7 @@ class MemoryModel:
         assert isinstance(instr, Alloc) or isinstance(instr, GlobalVariable)
         size = state.try_eval(instr.size())
         if instr.is_global():
-            ptr = state.memory.allocateGlobal(instr)
+            ptr = state.memory.allocate_global(instr)
         else:
             ptr = state.memory.allocate(size, instr)
         state.set(instr, ptr)

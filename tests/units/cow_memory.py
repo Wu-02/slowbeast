@@ -35,8 +35,8 @@ assert N._objects[ptr.object().value()]._is_ro(), "Object was not made RO"
 assert M._objects is N._objects, "References to objects differ"
 assert M._objects_ro is True, "Wrongly set RO flag after copy()"
 assert N._objects_ro is True, "Wrongly set RO flag after copy()"
-assert N.hasObject(ptr.object().value())
-assert M.hasObject(ptr.object().value())
+assert N.has_object(ptr.object().value())
+assert M.has_object(ptr.object().value())
 
 err = N.write(ptr, ConcreteVal(0, IntType(32)))
 assert not N._objects[ptr.object().value()]._is_ro(), "Object was not properly copied"

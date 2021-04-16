@@ -54,7 +54,7 @@ class Memory:
         self.copyTo(new)
         return new
 
-    def createMO(self, size, nm=None, objid=None):
+    def create_memory_object(self, size, nm=None, objid=None):
         """
         Create a new memory object -- may be overriden
         by child classes to create a different type of
@@ -84,7 +84,7 @@ class Memory:
 
     def _allocate(self, size, instr=None, nm=None, objid=None):
         """ Allocate a new memory object and return it """
-        o = self.createMO(size, nm, objid)
+        o = self.create_memory_object(size, nm, objid)
         assert o._is_ro() is False, "Created object is read-only (COW bug)"
 
         if instr:
@@ -106,7 +106,7 @@ class Memory:
 
         return Pointer(ConcreteVal(o.get_id(), get_size_type()))
 
-    def allocateGlobal(self, G, objid=None):
+    def allocate_global(self, G, objid=None):
         """ Allocate a new memory object and return a pointer to it """
         assert (
             objid is None or self._glob_objects.get(objid) is None
@@ -126,11 +126,11 @@ class Memory:
 
         return ptr
 
-    def hasGlobalObject(self, moid):
+    def has_global_object(self, moid):
         return self._glob_objects.get(moid) is not None
 
-    def hasObject(self, moid):
-        return self._objects.get(moid) is not None or self.hasGlobalObject(moid)
+    def has_object(self, moid):
+        return self._objects.get(moid) is not None or self.has_global_object(moid)
 
     def get_obj(self, moid):
         if isinstance(moid, ConcreteVal):
@@ -186,7 +186,7 @@ class Memory:
             ret = self._cs.get(v)
         return ret
 
-    def globalsList(self):
+    def globals_list(self):
         """ Return the list of globals in this state """
         # return only list, so that we must get them through "get"
         return self._glob_bindings.keys()

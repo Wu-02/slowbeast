@@ -46,7 +46,7 @@ class LazySymbolicMemoryModel(CoreMM):
             size = state.solver().Var(f"ndt_size_{instr.as_value()}", get_size_type())
         size = state.try_eval(size)
         if instr.is_global():
-            ptr = state.memory.allocateGlobal(instr)
+            ptr = state.memory.allocate_global(instr)
         else:
             ptr = state.memory.allocate(size, instr)
         state.set(instr, ptr)
