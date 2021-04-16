@@ -287,6 +287,7 @@ class Executor(PathExecutor):
         # annotations before target
         locannot = invariants.get(target) if invariants else None
         if locannot:
+            assert all(map(lambda a: not a.isAssert(), locannot)), f"An invariant is assertion: {locannot}"
             ready, tu = execannot(ready, locannot)
             nonready += tu
         # annotations after target
