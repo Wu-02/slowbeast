@@ -50,8 +50,8 @@ class AnnotatedCFAPath:
         "_annot_after",
     )
 
-    def __init__(self, edges=[]):
-        self._edges = edges
+    def __init__(self, edges=None):
+        self._edges = edges or []
         self._annot_after_loc = {}
         self._annot_before_loc = {}
         self._annot_before = []
@@ -69,8 +69,8 @@ class AnnotatedCFAPath:
     def first_assume_edge_idx(self):
         edges = self._edges
         if edges:
-            for idx in range(len(edges)):
-                if edges[idx].is_assume():
+            for idx, e in enumerate(edges):
+                if e.is_assume():
                     return idx
         return None
 
