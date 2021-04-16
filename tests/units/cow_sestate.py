@@ -22,7 +22,7 @@ s2 = s1.copy()
 
 assert s1 == s2, "FAILED: Copying empty states"
 
-s1.pushCall(C, FOO)
+s1.push_call(C, FOO)
 s1.set(A, ConcreteVal(5, IntType(32)))
 assert s1 != s2, "FAILED: states coparator"
 

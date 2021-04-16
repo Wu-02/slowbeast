@@ -95,7 +95,7 @@ class Executor(ConcreteExecutor):
 
     def create_clean_state(self, pc=None, m=None):
         s = self.create_state(pc, m)
-        s.pushCall(None)
+        s.push_call(None)
         return s
 
     def create_states_set(self, S=None):
@@ -356,7 +356,7 @@ class Executor(ConcreteExecutor):
         mapping = {
             x: state.eval(y) for (x, y) in zip(fun.arguments(), instr.operands())
         }
-        state.pushCall(instr, fun, mapping)
+        state.push_call(instr, fun, mapping)
         return [state]
 
     def exec_undef_fun(self, state, instr, fun):

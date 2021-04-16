@@ -32,7 +32,7 @@ class FutureExecutor(SExecutor):
             mapping = {
                 x: state.eval(y) for (x, y) in zip(fun.arguments(), instr.operands())
             }
-            state.pushCall(instr, fun, mapping)
+            state.push_call(instr, fun, mapping)
             return [state]
         else:
             retTy = fun.return_type()

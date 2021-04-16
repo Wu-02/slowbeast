@@ -145,7 +145,7 @@ class Interpreter:
 
         # push call to main to call stack
         for s in self.states:
-            s.pushCall(None, self.getProgram().entry())
+            s.push_call(None, self.getProgram().entry())
 
         # self.states_num += len(self.states)
 

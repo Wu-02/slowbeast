@@ -24,10 +24,10 @@ class CallStack:
             rets = self.returnsite
             return r ^ hash(rets) if rets else r
 
-        def _setRO(self):
+        def _set_ro(self):
             self._ro = True
 
-        def _isRO(self):
+        def _is_ro(self):
             return self._ro
 
         def _cow_reown(self):
@@ -35,7 +35,7 @@ class CallStack:
                 self.values = copy(self.values)
                 self._values_ro = False
 
-        def writableCopy(self):
+        def writable_copy(self):
             new = copy(self)
             new.values = copy(self.values)
             new._ro = False
@@ -51,7 +51,7 @@ class CallStack:
         def get(self, v):
             return self.values.get(v)
 
-        def getValuesList(self):
+        def values_list(self):
             return self.values.keys()
 
         def dump(self, stream=stdout):
@@ -67,12 +67,12 @@ class CallStack:
         new._cs_ro = True
         self._cs_ro = True
         for f in self._cs:
-            f._setRO()
+            f._set_ro()
         return new
 
     def _cow_reown(self):
         if self._cs_ro:
-            assert all([x._isRO() for x in self._cs])
+            assert all([x._is_ro() for x in self._cs])
             self._cs = copy(self._cs)
             self._cs_ro = False
 
@@ -100,25 +100,25 @@ class CallStack:
     def set(self, what, v):
         """ Set a value in the current frame """
         self._cow_reown()
-        if self.frame()._isRO():
-            self._cs[-1] = self.frame().writableCopy()
-            assert not self.frame()._isRO()
+        if self.frame()._is_ro():
+            self._cs[-1] = self.frame().writable_copy()
+            assert not self.frame()._is_ro()
         self.frame().set(what, v)
 
     def get(self, v):
         """ Set a value from the current frame """
         return self.frame().get(v)
 
-    def getValuesList(self, frameidx=-1):
+    def values_list(self, frameidx=-1):
         """ Set a value from the current frame """
-        return self.frame(frameidx).getValuesList()
+        return self.frame(frameidx).values_list()
 
-    def pushCall(self, callsite, fun, argsMap):
+    def push_call(self, callsite, fun, argsMap):
         self._cow_reown()
         self._cs.append(CallStack.Frame(fun, callsite, argsMap))
-        assert not self.frame()._isRO()
+        assert not self.frame()._is_ro()
 
-    def popCall(self):
+    def pop_call(self):
         assert len(self._cs) > 0
         self._cow_reown()
         rs = self.frame().returnsite

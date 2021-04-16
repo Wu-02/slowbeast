@@ -391,7 +391,7 @@ class Executor:
         mapping = {
             x: state.eval(y) for (x, y) in zip(fun.arguments(), instr.operands())
         }
-        state.pushCall(instr, fun, mapping)
+        state.push_call(instr, fun, mapping)
         return [state]
 
     def execRet(self, state, instr):
@@ -403,7 +403,7 @@ class Executor:
             ret = state.eval(instr.operand(0))
 
         # pop the call frame and get the return site
-        rs = state.popCall()
+        rs = state.pop_call()
         if rs is None:  # popped the last frame
             if ret.is_pointer():
                 state.setError(GenericError("Returning a pointer from main function"))

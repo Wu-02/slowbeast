@@ -27,17 +27,17 @@ class MemoryObject:
 
         self._ro = False  # COW support
 
-    def _setRO(self):
+    def _set_ro(self):
         self._ro = True
 
-    def _isRO(self):
+    def _is_ro(self):
         return self._ro
 
     def clear(self):
         assert not self._ro
         self._values.clear()
 
-    def writableCopy(self):
+    def writable_copy(self):
         new = copy(self)
         new._values = copy(self._values)
         new._ro = False

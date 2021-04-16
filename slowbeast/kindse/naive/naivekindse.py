@@ -119,7 +119,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         append = ind.append
         for b in bblocks:
             s = executor.create_state()
-            s.pushCall(None, entry)
+            s.push_call(None, entry)
             s.pc = b.first()
             append(s)
         return ind, False

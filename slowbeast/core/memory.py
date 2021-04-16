@@ -41,9 +41,9 @@ class Memory:
         new._glob_bindings_ro = True
         self._glob_bindings_ro = True
         for o in self._objects.values():
-            o._setRO()
+            o._set_ro()
         for o in self._glob_objects.values():
-            o._setRO()
+            o._set_ro()
         # do not take a reference, but do directly a copy,
         # we'll very probably modify it soon (it's cow internally)
         new._cs = self._cs.copy()
@@ -64,13 +64,13 @@ class Memory:
 
     def _objs_reown(self):
         if self._objects_ro:
-            assert all([x._isRO() for x in self._objects.values()])
+            assert all([x._is_ro() for x in self._objects.values()])
             self._objects = copy(self._objects)
             self._objects_ro = False
 
     def _globs_reown(self):
         if self._glob_objects_ro:
-            assert all([x._isRO() for x in self._glob_objects.values()])
+            assert all([x._is_ro() for x in self._glob_objects.values()])
             self._glob_objects = copy(self._glob_objects)
             self._glob_objects_ro = False
 
@@ -85,7 +85,7 @@ class Memory:
     def _allocate(self, size, instr=None, nm=None, objid=None):
         """ Allocate a new memory object and return it """
         o = self.createMO(size, nm, objid)
-        assert o._isRO() is False, "Created object is read-only (COW bug)"
+        assert o._is_ro() is False, "Created object is read-only (COW bug)"
 
         if instr:
             o.setAllocation(instr)
@@ -157,9 +157,9 @@ class Memory:
         else:
             self._objs_reown()
 
-        if obj._isRO():  # copy on write
-            obj = obj.writableCopy()
-            assert not obj._isRO()
+        if obj._is_ro():  # copy on write
+            obj = obj.writable_copy()
+            assert not obj._is_ro()
             if isglob:
                 self._glob_objects[obj.get_id()] = obj
             else:
@@ -191,14 +191,14 @@ class Memory:
         # return only list, so that we must get them through "get"
         return self._glob_bindings.keys()
 
-    def getValuesList(self):
-        return self._cs.getValuesList()
+    def values_list(self):
+        return self._cs.values_list()
 
-    def pushCall(self, callsite, fun, argsMapping={}):
-        self._cs.pushCall(callsite, fun, argsMapping)
+    def push_call(self, callsite, fun, argsMapping={}):
+        self._cs.push_call(callsite, fun, argsMapping)
 
-    def popCall(self):
-        return self._cs.popCall()
+    def pop_call(self):
+        return self._cs.pop_call()
 
     def dump(self, stream=sys.stdout):
         stream.write("-- Global objects:\n")
@@ -228,9 +228,9 @@ class Memory:
         else:
             self._objs_reown()
 
-        if obj._isRO():
+        if obj._is_ro():
             obj = obj.clean_copy()
-            assert not obj._isRO()
+            assert not obj._is_ro()
             if isglob:
                 self._glob_objects[obj.get_id()] = obj
             else:

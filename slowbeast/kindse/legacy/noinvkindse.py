@@ -32,7 +32,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             executor = self.executor()
         else:
             s = self.ind_executor().create_state()
-            s.pushCall(None, self.getProgram().entry())
+            s.push_call(None, self.getProgram().entry())
             states = [s]
             executor = self.ind_executor()
 
