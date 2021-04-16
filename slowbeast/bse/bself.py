@@ -577,9 +577,11 @@ class BSELFChecker(BaseBSE):
             for seq in sequences:
                 if seq:
                     S = seq.toannotation(True)
+                    # FIXME: cache CTI's to perform fast checks of non-inductivness.
                     res, _ = self.check_loop_precondition(L, S)
 
-                    self.add_inductive_set(loc, S)
+                    # TODO: now it works nice without it, we must test it
+                    # self.add_inductive_set(loc, S)
 
                     if res is Result.SAFE:
                         inv = seq.toannotation(False)
