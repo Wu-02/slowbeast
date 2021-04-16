@@ -39,41 +39,41 @@ class MemoryModel:
         value = state.eval(valueOp)
         to = state.get(toOp)
         if to is None:
-            state.setKilled("Use of unknown variable: {0}".format(toOp))
+            state.set_killed("Use of unknown variable: {0}".format(toOp))
             return [state]
 
         assert isinstance(value, Value)
         assert to.is_pointer()
         if not to.offset().is_concrete():
             # FIXME: move this check to memory.write() object
-            state.setKilled("Write with non-constant offset not supported yet")
+            state.set_killed("Write with non-constant offset not supported yet")
             return [state]
         try:
             err = state.memory.write(to, value)
         except NotImplementedError as e:
-            state.setKilled(str(e))
+            state.set_killed(str(e))
             return [state]
         if err:
-            state.setError(err)
+            state.set_error(err)
         return [state]
 
     def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
         frm = state.get(fromOp)
         if frm is None:
-            state.setKilled("Use of unknown variable: {0}".format(fromOp))
+            state.set_killed("Use of unknown variable: {0}".format(fromOp))
             return [state]
 
         assert frm.is_pointer()
         if not frm.offset().is_concrete():
-            state.setKilled("Read with non-constant offset not supported yet")
+            state.set_killed("Read with non-constant offset not supported yet")
             return [state]
         try:
             val, err = state.memory.read(frm, bytesNum)
         except NotImplementedError as e:
-            state.setKilled(str(e))
+            state.set_killed(str(e))
             return [state]
         if err:
-            state.setError(err)
+            state.set_error(err)
         else:
             state.set(toOp, val)
         return [state]

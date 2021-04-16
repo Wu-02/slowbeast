@@ -159,7 +159,7 @@ class TestCaseGenerator:
         return open(pathjoin(self._outputdir, path), 'w')
 
     def processErrorState(self, fl, state):
-        fl.write(state.getError().getDescr())
+        fl.write(state.get_error().descr())
         fl.write('\n')
         fl.write('\n')
         fl.write("Nondeterministic values:\n")
@@ -173,24 +173,24 @@ class TestCaseGenerator:
         state.dump(stream=fl)
 
     def processState(self, state):
-        assert not state.isReady()
+        assert not state.is_ready()
 
         if not self._alltests and state.exited():
             return
 
         filename=str(state.get_id())
-        if state.hasError():
+        if state.has_error():
             filename+= ".err"
-        elif state.wasKilled():
+        elif state.was_killed():
             filename+= ".killed"
-        elif state.isTerminated():
+        elif state.is_terminated():
             filename+= ".abort"
         filename+=".test"
 
         with self._openfile(filename) as fl:
-            fl.write(str(state.getStatus()))
+            fl.write(str(state.status()))
             fl.write('\n')
-            if state.hasError():
+            if state.has_error():
                 self.processErrorState(fl, state)
             else:
                 fl.write('\n')

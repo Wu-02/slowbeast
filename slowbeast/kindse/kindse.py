@@ -123,14 +123,14 @@ def overapprox(executor, s, E, target, L):
 
 
 def report_state(stats, n, fn=print_stderr):
-    if n.hasError():
+    if n.has_error():
         if fn:
             fn(
-                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.getError()),
+                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.get_error()),
                 color="RED",
             )
         stats.errors += 1
-    elif n.wasKilled():
+    elif n.was_killed():
         if fn:
             fn(n.status_detail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
@@ -1072,12 +1072,12 @@ class KindSEChecker(BaseKindSE):
 
         r = self.execute_path(path)
 
-        killed1 = (s for s in r.other if s.wasKilled()) if r.other else ()
+        killed1 = (s for s in r.other if s.was_killed()) if r.other else ()
         killed2 = (
             (
                 s
                 for s in r.early
-                if s.wasKilled() or (s.hasError() and s.getError().isMemError())
+                if s.was_killed() or (s.has_error() and s.get_error().is_memory_error())
             )
             if r.early
             else ()

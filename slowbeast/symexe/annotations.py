@@ -75,7 +75,7 @@ class ExprAnnotation(Annotation):
         # annotations)
         self.cannonical = self._sd.cannonical(EM)
 
-    def getDescr(self):
+    def descr(self):
         return self._sd
 
     def expr(self):
@@ -189,7 +189,7 @@ def _execute_instr(executor, states, instr):
         # FIXME: get rid of this -- make a version of execute() that does not mess with pc
         oldpc = state.pc
         state.pc = dummypc
-        assert state.isReady()
+        assert state.is_ready()
         tmp = executor.execute(state, instr)
         for t in tmp:
             t.pc = oldpc
@@ -197,7 +197,7 @@ def _execute_instr(executor, states, instr):
 
     ready, nonready = [], []
     for x in newstates:
-        (ready, nonready)[0 if x.isReady() else 1].append(x)
+        (ready, nonready)[0 if x.is_ready() else 1].append(x)
     return ready, nonready
 
 
@@ -248,7 +248,7 @@ def execute_annotation(executor, states, annot):
     """ Execute the given annotation on states """
 
     assert isinstance(annot, Annotation), annot
-    assert all(map(lambda s: s.isReady(), states))
+    assert all(map(lambda s: s.is_ready(), states))
 
     ldbgv("{0}", (annot,), verbose_lvl=3)
     # dbgv_sec(f"executing annotation:\n{annot}")
@@ -264,7 +264,7 @@ def execute_annotation(executor, states, annot):
 
 
 def execute_annotations(executor, s, annots):
-    assert s.isReady(), "Cannot execute non-ready state"
+    assert s.is_ready(), "Cannot execute non-ready state"
     oldpc = s.pc
 
     dbgv_sec(f"executing annotations on state {s.get_id()}", verbose_lvl=3)
@@ -298,7 +298,7 @@ def _join_annotations(EM, Ctor, op, annots):
 
 
 def unify_annotations(EM, a1, a2):
-    return unify_state_descriptions(EM, a1.getDescr(), a2.getDescr())
+    return unify_state_descriptions(EM, a1.descr(), a2.descr())
 
 
 def or_annotations(EM, toassert, *annots):

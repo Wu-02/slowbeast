@@ -13,7 +13,7 @@ class FutureExecutor(SExecutor):
         assert isinstance(instr, Call)
         fun = instr.called_function()
         if self.is_error_fn(fun):
-            state.setError(AssertFailError(f"Called '{fun.name()}'"))
+            state.set_error(AssertFailError(f"Called '{fun.name()}'"))
             return [state]
 
         if fun.is_undefined():
@@ -21,7 +21,7 @@ class FutureExecutor(SExecutor):
 
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.setKilled("calling '{0}', but calls are forbidden".format(fun.name()))
+            state.set_killed("calling '{0}', but calls are forbidden".format(fun.name()))
             return [state]
 
         nexti = instr.get_next_inst()
@@ -111,11 +111,11 @@ class FutureSymbolicExecutor(Interpreter):
     def handleNewState(self, s):
         testgen = self.ohandler.testgen if self.ohandler else None
         stats = self.stats
-        if s.isReady():
+        if s.is_ready():
             self.states.append(s)
-        elif s.hasError():
+        elif s.has_error():
             print_stderr(
-                "{0}: {1}, {2}".format(s.get_id(), s.pc, s.getError()), color="RED"
+                "{0}: {1}, {2}".format(s.get_id(), s.pc, s.get_error()), color="RED"
             )
             stats.errors += 1
             stats.paths += 1
@@ -125,13 +125,13 @@ class FutureSymbolicExecutor(Interpreter):
                 dbg("Found an error, terminating the search.")
                 self.states = []
                 return
-        elif s.isTerminated():
-            print_stderr(s.getError(), color="BROWN")
+        elif s.is_terminated():
+            print_stderr(s.get_error(), color="BROWN")
             stats.paths += 1
             stats.terminated_paths += 1
             if testgen:
                 testgen.processState(s)
-        elif s.wasKilled():
+        elif s.was_killed():
             stats.paths += 1
             stats.killed_paths += 1
             print_stderr(s.status_detail(), prefix="KILLED STATE: ", color="WINE")
@@ -139,7 +139,7 @@ class FutureSymbolicExecutor(Interpreter):
                 testgen.processState(s)
         else:
             assert s.exited()
-            dbg("state exited with exitcode {0}".format(s.getExitCode()))
+            dbg("state exited with exitcode {0}".format(s.get_exit_code()))
             stats.paths += 1
             stats.exited_paths += 1
             if testgen:

@@ -7,8 +7,7 @@ class ExecutionStatus:
     EXITED = 2  # normally exited
     TERMINATED = 3  # terminated by instruction (abort, etc.)
     ERROR = 4  # hit an error (violated assertion, oob access, etc.)
-    # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
-    KILLED = 5
+    KILLED = 5 # hit some problem in slowbeast (e.g., unsupported instruction, etc.)
 
     __slots__ = "_status", "_detail"
 
@@ -31,37 +30,37 @@ class ExecutionStatus:
     def detail(self):
         return self._detail
 
-    def setError(self, e):
+    def set_error(self, e):
         self._detail = e
         self._status = ExecutionStatus.ERROR
 
-    def setKilled(self, e):
+    def set_killed(self, e):
         # raise RuntimeError(e) # for debugging
         self._detail = e
         self._status = ExecutionStatus.KILLED
 
-    def setExited(self, ec):
+    def set_exited(self, ec):
         self._detail = ec
         self._status = ExecutionStatus.EXITED
 
-    def setTerminated(self, reason):
+    def set_terminated(self, reason):
         # The state terminated for some other reason than regular exit
         self._detail = reason
         self._status = ExecutionStatus.TERMINATED
 
-    def isError(self):
+    def is_error(self):
         return self._status == ExecutionStatus.ERROR
 
-    def isKilled(self):
+    def is_killed(self):
         return self._status == ExecutionStatus.KILLED
 
-    def isExited(self):
+    def is_exited(self):
         return self._status == ExecutionStatus.EXITED
 
-    def isTerminated(self):
+    def is_terminated(self):
         return self._status == ExecutionStatus.TERMINATED
 
-    def isReady(self):
+    def is_ready(self):
         return self._status == ExecutionStatus.READY
 
     def __repr__(self):

@@ -217,7 +217,7 @@ class BSELFChecker(BaseBSE):
         if fromInit and earl:
             # this is an initial path, so every error is taken as real
             errs = r.errors or []
-            for e in (e for e in earl if e.hasError()):
+            for e in (e for e in earl if e.has_error()):
                 errs.append(e)
             r.errors = errs
 

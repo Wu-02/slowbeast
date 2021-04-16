@@ -16,17 +16,17 @@ from .bseexecutor import Executor as BSEExecutor, BSEState
 
 
 def report_state(stats, n, msg=None, fn=print_stderr):
-    if n.hasError():
+    if n.has_error():
         fn(
-            f"{msg if msg else ''}:: state {n.get_id()}: {n.pc}, {n.getError()}",
+            f"{msg if msg else ''}:: state {n.get_id()}: {n.pc}, {n.get_error()}",
             color="red",
         )
         stats.errors += 1
-    elif n.wasKilled():
+    elif n.was_killed():
         if fn:
             fn(n.status_detail(), prefix="KILLED STATE: ", color="wine")
         stats.killed_paths += 1
-    elif n.isTerminated():
+    elif n.is_terminated():
         if fn:
             fn(n.status_detail(), prefix="TERMINATED STATE: ", color="orange")
         stats.terminated_paths += 1
@@ -140,7 +140,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         ready, nonready = executor.execute_edge(
             states, bsectx.edge, invariants=invariants
         )
-        for s in (s for s in nonready if s.wasKilled() or s.hasError()):
+        for s in (s for s in nonready if s.was_killed() or s.has_error()):
             report_state(
                 self.stats, s, fn=self.reportfn, msg=f"Executing {bsectx.edge}"
             )
@@ -224,7 +224,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             calledge = PS.calls[callsite]
             if not calledge.has_predecessors():
                 state = postcondition.copy()
-                state.setTerminated(
+                state.set_terminated(
                     "Function with only return edge unsupported in BSE atm."
                 )
                 report_state(self.stats, state, self.reportfn)
@@ -245,7 +245,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                     n += 1
                 self.queue_state(BSEContext(pedge, state, bsectx.errordescr))
 
-    # postcondition.setTerminated("Calls unsupported in BSE atm.")
+    # postcondition.set_terminated("Calls unsupported in BSE atm.")
     # report_state(self.stats, postcondition, self.reportfn)
     # self.problematic_states.append(postcondition)
 

@@ -34,7 +34,7 @@ class Executor(SExecutor):
     def exec_undef_fun(self, state, instr, fun):
         name = fun.name()
         if name == "abort":
-            state.setTerminated("Aborted via an abort() call")
+            state.set_terminated("Aborted via an abort() call")
             return [state]
 
         retTy = fun.return_type()
@@ -74,7 +74,7 @@ class Executor(SExecutor):
             for r in states:
                 cond = r.eval(elem)
                 # if cond is None:
-                #    r.setTerminated(f"Invalid assume edge: {elem}")
+                #    r.set_terminated(f"Invalid assume edge: {elem}")
                 #    nonready.append(r)
                 #    continue
                 ldbgv(
@@ -87,7 +87,7 @@ class Executor(SExecutor):
                     r, r.expr_manager().Not(cond) if isnot else cond
                 )
                 for t in tmp:
-                    if t.isReady():
+                    if t.is_ready():
                         newstates.append(t)
                     else:
                         nonready.append(t)
@@ -123,7 +123,7 @@ class Executor(SExecutor):
         elif edge.is_call() and not edge.called_function().is_undefined():
             fn = edge.called_function().name()
             for s in ready:
-                s.setTerminated(f"Called function {fn} on intraprocedural path")
+                s.set_terminated(f"Called function {fn} on intraprocedural path")
                 return [], nonready + ready
             raise NotImplementedError("Call edges not implemented")
         else:
@@ -188,8 +188,8 @@ class Executor(SExecutor):
             assert all(
                 map(lambda s: isinstance(s, LazySEState), states)
             ), "Wrong state type"
-            assert all(map(lambda x: x.isReady(), states))
-            assert all(map(lambda x: not x.isReady(), nonready))
+            assert all(map(lambda x: x.is_ready(), states))
+            assert all(map(lambda x: not x.is_ready(), nonready))
 
             # now execute the branch following the edge on the path
             earlytermstates += nonready
@@ -341,7 +341,7 @@ class CFGExecutor(SExecutor):
         for idx in range(0, locsnum):
             loc = locs[idx]
             ready, nonready = self.executeAnnotatedLoc(states, loc, path)
-            assert all(map(lambda x: x.isReady(), ready))
+            assert all(map(lambda x: x.is_ready(), ready))
             assert all(map(lambda x: isinstance(x.pc, Branch), ready)), [
                 s.pc for s in ready
             ]
@@ -353,7 +353,7 @@ class CFGExecutor(SExecutor):
                 # if this is the last edge and we should branch, do it
                 if branch_on_last and idx == locsnum - 2:
                     newstates = self.executeTillBranch(ready)
-                    assert all(map(lambda x: x.isReady(), newstates))
+                    assert all(map(lambda x: x.is_ready(), newstates))
                 else:
                     curbb = loc.bblock()
                     succbb = locs[idx + 1].bblock()
@@ -367,7 +367,7 @@ class CFGExecutor(SExecutor):
                 newstates = self.executeTillBranch(ready)
                 # we executed only the branch inst, so the states still must be
                 # ready
-                assert all(map(lambda x: x.isReady(), newstates))
+                assert all(map(lambda x: x.is_ready(), newstates))
                 assert not result.errors, "Have unsafe states before the last location"
                 result.errors, result.other = split_nonready_states(nonready)
             states = newstates
@@ -475,7 +475,7 @@ class CFGExecutor(SExecutor):
 #         s.pc = blk.first()
 #         rdy = self.executeTillBranch(s)
 #         for r in rdy:
-#             if r.isReady():
+#             if r.is_ready():
 #                 ready.append(r)
 
 #     finalstates = self.joinStates(ready, tostates)

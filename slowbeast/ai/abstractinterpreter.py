@@ -55,7 +55,7 @@ class AbstractInterpreter(Interpreter):
         pc = s.pc
         if s in self.explored_states.setdefault(pc, set()):
             dbg("Already have this state")
-            # if s.hasError():
+            # if s.has_error():
             #    s.dump()
             #    print('---- HAVE ----')
             #    for x in self.explored_states[s.pc]:
@@ -66,11 +66,11 @@ class AbstractInterpreter(Interpreter):
 
         testgen = self.ohandler.testgen if self.ohandler else None
         stats = self.stats
-        if s.isReady():
+        if s.is_ready():
             self.states.append(s)
-        elif s.hasError():
+        elif s.has_error():
             print_stderr(
-                "{0}: {1}, {2}".format(s.get_id(), s.pc, s.getError()), color="RED"
+                "{0}: {1}, {2}".format(s.get_id(), s.pc, s.get_error()), color="RED"
             )
             stats.errors += 1
             stats.paths += 1
@@ -80,13 +80,13 @@ class AbstractInterpreter(Interpreter):
                 dbg("Found an error, terminating the search.")
                 self.states = []
                 return
-        elif s.isTerminated():
-            print_stderr(s.getError(), color="BROWN")
+        elif s.is_terminated():
+            print_stderr(s.get_error(), color="BROWN")
             stats.paths += 1
             stats.terminated_paths += 1
             if testgen:
                 testgen.processState(s)
-        elif s.wasKilled():
+        elif s.was_killed():
             stats.paths += 1
             stats.killed_paths += 1
             print_stderr(s.status_detail(), prefix="KILLED STATE: ", color="WINE")
@@ -94,7 +94,7 @@ class AbstractInterpreter(Interpreter):
                 testgen.processState(s)
         else:
             assert s.exited()
-            dbg("state exited with exitcode {0}".format(s.getExitCode()))
+            dbg("state exited with exitcode {0}".format(s.get_exit_code()))
             stats.paths += 1
             stats.exited_paths += 1
             if testgen:

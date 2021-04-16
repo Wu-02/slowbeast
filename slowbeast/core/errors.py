@@ -19,13 +19,13 @@ class Error:
     def type(self):
         return self._type
 
-    def getDescr(self):
+    def descr(self):
         return self._descr
 
-    def isMemError(self):
+    def is_memory_error(self):
         return self._type == Error.MEM_ERROR
 
-    def isAssertionFail(self):
+    def is_assertion_fail(self):
         return self._type == Error.ASSERTION_FAIL
 
     def __repr__(self):
@@ -75,21 +75,21 @@ class MemError(Error):
         super(MemError, self).__init__(Error.MEM_ERROR, descr)
         self._memerr = t
 
-    def isUninitRead(self):
+    def is_uninit_read(self):
         return self._memerr == MemError.UNINIT_READ
 
-    def isOobAccess(self):
+    def is_oob_access(self):
         return self._memerr == MemError.OOB_ACCESS
 
-    def isInvalidObj(self):
+    def is_invalid_obj_access(self):
         return self._memerr == MemError.INVALID_OBJ
 
-    def isUnsupported(self):
+    def is_unsupported(self):
         return self._memerr == MemError.UNSUPPORTED
 
     def __repr__(self):
         err = self._memerr
-        assert self.isMemError()
+        assert self.is_memory_error()
         if err == MemError.OOB_ACCESS:
             detail = "oob"
         elif err == MemError.UNINIT_READ:
@@ -104,4 +104,4 @@ class MemError(Error):
         return "[memory error] - {1}".format(super(MemError, self).__repr__(), detail)
 
     def __str__(self):
-        return "{0} ({1})".format(self.__repr__(), self.getDescr())
+        return "{0} ({1})".format(self.__repr__(), self.descr())

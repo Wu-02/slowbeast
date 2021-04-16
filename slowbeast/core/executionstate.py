@@ -41,43 +41,43 @@ class ExecutionState:
     def status_detail(self):
         return self._status.detail()
 
-    def setError(self, e):
-        self._status.setError(e)
+    def set_error(self, e):
+        self._status.set_error(e)
 
-    def hasError(self):
-        return self._status.isError()
+    def has_error(self):
+        return self._status.is_error()
 
-    def wasKilled(self):
-        return self._status.isKilled()
-
-    def setKilled(self, e):
-        self._status.setKilled(e)
-
-    def getError(self):
-        assert self.hasError() or self.isTerminated() or self.wasKilled()
+    def get_error(self):
+        assert self.has_error() or self.is_terminated() or self.was_killed()
         return self._status.detail()
 
-    def setExited(self, ec):
-        self._status.setExited(ec)
+    def was_killed(self):
+        return self._status.is_killed()
 
-    def setTerminated(self, reason):
-        self._status.setTerminated(reason)
+    def set_killed(self, e):
+        self._status.set_killed(e)
 
-    def isTerminated(self):
-        return self._status.isTerminated()
+    def set_exited(self, ec):
+        self._status.set_exited(ec)
+
+    def set_terminated(self, reason):
+        self._status.set_terminated(reason)
+
+    def is_terminated(self):
+        return self._status.is_terminated()
 
     def exited(self):
-        return self._status.isExited()
+        return self._status.is_exited()
 
-    def getExitCode(self):
+    def get_exit_code(self):
         assert self.exited()
         return self._status.detail()
 
     def status(self):
         return self._status
 
-    def isReady(self):
-        return self._status.isReady()
+    def is_ready(self):
+        return self._status.is_ready()
 
     def eval(self, v):
         # FIXME: make an attribute is_constant...

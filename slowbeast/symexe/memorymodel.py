@@ -78,7 +78,7 @@ class LazySymbolicMemoryModel(CoreMM):
                     state, to
                 )  # symbolic pointers are unsupported atm
             else:
-                state.setKilled(f"Invalid pointer to write to: {to}")
+                state.set_killed(f"Invalid pointer to write to: {to}")
             return [state]
         if (
             not to.offset().is_concrete()
@@ -86,7 +86,7 @@ class LazySymbolicMemoryModel(CoreMM):
             if self._overapprox_unsupported:
                 self._havoc_ptr_target(state, to)
             else:
-                state.setKilled("Write with non-constant offset not supported yet")
+                state.set_killed("Write with non-constant offset not supported yet")
             return [state]
 
         value = state.try_eval(valueOp)
@@ -98,11 +98,11 @@ class LazySymbolicMemoryModel(CoreMM):
 
         err = state.memory.write(to, value)
         if err:
-            assert err.isMemError()
-            if err.isUnsupported() and self._overapprox_unsupported:
+            assert err.is_memory_error()
+            if err.is_unsupported() and self._overapprox_unsupported:
                 self._havoc_ptr_target(state, to)
             else:
-                state.setError(err)
+                state.set_error(err)
         return [state]
 
     def uninitializedRead(self, state, frm, ptr, bitsnum):
@@ -162,7 +162,7 @@ class LazySymbolicMemoryModel(CoreMM):
         if not frm.is_pointer() and self._overapprox_unsupported:
             val, err = self._nondet_value(state, fromOp, frm, bitsnum or bytesNum * 8)
             if err:
-                state.setError(err)
+                state.set_error(err)
             else:
                 state.set(toOp, val)
             return [state]
@@ -174,28 +174,28 @@ class LazySymbolicMemoryModel(CoreMM):
                     state, fromOp, frm, bitsnum or bytesNum * 8
                 )
                 if err:
-                    state.setError(err)
+                    state.set_error(err)
                 else:
                     state.set(toOp, val)
                 return [state]
             else:
-                state.setKilled("Read with non-constant offset not supported yet")
+                state.set_killed("Read with non-constant offset not supported yet")
             return [state]
         val, err = state.memory.read(frm, bytesNum)
         if err:
-            assert err.isMemError(), err
-            if err.isUninitRead():
+            assert err.is_memory_error(), err
+            if err.is_uninit_read():
                 val, err = self.uninitializedRead(
                     state, fromOp, frm, bitsnum or bytesNum * 8
                 )
                 assert isinstance(toOp, Load)
                 state.create_nondet(toOp, NondetLoad.fromExpr(val, toOp, fromOp))
-            elif err.isUnsupported() and self._overapprox_unsupported:
+            elif err.is_unsupported() and self._overapprox_unsupported:
                 val, err = self._nondet_value(
                     state, fromOp, frm, bitsnum or bytesNum * 8
                 )
         if err:
-            state.setError(err)
+            state.set_error(err)
         else:
             state.set(toOp, val)
         return [state]

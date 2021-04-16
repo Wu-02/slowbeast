@@ -91,13 +91,13 @@ class Executor(ConcreteExecutor):
         csat = state.is_sat(cond)
         if csat is None:
             T = state.copy()
-            T.setKilled("Solver failure: {0}".format(r))
+            T.set_killed("Solver failure: {0}".format(r))
 
         ncond = Domain.Not(cond)
         ncsat = state.is_sat(ncond)
         if ncsat is None:
             F = state.copy()
-            F.setKilled("Solver failure: {0}".format(r))
+            F.set_killed("Solver failure: {0}".format(r))
 
         # is one of the conditions implied?
         # in that case we do not need to add any constraint
@@ -215,7 +215,7 @@ class Executor(ConcreteExecutor):
         mo1 = p1.object()
         mo2 = p2.object()
         if not ConcreteDomain.belongto(mo1, mo2):
-            state.setKilled(
+            state.set_killed(
                 "Comparison of symbolic pointers unimplemented: {0}".format(instr)
             )
             return [state]
@@ -232,7 +232,7 @@ class Executor(ConcreteExecutor):
             return [state]
         else:
             if p != Cmp.EQ and p != Cmp.NE:
-                state.setKilled(
+                state.set_killed(
                     "Comparison of pointers implemented only for "
                     "(non-)equality or into the same object"
                 )
@@ -253,7 +253,7 @@ class Executor(ConcreteExecutor):
             if op1.is_pointer() and op2.is_pointer():
                 return self.compare_pointers(state, instr, op1, op2)
             else:
-                state.setKilled("Comparison of pointer to a constant not implemented")
+                state.set_killed("Comparison of pointer to a constant not implemented")
                 return state
 
         x = self.compare_values(
@@ -268,7 +268,7 @@ class Executor(ConcreteExecutor):
         assert isinstance(instr, Call)
         fun = instr.called_function()
         if self.is_error_fn(fun):
-            state.setError(AssertFailError(f"Called '{fun.name()}'"))
+            state.set_error(AssertFailError(f"Called '{fun.name()}'"))
             return [state]
 
         if fun.is_undefined():
@@ -276,7 +276,7 @@ class Executor(ConcreteExecutor):
 
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.setKilled("calling '{0}', but calls are forbidden".format(fun.name()))
+            state.set_killed("calling '{0}', but calls are forbidden".format(fun.name()))
             return [state]
 
         # map values to arguments
@@ -290,7 +290,7 @@ class Executor(ConcreteExecutor):
     def exec_undef_fun(self, state, instr, fun):
         name = fun.name()
         if name == "abort":
-            state.setTerminated("Aborted via an abort() call")
+            state.set_terminated("Aborted via an abort() call")
             return [state]
 
         retTy = fun.return_type()
@@ -312,7 +312,7 @@ class Executor(ConcreteExecutor):
             if not op2.is_pointer():
                 r = addPointerWithConstant(Domain, op1, op2)
             else:
-                state.setKilled(
+                state.set_killed(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
                 )
                 return [state]
@@ -320,7 +320,7 @@ class Executor(ConcreteExecutor):
             if not op1.is_pointer():
                 r = addPointerWithConstant(Domain, op2, op1)
             else:
-                state.setKilled(
+                state.set_killed(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
                 )
                 return [state]
@@ -348,7 +348,7 @@ class Executor(ConcreteExecutor):
             elif instr.operation() == BinaryOperation.XOR:
                 r = Domain.Xor(op1, op2)
             else:
-                state.setKilled("Not implemented binary operation: {0}".format(instr))
+                state.set_killed("Not implemented binary operation: {0}".format(instr))
                 return [state]
 
         assert r, "Bug in creating a binary op expression"
@@ -369,7 +369,7 @@ class Executor(ConcreteExecutor):
         elif instr.operation() == UnaryOperation.CAST:
             r = Domain.Cast(op1, instr.casttype())
             if r is None:
-                state.setKilled("Unsupported/invalid cast: {0}".format(instr))
+                state.set_killed("Unsupported/invalid cast: {0}".format(instr))
                 return [state]
         elif instr.operation() == UnaryOperation.EXTRACT:
             start, end = instr.range()
@@ -377,7 +377,7 @@ class Executor(ConcreteExecutor):
         elif instr.operation() == UnaryOperation.NEG:
             r = Domain.Neg(op1)
         else:
-            state.setKilled("Unary instruction not implemented: {0}".format(instr))
+            state.set_killed("Unary instruction not implemented: {0}".format(instr))
             return [state]
 
         state.set(instr, r)
@@ -397,7 +397,7 @@ class Executor(ConcreteExecutor):
                 isunsat = tmp is None
 
             if isunsat:
-                state.setTerminated(
+                state.set_terminated(
                     "Assumption unsat: {0} == {1} (!= True)".format(o, v)
                 )
                 return [state]
@@ -416,7 +416,7 @@ class Executor(ConcreteExecutor):
         assert v.is_bool(), f"Evaluated condition is not boolean: {v}"
         if v.is_concrete():
             if v.value() is not True:
-                state.setError(AssertFailError(msg))
+                state.set_error(AssertFailError(msg))
             else:
                 state.pc = state.pc.get_next_inst()
             states.append(state)
@@ -426,7 +426,7 @@ class Executor(ConcreteExecutor):
                 okBranch.pc = okBranch.pc.get_next_inst()
                 states.append(okBranch)
             if errBranch:
-                errBranch.setError(AssertFailError(msg))
+                errBranch.set_error(AssertFailError(msg))
                 states.append(errBranch)
 
         assert states, "Generated no states"

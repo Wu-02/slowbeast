@@ -28,21 +28,21 @@ class KindSymbolicExecutor(SymbolicExecutor):
         states = self.executor().executeTillBranch(self.base)
         self.base = []
         for ns in states:
-            if ns.hasError():
+            if ns.has_error():
                 print_stderr(
-                    "{0}: {1}, {2}".format(ns.get_id(), ns.pc, ns.getError()),
+                    "{0}: {1}, {2}".format(ns.get_id(), ns.pc, ns.get_error()),
                     color="RED",
                 )
                 self.stats.errors += 1
                 self.stats.paths += 1
                 return Result.UNSAFE
-            elif ns.isReady():
+            elif ns.is_ready():
                 self.base.append(ns)
-            elif ns.isTerminated():
-                print_stderr(ns.getError(), color="BROWN")
+            elif ns.is_terminated():
+                print_stderr(ns.get_error(), color="BROWN")
                 self.stats.paths += 1
                 self.stats.terminated_paths += 1
-            elif ns.wasKilled():
+            elif ns.was_killed():
                 self.stats.paths += 1
                 self.stats.killed_paths += 1
                 print_stderr(
@@ -66,19 +66,19 @@ class KindSymbolicExecutor(SymbolicExecutor):
         self.ind = []
         found_err = False
         for ns in states:
-            if ns.hasError():
+            if ns.has_error():
                 found_err = True
                 dbg(
                     "Hit error state while building IS assumptions: {0}: {1}, {2}".format(
-                        ns.get_id(), ns.pc, ns.getError()
+                        ns.get_id(), ns.pc, ns.get_error()
                     ),
                     color="PURPLE",
                 )
-            elif ns.isReady():
+            elif ns.is_ready():
                 self.ind.append(ns)
-            elif ns.isTerminated():
-                print_stderr(ns.getError(), color="BROWN")
-            elif ns.wasKilled():
+            elif ns.is_terminated():
+                print_stderr(ns.get_error(), color="BROWN")
+            elif ns.was_killed():
                 print_stderr(
                     ns.status_detail(), prefix="KILLED STATE: ", color="WINE"
                 )
@@ -94,16 +94,16 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         has_error = False
         for ns in states:
-            if ns.hasError():
+            if ns.has_error():
                 has_error = True
                 dbg(
                     "Induction check hit error state: {0}: {1}, {2}".format(
-                        ns.get_id(), ns.pc, ns.getError()
+                        ns.get_id(), ns.pc, ns.get_error()
                     ),
                     color="PURPLE",
                 )
                 break
-            elif ns.wasKilled():
+            elif ns.was_killed():
                 print_stderr(
                     ns.status_detail(), prefix="KILLED STATE: ", color="WINE"
                 )

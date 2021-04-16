@@ -199,8 +199,8 @@ class BSEMemoryModel(CoreMM):
         assert frm.is_pointer(), frm
         val, err = M._symbolic_read(state, frm, toOp, bytesNum)
         if err:
-            assert err.isMemError(), err
-            state.setError(err)
+            assert err.is_memory_error(), err
+            state.set_error(err)
         else:
             state.set(toOp, val)
         return [state]

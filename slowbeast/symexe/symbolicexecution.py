@@ -81,20 +81,20 @@ class SymbolicExecutor(Interpreter):
         testgen = self.ohandler.testgen if self.ohandler else None
         opts = self.getOptions()
         stats = self.stats
-        if opts.replay_errors and s.hasError():
+        if opts.replay_errors and s.has_error():
             print_stdout("Found an error, trying to replay it", color="white")
             repls = self.replay_state(s)
-            if not repls or not repls.hasError():
+            if not repls or not repls.has_error():
                 print_stderr("Failed replaying error", color="orange")
-                s.setKilled("Failed replaying error")
+                s.set_killed("Failed replaying error")
             else:
                 dbg("The replay succeeded.")
 
-        if s.isReady():
+        if s.is_ready():
             self.states.append(s)
-        elif s.hasError():
+        elif s.has_error():
             print_stderr(
-                "{0}: {1} @ {2}".format(s.get_id(), s.getError(), s.pc), color="redul"
+                "{0}: {1} @ {2}".format(s.get_id(), s.get_error(), s.pc), color="redul"
             )
             print_stderr("Error found.", color="red")
             stats.errors += 1
@@ -105,13 +105,13 @@ class SymbolicExecutor(Interpreter):
                 dbg("Found an error, terminating the search.")
                 self.states = []
                 return
-        elif s.isTerminated():
-            print_stderr(s.getError(), color="BROWN")
+        elif s.is_terminated():
+            print_stderr(s.get_error(), color="BROWN")
             stats.paths += 1
             stats.terminated_paths += 1
             if testgen:
                 testgen.processState(s)
-        elif s.wasKilled():
+        elif s.was_killed():
             stats.paths += 1
             stats.killed_paths += 1
             print_stderr(s.status_detail(), prefix="KILLED STATE: ", color="WINE")
@@ -119,7 +119,7 @@ class SymbolicExecutor(Interpreter):
                 testgen.processState(s)
         else:
             assert s.exited()
-            dbg("state exited with exitcode {0}".format(s.getExitCode()))
+            dbg("state exited with exitcode {0}".format(s.get_exit_code()))
             stats.paths += 1
             stats.exited_paths += 1
             if testgen:

@@ -40,7 +40,7 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
     def handleNewState(self, state):
         if self.is_subsumed(state):
             return
-        if state.isReady():
+        if state.is_ready():
             self.states.append(state)
         else:
             super().handleNewState(state)

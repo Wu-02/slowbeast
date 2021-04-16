@@ -77,20 +77,20 @@ class Interpreter:
         return s
 
     def handleNewState(self, state):
-        if state.isReady():
+        if state.is_ready():
             assert len(self.states) == 0
             self.states.append(state)
-        elif state.hasError():
+        elif state.has_error():
             print_stderr("Error while executing '{0}'".format(state), color="RED")
-            print_stderr(state.getError(), color="BROWN")
+            print_stderr(state.get_error(), color="BROWN")
             state.dump()
-        elif state.isTerminated():
-            print_stderr(state.getError(), color="BROWN")
-        elif state.wasKilled():
+        elif state.is_terminated():
+            print_stderr(state.get_error(), color="BROWN")
+        elif state.was_killed():
             print_stderr(state.status_detail(), prefix="KILLED STATE: ", color="WINE")
         else:
             assert state.exited()
-            dbg(f"state exited with exitcode {state.getExitCode()}")
+            dbg(f"state exited with exitcode {state.get_exit_code()}")
 
         raise RuntimeError("This line should be unreachable")
 
@@ -128,7 +128,7 @@ class Interpreter:
                     assert ret[0] is s, "Unhandled initialization instruction"
                     assert ret[
                         0
-                    ].isReady(), (
+                    ].is_ready(), (
                         "Generated errorneous state during initialization of globals"
                     )
 

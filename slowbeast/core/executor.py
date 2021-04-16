@@ -13,14 +13,14 @@ from .executionstate import ExecutionState
 def split_ready_states(states):
     ready, notready = [], []
     for x in states:
-        (ready, notready)[0 if x.isReady() else 1].append(x)
+        (ready, notready)[0 if x.is_ready() else 1].append(x)
     return ready, notready
 
 
 def split_nonready_states(states):
     errs, oth = [], []
     for x in states:
-        (errs, oth)[0 if x.hasError() else 1].append(x)
+        (errs, oth)[0 if x.has_error() else 1].append(x)
     return errs or None, oth or None
 
 
@@ -65,9 +65,9 @@ class PathExecutionResult:
         errs = self.errors or []
         oth = self.other or []
         for s in states:
-            if s.isReady():
+            if s.is_ready():
                 ready.append(s)
-            elif s.hasError():
+            elif s.has_error():
                 errs.append(s)
             else:
                 oth.append(s)
@@ -96,16 +96,16 @@ class PathExecutionResult:
     def killed(self):
         other = self.other
         early = self.early
-        killed1 = (s for s in other if s.wasKilled()) if other else ()
-        killed2 = (s for s in early if s.wasKilled()) if early else ()
+        killed1 = (s for s in other if s.was_killed()) if other else ()
+        killed2 = (s for s in early if s.was_killed()) if early else ()
         return chain(killed1, killed2)
 
     def check(self):
-        assert not self.ready or all(map(lambda x: x.isReady(), self.ready))
-        assert not self.errors or all(map(lambda x: x.hasError(), self.errors))
-        assert not self.early or all(map(lambda x: not x.isReady(), self.early))
+        assert not self.ready or all(map(lambda x: x.is_ready(), self.ready))
+        assert not self.errors or all(map(lambda x: x.has_error(), self.errors))
+        assert not self.early or all(map(lambda x: not x.is_ready(), self.early))
         assert not self.other or all(
-            map(lambda x: x.isTerminated() or x.wasKilled() or x.exited(), self.other)
+            map(lambda x: x.is_terminated() or x.was_killed() or x.exited(), self.other)
         )
         return True
 
@@ -184,7 +184,7 @@ class Executor:
         )
 
         for s in states:
-            if s.isReady():
+            if s.is_ready():
                 s.pc = s.pc.get_next_inst()
         return states
 
@@ -196,14 +196,14 @@ class Executor:
         )
 
         for s in states:
-            if s.isReady():
+            if s.is_ready():
                 s.pc = s.pc.get_next_inst()
         return states
 
     def execAlloc(self, state, instr):
         states = self.memorymodel.allocate(state, instr)
         for s in states:
-            if s.isReady():
+            if s.is_ready():
                 s.pc = s.pc.get_next_inst()
         return states
 
@@ -282,7 +282,7 @@ class Executor:
             v = state.eval(o)
             assert v.is_concrete()
             if v.value() != True:
-                state.setError(
+                state.set_error(
                     AssertFailError(
                         "Assertion failed: {0} is {1} (!= True)".format(o, v)
                     )
@@ -376,13 +376,13 @@ class Executor:
         assert isinstance(instr, Call)
 
         if self.callsForbidden():
-            state.setKilled("Calls are forbidden")
+            state.set_killed("Calls are forbidden")
             return [state]
 
         fun = instr.called_function()
         ldbgv("-- CALL {0} --", (fun.name()))
         if fun.is_undefined():
-            state.setError(
+            state.set_error(
                 GenericError("Called undefined function: {0}".format(fun.name()))
             )
             return [state]
@@ -406,14 +406,14 @@ class Executor:
         rs = state.pop_call()
         if rs is None:  # popped the last frame
             if ret.is_pointer():
-                state.setError(GenericError("Returning a pointer from main function"))
+                state.set_error(GenericError("Returning a pointer from main function"))
                 return [state]
             # elif not ret.is_concrete():
             #    state.add_warning(
             #        "Returning a non-constant value from the main function"
             #    )
 
-            state.setExited(ret)
+            state.set_exited(ret)
             return [state]
 
         if ret:
@@ -468,7 +468,7 @@ class Executor:
         elif isinstance(instr, Return):
             states = self.execRet(state, instr)
         else:
-            state.setKilled("Not implemented instruction: {0}".format(instr))
+            state.set_killed("Not implemented instruction: {0}".format(instr))
             return [state]
 
         return states
@@ -496,7 +496,7 @@ class Executor:
                 s.pc = i
                 nxt = execute(s, i)
                 for n in nxt:
-                    if n.isReady():
+                    if n.is_ready():
                         newstappend(n)
                     else:
                         nonreadystatesappend(n)
@@ -543,7 +543,7 @@ class Executor:
                     finalstates += nxt
                 else:
                     for n in nxt:
-                        if n.isReady():
+                        if n.is_ready():
                             newstappend(n)
                         else:
                             finalstatesappend(n)
@@ -572,7 +572,7 @@ class Executor:
         locs = path.getLocations()
         # set the pc of the states to be the first instruction of the path
         for s in states:
-            assert s.isReady()
+            assert s.is_ready()
             s.pc = locs[0].bblock().first()
 
         for idx in range(0, len(locs)):
@@ -582,7 +582,7 @@ class Executor:
             # get the ready states
             states = []
             for n in newstates:
-                (states, earlytermstates)[0 if n.isReady() else 1].append(n)
+                (states, earlytermstates)[0 if n.is_ready() else 1].append(n)
 
             # now execute the branch following the edge on the path
             if idx + 1 < len(locs):
@@ -592,13 +592,13 @@ class Executor:
                 newstates = []
                 assert followsucc or curbb.last().false_successor() == succbb
                 for s in states:
-                    assert s.isReady()
+                    assert s.is_ready()
                     newstates += self.exec_branch_to(s, s.pc, followsucc)
             else:  # this is the last location on path,
                 # so just normally execute the block instructions
                 newstates = self.executeTillBranch(states)
             states = newstates
 
-        assert all(map(lambda x: not x.isReady(), earlytermstates))
+        assert all(map(lambda x: not x.is_ready(), earlytermstates))
 
         return states, earlytermstates

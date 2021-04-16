@@ -178,7 +178,7 @@ def to_states_descr(S) -> StateDescription:
     elif isinstance(S, StateDescription):
         return S
     elif isinstance(S, ExprAnnotation):
-        return S.getDescr()
+        return S.descr()
     elif isinstance(S, Expr):
         # NOTE: maybe we should have a special method for Expr,
         # because Expr does not fully describe the state (unlike the others)
@@ -241,7 +241,7 @@ def complement(S) -> StatesSet:
 #     def getexprmanager(self):
 #         return getglobalexprmanager()
 #
-#     def get_descr(self):
+#     def descr(self):
 #         return self._descr
 #
 #     def _adjoin(self, s, op):
@@ -298,13 +298,13 @@ def complement(S) -> StatesSet:
 #     EM = getGlobalExprManager()
 #
 #     if isinstance(S, StatesSet):
-#         return S.get_descr()
+#         return S.descr()
 #     if isinstance(S, SEState):
 #         return state_to_description(S)
 #     elif isinstance(S, StateDescription):
 #         return S
 #     elif isinstance(S, ExprAnnotation):
-#         return S.getDescr()
+#         return S.descr()
 #     elif isinstance(S, Expr):
 #         return StateDescription(S, {})
 #     elif S is None and hasattr(S, "__iter__"):

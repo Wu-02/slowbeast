@@ -13,14 +13,14 @@ from slowbeast.kindse import KindSEOptions
 
 
 def report_state(stats, n, fn=print_stderr):
-    if n.hasError():
+    if n.has_error():
         if fn:
             fn(
-                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.getError()),
+                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.get_error()),
                 color="RED",
             )
         stats.errors += 1
-    elif n.wasKilled():
+    elif n.was_killed():
         if fn:
             fn(n.status_detail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
@@ -130,7 +130,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         if fromInit and earl:
             # this is an initial path, so every error is taken as real
             errs = r.errors or []
-            for e in (e for e in earl if e.hasError()):
+            for e in (e for e in earl if e.has_error()):
                 errs.append(e)
             r.errors = errs
 
@@ -251,10 +251,10 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         r = self.execute_path(path, fromInit=True)
         if not r.errors:
-            killed = any(True for s in r.early if s.wasKilled()) if r.early else None
+            killed = any(True for s in r.early if s.was_killed()) if r.early else None
             if killed:
                 return Result.UNKNOWN, r
-            killed = any(True for s in r.other if s.wasKilled()) if r.other else None
+            killed = any(True for s in r.other if s.was_killed()) if r.other else None
             if killed:
                 return Result.UNKNOWN, r
             if len(self._entry_loc.predecessors()) == 0:
@@ -285,7 +285,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             r = self.execute_path(path)
 
             oth = r.other
-            if oth and any(map(lambda s: s.wasKilled(), oth)):
+            if oth and any(map(lambda s: s.was_killed(), oth)):
                 return Result.UNKNOWN, oth
 
             step = -1  # self.getOptions().step

@@ -114,13 +114,13 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return loc.bblock() is self.getProgram().entry().bblock(0)
 
     def report(self, n):
-        if n.hasError():
+        if n.has_error():
             print_stderr(
-                "{0}: {1}, {2}".format(n.get_id(), n.pc, n.getError()), color="RED"
+                "{0}: {1}, {2}".format(n.get_id(), n.pc, n.get_error()), color="RED"
             )
             self.stats.errors += 1
             return Result.UNSAFE
-        elif n.wasKilled():
+        elif n.was_killed():
             print_stderr(n.status_detail(), prefix="KILLED STATE: ", color="WINE")
             self.stats.killed_paths += 1
             return Result.UNKNOWN
@@ -149,20 +149,20 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 else:
                     for n in notready:
                         # we found a real error
-                        if n.hasError():
+                        if n.has_error():
                             return self.report(n)
-                        if n.wasKilled():
+                        if n.was_killed():
                             return self.report(n)
 
             _, notready = self.execute_path(path)
 
             step = self.getOptions().step
             for n in notready:
-                if n.hasError():
+                if n.has_error():
                     has_err = True
                     newpaths += self.extendPath(path, steps=step)
                     break
-                if n.wasKilled():
+                if n.was_killed():
                     return self.report(n)
 
         self.paths = newpaths

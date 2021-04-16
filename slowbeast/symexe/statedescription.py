@@ -229,7 +229,7 @@ def _execute_instr(executor, state, instr):
         def get_next_inst(self):
             return self
 
-    assert state.isReady()
+    assert state.is_ready()
     # FIXME: get rid of this -- make a version of execute() that does not mess with pc
     oldpc, state.pc = state.pc, DummyInstr()
     newstates = executor.execute(state, instr)
@@ -237,7 +237,7 @@ def _execute_instr(executor, state, instr):
     if len(newstates) != 1:
         raise NotImplementedError("Executing forking instructions not supported")
     state = newstates[0]
-    assert state.isReady(), "Executing instruction resulted in non-ready state"
+    assert state.is_ready(), "Executing instruction resulted in non-ready state"
     state.pc = oldpc
     return state
 

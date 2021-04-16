@@ -61,15 +61,15 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 self._infeasibleSuffixes.append(p.getPath())
 
             for ns in notready:
-                if ns.hasError():
+                if ns.has_error():
                     found_err = True
                     dbg(
                         "Hit error state in induction check: {0}: {1}, {2}".format(
-                            ns.get_id(), ns.pc, ns.getError()
+                            ns.get_id(), ns.pc, ns.get_error()
                         ),
                         color="PURPLE",
                     )
-                if ns.wasKilled():
+                if ns.was_killed():
                     print_stderr(
                         ns.status_detail(), prefix="KILLED STATE: ", color="WINE"
                     )

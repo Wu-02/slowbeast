@@ -124,13 +124,13 @@ class Executor(ConcreteExecutor):
         csat = state.is_sat(cond)
         if csat is None:
             T = state.copy()
-            T.setKilled("Solver failure: {0}".format(ncsat))
+            T.set_killed("Solver failure: {0}".format(ncsat))
 
         ncond = state.expr_manager().Not(cond)
         ncsat = state.is_sat(ncond)
         if ncsat is None:
             F = state.copy()
-            F.setKilled("Solver failure: {0}".format(ncsat))
+            F.set_killed("Solver failure: {0}".format(ncsat))
 
         # is one of the conditions implied?
         # in that case we do not need to add any constraint
@@ -249,7 +249,7 @@ class Executor(ConcreteExecutor):
         mo1id = p1.object()
         mo2id = p2.object()
         if is_symbolic(mo1id) or is_symbolic(mo2id):
-            state.setKilled(
+            state.set_killed(
                 "Comparison of symbolic pointers unimplemented: {0}".format(instr)
             )
             return [state]
@@ -267,7 +267,7 @@ class Executor(ConcreteExecutor):
             return [state]
         else:
             if p != Cmp.EQ and p != Cmp.NE:
-                state.setKilled(
+                state.set_killed(
                     "Comparison of pointers implemented only for "
                     "(non-)equality or into the same object"
                 )
@@ -276,7 +276,7 @@ class Executor(ConcreteExecutor):
                 state.pc = state.pc.get_next_inst()
             return [state]
 
-        state.setKilled("Invalid pointer comparison")
+        state.set_killed("Invalid pointer comparison")
         return [state]
 
     def exec_cmp(self, state, instr):
@@ -318,7 +318,7 @@ class Executor(ConcreteExecutor):
                         ),
                     )
                 else:
-                    state.setKilled(
+                    state.set_killed(
                         f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}"
                     )
                 return [state]
@@ -340,7 +340,7 @@ class Executor(ConcreteExecutor):
         assert isinstance(instr, Call)
         fun = instr.called_function()
         if self.is_error_fn(fun):
-            state.setError(AssertFailError(f"Called '{fun.name()}'"))
+            state.set_error(AssertFailError(f"Called '{fun.name()}'"))
             return [state]
 
         if fun.is_undefined():
@@ -348,7 +348,7 @@ class Executor(ConcreteExecutor):
 
         if self.callsForbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.setKilled("calling '{0}', but calls are forbidden".format(fun.name()))
+            state.set_killed("calling '{0}', but calls are forbidden".format(fun.name()))
             return [state]
 
         # map values to arguments
@@ -362,7 +362,7 @@ class Executor(ConcreteExecutor):
     def exec_undef_fun(self, state, instr, fun):
         name = fun.name()
         if name == "abort":
-            state.setTerminated("Aborted via an abort() call")
+            state.set_terminated("Aborted via an abort() call")
             return [state]
 
         retTy = fun.return_type()
@@ -397,7 +397,7 @@ class Executor(ConcreteExecutor):
             if not op2ptr:
                 r = add_pointer_with_constant(E, op1, op2)
             else:
-                state.setKilled(
+                state.set_killed(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
                 )
                 return [state]
@@ -405,7 +405,7 @@ class Executor(ConcreteExecutor):
             if not op1ptr:
                 r = add_pointer_with_constant(E, op2, op1)
             else:
-                state.setKilled(
+                state.set_killed(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
                 )
                 return [state]
@@ -428,7 +428,7 @@ class Executor(ConcreteExecutor):
                         assert not instr.is_fp()
                         r = E.Div(op1, op2, instr.is_unsigned())
                     if bad:
-                        bad.setKilled("Division by 0")
+                        bad.set_killed("Division by 0")
                         states.append(bad)
                         if good is None:
                             return states
@@ -447,7 +447,7 @@ class Executor(ConcreteExecutor):
             elif opcode == BinaryOperation.XOR:
                 r = E.Xor(op1, op2)
             else:
-                state.setKilled("Not implemented binary operation: {0}".format(instr))
+                state.set_killed("Not implemented binary operation: {0}".format(instr))
                 return [state]
 
         assert r, "Bug in creating a binary op expression"
@@ -490,7 +490,7 @@ class Executor(ConcreteExecutor):
         elif opcode == UnaryOperation.CAST:
             r = E.Cast(op1, instr.casttype())
             if r is None:
-                state.setKilled("Unsupported/invalid cast: {0}".format(instr))
+                state.set_killed("Unsupported/invalid cast: {0}".format(instr))
                 return [state]
         elif opcode == UnaryOperation.EXTRACT:
             start, end = instr.range()
@@ -502,10 +502,10 @@ class Executor(ConcreteExecutor):
         elif opcode == UnaryOperation.FP_OP:
             r = E.FpOp(instr.fp_operation(), op1)
             if r is None:
-                state.setKilled(f"Unsupported FP operation: {instr}")
+                state.set_killed(f"Unsupported FP operation: {instr}")
                 return [state]
         else:
-            state.setKilled("Unary instruction not implemented: {0}".format(instr))
+            state.set_killed("Unary instruction not implemented: {0}".format(instr))
             return [state]
 
         state.set(instr, r)
@@ -523,7 +523,7 @@ class Executor(ConcreteExecutor):
             isunsat = tmp is None
 
         if isunsat:
-            state.setTerminated(f"Assumption unsat: {v} (!= True)")
+            state.set_terminated(f"Assumption unsat: {v} (!= True)")
 
         return [state]
 
@@ -540,7 +540,7 @@ class Executor(ConcreteExecutor):
                 isunsat = tmp is None
 
             if isunsat:
-                state.setTerminated(
+                state.set_terminated(
                     "Assumption unsat: {0} == {1} (!= True)".format(o, v)
                 )
                 return [state]
@@ -554,14 +554,14 @@ class Executor(ConcreteExecutor):
         if v.is_concrete():
             assert isinstance(v.value(), bool)
             if not v.value():
-                state.setError(AssertFailError(msg))
+                state.set_error(AssertFailError(msg))
             states.append(state)
         else:
             okBranch, errBranch = self.fork(state, v)
             if okBranch:
                 states.append(okBranch)
             if errBranch:
-                errBranch.setError(AssertFailError(msg))
+                errBranch.set_error(AssertFailError(msg))
                 states.append(errBranch)
 
         assert states, "Generated no states"
@@ -578,7 +578,7 @@ class Executor(ConcreteExecutor):
         assert v.is_bool()
         if v.is_concrete():
             if v.value() != True:
-                state.setError(AssertFailError(msg))
+                state.set_error(AssertFailError(msg))
             else:
                 state.pc = state.pc.get_next_inst()
             states.append(state)
@@ -588,7 +588,7 @@ class Executor(ConcreteExecutor):
                 okBranch.pc = okBranch.pc.get_next_inst()
                 states.append(okBranch)
             if errBranch:
-                errBranch.setError(AssertFailError(msg))
+                errBranch.set_error(AssertFailError(msg))
                 states.append(errBranch)
 
         assert states, "Generated no states"
