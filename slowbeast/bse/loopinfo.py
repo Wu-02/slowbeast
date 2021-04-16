@@ -93,3 +93,10 @@ class LoopInfo:
     #    solver.pop()
 
     # return has_feasible or allow_infeasible_only
+
+    def check_set_inductivity(self, S):
+        r = check_paths(self.checker, self.loop.paths(), pre=S, post=S)
+        ind_on_some_path = bool(r.ready)
+        ind_on_all_paths = not bool(r.errors)
+        return ind_on_some_path, ind_on_all_paths
+

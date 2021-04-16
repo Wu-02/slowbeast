@@ -521,7 +521,6 @@ class BSELFChecker(BaseBSE):
         print_stdout(f"{inv} holds on {loc}", color="BLUE")
 
     def add_inductive_set(self, loc, S):
-        return #FIXME FIXME FIXME
         I = InductiveSet(self.create_set(S))
         seqs = self.inductive_sets.setdefault(loc, [])
         seqsid = id(seqs)
@@ -579,16 +578,7 @@ class BSELFChecker(BaseBSE):
                     S = seq.toannotation(True)
                     res, _ = self.check_loop_precondition(L, S)
 
-                    I = InductiveSet(create_set(S))
-                    seqs = self.inductive_sets.setdefault(loc, [])
-                    seqsid = id(seqs)
-                    oldseqs = seqs.copy()
-                    seqs.clear()
-                    for olds in oldseqs:
-                        if not I.includes(olds):
-                            seqs.append(olds)
-                    assert seqsid == id(seqs)
-                    seqs.append(I)
+                    self.add_inductive_set(loc, S)
 
                     if res is Result.SAFE:
                         inv = seq.toannotation(False)
