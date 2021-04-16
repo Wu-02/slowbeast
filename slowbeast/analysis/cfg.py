@@ -1,8 +1,7 @@
-from ..ir.function import Function
-from ..ir.instruction import Branch
-
 from sys import stdout
 from copy import copy
+
+from slowbeast.ir.instruction import Branch
 
 
 class CFG:
@@ -128,7 +127,7 @@ class CFGPath:
     def copy(self):
         return copy(self)
 
-    def subpath(start, end):
+    def subpath(self, start, end):
         n = copy(self)
         n.locations = self.locations[start:end]
 

@@ -1,14 +1,13 @@
-from ..ir.function import Function
-from ..ir.instruction import Call
-
 from sys import stdout
-from copy import copy
 
+from slowbeast.ir.function import Function
+from slowbeast.ir.instruction import Call
 
 class CallGraph:
     class Node:
+        __slots__ = "_fun", "callsites", "callers"
+
         def __init__(self, F):
-            __slots__ = "_fun", "callsites", "callers"
             self._fun = F
             self.callers = []
             self.callsites = {}

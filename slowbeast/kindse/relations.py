@@ -2,41 +2,6 @@ from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.types import IntType
 from slowbeast.symexe.annotations import AssertAnnotation, get_subs
 
-from slowbeast.solvers.solver import Solver
-
-
-def get_safe_subexpressions(state, unsafe):
-    subs = get_subs(state)
-    EM = state.expr_manager()
-
-    safe = set()
-    solver = Solver()
-    for c in state.constraints():
-        # FIXME: do it somehow smarter than iterating over all...
-
-        # get all boolean subexpressions of 'c'
-        for sub in (s for s in c.subexpressions() if s.is_bool()):
-            # rule out subexpressions that are not "entire"
-            if not (state.is_sat(sub) is True):
-                continue
-            for u in unsafe:
-                # if this subexpression is able to rule out some unsafe state,
-                # this is our "safe" candidate
-                if any(map(lambda u: u.is_sat(sub) is False, unsafe)):
-                    # if it is implied by some of the safe abstractions that we
-                    # already yielded, skip it
-                    if any(
-                        map(
-                            lambda s: solver.is_sat(EM.And(sub, EM.Not(s))) is False,
-                            safe,
-                        )
-                    ):
-                        continue
-
-                    sub = EM.simplify(sub)
-                    safe.add(sub)
-                    yield AssertAnnotation(sub, subs, EM)
-
 
 def iter_nondet_load_pairs(state):
     loads = list(state.nondet_loads())

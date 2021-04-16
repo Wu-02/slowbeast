@@ -216,7 +216,7 @@ class CFA:
         """
         assert isinstance(prog, Program)
         # build a CFA for each function and then connect them with call edges
-        cfas = {fun: CFA(fun) for fun in prog.funs() if not fun.is_undefined()}
+        cfas = {fun : CFA(fun) for fun in prog.funs() if not fun.is_undefined()}
         # FIXME: populate call edges
         return cfas
 
@@ -243,7 +243,7 @@ class CFA:
                 # break on calls
                 if isinstance(i, Branch):
                     break  # this is a last inst and we handle it later
-                elif isinstance(i, Call):
+                if isinstance(i, Call):
                     if e.is_noop():
                         e = CFA.CallEdge(e.source(), e.target(), i)  # replace the edge
                     else:

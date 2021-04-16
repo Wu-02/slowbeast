@@ -64,8 +64,7 @@ class InductiveSequence:
             st2 = rhs.strengthening
             if st1:
                 return st2 and st1 == st2 and self.states == rhs.states
-            else:
-                return st2 is None and self.states == rhs.states
+            return st2 is None and self.states == rhs.states
 
         def __repr__(self):
             return f"{self.states} with {self.strengthening}"
@@ -118,7 +117,7 @@ class InductiveSequence:
         executor,
         paths,
         target,
-        tmpframes=[],
+        tmpframes=None,
         pre=None,
         post=None,
         self_as_pre=False,
@@ -128,10 +127,9 @@ class InductiveSequence:
         tmpframes are frames that should be appended to the self.frames
         """
 
-        EM = getGlobalExprManager()
         result = PathExecutionResult()
         oldframes = self.frames
-        self.frames = oldframes + tmpframes
+        self.frames = oldframes + (tmpframes or [])
         selfassert = self.toannotation(toassert=True)
         for path in paths:
             p = path.copy()
@@ -154,12 +152,11 @@ class InductiveSequence:
         self.frames = oldframes
         return result
 
-    def check_last_frame(self, executor, paths, pre=[], post=[]):
+    def check_last_frame(self, executor, paths, pre=None, post=None):
         """
         Check whether when we execute paths, we get to one of the frames
         """
 
-        EM = getGlobalExprManager()
         result = PathExecutionResult()
         frame = self.frames[-1]
         frameassert = frame.toassert()
@@ -167,10 +164,10 @@ class InductiveSequence:
             p = path.copy()
             # the post-condition is the whole frame
             p.addPostcondition(frameassert)
-            for e in post:
+            for e in post or ():
                 p.addPostcondition(e)
 
-            for e in pre:
+            for e in pre or ():
                 p.addPrecondition(e)
 
             r = executor.execute_edge(p)
