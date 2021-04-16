@@ -90,7 +90,7 @@ class Executor(ConcreteExecutor):
         else:
             # FIXME: we do not use the solver...
             s = SEState(self, pc, m, self.solver)
-        assert not s.getConstraints(), "the state is not clean"
+        assert not s.constraints(), "the state is not clean"
         return s
 
     def createCleanState(self, pc=None, m=None):
@@ -596,10 +596,10 @@ class Executor(ConcreteExecutor):
         if val.is_concrete():
             return val
 
-        return state.solver().toUnique(val, *state.getConstraints())
+        return state.solver().toUnique(val, *state.constraints())
 
     def concretize(self, state, val):
         if val.is_concrete():
             return val
 
-        return state.solver().concretize(val, *state.getConstraints())
+        return state.solver().concretize(val, *state.constraints())

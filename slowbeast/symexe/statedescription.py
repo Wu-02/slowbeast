@@ -188,7 +188,7 @@ def unify_state_descriptions(EM, sd1, sd2):
 def state_to_description(state):
     EM = state.expr_manager()
     return StateDescription(
-        state.getConstraintsObj().as_formula(EM),
+        state.constraints_obj().as_formula(EM),
         {
             l.value: l.instruction
             for l in state.nondets()

@@ -120,7 +120,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             ldbgv("Executing path: {0}", (path,), fn=self.reportfn, color="orange")
 
         assert all(
-            map(lambda s: not s.getConstraints(), states)
+            map(lambda s: not s.constraints(), states)
         ), "The state is not clean"
 
         # execute the annotated error path and generate also

@@ -608,7 +608,7 @@ class KindSEChecker(BaseKindSE):
         E = self.create_set(errstate)
 
         S = E.copy()
-        C = errstate.getConstraints()
+        C = errstate.constraints()
         S.reset_expr(EM.conjunction(*C[:-1], EM.Not(C[-1])))
         target0 = S.copy()
 
@@ -721,7 +721,7 @@ class KindSEChecker(BaseKindSE):
                 continue
 
             for e in r.errors:
-                C = e.getConstraints()
+                C = e.constraints()
                 # negate the last constraint on the path
                 tmp = create_set(e)
                 expr = EM.conjunction(*C[:-1], EM.Not(C[-1]))

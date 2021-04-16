@@ -146,14 +146,14 @@ class SEState(ExecutionState):
         if not symb:
             return True
 
-        r = self._solver.try_is_sat(1000, *self.getConstraints(), *e)
+        r = self._solver.try_is_sat(1000, *self.constraints(), *e)
         if r is not None:
             return r
 
         conj = self.expr_manager().conjunction
-        assumptions = conj(*self.getConstraints())
+        assumptions = conj(*self.constraints())
         expr = conj(*e)
-        r = try_solve_incrementally(self.getConstraints(), e, self.expr_manager())
+        r = try_solve_incrementally(self.constraints(), e, self.expr_manager())
         if r is not None:
             return r
         return self._solver.is_sat(expr)
@@ -163,10 +163,10 @@ class SEState(ExecutionState):
         Solve the PC and return True if it is sat. Handy in the cases
         when the state is constructed manually.
         """
-        return self._solver.is_sat(*self.getConstraints())
+        return self._solver.is_sat(*self.constraints())
 
     def concretize(self, *e):
-        return self._solver.concretize(self.getConstraints(), *e)
+        return self._solver.concretize(self.constraints(), *e)
 
     def input_vector(self):
         return self.concretize(*self.nondet_values())
@@ -180,7 +180,7 @@ class SEState(ExecutionState):
         }
 
     def concretize_with_assumptions(self, assumptions, *e):
-        return self._solver.concretize(self.getConstraints() + assumptions, *e)
+        return self._solver.concretize(self.constraints() + assumptions, *e)
 
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
@@ -203,10 +203,10 @@ class SEState(ExecutionState):
 
         return new
 
-    def getConstraints(self):
+    def constraints(self):
         return self._constraints.get()
 
-    def getConstraintsObj(self):
+    def constraints_obj(self):
         return self._constraints
 
     def path_condition(self):
@@ -287,7 +287,7 @@ class SEState(ExecutionState):
             write(str(n))
             write("\n")
         write(" -- constraints --\n")
-        write(str(self.getConstraintsObj()))
+        write(str(self.constraints_obj()))
         write("\n")
 
 

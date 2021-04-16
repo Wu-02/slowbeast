@@ -11,7 +11,7 @@ def get_safe_subexpressions(state, unsafe):
 
     safe = set()
     solver = Solver()
-    for c in state.getConstraints():
+    for c in state.constraints():
         # FIXME: do it somehow smarter than iterating over all...
 
         # get all boolean subexpressions of 'c'
@@ -237,7 +237,7 @@ def get_const_cmp_relations(state):
 def get_const_subs_relations(state):
     EM = state.expr_manager()
     subs = get_subs(state)
-    C = state.getConstraints()
+    C = state.constraints()
     substitute = EM.substitute
     for l, cval in _get_const_cmp_relations(state):
         for expr in C:

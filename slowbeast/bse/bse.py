@@ -134,7 +134,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             # ldbgv("Computing precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
 
         assert all(
-            map(lambda s: not s.getConstraints(), states)
+            map(lambda s: not s.constraints(), states)
         ), "The state is not clean"
 
         # execute the annotated error path and generate also

@@ -54,7 +54,7 @@ class StatesSet:
 
     def as_expr(self):
         """ NOTE: use carefully, only when you know what you do... """
-        return self._state.getConstraintsObj().as_formula(self.expr_manager())
+        return self._state.constraints_obj().as_formula(self.expr_manager())
 
     def as_assume_annotation(self):
         sd = state_to_description(self._state)
@@ -80,14 +80,14 @@ class StatesSet:
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
 
-        if not state.getConstraints():
+        if not state.constraints():
             # the state is clean, just add the first constraints
             state.add_constraint(expr)
             return
 
         EM = state.expr_manager()
         C = ConstraintsSet()
-        newexpr = EM.Or(expr, state.getConstraintsObj().as_formula(EM))
+        newexpr = EM.Or(expr, state.constraints_obj().as_formula(EM))
         if not newexpr.is_concrete():
             C.add(newexpr)
         else:
@@ -139,7 +139,7 @@ class StatesSet:
     def complement(self):
         state = self._state
         EM = state.expr_manager()
-        expr = EM.Not(state.getConstraintsObj().as_formula(EM))
+        expr = EM.Not(state.constraints_obj().as_formula(EM))
         C = ConstraintsSet()
         C.add(expr)
         state.setConstraints(C)

@@ -28,7 +28,7 @@ class Executor(SExecutor):
         if m is None:
             m = self.getMemoryModel().createMemory()
         s = LazySEState(self, pc, m, self.solver)
-        assert not s.getConstraints(), "the state is not clean"
+        assert not s.constraints(), "the state is not clean"
         return s
 
     def execUndefFun(self, state, instr, fun):
@@ -409,7 +409,7 @@ class CFGExecutor(SExecutor):
 #        EM = r.expr_manager()
 #        for s in tostates:
 #            tmpr = r.copy()
-#            newconstr = s.getConstraints()
+#            newconstr = s.constraints()
 
 #            FIXME("Handle other nondets")  # FIXME
 #            # map constraints from s to r

@@ -147,7 +147,7 @@ class BSEState(LazySEState):
 
     def _get_symbols(self):
         symbols = set(
-            s for e in self.getConstraints() for s in e.symbols() if not e.is_concrete()
+            s for e in self.constraints() for s in e.symbols() if not e.is_concrete()
         )
         for ptr, val in self.memory._reads.items():
             symbols.update(ptr.symbols())
@@ -208,7 +208,7 @@ class BSEState(LazySEState):
         # add new inputs from pre-state
         for inp in prestate.nondets():
             add_input(inp)
-        self.add_constraint(*prestate.getConstraints())
+        self.add_constraint(*prestate.constraints())
 
         # print("==Pre+state ==")
         # print(self)
@@ -218,7 +218,7 @@ class BSEState(LazySEState):
         return []
 
     def __repr__(self):
-        s = f"BSEState: {self.getConstraints()}"
+        s = f"BSEState: {self.constraints()}"
         if self.memory._reads:
             s += "\n" + "\n".join(
                 f"+L({p.as_value()})={x}" for p, x in self.memory._reads.items()
@@ -248,7 +248,7 @@ class Executor(PathExecutor):
         if m is None:
             m = self.getMemoryModel().createMemory()
         s = BSEState(self, pc, m, self.solver)
-        assert not s.getConstraints(), "the state is not clean"
+        assert not s.constraints(), "the state is not clean"
         return s
 
     def execute_edge(self, states, edge, invariants=None):

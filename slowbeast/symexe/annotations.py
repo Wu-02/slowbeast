@@ -321,7 +321,7 @@ def state_to_annotation(state, toassert=False):
     EM = state.expr_manager()
     Ctor = AssertAnnotation if toassert else AssumeAnnotation
     return Ctor(
-        state.getConstraintsObj().as_formula(EM),
+        state.constraints_obj().as_formula(EM),
         get_subs(state),
         EM,
     )
