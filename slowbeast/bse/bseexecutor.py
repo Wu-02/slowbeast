@@ -114,7 +114,7 @@ class BSEState(LazySEState):
             # FIXME: we should replace the value also in memory, shouldn't we?
             pc = substitute(pc, (val, newval))
         self._replace_value_in_memory(new_repl, newval, substitute, val)
-        self.setConstraints(pc)
+        self.set_constraints(pc)
 
         return new_repl
 

@@ -220,7 +220,7 @@ class SEState(ExecutionState):
         for c in C:
             self._constraints.add(c)
 
-    def setConstraints(self, *C):
+    def set_constraints(self, *C):
         if len(C) == 1 and isinstance(C[0], ConstraintsSet):
             self._constraints = C[0]
             self._constraints_ro = False

@@ -73,7 +73,7 @@ class StatesSet:
         C = ConstraintsSet()
         if expr is not None:
             C.add(expr)
-        self._state.setConstraints(C)
+        self._state.set_constraints(C)
 
     def _unite(self, s):
         state = self._state
@@ -94,7 +94,7 @@ class StatesSet:
             # if newexpr is concrete, it must be True. And adding True is useless,
             # its the same as empty constraints
             assert newexpr.value() is True  # this is Or expr...
-        state.setConstraints(C)
+        state.set_constraints(C)
 
     def unite(self, *S):
         for s in S:
@@ -121,7 +121,7 @@ class StatesSet:
             state = S._state.copy()
         self._state = state
         newexpr = eval_state_description(state.executor(), state, selfsd)
-        state.setConstraints(ConstraintsSet((newexpr,)))
+        state.set_constraints(ConstraintsSet((newexpr,)))
 
     def translated(self, S):
         """
@@ -133,7 +133,7 @@ class StatesSet:
         else:
             state = S._state.copy()
         newexpr = eval_state_description(state.executor(), state, selfsd)
-        state.setConstraints(ConstraintsSet((newexpr,)))
+        state.set_constraints(ConstraintsSet((newexpr,)))
         return StatesSet(state)
 
     def complement(self):
@@ -142,7 +142,7 @@ class StatesSet:
         expr = EM.Not(state.constraints_obj().as_formula(EM))
         C = ConstraintsSet()
         C.add(expr)
-        state.setConstraints(C)
+        state.set_constraints(C)
 
     def minus(self, s):
         state = self._state
