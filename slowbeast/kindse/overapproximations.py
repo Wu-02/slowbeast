@@ -1,17 +1,16 @@
 from functools import partial
 from slowbeast.domains.concrete import ConcreteInt
-from slowbeast.util.debugging import dbg, dbgv, ldbg
+from slowbeast.util.debugging import dbg, dbgv
 from slowbeast.solvers.expressions import em_optimize_expressions
 from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
 from slowbeast.symexe.statesset import union, intersection, complement
-from .inductivesequence import InductiveSequence
 from slowbeast.core.executor import PathExecutionResult
-
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
     execute_annotation_substitutions,
 )
 
+from .inductivesequence import InductiveSequence
 
 def remove_implied_literals(clauses):
     """
@@ -53,7 +52,7 @@ def remove_implied_literals(clauses):
         if drop:
             # dbg(f"Dropping {r}, it's True")
             continue
-        elif changed:
+        if changed:
             if len(newc) == 1:
                 singletons.append(newc[0])
                 solver.add(newc[0])
@@ -76,7 +75,7 @@ def poststates(executor, paths, prestate):
     result = PathExecutionResult()
     indexecutor = executor.ind_executor()
     for path in paths:
-        p = path.copy()
+        # p = path.copy()
         # the post-condition is the whole frame
         # if pre:
         #    p.add_annot_before(pre.as_assume_annotation())
@@ -333,7 +332,7 @@ class LoopStateOverapproximation:
         """
         assumptions are clauses that we do not try to drop
         """
-        target, executor = self.target, self.executor
+        target = self.target
 
         # we start with all clauses
         em = self.expr_mgr
@@ -344,8 +343,7 @@ class LoopStateOverapproximation:
                 if c.value() is False:
                     dbg("  ... got FALSE in clauses, returning FALSE")
                     return [em.getFalse()]
-                else:
-                    dbg("  ... dropping True clause")
+                dbg("  ... dropping True clause")
             else:
                 expressions.add(c)
 
@@ -448,7 +446,7 @@ class LoopStateOverapproximation:
             assert not S.is_empty()
             assert intersection(
                 self.unsafe, S
-            ).is_empty(), f"Overapproxmating clauses made the set unsafe"
+            ).is_empty(), "Overapproxmating clauses made the set unsafe"
 
         self.clauses = newclauses
 
@@ -462,7 +460,7 @@ class LoopStateOverapproximation:
 
         assert intersection(
             R, c, self.unsafe
-        ).is_empty(), f"{R} \cap {c} \cap {self.unsafe}"
+        ).is_empty(), f"{R} & {c} & {self.unsafe}"
         if __debug__:
             X = R.copy()
             X.intersect(c)
@@ -701,7 +699,7 @@ def overapprox_set(
 
     assert intersection(
         unsafe, create_set(S)
-    ).is_empty(), f"Dropping clauses second time made the set unsafe"
+    ).is_empty(), "Dropping clauses second time made the set unsafe"
 
     dbg(f"Overapproximated to {S}", color="orange")
 
