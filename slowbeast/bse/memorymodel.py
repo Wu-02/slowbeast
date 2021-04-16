@@ -31,11 +31,11 @@ class BSEMemory(SEMemory):
         return new
 
     def read_symbolic_ptr(self, state, toOp, fromOp, bitsnum=None):
-        raise NotImplemented("Not implemented yet")
-        val = _nondet_value(state.solver().fresh_value, toOp, bitsnum)
-        state.create_nondet(toOp, val)
-        state.set(toOp, val)
-        self._reads[fromOp] = val
+        raise NotImplementedError("Not implemented yet")
+       #val = _nondet_value(state.solver().fresh_value, toOp, bitsnum)
+       #state.create_nondet(toOp, val)
+       #state.set(toOp, val)
+       #self._reads[fromOp] = val
 
     def read_unknown_ptr(self, state, toOp, fromOp, bitsnum=None):
         assert not self._reads.get(fromOp), fromOp
@@ -100,11 +100,10 @@ class BSEMemory(SEMemory):
     def write_symbolic_ptr(self, state, toOp, value):
         raise NotImplementedError("Not implemented yet")
         # reading from this pointer must equal value in the future
-        self._reads[toOp] = value
+        # self._reads[toOp] = value
 
-    def symbolic_write(self, state, ptr, ptrOp, value):
+    def symbolic_write(self, ptr, value):
         self._reads[ptr] = value
-        return None
 
     def dump(self, stream=stdout):
         stream.write("-- Global objects:\n")
@@ -173,10 +172,7 @@ class BSEMemoryModel(CoreMM):
             M.write_symbolic_ptr(state, toOp, value)
             return [state]
 
-        err = M.symbolic_write(state, to, toOp, value)
-        if err:
-            assert err.isMemError()
-            state.setError(err)
+        M.symbolic_write(to, value)
         return [state]
 
     def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
