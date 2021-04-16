@@ -503,6 +503,15 @@ class BSELFChecker(BaseBSE):
             return [R]
         return None
 
+    def add_invariant(self, loc, inv):
+        invs = self.invariant_sets.setdefault(loc, [])
+        invs.append(inv.to_assume(getGlobalExprManager()))
+        # FIXME: check that the invariant gives us a new information
+        # I = create_set() # FIXME: cache the union of invariants
+        # I.add(invs)
+        # I.intersect()
+        print_stdout(f"{inv} holds on {loc}", color="BLUE")
+
     def fold_loop(self, loc, L: Loop, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
         if __debug__:
@@ -561,14 +570,8 @@ class BSELFChecker(BaseBSE):
                     seqs.append(I)
 
                     if res is Result.SAFE:
-                        invs = self.invariant_sets.setdefault(loc, [])
                         inv = seq.toannotation(False)
-                        invs.append(inv)
-                        # FIXME: check that the invariant gives us a new information
-                        # I = create_set() # FIXME: cache the union of invariants
-                        # I.add(invs)
-                        # I.intersect()
-                        print_stdout(f"{S} holds on {loc}", color="BLUE")
+                        self.add_invariant(loc, inv)
                         return True
 
             extended = []

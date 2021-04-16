@@ -159,6 +159,12 @@ class AssumeAnnotation(ExprAnnotation):
     def __init__(self, expr, subs, EM):
         super().__init__(Annotation.ASSUME, expr, subs, EM)
 
+    def to_assume(self, EM):
+        return self
+
+    def assume_not(self, EM):
+        return AssumeAnnotation(EM.Not(self.expr()), self.substitutions(), EM)
+
     def __repr__(self):
         return f"@[assume {ExprAnnotation.__repr__(self)}]"
 
