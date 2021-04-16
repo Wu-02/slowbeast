@@ -700,6 +700,6 @@ def overapprox_set(
         unsafe, create_set(S)
     ).is_empty(), f"Dropping clauses second time made the set unsafe"
 
-    dbg(f"Overapproximated to {S}", color="dark_blue")
+    dbg(f"Overapproximated to {S}", color="orange")
 
     return S

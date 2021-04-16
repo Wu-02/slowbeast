@@ -115,7 +115,7 @@ class BSELFChecker(BaseBSE):
     """
 
     def __init__(
-        self, loc, A, program, programstructure, opts, invariants=None, indsets=None
+        self, loc, A, program, programstructure, opts, invariants=None, indsets=None, max_loop_hits=None
     ):
         super().__init__(
             program,
@@ -146,6 +146,8 @@ class BSELFChecker(BaseBSE):
                 dbg(f"  @ {loc}: {invs}")
 
         self.no_sum_loops = set()
+        self._loop_hits = {}
+        self._max_loop_hits = max_loop_hits
 
     def get_loop(self, loc):
         L = self.loop_info.get(loc)
@@ -171,6 +173,7 @@ class BSELFChecker(BaseBSE):
             self.options,
             indsets=self.inductive_sets,
             invariants=self.invariant_sets,
+            max_loop_hits=1
         )
         result, states = checker.check(L.entries())
         dbg_sec()
@@ -512,8 +515,21 @@ class BSELFChecker(BaseBSE):
         # I.intersect()
         print_stdout(f"{inv} holds on {loc}", color="BLUE")
 
+    def add_inductive_set(self, loc, S):
+        return #FIXME FIXME FIXME
+        I = InductiveSet(self.create_set(S))
+        seqs = self.inductive_sets.setdefault(loc, [])
+        seqsid = id(seqs)
+        oldseqs = seqs.copy()
+        seqs.clear()
+        for olds in oldseqs:
+            if not I.includes(olds):
+                seqs.append(olds)
+        assert seqsid == id(seqs)
+        seqs.append(I)
+
     def fold_loop(self, loc, L: Loop, unsafe):
-        dbg(f"========== Folding loop {loc} ===========")
+        print_stdout(f"========== Folding loop {loc} ===========", color="white")
         if __debug__:
             _dump_inductive_sets(self, loc)
 
@@ -543,13 +559,13 @@ class BSELFChecker(BaseBSE):
         sequences = seqs0
         E = create_set(errs0.toassert())
 
-        print_stdout(f"Folding loop {loc} with errors {errs0}", color="white")
+        print_stdout(f"Folding loop {loc} with errors {errs0}", color="gray")
 
         max_seq_len = 2 * len(L.paths())
         while True:
             print_stdout(
                 f"Got {len(sequences)} abstract path(s) of loop " f"{loc}",
-                color="GRAY",
+                color="dark_blue",
             )
             # FIXME: check that all the sequences together cover the input paths
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
@@ -576,10 +592,9 @@ class BSELFChecker(BaseBSE):
 
             extended = []
             for seq in sequences:
-                print_stdout(
-                    f"Processing sequence of len {len(seq) if seq else 0}:\n{seq}",
-                    color="dark_blue",
-                )
+                print_stdout(f"Extending a sequence of len {len(seq) if seq else 0}...", color="gray")
+                dbg(f"{seq}:", color="dark_blue")
+
                 if __debug__:
                     assert (
                         seq is None
@@ -592,15 +607,14 @@ class BSELFChecker(BaseBSE):
                     dbg("Give up extending the sequence, it is too long")
                     continue
 
-                dbg("Extending the sequence")
                 # FIXME: we usually need seq[-1] as annotation, or not?
                 new_frames_complements = []
                 for A in self.extend_seq(seq, target0, E, L):
                     drop = False
                     for C in new_frames_complements:
                         if intersection(C, A).is_empty():
-                            print(
-                                f"Did not extended with: {A} (already has same or bigger frame)"
+                            dbg(
+                                f"Did not extend with: {A} (already has same or bigger frame)"
                             )
                             drop = True
                             break
@@ -621,11 +635,10 @@ class BSELFChecker(BaseBSE):
                 dbg("Extending the sequence finished")
 
             if not extended:
-                dbg("Failed extending any sequence")
-                # seq not extended... it looks that there is no
-                # safe invariant
+                # seq not extended... it looks that there is no safe invariant
                 # FIXME: could we use it for annotations?
                 print_stdout("Failed extending any sequence", color="orange")
+                print_stdout(f"========== Folding loop {loc} finished (unsuccessfully) ===========", color="orange")
                 return False  # fall-back to unwinding
 
             sequences = extended
@@ -665,12 +678,22 @@ class BSELFChecker(BaseBSE):
                 if opt_fold_loops:
                     # is this a path starting at a loop header?
                     fl = bsectx.edge.source()
-                    if fl not in self.no_sum_loops and self.is_loop_header(fl):
-                        if self.handle_loop(fl, pre):
-                            dbg(f"Path with loop {fl} proved safe", color="dark_green")
-                        else:
-                            self.extend_state(bsectx, pre)
-                        continue
+                    if self.is_loop_header(fl):
+                        # check whether we are not told to give up when hitting this loop this time
+                        mlh = self._max_loop_hits
+                        if mlh:
+                            lnm = self._loop_hits.setdefault(fl, 0)
+                            if lnm > self._max_loop_hits:
+                                dbg("Hit limit of visits to a loop")
+                                return Result.UNKNOWN, pre
+                            self._loop_hits[fl] += 1
+
+                        if fl not in self.no_sum_loops:
+                            if self.handle_loop(fl, pre):
+                                dbg(f"Path with loop {fl} proved safe", color="dark_green")
+                            else:
+                                self.extend_state(bsectx, pre)
+                            continue
                 self.extend_state(bsectx, pre)
 
         raise RuntimeError("Unreachable")
