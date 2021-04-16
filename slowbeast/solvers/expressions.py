@@ -79,11 +79,11 @@ class ExprManager:
     def Bool(self, name):
         return self.Var(name, BoolType())
 
-   #def subexpressions(self, expr):
-   #    if expr.is_concrete():
-   #        yield expr
-   #    else:
-   #        yield from SymbolicDomain.subexpressions(expr)
+    # def subexpressions(self, expr):
+    #    if expr.is_concrete():
+    #        yield expr
+    #    else:
+    #        yield from SymbolicDomain.subexpressions(expr)
 
     def simplify(self, expr):
         if expr.is_concrete():
@@ -194,7 +194,7 @@ class ExprManager:
             if cval is False:
                 return b
             raise RuntimeError(f"Invalid bool: {cval}")
-            #return ConcreteDomain.And(a, b)
+            # return ConcreteDomain.And(a, b)
         lift = self.lift
         return opt(SymbolicDomain.Ite(lift(c), lift(a), lift(b)))
 

@@ -32,10 +32,11 @@ class BSEMemory(SEMemory):
 
     def read_symbolic_ptr(self, state, toOp, fromOp, bitsnum=None):
         raise NotImplementedError("Not implemented yet")
-       #val = _nondet_value(state.solver().fresh_value, toOp, bitsnum)
-       #state.create_nondet(toOp, val)
-       #state.set(toOp, val)
-       #self._reads[fromOp] = val
+
+    # val = _nondet_value(state.solver().fresh_value, toOp, bitsnum)
+    # state.create_nondet(toOp, val)
+    # state.set(toOp, val)
+    # self._reads[fromOp] = val
 
     def read_unknown_ptr(self, state, toOp, fromOp, bitsnum=None):
         assert not self._reads.get(fromOp), fromOp

@@ -57,7 +57,7 @@ class CFG(PureCFG):
             return self.bblock().get_id()
 
     def __init__(self, F):
-        super(CFG, self).__init__(F)
+        super().__init__(F)
 
     def createNode(self, *args):
         assert len(args) == 1
@@ -65,8 +65,8 @@ class CFG(PureCFG):
 
 
 class CFGPath(PureCFGPath):
-    def __init__(self, locs=[]):
-        super(CFGPath, self).__init__(locs)
+    def __init__(self, locs=None):
+        super().__init__(locs or [])
 
     def reachesAssert(self):
         if len(self.locations) <= 0:
@@ -78,10 +78,9 @@ class CFGPath(PureCFGPath):
 def _get_loc_key(loc):
     if isinstance(loc, CFG.AnnotatedNode):
         return loc.bblock().get_id()
-    elif isinstance(loc, BBlock):
+    if isinstance(loc, BBlock):
         return loc.get_id()
-    else:
-        raise NotImplementedError(f"Unhandled key value: {loc}")
+    raise NotImplementedError(f"Unhandled key value: {loc}")
 
 
 class AnnotatedCFGPath(CFGPath):
@@ -93,15 +92,10 @@ class AnnotatedCFGPath(CFGPath):
     are executed on given places.
     """
 
-    __slots__ = [
-        "locannotations",
-        "locannotationsafter",
-        "precondition",
-        "postcondition",
-    ]
+    __slots__ = "locannotations", "locannotationsafter", "precondition", "postcondition"
 
-    def __init__(self, locs=[]):
-        super(AnnotatedCFGPath, self).__init__(locs)
+    def __init__(self, locs=None):
+        super().__init__(locs or [])
         self.locannotations = {}
         self.locannotationsafter = {}
         self.precondition = []
@@ -162,8 +156,8 @@ class AnnotatedCFGPath(CFGPath):
         # FIXME: this is not efficient...
         n = AnnotatedCFGPath([loc] + self.locations)
         # FIXME: do cow?
-        n.annotations = self.locannotations.copy()
-        n.annotations = self.locannotationsafter.copy()
+        n.locannotations = self.locannotations.copy()
+        n.locannotationsafter = self.locannotationsafter.copy()
         n.postcondition = self.postcondition.copy()
         n.precondition = self.precondition.copy()
 

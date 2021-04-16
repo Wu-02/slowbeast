@@ -123,7 +123,7 @@ class AnnotatedCFAPath:
                     n += 1
                 if e.target() == elem:
                     n += 1
-            return n
+        return n
 
     def last_idx_of(self, elem):
         edges = self._edges
@@ -135,7 +135,7 @@ class AnnotatedCFAPath:
             for idx in range(-1, -(len(edges) + 1), -1):
                 if edges[idx].target() == elem:
                     return idx
-                elif edges[idx].source() == elem:
+                if edges[idx].source() == elem:
                     return idx
         return None
 
