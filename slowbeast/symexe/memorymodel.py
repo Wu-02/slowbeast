@@ -12,7 +12,7 @@ class SymbolicMemoryModel(CoreMM):
     def __init__(self, opts):
         super().__init__(opts)
 
-    def createMemory(self):
+    def create_memory(self):
         """ Create a memory object that is going to be a part of a state. """
         return Memory()
 

@@ -138,7 +138,7 @@ class AIMemoryModel(MemoryModel):
     def __init__(self, opts, solver):
         super().__init__(opts)
 
-    def createMemory(self):
+    def create_memory(self):
         return AIMemory()
 
 
@@ -146,7 +146,7 @@ class AIMemoryModel(MemoryModel):
     def __init__(self, opts):
         super().__init__(opts)
 
-    def createMemory(self):
+    def create_memory(self):
         return AIMemory()
 
     def lazyAllocate(self, state, op):

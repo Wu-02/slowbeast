@@ -250,7 +250,7 @@ class Executor(PathExecutor):
         that are able to lazily create unknown values
         """
         if m is None:
-            m = self.getMemoryModel().createMemory()
+            m = self.getMemoryModel().create_memory()
         s = BSEState(self, pc, m, self.solver)
         assert not s.constraints(), "the state is not clean"
         return s

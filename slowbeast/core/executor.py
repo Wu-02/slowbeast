@@ -158,7 +158,7 @@ class Executor:
         Create a state that can be processed by this executor.
         """
         if m is None:
-            m = self.memorymodel.createMemory()
+            m = self.memorymodel.create_memory()
         return ExecutionState(pc, m)
 
     def getExecInstrNum(self):
