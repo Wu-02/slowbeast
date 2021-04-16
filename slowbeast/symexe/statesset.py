@@ -82,7 +82,7 @@ class StatesSet:
 
         if not state.getConstraints():
             # the state is clean, just add the first constraints
-            state.addConstraint(expr)
+            state.add_constraint(expr)
             return
 
         EM = state.expr_manager()
@@ -107,7 +107,7 @@ class StatesSet:
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
-        state.addConstraint(expr)
+        state.add_constraint(expr)
 
     def translate(self, S):
         """
@@ -149,7 +149,7 @@ class StatesSet:
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
         EM = state.expr_manager()
-        state.addConstraint(EM.Not(expr))
+        state.add_constraint(EM.Not(expr))
 
     def is_empty(self):
         """ Check whether the set is empty. Involves a solver call """

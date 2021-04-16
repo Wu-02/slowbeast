@@ -212,7 +212,7 @@ class SEState(ExecutionState):
     def path_condition(self):
         return self._constraints.as_formula(self._solver.expr_manager())
 
-    def addConstraint(self, *C):
+    def add_constraint(self, *C):
         if self._constraints_ro:
             self._constraints = self._constraints.copy()
             self._constraints_ro = False
@@ -227,7 +227,7 @@ class SEState(ExecutionState):
         else:
             self._constraints = type(self._constraints)()
             self._constraints_ro = False
-            self.addConstraint(*C)
+            self.add_constraint(*C)
 
     def addWarning(self, msg):
         warn(msg)

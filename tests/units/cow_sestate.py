@@ -29,7 +29,7 @@ assert s1 != s2, "FAILED: states coparator"
 s3 = s1.copy()
 assert s1 == s3, "FAILED: Copying small states"
 
-s2.addConstraint('x')
+s2.add_constraint('x')
 s4 = s2.copy()
 s2.dump()
 s4.dump()

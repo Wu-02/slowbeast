@@ -169,7 +169,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 prestate = prestates[0]
                 # FIXME: can we somehow easily check that we do not have to do this?
                 # found a real error
-                prestate.addConstraint(*prestate.memory_constraints())
+                prestate.add_constraint(*prestate.memory_constraints())
                 if prestate.isfeasible():
                     return Result.UNSAFE, prestates[0]
             if not self._entry_loc.has_predecessors():

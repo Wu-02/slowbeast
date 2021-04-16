@@ -208,7 +208,7 @@ class BSEState(LazySEState):
         # add new inputs from pre-state
         for inp in prestate.nondets():
             add_input(inp)
-        self.addConstraint(*prestate.getConstraints())
+        self.add_constraint(*prestate.getConstraints())
 
         # print("==Pre+state ==")
         # print(self)

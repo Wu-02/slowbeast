@@ -141,11 +141,11 @@ class Executor(ConcreteExecutor):
         else:
             if csat is True:
                 T = state.copy()
-                T.addConstraint(cond)
+                T.add_constraint(cond)
 
             if ncsat is True:
                 F = state.copy()
-                F.addConstraint(ncond)
+                F.add_constraint(ncond)
 
             if T and F:
                 self.stats.forks += 1
@@ -169,7 +169,7 @@ class Executor(ConcreteExecutor):
         if r is None:
             return None
         elif r:
-            state.addConstraint(cond)
+            state.add_constraint(cond)
             return state
         return None
 
