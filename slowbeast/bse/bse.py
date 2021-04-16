@@ -15,17 +15,16 @@ from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
 
 
-def report_state(stats, n, fn=print_stderr):
+def report_state(stats, n, msg=None, fn=print_stderr):
     if n.hasError():
-        if fn:
-            fn(
-                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.getError()),
-                color="RED",
-            )
+        fn(
+            f"{msg if msg else ''}:: state {n.get_id()}: {n.pc}, {n.getError()}",
+            color="red",
+        )
         stats.errors += 1
     elif n.wasKilled():
         if fn:
-            fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
+            fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="wine")
         stats.killed_paths += 1
     elif n.isTerminated():
         if fn:
@@ -144,7 +143,8 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             states, bsectx.edge, invariants=invariants
         )
         for s in (s for s in nonready if s.wasKilled() or s.hasError()):
-            report_state(self.stats, s, self.reportfn)
+            report_state(self.stats, s, fn=self.reportfn,
+                         msg=f"Executing {bsectx.edge}")
             self.problematic_states.append(s)
 
         state = bsectx.errorstate
