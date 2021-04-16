@@ -25,10 +25,10 @@ class ExecutionStatus:
     def __hash__(self):
         return hash(self._detail) ^ hash(self._status)
 
-    def getStatus(self):
+    def status(self):
         return self._status
 
-    def getDetail(self):
+    def detail(self):
         return self._detail
 
     def setError(self, e):

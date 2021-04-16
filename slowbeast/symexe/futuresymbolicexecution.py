@@ -134,7 +134,7 @@ class FutureSymbolicExecutor(Interpreter):
         elif s.wasKilled():
             stats.paths += 1
             stats.killed_paths += 1
-            print_stderr(s.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
+            print_stderr(s.status_detail(), prefix="KILLED STATE: ", color="WINE")
             if testgen:
                 testgen.processState(s)
         else:

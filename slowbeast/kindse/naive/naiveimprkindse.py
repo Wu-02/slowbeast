@@ -71,7 +71,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     )
                 if ns.wasKilled():
                     print_stderr(
-                        ns.getStatusDetail(), prefix="KILLED STATE: ", color="WINE"
+                        ns.status_detail(), prefix="KILLED STATE: ", color="WINE"
                     )
                     return [], Result.UNKNOWN
 

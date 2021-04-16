@@ -24,11 +24,11 @@ def report_state(stats, n, msg=None, fn=print_stderr):
         stats.errors += 1
     elif n.wasKilled():
         if fn:
-            fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="wine")
+            fn(n.status_detail(), prefix="KILLED STATE: ", color="wine")
         stats.killed_paths += 1
     elif n.isTerminated():
         if fn:
-            fn(n.getStatusDetail(), prefix="TERMINATED STATE: ", color="orange")
+            fn(n.status_detail(), prefix="TERMINATED STATE: ", color="orange")
         stats.terminated_paths += 1
 
 

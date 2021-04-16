@@ -7,7 +7,7 @@ from sys import stdout
 
 
 class ExecutionState:
-    __slots__ = "pc", "memory", "status"
+    __slots__ = "pc", "memory", "_status"
 
     def __init__(self, pc, m):
         # program counter
@@ -15,7 +15,7 @@ class ExecutionState:
         # memory objects
         self.memory = m
         # status of the execution: ready/exited/errored/etc.
-        self.status = ExecutionStatus()
+        self._status = ExecutionStatus()
 
     def __eq__(self, rhs):
         if self is rhs:
@@ -23,7 +23,7 @@ class ExecutionState:
         assert self.pc is not None and rhs.pc is not None
         return (
             self.pc == rhs.pc
-            and self.status == rhs.status
+            and self._status == rhs._status
             and self.memory == rhs.memory
         )
 
@@ -31,53 +31,53 @@ class ExecutionState:
         assert isinstance(rhs, ExecutionState)
         rhs.pc = self.pc
         rhs.memory = self.memory.copy()
-        rhs.status = self.status.copy()
+        rhs._status = self._status.copy()
 
     def copy(self):
         new = type(self)(None, None)
         self.copyTo(new)
         return new
 
-    def getStatusDetail(self):
-        return self.status.getDetail()
+    def status_detail(self):
+        return self._status.detail()
 
     def setError(self, e):
-        self.status.setError(e)
+        self._status.setError(e)
 
     def hasError(self):
-        return self.status.isError()
+        return self._status.isError()
 
     def wasKilled(self):
-        return self.status.isKilled()
+        return self._status.isKilled()
 
     def setKilled(self, e):
-        self.status.setKilled(e)
+        self._status.setKilled(e)
 
     def getError(self):
         assert self.hasError() or self.isTerminated() or self.wasKilled()
-        return self.status.getDetail()
+        return self._status.detail()
 
     def setExited(self, ec):
-        self.status.setExited(ec)
+        self._status.setExited(ec)
 
     def setTerminated(self, reason):
-        self.status.setTerminated(reason)
+        self._status.setTerminated(reason)
 
     def isTerminated(self):
-        return self.status.isTerminated()
+        return self._status.isTerminated()
 
     def exited(self):
-        return self.status.isExited()
+        return self._status.isExited()
 
     def getExitCode(self):
         assert self.exited()
-        return self.status.getDetail()
+        return self._status.detail()
 
-    def getStatus(self):
-        return self.status
+    def status(self):
+        return self._status
 
     def isReady(self):
-        return self.status.isReady()
+        return self._status.isReady()
 
     def eval(self, v):
         # FIXME: make an attribute is_constant...
@@ -134,7 +134,7 @@ class ExecutionState:
 
     def dump(self, stream=stdout):
         stream.write("---- State ----\n")
-        self.status.dump(stream)
+        self._status.dump(stream)
         stream.write(" -- program counter --\n")
         stream.write("{0}\n".format(self.pc))
         stream.write("-- Memory:\n")

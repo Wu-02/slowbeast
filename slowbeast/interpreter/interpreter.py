@@ -87,7 +87,7 @@ class Interpreter:
         elif state.isTerminated():
             print_stderr(state.getError(), color="BROWN")
         elif state.wasKilled():
-            print_stderr(state.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
+            print_stderr(state.status_detail(), prefix="KILLED STATE: ", color="WINE")
         else:
             assert state.exited()
             dbg(f"state exited with exitcode {state.getExitCode()}")

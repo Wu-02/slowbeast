@@ -132,7 +132,7 @@ def report_state(stats, n, fn=print_stderr):
         stats.errors += 1
     elif n.wasKilled():
         if fn:
-            fn(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
+            fn(n.status_detail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
 
 

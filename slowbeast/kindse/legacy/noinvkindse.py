@@ -121,7 +121,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             self.stats.errors += 1
             return Result.UNSAFE
         elif n.wasKilled():
-            print_stderr(n.getStatusDetail(), prefix="KILLED STATE: ", color="WINE")
+            print_stderr(n.status_detail(), prefix="KILLED STATE: ", color="WINE")
             self.stats.killed_paths += 1
             return Result.UNKNOWN
 
