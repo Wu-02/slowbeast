@@ -259,7 +259,9 @@ class Executor(ConcreteExecutor):
         if mo1id == mo2id:
             state.set(
                 instr,
-                self.compare_values(E, p, p1.offset(), p2.offset(), instr.is_unsigned()),
+                self.compare_values(
+                    E, p, p1.offset(), p2.offset(), instr.is_unsigned()
+                ),
             )
             state.pc = state.pc.get_next_inst()
             return [state]
@@ -474,7 +476,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_unary_op(self, state, instr : UnaryOperation):
+    def exec_unary_op(self, state, instr: UnaryOperation):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
         opcode = instr.operation()

@@ -115,7 +115,15 @@ class BSELFChecker(BaseBSE):
     """
 
     def __init__(
-        self, loc, A, program, programstructure, opts, invariants=None, indsets=None, max_loop_hits=None
+        self,
+        loc,
+        A,
+        program,
+        programstructure,
+        opts,
+        invariants=None,
+        indsets=None,
+        max_loop_hits=None,
     ):
         super().__init__(
             program,
@@ -173,11 +181,11 @@ class BSELFChecker(BaseBSE):
             self.options,
             indsets=self.inductive_sets,
             invariants=self.invariant_sets,
-            max_loop_hits=1
+            max_loop_hits=1,
         )
         result, states = checker.check(L.entries())
         print_stdout(f"Checking if {A} holds on {loc} finished")
-        #dbg_sec()
+        # dbg_sec()
         return result, states
 
     def execute_path(self, path, fromInit=False, invariants=None):
@@ -206,9 +214,7 @@ class BSELFChecker(BaseBSE):
 
             ldbgv("Executing path: {0}", (path,), fn=self.reportfn, color="orange")
 
-        assert all(
-            map(lambda s: not s.constraints(), states)
-        ), "The state is not clean"
+        assert all(map(lambda s: not s.constraints(), states)), "The state is not clean"
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
@@ -245,11 +251,15 @@ class BSELFChecker(BaseBSE):
 
             k += 1
             if k <= maxk:
-                queue = [BSEContext(pedge, pre.copy()) for pre, edge in newst for pedge in edge.predecessors()]
+                queue = [
+                    BSEContext(pedge, pre.copy())
+                    for pre, edge in newst
+                    for pedge in edge.predecessors()
+                ]
             else:
                 return Result.UNKNOWN
 
-        #if queue is empty, we're safe!
+        # if queue is empty, we're safe!
         assert not queue, "Queue is not empty"
         return Result.SAFE
 
@@ -267,13 +277,11 @@ class BSELFChecker(BaseBSE):
         res = self.unwind(loc, errpre, maxk=maxk)
         dbg_sec()
         if res is Result.SAFE:
-            print_stdout(
-                f"Loop {loc} proved by unwinding", color="GREEN"
-            )
+            print_stdout(f"Loop {loc} proved by unwinding", color="GREEN")
             return True
         elif res is Result.UNSAFE:
-          self.no_sum_loops.add(loc)
-          return False
+            self.no_sum_loops.add(loc)
+            return False
 
         L = self.get_loop(loc)
         if L is None:
@@ -386,7 +394,9 @@ class BSELFChecker(BaseBSE):
         # reduce and over-approximate the initial sequence
         if seqs:
             tmp = []
-            print_stdout(f"Got {len(seqs)} starting inductive sequence(s)", color="dark_blue")
+            print_stdout(
+                f"Got {len(seqs)} starting inductive sequence(s)", color="dark_blue"
+            )
             for seq in seqs:
                 tmp.extend(self.overapprox_init_seq(seq, errs0, L))
             if tmp:
@@ -590,7 +600,10 @@ class BSELFChecker(BaseBSE):
 
             extended = []
             for seq in sequences:
-                print_stdout(f"Extending a sequence of len {len(seq) if seq else 0}...", color="gray")
+                print_stdout(
+                    f"Extending a sequence of len {len(seq) if seq else 0}...",
+                    color="gray",
+                )
                 dbg(f"{seq}:", color="dark_blue")
 
                 if __debug__:
@@ -636,7 +649,10 @@ class BSELFChecker(BaseBSE):
                 # seq not extended... it looks that there is no safe invariant
                 # FIXME: could we use it for annotations?
                 print_stdout("Failed extending any sequence", color="orange")
-                print_stdout(f"========== Folding loop {loc} finished (unsuccessfully) ===========", color="orange")
+                print_stdout(
+                    f"========== Folding loop {loc} finished (unsuccessfully) ===========",
+                    color="orange",
+                )
                 return False  # fall-back to unwinding
 
             sequences = extended
@@ -688,7 +704,10 @@ class BSELFChecker(BaseBSE):
 
                         if fl not in self.no_sum_loops:
                             if self.handle_loop(fl, pre):
-                                dbg(f"Path with loop {fl} proved safe", color="dark_green")
+                                dbg(
+                                    f"Path with loop {fl} proved safe",
+                                    color="dark_green",
+                                )
                             else:
                                 self.extend_state(bsectx, pre)
                             continue

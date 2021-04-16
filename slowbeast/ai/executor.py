@@ -256,7 +256,9 @@ class Executor(ConcreteExecutor):
                 state.setKilled("Comparison of pointer to a constant not implemented")
                 return state
 
-        x = self.compare_values(Domain, instr.predicate(), op1, op2, instr.is_unsigned())
+        x = self.compare_values(
+            Domain, instr.predicate(), op1, op2, instr.is_unsigned()
+        )
         state.set(instr, x)
         state.pc = state.pc.get_next_inst()
 

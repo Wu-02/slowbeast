@@ -3,6 +3,7 @@ from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import Instruction, Load
 from slowbeast.domains.concrete import ConcreteVal
 
+
 def _get_cannonic_var(val, x, EM):
     if isinstance(x, Load):
         name = f"L({x.operand(0).as_value()})"
@@ -10,10 +11,16 @@ def _get_cannonic_var(val, x, EM):
         name = x.as_value()
     return EM.Var(name, val.type())
 
+
 def _createCannonical(expr, subs, EM):
     get_cannonic_var = _get_cannonic_var
     return EM.substitute(
-        expr, *((val, get_cannonic_var(val, x, EM)) for (val, x) in subs.items() if not val.is_pointer())
+        expr,
+        *(
+            (val, get_cannonic_var(val, x, EM))
+            for (val, x) in subs.items()
+            if not val.is_pointer()
+        ),
     )
 
 
@@ -66,7 +73,7 @@ class StateDescription:
             assert v, (v, x)
             xx = get(x)
             if xx is None or v == xx:
-                continue # cannot or don't need to substitute
+                continue  # cannot or don't need to substitute
             assert xx.type() == v.type(), (xx, v)
             if xx.is_pointer():
                 assert v.is_pointer(), v
@@ -85,12 +92,12 @@ class StateDescription:
 
         # we must do all the substitution at once!
         assert all(
-            map(
-                lambda x: x[0].type() == x[1].type(), self.eval_subs(state)
-            )
+            map(lambda x: x[0].type() == x[1].type(), self.eval_subs(state))
         ), self._subs
         return EM.simplify(
-            EM.substitute(self._expr, *((val, curval) for (val, curval) in subs if curval))
+            EM.substitute(
+                self._expr, *((val, curval) for (val, curval) in subs if curval)
+            )
         )
 
     def eval_input_subs(self, state):
@@ -123,9 +130,7 @@ class StateDescription:
     def __repr__(self):
         return "{0}[{1}]".format(
             self._expr,
-            ", ".join(
-                f"{x.as_value()}->{val}" for (val, x) in self._subs.items()
-            ),
+            ", ".join(f"{x.as_value()}->{val}" for (val, x) in self._subs.items()),
         )
 
     def dump(self):

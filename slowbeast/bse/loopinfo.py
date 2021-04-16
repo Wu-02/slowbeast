@@ -1,6 +1,7 @@
 from slowbeast.bse.bse import check_paths
 from slowbeast.symexe.statesset import union
 
+
 class LoopInfo:
     def __init__(self, executor, loop):
         self.loop = loop

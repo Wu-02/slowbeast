@@ -194,7 +194,10 @@ def check_literal(EM, lit, ldata):
         return False
 
     # safety check
-    if not ldata.safety_solver.try_is_sat(500, EM.disjunction(lit, *ldata.clause)) is False:
+    if (
+        not ldata.safety_solver.try_is_sat(500, EM.disjunction(lit, *ldata.clause))
+        is False
+    ):
         return False
 
     have_feasible = False
@@ -214,7 +217,7 @@ def check_literal(EM, lit, ldata):
         feasible = solver.try_is_sat(500)
         if feasible is not True:
             solver.pop()
-            if feasible is None: # solver t-outed/failed
+            if feasible is None:  # solver t-outed/failed
                 return False
             continue
         # feasible means ok, but we want at least one feasible path

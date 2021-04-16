@@ -93,7 +93,9 @@ def get_var_diff_relations(state):
 
         # relation between loads of the type l1 = c*l2
         expr = EM.Eq(EM.Mul(c, l1), l2)
-        c_concr = state.concretize_with_assumptions([expr, EM.Ne(c, ConcreteInt(0, bw))], c)
+        c_concr = state.concretize_with_assumptions(
+            [expr, EM.Ne(c, ConcreteInt(0, bw))], c
+        )
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
@@ -104,7 +106,9 @@ def get_var_diff_relations(state):
                 )
         # relation between loads of the type l2 = c*l1
         expr = EM.Eq(EM.Mul(c, l2), l1)
-        c_concr = state.concretize_with_assumptions([expr, EM.Ne(c, ConcreteInt(0, bw))], c)
+        c_concr = state.concretize_with_assumptions(
+            [expr, EM.Ne(c, ConcreteInt(0, bw))], c
+        )
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
@@ -233,6 +237,7 @@ def get_const_cmp_relations(state):
     subs = get_subs(state)
     for l, cval in _get_const_cmp_relations(state):
         yield AssertAnnotation(EM.Eq(l, cval), subs, EM)
+
 
 def get_const_subs_relations(state):
     EM = state.expr_manager()

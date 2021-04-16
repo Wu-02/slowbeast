@@ -133,9 +133,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
             # ldbgv("Computing precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
 
-        assert all(
-            map(lambda s: not s.constraints(), states)
-        ), "The state is not clean"
+        assert all(map(lambda s: not s.constraints(), states)), "The state is not clean"
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
@@ -143,8 +141,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             states, bsectx.edge, invariants=invariants
         )
         for s in (s for s in nonready if s.wasKilled() or s.hasError()):
-            report_state(self.stats, s, fn=self.reportfn,
-                         msg=f"Executing {bsectx.edge}")
+            report_state(
+                self.stats, s, fn=self.reportfn, msg=f"Executing {bsectx.edge}"
+            )
             self.problematic_states.append(s)
 
         state = bsectx.errorstate
@@ -226,7 +225,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             calledge = PS.calls[callsite]
             if not calledge.has_predecessors():
                 state = postcondition.copy()
-                state.setTerminated("Function with only return edge unsupported in BSE atm.")
+                state.setTerminated(
+                    "Function with only return edge unsupported in BSE atm."
+                )
                 report_state(self.stats, state, self.reportfn)
                 self.problematic_states.append(state)
                 continue
@@ -244,15 +245,16 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                     state.replace_value(argval.value, val)
                     n += 1
                 self.queue_state(BSEContext(pedge, state, bsectx.errordescr))
-       #postcondition.setTerminated("Calls unsupported in BSE atm.")
-       #report_state(self.stats, postcondition, self.reportfn)
-       #self.problematic_states.append(postcondition)
+
+    # postcondition.setTerminated("Calls unsupported in BSE atm.")
+    # report_state(self.stats, postcondition, self.reportfn)
+    # self.problematic_states.append(postcondition)
 
     def extend_to_call(self, edge, bsectx, postcondition):
         PS = self.programstructure
         fun = edge.called_function()
         retval = None
-        retnd =  postcondition.nondet(edge[0])
+        retnd = postcondition.nondet(edge[0])
         if retnd is not None:
             retval = retnd.value
             assert fun.return_type() is not None, fun
@@ -265,7 +267,6 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 state.replace_value(retval, opval)
             retedge = PS.rets[ret]
             self.queue_state(BSEContext(retedge, state, bsectx.errordescr))
-
 
 
 def check_paths(checker, paths, pre=None, post=None):

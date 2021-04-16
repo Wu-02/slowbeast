@@ -172,7 +172,6 @@ class CFA:
         def ret(self):
             return self._elems[0]
 
-
     def __init__(self, fun: Function):
         assert isinstance(fun, Function)
         self._fun = fun

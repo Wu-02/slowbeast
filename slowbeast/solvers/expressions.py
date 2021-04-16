@@ -93,13 +93,13 @@ class ExprManager:
     def fresh_value(self, name, ty):
         assert isinstance(name, str)
         names = self._names
-        idx = name.rfind('#')
+        idx = name.rfind("#")
         if idx == -1:
             origname = name
             cnt = 1
         else:
             origname = name[:idx]
-            cnt = int(name[idx + 1:])
+            cnt = int(name[idx + 1 :])
         s = names.get(name)
         while s:
             cnt += 1
