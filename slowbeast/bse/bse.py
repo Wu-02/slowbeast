@@ -83,20 +83,21 @@ class BSEPath:
 class BSEContext:
     """ Class that keeps the state of BSE search """
 
-    __slots__ = "edge", "errorstate", "errordescr"
+    __slots__ = "path", "errorstate", "errordescr"
 
-    def __init__(self, edge, errstate, errdescr=None):
+    def __init__(self, path, errstate, errdescr=None):
         """
         edge  - edge after which the error should be infeasible
         error - error condition
         """
         assert isinstance(errstate, (AssumeAnnotation, BSEState)), errstate
-        self.edge = edge
+        assert isinstance(path, CFA.Edge), path
+        self.path = BSEPath(path)
         self.errorstate = errstate
         self.errordescr = errdescr
 
     def __repr__(self):
-        return f"BSE-ctx[{self.edge}:{self.errorstate}]"
+        return f"BSE-ctx[{self.path}:{self.errorstate}]"
 
 
 class BackwardSymbolicInterpreter(SymbolicInterpreter):
@@ -186,11 +187,11 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
         ready, nonready = executor.execute_edge(
-            states, bsectx.edge, invariants=invariants
+            states, bsectx.path[0], invariants=invariants
         )
         for s in (s for s in nonready if s.was_killed() or s.has_error()):
             report_state(
-                self.stats, s, fn=self.reportfn, msg=f"Executing {bsectx.edge}"
+                self.stats, s, fn=self.reportfn, msg=f"Executing {bsectx.path}"
             )
             self.problematic_states.append(s)
 
@@ -207,7 +208,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
     def precondition(self, bsectx: BSEContext) -> (Result, Optional[BSEState]):
         """ Compute precondition of the given BSEContext. """
-        edge = bsectx.edge
+        edge = bsectx.path[0]
 
         if edge.source() is self._entry_loc:
             prestates = self._execute_edge(bsectx, fromInit=True)
@@ -241,9 +242,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def extend_state(self, bsectx, postcondition):
         assert postcondition, postcondition
         had_one: bool = False
-        edge = bsectx.edge
+        edge = bsectx.path[0]
         if edge.has_predecessors():
-            for pedge in bsectx.edge.predecessors():
+            for pedge in edge.predecessors():
                 # if is call edge...
                 if pedge.is_call():
                     if not pedge.called_function().is_undefined():

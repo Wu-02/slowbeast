@@ -11,6 +11,7 @@ from slowbeast.kindse.inductivesequence import InductiveSequence
 from slowbeast.kindse.overapproximations import overapprox_set
 from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
 from slowbeast.analysis.loops import Loop
+from slowbeast.analysis.cfa import CFA
 from slowbeast.solvers.solver import getGlobalExprManager
 
 from .bse import (
@@ -239,7 +240,7 @@ class BSELFChecker(BaseBSE):
                 elif r is Result.UNSAFE:
                     return Result.UNSAFE
 
-                newst.append((pre, bsectx.edge))
+                newst.append((pre, bsectx.path[0]))
 
             k += 1
             if k <= maxk:
@@ -649,7 +650,8 @@ class BSELFChecker(BaseBSE):
 
             sequences = extended
 
-    def is_loop_header(self, loc):
+    def is_loop_header(self, loc : CFA.Location):
+        assert isinstance(loc, CFA.Location)
         return loc in self.get_loop_headers()
 
     def check(self, onlyedges=None):
@@ -683,7 +685,7 @@ class BSELFChecker(BaseBSE):
             assert r is Result.UNKNOWN
             if opt_fold_loops:
                 # is this a path starting at a loop header?
-                fl = bsectx.edge.source()
+                fl = bsectx.path[0].source()
                 if self.is_loop_header(fl):
                     # check whether we are not told to give up when hitting this loop this time
                     mlh = self._max_loop_hits
