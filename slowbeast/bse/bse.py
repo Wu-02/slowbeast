@@ -157,7 +157,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         """
         return self.return_states
 
-    def _execute_edge(self, bsectx, fromInit=False, invariants=None):
+    def _execute_path(self, bsectx, fromInit=False, invariants=None):
         """
         Execute the given path. The path is such that
         it ends one step before possible error.
@@ -186,8 +186,8 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
         # execute the annotated error path and generate also
         # the states that can avoid the error at the end of the path
-        ready, nonready = executor.execute_edge(
-            states, bsectx.path[0], invariants=invariants
+        ready, nonready = executor.execute_bse_path(
+            states, bsectx.path, invariants=invariants
         )
         for s in (s for s in nonready if s.was_killed() or s.has_error()):
             report_state(
@@ -211,7 +211,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         edge = bsectx.path[0]
 
         if edge.source() is self._entry_loc:
-            prestates = self._execute_edge(bsectx, fromInit=True)
+            prestates = self._execute_path(bsectx, fromInit=True)
             assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
             if prestates:
                 prestate = prestates[0]
@@ -223,7 +223,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             if not self._entry_loc.has_predecessors():
                 return Result.SAFE, None
 
-        prestates = self._execute_edge(bsectx, invariants=self.invariant_sets)
+        prestates = self._execute_path(bsectx, invariants=self.invariant_sets)
         assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
         if prestates:
             return Result.UNKNOWN, prestates[0]
