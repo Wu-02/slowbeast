@@ -7,6 +7,7 @@ from slowbeast.util.debugging import print_stdout, print_stderr
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )
+from slowbeast.analysis.cfa import CFA
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.bse.memorymodel import BSEMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result
@@ -31,6 +32,53 @@ def report_state(stats, n, msg=None, fn=print_stderr):
             fn(n.status_detail(), prefix="TERMINATED STATE: ", color="orange")
         stats.terminated_paths += 1
 
+class BSEPath:
+    def __init__(self, *edges):
+        # we keep the edges in reversed order to do efficient prepends
+        # (= append in the reversed case)
+        self._edges = list(reversed(edges))
+        assert all(map(lambda x: x[1] == self[x[0]], enumerate(self))), "Invalid iterators and getteres"
+
+    def copy(self):
+        n = BSEPath()
+        n._edges = self._edges.copy()
+        return n
+
+    def copy_prepend(self, *edges):
+        n = self.copy()
+        n.prepend(*edges)
+        return n
+
+    def prepend(self, *edges):
+        self._edges.extend(edges)
+
+    def source(self):
+        if self._edges:
+            assert self._edges[-1] == self[0]
+            return self._edges[-1]
+        return None
+
+    def target(self):
+        if self._edges:
+            assert self._edges[0] == self[-1]
+            return self._edges[0]
+        return None
+
+    def __getitem__(self, item):
+        assert isinstance(item, int), item # no slices atm
+        edges = self._edges
+        if item < 0:
+            return edges[item + 1]
+        return edges[len(edges) - item - 1]
+
+    def __iter__(self):
+        return reversed(self._edges)
+
+    def __str__(self):
+        return ";".join(map(str, self))
+
+    def __repr__(self):
+        return "<=".join(map(str, self._edges))
 
 class BSEContext:
     """ Class that keeps the state of BSE search """
