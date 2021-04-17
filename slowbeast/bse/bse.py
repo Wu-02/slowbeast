@@ -52,16 +52,16 @@ class BSEPath:
     def prepend(self, *edges):
         self._edges.extend(edges)
 
-    def source(self):
+    def source(self) -> Optional[CFA.Location]:
         if self._edges:
             assert self._edges[-1] == self[0]
-            return self._edges[-1]
+            return self._edges[-1].source()
         return None
 
-    def target(self):
+    def target(self) -> Optional[CFA.Location]:
         if self._edges:
             assert self._edges[0] == self[-1]
-            return self._edges[0]
+            return self._edges[0].target()
         return None
 
     def __getitem__(self, item):
@@ -210,7 +210,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         """ Compute precondition of the given BSEContext. """
         edge = bsectx.path[0]
 
-        if edge.source() is self._entry_loc:
+        assert isinstance(bsectx.path.source(), CFA.Location)
+        assert isinstance(self._entry_loc, CFA.Location)
+        if bsectx.path.source() is self._entry_loc:
             prestates = self._execute_path(bsectx, fromInit=True)
             assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
             if prestates:
