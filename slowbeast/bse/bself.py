@@ -380,7 +380,7 @@ class BSELFChecker(BaseBSE):
 
         return target0, seqs, errs0
 
-    def get_initial_seqs(self, unsafe: list, L: Loop):
+    def get_initial_seqs(self, unsafe: list, L: LoopInfo):
         assert len(unsafe) == 1, "One path raises multiple unsafe states"
 
         target0, seqs, errs0 = self.get_simple_initial_seqs(unsafe, L)
@@ -400,6 +400,8 @@ class BSELFChecker(BaseBSE):
 
     def overapprox_init_seq(self, seq0, errs0, L):
         assert is_seq_inductive(seq0, self, L), "seq is not inductive"
+        dbg("Overapproximating initial sequence")
+        dbg(str(seq0))
 
         create_set = self.create_set
         target = create_set(seq0[-1].toassert())
@@ -597,7 +599,7 @@ class BSELFChecker(BaseBSE):
                     f"Extending a sequence of len {len(seq) if seq else 0}...",
                     color="gray",
                 )
-                dbg(f"{seq}:", color="dark_blue")
+                dbg(f"{seq}", color="dark_blue")
 
                 if __debug__:
                     assert (

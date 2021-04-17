@@ -475,24 +475,23 @@ class LoopStateOverapproximation:
         for l in lits:
             newl = simplify(overapprox_lit(l, lits, R))
             newc.append(newl)
-            dbg(
-                f"  Overapproximated {l} --> {newl}",
-                color="gray",
-            )
-
             if __debug__:
-                X = R.copy()
-                X.intersect(
-                    self.expr_mgr.disjunction(
-                        *(
-                            newc[i] if i < len(newc) else lits[i]
-                            for i in range(len(lits))
+                if l != newl:
+                    dbg(
+                        f"  Overapproximated {l} --> {newl}", color="gray",
+                    )
+                    X = R.copy()
+                    X.intersect(
+                        self.expr_mgr.disjunction(
+                            *(
+                                newc[i] if i < len(newc) else lits[i]
+                                for i in range(len(lits))
+                            )
                         )
                     )
-                )
-                assert self.loop.set_is_inductive_towards(
-                    X, self.target, allow_infeasible_only=True
-                ), f"X: {X}, target: {self.target}"
+                    assert self.loop.set_is_inductive_towards(
+                        X, self.target, allow_infeasible_only=True
+                    ), f"X: {X}, target: {self.target}"
 
         if len(newc) == 1:
             return newc[0]
