@@ -36,7 +36,7 @@ def get_var_diff_relations(state):
             l2 = EM.SExt(l2, ConcreteInt(bw, bw))
 
         # relation between loads of the type l1 - l2 = constant
-        c = Var(f"c_diff_{l1name}_{l2name}", IntType(bw))
+        c = Var(f"c_{l1name}_{l2name}", IntType(bw))
         expr = Eq(Sub(l2, l1), c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
