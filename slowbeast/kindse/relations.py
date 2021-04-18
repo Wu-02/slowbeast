@@ -13,6 +13,10 @@ def iter_nondet_load_pairs(state):
 def get_var_diff_relations(state):
     subs = get_subs(state)
     EM = state.expr_manager()
+    Eq, Ne =  EM.Eq, EM.Ne
+    Add, Sub, Mul = EM.Add, EM.Sub, EM.Mul
+    Var, simplify = EM.Var, EM.simplify
+    And = EM.And
 
     for nd1, nd2 in iter_nondet_load_pairs(state):
         l1, l2 = nd1.value, nd2.value
@@ -32,69 +36,70 @@ def get_var_diff_relations(state):
             l2 = EM.SExt(l2, ConcreteInt(bw, bw))
 
         # relation between loads of the type l1 - l2 = constant
-        c = EM.Var(f"c_diff_{l1name}_{l2name}", IntType(bw))
-        expr = EM.Eq(EM.Sub(l2, l1), c)
+        c = Var(f"c_diff_{l1name}_{l2name}", IntType(bw))
+        expr = Eq(Sub(l2, l1), c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.is_sat(expr, EM.Ne(c, cval))
+            nonunique = state.is_sat(expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
-                    EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
+                    simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
 
         # relation between loads of the type l1 + l2 = constant
-        expr = EM.Eq(EM.Add(l2, l1), c)
+        expr = Eq(Add(l2, l1), c)
         c_concr = state.concretize_with_assumptions([expr], c)
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.is_sat(expr, EM.Ne(c, cval))
+            nonunique = state.is_sat(expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
-                    EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
+                    simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
 
         # relation between loads of the type l1 = c*l2
-        expr = EM.Eq(EM.Mul(c, l1), l2)
+        expr = Eq(Mul(c, l1), l2)
         c_concr = state.concretize_with_assumptions(
-            [expr, EM.Ne(c, ConcreteInt(0, bw))], c
+            [expr, Ne(c, ConcreteInt(0, bw))], c
         )
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.is_sat(expr, EM.Ne(c, cval))
+            nonunique = state.is_sat(expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
-                    EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
+                    simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
         # relation between loads of the type l2 = c*l1
-        expr = EM.Eq(EM.Mul(c, l2), l1)
+        expr = Eq(Mul(c, l2), l1)
         c_concr = state.concretize_with_assumptions(
-            [expr, EM.Ne(c, ConcreteInt(0, bw))], c
+            [expr, Ne(c, ConcreteInt(0, bw))], c
         )
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.is_sat(expr, EM.Ne(c, cval))
+            nonunique = state.is_sat(expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
-                    EM.simplify(EM.substitute(expr, (c, cval))), subs, EM
+                    simplify(EM.substitute(expr, (c, cval))), subs, EM
                 )
+
         # else:
         #    # check d*l1 + e+l2 = c
-        #    d = EM.Var(f"c_{l1name}", IntType(bw))
-        #    e = EM.Var(f"c_{l2name}", IntType(bw))
-        #    expr = EM.Eq(EM.Add(EM.Mul(d, l1), EM.Mul(e, l2)), c)
+        #    d = Var(f"c_{l1name}", IntType(bw))
+        #    e = Var(f"c_{l2name}", IntType(bw))
+        #    expr = Eq(Add(Mul(d, l1), Mul(e, l2)), c)
         #    # we do not want the trivial solution
-        #    exprchk = EM.And(EM.Or(EM.Ne(d, ConcreteInt(0, bw)), EM.Ne(e, ConcreteInt(0, bw))), expr)
+        #    exprchk = And(EM.Or(Ne(d, ConcreteInt(0, bw)), Ne(e, ConcreteInt(0, bw))), expr)
         #    c_concr = state.concretize_with_assumptions([exprchk], c, d, e)
-        #    if state.is_sat(exprchk, EM.Ne(c, c_concr[0])) is False and\
-        #       state.is_sat(exprchk, EM.Ne(d, c_concr[1])) is False and\
-        #       state.is_sat(exprchk, EM.Ne(e, c_concr[2])) is False:
+        #    if state.is_sat(exprchk, Ne(c, c_concr[0])) is False and\
+        #       state.is_sat(exprchk, Ne(d, c_concr[1])) is False and\
+        #       state.is_sat(exprchk, Ne(e, c_concr[2])) is False:
         #        yield AssertAnnotation(
-        #            EM.simplify(EM.substitute(expr, zip((d, e, c), c_concr))), subs, EM
+        #            simplify(EM.substitute(expr, zip((d, e, c), c_concr))), subs, EM
         #        )
 
         # check equalities to other loads: l1 - l2 = k*l3
@@ -112,13 +117,13 @@ def get_var_diff_relations(state):
             if l3bw != bw:
                 l3 = EM.SExt(l3, ConcreteInt(bw, bw))
 
-            if state.is_sat(EM.Ne(EM.Sub(l2, l1), l3)) is False:
-                yield AssertAnnotation(EM.Eq(EM.Sub(l2, l1), l3), subs, EM)
+            if state.is_sat(Ne(Sub(l2, l1), l3)) is False:
+                yield AssertAnnotation(Eq(Sub(l2, l1), l3), subs, EM)
             else:
                 c = EM.fresh_value(f"c_mul_{l1name}{l2name}{l3name}", IntType(bw))
-                # expr = EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3))
-                expr = EM.And(
-                    EM.Eq(EM.Add(l1, l2), EM.Mul(c, l3)), EM.Ne(c, ConcreteInt(0, bw))
+                # expr = Eq(Add(l1, l2), Mul(c, l3))
+                expr = And(
+                    Eq(Add(l1, l2), Mul(c, l3)), Ne(c, ConcreteInt(0, bw))
                 )
                 c_concr = state.concretize_with_assumptions([expr], c)
                 if c_concr is not None:
@@ -126,7 +131,7 @@ def get_var_diff_relations(state):
                     cval = c_concr[0]
                     if state.is_sat(EM.substitute(expr, (c, cval))) is False:
                         yield AssertAnnotation(
-                            EM.simplify(EM.Eq(EM.Add(l1, l2), EM.Mul(cval, l3))),
+                            simplify(Eq(Add(l1, l2), Mul(cval, l3))),
                             subs,
                             EM,
                         )
