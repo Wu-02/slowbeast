@@ -323,7 +323,7 @@ class LoopStateOverapproximation:
         self.goal = S
         # clauses are our internal working structure. Any change that we do is not visible until we do commit().
         # Note: break equalities to <= && >= so that we can overapproximate them
-        self.clauses = break_eqs(S.as_expr().rewrite_and_simplify().to_cnf())
+        self.clauses = list(S.as_expr().rewrite_and_simplify().to_cnf().children())
 
         safesolver = IncrementalSolver()
         safesolver.add(unsafe.as_expr())
@@ -396,7 +396,7 @@ class LoopStateOverapproximation:
         newclauses = self._drop_clauses_fixpoint(assumptions)
         # new add the assumptions (without them the formula is not equivalent to expr now)
         if assumptions:
-            newclauses.extend(break_eqs(assumptions.as_expr().to_cnf()))
+            newclauses.extend(list(assumptions.as_expr().to_cnf().children()))
         clauses = remove_implied_literals(newclauses)
 
         assert intersection(
@@ -414,27 +414,72 @@ class LoopStateOverapproximation:
         overapprox_clause = self.overapprox_clause
         clauses, newclauses = self.clauses, []
         S = self.goal
+        em = self.expr_mgr
+        Le, Ge = em.Le, em.Ge
+        Lt, Gt = em.Lt, em.Gt
         # Now take every clause c and try to overapproximate it
         for n in range(len(clauses)):
-            assert len(newclauses) == n
             c = clauses[n]
             # R is the rest of the actual formula without the clause c
             R = S.copy()  # copy the substitutions
             R.reset_expr(conjunction(*newclauses, *clauses[n + 1 :]))
 
-            newclause = overapprox_clause(c, R)
-            if newclause:
-                # newclauses.append(newclause)
-                # FIXME: this check should be
-                # assertion, overapprox_clause should not give us such clauses
-                # assert intersection(tmp, S).is_empty()
-                if is_overapprox_of(S, intersection(R, newclause)):
-                    # new clause makes S to be an overapproximation, good
-                    newclauses.append(newclause)
+            # try breaking equalities into inequalities. We do it here so that we preserve the equality
+            # if we fail overapproximating. This is because when we later derive relations from path condition,
+            # we want the equalities there.
+            if c.isEq():
+                chld = list(c.children())
+                assert len(chld) == 2, c
+                le = Le(chld[0], chld[1])
+                ge = Ge(chld[0], chld[1])
+                new_le = overapprox_clause(le, intersection(R, ge))
+                new_ge = overapprox_clause(ge, intersection(R, le))
+                if new_le and new_ge and (new_le != le or new_ge != ge) and is_overapprox_of(S, intersection(R, new_le, new_ge)):
+                        newclauses.append(new_le)
+                        newclauses.append(new_ge)
+                        continue
+                if new_le and new_le != le and is_overapprox_of(S, intersection(R, new_le, ge)):
+                    newclauses.append(new_le)
+                    newclauses.append(ge)
+                    continue
+                if new_ge and new_ge != ge and is_overapprox_of(S, intersection(R, new_ge, le)):
+                    newclauses.append(new_ge)
+                    newclauses.append(le)
+                    continue
+                newclauses.append(c)
+            elif c.isNot() and next(c.children()).isEq():
+                chld = list(next(c.children()).children())
+                lt = Lt(chld[0], chld[1])
+                gt = Gt(chld[0], chld[1])
+                new_lt = overapprox_clause(lt, union(R, gt))
+                new_gt = overapprox_clause(gt, union(R, lt))
+                if new_lt and new_gt and (new_lt != lt or new_gt != gt) and\
+                    is_overapprox_of(S, intersection(R, em.Or(new_lt, new_gt))):
+                    newclauses.append(em.Or(new_lt, new_gt))
+                    continue
+                if new_lt and new_lt != lt and\
+                    is_overapprox_of(S, intersection(R, em.Or(new_lt, gt))):
+                    newclauses.append(em.Or(new_lt, gt))
+                    continue
+                if new_gt and new_gt != gt and\
+                    is_overapprox_of(S, intersection(R, em.Or(new_gt, lt))):
+                    newclauses.append(em.Or(new_gt, lt))
+                    continue
+                newclauses.append(c)
+            else:
+                newclause = overapprox_clause(c, R)
+                if newclause:
+                    # newclauses.append(newclause)
+                    # FIXME: this check should be
+                    # assertion, overapprox_clause should not give us such clauses
+                    # assert intersection(tmp, S).is_empty()
+                    if is_overapprox_of(S, intersection(R, newclause)):
+                        # new clause makes S to be an overapproximation, good
+                        newclauses.append(newclause)
+                    else:
+                        newclauses.append(c)
                 else:
                     newclauses.append(c)
-            else:
-                newclauses.append(c)
 
             if __debug__:
                 R.intersect(newclauses[-1])
@@ -639,7 +684,6 @@ def break_eqs(expr):
             clauses.append(c)
 
     return clauses
-
 
 def is_overapprox_of(A, B):
     """ Return true if B is overapproximation of A """
