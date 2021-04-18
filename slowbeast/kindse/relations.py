@@ -202,6 +202,34 @@ def _get_const_cmp_relations(state):
                 yield (l, cval)
 
 
+def _get_eq_loads(state):
+    subs = get_subs(state)
+    EM = state.expr_manager()
+    Eq, Ne =  EM.Eq, EM.Ne
+    Var, simplify = EM.Var, EM.simplify
+
+    for nd1, nd2 in iter_nondet_load_pairs(state):
+        l1, l2 = nd1.value, nd2.value
+        assert l1 is not l2
+
+        if l1.is_pointer() or l2.is_pointer():
+            continue
+
+        l1name, l2name = nd1.instruction.as_value(), nd2.instruction.as_value()
+        l1bw = l1.type().bitwidth()
+        l2bw = l2.type().bitwidth()
+
+        bw = max(l1bw, l2bw)
+        if l1bw != bw:
+            l1 = EM.SExt(l1, ConcreteInt(bw, bw))
+        if l2bw != bw:
+            l2 = EM.SExt(l2, ConcreteInt(bw, bw))
+
+        # relation between loads of the type l1 - l2 = constant
+        c = Var(f"c_{l1name}_{l2name}", IntType(bw))
+        if state.is_sat(Ne(l1, l2)) is False:
+            yield l1, l2
+
 def get_const_cmp_relations(state):
     EM = state.expr_manager()
     subs = get_subs(state)
@@ -215,9 +243,34 @@ def get_const_subs_relations(state):
     C = state.constraints()
     substitute = EM.substitute
     for l, cval in _get_const_cmp_relations(state):
+        assert cval.is_concrete(), (l, cval)
         for expr in C:
             nexpr = substitute(expr, (cval, l))
-            if not nexpr.is_concrete() and expr != nexpr:
+            if not nexpr.is_concrete() and expr != nexpr and state.is_sat(nexpr) is True:
+                yield AssertAnnotation(nexpr, subs, EM)
+
+
+def _iter_constraints(C):
+    for c in C:
+        if c.isOr():
+            for cc in c.children():
+                if cc.isEq():
+                    yield cc
+        elif c.isEq():
+            yield c
+
+def get_var_subs_relations(state):
+    EM = state.expr_manager()
+    subs = get_subs(state)
+    C = state.constraints()
+    substitute, simplify = EM.substitute, EM.simplify
+    for l, r in _get_eq_loads(state):
+        for expr in _iter_constraints(C):
+            nexpr = substitute(expr, (r, l))
+            if not nexpr.is_concrete() and expr != nexpr and state.is_sat(nexpr) is True:
+                yield AssertAnnotation(nexpr, subs, EM)
+            nexpr = substitute(expr, (l, r))
+            if not nexpr.is_concrete() and expr != nexpr and state.is_sat(nexpr) is True:
                 yield AssertAnnotation(nexpr, subs, EM)
 
 
@@ -282,7 +335,8 @@ def get_var_relations(safe, prevsafe=None):
     for s in safe:
         # get and filter out those relations that make the state safe
         yield from get_var_diff_relations(s)
-        # yield from get_const_subs_relations(s)
+        yield from get_const_subs_relations(s)
+        yield from get_var_subs_relations(s)
         # yield from get_var_cmp_relations(s)
         if prevsafe:
             yield from get_relations_to_prev_states(s, prevsafe)
