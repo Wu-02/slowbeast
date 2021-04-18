@@ -1,7 +1,8 @@
+from copy import copy
 from slowbeast.util.debugging import dbgv_sec, ldbgv
 from slowbeast.core.executor import split_ready_states
+from slowbeast.symexe.executionstate import ExecutionState
 from .statedescription import StateDescription, unify_state_descriptions
-from copy import copy
 
 
 def get_subs(state):
@@ -142,8 +143,15 @@ class ExprAnnotation(Annotation):
 
 
 class AssertAnnotation(ExprAnnotation):
-    def __init__(self, expr, subs, EM):
-        super().__init__(Annotation.ASSERT, expr, subs, EM)
+    def __init__(self, expr, arg1, em=None):
+        if isinstance(arg1, ExecutionState):
+            subs = get_subs(arg1)
+            em = arg1.expr_manager()
+        else:
+            subs = arg1
+        assert isinstance(subs, dict), subs
+        assert em is not None
+        super().__init__(Annotation.ASSERT, expr, subs, em)
 
     def to_assume(self, EM):
         return AssumeAnnotation(self.expr(), self.substitutions(), EM)
