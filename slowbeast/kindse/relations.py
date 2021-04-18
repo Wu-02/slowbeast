@@ -241,12 +241,22 @@ def get_const_subs_relations(state):
     EM = state.expr_manager()
     subs = get_subs(state)
     C = state.constraints()
+    yielded = set()
     substitute = EM.substitute
     for l, cval in _get_const_cmp_relations(state):
         assert cval.is_concrete(), (l, cval)
         for expr in C:
+            if not expr.isEq():
+                continue
             nexpr = substitute(expr, (cval, l))
             if not nexpr.is_concrete() and expr != nexpr and state.is_sat(nexpr) is True:
+                assert nexpr.isEq()
+                c1, c2 = list(nexpr.children())
+                if c1.is_concrete() or c2.is_concrete():
+                    continue
+                if (c1, c2) in yielded or (c2, c1) in yielded:
+                    continue
+                yielded.add((c1, c2))
                 yield AssertAnnotation(nexpr, subs, EM)
 
 
@@ -259,18 +269,34 @@ def _iter_constraints(C):
         elif c.isEq():
             yield c
 
+
 def get_var_subs_relations(state):
     EM = state.expr_manager()
     subs = get_subs(state)
     C = state.constraints()
     substitute, simplify = EM.substitute, EM.simplify
+    yielded = set()
     for l, r in _get_eq_loads(state):
         for expr in _iter_constraints(C):
             nexpr = substitute(expr, (r, l))
             if not nexpr.is_concrete() and expr != nexpr and state.is_sat(nexpr) is True:
+                assert nexpr.isEq()
+                c1, c2 = list(nexpr.children())
+                if c1.is_concrete() or c2.is_concrete():
+                    continue
+                if (c1, c2) in yielded or (c2, c1) in yielded:
+                    continue
+                yielded.add((c1, c2))
                 yield AssertAnnotation(nexpr, subs, EM)
             nexpr = substitute(expr, (l, r))
             if not nexpr.is_concrete() and expr != nexpr and state.is_sat(nexpr) is True:
+                assert nexpr.isEq()
+                c1, c2 = list(nexpr.children())
+                if c1.is_concrete() or c2.is_concrete():
+                    continue
+                if (c1, c2) in yielded or (c2, c1) in yielded:
+                    continue
+                yielded.add((c1, c2))
                 yield AssertAnnotation(nexpr, subs, EM)
 
 
@@ -329,7 +355,7 @@ def get_safe_relations(safe, unsafe, prevsafe=None):
             yield from get_relations_to_prev_states(s, prevsafe)
 
 
-def get_var_relations(safe, prevsafe=None):
+def _get_var_relations(safe, prevsafe=None):
     if not hasattr(safe, "__iter__"):
         safe = (safe,)
     for s in safe:
@@ -340,3 +366,16 @@ def get_var_relations(safe, prevsafe=None):
         # yield from get_var_cmp_relations(s)
         if prevsafe:
             yield from get_relations_to_prev_states(s, prevsafe)
+
+
+def get_var_relations(safe, prevsafe=None):
+    yielded = set()
+    for rel in _get_var_relations(safe, prevsafe):
+        expr = rel.expr()
+        if expr.isEq():
+            c1, c2 = list(expr.children())
+            if (c1, c2) in yielded or (c2, c1) in yielded:
+                continue
+            yielded.add((c1, c2))
+        yield rel
+
