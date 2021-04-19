@@ -28,11 +28,15 @@ class BSELFOptions(KindSEOptions):
     def __init__(self, copyopts=None):
         super().__init__(copyopts)
         if copyopts:
-            self.fold_loops = copyopts.fold_loops = True
-            self.target_is_whole_seq = copyopts.target_is_whole_seq = True
+            self.fold_loops = copyopts.fold_loops
+            self.target_is_whole_seq = copyopts.target_is_whole_seq
+            self.union_abstractions = copyopts.union_abstractions
+            self.union_extensions = copyopts.union_extensions
         else:
             self.fold_loops = True
             self.target_is_whole_seq = True
+            self.union_abstractions = False
+            self.union_extensions = False
 
 
 def _dump_inductive_sets(checker, loc):
@@ -286,6 +290,32 @@ class BSELFChecker(BaseBSE):
         return self.fold_loop(loc, L, unsafe)
 
     def extend_seq(self, seq, target0, E, L):
+        new_frames_complements = []
+        make_union = self.options.union_extensions
+        oneA = None
+        for A in self._extend_seq(seq, target0, E, L):
+            drop = False
+            for C in new_frames_complements:
+                if intersection(C, A).is_empty():
+                    dbg(
+                        f"Did not extend with: {A} (already has same or bigger frame)"
+                    )
+                    drop = True
+                    break
+            if drop:
+                continue
+            new_frames_complements.append(complement(A))
+            if make_union:
+                if oneA is None:
+                    oneA = A
+                else:
+                    oneA.add(A)
+            else:
+                yield A
+        if make_union and oneA:
+            yield oneA
+
+    def _extend_seq(self, seq, target0, E, L):
         """
         Compute the precondition for reaching S and overapproximate it
 
@@ -614,20 +644,7 @@ class BSELFChecker(BaseBSE):
                     continue
 
                 # FIXME: we usually need seq[-1] as annotation, or not?
-                new_frames_complements = []
                 for A in self.extend_seq(seq, target0, E, L):
-                    drop = False
-                    for C in new_frames_complements:
-                        if intersection(C, A).is_empty():
-                            dbg(
-                                f"Did not extend with: {A} (already has same or bigger frame)"
-                            )
-                            drop = True
-                            break
-                    if drop:
-                        continue
-                    new_frames_complements.append(complement(A))
-
                     print_stdout(f"Extended with: {A}", color="BROWN")
                     tmp = seq.copy() if seq else InductiveSequence()
                     tmp.append(A.as_assert_annotation(), None)
