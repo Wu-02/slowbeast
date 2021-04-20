@@ -1,5 +1,13 @@
 from slowbeast.core.errors import AssertFailError
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg, ldbgv, inc_print_indent, dec_print_indent
+from slowbeast.util.debugging import (
+    print_stdout,
+    dbg,
+    dbg_sec,
+    ldbg,
+    ldbgv,
+    inc_print_indent,
+    dec_print_indent,
+)
 
 from slowbeast.symexe.statesset import intersection, union, complement
 from slowbeast.symexe.symbolicexecution import SEStats
@@ -569,7 +577,10 @@ class BSELFChecker(BaseBSE):
         seqs.append(I)
 
     def fold_loop(self, loc, L: LoopInfo, unsafe, loop_hit_no):
-        print_stdout(f"========== Folding loop {loc} ({loop_hit_no} time) ===========", color="white")
+        print_stdout(
+            f"========== Folding loop {loc} ({loop_hit_no} time) ===========",
+            color="white",
+        )
         if __debug__:
             _dump_inductive_sets(self, loc)
 
@@ -599,7 +610,10 @@ class BSELFChecker(BaseBSE):
         sequences = seqs0
         E = create_set(errs0.toassert())
 
-        dbg(f"Folding loop {loc} with errors:\n  {errs0}\nand starting sets:\n{seqs0}", color="gray")
+        dbg(
+            f"Folding loop {loc} with errors:\n  {errs0}\nand starting sets:\n{seqs0}",
+            color="gray",
+        )
 
         max_seq_len = 2 * len(L.paths())
         while True:
@@ -682,8 +696,7 @@ class BSELFChecker(BaseBSE):
             state = self.ind_executor().create_clean_state()
             state.apply_postcondition(notA)
             self.queue_state(
-                BSEContext(edge, state,
-                           errdescr=AssertFailError(f"{loc} reachable."))
+                BSEContext(edge, state, errdescr=AssertFailError(f"{loc} reachable."))
             )
 
         opt_fold_loops = self.getOptions().fold_loops

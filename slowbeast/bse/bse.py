@@ -89,7 +89,7 @@ class BSEContext:
 
     __slots__ = "path", "loc_hits", "errorstate", "errordescr"
 
-    def __init__(self, path, errstate, loc_hits = None, errdescr=None):
+    def __init__(self, path, errstate, loc_hits=None, errdescr=None):
         """
         edge  - edge after which the error should be infeasible
         errstate - error condition
@@ -107,8 +107,10 @@ class BSEContext:
         Derive a new context from this context - it must correctly preceed
         the current path.
         """
-        assert path.source().cfa() != self.path.source().cfa() or\
-                path.target() == self.path[0].source(), f"{path};{self.path}"
+        assert (
+            path.source().cfa() != self.path.source().cfa()
+            or path.target() == self.path[0].source()
+        ), f"{path};{self.path}"
         return BSEContext(path, cond, self.loc_hits.copy(), self.errordescr)
 
     def __repr__(self):

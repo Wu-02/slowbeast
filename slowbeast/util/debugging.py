@@ -25,7 +25,8 @@ COLORS = {
     "reset": "\033[0m",
 }
 
-_global_prefix=None
+_global_prefix = None
+
 
 def inc_print_indent():
     global _global_prefix
@@ -37,6 +38,7 @@ def dec_print_indent():
     _global_prefix = _global_prefix[2:]
     if not _global_prefix:
         _global_prefix = None
+
 
 def print_stream(msg, stream, prefix=None, print_ws="\n", color=None):
     """
