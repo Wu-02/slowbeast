@@ -393,7 +393,7 @@ class BSELFChecker(BaseBSE):
         errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
         if S.is_empty():
-            return None, errs0
+            return None
         if not is_seq_inductive(seq0, self, L):
             dbg("... (complement not inductive)")
             seqs = []
@@ -412,10 +412,10 @@ class BSELFChecker(BaseBSE):
                     dbg("... (got first IS)")
                     # should be inductive from construction
                     assert is_seq_inductive(s, self, L), f"seq is not inductive: {s}"
-                    seqs.append(s)
+                    seqs.append((s, errs0))
         else:
             dbg("... (complement is inductive)")
-            seqs = [seq0]
+            seqs = [(seq0, errs0)]
 
         ### reduce and over-approximate the initial sequence
         if seqs:
@@ -423,13 +423,13 @@ class BSELFChecker(BaseBSE):
             print_stdout(
                 f"Got {len(seqs)} starting inductive sequence(s)", color="dark_blue"
             )
-            for seq in seqs:
-                tmp.extend(self.overapprox_init_seq(seq, errs0, L))
+            for seq, errs in seqs:
+                tmp.extend((oseq, errs) for oseq in self.overapprox_init_seq(seq, errs, L))
             if tmp:
                 seqs = tmp
 
         # inductive sequence is either inductive now, or it is None and we'll use non-inductive E
-        return seqs or None, errs0
+        return seqs or None
 
     def overapprox_init_seq(self, seq0, errs0, L):
         assert is_seq_inductive(seq0, self, L), "seq is not inductive"
@@ -572,7 +572,7 @@ class BSELFChecker(BaseBSE):
         create_set = self.create_set
 
         dbg(f"Getting initial sequence for loop {loc}")
-        seqs0, errs0 = self.get_initial_seqs(unsafe, L, loop_hit_no)
+        seqs0 = self.get_initial_seqs(unsafe, L, loop_hit_no)
         if not seqs0:
             print_stdout(
                 f"Failed getting initial inductive sequence for loop {loc}", color="red"
@@ -583,22 +583,15 @@ class BSELFChecker(BaseBSE):
         assert seqs0
 
         if __debug__:
-            for seq0 in seqs0:
+            for seq0, err0 in seqs0:
                 assert intersection(
-                    create_set(seq0.toannotation()), errs0.toassert()
+                    create_set(seq0.toannotation()), err0.toassert()
                 ).is_empty(), "Initial sequence contains error states"
 
         # now we do not support empty sequences
         assert all(map(lambda s: s is not None, seqs0)), "A sequence is none"
 
         sequences = seqs0
-        E = create_set(errs0.toassert())
-
-        dbg(
-            f"Folding loop {loc} with errors:\n  {errs0}\nand starting sets:\n{seqs0}",
-            color="gray",
-        )
-
         max_seq_len = 2 * len(L.paths())
         while True:
             print_stdout(
@@ -607,35 +600,35 @@ class BSELFChecker(BaseBSE):
             )
             # FIXME: check that all the sequences together cover the input paths
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
-            for n, seq in enumerate(sequences):
+            for n, elem in enumerate(sequences):
+                seq, errs = elem
                 assert seq, sequences
                 S = seq.toannotation(True)
                 # FIXME: cache CTI's to perform fast checks of non-inductivness.
                 res, _ = self.check_loop_precondition(L, S)
                 if res is Result.SAFE:
                     # store the other sequences for further processing
-                    for i, oseq in enumerate(sequences):
+                    for i, oelem in enumerate(sequences):
                         if i == n:
                             continue
-                        self.add_inductive_set(loc, oseq.toannotation(True))
+                        self.add_inductive_set(loc, oelem[0].toannotation(True))
 
                     # add the current sequence as invariant
                     self.add_invariant(loc, seq.toannotation(False))
                     return True
 
             extended = []
-            for seq in sequences:
+            for seq, err in sequences:
                 assert seq, sequences
+                E = create_set(err.toassert())
 
-                print_stdout(
-                    f"Extending a sequence of len {len(seq) if seq else 0}...",
-                    color="gray",
-                )
+                print_stdout(f"Extending a sequence of len {len(seq)}...", color="gray")
                 dbg(f"{seq}", color="dark_blue")
+                dbg(f"errors: {err}", color="dark_blue")
 
                 if __debug__:
                     assert intersection(
-                        create_set(seq.toannotation(True)), errs0.toassert()
+                        create_set(seq.toannotation(True)), err.toassert()
                     ).is_empty(), "Sequence is not safe"
 
                 if len(seq) >= max_seq_len:
@@ -653,7 +646,7 @@ class BSELFChecker(BaseBSE):
                             tmp, self, L
                         ), "Extended sequence is not inductive"
 
-                    extended.append(tmp)
+                    extended.append((tmp, err))
                 dbg("Extending the sequence finished")
 
             if not extended:
