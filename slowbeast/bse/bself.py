@@ -1,5 +1,5 @@
 from slowbeast.core.errors import AssertFailError
-from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg, ldbgv
+from slowbeast.util.debugging import print_stdout, dbg, dbg_sec, ldbg, ldbgv, inc_print_indent, dec_print_indent
 
 from slowbeast.symexe.statesset import intersection, union, complement
 from slowbeast.symexe.symbolicexecution import SEStats
@@ -168,6 +168,7 @@ class BSELFChecker(BaseBSE):
     def check_loop_precondition(self, L, A):
         loc = L.header()
         print_stdout(f"Checking if {str(A)} holds on {loc}", color="purple")
+        inc_print_indent()
 
         # run recursively BSELFChecker with already computed inductive sets
         checker = BSELFChecker(
@@ -181,8 +182,9 @@ class BSELFChecker(BaseBSE):
             max_loop_hits=1,
         )
         result, states = checker.check(L.entries())
+
+        dec_print_indent()
         dbg(f"Checking if {A} holds on {loc} finished")
-        # dbg_sec()
         return result, states
 
     def execute_path(self, path, fromInit=False, invariants=None):
