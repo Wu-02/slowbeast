@@ -526,7 +526,31 @@ class BSELFChecker(BaseBSE):
             tmp.intersect(cE)
             if not tmp.is_empty():
                 sets.append(tmp)
-        return sets
+
+        # try to match the sets with inductive sets that we already have
+        isets = self.inductive_sets.get(L.header())
+        if isets is None:
+            return sets
+
+        # replace every set in 'sets' with an inductive set that we already have
+        # if the IS already includes the set
+        newsets = set()
+        sets = []
+        newisets = isets.copy()
+        for s in sets:
+            cov = False
+            for I in isets:
+                if I.I.contains(s):
+                    newsets.add(I.I)
+                    if I in newisets:
+                        newisets.remove(I)
+                    cov = True
+                    break
+            if not cov:
+                newsets.add(s)
+        self.inductive_sets[L.header()] = newisets
+        return sets or None
+
 
     def initial_sets_from_is(self, E, L):
         # get the inductive sets that we have created for this header.
