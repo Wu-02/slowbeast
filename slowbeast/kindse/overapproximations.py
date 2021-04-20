@@ -413,6 +413,7 @@ class LoopStateOverapproximation:
         conjunction = self.expr_mgr.conjunction
         overapprox_clause = self.overapprox_clause
         clauses, newclauses = self.clauses, []
+        target = self.target
         S = self.goal
         em = self.expr_mgr
         Le, Ge = em.Le, em.Ge
@@ -449,10 +450,11 @@ class LoopStateOverapproximation:
                 newclauses.append(c)
             elif c.isNot() and next(c.children()).isEq():
                 chld = list(next(c.children()).children())
+                assert len(chld) == 2, c
                 lt = Lt(chld[0], chld[1])
                 gt = Gt(chld[0], chld[1])
-                new_lt = overapprox_clause(lt, union(R, gt))
-                new_gt = overapprox_clause(gt, union(R, lt))
+                new_lt = overapprox_clause(lt, R) if self.loop.set_is_inductive_towards(intersection(R, lt),target, allow_infeasible_only=True) else em.getFalse()
+                new_gt = overapprox_clause(gt, R) if self.loop.set_is_inductive_towards(intersection(R, gt),target, allow_infeasible_only=True) else em.getFalse()
                 if new_lt and new_gt and (new_lt != lt or new_gt != gt) and\
                     is_overapprox_of(S, intersection(R, em.Or(new_lt, new_gt))):
                     newclauses.append(em.Or(new_lt, new_gt))
@@ -510,7 +512,7 @@ class LoopStateOverapproximation:
             X.intersect(c)
             assert self.loop.set_is_inductive_towards(
                 X, self.target, allow_infeasible_only=True
-            )
+            ), X
 
         newc = []
         lits = list(literals(c))
