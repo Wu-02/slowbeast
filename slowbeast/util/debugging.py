@@ -150,6 +150,8 @@ def ldbg(fmt, args, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr)
     time to build.
     """
     if __debug__:
+        if _is_debugging < 1:
+            return
         fn(fmt.format(*args), f"[sb] {_debugging_prefix}", print_ws, color)
 
 

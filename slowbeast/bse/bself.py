@@ -181,7 +181,7 @@ class BSELFChecker(BaseBSE):
             max_loop_hits=1,
         )
         result, states = checker.check(L.entries())
-        print_stdout(f"Checking if {A} holds on {loc} finished")
+        dbg(f"Checking if {A} holds on {loc} finished")
         # dbg_sec()
         return result, states
 
@@ -597,7 +597,7 @@ class BSELFChecker(BaseBSE):
         sequences = seqs0
         E = create_set(errs0.toassert())
 
-        print_stdout(f"Folding loop {loc} with errors {errs0}", color="gray")
+        dbg(f"Folding loop {loc} with errors:\n  {errs0}\nand starting sets:\n{seqs0}", color="gray")
 
         max_seq_len = 2 * len(L.paths())
         while True:
@@ -643,7 +643,7 @@ class BSELFChecker(BaseBSE):
 
                 # FIXME: we usually need seq[-1] as annotation, or not?
                 for A in self.extend_seq(seq, target0, E, L):
-                    print_stdout(f"Extended with: {A}", color="BROWN")
+                    dbg(f"Extended with: {A}", color="brown")
                     tmp = seq.copy() if seq else InductiveSequence()
                     tmp.append(A.as_assert_annotation(), None)
                     if __debug__:
