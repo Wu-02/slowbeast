@@ -708,11 +708,11 @@ class BSELFChecker(BaseBSE):
                     # check whether we are not told to give up when hitting this loop this time
                     mlh = self._max_loop_hits
                     if mlh:
-                        lnm = self._loop_hits.setdefault(fl, 1)
+                        loc_hits = bsectx.loc_hits
+                        lnm = loc_hits[fl] = loc_hits.get(fl, 0) + 1
                         if lnm > self._max_loop_hits:
-                            dbg("Hit limit of visits to a loop")
+                            dbg("Hit limit of visits to a loop in this context")
                             return Result.UNKNOWN, pre
-                        self._loop_hits[fl] += 1
 
                     if fl not in self.no_sum_loops:
                         if self.handle_loop(fl, pre):

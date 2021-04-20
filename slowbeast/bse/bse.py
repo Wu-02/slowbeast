@@ -223,7 +223,6 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
     def precondition(self, bsectx: BSEContext) -> (Result, Optional[BSEState]):
         """ Compute precondition of the given BSEContext. """
-        edge = bsectx.path[0]
 
         assert isinstance(bsectx.path.source(), CFA.Location)
         assert isinstance(self._entry_loc, CFA.Location)
