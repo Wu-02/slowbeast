@@ -260,7 +260,7 @@ class BSELFChecker(BaseBSE):
         assert not queue, "Queue is not empty"
         return Result.SAFE
 
-    def handle_loop(self, loc, errpre):
+    def handle_loop(self, loc, errpre, loop_hit_no):
         assert (
             loc not in self.no_sum_loops
         ), "Handling a loop that should not be handled"
@@ -287,7 +287,7 @@ class BSELFChecker(BaseBSE):
             self.no_sum_loops.add(loc)
             return False
 
-        return self.fold_loop(loc, L, unsafe)
+        return self.fold_loop(loc, L, unsafe, loop_hit_no)
 
     def extend_seq(self, seq, target0, E, L):
         new_frames_complements = []
@@ -566,8 +566,8 @@ class BSELFChecker(BaseBSE):
         assert seqsid == id(seqs)
         seqs.append(I)
 
-    def fold_loop(self, loc, L: Loop, unsafe):
-        print_stdout(f"========== Folding loop {loc} ===========", color="white")
+    def fold_loop(self, loc, L: LoopInfo, unsafe, loop_hit_no):
+        print_stdout(f"========== Folding loop {loc} ({loop_hit_no} time) ===========", color="white")
         if __debug__:
             _dump_inductive_sets(self, loc)
 
@@ -706,16 +706,15 @@ class BSELFChecker(BaseBSE):
                 fl = bsectx.path[0].source()
                 if self.is_loop_header(fl):
                     # check whether we are not told to give up when hitting this loop this time
+                    loc_hits = bsectx.loc_hits
+                    lnm = loc_hits[fl] = loc_hits.get(fl, 0) + 1
                     mlh = self._max_loop_hits
-                    if mlh:
-                        loc_hits = bsectx.loc_hits
-                        lnm = loc_hits[fl] = loc_hits.get(fl, 0) + 1
-                        if lnm > self._max_loop_hits:
-                            dbg("Hit limit of visits to a loop in this context")
-                            return Result.UNKNOWN, pre
+                    if mlh and lnm > mlh:
+                        dbg("Hit limit of visits to a loop in this context")
+                        return Result.UNKNOWN, pre
 
                     if fl not in self.no_sum_loops:
-                        if self.handle_loop(fl, pre):
+                        if self.handle_loop(fl, pre, lnm):
                             dbg(
                                 f"Path with loop {fl} proved safe",
                                 color="dark_green",
