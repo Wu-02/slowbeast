@@ -405,6 +405,8 @@ class BSELFChecker(BaseBSE):
             else:
                 dbg("... (joining with previously unfinished sequences)")
                 Is = self.initial_sets_from_is(E, L)
+                if not Is:
+                    Is = self.initial_sets_from_exits(E, L, match_is=False)
             if Is:
                 for seq, err in (
                     (InductiveSequence(I.as_assert_annotation(), None), err) for I, err in Is
@@ -514,7 +516,7 @@ class BSELFChecker(BaseBSE):
         else:
             dbg("Overapproximated sequence is not inductive...")
 
-    def initial_sets_from_exits(self, E, L: LoopInfo):
+    def initial_sets_from_exits(self, E, L: LoopInfo, match_is=True):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -539,7 +541,7 @@ class BSELFChecker(BaseBSE):
 
         # try to match the sets with inductive sets that we already have
         isets = self.inductive_sets.get(L.header())
-        if isets is None:
+        if isets is None or not match_is:
             return sets
 
         # replace every set in 'sets' with an inductive set that we already have
