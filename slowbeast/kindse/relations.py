@@ -1,6 +1,7 @@
 from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.types import IntType
 from slowbeast.symexe.annotations import AssertAnnotation, get_subs
+from slowbeast.solvers.solver import IncrementalSolver, getGlobalExprManager
 
 
 def iter_nondet_load_pairs(state):
@@ -368,13 +369,26 @@ def _get_var_relations(safe, prevsafe=None):
 
 
 def get_var_relations(safe, prevsafe=None):
-    yielded = set()
+    solver = IncrementalSolver()
+    toyield = set()
+    Not = getGlobalExprManager().Not
     for rel in _get_var_relations(safe, prevsafe):
         expr = rel.expr()
-        if expr.isEq():
-            c1, c2 = list(expr.children())
-            if (c1, c2) in yielded or (c2, c1) in yielded:
-                continue
-            yielded.add((c1, c2))
+        solver.push()
+        solver.add(expr)
+        yield_rel = True
+        for e in (ee.expr() for ee in toyield):
+            if solver.is_sat(Not(e)) is False: # included in some previous relation
+                yield_rel = False
+        solver.pop()
+        if yield_rel:
+            solver.push()
+            solver.add(Not(expr))
+            # remove relations included in this one
+            toyield = set(e for e in toyield if solver.is_sat(e.expr()))
+            solver.pop()
+            toyield.add(rel)
+
+    for rel in toyield:
         yield rel
 
