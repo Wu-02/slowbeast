@@ -542,7 +542,8 @@ class BSELFChecker(BaseBSE):
             for I in isets:
                 if I.I.contains(s):
                     #newsets.add((I.I, union(I.errors, E)))
-                    newsets.add((I.I, I.errors))
+                    #newsets.add((I.I, I.errors))
+                    newsets.add((I.I, E))
                     if I in newisets:
                         newisets.remove(I)
                     cov = True
@@ -569,7 +570,8 @@ class BSELFChecker(BaseBSE):
             else:
                 newisets.append(I)
         self.inductive_sets[L.header()] = newisets
-        return [(I.I, I.errors) for I in sets]
+        return [(I.I, E) for I in sets]
+        #return [(I.I, I.errors) for I in sets]
         #return [(I.I, union(I.errors, E)) for I in sets]
 
     def add_invariant(self, loc, inv):
