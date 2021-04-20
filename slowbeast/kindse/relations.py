@@ -14,7 +14,7 @@ def iter_nondet_load_pairs(state):
 def get_var_diff_relations(state):
     subs = get_subs(state)
     EM = state.expr_manager()
-    Eq, Ne =  EM.Eq, EM.Ne
+    Eq, Ne = EM.Eq, EM.Ne
     Add, Sub, Mul = EM.Add, EM.Sub, EM.Mul
     Var, simplify = EM.Var, EM.simplify
     And = EM.And
@@ -123,9 +123,7 @@ def get_var_diff_relations(state):
             else:
                 c = EM.fresh_value(f"c_mul_{l1name}{l2name}{l3name}", IntType(bw))
                 # expr = Eq(Add(l1, l2), Mul(c, l3))
-                expr = And(
-                    Eq(Add(l1, l2), Mul(c, l3)), Ne(c, ConcreteInt(0, bw))
-                )
+                expr = And(Eq(Add(l1, l2), Mul(c, l3)), Ne(c, ConcreteInt(0, bw)))
                 c_concr = state.concretize_with_assumptions([expr], c)
                 if c_concr is not None:
                     # is c unique?
@@ -206,7 +204,7 @@ def _get_const_cmp_relations(state):
 def _get_eq_loads(state):
     subs = get_subs(state)
     EM = state.expr_manager()
-    Eq, Ne =  EM.Eq, EM.Ne
+    Eq, Ne = EM.Eq, EM.Ne
     Var, simplify = EM.Var, EM.simplify
 
     for nd1, nd2 in iter_nondet_load_pairs(state):
@@ -231,6 +229,7 @@ def _get_eq_loads(state):
         if state.is_sat(Ne(l1, l2)) is False:
             yield l1, l2
 
+
 def get_const_cmp_relations(state):
     EM = state.expr_manager()
     subs = get_subs(state)
@@ -248,7 +247,11 @@ def get_const_subs_relations(state):
         assert cval.is_concrete(), (l, cval)
         for expr in C:
             nexpr = substitute(expr, (cval, l))
-            if not nexpr.is_concrete() and expr != nexpr and state.is_sat(nexpr) is True:
+            if (
+                not nexpr.is_concrete()
+                and expr != nexpr
+                and state.is_sat(nexpr) is True
+            ):
                 # do not yield same eq expressions multiple times
                 if nexpr.isEq():
                     c1, c2 = list(nexpr.children())
@@ -279,7 +282,11 @@ def get_var_subs_relations(state):
     for l, r in _get_eq_loads(state):
         for expr in _iter_constraints(C):
             nexpr = substitute(expr, (r, l))
-            if not nexpr.is_concrete() and expr != nexpr and state.is_sat(nexpr) is True:
+            if (
+                not nexpr.is_concrete()
+                and expr != nexpr
+                and state.is_sat(nexpr) is True
+            ):
                 assert nexpr.isEq()
                 c1, c2 = list(nexpr.children())
                 if c1.is_concrete() or c2.is_concrete():
@@ -289,7 +296,11 @@ def get_var_subs_relations(state):
                 yielded.add((c1, c2))
                 yield AssertAnnotation(nexpr, subs, EM)
             nexpr = substitute(expr, (l, r))
-            if not nexpr.is_concrete() and expr != nexpr and state.is_sat(nexpr) is True:
+            if (
+                not nexpr.is_concrete()
+                and expr != nexpr
+                and state.is_sat(nexpr) is True
+            ):
                 assert nexpr.isEq()
                 c1, c2 = list(nexpr.children())
                 if c1.is_concrete() or c2.is_concrete():
@@ -378,7 +389,7 @@ def get_var_relations(safe, prevsafe=None):
         solver.add(expr)
         yield_rel = True
         for e in (ee.expr() for ee in toyield):
-            if solver.is_sat(Not(e)) is False: # included in some previous relation
+            if solver.is_sat(Not(e)) is False:  # included in some previous relation
                 yield_rel = False
         solver.pop()
         if yield_rel:
@@ -391,4 +402,3 @@ def get_var_relations(safe, prevsafe=None):
 
     for rel in toyield:
         yield rel
-

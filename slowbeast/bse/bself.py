@@ -297,9 +297,7 @@ class BSELFChecker(BaseBSE):
             drop = False
             for C in new_frames_complements:
                 if intersection(C, A).is_empty():
-                    dbg(
-                        f"Did not extend with: {A} (already has same or bigger frame)"
-                    )
+                    dbg(f"Did not extend with: {A} (already has same or bigger frame)")
                     drop = True
                     break
             if drop:
@@ -669,7 +667,7 @@ class BSELFChecker(BaseBSE):
 
             sequences = extended
 
-    def is_loop_header(self, loc : CFA.Location):
+    def is_loop_header(self, loc: CFA.Location):
         assert isinstance(loc, CFA.Location)
         return loc in self.get_loop_headers()
 

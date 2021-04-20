@@ -32,12 +32,15 @@ def report_state(stats, n, msg=None, fn=print_stderr):
             fn(n.status_detail(), prefix="TERMINATED STATE: ", color="orange")
         stats.terminated_paths += 1
 
+
 class BSEPath:
     def __init__(self, *edges):
         # we keep the edges in reversed order to do efficient prepends
         # (= append in the reversed case)
         self._edges = list(reversed(edges))
-        assert all(map(lambda x: x[1] == self[x[0]], enumerate(self))), "Invalid iterators and getteres"
+        assert all(
+            map(lambda x: x[1] == self[x[0]], enumerate(self))
+        ), "Invalid iterators and getteres"
 
     def copy(self):
         n = BSEPath()
@@ -65,7 +68,7 @@ class BSEPath:
         return None
 
     def __getitem__(self, item):
-        assert isinstance(item, int), item # no slices atm
+        assert isinstance(item, int), item  # no slices atm
         edges = self._edges
         if item < 0:
             return edges[item + 1]
@@ -79,6 +82,7 @@ class BSEPath:
 
     def __repr__(self):
         return "<=".join(map(str, self._edges))
+
 
 class BSEContext:
     """ Class that keeps the state of BSE search """

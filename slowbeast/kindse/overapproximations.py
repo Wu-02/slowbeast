@@ -435,15 +435,28 @@ class LoopStateOverapproximation:
                 ge = Ge(chld[0], chld[1])
                 new_le = overapprox_clause(le, intersection(R, ge))
                 new_ge = overapprox_clause(ge, intersection(R, le))
-                if new_le and new_ge and (new_le != le or new_ge != ge) and is_overapprox_of(S, intersection(R, new_le, new_ge)):
-                        newclauses.append(new_le)
-                        newclauses.append(new_ge)
-                        continue
-                if new_le and new_le != le and is_overapprox_of(S, intersection(R, new_le, ge)):
+                if (
+                    new_le
+                    and new_ge
+                    and (new_le != le or new_ge != ge)
+                    and is_overapprox_of(S, intersection(R, new_le, new_ge))
+                ):
+                    newclauses.append(new_le)
+                    newclauses.append(new_ge)
+                    continue
+                if (
+                    new_le
+                    and new_le != le
+                    and is_overapprox_of(S, intersection(R, new_le, ge))
+                ):
                     newclauses.append(new_le)
                     newclauses.append(ge)
                     continue
-                if new_ge and new_ge != ge and is_overapprox_of(S, intersection(R, new_ge, le)):
+                if (
+                    new_ge
+                    and new_ge != ge
+                    and is_overapprox_of(S, intersection(R, new_ge, le))
+                ):
                     newclauses.append(new_ge)
                     newclauses.append(le)
                     continue
@@ -453,18 +466,40 @@ class LoopStateOverapproximation:
                 assert len(chld) == 2, c
                 lt = Lt(chld[0], chld[1])
                 gt = Gt(chld[0], chld[1])
-                new_lt = overapprox_clause(lt, R) if self.loop.set_is_inductive_towards(intersection(R, lt),target, allow_infeasible_only=True) else em.getFalse()
-                new_gt = overapprox_clause(gt, R) if self.loop.set_is_inductive_towards(intersection(R, gt),target, allow_infeasible_only=True) else em.getFalse()
-                if new_lt and new_gt and (new_lt != lt or new_gt != gt) and\
-                    is_overapprox_of(S, intersection(R, em.Or(new_lt, new_gt))):
+                new_lt = (
+                    overapprox_clause(lt, R)
+                    if self.loop.set_is_inductive_towards(
+                        intersection(R, lt), target, allow_infeasible_only=True
+                    )
+                    else em.getFalse()
+                )
+                new_gt = (
+                    overapprox_clause(gt, R)
+                    if self.loop.set_is_inductive_towards(
+                        intersection(R, gt), target, allow_infeasible_only=True
+                    )
+                    else em.getFalse()
+                )
+                if (
+                    new_lt
+                    and new_gt
+                    and (new_lt != lt or new_gt != gt)
+                    and is_overapprox_of(S, intersection(R, em.Or(new_lt, new_gt)))
+                ):
                     newclauses.append(em.Or(new_lt, new_gt))
                     continue
-                if new_lt and new_lt != lt and\
-                    is_overapprox_of(S, intersection(R, em.Or(new_lt, gt))):
+                if (
+                    new_lt
+                    and new_lt != lt
+                    and is_overapprox_of(S, intersection(R, em.Or(new_lt, gt)))
+                ):
                     newclauses.append(em.Or(new_lt, gt))
                     continue
-                if new_gt and new_gt != gt and\
-                    is_overapprox_of(S, intersection(R, em.Or(new_gt, lt))):
+                if (
+                    new_gt
+                    and new_gt != gt
+                    and is_overapprox_of(S, intersection(R, em.Or(new_gt, lt)))
+                ):
                     newclauses.append(em.Or(new_gt, lt))
                     continue
                 newclauses.append(c)
@@ -525,7 +560,8 @@ class LoopStateOverapproximation:
             if __debug__:
                 if l != newl:
                     dbg(
-                        f"  Overapproximated {l} --> {newl}", color="gray",
+                        f"  Overapproximated {l} --> {newl}",
+                        color="gray",
                     )
                     X = R.copy()
                     X.intersect(
@@ -686,6 +722,7 @@ def break_eqs(expr):
             clauses.append(c)
 
     return clauses
+
 
 def is_overapprox_of(A, B):
     """ Return true if B is overapproximation of A """
