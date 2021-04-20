@@ -423,10 +423,16 @@ class BSELFChecker(BaseBSE):
             print_stdout(
                 f"Got {len(seqs)} starting inductive sequence(s)", color="dark_blue"
             )
+            # FIXME: should we filter the sequences also here?
             for seq, errs in seqs:
-                tmp.extend((oseq, errs) for oseq in self.overapprox_init_seq(seq, errs, L))
+                for O in self.overapprox_init_seq(seq, errs, L):
+                    tmp.append((O, errs))
             if tmp:
                 seqs = tmp
+
+        print_stdout(
+            f"Got {len(seqs)} starting inductive sequence(s)", color="dark_blue"
+        )
 
         # inductive sequence is either inductive now, or it is None and we'll use non-inductive E
         return seqs or None
@@ -484,6 +490,8 @@ class BSELFChecker(BaseBSE):
                 if yield_seq:
                     yielded_seqs.append(create_set(seqa))
                     yield seq
+            else:
+                dbg("Overapproximated sequence is not inductive...")
 
         # try without relations
         seq = InductiveSequence(
@@ -503,6 +511,8 @@ class BSELFChecker(BaseBSE):
                     break
             if yield_seq:
                 yield seq
+        else:
+            dbg("Overapproximated sequence is not inductive...")
 
     def initial_sets_from_exits(self, E, L: LoopInfo):
         """
