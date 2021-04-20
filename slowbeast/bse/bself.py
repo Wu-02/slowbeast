@@ -526,7 +526,31 @@ class BSELFChecker(BaseBSE):
             tmp.intersect(cE)
             if not tmp.is_empty():
                 sets.append((tmp, E))
-        return sets
+
+        # try to match the sets with inductive sets that we already have
+        isets = self.inductive_sets.get(L.header())
+        if isets is None:
+            return sets
+
+        # replace every set in 'sets' with an inductive set that we already have
+        # if the IS already includes the set
+        newsets = set()
+        sets = []
+        newisets = isets.copy()
+        for s in sets:
+            cov = False
+            for I in isets:
+                if I.I.contains(s):
+                    #newsets.add((I.I, union(I.errors, E)))
+                    newsets.add((I.I, I.errors))
+                    if I in newisets:
+                        newisets.remove(I)
+                    cov = True
+                    break
+            if not cov:
+                newsets.add((s, E))
+        self.inductive_sets[L.header()] = newisets
+        return sets or None
 
     def initial_sets_from_is(self, E, L):
         # get the inductive sets that we have created for this header.
@@ -545,7 +569,8 @@ class BSELFChecker(BaseBSE):
             else:
                 newisets.append(I)
         self.inductive_sets[L.header()] = newisets
-        return [(I.I, union(I.errors, E)) for I in sets]
+        return [(I.I, I.errors) for I in sets]
+        #return [(I.I, union(I.errors, E)) for I in sets]
 
     def add_invariant(self, loc, inv):
         invs = self.invariant_sets.setdefault(loc, [])
@@ -620,7 +645,7 @@ class BSELFChecker(BaseBSE):
             extended = []
             for seq, err in sequences:
                 assert seq, sequences
-                E = create_set(err.toassert())
+                E = create_set(err)
 
                 print_stdout(f"Extending a sequence of len {len(seq)}...", color="gray")
                 dbg(f"{seq}", color="dark_blue")
@@ -628,7 +653,7 @@ class BSELFChecker(BaseBSE):
 
                 if __debug__:
                     assert intersection(
-                        create_set(seq.toannotation(True)), err.toassert()
+                        create_set(seq.toannotation(True)), err
                     ).is_empty(), "Sequence is not safe"
 
                 if len(seq) >= max_seq_len:
