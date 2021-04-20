@@ -102,6 +102,15 @@ class BSEContext:
         self.errorstate = errstate
         self.errordescr = errdescr
 
+    def extension(self, path, cond):
+        """
+        Derive a new context from this context - it must correctly preceed
+        the current path.
+        """
+        assert path.source().cfa() != self.path.source().cfa() or\
+                path.target() == self.path[0].source(), f"{path};{self.path}"
+        return BSEContext(path, cond, self.loc_hits.copy(), self.errordescr)
+
     def __repr__(self):
         return f"BSE-ctx[{self.path}:{self.errorstate}]"
 
@@ -260,10 +269,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                         continue
                     # fall-through
                 self.queue_state(
-                    BSEContext(
+                    bsectx.extension(
                         pedge,
                         postcondition.copy() if had_one else postcondition,
-                        bsectx.errordescr,
                     )
                 )
                 had_one = True
@@ -300,7 +308,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                         continue
                     state.replace_value(argval.value, val)
                     n += 1
-                self.queue_state(BSEContext(pedge, state, bsectx.errordescr))
+                self.queue_state(bsectx.extension(pedge, state))
 
     # postcondition.set_terminated("Calls unsupported in BSE atm.")
     # report_state(self.stats, postcondition, self.reportfn)
@@ -322,7 +330,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 opval = state.eval(op)
                 state.replace_value(retval, opval)
             retedge = PS.rets[ret]
-            self.queue_state(BSEContext(retedge, state, bsectx.errordescr))
+            self.queue_state(bsectx.extension(retedge, state))
 
 
 def check_paths(checker, paths, pre=None, post=None):

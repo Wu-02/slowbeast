@@ -244,14 +244,14 @@ class BSELFChecker(BaseBSE):
                 elif r is Result.UNSAFE:
                     return Result.UNSAFE
 
-                newst.append((pre, bsectx.path[0]))
+                newst.append((pre, bsectx))
 
             k += 1
             if k <= maxk:
                 queue = [
-                    BSEContext(pedge, pre.copy())
-                    for pre, edge in newst
-                    for pedge in edge.predecessors()
+                    bsectx.extension(pedge, pre.copy())
+                    for pre, bsectx in newst
+                    for pedge in bsectx.path[0].predecessors()
                 ]
             else:
                 return Result.UNKNOWN
@@ -680,7 +680,8 @@ class BSELFChecker(BaseBSE):
             state = self.ind_executor().create_clean_state()
             state.apply_postcondition(notA)
             self.queue_state(
-                BSEContext(edge, state, AssertFailError(f"{loc} reachable."))
+                BSEContext(edge, state,
+                           errdescr=AssertFailError(f"{loc} reachable."))
             )
 
         opt_fold_loops = self.getOptions().fold_loops
