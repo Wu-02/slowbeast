@@ -730,14 +730,13 @@ def is_overapprox_of(A, B):
 
 
 def overapprox_set(
-    executor, EM, goal, unsafeAnnot, indtarget, assumptions, L, drop_only=False
+    executor, EM, goal, unsafe, indtarget, assumptions, L, drop_only=False
 ):
     """
     goal - the set to be overapproxiamted
     drop_only - only try to drop clauses, not to extend them
     """
     create_set = executor.create_set
-    unsafe = create_set(unsafeAnnot)
     # unify variables in goal, target, and unsafe
     S = goal.translated(unsafe)
     target = indtarget.translated(unsafe)
