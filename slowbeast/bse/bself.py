@@ -299,11 +299,11 @@ class BSELFChecker(BaseBSE):
 
         return self.fold_loop(loc, L, unsafe, loop_hit_no)
 
-    def extend_seq(self, seq, target0, E, L):
+    def extend_seq(self, seq, E, L):
         new_frames_complements = []
         make_union = self.options.union_extensions
         oneA = None
-        for A in self._extend_seq(seq, target0, E, L):
+        for A in self._extend_seq(seq, E, L):
             drop = False
             for C in new_frames_complements:
                 if intersection(C, A).is_empty():
@@ -323,17 +323,18 @@ class BSELFChecker(BaseBSE):
         if make_union and oneA:
             yield oneA
 
-    def _extend_seq(self, seq, target0, E, L):
+    def _extend_seq(self, seq, E, L):
         """
         Compute the precondition for reaching S and overapproximate it
 
         S - target states
         E - error states
         """
+        assert seq
         if self._target_is_whole_seq:
-            target = self.create_set(seq[-1].toassert()) if seq else target0
+            target = self.create_set(seq[-1].toassert())
         else:
-            target = self.create_set(seq.toannotation(True)) if seq else target0
+            target = self.create_set(seq.toannotation(True))
         r = check_paths(self, L.paths(), post=target)
         if not r.ready:  # cannot step into this frame...
             dbg("Infeasible frame...")
@@ -383,17 +384,16 @@ class BSELFChecker(BaseBSE):
             for A in toyield:
                 yield A
 
-    def get_initial_seqs(self, unsafe: list, L: LoopInfo, loop_hit_no : int):
+    def get_initial_seqs(self, unsafe: list, L: LoopInfo, loop_hit_no: int):
         assert len(unsafe) == 1, "One path raises multiple unsafe states"
         E = self.create_set(unsafe[0])
         S = E.copy()
         S.complement()
-        target0 = S.copy()
 
         errs0 = InductiveSequence.Frame(E.as_assert_annotation(), None)
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
         if S.is_empty():
-            return target0, None, errs0
+            return None, errs0
         if not is_seq_inductive(seq0, self, L):
             dbg("... (complement not inductive)")
             seqs = []
@@ -429,7 +429,7 @@ class BSELFChecker(BaseBSE):
                 seqs = tmp
 
         # inductive sequence is either inductive now, or it is None and we'll use non-inductive E
-        return target0, seqs or None, errs0
+        return seqs or None, errs0
 
     def overapprox_init_seq(self, seq0, errs0, L):
         assert is_seq_inductive(seq0, self, L), "seq is not inductive"
@@ -572,7 +572,7 @@ class BSELFChecker(BaseBSE):
         create_set = self.create_set
 
         dbg(f"Getting initial sequence for loop {loc}")
-        target0, seqs0, errs0 = self.get_initial_seqs(unsafe, L, loop_hit_no)
+        seqs0, errs0 = self.get_initial_seqs(unsafe, L, loop_hit_no)
         if not seqs0:
             print_stdout(
                 f"Failed getting initial inductive sequence for loop {loc}", color="red"
@@ -608,22 +608,25 @@ class BSELFChecker(BaseBSE):
             # FIXME: check that all the sequences together cover the input paths
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
             for n, seq in enumerate(sequences):
-                if seq:
-                    S = seq.toannotation(True)
-                    # FIXME: cache CTI's to perform fast checks of non-inductivness.
-                    res, _ = self.check_loop_precondition(L, S)
-                    if res is Result.SAFE:
-                        # store the other sequences for further processing
-                        for i, oseq in enumerate(sequences):
-                            if i == n: continue
-                            self.add_inductive_set(loc, oseq.toannotation(True))
+                assert seq, sequences
+                S = seq.toannotation(True)
+                # FIXME: cache CTI's to perform fast checks of non-inductivness.
+                res, _ = self.check_loop_precondition(L, S)
+                if res is Result.SAFE:
+                    # store the other sequences for further processing
+                    for i, oseq in enumerate(sequences):
+                        if i == n:
+                            continue
+                        self.add_inductive_set(loc, oseq.toannotation(True))
 
-                        # add the current sequence as invariant
-                        self.add_invariant(loc, seq.toannotation(False))
-                        return True
+                    # add the current sequence as invariant
+                    self.add_invariant(loc, seq.toannotation(False))
+                    return True
 
             extended = []
             for seq in sequences:
+                assert seq, sequences
+
                 print_stdout(
                     f"Extending a sequence of len {len(seq) if seq else 0}...",
                     color="gray",
@@ -631,22 +634,19 @@ class BSELFChecker(BaseBSE):
                 dbg(f"{seq}", color="dark_blue")
 
                 if __debug__:
-                    assert (
-                        seq is None
-                        or intersection(
-                            create_set(seq.toannotation(True)), errs0.toassert()
-                        ).is_empty()
-                    ), "Sequence is not safe"
+                    assert intersection(
+                        create_set(seq.toannotation(True)), errs0.toassert()
+                    ).is_empty(), "Sequence is not safe"
 
-                if seq and len(seq) >= max_seq_len:
+                if len(seq) >= max_seq_len:
                     dbg("Give up extending the sequence, it is too long")
                     self.add_inductive_set(loc, seq.toannotation(True))
                     continue
 
                 # FIXME: we usually need seq[-1] as annotation, or not?
-                for A in self.extend_seq(seq, target0, E, L):
+                for A in self.extend_seq(seq, E, L):
                     dbg(f"Extended with: {A}", color="brown")
-                    tmp = seq.copy() if seq else InductiveSequence()
+                    tmp = seq.copy()
                     tmp.append(A.as_assert_annotation(), None)
                     if __debug__:
                         assert is_seq_inductive(
