@@ -87,16 +87,18 @@ class BSEPath:
 class BSEContext:
     """ Class that keeps the state of BSE search """
 
-    __slots__ = "path", "errorstate", "errordescr"
+    __slots__ = "path", "loc_hits", "errorstate", "errordescr"
 
-    def __init__(self, path, errstate, errdescr=None):
+    def __init__(self, path, errstate, loc_hits = None, errdescr=None):
         """
         edge  - edge after which the error should be infeasible
-        error - error condition
+        errstate - error condition
+        loc_hits - number of hitting locations (usually just loop headers)
         """
         assert isinstance(errstate, (AssumeAnnotation, BSEState)), errstate
         assert isinstance(path, CFA.Edge), path
         self.path = BSEPath(path)
+        self.loc_hits = loc_hits or {}
         self.errorstate = errstate
         self.errordescr = errdescr
 
