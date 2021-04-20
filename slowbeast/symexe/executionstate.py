@@ -163,10 +163,13 @@ class SEState(ExecutionState):
         Solve the PC and return True if it is sat. Handy in the cases
         when the state is constructed manually.
         """
-        return self._solver.is_sat(*self.constraints())
+        return self.is_sat(*self.constraints())
 
     def concretize(self, *e):
         return self._solver.concretize(self.constraints(), *e)
+
+    def concretize_with_assumptions(self, assumptions, *e):
+        return self._solver.concretize(self.constraints() + assumptions, *e)
 
     def input_vector(self):
         return self.concretize(*self.nondet_values())
@@ -178,9 +181,6 @@ class SEState(ExecutionState):
                 self.nondet_values(), self.concretize(*self.nondet_values())
             )
         }
-
-    def concretize_with_assumptions(self, assumptions, *e):
-        return self._solver.concretize(self.constraints() + assumptions, *e)
 
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
