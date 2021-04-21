@@ -132,15 +132,15 @@ class BSEState(LazySEState):
         new_repl = []
         pc = self.path_condition()
         if val.is_pointer():
-            # assert val.object().is_concrete() or val.object().is_symbol(), f"Cannot replace {val} with {newval}"
-            # assert val.offset().is_concrete() or val.offset().is_symbol(), f"Cannot replace {val} with {newval}"
+            assert val.object().is_concrete() or val.object().is_symbol(), f"Cannot replace {val} with {newval}"
+            assert val.offset().is_concrete() or val.offset().is_symbol(), f"Cannot replace {val} with {newval}"
             # if the value is pointer, we must substitute it also in the state of the memory
             assert newval.is_pointer(), newval
             pc = substitute(
                 pc, (val.object(), newval.object()), (val.offset(), newval.offset())
             )
         else:
-            # assert val.is_concrete() or val.is_symbol(), f"Cannot replace {val} with {newval}"
+            assert val.is_concrete() or val.is_symbol(), f"Cannot replace {val} with {newval}"
             pc = substitute(pc, (val, newval))
         self._replace_value_in_memory(new_repl, newval, substitute, val)
         self.set_constraints(pc)
