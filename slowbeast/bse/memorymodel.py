@@ -38,22 +38,6 @@ class BSEMemory(SEMemory):
     # state.set(toOp, val)
     # self._reads[fromOp] = val
 
-    def read_unknown_ptr(self, state, toOp, fromOp, bitsnum=None):
-        assert not self._reads.get(fromOp), fromOp
-        fresh = state.solver().fresh_value
-
-        # FIXME: we can do the allocation if the fromOp is allocation inst
-        ptrobj = fresh(f"unknown_obj_{fromOp.as_value()}", get_offset_type())
-        ptroff = fresh(f"unknown_off_{fromOp.as_value()}", get_offset_type())
-        ptr = Pointer(ptrobj, ptroff)
-        state.create_nondet(fromOp, ptr)
-        state.set(fromOp, ptr)
-
-        val = _nondet_value(fresh, toOp, bitsnum)
-        state.create_nondet(toOp, val)
-        state.set(toOp, val)
-        self._reads[ptr] = val
-
     def _symbolic_read(self, state, ptr, valinst, bytesNum):
         val = self._reads.get(ptr)
         if val:
@@ -83,20 +67,6 @@ class BSEMemory(SEMemory):
                 f"Read of value with different sizes: {v} {bytesNum}",
             )
         return v, None
-
-    def write_unknown_ptr(self, state, toOp, value):
-        assert not self._reads.get(toOp), toOp
-        fresh = state.solver().fresh_value
-
-        # FIXME: we can do the allocation if the fromOp is allocation inst
-        ptrobj = fresh(f"unknown_obj_{toOp.as_value()}", get_offset_type())
-        ptroff = fresh(f"unknown_off_{toOp.as_value()}", get_offset_type())
-        ptr = Pointer(ptrobj, ptroff)
-        state.set(toOp, ptr)
-        state.create_nondet(toOp, ptr)
-
-        # reading from this pointer must equal value in the future
-        self._reads[ptr] = value
 
     def write_symbolic_ptr(self, state, toOp, value):
         raise NotImplementedError("Not implemented yet")
@@ -164,11 +134,7 @@ class BSEMemoryModel(CoreMM):
         assert value, "Have no value after (symbolic) eval"
         assert isinstance(value, Value)
 
-        to = state.get(toOp)
-        if to is None:
-            M.write_unknown_ptr(state, toOp, value)
-            return [state]
-
+        to = state.eval(toOp)
         if not to.is_pointer():
             M.write_symbolic_ptr(state, toOp, value)
             return [state]
@@ -185,13 +151,8 @@ class BSEMemoryModel(CoreMM):
             bitsnum is None or max(1, int(bitsnum / 8)) == bytesNum
         ), f"{bytesNum} {bitsnum}"
         assert isinstance(bytesNum, int), f"Invalid number of bytes: {bytesNum}"
-
         M = state.memory
-        frm = state.get(fromOp)
-        if frm is None:
-            M.read_unknown_ptr(state, toOp, fromOp, bitsnum or bytesNum * 8)
-            return [state]
-
+        frm = state.eval(fromOp)
         if not frm.is_pointer():
             M.read_symbolic_ptr(state, toOp, fromOp, bitsnum or bytesNum * 8)
             return [state]
