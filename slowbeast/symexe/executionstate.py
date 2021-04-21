@@ -305,24 +305,9 @@ class IncrementalSEState(SEState):
 class LazySEState(SEState):
     def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
         super().__init__(executor, pc, m, solver, constraints)
-        # this is basically the input vector for this state.
-        # A state describes a set of executions by putting constraints
-        # on the inputs. But when inputs are created dynamically during
-        # the execution, we must put constraints on them once they are
-        # created. Those are these constraints.
-        self._future_nondets = {}
-
-    def _copy_to(self, new):
-        super()._copy_to(new)
 
     def get_nondet_instr_result(self):
         return (l for l in self._nondets if l.is_nondet_instr_result())
-
-    def get_future_nondet(self, instr):
-        exprs = self._future_nondets.get(instr)
-        if exprs:
-            return exprs.pop(0)  # consume the returned expression
-        return None
 
     def havoc(self, mobjs=None):
         self.memory.havoc(mobjs)

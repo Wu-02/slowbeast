@@ -39,12 +39,7 @@ class Executor(SExecutor):
 
         retTy = fun.return_type()
         if retTy:
-            val = state.get_future_nondet(instr)
-            if val:
-                ldbgv(f"Using value from future nondets: {0}", (val))
-                assert val.type() == retTy
-            else:
-                val = state.solver().fresh_value(name, retTy)
+            val = state.solver().fresh_value(name, retTy)
             state.create_nondet(instr, val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
