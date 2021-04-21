@@ -187,7 +187,7 @@ class SEState(ExecutionState):
         # also, use type(self) so that this method works also for
         # child classes (if not overridden)
         new = type(self)(self._executor, self.pc, self.memory, self._solver)
-        super().copyTo(new)  # cow copy of super class
+        super()._copy_to(new)  # cow copy of super class
 
         new._constraints = self._constraints
         new._constraints_ro = True
@@ -303,7 +303,7 @@ class IncrementalSEState(SEState):
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
         new = IncrementalSEState(self._executor, self.pc, self.memory)
-        super().copyTo(new)  # cow copy of super class
+        super()._copy_to(new)  # cow copy of super class
 
         new._constraints = self._constraints
         new._constraints_ro = True

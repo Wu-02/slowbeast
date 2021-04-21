@@ -25,8 +25,8 @@ class BSEMemory(SEMemory):
         # output state of memory
         self._reads = {}
 
-    def copyTo(self, new):
-        super().copyTo(new)
+    def _copy_to(self, new):
+        super()._copy_to(new)
         new._reads = self._reads.copy()
         return new
 

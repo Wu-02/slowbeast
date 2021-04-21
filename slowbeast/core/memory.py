@@ -30,7 +30,7 @@ class Memory:
         # to particular frames
         self._cs = CallStack()
 
-    def copyTo(self, new):
+    def _copy_to(self, new):
         new._objects = self._objects
         new._objects_ro = True
         self._objects_ro = True
@@ -51,7 +51,7 @@ class Memory:
 
     def copy(self):
         new = type(self)()
-        self.copyTo(new)
+        self._copy_to(new)
         return new
 
     def create_memory_object(self, size, nm=None, objid=None):

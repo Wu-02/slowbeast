@@ -48,7 +48,7 @@ class AbstractState(ExecutionState):
     def copy(self):
         # do not use copy.copy() so that we bump the id counter
         new = AbstractState(self._executor, self.pc, self.memory)
-        super().copyTo(new)  # cow copy of super class
+        super()._copy_to(new)  # cow copy of super class
 
         return new
 

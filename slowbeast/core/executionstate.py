@@ -27,7 +27,7 @@ class ExecutionState:
             and self.memory == rhs.memory
         )
 
-    def copyTo(self, rhs):
+    def _copy_to(self, rhs):
         assert isinstance(rhs, ExecutionState)
         rhs.pc = self.pc
         rhs.memory = self.memory.copy()
@@ -35,7 +35,7 @@ class ExecutionState:
 
     def copy(self):
         new = type(self)(None, None)
-        self.copyTo(new)
+        self._copy_to(new)
         return new
 
     def status_detail(self):
