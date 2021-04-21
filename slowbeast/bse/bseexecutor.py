@@ -236,10 +236,8 @@ class BSEState(LazySEState):
         # add memory state from pre-state
         # FIXME: do not touch the internal attributes
         for k, v in prestate.memory._reads.items():
-            oldv = self.memory._reads.get(k)
-            if oldv is not None:
-                replace_value(oldv, v)
-            self.memory._reads[k] = v
+            if k not in self.memory._reads:
+                self.memory._reads[k] = v
         # add new inputs from pre-state
         for inp in prestate.nondets():
             self.add_nondet(inp)
