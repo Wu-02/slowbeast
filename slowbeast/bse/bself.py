@@ -551,7 +551,6 @@ class BSELFChecker(BaseBSE):
         self.inductive_sets[L.header()] = newisets
         return sets or None
 
-
     def initial_sets_from_is(self, E, L):
         # get the inductive sets that we have created for this header.
         # Since we go iteration over iteration, adding this sequence

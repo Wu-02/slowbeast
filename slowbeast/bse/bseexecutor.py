@@ -49,7 +49,6 @@ class BSEState(LazySEState):
                 return nd
         return None
 
-
     def eval(self, v):
         value = self.try_eval(v)
         if value is None:
@@ -133,13 +132,15 @@ class BSEState(LazySEState):
         new_repl = []
         pc = self.path_condition()
         if val.is_pointer():
+            # assert val.object().is_concrete() or val.object().is_symbol(), f"Cannot replace {val} with {newval}"
+            # assert val.offset().is_concrete() or val.offset().is_symbol(), f"Cannot replace {val} with {newval}"
             # if the value is pointer, we must substitute it also in the state of the memory
             assert newval.is_pointer(), newval
             pc = substitute(
                 pc, (val.object(), newval.object()), (val.offset(), newval.offset())
             )
         else:
-            # FIXME: we should replace the value also in memory, shouldn't we?
+            # assert val.is_concrete() or val.is_symbol(), f"Cannot replace {val} with {newval}"
             pc = substitute(pc, (val, newval))
         self._replace_value_in_memory(new_repl, newval, substitute, val)
         self.set_constraints(pc)
@@ -186,10 +187,11 @@ class BSEState(LazySEState):
         """
         assert isinstance(prestate, BSEState), type(prestate)
         # print('-- Joining with pre-state')
-        # print("Pre-state:", prestate)
-        # print('-- --')
-        # print("State:", self)
-        # print('-- -- --')
+        print("==================== Pre-state ========================")
+        prestate.dump()
+        print("==================== Join into ========================")
+        self.dump()
+        print("====================           ========================")
         ###
         try_eval = prestate.try_eval
         add_input = self.add_input
@@ -245,9 +247,9 @@ class BSEState(LazySEState):
             add_input(inp)
         self.add_constraint(*prestate.constraints())
 
-        # print("==Pre+state ==")
-        # print(self)
-        # print("==============")
+        print("==================== Joined st ========================")
+        self.dump()
+        print("====================           ========================")
         if self.isfeasible():
             return [self]
         return []
@@ -271,7 +273,6 @@ class BSEState(LazySEState):
         for n in self._inputs:
             write(str(n))
             write("\n")
-
 
 
 class Executor(PathExecutor):

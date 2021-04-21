@@ -85,6 +85,14 @@ if _use_z3:
         fpLT,
     )
 
+    def _is_symbol(expr):
+        return (
+            is_const(expr)
+            and not is_bv_value(expr)
+            and not is_fp_value(expr)
+            and not is_fprm_value(expr)
+        )
+
     def trunc_fp(fexpr, bw):
         return simplify(fpFPToFP(RNE(), fexpr, get_fp_sort(bw)))
 
@@ -442,12 +450,7 @@ if _use_z3:
         yield expr
 
     def _symbols(expr, ret: set):
-        if (
-            is_const(expr)
-            and not is_bv_value(expr)
-            and not is_fp_value(expr)
-            and not is_fprm_value(expr)
-        ):
+        if _is_symbol(expr):
             ret.add(expr)
         else:
             for c in expr.children():
@@ -924,6 +927,9 @@ class Expr(Value):
         E.g. for And(a, 3*b) this method returns [a, b].
         """
         return (Expr(s, solver_to_sb_type(s)) for s in symbols(self.unwrap()))
+
+    def is_symbol(self):
+        return _is_symbol(self._expr)
 
     def to_cnf(self):
         """
