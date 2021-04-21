@@ -24,10 +24,12 @@ class BSEMemory(SEMemory):
         super().__init__()
         # output state of memory
         self._reads = {}
+        self._input_reads = {}
 
     def _copy_to(self, new):
         super()._copy_to(new)
         new._reads = self._reads.copy()
+        new._input_reads = self._input_reads.copy()
         return new
 
     def read_symbolic_ptr(self, state, toOp, fromOp, bitsnum=None):
@@ -51,6 +53,7 @@ class BSEMemory(SEMemory):
             val = _nondet_value(state.solver().fresh_value, valinst, bytesNum * 8)
             state.create_nondet(valinst, val)
             self._reads[ptr] = val
+            self._input_reads[ptr] = (val, bytesNum)
             return val, None
         raise NotImplementedError("Not implemented")
         # concrete read

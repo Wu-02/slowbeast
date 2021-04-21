@@ -168,8 +168,19 @@ class BSEState(LazySEState):
             if curval:
                 new_repl.append((curval, nval))
             nUP[nptr] = nval
-
         self.memory._reads = nUP
+        UP = self.memory._input_reads
+        nUP = {}
+        # replace pointers in input reads, but not the values
+        # we will need the values in substitutions
+        for cptr, cval in UP.items():
+            nptr = _subst_val(substitute, cptr, (val, newval))
+           #curval = nUP.get(nptr)
+           #if curval:
+           #    new_repl.append((curval, nval))
+            nUP[nptr] = cval
+        self.memory._input_reads = nUP
+
 
     def _get_symbols(self):
         symbols = set(
@@ -178,6 +189,9 @@ class BSEState(LazySEState):
         for ptr, val in self.memory._reads.items():
             symbols.update(ptr.symbols())
             symbols.update(val.symbols())
+        for ptr, val in self.memory._input_reads.items():
+            symbols.update(ptr.symbols())
+            symbols.update(val[0].symbols())
         return symbols
 
     def join_prestate(self, prestate):
@@ -186,34 +200,31 @@ class BSEState(LazySEState):
         that this state is executed after prestate.
         """
         assert isinstance(prestate, BSEState), type(prestate)
-        # print('-- Joining with pre-state')
-        print("==================== Pre-state ========================")
-        prestate.dump()
-        print("==================== Join into ========================")
-        self.dump()
-        print("====================           ========================")
-        ###
+       #print("==================== Pre-state ========================")
+       #prestate.dump()
+       #print("==================== Join into ========================")
+       #self.dump()
+       #print("====================           ========================")
         try_eval = prestate.try_eval
         add_input = self.add_input
 
         ### modify the state according to the pre-state
         replace_value = self.replace_value
         for inp in self.inputs():
-            instr = inp.instruction
-            if isinstance(instr, Load):
-                # try read the memory if it is written in the state
-                addrop = instr.operand(0)
-                addr = try_eval(addrop)
-                if addr:
-                    val, _ = prestate.memory.read(addr, inp.value.bytewidth())
-                    if val:
-                        # print('REPL from memory', inp.value, val)
-                        replace_value(inp.value, val)
+            preval = try_eval(inp.instruction)
+            if preval:
+                # print('REPL from reg', inp.value, preval)
+                replace_value(inp.value, preval)
+
+        new_ireads = {}
+        for ptr, inpval in self.memory._input_reads.items():
+            # try read the memory if it is written in the state
+            val, _ = prestate.memory.read(ptr, inpval[1])
+            if val:
+                # print('REPL from memory', inp.value, val)
+                replace_value(inpval[0], val)
             else:
-                preval = try_eval(inp.instruction)
-                if preval:
-                    # print('REPL from reg', inp.value, preval)
-                    replace_value(inp.value, preval)
+                new_ireads[ptr] = inpval
 
         # filter the inputs that still need to be found and nondets that are still used
         symbols = set(self._get_symbols())
@@ -223,14 +234,11 @@ class BSEState(LazySEState):
         assert len(self._inputs) <= len(symbols)
         assert len(set(inp.instruction for inp in self._inputs)) == len(
             self._inputs
-        ), "Repeated value for an instruction"
+        ), f"Repeated value for an instruction: {self._inputs}"
         self._nondets = [
             inp for inp in self.nondets() if not symbols.isdisjoint(inp.value.symbols())
         ]
         assert len(self._nondets) <= len(symbols)
-        assert len(set(inp.instruction for inp in self._nondets)) == len(
-            self._nondets
-        ), "Repeated value for an instruction"
 
         ### copy the data from pre-state
         # add memory state from pre-state
@@ -238,6 +246,10 @@ class BSEState(LazySEState):
         for k, v in prestate.memory._reads.items():
             if k not in self.memory._reads:
                 self.memory._reads[k] = v
+        self.memory._input_reads = prestate.memory._input_reads.copy()
+        for k, v in new_ireads.items():
+            if k not in self.memory._input_reads:
+                self.memory._input_reads[k] = v
         # add new inputs from pre-state
         for inp in prestate.nondets():
             self.add_nondet(inp)
@@ -245,9 +257,9 @@ class BSEState(LazySEState):
             add_input(inp)
         self.add_constraint(*prestate.constraints())
 
-        print("==================== Joined st ========================")
-        self.dump()
-        print("====================           ========================")
+       #print("==================== Joined st ========================")
+       #self.dump()
+       #print("====================           ========================")
         if self.isfeasible():
             return [self]
         return []
