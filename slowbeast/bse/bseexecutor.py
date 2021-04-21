@@ -26,7 +26,7 @@ def _subst_val(substitute, val, subs):
 
 
 class BSEState(LazySEState):
-    def __init__(self, executor, pc, m, solver, constraints=None):
+    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
         super().__init__(executor, pc, m, solver, constraints)
 
     def eval(self, v):

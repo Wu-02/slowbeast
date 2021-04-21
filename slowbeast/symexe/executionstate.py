@@ -95,7 +95,7 @@ class SEState(ExecutionState):
     )
     statesCounter = 0
 
-    def __init__(self, executor, pc, m, solver, constraints=None):
+    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
         super().__init__(pc, m)
 
         SEState.statesCounter += 1
@@ -182,13 +182,14 @@ class SEState(ExecutionState):
             )
         }
 
-    def copy(self):
+    def _copy_to(self, new):
         # do not use copy.copy() so that we bump the id counter
         # also, use type(self) so that this method works also for
         # child classes (if not overridden)
-        new = type(self)(self._executor, self.pc, self.memory, self._solver)
         super()._copy_to(new)  # cow copy of super class
 
+        new._executor = self._executor
+        new._solver = self._solver
         new._constraints = self._constraints
         new._constraints_ro = True
         self._constraints_ro = True
@@ -293,35 +294,16 @@ class SEState(ExecutionState):
 
 
 class IncrementalSEState(SEState):
-    def __init__(self, executor, pc, m, solver=None):
+    def __init__(self, executor=None, pc=None, m=None, solver=None):
         if solver:  # copy ctor
             super().__init__(executor, pc, m, None, None)
         else:
             C = IncrementalConstraintsSet()
             super().__init__(executor, pc, m, C.solver(), C)
 
-    def copy(self):
-        # do not use copy.copy() so that we bump the id counter
-        new = IncrementalSEState(self._executor, self.pc, self.memory)
-        super()._copy_to(new)  # cow copy of super class
-
-        new._constraints = self._constraints
-        new._constraints_ro = True
-        self._constraints_ro = True
-
-        new._warnings = self._warnings
-        new._warnings_ro = True
-        self._warnings_ro = True
-
-        new._nondets = self._nondets
-        new._nondets_ro = True
-        self._nondets_ro = True
-
-        return new
-
 
 class LazySEState(SEState):
-    def __init__(self, executor, pc, m, solver, constraints=None):
+    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
         super().__init__(executor, pc, m, solver, constraints)
         # this is basically the input vector for this state.
         # A state describes a set of executions by putting constraints
@@ -329,6 +311,9 @@ class LazySEState(SEState):
         # the execution, we must put constraints on them once they are
         # created. Those are these constraints.
         self._future_nondets = {}
+
+    def _copy_to(self, new):
+        super()._copy_to(new)
 
     def get_nondet_instr_result(self):
         return (l for l in self._nondets if l.is_nondet_instr_result())

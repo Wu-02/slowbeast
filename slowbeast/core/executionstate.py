@@ -9,7 +9,7 @@ from sys import stdout
 class ExecutionState:
     __slots__ = "pc", "memory", "_status"
 
-    def __init__(self, pc, m):
+    def __init__(self, pc=None, m=None):
         # program counter
         self.pc = pc
         # memory objects
@@ -34,7 +34,7 @@ class ExecutionState:
         rhs._status = self._status.copy()
 
     def copy(self):
-        new = type(self)(None, None)
+        new = type(self)()
         self._copy_to(new)
         return new
 
