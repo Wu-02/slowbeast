@@ -169,15 +169,16 @@ class BSEState(LazySEState):
                 new_repl.append((curval, nval))
             nUP[nptr] = nval
         self.memory._reads = nUP
+
         UP = self.memory._input_reads
         nUP = {}
         # replace pointers in input reads, but not the values
         # we will need the values in substitutions
         for cptr, cval in UP.items():
             nptr = _subst_val(substitute, cptr, (val, newval))
-           #curval = nUP.get(nptr)
-           #if curval:
-           #    new_repl.append((curval, nval))
+            curval = nUP.get(nptr)
+            if curval is not None:
+                new_repl.append((curval[0], cval[0]))
             nUP[nptr] = cval
         self.memory._input_reads = nUP
 
