@@ -302,8 +302,8 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 # map the arguments to the operands
                 for op in callsite.operands():
                     arg = fun.argument(n)
+                    argval = state.input(arg)
                     val = state.eval(op)
-                    argval = state.nondet(arg)
                     if argval is None:
                         n += 1
                         continue
@@ -319,7 +319,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         PS = self.programstructure
         fun = edge.called_function()
         retval = None
-        retnd = postcondition.nondet(edge[0])
+        retnd = postcondition.input(edge[0])
         if retnd is not None:
             retval = retnd.value
             assert fun.return_type() is not None, fun

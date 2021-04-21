@@ -1,5 +1,6 @@
+from sys import stdout
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
-from slowbeast.symexe.executionstate import LazySEState
+from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.concrete import ConcreteInt
@@ -28,18 +29,40 @@ def _subst_val(substitute, val, subs):
 class BSEState(LazySEState):
     def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
         super().__init__(executor, pc, m, solver, constraints)
+        # inputs are the subset of nondet values that we search for in pre-states
+        # when joining states
+        self._inputs = []
+
+    def _copy_to(self, new):
+        super()._copy_to(new)
+        new._inputs = self._inputs.copy()
+
+    def add_input(self, nd):
+        self._inputs.append(nd)
+
+    def inputs(self):
+        return self._inputs
+
+    def input(self, x):
+        for nd in self._inputs:
+            if nd.instruction == x:
+                return nd
+        return None
+
 
     def eval(self, v):
         value = self.try_eval(v)
         if value is None:
             value = _nondet_value(self.solver().fresh_value, v, v.type().bitwidth())
             ldbgv(
-                "Created new nondet value {0} = {1}",
+                "Created new input value {0} = {1}",
                 (v.as_value(), value),
                 color="dark_blue",
             )
             self.set(v, value)
             self.create_nondet(v, value)
+            self.add_input(Nondet(v, value))
+        assert value
         return value
 
     def memory_constraints(self):
@@ -134,9 +157,6 @@ class BSEState(LazySEState):
             new_repl = tmp
 
     def _replace_value_in_memory(self, new_repl, newval, substitute, val):
-        self._replace_final_memory(new_repl, newval, substitute, val)
-
-    def _replace_final_memory(self, new_repl, newval, substitute, val):
         UP = self.memory._reads
         nUP = {}
         for cptr, cval in UP.items():
@@ -172,11 +192,11 @@ class BSEState(LazySEState):
         # print('-- -- --')
         ###
         try_eval = prestate.try_eval
-        add_input = self.add_nondet
+        add_input = self.add_input
 
         ### modify the state according to the pre-state
         replace_value = self.replace_value
-        for inp in self.nondets():
+        for inp in self.inputs():
             instr = inp.instruction
             if isinstance(instr, Load):
                 # try read the memory if it is written in the state
@@ -193,8 +213,15 @@ class BSEState(LazySEState):
                     # print('REPL from reg', inp.value, preval)
                     replace_value(inp.value, preval)
 
-        # filter the inputs that still need to be found
+        # filter the inputs that still need to be found and nondets that are still used
         symbols = set(self._get_symbols())
+        self._inputs = [
+            inp for inp in self.inputs() if not symbols.isdisjoint(inp.value.symbols())
+        ]
+        assert len(self._inputs) <= len(symbols)
+        assert len(set(inp.instruction for inp in self._inputs)) == len(
+            self._inputs
+        ), "Repeated value for an instruction"
         self._nondets = [
             inp for inp in self.nondets() if not symbols.isdisjoint(inp.value.symbols())
         ]
@@ -207,10 +234,14 @@ class BSEState(LazySEState):
         # add memory state from pre-state
         # FIXME: do not touch the internal attributes
         for k, v in prestate.memory._reads.items():
-            if k not in self.memory._reads:
-                self.memory._reads[k] = v
+            oldv = self.memory._reads.get(k)
+            if oldv is not None:
+                replace_value(oldv, v)
+            self.memory._reads[k] = v
         # add new inputs from pre-state
         for inp in prestate.nondets():
+            self.add_nondet(inp)
+        for inp in prestate.inputs():
             add_input(inp)
         self.add_constraint(*prestate.constraints())
 
@@ -227,11 +258,20 @@ class BSEState(LazySEState):
             s += "\n" + "\n".join(
                 f"+L({p.as_value()})={x}" for p, x in self.memory._reads.items()
             )
-        if self._nondets:
+        if self._inputs:
             s += "\n" + "\n".join(
-                f"{nd.instruction.as_value()}={nd.value}" for nd in self._nondets
+                f"{nd.instruction.as_value()}={nd.value}" for nd in self._inputs
             )
         return s
+
+    def dump(self, stream=stdout):
+        super().dump(stream)
+        write = stream.write
+        write(" -- inputs --\n")
+        for n in self._inputs:
+            write(str(n))
+            write("\n")
+
 
 
 class Executor(PathExecutor):
