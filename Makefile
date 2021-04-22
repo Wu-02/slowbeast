@@ -22,6 +22,9 @@ check:
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -bself" tests/
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -kindse" tests/
 
+check-bse:
+	lit -j4 --path=$(shell pwd) -v -D OPTS="-bse" tests/
+
 check-bself:
 	lit -j4 --path=$(shell pwd) -a -D OPTS="-bself" tests/
 
