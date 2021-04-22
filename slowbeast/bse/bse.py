@@ -228,7 +228,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         state = bsectx.errorstate
         assert len(ready) <= 1, "We support only one pre-state"
         if ready:
-            if state.join_prestate(ready[0]):
+            if state.join_prestate(ready[0], fromInit):
                 assert not fromInit or not state.inputs(), "Initial state has unresolved inputs"
                 return [state]
         return []
@@ -246,12 +246,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             prestates = self._execute_path(bsectx, fromInit=True)
             assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
             if prestates:
-                prestate = prestates[0]
-                # FIXME: can we somehow easily check that we do not have to do this?
-                # found a real error
-                prestate.add_constraint(*prestate.memory_constraints())
-                if prestate.isfeasible():
-                    return Result.UNSAFE, prestates[0]
+                return Result.UNSAFE, prestates[0]
             if not self._entry_loc.has_predecessors():
                 return Result.SAFE, None
 

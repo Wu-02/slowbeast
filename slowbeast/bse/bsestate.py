@@ -64,7 +64,7 @@ class BSEState(LazySEState):
         assert value
         return value
 
-    def memory_constraints(self):
+    def _memory_constraints(self):
         M = self.memory._reads
         em = self.expr_manager()
         Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
@@ -207,7 +207,24 @@ class BSEState(LazySEState):
             symbols.update(val[0].symbols())
         return symbols
 
-    def join_prestate(self, prestate):
+    def join_prestate(self, prestate, is_init):
+        tmp = self._join_prestate(prestate)
+        assert len(tmp) <= 1, "Have multiple joined states"
+
+        if not tmp:
+            return tmp
+
+        assert tmp[0] is self
+        if is_init:
+            # we have feasible state in init, we must check whether it is really feasible
+            # by adding the omitted memory constraints
+            # FIXME: can we somehow easily check that we do not have to do this?
+            self.add_constraint(*self._memory_constraints())
+            if not prestate.isfeasible():
+                return []
+        return [self]
+
+    def _join_prestate(self, prestate):
         """
         Update this state with information from prestate. That is, simulate
         that this state is executed after prestate.
