@@ -97,8 +97,8 @@ class BSEContext:
         loc_hits - number of hitting locations (usually just loop headers)
         """
         assert isinstance(errstate, (AssumeAnnotation, BSEState)), errstate
-        assert isinstance(path, CFA.Edge), path
-        self.path = BSEPath(path)
+        self.path = BSEPath(path) if isinstance(path, CFA.Edge) else path
+        assert isinstance(self.path, BSEPath), self.path
         self.loc_hits = loc_hits or {}
         self.errorstate = errstate
         self.errordescr = errdescr
@@ -113,6 +113,18 @@ class BSEContext:
             or path.target() == self.path[0].source()
         ), f"{path};{self.path}"
         return BSEContext(path, cond, self.loc_hits.copy(), self.errordescr)
+
+    def extend_path(self, edge):
+        """
+        Derive a new context from this context - it must correctly preceed
+        the current path.
+        """
+        assert (
+            edge.source().cfa() != self.path.source().cfa()
+            or edge.target() == self.path[0].source()
+        ), f"{edge};{self.path}"
+        return BSEContext(self.path.copy_prepend(edge), self.errorstate, self.loc_hits.copy(), self.errordescr)
+
 
     def __repr__(self):
         return f"BSE-ctx[{self.path}:{self.errorstate}]"
