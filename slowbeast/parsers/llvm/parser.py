@@ -162,8 +162,11 @@ def offset_of_struct_elem(llvmmodule, ty, cval):
 
 unsupported_funs = [
     "memmove",
+    "memcpy",
     "llvm.memmove.p0i8.p0i8.i32",
     "llvm.memmove.p0i8.p0i8.i64",
+    "llvm.memcpy.p0i8.p0i8.i32",
+    "llvm.memcpy.p0i8.p0i8.i64",
 ]
 
 
