@@ -120,10 +120,13 @@ class BSEState(LazySEState):
 
         # coerce the values
         if not val.is_bool() and newval.is_bool():
-            assert val.bitwidth() == 1, val
-            newval = em.Ite(newval, ConcreteInt(1, 1), ConcreteInt(0, 1))
-        if not val.is_float() and newval.is_float():
-            assert val.bitwidth() == newval.bitwidth()
+            bw = val.bitwidth()
+            assert bw <= 8, f"{val} -> {newval}"
+            newval = em.Ite(newval, ConcreteInt(1, bw), ConcreteInt(0, bw))
+        elif not val.is_float() and newval.is_float():
+            assert val.bitwidth() == newval.bitwidth(),  f"{val} -> {newval}"
+            newval = em.Cast(newval, val.type())
+        elif newval.bitwidth() == 1 and val.bitwidth() == 8:
             newval = em.Cast(newval, val.type())
 
         assert val.type() == newval.type(), f"{val} -- {newval}"
