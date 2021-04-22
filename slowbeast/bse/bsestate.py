@@ -273,7 +273,7 @@ class BSEState(LazySEState):
         # print("==================== Joined st ========================")
         # self.dump()
         # print("====================           ========================")
-        if self.maybe_sat():
+        if self.isfeasible():
             return [self]
         return []
 
