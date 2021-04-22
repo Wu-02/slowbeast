@@ -64,6 +64,27 @@ class BSEState(LazySEState):
         assert value
         return value
 
+    def _init_memory_constraints(self, initstate):
+        """
+        Add constraints from matching input reads of zeroed globals.
+        """
+        M, em = self.memory, self.expr_manager()
+        R, get_obj = M._input_reads, initstate.memory.get_obj
+        constraints = []
+        # FIXME: we target globals, but we could in fact just try reading from initstate
+        # to get, e.g., values of bytes from objects.
+        # However, the problem is that symbolic offsets are not supported, so...
+        for ptr, val in R.items():
+            obj = ptr.object()
+            assert obj.is_concrete(), "Initial state has symbolic object"
+            mo = get_obj(obj)
+            if mo is None:
+                continue
+            # we found zeroed global from which we read
+            if mo.is_global() and mo.is_zeroed():
+                constraints.append(em.Eq(val[0], ConcreteInt(0, val[0].bitwidth())))
+        return constraints
+
     def _memory_constraints(self):
         M = self.memory._reads
         em = self.expr_manager()
@@ -208,19 +229,18 @@ class BSEState(LazySEState):
         return symbols
 
     def join_prestate(self, prestate, is_init):
-        tmp = self._join_prestate(prestate)
-        assert len(tmp) <= 1, "Have multiple joined states"
+        self._join_prestate(prestate)
 
-        if not tmp:
-            return tmp
+        if not self.isfeasible():
+            return []
 
-        assert tmp[0] is self
         if is_init:
             # we have feasible state in init, we must check whether it is really feasible
             # by adding the omitted memory constraints
             # FIXME: can we somehow easily check that we do not have to do this?
             self.add_constraint(*self._memory_constraints())
-            if not prestate.isfeasible():
+            self.add_constraint(*self._init_memory_constraints(prestate))
+            if not self.isfeasible():
                 return []
         return [self]
 
@@ -291,9 +311,6 @@ class BSEState(LazySEState):
         # print("==================== Joined st ========================")
         # self.dump()
         # print("====================           ========================")
-        if self.isfeasible():
-            return [self]
-        return []
 
     def maybe_sat(self, *e):
         """
