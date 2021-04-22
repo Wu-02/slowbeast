@@ -15,6 +15,16 @@ from .statesset import StatesSet
 
 from random import getrandbits
 
+unsupported_funs = [
+    "memmove",
+    "memcpy",
+    "llvm.memmove.p0i8.p0i8.i32",
+    "llvm.memmove.p0i8.p0i8.i64",
+    "llvm.memcpy.p0i8.p0i8.i32",
+    "llvm.memcpy.p0i8.p0i8.i64",
+]
+
+
 
 class SEStats:
     def __init__(self):
@@ -365,6 +375,9 @@ class Executor(ConcreteExecutor):
         name = fun.name()
         if name == "abort":
             state.set_terminated("Aborted via an abort() call")
+            return [state]
+        if name in unsupported_funs:
+            state.set_killed(f"Called unsupported function: {name}")
             return [state]
 
         retTy = fun.return_type()

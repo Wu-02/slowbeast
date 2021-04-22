@@ -159,16 +159,7 @@ def offset_of_struct_elem(llvmmodule, ty, cval):
 
     return off
 
-
-unsupported_funs = [
-    "memmove",
-    "memcpy",
-    "llvm.memmove.p0i8.p0i8.i32",
-    "llvm.memmove.p0i8.p0i8.i64",
-    "llvm.memcpy.p0i8.p0i8.i32",
-    "llvm.memcpy.p0i8.p0i8.i64",
-]
-
+unsupported_funs = []
 
 class Parser:
     def __init__(self, error_funs=None):
