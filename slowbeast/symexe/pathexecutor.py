@@ -1,7 +1,6 @@
 from slowbeast.util.debugging import dbgv, ldbgv
 from .executor import Executor as SExecutor
 from .annotations import execute_annotations
-from slowbeast.domains.symbolic import NondetInstrResult
 from .executionstate import LazySEState
 from slowbeast.core.executor import (
     PathExecutionResult,

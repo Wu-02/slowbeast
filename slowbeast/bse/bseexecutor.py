@@ -340,7 +340,7 @@ class Executor(PathExecutor):
         elif edge.is_call() and not edge.called_function().is_undefined():
             fn = edge.called_function().name()
             for s in ready:
-                s.set_terminated(f"Called function {fn} on intraprocedural path")
+                s.set_killed(f"Called function {fn} on intraprocedural path")
                 return [], nonready + ready
             raise NotImplementedError("Call edges not implemented")
         else:

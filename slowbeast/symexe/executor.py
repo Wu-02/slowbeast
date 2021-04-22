@@ -354,6 +354,14 @@ class Executor(ConcreteExecutor):
             return [state]
 
         if fun.is_undefined():
+            name = fun.name()
+            if name == "abort":
+                state.set_terminated("Aborted via an abort() call")
+                return [state]
+            if name in unsupported_funs:
+                state.set_killed(f"Called unsupported function: {name}")
+                return [state]
+            # NOTE: this may be overridden by child classes
             return self.exec_undef_fun(state, instr, fun)
 
         if self.callsForbidden():
@@ -372,14 +380,6 @@ class Executor(ConcreteExecutor):
         return [state]
 
     def exec_undef_fun(self, state, instr, fun):
-        name = fun.name()
-        if name == "abort":
-            state.set_terminated("Aborted via an abort() call")
-            return [state]
-        if name in unsupported_funs:
-            state.set_killed(f"Called unsupported function: {name}")
-            return [state]
-
         retTy = fun.return_type()
         if retTy:
             if self.getOptions().concretize_nondets:
@@ -389,7 +389,7 @@ class Executor(ConcreteExecutor):
                 ldbgv(f"Using value from input vector: {0}", (val,))
                 assert val.type() == retTy
             else:
-                val = state.solver().fresh_value(name, retTy)
+                val = state.solver().fresh_value(fun.name(), retTy)
                 state.create_nondet(instr, val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
