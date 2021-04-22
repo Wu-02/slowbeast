@@ -30,6 +30,9 @@ class CFA:
         def has_successors(self):
             return len(self._successors) > 0
 
+        def is_branching(self):
+            return len(self._successors) > 1
+
         def elem(self):
             return self._elem
 
