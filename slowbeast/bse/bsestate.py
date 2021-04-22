@@ -230,18 +230,15 @@ class BSEState(LazySEState):
 
     def join_prestate(self, prestate, is_init):
         self._join_prestate(prestate)
-
-        if not self.isfeasible():
-            return []
-
         if is_init:
             # we have feasible state in init, we must check whether it is really feasible
             # by adding the omitted memory constraints
             # FIXME: can we somehow easily check that we do not have to do this?
             self.add_constraint(*self._memory_constraints())
             self.add_constraint(*self._init_memory_constraints(prestate))
-            if not self.isfeasible():
-                return []
+
+        if not self.isfeasible():
+            return []
         return [self]
 
     def _join_prestate(self, prestate):
