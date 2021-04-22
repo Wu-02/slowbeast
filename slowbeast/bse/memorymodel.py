@@ -18,7 +18,7 @@ def _nondet_value(fresh, op, bitsnum):
     return fresh(f"uninit_{op.as_value()}", IntType(bitsnum))
 
 
-# FIXME: do we need to inherit from SEMemory?
+# FIXME: do we need to inherit from SEMemory? We need that only for the initial states...
 class BSEMemory(SEMemory):
     def __init__(self):
         super().__init__()
@@ -74,7 +74,12 @@ class BSEMemory(SEMemory):
     def read(self, ptr, bytesNum):
         v = self._reads.get(ptr)
         if v is None:
-            return None, MemError(
+            if ptr.is_concrete():  # this happens only in the initial state
+                mo = self.get_obj(ptr.object())
+                if mo:
+                    return mo.read(bytesNum, ptr.offset())
+        if v is None:
+                return None, MemError(
                 MemError.UNSUPPORTED, f"Read of unknown value; pointer: {ptr}"
             )
         if v.bytewidth() != bytesNum:
@@ -105,6 +110,10 @@ class BSEMemory(SEMemory):
         stream.write("-- Reads:\n")
         if self._reads:
             for p, x in self._reads.items():
+                stream.write(f"+L({p.as_value()})={x}\n")
+        stream.write("-- Input reads:\n")
+        if self._reads:
+            for p, x in self._input_reads.items():
                 stream.write(f"+L({p.as_value()})={x}\n")
         stream.write("-- Call stack:\n")
         self._cs.dump(stream)
