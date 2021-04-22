@@ -264,3 +264,54 @@ class IncrementalSolver(SymbolicSolver):
 
 
 Solver = SymbolicSolver
+
+
+def _sort_subs(subs):
+    """
+    Return multiplication of two variables later than other expressions
+    """
+    # FIXME: not very efficient
+    V = []
+    for k, v in subs.items():
+        s = sum(map(lambda c: not c.is_concrete(), k.children()))
+        if s > 1:
+            V.append((k, v))
+        else:
+            yield (k, v)
+    for k, v in V:
+        yield (k, v)
+
+
+def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
+    if assumptions:
+        # First try to rewrite the formula into simpler form
+        expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions)
+        A = []
+        for i in range(len(assumptions)):
+            a = assumptions[i]
+            A.append(
+                a.rewrite_polynomials([x for n, x in enumerate(assumptions) if n != i])
+            )
+        assumptions = A
+        r = IncrementalSolver().try_is_sat(to1, *assumptions, expr1)
+        if r is not None:
+            return r
+        expr = em.conjunction(*assumptions, expr1)
+    else:
+        expr = em.conjunction(*assumptions, *exprs)
+
+    ###
+    # Now try abstractions
+    #
+    rexpr, subs = expr.replace_arith_ops()
+    if rexpr:
+        solver = IncrementalSolver()
+        solver.add(rexpr.rewrite_and_simplify())
+        for placeholder, e in _sort_subs(subs):
+            if solver.is_sat() is False:
+                return False
+            solver.add(em.Eq(e, placeholder))
+        # solve the un-abstracted expression
+        return solver.try_is_sat(to2)
+    # FIXME try reduced bitwidth and propagating back models
+    return None

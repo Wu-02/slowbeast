@@ -6,6 +6,7 @@ from slowbeast.domains.pointer import Pointer
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.util.debugging import ldbgv
+from slowbeast.solvers.solver import try_solve_incrementally
 
 
 def _subst_val(substitute, val, subs):
@@ -272,9 +273,36 @@ class BSEState(LazySEState):
         # print("==================== Joined st ========================")
         # self.dump()
         # print("====================           ========================")
-        if self.isfeasible():
+        if self.maybe_sat():
             return [self]
         return []
+
+    def maybe_sat(self, *e):
+        """
+        This is a copy of sestate.is_sat() but we bail out after some timeout
+        assuming that 'sat'.
+        """
+        # XXX: check whether this kind of preprocessing is not too costly
+        symb = []
+        for x in e:
+            if x.is_concrete():
+                assert isinstance(x.value(), bool)
+                if not x.value():
+                    return False
+                else:
+                    continue
+            else:
+                symb.append(x)
+        if not symb:
+            return True
+
+        r = self._solver.try_is_sat(500, *self.constraints(), *e)
+        if r is not None:
+            return r
+        r = try_solve_incrementally(self.constraints(), e, self.expr_manager(), 2000, 500)
+        if r is None:
+            return True
+        return r
 
     def __repr__(self):
         s = f"BSEState: {self.constraints()}"

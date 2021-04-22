@@ -2,60 +2,9 @@ from slowbeast.core.executionstate import ExecutionState
 from slowbeast.util.debugging import warn, ldbgv
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
-from slowbeast.solvers.solver import IncrementalSolver
+from slowbeast.solvers.solver import try_solve_incrementally
 from copy import copy
 from sys import stdout
-
-
-def _sort_subs(subs):
-    """
-    Return multiplication of two variables later than other expressions
-    """
-    # FIXME: not very efficient
-    V = []
-    for k, v in subs.items():
-        s = sum(map(lambda c: not c.is_concrete(), k.children()))
-        if s > 1:
-            V.append((k, v))
-        else:
-            yield (k, v)
-    for k, v in V:
-        yield (k, v)
-
-
-def try_solve_incrementally(assumptions, exprs, em):
-    if assumptions:
-        # First try to rewrite the formula into simpler form
-        expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions)
-        A = []
-        for i in range(len(assumptions)):
-            a = assumptions[i]
-            A.append(
-                a.rewrite_polynomials([x for n, x in enumerate(assumptions) if n != i])
-            )
-        assumptions = A
-        r = IncrementalSolver().try_is_sat(3000, *assumptions, expr1)
-        if r is not None:
-            return r
-        expr = em.conjunction(*assumptions, expr1)
-    else:
-        expr = em.conjunction(*assumptions, *exprs)
-
-    ###
-    # Now try abstractions
-    #
-    rexpr, subs = expr.replace_arith_ops()
-    if rexpr:
-        solver = IncrementalSolver()
-        solver.add(rexpr.rewrite_and_simplify())
-        for placeholder, e in _sort_subs(subs):
-            if solver.is_sat() is False:
-                return False
-            solver.add(em.Eq(e, placeholder))
-        # solve the un-abstracted expression
-        return solver.try_is_sat(1000)
-    # FIXME try reduced bitwidth and propagating back models
-    return None
 
 
 class Nondet:
@@ -151,7 +100,6 @@ class SEState(ExecutionState):
             return r
 
         conj = self.expr_manager().conjunction
-        assumptions = conj(*self.constraints())
         expr = conj(*e)
         r = try_solve_incrementally(self.constraints(), e, self.expr_manager())
         if r is not None:
