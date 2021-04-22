@@ -32,6 +32,8 @@ class Executor(PathExecutor):
         """
         assert all(map(lambda s: isinstance(s, LazySEState), states))
 
+        ldbgv(" -- {0} --", (edge,))
+
         source, target = edge.source(), edge.target()
         ready, nonready = states, []
         # annotations before taking the edge (proably an invariant)

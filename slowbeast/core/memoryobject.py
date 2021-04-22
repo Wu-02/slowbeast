@@ -11,9 +11,9 @@ from slowbeast.core.errors import MemError
 class MemoryObject:
     ids = 0
 
-    __slots__ = "_id", "_values", "_size", "_name", "_allocation", "_ro"
+    __slots__ = "_id", "_values", "_size", "_name", "_allocation", "_ro", "_is_global"
 
-    def __init__(self, size, nm="unnamed", objid=None):
+    def __init__(self, size, nm="unnamed", objid=None, is_global=False):
         if objid:
             self._id = objid
         else:
@@ -24,6 +24,7 @@ class MemoryObject:
         self._size = size
         self._name = nm  # for debugging
         self._allocation = None  # which allocation allocated this memory
+        self._is_global = is_global
 
         self._ro = False  # COW support
 
@@ -32,6 +33,9 @@ class MemoryObject:
 
     def _is_ro(self):
         return self._ro
+
+    def is_global(self):
+        return self._is_global
 
     def clear(self):
         assert not self._ro

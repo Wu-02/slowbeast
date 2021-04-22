@@ -55,8 +55,21 @@ class BSEMemory(SEMemory):
             self._reads[ptr] = val
             self._input_reads[ptr] = (val, bytesNum)
             return val, None
-        raise NotImplementedError("Not implemented")
-        # concrete read
+        # a read of a value from a concrete pointer
+        # for which we do not have an entry
+        mo = self.get_obj(ptr.object())
+        if mo is None:
+            return None, MemError(
+                MemError.INVALID_OBJ, f"Read of unknown object"
+            )
+        if mo.is_global():
+            return None, MemError(
+                MemError.UNSUPPORTED, f"Reading uninitialized globals is unsupported atm."
+            )
+
+        return None, MemError(
+            MemError.UNINIT_READ, f"Read of uninitialized memory"
+        )
 
     def read(self, ptr, bytesNum):
         v = self._reads.get(ptr)

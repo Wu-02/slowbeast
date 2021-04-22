@@ -54,13 +54,13 @@ class Memory:
         self._copy_to(new)
         return new
 
-    def create_memory_object(self, size, nm=None, objid=None):
+    def create_memory_object(self, size, nm=None, objid=None, is_glob=False):
         """
         Create a new memory object -- may be overriden
         by child classes to create a different type of
         memory objects.
         """
-        return MemoryObject(size, nm, objid)
+        return MemoryObject(size, nm, objid, is_glob)
 
     def _objs_reown(self):
         if self._objects_ro:
@@ -82,9 +82,9 @@ class Memory:
     def __eq__(self, rhs):
         return self._objects == rhs._objects and self._cs == self._cs
 
-    def _allocate(self, size, instr=None, nm=None, objid=None):
+    def _allocate(self, size, instr=None, nm=None, objid=None, is_glob=False):
         """ Allocate a new memory object and return it """
-        o = self.create_memory_object(size, nm, objid)
+        o = self.create_memory_object(size, nm, objid, is_glob)
         assert o._is_ro() is False, "Created object is read-only (COW bug)"
 
         if instr:
@@ -112,7 +112,7 @@ class Memory:
             objid is None or self._glob_objects.get(objid) is None
         ), "Already has a global object with id {0}".format(objid)
 
-        o = self._allocate(G.size(), G, G.name(), objid)
+        o = self._allocate(G.size(), G, G.name(), objid, is_glob=True)
 
         self._globs_reown()
         assert self._glob_objects.get(o.get_id()) is None
