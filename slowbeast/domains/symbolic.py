@@ -389,13 +389,19 @@ if _use_z3:
                 isac = ArithFormula.op_is_assoc_and_comm(op)
                 formula = BVFormula(op, None)
                 for c in chlds:
+                    f = BVFormula.create(c)
+                    if f is None:
+                        return None
                     if isac and op == _expr_op_to_formula_op(c):
-                        formula.add_child(*(BVFormula.create(c).children()))
+                        for fc in f.children():
+                            formula.add_child(fc)
                     else:
-                        formula.add_child(BVFormula.create(c))
+                        formula.add_child(f)
                 return formula
             # return BVFormula(_expr_op_to_formula_op(expr), None,
             #                 *(BVFormula.create(c) for c in chlds))
+            if not is_bv(expr):
+                return None # it is no bitvector, we cannot do a polynom from it
             return BVFormula(ArithFormula.POLYNOM, BVPolynomial.create(expr))
 
         def value_equals(self, x):
@@ -710,9 +716,13 @@ if _use_z3:
             assert len(re) == 1, re
             expr_to = _desimplify_ext(simplify(mk_and(*re[0])))
             to_formula = BVFormula.create(expr_to)
+            if to_formula is None:
+                return expr_to
             simple_poly = []
             for e in exprs_from:
                 e_formula = BVFormula.create(_desimplify_ext(e))
+                if e_formula is None:
+                    continue
                 if e_formula.is_eq():
                     chlds = list(e_formula.children())
                     if len(chlds) == 2 and chlds[0].is_poly() and chlds[1].is_poly():
