@@ -13,7 +13,8 @@ from slowbeast.bse.memorymodel import BSEMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
 
-from .bseexecutor import Executor as BSEExecutor, BSEState
+from .bseexecutor import Executor as BSEExecutor
+from .bsestate import BSEState
 
 
 def report_state(stats, n, msg=None, fn=print_stderr):
