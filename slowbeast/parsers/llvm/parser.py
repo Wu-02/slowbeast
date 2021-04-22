@@ -755,9 +755,14 @@ class Parser:
             #        print(parts)
             #    # FIXME: add String type to represent strings
             else:
-                print_stderr(
-                    "Unsupported initializer: {0}".format(g.initializer), color="YELLOW"
-                )
+                initsize = type_size(self.llvmmodule, g.initializer.type)
+                if initsize and initsize == ts and 'zeroinitializer' in str(g.initializer):
+                    # this global is whole zero-initialized
+                    G.set_zeroed()
+                else:
+                    print_stderr(
+                        "Unsupported initializer: {0}".format(g.initializer), color="YELLOW"
+                    )
             self.program.add_global(G)
             self._addMapping(g, G)
 

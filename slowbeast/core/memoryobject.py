@@ -1,9 +1,8 @@
 from sys import stdout
 from copy import copy
-from ..util.debugging import FIXME
 
 from slowbeast.domains.value import Value
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal, ConcreteInt
 from slowbeast.ir.types import get_offset_type
 from slowbeast.core.errors import MemError
 
@@ -11,7 +10,7 @@ from slowbeast.core.errors import MemError
 class MemoryObject:
     ids = 0
 
-    __slots__ = "_id", "_values", "_size", "_name", "_allocation", "_ro", "_is_global"
+    __slots__ = "_id", "_values", "_size", "_name", "_allocation", "_ro", "_is_global", "_zeroed"
 
     def __init__(self, size, nm="unnamed", objid=None, is_global=False):
         if objid:
@@ -25,6 +24,7 @@ class MemoryObject:
         self._name = nm  # for debugging
         self._allocation = None  # which allocation allocated this memory
         self._is_global = is_global
+        self._zeroed = False
 
         self._ro = False  # COW support
 
@@ -33,6 +33,12 @@ class MemoryObject:
 
     def _is_ro(self):
         return self._ro
+
+    def set_zeroed(self):
+        self._zeroed = True
+
+    def is_zeroed(self):
+        return self._zeroed
 
     def is_global(self):
         return self._is_global
@@ -142,6 +148,8 @@ class MemoryObject:
 
         val = self._values.get(offval)
         if val is None:
+            if self._is_global and self._allocation.is_zeroed():
+                return ConcreteInt(0, bts*8), None
             return None, MemError(
                 MemError.UNINIT_READ,
                 f"Read from uninitialized memory (or unaligned read (not supp.  yet)).\n"
@@ -166,11 +174,12 @@ class MemoryObject:
         return self._values.keys()
 
     def __repr__(self):
-        s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
+        s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), 0-ed: {4}, size: {5}".format(
             self._id,
             self._name if self._name else "no name",
             self._allocation.as_value() if self._allocation else "unknown",
             self._ro,
+            self._zeroed,
             self._size,
         )
         for k, v in self._values.items():

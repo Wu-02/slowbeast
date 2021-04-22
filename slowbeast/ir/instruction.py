@@ -16,6 +16,7 @@ class GlobalVariable(ProgramElement):
         self._isconst = const
         # sequence of instructions used to initialize this global
         self._init = []
+        self._zeroed = False
 
     def is_global(self):
         return True
@@ -30,7 +31,18 @@ class GlobalVariable(ProgramElement):
         return self._name
 
     def has_init(self):
-        return self._init is not None
+        """
+        Is this variable initialized? It is initialized if it has some associated init sequence
+        or is zeroed. Note that it does not mean it is initialized entirely.
+        """
+        return self._init is not None or self._zeroed
+
+    def set_zeroed(self):
+        self.add_metadata("init", "zeroed")
+        self._zeroed = True
+
+    def is_zeroed(self):
+        return self._zeroed
 
     def init(self):
         return self._init

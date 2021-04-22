@@ -38,18 +38,25 @@ def write_bytes(offval, values, size, x):
     return None
 
 
-def read_bytes(values, offval, size, bts):
+def read_bytes(values, offval, size, bts, zeroed):
     assert bts > 0, bts
     assert size > 0, bts
     assert offval >= 0, bts
     EM = getGlobalExprManager()
-    if not all(values[i] for i in range(offval, offval + bts)):
-        return None, MemError(MemError.UNINIT_READ, "Read of uninitialized byte")
-    c = offval + bts - 1
-    # FIXME hack
-    # just make Extract return Bytes and it should work well then
-    val = EM.Concat(*(values[c - i] for i in range(0, bts)))
-    val._type = Bytes(val.bytewidth())
+    if zeroed:
+        c = offval + bts - 1
+        # just make Extract return Bytes and it should work well then
+        val = EM.Concat(*(values[c - i] if values[c - i] else ConcreteVal(0, 8) for i in range(0, bts)))
+        # FIXME hack
+        val._type = Bytes(val.bytewidth())
+    else:
+        if not all(values[i] for i in range(offval, offval + bts)):
+            return None, MemError(MemError.UNINIT_READ, "Read of uninitialized byte")
+        c = offval + bts - 1
+        # just make Extract return Bytes and it should work well then
+        val = EM.Concat(*(values[c - i] for i in range(0, bts)))
+        # FIXME hack
+        val._type = Bytes(val.bytewidth())
     return val, None
 
 
@@ -100,7 +107,7 @@ class MemoryObject(CoreMO):
 
         values = self._values
         if isinstance(values, list):
-            return read_bytes(values, offval, size, bts)
+            return read_bytes(values, offval, size, bts, self._zeroed)
 
         val = values.get(offval)
         if val is None:
@@ -110,11 +117,13 @@ class MemoryObject(CoreMO):
                     return None, err
                 self.values = values
                 assert isinstance(self.values, list)
-                return read_bytes(values, offval, size, bts)
+                return read_bytes(values, offval, size, bts, self._zeroed)
 
+            if self._zeroed:
+                return ConcreteVal(0, IntType(bts*8)), None
             return None, MemError(
                 MemError.UNINIT_READ,
-                f"Uninitialized or unaligned read (the latter is unsupported)\n"
+                f"uninitialized or unaligned read (the latter is unsupported)\n"
                 f"Reading bytes {offval}-{offval+bts-1} from obj {self._id} with contents:\n"
                 f"{values}",
             )
@@ -126,7 +135,7 @@ class MemoryObject(CoreMO):
                 if err:
                     return None, err
                 self._values = values
-                return read_bytes(values, offval, size, bts)
+                return read_bytes(values, offval, size, bts, self._zeroed)
 
             return None, MemError(
                 MemError.UNSUPPORTED,
@@ -201,11 +210,12 @@ class MemoryObject(CoreMO):
         return MemError(MemError.UNSUPPORTED, "Unsupported memory operation")
 
     def __repr__(self):
-        s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
+        s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), 0-ed: {4}, size: {5}".format(
             self._id,
             self._name if self._name else "no name",
             self._allocation.as_value() if self._allocation else "unknown",
             self._ro,
+            self._zeroed,
             self._size,
         )
         vals = self._values

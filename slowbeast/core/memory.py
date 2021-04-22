@@ -106,13 +106,15 @@ class Memory:
 
         return Pointer(ConcreteVal(o.get_id(), get_size_type()))
 
-    def allocate_global(self, G, objid=None):
+    def allocate_global(self, G, objid=None, zeroed=False):
         """ Allocate a new memory object and return a pointer to it """
         assert (
             objid is None or self._glob_objects.get(objid) is None
         ), "Already has a global object with id {0}".format(objid)
 
         o = self._allocate(G.size(), G, G.name(), objid, is_glob=True)
+        if zeroed:
+            o.set_zeroed()
 
         self._globs_reown()
         assert self._glob_objects.get(o.get_id()) is None

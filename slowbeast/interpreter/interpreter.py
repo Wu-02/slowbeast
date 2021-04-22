@@ -117,7 +117,7 @@ class Interpreter:
         for G in globs:
             # bind the global to the state
             for s in states:
-                s.memory.allocate_global(G)
+                s.memory.allocate_global(G, zeroed=G.is_zeroed())
 
             if not G.has_init():
                 continue
