@@ -25,7 +25,6 @@ unsupported_funs = [
 ]
 
 
-
 class SEStats:
     def __init__(self):
         # number of branch instructions

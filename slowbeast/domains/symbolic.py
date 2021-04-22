@@ -401,7 +401,7 @@ if _use_z3:
             # return BVFormula(_expr_op_to_formula_op(expr), None,
             #                 *(BVFormula.create(c) for c in chlds))
             if not is_bv(expr):
-                return None # it is no bitvector, we cannot do a polynom from it
+                return None  # it is no bitvector, we cannot do a polynom from it
             return BVFormula(ArithFormula.POLYNOM, BVPolynomial.create(expr))
 
         def value_equals(self, x):

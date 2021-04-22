@@ -123,12 +123,12 @@ class BSEState(LazySEState):
             assert bw <= 8, f"{val} -> {newval}"
             newval = em.Ite(newval, ConcreteInt(1, bw), ConcreteInt(0, bw))
         elif not val.is_float() and newval.is_float():
-            assert val.bitwidth() == newval.bitwidth(),  f"{val} -> {newval}"
+            assert val.bitwidth() == newval.bitwidth(), f"{val} -> {newval}"
             newval = em.Cast(newval, val.type())
         elif newval.bitwidth() == 1 and val.bitwidth() == 8:
             newval = em.Cast(newval, val.type())
         elif val.bitwidth() == 1 and newval.bitwidth() == 8:
-            assert not val.is_bool(),  f"{val} -> {newval}"
+            assert not val.is_bool(), f"{val} -> {newval}"
             z = ConcreteInt(0, 8)
             newval = em.Extract(newval, z, z)
 
@@ -138,15 +138,21 @@ class BSEState(LazySEState):
         new_repl = []
         pc = self.path_condition()
         if val.is_pointer():
-            assert val.object().is_concrete() or val.object().is_symbol(), f"Cannot replace {val} with {newval}"
-            assert val.offset().is_concrete() or val.offset().is_symbol(), f"Cannot replace {val} with {newval}"
+            assert (
+                val.object().is_concrete() or val.object().is_symbol()
+            ), f"Cannot replace {val} with {newval}"
+            assert (
+                val.offset().is_concrete() or val.offset().is_symbol()
+            ), f"Cannot replace {val} with {newval}"
             # if the value is pointer, we must substitute it also in the state of the memory
             assert newval.is_pointer(), newval
             pc = substitute(
                 pc, (val.object(), newval.object()), (val.offset(), newval.offset())
             )
         else:
-            assert val.is_concrete() or val.is_symbol(), f"Cannot replace {val} with {newval}"
+            assert (
+                val.is_concrete() or val.is_symbol()
+            ), f"Cannot replace {val} with {newval}"
             pc = substitute(pc, (val, newval))
         self._replace_value_in_memory(new_repl, newval, substitute, val)
         self.set_constraints(pc)
@@ -188,7 +194,6 @@ class BSEState(LazySEState):
             nUP[nptr] = cval
         self.memory._input_reads = nUP
 
-
     def _get_symbols(self):
         symbols = set(
             s for e in self.constraints() for s in e.symbols() if not e.is_concrete()
@@ -207,11 +212,11 @@ class BSEState(LazySEState):
         that this state is executed after prestate.
         """
         assert isinstance(prestate, BSEState), type(prestate)
-       #print("==================== Pre-state ========================")
-       #prestate.dump()
-       #print("==================== Join into ========================")
-       #self.dump()
-       #print("====================           ========================")
+        # print("==================== Pre-state ========================")
+        # prestate.dump()
+        # print("==================== Join into ========================")
+        # self.dump()
+        # print("====================           ========================")
         try_eval = prestate.try_eval
         add_input = self.add_input
 
@@ -264,9 +269,9 @@ class BSEState(LazySEState):
             add_input(inp)
         self.add_constraint(*prestate.constraints())
 
-       #print("==================== Joined st ========================")
-       #self.dump()
-       #print("====================           ========================")
+        # print("==================== Joined st ========================")
+        # self.dump()
+        # print("====================           ========================")
         if self.isfeasible():
             return [self]
         return []

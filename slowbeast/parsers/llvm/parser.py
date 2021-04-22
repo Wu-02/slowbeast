@@ -159,7 +159,9 @@ def offset_of_struct_elem(llvmmodule, ty, cval):
 
     return off
 
+
 unsupported_funs = []
+
 
 class Parser:
     def __init__(self, error_funs=None):
