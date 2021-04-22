@@ -239,6 +239,17 @@ class BSEState(LazySEState):
             else:
                 new_ireads[ptr] = inpval
 
+        ### copy the data from pre-state
+        # add memory state from pre-state
+        # FIXME: do not touch the internal attributes
+        for k, v in prestate.memory._reads.items():
+            if k not in self.memory._reads:
+                self.memory._reads[k] = v
+        self.memory._input_reads = prestate.memory._input_reads.copy()
+        for k, v in new_ireads.items():
+            if k not in self.memory._input_reads:
+                self.memory._input_reads[k] = v
+
         # filter the inputs that still need to be found and nondets that are still used
         symbols = set(self._get_symbols())
         self._inputs = [
@@ -253,16 +264,6 @@ class BSEState(LazySEState):
         ]
         assert len(self._nondets) <= len(symbols)
 
-        ### copy the data from pre-state
-        # add memory state from pre-state
-        # FIXME: do not touch the internal attributes
-        for k, v in prestate.memory._reads.items():
-            if k not in self.memory._reads:
-                self.memory._reads[k] = v
-        self.memory._input_reads = prestate.memory._input_reads.copy()
-        for k, v in new_ireads.items():
-            if k not in self.memory._input_reads:
-                self.memory._input_reads[k] = v
         # add new inputs from pre-state
         for inp in prestate.nondets():
             self.add_nondet(inp)
