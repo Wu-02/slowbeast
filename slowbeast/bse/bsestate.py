@@ -5,7 +5,7 @@ from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.domains.pointer import Pointer
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
-from slowbeast.util.debugging import ldbgv
+from slowbeast.util.debugging import ldbgv, print_stdout
 from slowbeast.solvers.solver import try_solve_incrementally
 
 
@@ -137,7 +137,7 @@ class BSEState(LazySEState):
 
     def _replace_value(self, val, newval):
         em = self.expr_manager()
-        # print('REPLACING', val, 'WITH', newval)
+        print_stdout(f'REPLACING {val} WITH {newval}', color="red")
 
         # coerce the values
         if not val.is_bool() and newval.is_bool():
@@ -245,12 +245,13 @@ class BSEState(LazySEState):
         """
         Update this state with information from prestate. That is, simulate
         that this state is executed after prestate.
+        # FIXME: do not touch the internal attributes of memory
         """
         assert isinstance(prestate, BSEState), type(prestate)
         print("==================== Pre-state ========================")
-        print(prestate)
+        print_stdout(str(prestate), color="green")
         print("==================== Join into ========================")
-        print(self)
+        print_stdout(str(self), color='cyan')
         print("====================           ========================")
         try_eval = prestate.try_eval
         add_input = self.add_input
@@ -274,8 +275,6 @@ class BSEState(LazySEState):
                 new_ireads[ptr] = inpval
 
         ### copy the data from pre-state
-        # add memory state from pre-state
-        # FIXME: do not touch the internal attributes
         for k, v in prestate.memory._reads.items():
             if k not in self.memory._reads:
                 self.memory._reads[k] = v
@@ -306,7 +305,7 @@ class BSEState(LazySEState):
         self.add_constraint(*prestate.constraints())
 
         print("==================== Joined st ========================")
-        print(self)
+        print_stdout(str(self), color="orange")
         print("====================           ========================")
 
     def maybe_sat(self, *e):
