@@ -137,7 +137,7 @@ class BSEState(LazySEState):
 
     def _replace_value(self, val, newval):
         em = self.expr_manager()
-        print_stdout(f'REPLACING {val} WITH {newval}', color="red")
+        # print_stdout(f'REPLACING {val} WITH {newval}', color="red")
 
         # coerce the values
         if not val.is_bool() and newval.is_bool():
@@ -265,11 +265,11 @@ class BSEState(LazySEState):
         # FIXME: do not touch the internal attributes of memory
         """
         assert isinstance(prestate, BSEState), type(prestate)
-        print("==================== Pre-state ========================")
-        print_stdout(str(prestate), color="green")
-        print("==================== Join into ========================")
-        print_stdout(str(self), color='cyan')
-        print("====================           ========================")
+       # print("==================== Pre-state ========================")
+       # print_stdout(str(prestate), color="green")
+       # print("==================== Join into ========================")
+       # print_stdout(str(self), color='cyan')
+       # print("====================           ========================")
         try_eval = prestate.try_eval
         add_input = self.add_input
 
@@ -325,9 +325,9 @@ class BSEState(LazySEState):
             add_input(inp)
         self.add_constraint(*prestate.constraints())
 
-        print("==================== Joined st ========================")
-        print_stdout(str(self), color="orange")
-        print("====================           ========================")
+       # print("==================== Joined st ========================")
+       # print_stdout(str(self), color="orange")
+       # print("====================           ========================")
 
     def maybe_sat(self, *e):
         """
