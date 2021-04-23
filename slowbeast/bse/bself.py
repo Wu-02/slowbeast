@@ -400,6 +400,7 @@ class BSELFChecker(BaseBSE):
             if loop_hit_no == 1:
                 dbg("... (getting sis for the 1st hit of the loop)")
                 Is = self.initial_sets_from_exits(E, L)
+                assert Is, "Failed getting sequence for first visit"
                 if not Is:
                     Is = self.initial_sets_from_is(E, L)
             else:
@@ -534,22 +535,21 @@ class BSELFChecker(BaseBSE):
 
         # replace every set in 'sets' with an inductive set that we already have
         # if the IS already includes the set
-        newsets = set()
-        sets = []
-        newisets = isets.copy()
+        newsets = []
         for s in sets:
-            cov = False
-            for I in isets:
-                if I.I.contains(s):
-                    newsets.add(I.I)
-                    if I in newisets:
-                        newisets.remove(I)
-                    cov = True
-                    break
-            if not cov:
-                newsets.add(s)
-        self.inductive_sets[L.header()] = newisets
-        return sets or None
+            cov = [I for I in isets if intersection(I.I, s).is_empty() and I.I.contains(s)]
+            if cov:
+                # FIXME: do not do union?
+                S = create_set()
+                for I in cov:
+                    S.add(I.I)
+                    l = len(isets)
+                    isets.remove(I)
+                    assert l - 1 == len(isets), "Did not pop the element"
+                newsets.append(S)
+            else:
+                newsets.append(s)
+        return newsets or None
 
     def initial_sets_from_is(self, E, L):
         # get the inductive sets that we have created for this header.

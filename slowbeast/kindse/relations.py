@@ -378,12 +378,14 @@ def _get_var_relations(safe, prevsafe=None):
             yield from get_relations_to_prev_states(s, prevsafe)
 
 
-def get_var_relations(safe, prevsafe=None):
+def get_var_relations(safe, prevsafe=None, only_eq=False):
     solver = IncrementalSolver()
     toyield = set()
     Not = getGlobalExprManager().Not
     for rel in _get_var_relations(safe, prevsafe):
         expr = rel.expr()
+        if only_eq and not expr.isEq():
+            continue
         solver.push()
         solver.add(expr)
         yield_rel = True

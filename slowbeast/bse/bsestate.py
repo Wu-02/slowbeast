@@ -121,6 +121,8 @@ class BSEState(LazySEState):
         for ptr, val in R.items():
             obj = ptr.object()
             assert obj.is_concrete(), "Initial state has symbolic object"
+            if not obj.is_concrete():
+                continue
             mo = get_obj(obj)
             if mo is None:
                 continue
