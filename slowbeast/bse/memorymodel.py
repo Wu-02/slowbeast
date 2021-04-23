@@ -10,12 +10,12 @@ from slowbeast.symexe.memory import Memory as SEMemory
 
 def _nondet_value(fresh, op, bitsnum):
     if op.type().is_bool():
-        return fresh(f"unknown_bool_{op.as_value()}", BoolType())
+        return fresh(f"bool_{op.as_value()}", BoolType())
     if op.type().is_pointer():
-        ptrobj = fresh(f"unknown_obj_{op.as_value()}", get_offset_type())
-        ptroff = fresh(f"unknown_off_{op.as_value()}", get_offset_type())
+        ptrobj = fresh(f"obj_{op.as_value()}", get_offset_type())
+        ptroff = fresh(f"off_{op.as_value()}", get_offset_type())
         return Pointer(ptrobj, ptroff)
-    return fresh(f"uninit_{op.as_value()}", IntType(bitsnum))
+    return fresh(f"{op.as_value()}", IntType(bitsnum))
 
 
 # FIXME: do we need to inherit from SEMemory? We need that only for the initial states...
