@@ -45,7 +45,7 @@ class BSELFOptions(KindSEOptions):
             self.target_is_whole_seq = True
             self.union_abstractions = False
             self.union_extensions = False
-            self.union_matched = True
+            self.union_matched = False
 
 
 def _dump_inductive_sets(checker, loc):
