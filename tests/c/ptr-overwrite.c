@@ -1,5 +1,6 @@
 #include <assert.h>
 
+// REQUIRES: se
 // RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out
 // RUN: timeout 30 sb -out-dir=%t-out %opts %t.bc &>%t.log
