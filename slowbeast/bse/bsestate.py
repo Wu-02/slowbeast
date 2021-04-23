@@ -247,11 +247,11 @@ class BSEState(LazySEState):
         that this state is executed after prestate.
         """
         assert isinstance(prestate, BSEState), type(prestate)
-        # print("==================== Pre-state ========================")
-        # prestate.dump()
-        # print("==================== Join into ========================")
-        # self.dump()
-        # print("====================           ========================")
+        print("==================== Pre-state ========================")
+        print(prestate)
+        print("==================== Join into ========================")
+        print(self)
+        print("====================           ========================")
         try_eval = prestate.try_eval
         add_input = self.add_input
 
@@ -305,9 +305,9 @@ class BSEState(LazySEState):
             add_input(inp)
         self.add_constraint(*prestate.constraints())
 
-        # print("==================== Joined st ========================")
-        # self.dump()
-        # print("====================           ========================")
+        print("==================== Joined st ========================")
+        print(self)
+        print("====================           ========================")
 
     def maybe_sat(self, *e):
         """
