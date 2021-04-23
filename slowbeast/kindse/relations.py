@@ -241,7 +241,6 @@ def get_const_subs_relations(state):
     EM = state.expr_manager()
     subs = get_subs(state)
     C = state.constraints()
-    yielded = set()
     substitute = EM.substitute
     for l, cval in _get_const_cmp_relations(state):
         assert cval.is_concrete(), (l, cval)
@@ -252,15 +251,15 @@ def get_const_subs_relations(state):
                 and expr != nexpr
                 and state.is_sat(nexpr) is True
             ):
-                # do not yield same eq expressions multiple times
                 if nexpr.isEq():
                     c1, c2 = list(nexpr.children())
                     if c1.is_concrete() or c2.is_concrete():
                         continue
-                    if (c1, c2) in yielded or (c2, c1) in yielded:
-                        continue
-                    yielded.add((c1, c2))
-                yield AssertAnnotation(nexpr, subs, EM)
+                if nexpr.isOr():
+                    for c in nexpr.children():
+                        yield AssertAnnotation(c, subs, EM)
+                else:
+                    yield AssertAnnotation(nexpr, subs, EM)
 
 
 def _iter_constraints(C):
