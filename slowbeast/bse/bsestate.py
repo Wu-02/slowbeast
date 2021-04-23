@@ -25,6 +25,50 @@ def _subst_val(substitute, val, subs):
         return Pointer(substitute(val.object(), *subs), substitute(val.offset(), *subs))
     return substitute(val, *subs)
 
+def _iter_read_pairs(reads):
+    for idx1, r1 in enumerate(reads):
+        ptr1, val1 = r1
+        for idx2 in range(idx1 + 1, len(reads)):
+            ptr2, val2 = reads[idx2]
+            yield (ptr1, val1), (ptr2, val2)
+
+def compare_reads(em, ptr1, ptr2, val1, val2):
+    """ Create an expression that says: if the pointers are the same, the values must be the same """
+    Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
+    val1ptr, val2ptr = val1.is_pointer(), val2.is_pointer()
+
+    if val1ptr and val2ptr:
+        expr = And(
+            Eq(val1.object(), val2.object()),
+            Eq(val1.offset(), val2.offset()),
+        )
+    elif val1ptr and not val2ptr:
+        if val2.is_concrete() and val2.value() == 0:  # comparison to null
+            expr = And(Eq(val1.object(), val2), Eq(val1.offset(), val2))
+        else:
+            raise NotImplementedError(
+                "Comparison of symbolic addreses not implemented"
+            )
+    elif val2ptr and not val1ptr:
+        if val1.is_concrete() and val1.value() == 0:  # comparison to null
+            expr = And(Eq(val2.object(), val1), Eq(val2.offset(), val1))
+        else:
+            raise NotImplementedError(
+                "Comparison of symbolic addreses not implemented"
+            )
+    else: # non is are pointer
+        expr = Eq(val1, val2)
+
+    return Or(
+        Not(
+            And(
+                Eq(ptr1.object(), ptr2.object()),
+                Eq(ptr1.offset(), ptr2.offset()),
+            )
+        ),
+        expr,
+    )
+
 
 class BSEState(LazySEState):
     def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
@@ -87,46 +131,20 @@ class BSEState(LazySEState):
 
     def _memory_constraints(self):
         M = self.memory._reads
-        em = self.expr_manager()
-        Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
         reads = list(M.items())
         constraints = []
-        # FIXME: use enumerate()
-        for idx1 in range(0, len(reads)):
-            ptr1, val1 = reads[idx1]
-            for idx2 in range(idx1 + 1, len(reads)):
-                ptr2, val2 = reads[idx2]
-                if val1 is val2 or val1.bitwidth() != val2.bitwidth():
-                    continue
-                # if the pointers are the same, the values must be the same
-                if val1.is_pointer():
-                    if val2.is_concrete() and val2.value() == 0:  # comparison to null
-                        expr = And(Eq(val1.object(), val2), Eq(val1.offset(), val2))
-                    else:
-                        raise NotImplementedError(
-                            "Comparison of symbolic addreses not implemented"
-                        )
-                elif val2.is_pointer():
-                    if val1.is_concrete() and val1.value() == 0:  # comparison to null
-                        expr = And(Eq(val2.object(), val1), Eq(val2.offset(), val1))
-                    else:
-                        raise NotImplementedError(
-                            "Comparison of symbolic addreses not implemented"
-                        )
-                else:
-                    expr = Eq(val1, val2)
-                c = Or(
-                    Not(
-                        And(
-                            Eq(ptr1.object(), ptr2.object()),
-                            Eq(ptr1.offset(), ptr2.offset()),
-                        )
-                    ),
-                    expr,
-                )
-                if c.is_concrete() and bool(c.value()):
-                    continue
-                constraints.append(c)
+        em = self.expr_manager()
+        for r1, r2 in _iter_read_pairs(reads):
+            ptr1, val1 = r1
+            ptr2, val2 = r2
+            # we assume that such reads do not read the same memory
+            # TODO: this assumption may not be right
+            if val1 is val2 or val1.bitwidth() != val2.bitwidth():
+                continue
+            c = compare_reads(em, ptr1, ptr2, val1, val2)
+            if c.is_concrete() and bool(c.value()):
+                continue
+            constraints.append(c)
         return constraints
 
     def apply_postcondition(self, postcondition):
