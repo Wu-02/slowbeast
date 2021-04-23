@@ -181,6 +181,23 @@ class BSEState(LazySEState):
 
         return new_repl
 
+    def replace_input_value(self, val, newval):
+        """
+        Replace an input value with a new values and consume it.
+        NOTE: the argument 'val' must be the very same object (not only equal expression),
+        e.g., obtained by the input() method.
+        """
+        mtch_input = None
+        for inp in self._inputs:
+            if inp.value is val:
+                mtch_input = inp
+                break
+        if mtch_input:
+            self.replace_value(val, newval)
+            self._inputs.remove(mtch_input)
+            return True
+        return False
+
     def replace_value(self, val, newval):
         # recursively handle the implied equalities
         replace_value = self._replace_value
@@ -258,37 +275,41 @@ class BSEState(LazySEState):
 
         ### modify the state according to the pre-state
         replace_value = self.replace_value
+        new_inputs = []
         for inp in self.inputs():
             preval = try_eval(inp.instruction)
             if preval:
                 # print('REPL from reg', inp.value, preval)
                 replace_value(inp.value, preval)
-
-        new_ireads = {}
-        for ptr, inpval in self.memory._input_reads.items():
-            # try read the memory if it is written in the state
-            val, _ = prestate.memory.read(ptr, inpval[1])
-            if val:
-                # print('REPL from memory', inp.value, val)
-                replace_value(inpval[0], val)
             else:
-                new_ireads[ptr] = inpval
+                new_inputs.append(inp)
+        self._inputs = new_inputs # new inputs are those that we didn't match
+
+        changed = True
+        while changed:
+            changed = False
+            for ptr, inpval in self.memory._input_reads.items():
+                # try read the memory if it is written in the state
+                val, _ = prestate.memory.read(ptr, inpval[1])
+                if val:
+                    replace_value(inpval[0], val)
+                    changed = True
+                    # we matched the input read, so remove it
+                    self.memory._input_reads.pop(ptr)
 
         ### copy the data from pre-state
         for k, v in prestate.memory._reads.items():
             if k not in self.memory._reads:
                 self.memory._reads[k] = v
+        ireads = self.memory._input_reads
         self.memory._input_reads = prestate.memory._input_reads.copy()
-        for k, v in new_ireads.items():
-            if k not in self.memory._input_reads:
-                self.memory._input_reads[k] = v
+        for k, v in ireads.items():
+            assert k not in self.memory._input_reads
+            self.memory._input_reads[k] = v
 
-        # filter the inputs that still need to be found and nondets that are still used
+        # filter the nondets that are still used
         symbols = set(self._get_symbols())
-        self._inputs = [
-            inp for inp in self.inputs() if not symbols.isdisjoint(inp.value.symbols())
-        ]
-        assert len(self._inputs) <= len(symbols)
+        assert len(self._inputs) <= len(symbols), f"{{{self._inputs}}} not in {symbols}"
         assert len(set(inp.instruction for inp in self._inputs)) == len(
             self._inputs
         ), f"Repeated value for an instruction: {self._inputs}"

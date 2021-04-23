@@ -316,7 +316,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                     if argval is None:
                         n += 1
                         continue
-                    state.replace_value(argval.value, val)
+                    state.replace_input_value(argval.value, val)
                     n += 1
                 self.queue_state(bsectx.extension(pedge, state))
 
@@ -338,7 +338,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             if retval:
                 op = ret.operand(0)
                 opval = state.eval(op)
-                state.replace_value(retval, opval)
+                state.replace_input_value(retval, opval)
             retedge = PS.rets[ret]
             self.queue_state(bsectx.extension(retedge, state))
 
