@@ -337,15 +337,20 @@ class BSEState(LazySEState):
         return r
 
     def __repr__(self):
-        s = f"BSEState: {self.constraints()}"
+        s = f"BSEState [{self.get_id()}]"
+        if self.memory._input_reads:
+            s += "\n" + "\n".join(
+                f"-> L({p.as_value()})={x}" for p, x in self.memory._input_reads.items()
+            )
         if self.memory._reads:
             s += "\n" + "\n".join(
-                f"+L({p.as_value()})={x}" for p, x in self.memory._reads.items()
+                f"<- L({p.as_value()})={x}" for p, x in self.memory._reads.items()
             )
         if self._inputs:
             s += "\n" + "\n".join(
-                f"{nd.instruction.as_value()}={nd.value}" for nd in self._inputs
+                f"?  {nd.instruction.as_value()}={nd.value}" for nd in self._inputs
             )
+        s += f"\nconstraints: {self.constraints()}"
         return s
 
     def dump(self, stream=stdout):
