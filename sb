@@ -61,13 +61,17 @@ def createArgParser():
     parser.add_argument('-bse', action='store_true', help='Do backward symbolic execution')
     parser.add_argument('-bself', action='store_true', help='Do backward symbolic execution with loops folding')
     parser.add_argument('-bself-til', action='store_true', help='Target towards induction is the last element in BSELF')
-    parser.add_argument('-bself-union-extensions', action='store_true', help='Union extensions of inductive sequences')
+    parser.add_argument('-bself-union-extensions', action='store_true',
+                        help='Union extensions of inductive sequences')
+    parser.add_argument('-bself-union-matched', action='store_true',
+                        help='Union the sets matched in the stored inductive sequences '
+                             'when getting starting inductive sequences')
     parser.add_argument('-se', action='store_true', default=False,
-                        help='Perform symbolic execution.')
+                        help='Perform symbolic execution (default).')
     parser.add_argument('-stateful-se', action='store_true', default=False,
-                        help='Perform stateful symbolic execution.')
+                        help='Perform stateful symbolic execution (experimental).')
     parser.add_argument('-future-se', action='store_true', default=False,
-                        help='Perform symbolic execution with on-demand subprograms search.')
+                        help='Perform symbolic execution with on-demand subprograms search (experimental).')
     parser.add_argument('-se-step', default='instr',
                         help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
     parser.add_argument('-se-exit-on-error', action='store_true',
@@ -409,6 +413,8 @@ def main():
             opts.target_is_whole_seq = False
         if args.bself_union_extensions:
             opts.union_extensions = True
+        if args.bself_union_matched:
+            opts.union_matched = True
         interpreter = BSELF(P, ohandler, opts)
     elif args.se:
         opts = SEOptions()

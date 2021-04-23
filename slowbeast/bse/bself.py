@@ -18,7 +18,6 @@ from slowbeast.kindse import KindSEOptions
 from slowbeast.kindse.inductivesequence import InductiveSequence
 from slowbeast.kindse.overapproximations import overapprox_set
 from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
-from slowbeast.analysis.loops import Loop
 from slowbeast.analysis.cfa import CFA
 from slowbeast.solvers.solver import getGlobalExprManager
 
@@ -40,11 +39,13 @@ class BSELFOptions(KindSEOptions):
             self.target_is_whole_seq = copyopts.target_is_whole_seq
             self.union_abstractions = copyopts.union_abstractions
             self.union_extensions = copyopts.union_extensions
+            self.union_matched = copyopts.union_matched
         else:
             self.fold_loops = True
             self.target_is_whole_seq = True
             self.union_abstractions = False
             self.union_extensions = False
+            self.union_matched = True
 
 
 def _dump_inductive_sets(checker, loc):
@@ -536,13 +537,18 @@ class BSELFChecker(BaseBSE):
         # replace every set in 'sets' with an inductive set that we already have
         # if the IS already includes the set
         newsets = []
+        union_matched = self.options.union_matched
         for s in sets:
             cov = [I for I in isets if intersection(I.I, s).is_empty() and I.I.contains(s)]
             if cov:
                 # FIXME: do not do union?
-                S = create_set()
+                S = create_set() if union_matched else None
                 for I in cov:
-                    S.add(I.I)
+                    if union_matched:
+                        S.add(I.I)
+                    else:
+                        newsets.append(I.I)
+                    # remove the matched set from inductive sets
                     l = len(isets)
                     isets.remove(I)
                     assert l - 1 == len(isets), "Did not pop the element"
@@ -568,7 +574,11 @@ class BSELFChecker(BaseBSE):
             else:
                 newisets.append(I)
         self.inductive_sets[L.header()] = newisets
-        return sets or None
+        if sets:
+            if self.options.union_matched:
+                return union(*sets)
+            return sets
+        return None
 
     def add_invariant(self, loc, inv):
         invs = self.invariant_sets.setdefault(loc, [])
