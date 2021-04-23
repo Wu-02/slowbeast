@@ -59,17 +59,14 @@ class BSEMemory(SEMemory):
         # for which we do not have an entry
         mo = self.get_obj(ptr.object())
         if mo is None:
-            return None, MemError(
-                MemError.INVALID_OBJ, f"Read of unknown object"
-            )
+            return None, MemError(MemError.INVALID_OBJ, f"Read of unknown object")
         if mo.is_global():
             return None, MemError(
-                MemError.UNSUPPORTED, f"Reading uninitialized globals is unsupported atm."
+                MemError.UNSUPPORTED,
+                f"Reading uninitialized globals is unsupported atm.",
             )
 
-        return None, MemError(
-            MemError.UNINIT_READ, f"Read of uninitialized memory"
-        )
+        return None, MemError(MemError.UNINIT_READ, f"Read of uninitialized memory")
 
     def read(self, ptr, bytesNum):
         v = self._reads.get(ptr)
@@ -79,7 +76,7 @@ class BSEMemory(SEMemory):
                 if mo:
                     return mo.read(bytesNum, ptr.offset())
         if v is None:
-                return None, MemError(
+            return None, MemError(
                 MemError.UNSUPPORTED, f"Read of unknown value; pointer: {ptr}"
             )
         if v.bytewidth() != bytesNum:

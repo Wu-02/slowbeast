@@ -46,7 +46,12 @@ def read_bytes(values, offval, size, bts, zeroed):
     if zeroed:
         c = offval + bts - 1
         # just make Extract return Bytes and it should work well then
-        val = EM.Concat(*(values[c - i] if values[c - i] else ConcreteVal(0, 8) for i in range(0, bts)))
+        val = EM.Concat(
+            *(
+                values[c - i] if values[c - i] else ConcreteVal(0, 8)
+                for i in range(0, bts)
+            )
+        )
         # FIXME hack
         val._type = Bytes(val.bytewidth())
     else:
@@ -120,7 +125,7 @@ class MemoryObject(CoreMO):
                 return read_bytes(values, offval, size, bts, self._zeroed)
 
             if self._zeroed:
-                return ConcreteVal(0, IntType(bts*8)), None
+                return ConcreteVal(0, IntType(bts * 8)), None
             return None, MemError(
                 MemError.UNINIT_READ,
                 f"uninitialized or unaligned read (the latter is unsupported)\n"

@@ -123,8 +123,12 @@ class BSEContext:
             edge.source().cfa() != self.path.source().cfa()
             or edge.target() == self.path[0].source()
         ), f"{edge};{self.path}"
-        return BSEContext(self.path.copy_prepend(edge), self.errorstate, self.loc_hits.copy(), self.errordescr)
-
+        return BSEContext(
+            self.path.copy_prepend(edge),
+            self.errorstate,
+            self.loc_hits.copy(),
+            self.errordescr,
+        )
 
     def __repr__(self):
         return f"BSE-ctx[{self.path}:{self.errorstate}]"
@@ -229,7 +233,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         assert len(ready) <= 1, "We support only one pre-state"
         if ready:
             if state.join_prestate(ready[0], fromInit):
-                assert not fromInit or not state.inputs(), "Initial state has unresolved inputs"
+                assert (
+                    not fromInit or not state.inputs()
+                ), "Initial state has unresolved inputs"
                 return [state]
         return []
         # prestates = []

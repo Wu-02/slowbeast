@@ -265,11 +265,11 @@ class BSEState(LazySEState):
         # FIXME: do not touch the internal attributes of memory
         """
         assert isinstance(prestate, BSEState), type(prestate)
-       # print("==================== Pre-state ========================")
-       # print_stdout(str(prestate), color="green")
-       # print("==================== Join into ========================")
-       # print_stdout(str(self), color='cyan')
-       # print("====================           ========================")
+        # print("==================== Pre-state ========================")
+        # print_stdout(str(prestate), color="green")
+        # print("==================== Join into ========================")
+        # print_stdout(str(self), color='cyan')
+        # print("====================           ========================")
         try_eval = prestate.try_eval
         add_input = self.add_input
 
@@ -283,7 +283,7 @@ class BSEState(LazySEState):
                 replace_value(inp.value, preval)
             else:
                 new_inputs.append(inp)
-        self._inputs = new_inputs # new inputs are those that we didn't match
+        self._inputs = new_inputs  # new inputs are those that we didn't match
 
         changed = True
         while changed:
@@ -325,9 +325,9 @@ class BSEState(LazySEState):
             add_input(inp)
         self.add_constraint(*prestate.constraints())
 
-       # print("==================== Joined st ========================")
-       # print_stdout(str(self), color="orange")
-       # print("====================           ========================")
+    # print("==================== Joined st ========================")
+    # print_stdout(str(self), color="orange")
+    # print("====================           ========================")
 
     def maybe_sat(self, *e):
         """
@@ -351,7 +351,9 @@ class BSEState(LazySEState):
         r = self._solver.try_is_sat(500, *self.constraints(), *e)
         if r is not None:
             return r
-        r = try_solve_incrementally(self.constraints(), e, self.expr_manager(), 2000, 500)
+        r = try_solve_incrementally(
+            self.constraints(), e, self.expr_manager(), 2000, 500
+        )
         if r is None:
             return True
         return r
