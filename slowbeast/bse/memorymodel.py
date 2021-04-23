@@ -110,11 +110,11 @@ class BSEMemory(SEMemory):
         stream.write("-- Reads:\n")
         if self._reads:
             for p, x in self._reads.items():
-                stream.write(f"+L({p.as_value()})={x}\n")
+                stream.write(f"L({p.as_value()})={x}\n")
         stream.write("-- Input reads:\n")
         if self._reads:
             for p, x in self._input_reads.items():
-                stream.write(f"+L({p.as_value()})={x}\n")
+                stream.write(f"L({p.as_value()})={x}\n")
         stream.write("-- Call stack:\n")
         self._cs.dump(stream)
 
