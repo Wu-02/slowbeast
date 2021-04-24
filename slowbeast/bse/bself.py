@@ -84,6 +84,16 @@ def overapprox(executor, s, E, target, L):
     # add relations
     for rel in get_const_cmp_relations(S.get_se_state()):
         ldbg("  Adding relation {0}", (rel,))
+       #on_some, on_all = L.check_set_inductivity(create_set(rel))
+       #if on_all:
+       #    res, _ = executor.check_loop_precondition(L, rel)
+       #    if res is Result.SAFE:
+       #        # store the other sequences for further processing
+       #        dbg("The relation is invariant!")
+       #        # FIXME: check that we do not have this invariant already
+       #        executor.add_invariant(L.header(), rel)
+       #        continue
+
         S.intersect(rel)
         assert (
             not S.is_empty()
