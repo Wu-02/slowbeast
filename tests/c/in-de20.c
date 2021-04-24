@@ -4,7 +4,7 @@
 // REQUIRES: bself
 // RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out
-// RUN: timeout 100 sb -out-dir=%t-out %opts %t.bc &>%t.log
+// RUN: timeout 120 sb -out-dir=%t-out %opts %t.bc &>%t.log
 // RUN: cat %t.log | FileCheck %s
 
 int main()

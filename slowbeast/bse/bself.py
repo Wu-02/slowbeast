@@ -650,6 +650,10 @@ class BSELFChecker(BaseBSE):
             color="gray",
         )
 
+        # a good length is at least 3 to make the relations to previous state
+        # take effect. If we start creating starting inductive sets
+        # from several states, the length could decrease to 2
+        #max_seq_len = max(3, 2 * len(L.paths()))
         max_seq_len = 2 * len(L.paths())
         while True:
             print_stdout(
