@@ -533,7 +533,7 @@ class BSELFChecker(BaseBSE):
             if yield_seq:
                 yield seq
 
-    def initial_sets_from_exits(self, E, L: LoopInfo):
+    def _initial_sets_from_exits(self, E, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -555,7 +555,19 @@ class BSELFChecker(BaseBSE):
             tmp.intersect(cE)
             if not tmp.is_empty():
                 sets.append(tmp)
+        return sets
 
+
+    def initial_sets_from_exits(self, E, L: LoopInfo):
+        """
+        Strengthen the initial sequence through obtaining the
+        last safe iteration of the loop.
+        """
+
+        create_set = self.create_set
+        # execute the safe path that avoids error and then jumps out of the loop
+        # and also only paths that jump out of the loop, so that the set is inductive
+        sets = self._initial_sets_from_exits(E, L)
         # try to match the sets with inductive sets that we already have
         isets = self.inductive_sets.get(L.header())
         if isets is None:
@@ -596,15 +608,24 @@ class BSELFChecker(BaseBSE):
         if isets is None:
             return None
 
+        exit_sets = self._initial_sets_from_exits(E, L)
+
         dbg("Checking inductive sets that we have")
         sets = []
+        included_sets = []
        #newisets = []
         for I in isets:
             if intersection(I.I, E).is_empty():
                 sets.append(I.I)
+                if exit_sets and I.I.contains_any(*exit_sets):
+                    included_sets.append(I.I)
        #    else:
        #        newisets.append(I)
         # self.inductive_sets[L.header()] = newisets
+
+        # use the sets that include some of the sets created for exit sets
+        if included_sets:
+            sets = included_sets
         if sets:
             dbg("Matched stored inductive sequences")
             if self.options.union_matched:

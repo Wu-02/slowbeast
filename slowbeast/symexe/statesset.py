@@ -161,6 +161,14 @@ class StatesSet:
         X.intersect(S)
         return X.is_empty()
 
+    def contains_any(self, *Ss):
+        X = self.copy()
+        X.complement()
+        for s in Ss:
+            if intersection(X, s).is_empty():
+                return True
+        return False
+
     def __repr__(self):
         return f"{{{self.as_description().__repr__()}}}"
 
