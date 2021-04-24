@@ -541,7 +541,6 @@ class BSELFChecker(BaseBSE):
         for s in sets:
             cov = [I for I in isets if intersection(I.I, s).is_empty() and I.I.contains(s)]
             if cov:
-                # FIXME: do not do union?
                 S = create_set() if union_matched else None
                 for I in cov:
                     if union_matched:
