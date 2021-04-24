@@ -418,6 +418,8 @@ class BSELFChecker(BaseBSE):
             else:
                 dbg("... (joining with previously unfinished sequences)")
                 Is = self.initial_sets_from_is(E, L)
+                if Is is None:
+                    Is = self.initial_sets_from_exits(E, L)
             if Is:
                 for s in (
                     InductiveSequence(I.as_assert_annotation(), None) for I in Is
@@ -552,6 +554,7 @@ class BSELFChecker(BaseBSE):
         for s in sets:
             cov = [I for I in isets if intersection(I.I, s).is_empty() and I.I.contains(s)]
             if cov:
+                dbg("Matched stored inductive sequences")
                 S = create_set() if union_matched else None
                 for I in cov:
                     if union_matched:
@@ -559,9 +562,9 @@ class BSELFChecker(BaseBSE):
                     else:
                         newsets.append(I.I)
                     # remove the matched set from inductive sets
-                    l = len(isets)
-                    isets.remove(I)
-                    assert l - 1 == len(isets), "Did not pop the element"
+                   #l = len(isets)
+                   #isets.remove(I)
+                   #assert l - 1 == len(isets), "Did not pop the element"
                 newsets.append(S)
             else:
                 newsets.append(s)
@@ -583,8 +586,9 @@ class BSELFChecker(BaseBSE):
                 sets.append(I.I)
             else:
                 newisets.append(I)
-        self.inductive_sets[L.header()] = newisets
+        #self.inductive_sets[L.header()] = newisets
         if sets:
+            dbg("Matched stored inductive sequences")
             if self.options.union_matched:
                 return [union(*sets)]
             return sets
