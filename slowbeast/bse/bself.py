@@ -12,6 +12,7 @@ from slowbeast.util.debugging import (
 from slowbeast.symexe.statesset import intersection, union, complement
 from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.symexe.annotations import AssertAnnotation
+from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.kindse.programstructure import ProgramStructure
 from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
@@ -533,12 +534,26 @@ class BSELFChecker(BaseBSE):
             if yield_seq:
                 yield seq
 
+
+    def _last_k_iteration_paths(self, L, k = 0):
+        """ Obtain the paths that correspond to the last k iterations of the loop """
+        is_error_loc = L.cfa().is_err
+        exits = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
+        if k == 0:
+            return exits
+        loop_paths = L.paths()
+        paths = [e.edges() for e in exits]
+        while k > 0:
+            # we loose annotations if any -- but there should be none in this case
+            paths = [l.edges() + s for l in loop_paths for s in paths]
+            k -= 1
+        return [AnnotatedCFAPath(p) for p in paths]
+
     def _initial_sets_from_exits(self, E, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
         """
-
         is_error_loc = L.cfa().is_err
         create_set = self.create_set
         # execute the safe path that avoids error and then jumps out of the loop
