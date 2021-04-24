@@ -48,19 +48,19 @@ class BSELFOptions(KindSEOptions):
             self.union_matched = True
 
 
-def _dump_inductive_sets(checker, loc):
-    dbg(f"With this INVARIANT set at loc {loc}:", color="dark_green")
+def _dump_inductive_sets(checker, loc, fn=dbg):
+    fn(f"With this INVARIANT set at loc {loc}:", color="dark_green")
     IS = checker.invariant_sets.get(loc)
     if IS:
-        dbg(f"\n{IS}", color="dark_green")
+        fn(f"\n{IS}", color="dark_green")
     else:
-        dbg(" ∅", color="dark_green")
-    dbg(f"With this INDUCTIVE set at loc {loc}:", color="dark_green")
+        fn(" ∅", color="dark_green")
+    fn(f"With this INDUCTIVE set at loc {loc}:", color="dark_green")
     IS = checker.inductive_sets.get(loc)
     if IS:
-        dbg(f"\n{IS}", color="dark_green")
+        fn(f"\n{IS}", color="dark_green")
     else:
-        dbg(" ∅", color="dark_green")
+        fn(" ∅", color="dark_green")
 
 
 def overapprox(executor, s, E, target, L):
