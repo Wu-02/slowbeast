@@ -106,9 +106,6 @@ class SEState(ExecutionState):
             return r
         return self._solver.is_sat(expr)
 
-    def try_is_sat(self, timeout, *e):
-        return self._solver.try_is_sat(timeout, *e)
-
     def isfeasible(self):
         """
         Solve the PC and return True if it is sat. Handy in the cases

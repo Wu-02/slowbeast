@@ -43,7 +43,7 @@ def get_var_diff_relations(state):
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.try_is_sat(600, expr, Ne(c, cval))
+            nonunique = state.is_sat(expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
                     simplify(EM.substitute(expr, (c, cval))), subs, EM
@@ -55,7 +55,7 @@ def get_var_diff_relations(state):
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.try_is_sat(600, expr, Ne(c, cval))
+            nonunique = state.is_sat(expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
                     simplify(EM.substitute(expr, (c, cval))), subs, EM
@@ -69,7 +69,7 @@ def get_var_diff_relations(state):
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.try_is_sat(600, expr, Ne(c, cval))
+            nonunique = state.is_sat(expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
                     simplify(EM.substitute(expr, (c, cval))), subs, EM
@@ -82,7 +82,7 @@ def get_var_diff_relations(state):
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.try_is_sat(600, expr, Ne(c, cval))
+            nonunique = state.is_sat(expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
                     simplify(EM.substitute(expr, (c, cval))), subs, EM
@@ -118,7 +118,7 @@ def get_var_diff_relations(state):
             if l3bw != bw:
                 l3 = EM.SExt(l3, ConcreteInt(bw, bw))
 
-            if state.try_is_sat(600, Ne(Sub(l2, l1), l3)) is False:
+            if state.is_sat(Ne(Sub(l2, l1), l3)) is False:
                 yield AssertAnnotation(Eq(Sub(l2, l1), l3), subs, EM)
             else:
                 c = EM.fresh_value(f"c_mul_{l1name}{l2name}{l3name}", IntType(bw))
@@ -128,7 +128,7 @@ def get_var_diff_relations(state):
                 if c_concr is not None:
                     # is c unique?
                     cval = c_concr[0]
-                    if state.try_is_sat(600, EM.substitute(expr, (c, cval))) is False:
+                    if state.is_sat(EM.substitute(expr, (c, cval))) is False:
                         yield AssertAnnotation(
                             simplify(Eq(Add(l1, l2), Mul(cval, l3))),
                             subs,
