@@ -576,7 +576,7 @@ class BSELFChecker(BaseBSE):
         self.inductive_sets[L.header()] = newisets
         if sets:
             if self.options.union_matched:
-                return union(*sets)
+                return [union(*sets)]
             return sets
         return None
 
