@@ -291,7 +291,7 @@ class BSELFChecker(BaseBSE):
         unsafe = [errpre]
 
         # first try to unroll it in the case the loop is easy to verify
-        maxk = 1 # unroll the loop only once
+        maxk = 1  # unroll the loop only once
         dbg_sec(f"Unwinding the loop {maxk} steps")
         res = self.unwind(loc, errpre, maxk=maxk)
         dbg_sec()
@@ -552,7 +552,9 @@ class BSELFChecker(BaseBSE):
         newsets = []
         union_matched = self.options.union_matched
         for s in sets:
-            cov = [I for I in isets if intersection(I.I, s).is_empty() and I.I.contains(s)]
+            cov = [
+                I for I in isets if intersection(I.I, s).is_empty() and I.I.contains(s)
+            ]
             if cov:
                 dbg("Matched stored inductive sequences")
                 S = create_set() if union_matched else None
@@ -564,9 +566,9 @@ class BSELFChecker(BaseBSE):
                     else:
                         newsets.append(I.I)
                     # remove the matched set from inductive sets
-                   #l = len(isets)
-                   #isets.remove(I)
-                   #assert l - 1 == len(isets), "Did not pop the element"
+                # l = len(isets)
+                # isets.remove(I)
+                # assert l - 1 == len(isets), "Did not pop the element"
                 newsets.append(S)
             else:
                 newsets.append(s)
@@ -588,7 +590,7 @@ class BSELFChecker(BaseBSE):
                 sets.append(I.I)
             else:
                 newisets.append(I)
-        #self.inductive_sets[L.header()] = newisets
+        # self.inductive_sets[L.header()] = newisets
         if sets:
             dbg("Matched stored inductive sequences")
             if self.options.union_matched:

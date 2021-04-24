@@ -25,6 +25,7 @@ def _subst_val(substitute, val, subs):
         return Pointer(substitute(val.object(), *subs), substitute(val.offset(), *subs))
     return substitute(val, *subs)
 
+
 def _iter_read_pairs(reads):
     for idx1, r1 in enumerate(reads):
         ptr1, val1 = r1
@@ -32,16 +33,18 @@ def _iter_read_pairs(reads):
             ptr2, val2 = reads[idx2]
             yield (ptr1, val1), (ptr2, val2)
 
+
 def compare_reads(em, ptr1, ptr2, val1, val2):
     """ Create an expression that says: if the pointers are the same, the values must be the same """
     Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
 
     # pointers are equal?
     ptreq = em.simplify(
-                And(
-                    Eq(ptr1.object(), ptr2.object()),
-                    Eq(ptr1.offset(), ptr2.offset()),
-                ))
+        And(
+            Eq(ptr1.object(), ptr2.object()),
+            Eq(ptr1.offset(), ptr2.offset()),
+        )
+    )
 
     # if we know that not already here, bail out
     if ptreq.is_concrete() and ptreq.value() is False:
@@ -58,18 +61,14 @@ def compare_reads(em, ptr1, ptr2, val1, val2):
         if val2.is_concrete() and val2.value() == 0:  # comparison to null
             expr = And(Eq(val1.object(), val2), Eq(val1.offset(), val2))
         else:
-            raise NotImplementedError(
-                "Comparison of symbolic addreses not implemented"
-            )
+            raise NotImplementedError("Comparison of symbolic addreses not implemented")
     elif val2ptr and not val1ptr:
         if val1.is_concrete() and val1.value() == 0:  # comparison to null
             expr = And(Eq(val2.object(), val1), Eq(val2.offset(), val1))
         else:
             print(ptr1, ptr2, val1, val2)
-            raise NotImplementedError(
-                "Comparison of symbolic addreses not implemented"
-            )
-    else: # non is are pointer
+            raise NotImplementedError("Comparison of symbolic addreses not implemented")
+    else:  # non is are pointer
         expr = Eq(val1, val2)
 
     return Or(Not(ptreq), expr)
