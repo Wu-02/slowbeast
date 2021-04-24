@@ -240,13 +240,20 @@ class BSELFChecker(BaseBSE):
         return r
 
     def unwind(self, loc, errpre, maxk=None):
+        """
+        Unroll the loop maxk times - that is, unroll the loop until you hit 'loc'
+        in every feasible context maximally maxk times
+        """
         queue = []
         for edge in loc.predecessors():
             queue.append(BSEContext(edge, errpre))
 
-        k = 1
+        if __debug__:
+            k = 1
         while queue:
-            ldbgv("Unwinding step {0}", (k,))
+            if __debug__:
+                ldbgv("Unwinding step {0}", (k,))
+                k += 1
             newst = []
             for bsectx in queue:
                 r, pre = self.precondition(bsectx)
@@ -255,17 +262,21 @@ class BSELFChecker(BaseBSE):
                 elif r is Result.UNSAFE:
                     return Result.UNSAFE
 
+                if bsectx.path.source() == loc:
+                    loc_hits = bsectx.loc_hits
+                    lnm = loc_hits[loc] = loc_hits.get(loc, 0) + 1
+                    if lnm > maxk:
+                        # the loop is potentially unsafe on this path
+                        # and we do not want to proceed further
+                        return Result.UNKNOWN
+
                 newst.append((pre, bsectx))
 
-            k += 1
-            if k <= maxk:
                 queue = [
                     bsectx.extension(pedge, pre.copy())
                     for pre, bsectx in newst
                     for pedge in bsectx.path[0].predecessors()
                 ]
-            else:
-                return Result.UNKNOWN
 
         # if queue is empty, we're safe!
         assert not queue, "Queue is not empty"
@@ -280,7 +291,7 @@ class BSELFChecker(BaseBSE):
         unsafe = [errpre]
 
         # first try to unroll it in the case the loop is easy to verify
-        maxk = 15
+        maxk = 1 # unroll the loop only once
         dbg_sec(f"Unwinding the loop {maxk} steps")
         res = self.unwind(loc, errpre, maxk=maxk)
         dbg_sec()
