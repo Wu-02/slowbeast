@@ -558,6 +558,8 @@ class BSELFChecker(BaseBSE):
                 S = create_set() if union_matched else None
                 for I in cov:
                     if union_matched:
+                        # and not S.contains(I.I):
+                        # todo: could the inclusion check break inferring relations from path condition? Probably yes.
                         S.add(I.I)
                     else:
                         newsets.append(I.I)
