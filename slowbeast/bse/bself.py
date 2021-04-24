@@ -40,12 +40,14 @@ class BSELFOptions(KindSEOptions):
             self.union_abstractions = copyopts.union_abstractions
             self.union_extensions = copyopts.union_extensions
             self.union_matched = copyopts.union_matched
+            self.add_unwind_invariants = copyopts.add_unwind_invariants
         else:
             self.fold_loops = True
             self.target_is_whole_seq = True
             self.union_abstractions = False
             self.union_extensions_threshold = None
             self.union_matched = True
+            self.add_unwind_invariants = False
 
 
 def _dump_inductive_sets(checker, loc, fn=dbg):
@@ -296,6 +298,8 @@ class BSELFChecker(BaseBSE):
         res = self.unwind(loc, errpre, maxk=maxk)
         dbg_sec()
         if res is Result.SAFE:
+            if self.options.add_unwind_invariants:
+                self.add_invariant(loc, complement(self.create_set(errpre)).as_assume_annotation())
             print_stdout(f"Loop {loc} proved by unwinding", color="GREEN")
             return True
         elif res is Result.UNSAFE:
