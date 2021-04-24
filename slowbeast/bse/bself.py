@@ -44,7 +44,7 @@ class BSELFOptions(KindSEOptions):
             self.fold_loops = True
             self.target_is_whole_seq = True
             self.union_abstractions = False
-            self.union_extensions = False
+            self.union_extensions_threshold = None
             self.union_matched = True
 
 
@@ -313,8 +313,7 @@ class BSELFChecker(BaseBSE):
 
     def extend_seq(self, seq, E, L):
         new_frames_complements = []
-        make_union = self.options.union_extensions
-        oneA = None
+        extended = []
         for A in self._extend_seq(seq, E, L):
             drop = False
             for C in new_frames_complements:
@@ -325,15 +324,16 @@ class BSELFChecker(BaseBSE):
             if drop:
                 continue
             new_frames_complements.append(complement(A))
-            if make_union:
-                if oneA is None:
-                    oneA = A
-                else:
-                    oneA.add(A)
-            else:
+            extended.append(A)
+        if not extended:
+            return
+        union_threshold = self.options.union_extensions_threshold
+        if union_threshold is not None and len(extended) >= union_threshold:
+            dbg(f"Making union of extensions (threshold = {union_threshold})")
+            yield union(*extended)
+        else:
+            for A in extended:
                 yield A
-        if make_union and oneA:
-            yield oneA
 
     def _extend_seq(self, seq, E, L):
         """

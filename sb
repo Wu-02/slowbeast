@@ -61,8 +61,11 @@ def createArgParser():
     parser.add_argument('-bse', action='store_true', help='Do backward symbolic execution')
     parser.add_argument('-bself', action='store_true', help='Do backward symbolic execution with loops folding')
     parser.add_argument('-bself-til', action='store_true', help='Target towards induction is the last element in BSELF')
-    parser.add_argument('-bself-union-extensions', action='store_true',
-                        help='Union extensions of inductive sequences')
+    parser.add_argument('-bself-union-extensions-thr', action='store',
+                        default=None,
+                        help='Union extensions of inductive sequences if '
+                             'their number is at least this threshold '
+                             '(0 = always union, default=None)')
     parser.add_argument('-bself-no-union-matched', action='store_true',
                         help='Do not union the sets matched in the stored inductive sequences '
                              'when getting starting inductive sequences')
@@ -411,8 +414,8 @@ def main():
             opts.fold_loops = False
         if args.bself_til:
             opts.target_is_whole_seq = False
-        if args.bself_union_extensions:
-            opts.union_extensions = True
+        if args.bself_union_extensions_thr is not None:
+            opts.union_extensions_threshold = int(args.bself_union_extensions_thr)
         if args.bself_no_union_matched:
             assert opts.union_matched == True
             opts.union_matched = False
