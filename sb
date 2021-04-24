@@ -63,8 +63,8 @@ def createArgParser():
     parser.add_argument('-bself-til', action='store_true', help='Target towards induction is the last element in BSELF')
     parser.add_argument('-bself-union-extensions', action='store_true',
                         help='Union extensions of inductive sequences')
-    parser.add_argument('-bself-union-matched', action='store_true',
-                        help='Union the sets matched in the stored inductive sequences '
+    parser.add_argument('-bself-no-union-matched', action='store_true',
+                        help='Do not union the sets matched in the stored inductive sequences '
                              'when getting starting inductive sequences')
     parser.add_argument('-se', action='store_true', default=False,
                         help='Perform symbolic execution (default).')
@@ -413,8 +413,9 @@ def main():
             opts.target_is_whole_seq = False
         if args.bself_union_extensions:
             opts.union_extensions = True
-        if args.bself_union_matched:
-            opts.union_matched = True
+        if args.bself_no_union_matched:
+            assert opts.union_matched == True
+            opts.union_matched = False
         interpreter = BSELF(P, ohandler, opts)
     elif args.se:
         opts = SEOptions()
