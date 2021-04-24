@@ -598,12 +598,12 @@ class BSELFChecker(BaseBSE):
 
         dbg("Checking inductive sets that we have")
         sets = []
-        newisets = []
+       #newisets = []
         for I in isets:
             if intersection(I.I, E).is_empty():
                 sets.append(I.I)
-            else:
-                newisets.append(I)
+       #    else:
+       #        newisets.append(I)
         # self.inductive_sets[L.header()] = newisets
         if sets:
             dbg("Matched stored inductive sequences")
