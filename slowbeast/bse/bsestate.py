@@ -35,6 +35,18 @@ def _iter_read_pairs(reads):
 def compare_reads(em, ptr1, ptr2, val1, val2):
     """ Create an expression that says: if the pointers are the same, the values must be the same """
     Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
+
+    # pointers are equal?
+    ptreq = em.simplify(
+                And(
+                    Eq(ptr1.object(), ptr2.object()),
+                    Eq(ptr1.offset(), ptr2.offset()),
+                ))
+
+    # if we know that not already here, bail out
+    if ptreq.is_concrete() and ptreq.value() is False:
+        return em.simplify(em.getTrue())
+
     val1ptr, val2ptr = val1.is_pointer(), val2.is_pointer()
 
     if val1ptr and val2ptr:
@@ -53,21 +65,14 @@ def compare_reads(em, ptr1, ptr2, val1, val2):
         if val1.is_concrete() and val1.value() == 0:  # comparison to null
             expr = And(Eq(val2.object(), val1), Eq(val2.offset(), val1))
         else:
+            print(ptr1, ptr2, val1, val2)
             raise NotImplementedError(
                 "Comparison of symbolic addreses not implemented"
             )
     else: # non is are pointer
         expr = Eq(val1, val2)
 
-    return Or(
-        Not(
-            And(
-                Eq(ptr1.object(), ptr2.object()),
-                Eq(ptr1.offset(), ptr2.offset()),
-            )
-        ),
-        expr,
-    )
+    return Or(Not(ptreq), expr)
 
 
 class BSEState(LazySEState):
