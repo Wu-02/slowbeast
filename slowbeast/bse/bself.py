@@ -272,11 +272,11 @@ class BSELFChecker(BaseBSE):
 
                 newst.append((pre, bsectx))
 
-                queue = [
-                    bsectx.extension(pedge, pre.copy())
-                    for pre, bsectx in newst
-                    for pedge in bsectx.path[0].predecessors()
-                ]
+            queue = [
+                bsectx.extension(pedge, pre.copy())
+                for pre, bsectx in newst
+                for pedge in bsectx.path[0].predecessors()
+            ]
 
         # if queue is empty, we're safe!
         assert not queue, "Queue is not empty"
