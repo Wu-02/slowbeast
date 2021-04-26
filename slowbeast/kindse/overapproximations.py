@@ -329,6 +329,52 @@ class LoopStateOverapproximation:
         safesolver.add(unsafe.as_expr())
         self.safesolver = safesolver
 
+
+    def drop_disjuncts(self):
+        solver = IncrementalSolver()
+        solver.add(*self.clauses)
+        assert solver.is_sat(), "The clauses are unsat!"
+        em = self.expr_mgr
+        disjunction, conjunction, Not = em.disjunction, em.conjunction, em.Not
+        false, true = em.getFalse(), em.getTrue()
+        substitute = em.substitute
+
+        subs = []
+        newclauses = []
+        for c in self.clauses:
+            c = substitute(c, *subs)
+            newd = []
+            if c.is_concrete():
+                val = c.value()
+                if val is True:
+                    continue
+                elif val is False:
+                    raise RuntimeError("BUG in dropping disjuncts! Made the expression unsat")
+                raise RuntimeError(f"Invalid boolean value: {val}")
+            if not c.isOr():
+                newclauses.append(c)
+                continue
+
+            for d in c.children():
+                nd = Not(d)
+                if solver.try_is_sat(100, nd) is False:
+                    if nd.isNot():
+                        subs.append((d, true))
+                        newd.append(true)
+                        continue
+                    subs.append((nd, false))
+                if solver.try_is_sat(100, d) is False:
+                    if d.isNot():
+                        subs.append((next(d.children()), true))
+                    subs.append((d, false))
+                else:
+                    newd.append(d)
+            if newd:
+                newclauses.append(disjunction(*newd))
+            else:
+                raise RuntimeError("BUG in dropping disjuncts! Made the expression unsat")
+        self.clauses = [em.substitute(c, *subs) for c in newclauses]
+
     def _drop_clauses(self, clauses, assumptions):
         """
         assumptions are clauses that we do not try to drop
@@ -765,6 +811,7 @@ def overapprox_set(
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     overapprox = LoopStateOverapproximation(S, executor, target, unsafe, L, EM)
+    overapprox.drop_disjuncts()
     overapprox.drop_clauses(assumptions)
 
     # NOTE: this works good alone sometimes
