@@ -105,7 +105,7 @@ class SEState(ExecutionState):
         return self._solver.is_sat(self.expr_manager().conjunction(*e))
 
     def try_is_sat(self, timeout, *e):
-        return self._solver.try_is_sat(timeout, *e)
+        return self._solver.try_is_sat(timeout, *self.constraints(), *e)
 
     def is_feasible(self):
         """
