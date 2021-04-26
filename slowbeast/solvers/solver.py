@@ -283,6 +283,12 @@ def _sort_subs(subs):
 
 
 def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
+    # check if we can evaluate some expression syntactically
+    for a in assumptions:
+        exprs = [em.substitute(e, (a, em.getTrue())) for e in exprs]
+    # filter out expressions that are 'true'
+    exprs = [e for e in exprs if not (e.is_concrete() and bool(e.value()))]
+
     if assumptions:
         # First try to rewrite the formula into simpler form
         expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions)
