@@ -549,6 +549,24 @@ class BSELFChecker(BaseBSE):
             k -= 1
         return [AnnotatedCFAPath(p) for p in paths]
 
+    def _last_k_iterations_states(self, L, k=0):
+        assert k >= 0, k
+
+        create_set = self.create_set
+        paths = self._last_k_iteration_paths(L, k)
+        sets = []
+        for p in paths:
+            r = check_paths(self, [p])
+            if not r.ready:
+                continue
+
+            tmp = create_set()
+            tmp.add(r.ready)
+            sets.append(tmp)
+        assert sets
+        return sets
+
+
     def _initial_sets_from_exits(self, E, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
@@ -559,14 +577,9 @@ class BSELFChecker(BaseBSE):
         # execute the safe path that avoids error and then jumps out of the loop
         # and also only paths that jump out of the loop, so that the set is inductive
         cE = complement(E)
+        tmpsets = self._last_k_iterations_states(L, k = 0)
         sets = []
-        for p in (p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())):
-            r = check_paths(self, [p])
-            if not r.ready:
-                continue
-
-            tmp = create_set()
-            tmp.add(r.ready)
+        for tmp in tmpsets:
             tmp.intersect(cE)
             if not tmp.is_empty():
                 sets.append(tmp)
