@@ -252,6 +252,21 @@ class BSELFChecker(BaseBSE):
 
         return r
 
+    def unwind_iteration(self, L, err):
+        """
+        Unroll the loop maxk times - that is, unroll the loop until you hit 'loc'
+        in every feasible context maximally maxk times
+        """
+        queue = []
+        for p in L.paths():
+            queue.append(BSEContext(p, err.copy()))
+        states = []
+        for ctx in queue:
+            pre = self._execute_path(ctx, invariants=self.invariant_sets)
+            assert len(pre) <= 1, "Maximally one pre-states is supported atm"
+            states.extend(pre)
+        return states
+
     def unwind(self, loc, errpre, maxk=None):
         """
         Unroll the loop maxk times - that is, unroll the loop until you hit 'loc'
@@ -918,7 +933,6 @@ class BSELF:
                 has_unknown = True
                 assert checker.problematic_states, "Unknown with no problematic paths?"
                 for p in checker.problematic_states:
-                    self.stats.killed_paths += 1
                     report_state(self.stats, p)
 
         if has_unknown:

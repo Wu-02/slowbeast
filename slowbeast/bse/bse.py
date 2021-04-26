@@ -251,10 +251,6 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 ), "Initial state has unresolved inputs"
                 return [state]
         return []
-        # prestates = []
-        # for r in ready:
-        #    prestates.extend(r.apply_postcondition(poststate))
-        # return prestates
 
     def precondition(self, bsectx: BSEContext) -> (Result, Optional[BSEState]):
         """ Compute precondition of the given BSEContext. """
