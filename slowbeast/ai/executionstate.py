@@ -38,7 +38,7 @@ class AbstractState(ExecutionState):
             raise RuntimeError("Use of uninitialized/unknown variable {0}".format(v))
         return value
 
-    def isfeasible(self):
+    def is_feasible(self):
         """
         Solve the PC and return True if it is sat. Handy in the cases
         when the state is constructed manually.

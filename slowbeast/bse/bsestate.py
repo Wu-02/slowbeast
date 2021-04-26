@@ -278,7 +278,7 @@ class BSEState(LazySEState):
             self.add_constraint(*self._memory_constraints())
             self.add_constraint(*self._init_memory_constraints(prestate))
 
-        if not self.isfeasible():
+        if not self.is_feasible():
             return []
         return [self]
 

@@ -35,7 +35,7 @@ class StatesSet:
         """ Create new states set from the given states """
 
         assert state is not None and isinstance(state, SEState)
-        # assert state.isfeasible(), "Infeasible state given"
+        # assert state.is_feasible(), "Infeasible state given"
         # NOTE: we want to be able to create infeasible states
         # (empty sets)
         self._state = state
@@ -153,7 +153,7 @@ class StatesSet:
 
     def is_empty(self):
         """ Check whether the set is empty. Involves a solver call """
-        return not self._state.isfeasible()
+        return not self._state.is_feasible()
 
     def contains(self, S):
         X = self.copy()

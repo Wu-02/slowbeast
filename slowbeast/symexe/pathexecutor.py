@@ -423,7 +423,7 @@ class CFGExecutor(SExecutor):
 
 #            if tmpr:
 #                tmpr.add_constraint(*newconstr)
-#                feas = tmpr.isfeasible()
+#                feas = tmpr.is_feasible()
 #                assert feas is not None, "Solver failure"
 #                if feas is True:
 #                    finalstates.append(tmpr)
