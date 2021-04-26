@@ -290,6 +290,15 @@ def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
     exprs = [e for e in exprs if not (e.is_concrete() and bool(e.value()))]
 
     if assumptions:
+        solver = IncrementalSolver()
+        solver.add(*assumptions)
+        # try to subsume the implied expressions
+        # assert solver.is_sat() is True # otherwise we'll subsume everything
+        exprs = [e for e in exprs if solver.try_is_sat(500, em.Not(e)) is not False]
+        r = solver.try_is_sat(1000, *exprs)
+        if r is not None:
+            return r
+
         # First try to rewrite the formula into simpler form
         expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions)
         A = []
