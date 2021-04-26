@@ -85,15 +85,15 @@ def overapprox(executor, s, E, target, L):
     # add relations
     for rel in get_const_cmp_relations(S.get_se_state()):
         ldbg("  Adding relation {0}", (rel,))
-       #on_some, on_all = L.check_set_inductivity(create_set(rel))
-       #if on_all:
-       #    res, _ = executor.check_loop_precondition(L, rel)
-       #    if res is Result.SAFE:
-       #        # store the other sequences for further processing
-       #        dbg("The relation is invariant!")
-       #        # FIXME: check that we do not have this invariant already
-       #        executor.add_invariant(L.header(), rel)
-       #        continue
+        # on_some, on_all = L.check_set_inductivity(create_set(rel))
+        # if on_all:
+        #    res, _ = executor.check_loop_precondition(L, rel)
+        #    if res is Result.SAFE:
+        #        # store the other sequences for further processing
+        #        dbg("The relation is invariant!")
+        #        # FIXME: check that we do not have this invariant already
+        #        executor.add_invariant(L.header(), rel)
+        #        continue
 
         S.intersect(rel)
         assert (
@@ -310,7 +310,9 @@ class BSELFChecker(BaseBSE):
         dbg_sec()
         if res is Result.SAFE:
             if self.options.add_unwind_invariants:
-                self.add_invariant(loc, complement(self.create_set(errpre)).as_assume_annotation())
+                self.add_invariant(
+                    loc, complement(self.create_set(errpre)).as_assume_annotation()
+                )
             print_stdout(f"Loop {loc} proved by unwinding", color="GREEN")
             return True
         elif res is Result.UNSAFE:
@@ -534,8 +536,7 @@ class BSELFChecker(BaseBSE):
             if yield_seq:
                 yield seq
 
-
-    def _last_k_iteration_paths(self, L, k = 0):
+    def _last_k_iteration_paths(self, L, k=0):
         """ Obtain the paths that correspond to the last k iterations of the loop """
         is_error_loc = L.cfa().is_err
         exits = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
@@ -571,7 +572,6 @@ class BSELFChecker(BaseBSE):
             if not tmp.is_empty():
                 sets.append(tmp)
         return sets
-
 
     def initial_sets_from_exits(self, E, L: LoopInfo):
         """
@@ -628,14 +628,14 @@ class BSELFChecker(BaseBSE):
         dbg("Checking inductive sets that we have")
         sets = []
         included_sets = []
-       #newisets = []
+        # newisets = []
         for I in isets:
             if intersection(I.I, E).is_empty():
                 sets.append(I.I)
                 if exit_sets and I.I.contains_any(*exit_sets):
                     included_sets.append(I.I)
-       #    else:
-       #        newisets.append(I)
+        #    else:
+        #        newisets.append(I)
         # self.inductive_sets[L.header()] = newisets
 
         # use the sets that include some of the sets created for exit sets
@@ -703,7 +703,7 @@ class BSELFChecker(BaseBSE):
         # a good length is at least 3 to make the relations to previous state
         # take effect. If we start creating starting inductive sets
         # from several states, the length could decrease to 2
-        #max_seq_len = max(3, 2 * len(L.paths()))
+        # max_seq_len = max(3, 2 * len(L.paths()))
         max_seq_len = 2 * len(L.paths())
         while True:
             print_stdout(

@@ -257,7 +257,9 @@ def get_const_subs_relations(state):
                         continue
                 if nexpr.isOr():
                     for c in nexpr.children():
-                        if state.is_sat(c): # only a part of the disjunction may be unsat in the state
+                        if state.is_sat(
+                            c
+                        ):  # only a part of the disjunction may be unsat in the state
                             yield AssertAnnotation(c, subs, EM)
                 else:
                     yield AssertAnnotation(nexpr, subs, EM)
