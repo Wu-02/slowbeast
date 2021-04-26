@@ -8,6 +8,7 @@ from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )
 from slowbeast.analysis.cfa import CFA
+from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.bse.memorymodel import BSEMemoryModel
 from slowbeast.kindse.naive.naivekindse import Result
@@ -38,7 +39,19 @@ class BSEPath:
     def __init__(self, *edges):
         # we keep the edges in reversed order to do efficient prepends
         # (= append in the reversed case)
-        self._edges = list(reversed(edges))
+        if edges:
+            if len(edges) == 1:
+                if isinstance(edges[0], CFA.Edge):
+                    self._edges = list(edges)
+                elif isinstance(edges[0], BSEPath):
+                    self._edges = edges[0]._edges.copy()
+                elif isinstance(edges[0], AnnotatedCFAPath):
+                    self._edges = list(reversed(edges[0]))
+                else:
+                    raise RuntimeError(f"Invalid ctor value: {edges}")
+            else:
+                assert all(map(lambda e: isinstance(e, CFA.Edge), edges)), edges
+                self._edges = list(reversed(edges))
         assert all(
             map(lambda x: x[1] == self[x[0]], enumerate(self))
         ), "Invalid iterators and getteres"
@@ -97,7 +110,7 @@ class BSEContext:
         loc_hits - number of hitting locations (usually just loop headers)
         """
         assert isinstance(errstate, (AssumeAnnotation, BSEState)), errstate
-        self.path = BSEPath(path) if isinstance(path, CFA.Edge) else path
+        self.path = BSEPath(path) if not isinstance(path, BSEPath) else path
         assert isinstance(self.path, BSEPath), self.path
         self.loc_hits = loc_hits or {}
         self.errorstate = errstate
