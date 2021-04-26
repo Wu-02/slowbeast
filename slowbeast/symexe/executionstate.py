@@ -99,12 +99,10 @@ class SEState(ExecutionState):
         if r is not None:
             return r
 
-        conj = self.expr_manager().conjunction
-        expr = conj(*e)
         r = try_solve_incrementally(self.constraints(), e, self.expr_manager())
         if r is not None:
             return r
-        return self._solver.is_sat(expr)
+        return self._solver.is_sat(self.expr_manager().conjunction(*e))
 
     def try_is_sat(self, timeout, *e):
         return self._solver.try_is_sat(timeout, *e)
