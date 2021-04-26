@@ -69,7 +69,7 @@ def get_var_diff_relations(state):
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.is_sat(expr, Ne(c, cval))
+            nonunique = state.try_is_sat(500, expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
                     simplify(EM.substitute(expr, (c, cval))), subs, EM
@@ -82,7 +82,7 @@ def get_var_diff_relations(state):
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = state.is_sat(expr, Ne(c, cval))
+            nonunique = state.try_is_sat(500, expr, Ne(c, cval))
             if nonunique is False:
                 yield AssertAnnotation(
                     simplify(EM.substitute(expr, (c, cval))), subs, EM
@@ -378,14 +378,14 @@ def get_var_relations(safe, prevsafe=None, only_eq=False):
         solver.add(expr)
         yield_rel = True
         for e in (ee.expr() for ee in toyield):
-            if solver.is_sat(Not(e)) is False:  # included in some previous relation
+            if solver.try_is_sat(300, Not(e)) is False:  # included in some previous relation
                 yield_rel = False
         solver.pop()
         if yield_rel:
             solver.push()
             solver.add(Not(expr))
             # remove relations included in this one
-            toyield = set(e for e in toyield if solver.is_sat(e.expr()))
+            toyield = set(e for e in toyield if solver.try_is_sat(300, e.expr()) is not False)
             solver.pop()
             toyield.add(rel)
 
