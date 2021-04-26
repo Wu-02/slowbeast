@@ -257,9 +257,8 @@ def get_const_subs_relations(state):
                         continue
                 if nexpr.isOr():
                     for c in nexpr.children():
-                        if state.is_sat(
-                            c
-                        ):  # only a part of the disjunction may be unsat in the state
+                        # only a part of the disjunction may be sat in the state
+                        if state.is_sat(c) is True:
                             yield AssertAnnotation(c, subs, EM)
                 else:
                     yield AssertAnnotation(nexpr, subs, EM)
@@ -353,20 +352,6 @@ def get_relations_to_prev_states(state, prev):
                         EM.Eq(EM.Rem(l, dval), EM.Rem(cval, dval)),
                     )
                 yield AssertAnnotation(expr, subs, EM)
-
-
-def get_safe_relations(safe, unsafe, prevsafe=None):
-    if not hasattr(safe, "__iter__"):
-        safe = (safe,)
-    for s in safe:
-        # get and filter out those relations that make the state safe
-        yield from get_var_diff_relations(s)
-        # yield from get_var_cmp_relations(s)
-
-        yield from get_const_cmp_relations(s)
-        if prevsafe:
-            yield from get_relations_to_prev_states(s, prevsafe)
-
 
 def _get_var_relations(safe, prevsafe=None):
     if not hasattr(safe, "__iter__"):

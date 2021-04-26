@@ -486,11 +486,10 @@ class BSELFChecker(BaseBSE):
                 S, unsafe
             ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
-        assumptions = create_set()
         yielded_seqs = []
         for rel in get_var_relations([S.get_se_state()], prevsafe=target):
             ldbg("  Using assumption {0}", (rel,))
-            assumptions.intersect(rel)
+            assumptions = create_set(rel)
             assert not intersection(
                 assumptions, S
             ).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"

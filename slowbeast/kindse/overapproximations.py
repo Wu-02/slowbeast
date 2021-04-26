@@ -811,7 +811,7 @@ def overapprox_set(
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     overapprox = LoopStateOverapproximation(S, executor, target, unsafe, L, EM)
-    overapprox.drop_disjuncts()
+    #overapprox.drop_disjuncts()
     overapprox.drop_clauses(assumptions)
 
     # NOTE: this works good alone sometimes
