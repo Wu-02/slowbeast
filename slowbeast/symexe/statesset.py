@@ -56,6 +56,10 @@ class StatesSet:
         """ NOTE: use carefully, only when you know what you do... """
         return self._state.constraints_obj().as_formula(self.expr_manager())
 
+    def rewrite_and_simplify(self):
+        self.reset_expr(self.as_expr().rewrite_and_simplify())
+        return self
+
     def as_assume_annotation(self):
         sd = state_to_description(self._state)
         return AssumeAnnotation(
@@ -74,6 +78,7 @@ class StatesSet:
         if expr is not None:
             C.add(expr)
         self._state.set_constraints(C)
+        return self
 
     def _unite(self, s):
         state = self._state
@@ -96,18 +101,23 @@ class StatesSet:
             assert newexpr.value() is True  # this is Or expr...
         state.set_constraints(C)
 
+    def model(self):
+        return self._state.model()
+
     def unite(self, *S):
         for s in S:
             self._unite(s)
+        return self
 
     def add(self, *S):
-        self.unite(S)
+        return self.unite(S)
 
     def intersect(self, s):
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
         state.add_constraint(expr)
+        return self
 
     def translate(self, S):
         """
@@ -122,6 +132,7 @@ class StatesSet:
         self._state = state
         newexpr = eval_state_description(state.executor(), state, selfsd)
         state.set_constraints(ConstraintsSet((newexpr,)))
+        return self
 
     def translated(self, S):
         """
@@ -143,6 +154,7 @@ class StatesSet:
         C = ConstraintsSet()
         C.add(expr)
         state.set_constraints(C)
+        return self
 
     def minus(self, s):
         state = self._state
@@ -150,6 +162,7 @@ class StatesSet:
         expr = eval_state_description(state.executor(), state, sd)
         EM = state.expr_manager()
         state.add_constraint(EM.Not(expr))
+        return self
 
     def is_empty(self):
         """ Check whether the set is empty. Involves a solver call """
