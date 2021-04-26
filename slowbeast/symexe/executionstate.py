@@ -99,10 +99,12 @@ class SEState(ExecutionState):
         if r is not None:
             return r
 
+        conj = self.expr_manager().conjunction
+        expr = conj(*e)
         r = try_solve_incrementally(self.constraints(), e, self.expr_manager())
         if r is not None:
             return r
-        return self._solver.is_sat(self.expr_manager().conjunction(*e))
+        return self._solver.is_sat(expr)
 
     def try_is_sat(self, timeout, *e):
         return self._solver.try_is_sat(timeout, *e)
@@ -112,18 +114,7 @@ class SEState(ExecutionState):
         Solve the PC and return True if it is sat. Handy in the cases
         when the state is constructed manually.
         """
-        C = self.constraints()
-        if not C:
-            return True
-        r = self._solver.try_is_sat(1000, *C)
-        if r is not None:
-            return r
-
-        em = self.expr_manager()
-        r = try_solve_incrementally([], C, em)
-        if r is not None:
-            return r
-        return self._solver.is_sat(em.conjunction(*C))
+        return self.is_sat(*self.constraints())
 
     def concretize(self, *e):
         return self._solver.concretize(self.constraints(), *e)

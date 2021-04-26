@@ -283,42 +283,22 @@ def _sort_subs(subs):
 
 
 def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
-    # check if we can evaluate some expression syntactically
-    for a in assumptions:
-        exprs = [em.substitute(e, (a, em.getTrue())) for e in exprs]
-    # filter out expressions that are 'true'
-    exprs = [e for e in exprs if not (e.is_concrete() and bool(e.value()))]
-
-    solver = IncrementalSolver()
-    solver.add(*assumptions)
     if assumptions:
-        # try to subsume the implied expressions
-        # assert solver.is_sat() is True # otherwise we'll subsume everything
-        exprs = [e for e in exprs if solver.try_is_sat(500, em.Not(e)) is not False]
-        r = solver.try_is_sat(1000, *exprs)
+        # First try to rewrite the formula into simpler form
+        expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions)
+        A = []
+        for i in range(len(assumptions)):
+            a = assumptions[i]
+            A.append(
+                a.rewrite_polynomials([x for n, x in enumerate(assumptions) if n != i])
+            )
+        assumptions = A
+        r = IncrementalSolver().try_is_sat(to1, *assumptions, expr1)
         if r is not None:
             return r
+        expr = em.conjunction(*assumptions, expr1)
     else:
-        # this will allow us to rewrite expressions
-        assumptions = exprs
-
-    # Now try to rewrite the formula into a simpler form
-    expr1 = em.conjunction(*exprs)
-    if not expr1.is_concrete():
-        expr1 = expr1.rewrite_polynomials(assumptions)
-    A = []
-    for i in range(len(assumptions)):
-        a = assumptions[i]
-        A.append(
-            a.rewrite_polynomials([x for n, x in enumerate(assumptions) if n != i])
-        )
-    assumptions = A
-    solver = IncrementalSolver()
-    solver.add(*assumptions)
-    r = solver.try_is_sat(to1, expr1)
-    if r is not None:
-        return r
-    expr = em.conjunction(*assumptions, expr1)
+        expr = em.conjunction(*assumptions, *exprs)
 
     ###
     # Now try abstractions
@@ -328,7 +308,7 @@ def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
         solver = IncrementalSolver()
         solver.add(rexpr.rewrite_and_simplify())
         for placeholder, e in _sort_subs(subs):
-            if solver.try_is_sat(to2) is False:
+            if solver.is_sat() is False:
                 return False
             solver.add(em.Eq(e, placeholder))
         # solve the un-abstracted expression
