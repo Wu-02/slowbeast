@@ -65,7 +65,7 @@ class Executor(PathExecutor):
         locannot = invariants.get(target) if invariants else None
         if locannot:
             assert all(
-                map(lambda a: not a.isAssert(), locannot)
+                map(lambda a: not a.is_assert(), locannot)
             ), f"An invariant is assertion: {locannot}"
             ready, tu = execannot(ready, locannot)
             nonready += tu

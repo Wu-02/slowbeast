@@ -24,13 +24,13 @@ class Annotation:
         assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
         self.type = ty
 
-    def isInstrs(self):
+    def is_instrs(self):
         return self.type == Annotation.INSTRS
 
-    def isAssume(self):
+    def is_assume(self):
         return self.type == Annotation.ASSUME
 
-    def isAssert(self):
+    def is_assert(self):
         return self.type == Annotation.ASSERT
 
 
@@ -89,7 +89,7 @@ class ExprAnnotation(Annotation):
     def substitutions(self):
         return self._sd.substitutions()
 
-    def getCannonical(self):
+    def get_cannonical(self):
         return self.cannonical
 
     def Not(self, EM):
@@ -131,7 +131,7 @@ class ExprAnnotation(Annotation):
             )
         )
         print(f"> expr: {self.expr()}")
-        print(f"> cannonical: {self.getCannonical()}")
+        print(f"> cannonical: {self.get_cannonical()}")
         print(
             "> substitutions: {0}".format(
                 ", ".join(
@@ -232,7 +232,7 @@ def execute_annotation_substitutions(executor, states, annot):
 def _execute_expr_annotation(executor, states, annot):
     states, nonready = execute_annotation_substitutions(executor, states, annot)
 
-    isassume = annot.isAssume()
+    isassume = annot.is_assume()
     ready = states
     states = []
     for s in ready:
@@ -243,7 +243,7 @@ def _execute_expr_annotation(executor, states, annot):
             if s:
                 states.append(s)
         else:
-            assert annot.isAssert()
+            assert annot.is_assert()
             tmp = executor.exec_assert_expr(s, expr)
             tr, tu = split_ready_states(tmp)
             states += tr
@@ -261,10 +261,10 @@ def execute_annotation(executor, states, annot):
     ldbgv("{0}", (annot,), verbose_lvl=3)
     # dbgv_sec(f"executing annotation:\n{annot}")
 
-    if annot.isInstrs():
+    if annot.is_instrs():
         states, nonready = _execute_instr_annotation(executor, states, annot)
     else:
-        assert annot.isAssume() or annot.isAssert()
+        assert annot.is_assume() or annot.is_assert()
         states, nonready = _execute_expr_annotation(executor, states, annot)
 
     # dbgv_sec()
