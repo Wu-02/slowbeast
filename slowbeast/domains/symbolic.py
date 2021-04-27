@@ -713,9 +713,7 @@ if _use_z3:
         Return a mapping from new symbols to replaced expressions.
         Note: performs formula rewritings before the replacement.
         """
-        if not exprs_from:
-            return expr_to
-
+        exprs_from = exprs_from or []
         try:
             re = Tactic("elim-term-ite")(_rewrite_sext(_desimplify_ext(expr_to)))
             assert len(re) == 1, re
@@ -736,9 +734,6 @@ if _use_z3:
                         P2.change_sign()
                         P1.add(P2)
                         simple_poly.append(P1)
-
-            if not simple_poly:
-                return expr_to
 
             # print('--------')
             # for p in simple_poly:
@@ -1006,7 +1001,7 @@ class Expr(Value):
         return Expr(expr, ty)
 
     def rewrite_polynomials(self, from_exprs):
-        expr = rewrite_polynomials(self.unwrap(), map(lambda x: x.unwrap(), from_exprs))
+        expr = rewrite_polynomials(self.unwrap(), map(lambda x: x.unwrap(), from_exprs) if from_exprs else None)
         if expr is None:
             return self
         return Expr(expr, self.type())

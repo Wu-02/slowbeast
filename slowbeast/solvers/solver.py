@@ -278,7 +278,7 @@ def _sort_subs(subs):
         yield (k, v)
 
 def _rewrite_poly(em, exprs, assumptions=None):
-    expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions or exprs)
+    expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions)
     if assumptions:
         A = []
         for i in range(len(assumptions)):
