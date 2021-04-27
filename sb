@@ -7,6 +7,7 @@ from shutil import rmtree
 from os.path import join as pathjoin
 from os.path import basename
 from subprocess import run
+from time import time, process_time
 
 from slowbeast.parsers.llvm.parser import Parser as LLVMParser
 from slowbeast.symexe.symbolicexecution import SEOptions
@@ -452,12 +453,17 @@ def main():
     if args.error_fn:
         opts.error_funs = args.error_fn.split(',')
 
+    walltime, cputime = time(), process_time()
     try:
         interpreter.run()
         print_stats(interpreter)
     except KeyboardInterrupt:
         print_stdout("Interrupted...")
         print_stats(interpreter)
+    finally:
+        wt = time()-walltime
+        ct = process_time()-cputime
+        print_stdout(f"wall-time: {wt}, cpu-time: {ct}", color="gray")
 
     exit(0)
 
