@@ -188,6 +188,10 @@ class Memory:
             ret = self._cs.get(v)
         return ret
 
+    def bound_globals(self):
+        """ Return the bound globals in this state """
+        return self._glob_bindings.items()
+
     def globals_list(self):
         """ Return the list of globals in this state """
         # return only list, so that we must get them through "get"

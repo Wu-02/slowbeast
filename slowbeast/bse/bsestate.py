@@ -117,22 +117,28 @@ class BSEState(LazySEState):
         Add constraints from matching input reads of zeroed globals.
         """
         M, em = self.memory, self.expr_manager()
-        R, get_obj = M._input_reads, initstate.memory.get_obj
+        IM = initstate.memory
+        R, get_obj = M._input_reads, IM.get_obj
         constraints = []
         # FIXME: we target globals, but we could in fact just try reading from initstate
         # to get, e.g., values of bytes from objects.
         # However, the problem is that symbolic offsets are not supported, so...
         for ptr, val in R.items():
             obj = ptr.object()
-            assert obj.is_concrete(), "Initial state has symbolic object"
-            if not obj.is_concrete():
-                continue
-            mo = get_obj(obj)
-            if mo is None:
-                continue
-            # we found zeroed global from which we read
-            if mo.is_global() and mo.is_zeroed():
-                constraints.append(em.Eq(val[0], ConcreteInt(0, val[0].bitwidth())))
+            # this can happen if we execute a path that does not contain all information
+            # to match all inputs. It is not a bug.
+            # assert obj.is_concrete(), f"Initial state has symbolic object:\n{self}"
+            if obj.is_concrete():
+                mo = get_obj(obj)
+                if mo is None:
+                    continue
+                # we found zeroed global from which we read
+                if mo.is_global() and mo.is_zeroed():
+                    constraints.append(em.Eq(val[0], ConcreteInt(0, val[0].bitwidth())))
+            else:
+                for g, ptr in ((g, ptr) for (g, ptr) in IM.bound_globals() if g.is_zeroed()):
+                    constraints.append(em.Or(em.Ne(obj, ptr.object()),
+                                             em.Eq(val[0], ConcreteInt(0, val[0].bitwidth()))))
         return constraints
 
     def _memory_constraints(self):
