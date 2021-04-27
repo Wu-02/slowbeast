@@ -9,7 +9,7 @@ from slowbeast.util.debugging import (
     dec_print_indent,
 )
 
-from slowbeast.symexe.statesset import intersection, union, complement
+from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
@@ -82,8 +82,7 @@ def _check_set(executor, S, L, target):
 
 
 def overapprox_state(executor, s, E, target, L):
-    create_set = executor.create_set
-    S = create_set(s)
+    S = s if isinstance(s, StatesSet) else executor.create_set(s)
 
     if not _check_set(executor, S, L, target):
         return
