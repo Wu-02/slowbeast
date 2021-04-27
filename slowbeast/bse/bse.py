@@ -246,9 +246,11 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         assert len(ready) <= 1, "We support only one pre-state"
         if ready:
             if state.join_prestate(ready[0], fromInit):
-                assert (
-                    not fromInit or not state.inputs()
-                ), "Initial state has unresolved inputs"
+                # This assertion must hold only if the execution was maximal
+                # - but that may not be tru
+               #assert (
+               #    not fromInit or not state.inputs()
+               #), f"Initial state has unresolved inputs: {state}"
                 return [state]
         return []
 
