@@ -76,10 +76,6 @@ if _use_z3:
                 raise KeyboardInterrupt
         return None
 
-    def is_sat(*args):
-        return _is_sat(Z3Solver(), None, *args)
-
-
 else:
     from pysmt.shortcuts import is_sat
 
@@ -189,7 +185,7 @@ class SymbolicSolver(SolverIntf):
             map(lambda x: is_false(x) or (x.is_concrete() and x.value() is False), e)
         ):
             return False
-        return is_sat(*(x.unwrap() for x in e if not x.is_concrete()))
+        return _is_sat(Z3Solver(), None, *(x.unwrap() for x in e if not x.is_concrete()))
 
     def try_is_sat(self, timeout, *e):
         if any(
