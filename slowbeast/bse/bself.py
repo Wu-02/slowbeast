@@ -116,17 +116,23 @@ def overapprox_state(executor, s, E, target, L):
 
 
 def _overapprox_with_assumptions(E, L, S, executor, s, target):
+    """
+    Infer a set of relations that hold in S and over-approximate the set
+    w.r.t. these relations.
+    """
+    create_set = executor.create_set
     # precise prestates of this state
-    prestates = executor._extend_one_step(L, S)
     R0 = set(get_var_relations([S.get_se_state()], prevsafe=target))
+    if not R0:
+        return
     yielded = False
+    prestates = executor._extend_one_step(L, S)
     if prestates:
         for p in prestates:
-            # FIXME: instead of getting relations, we could just check whether the relation
-            # FIXME: from R0 holds in 'p', it should be better, right?
-            R1 = set(get_var_relations([p], prevsafe=S))
-            # For each assumption that we can infer, try to overapproximate the set
-            rels =  R1.intersection(R0)
+            # check whether the relation from R0 holds in 'p'
+            # R1 = set(get_var_relations([p], prevsafe=S))
+            P =  create_set(p)
+            rels =  [r0 for r0 in R0 if not intersection(P, r0).is_empty()]
             yielded |= bool(rels)
             yield from _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target)
 
