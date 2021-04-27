@@ -531,34 +531,9 @@ class BSELFChecker(BaseBSE):
         assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
         EM = getGlobalExprManager()
 
-        # add relations
-        for rel in get_const_cmp_relations(S.get_se_state()):
-            ldbg("  Adding relation {0}", (rel,))
-            S.intersect(rel)
-            assert (
-                not S.is_empty()
-            ), f"Added realtion {rel} rendered the set infeasible\n{S}"
-            assert intersection(
-                S, unsafe
-            ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
-
         yielded_seqs = []
-        for rel in get_var_relations([S.get_se_state()], prevsafe=target):
-            ldbg("  Using assumption {0}", (rel,))
-            assumptions = create_set(rel)
-            assert not intersection(
-                assumptions, S
-            ).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
-            assert intersection(
-                assumptions, S, unsafe
-            ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
-
-            seq = InductiveSequence(
-                overapprox_set(
-                    self, EM, S, errs0.toassert(), target, assumptions, L
-                ).as_assert_annotation()
-            )
-
+        for A in overapprox_state(self, S, unsafe, S, L):
+            seq = InductiveSequence(A.as_assert_annotation())
             if is_seq_inductive(seq, self, L):
                 # check if seq is a subset of some previously yielded sequence
                 yield_seq = True
