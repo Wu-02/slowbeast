@@ -66,20 +66,26 @@ def _dump_inductive_sets(checker, loc, fn=dbg):
         fn(" ∅", color="dark_green")
 
 
-def overapprox(executor, s, E, target, L):
-    create_set = executor.create_set
-    S = create_set(s)
-
+def _check_set(executor, S, L, target):
     # FIXME: this is a workaround until we support nondet() calls in lazy execution
     r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
     if r.errors:
         dbg(
             "FIXME: pre-image is not inductive cause we do not support nondets() in lazy execution yet"
         )
-        return
+        return False
     # --- workaround ends here...
     if S.is_empty():
         dbg("Starting sequence is empty")
+        return False
+    return True
+
+
+def overapprox(executor, s, E, target, L):
+    create_set = executor.create_set
+    S = create_set(s)
+
+    if not _check_set(executor, S, L, target):
         return
 
     # add relations
@@ -103,6 +109,7 @@ def overapprox(executor, s, E, target, L):
             S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
+    # For each assumption that we can infer, try to overapproximate the set
     for rel in get_var_relations([S.get_se_state()], prevsafe=target):
         ldbg("  Using assumption {0}", (rel,))
         assumptions = create_set(rel)
@@ -367,6 +374,18 @@ class BSELFChecker(BaseBSE):
             for A in extended:
                 yield A
 
+    def _extend_one_step(self, L, target):
+        r = check_paths(self, L.paths(), post=target)
+        if not r.ready:  # cannot step into this frame...
+            dbg("Infeasible frame...")
+            # FIXME: remove this sequence from INV sets
+            return None
+        for s in r.killed():
+            dbg("Killed a state")
+            report_state(self.stats, s)
+            return None
+        return r.ready
+
     def _extend_seq(self, seq, E, L):
         """
         Compute the precondition for reaching S and overapproximate it
@@ -379,18 +398,13 @@ class BSELFChecker(BaseBSE):
             target = self.create_set(seq[-1].toassert())
         else:
             target = self.create_set(seq.toannotation(True))
-        r = check_paths(self, L.paths(), post=target)
-        if not r.ready:  # cannot step into this frame...
-            dbg("Infeasible frame...")
-            # FIXME: remove this sequence from INV sets
-            return
-        for s in r.killed():
-            dbg("Killed a state")
-            report_state(self.stats, s)
+
+        prestates = self._extend_one_step(L, target)
+        if not prestates:
             return
 
         toyield = []
-        for s in r.ready:
+        for s in prestates:
             if not intersection(E, s).is_empty():
                 dbg("Pre-image is not safe...")
                 # FIXME: should we do the intersection with complement of E?
