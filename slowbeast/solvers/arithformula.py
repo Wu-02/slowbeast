@@ -266,6 +266,8 @@ class Polynomial:
         return str(self.monomials)
 
     def __str__(self):
+        if not self.monomials:
+            return "0"
         return " + ".join(map(lambda x: f"{x[1]}·{x[0]}", self.monomials.items()))
 
 
@@ -463,6 +465,7 @@ class ArithFormula:
         if ty == ArithFormula.NOT:
             assert len(self._children) == 1, self._children
             if self._children[0]._ty == ArithFormula.EQ:
+                assert len(self._children[0]._children) >= 2, self._children
                 return "({0})".format("≠".join(map(str, self._children[0]._children)))
             return f"¬({self._children[0]})"
         elif ty > ArithFormula.MT_VALUES:
