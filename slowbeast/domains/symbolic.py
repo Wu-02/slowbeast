@@ -529,6 +529,7 @@ if _use_z3:
                 return next(dc) != next(dc)
             else:
                 assert not is_app_of(expr, Z3_OP_CONCAT), expr
+                return expr.decl()(*(_desimplify_ext(c) for c in expr.children()))
                 return expr
 
     def _rewrite_sext(expr):
