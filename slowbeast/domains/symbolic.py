@@ -681,17 +681,23 @@ if _use_z3:
             if formula.is_eq():
                 chld = formula.children()
                 if len(chld) == 2 and chld[0].is_poly() and chld[1].is_poly():
+                    # move all elements on one side
                     chld[1][0].change_sign()
                     chld[0][0].add(chld[1][0])
-                    changed |= self._simplify_polynomial_formula(chld[0])
-                    formula.replace_with(
-                        BVFormula(
+                    chld[0].replace_with(BVFormula.create(bv_const(0, chld[0][0].bitwidth())))
+                    # now we know that chld[0] = 0
+                    # create this new formula now, because we will change
+                    # the children in a bit
+                    new_formula = BVFormula(
                             ArithFormula.EQ,
                             None,
                             chld[0],
                             BVFormula.create(bv_const(0, chld[0][0].bitwidth())),
                         )
-                    )
+                    # we can replace chld[0] for 0 in the whole formula
+                    changed |= self._simplify_polynomial_formula(chld[0])
+                    # put back our assumption formula
+                    formula.replace_with(new_formula)
                 else:
                     for c in formula.children():
                         changed |= self.simplify_formula(c)
