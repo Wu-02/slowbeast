@@ -751,6 +751,31 @@ if _use_z3:
         except ValueError:
             return None
 
+    def eqs_from_ineqs(expr):
+        ###
+        # check for equalities from inequalities:
+        # Not(1 + x <= c) && x <= c  ==> x=c
+        clauses = set(expr.children())
+        eqs = []
+        for clause in clauses:
+            if is_app_of(clause, Z3_OP_SLEQ):
+                chld = clause.children()
+                nc = Not(1 + chld[0] <= chld[1])
+                if nc in clauses:
+                    eqs.append((clause, nc, chld[0] == chld[1]))
+                else:
+                    nc = Not(chld[0] + 1 <= chld[1])
+                    if nc in clauses:
+                        eqs.append((clause, nc, chld[0] == chld[1]))
+
+        if eqs:
+            for c, nc, e in eqs:
+                clauses.remove(c)
+                clauses.remove(nc)
+                clauses.add(e)
+            return And(*clauses)
+        return None
+
     def replace_arith_ops(expr):
         """
         Replace arithmetical operations with a fresh uninterpreted symbol.
@@ -979,7 +1004,13 @@ class Expr(Value):
     def rewrite_polynomials(self, from_exprs):
         expr = rewrite_polynomials(self.unwrap(), map(lambda x: x.unwrap(), from_exprs))
         if expr is None:
-            return None
+            return self
+        return Expr(expr, self.type())
+
+    def eqs_from_ineqs(self):
+        expr = eqs_from_ineqs(self.unwrap())
+        if expr is None:
+            return self
         return Expr(expr, self.type())
 
     def replace_arith_ops(self):

@@ -281,6 +281,15 @@ def _sort_subs(subs):
     for k, v in V:
         yield (k, v)
 
+def _rewrite_poly(em, exprs, assumptions=None):
+    expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions or exprs)
+    if assumptions:
+        A = []
+        for i in range(len(assumptions)):
+            a = assumptions[i]
+            A.append(a.rewrite_polynomials(assumptions))
+        return em.conjunction(*A, expr1)
+    return em.conjunction(expr1)
 
 def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
     # check if we can evaluate some expression syntactically
@@ -299,28 +308,13 @@ def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
         if r is not None:
             return r
 
-        # First try to rewrite the formula into a simpler form
-        expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions)
+    # First try to rewrite the formula into a simpler form
+    expr = _rewrite_poly(em, exprs, assumptions)
+    expreq = expr.eqs_from_ineqs()
+    if expreq is expr:
+        expr = expreq
     else:
-        expr1 = em.conjunction(*exprs).rewrite_polynomials(exprs)
-
-    if expr1 is None:
-        expr = em.conjunction(*assumptions, *exprs)
-    else:
-        A = []
-        for i in range(len(assumptions)):
-            a = assumptions[i]
-            ra = a.rewrite_polynomials(assumptions)
-            if ra is None:
-                # we failed
-                A = assumptions
-                break
-            A.append(ra)
-        assumptions = A
-        r = IncrementalSolver().try_is_sat(to1, *assumptions, expr1)
-        if r is not None:
-            return r
-        expr = em.conjunction(*assumptions, expr1)
+        expr = _rewrite_poly(em, list(expr.children()))
 
     ###
     # Now try abstractions
