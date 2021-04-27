@@ -310,6 +310,9 @@ def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
 
     # First try to rewrite the formula into a simpler form
     expr = _rewrite_poly(em, exprs, assumptions)
+    if expr.is_concrete():
+        return bool(expr.value())
+
     expreq = expr.eqs_from_ineqs()
     if expreq is expr:
         expr = expreq
