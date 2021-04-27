@@ -315,6 +315,19 @@ def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
     else:
         expr = _rewrite_poly(em, list(expr.children()))
 
+    solver = IncrementalSolver()
+    for bw in (2, 4, 8, 16):
+        solver.add(expr.reduce_arith_bitwidth(bw).rewrite_and_simplify())
+        r = solver.try_is_sat(bw*500)
+        if r is False: return False
+        elif r is None:
+            break
+        assert r is True
+        # the reduce formula is sat. Try to check the original formula
+        # with the knowledge about the reduced formula stored in the solver
+        r = solver.try_is_sat(bw*500, expr)
+        if r is not None:
+            return r
     ###
     # Now try abstractions
     #

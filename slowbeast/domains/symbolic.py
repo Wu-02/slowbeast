@@ -46,6 +46,7 @@ if _use_z3:
         Z3_OP_EQ,
         Z3_OP_BMUL,
         Z3_OP_BADD,
+        Z3_OP_BSUB,
         Z3_OP_ZERO_EXT,
         Z3_OP_SIGN_EXT,
         Z3_OP_CONCAT,
@@ -828,6 +829,41 @@ if _use_z3:
         except ValueError:
             return None
 
+
+    def _rdw(expr, bw):
+        oldbw = expr.size()
+        return BVZExt(oldbw - bw, BVExtract(bw-1, 0, expr))
+
+    def _reduce_arith_bitwidth(expr, bw):
+        if is_const(expr):
+            return expr
+        chld = expr.children()
+        if is_app_of(expr, Z3_OP_BADD):
+            return simplify(
+                   _rdw(_reduce_arith_bitwidth(chld[0], bw), bw) +\
+                   _rdw(_reduce_arith_bitwidth(chld[1], bw), bw))
+        elif is_app_of(expr, Z3_OP_BSUB):
+            return simplify(
+                    _rdw(_reduce_arith_bitwidth(chld[0], bw), bw) -\
+                    _rdw(_reduce_arith_bitwidth(chld[1], bw), bw))
+        elif is_app_of(expr, Z3_OP_BMUL):
+            return simplify(
+                    _rdw(_reduce_arith_bitwidth(chld[0], bw), bw) *\
+                    _rdw(_reduce_arith_bitwidth(chld[1], bw), bw))
+        else:
+            red = (_reduce_arith_bitwidth(c, bw) for c in chld)
+            if is_and(expr): return And(*red)
+            elif is_or(expr): return Or(*red)
+            return expr.decl()(*red)
+
+
+    def reduce_arith_bitwidth(expr, bw):
+        #return _reduce_arith_bitwidth(expr, bw, variables)
+        try:
+            return _reduce_arith_bitwidth(expr, bw)
+        except ValueError:
+            return None
+
     def to_cnf(*exprs):
         g = Goal()
         g.add(*exprs)
@@ -994,6 +1030,20 @@ class Expr(Value):
         \return None on failure (e.g., unsupported expression)
         """
         expr = reduce_eq_bitwidth(self.unwrap(), bw)
+        if expr is None:
+            return None
+        ty = solver_to_sb_type(expr)
+        assert ty.bitwidth() <= bw
+        return Expr(expr, ty)
+
+    def reduce_arith_bitwidth(self, bw):
+        """
+        Reduce the maximal bitwith of arithmetic operations to 'bw'
+        (return new expression). The resulting expression is
+        overapproximation of the original one.
+        \return None on failure (e.g., unsupported expression)
+        """
+        expr = reduce_arith_bitwidth(self.unwrap(), bw)
         if expr is None:
             return None
         ty = solver_to_sb_type(expr)
