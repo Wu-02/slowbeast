@@ -81,7 +81,7 @@ def _check_set(executor, S, L, target):
     return True
 
 
-def overapprox(executor, s, E, target, L):
+def overapprox_state(executor, s, E, target, L):
     create_set = executor.create_set
     S = create_set(s)
 
@@ -109,8 +109,35 @@ def overapprox(executor, s, E, target, L):
             S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
-    # For each assumption that we can infer, try to overapproximate the set
-    for rel in get_var_relations([S.get_se_state()], prevsafe=target):
+    yield from _overapprox_with_assumptions(E, L, S, executor, s, target)
+
+    # try without any relation
+    assert not S.is_empty(), "Infeasible states given to overapproximate"
+    yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
+
+
+def _overapprox_with_assumptions(E, L, S, executor, s, target):
+    # precise prestates of this state
+    prestates = executor._extend_one_step(L, S)
+    R0 = set(get_var_relations([S.get_se_state()], prevsafe=target))
+    yielded = False
+    if prestates:
+        for p in prestates:
+            # FIXME: instead of getting relations, we could just check whether the relation
+            # FIXME: from R0 holds in 'p', it should be better, right?
+            R1 = set(get_var_relations([p], prevsafe=S))
+            # For each assumption that we can infer, try to overapproximate the set
+            rels =  R1.intersection(R0)
+            yielded |= bool(rels)
+            yield from _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target)
+
+    if not yielded:
+        yield from _yield_overapprox_with_assumption(E, L, S, executor, R0, s, target)
+
+
+def _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target):
+    create_set = executor.create_set
+    for rel in rels:
         ldbg("  Using assumption {0}", (rel,))
         assumptions = create_set(rel)
         assert not intersection(
@@ -119,13 +146,8 @@ def overapprox(executor, s, E, target, L):
         assert intersection(
             assumptions, S, E
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
-
         assert not S.is_empty(), "Infeasible states given to overapproximate"
         yield overapprox_set(executor, s.expr_manager(), S, E, target, assumptions, L)
-
-    # try without any relation
-    assert not S.is_empty(), "Infeasible states given to overapproximate"
-    yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
 
 
 def is_seq_inductive(seq, executor, L: LoopInfo):
@@ -409,7 +431,7 @@ class BSELFChecker(BaseBSE):
                 dbg("Pre-image is not safe...")
                 # FIXME: should we do the intersection with complement of E?
                 continue
-            for A in overapprox(self, s, E, target, L):
+            for A in overapprox_state(self, s, E, target, L):
                 if A is None:
                     dbg("Overapproximation failed...")
                     continue
