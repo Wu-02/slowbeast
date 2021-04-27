@@ -401,6 +401,8 @@ if _use_z3:
             # return BVFormula(_expr_op_to_formula_op(expr), None,
             #                 *(BVFormula.create(c) for c in chlds))
             if not is_bv(expr):
+                if is_bool(expr):
+                    return BVFormula(ArithFormula.BOOLEAN, expr)
                 return None  # it is no bitvector, we cannot do a polynom from it
             return BVFormula(ArithFormula.POLYNOM, BVPolynomial.create(expr))
 
@@ -413,6 +415,8 @@ if _use_z3:
         def expr(self):
             "Convert this object into expression for solver"
             ty = self._ty
+            if ty == ArithFormula.BOOLEAN:
+                return self._value
             if ty == ArithFormula.POLYNOM:
                 return self._value.expr()
             if ty == ArithFormula.AND:

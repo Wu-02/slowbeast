@@ -298,6 +298,7 @@ class ArithFormula:
     # variables, constants
     MT_VALUES = 100
     POLYNOM = 101
+    BOOLEAN = 102
 
     def __init__(self, ty, value, *operands):
         assert value is None or ty > ArithFormula.MT_VALUES
@@ -401,6 +402,12 @@ class ArithFormula:
 
     def is_poly(self):
         return self._ty == ArithFormula.POLYNOM
+
+    def is_bool(self):
+        return self._ty == ArithFormula.BOOLEAN
+
+    def is_value(self):
+        return self._ty == ArithFormula.MT_VALUES
 
     def substitute_inplace(self, *subs):
         """ Return True if the formula gets modified """
