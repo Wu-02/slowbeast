@@ -443,7 +443,7 @@ class BSELFChecker(BaseBSE):
             seqs = []
             if loop_hit_no == 1:
                 dbg("... (getting sis for the 1st hit of the loop)")
-                Is = self.initial_sets_from_last_iters(E, L)
+                Is = self.initial_sets_from_exits(E, L)
                 assert Is, "Failed getting sequence for first visit"
                 if not Is:
                     Is = self.initial_sets_from_is(E, L)
@@ -581,24 +581,6 @@ class BSELFChecker(BaseBSE):
         assert sets
         return sets
 
-    def _initial_sets_from_iters(self, E, L: LoopInfo):
-        """
-        Strengthen the initial sequence through obtaining the
-        last safe iteration of the loop.
-        """
-        is_error_loc = L.cfa().is_err
-        create_set = self.create_set
-        # execute the safe path that avoids error and then jumps out of the loop
-        # and also only paths that jump out of the loop, so that the set is inductive
-        cE = complement(E)
-        tmpsets = self._last_k_iterations_states(L, k = 0)
-        sets = []
-        for tmp in tmpsets:
-            tmp.intersect(cE)
-            if not tmp.is_empty():
-                sets.append(tmp)
-        return sets
-
     def _initial_sets_from_exits(self, E, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
@@ -659,23 +641,6 @@ class BSELFChecker(BaseBSE):
             return sets
 
         return self._match_included_indsets(isets, sets)
-
-    def initial_sets_from_last_iters(self, E, L: LoopInfo):
-        """
-        Strengthen the initial sequence through obtaining the
-        last safe iteration of the loop.
-        """
-
-        # execute the safe path that avoids error and then jumps out of the loop
-        # and also only paths that jump out of the loop, so that the set is inductive
-        sets = self._initial_sets_from_iters(E, L)
-        # try to match the sets with inductive sets that we already have
-        isets = self.inductive_sets.get(L.header())
-        if isets is None:
-            return sets
-
-        return self._match_included_indsets(isets, sets)
-
 
     def initial_sets_from_is(self, E, L):
         # get the inductive sets that we have created for this header.
