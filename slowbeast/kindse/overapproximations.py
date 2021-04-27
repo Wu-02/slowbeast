@@ -804,7 +804,8 @@ def overapprox_set(
         ), f"{S} -> {target}"
 
     dbg(f"Overapproximating {S}", color="dark_blue")
-    dbg(f"  with unsafe states: {unsafe}", color="dark_blue")
+    dbg(f"  with assumptions {assumptions}", color="dark_blue")
+    dbg(f"  and unsafe states: {unsafe}", color="dark_blue")
 
     expr = S.as_expr()
     if expr.is_concrete():

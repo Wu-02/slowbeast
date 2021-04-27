@@ -465,7 +465,9 @@ class BSELFChecker(BaseBSE):
             seqs = [seq0]
 
         ### reduce and over-approximate the initial sequence
-        if seqs:
+        # note: do that only on later than 1st iteration, because for the 1st iteration,
+        # we already did that
+        if seqs and loop_hit_no != 1:
             tmp = []
             print_stdout(
                 f"Got {len(seqs)} starting inductive sequence(s)", color="dark_blue"
@@ -586,18 +588,40 @@ class BSELFChecker(BaseBSE):
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
         """
-        is_error_loc = L.cfa().is_err
         create_set = self.create_set
         # execute the safe path that avoids error and then jumps out of the loop
         # and also only paths that jump out of the loop, so that the set is inductive
-        cE = complement(E)
-        tmpsets = self._last_k_iterations_states(L, k = 0)
-        sets = []
-        for tmp in tmpsets:
-            tmp.intersect(cE)
-            if not tmp.is_empty():
-                sets.append(tmp)
-        return sets
+        precondition = lambda s: self.unwind_iteration(L, s)
+        rels = lambda s, l=None: set(list(get_const_cmp_relations(s)) + list(get_var_relations(s, l)))
+        approx = lambda s, a=None:\
+        overapprox_set(
+            self, getGlobalExprManager(), s, E, s, a, L
+        )
+
+        S0 = self._initial_sets_from_exits(E, L)
+        if not S0:
+            return None
+        sets = set()
+        for s0 in S0:
+            R0 = rels(s0.get_se_state())
+            for s1 in precondition(s0.get_se_state()):
+                R1 = rels(s1, s0)
+                for s2 in precondition(s1):
+                    R2 = rels(s2, create_set(s1))
+                    for rel in R1.intersection(R2):
+                        if not intersection(s0, rel).is_empty():
+                            A = approx(intersection(s0, *R0), create_set(rel))
+                            if not A.is_empty():
+                                sets.add(A)
+                            else:
+                                A = approx(intersection(s0, *R0))
+                                if not A.is_empty():
+                                    sets.add(A)
+                                else:
+                                    sets.add(approx(s0))
+        if sets:
+            return [approx(union(*sets))] if len(sets) > 1 else list(sets)
+        return [approx(s0) for s0 in S0]
 
     def _initial_sets_from_exits(self, E, L: LoopInfo):
         """
