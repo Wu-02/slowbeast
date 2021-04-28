@@ -312,22 +312,22 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
     if expr.is_concrete():
         return bool(expr.value())
 
-    # FIXME try reduced bitwidth with propagating back models instead of this
     solver = IncrementalSolver()
-    for bw in (1, 2, 4, 8, 16):
-        # FIXME: handle signed/unsinged and negations correctly in
-        # reduce_arith_bitwidth and use that
-        solver.add(expr.reduce_eq_bitwidth(bw).rewrite_and_simplify())
-        r = solver.try_is_sat(bw*500)
-        if r is False: return False
-        elif r is None:
-            break
-        assert r is True
-        # the reduced subformulas are sat. Try to check the original formula
-        # with the knowledge about the reduced formulas stored in the solver
-        r = solver.try_is_sat(bw*500, expr)
-        if r is not None:
-            return r
+    # FIXME try reduced bitwidth with propagating back models instead of this
+   #for bw in (1, 2, 4, 8, 16):
+   #    # FIXME: handle signed/unsinged and negations correctly in
+   #    # reduce_arith_bitwidth and use that
+   #    solver.add(expr.reduce_eq_bitwidth(bw).rewrite_and_simplify())
+   #    r = solver.try_is_sat(bw*500)
+   #    if r is False: return False
+   #    elif r is None:
+   #        break
+   #    assert r is True
+   #    # the reduced subformulas are sat. Try to check the original formula
+   #    # with the knowledge about the reduced formulas stored in the solver
+   #    r = solver.try_is_sat(bw*500, expr)
+   #    if r is not None:
+   #        return r
     ###
     # Now try abstractions
     #

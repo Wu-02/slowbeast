@@ -768,27 +768,33 @@ if _use_z3:
                 nc = Not(chld[0] + 1 <= chld[1])
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
+                    continue
                 nc = (chld[1] <= chld[0])
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
+                    continue
                 nc = (chld[0] >= chld[1])
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
+                    continue
             if is_app_of(clause, Z3_OP_ULEQ):
                 chld = clause.children()
-                nc = Not(ULE(1 + chld[0], chld[1]))
+                nc = Not(BVULE(1 + chld[0], chld[1]))
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
                     continue
-                nc = Not(ULE(chld[0] + 1, chld[1]))
+                nc = Not(BVULE(chld[0] + 1, chld[1]))
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
-                nc = UGE(chld[0], chld[1])
+                    continue
+                nc = BVUGE(chld[0], chld[1])
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
-                nc = ULE(chld[1], chld[0])
+                    continue
+                nc = BVULE(chld[1], chld[0])
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
+                    continue
         return eqs
 
     def eqs_from_ineqs(expr):
@@ -838,13 +844,9 @@ if _use_z3:
             # is underapproximation
             return expr
         else:
-            red = (_reduce_eq_bitwidth(c, bw) for c in chld)
-            if is_and(expr):
-                return mk_and(*red)
-            elif is_or(expr):
-                return mk_or(*red)
-            # elif is_add(expr): return Sum(*red)
-            # elif is_mul(expr): return Product(*red)
+            red = [_reduce_eq_bitwidth(c, bw) for c in chld]
+            if is_and(expr): return mk_and(*red)
+            elif is_or(expr): return mk_or(*red)
             else:
                 return expr.decl()(*red)
 
