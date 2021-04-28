@@ -759,6 +759,8 @@ if _use_z3:
         clauses = set(expr.children())
         eqs = []
         for clause in clauses:
+            # FIXME: Add greate-equal and check also for other patters
+            # (a <= b & 1 + a > b), ...
             if is_app_of(clause, Z3_OP_SLEQ):
                 chld = clause.children()
                 nc = Not(1 + chld[0] <= chld[1])
@@ -777,6 +779,7 @@ if _use_z3:
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
                     continue
+
             if is_app_of(clause, Z3_OP_ULEQ):
                 chld = clause.children()
                 nc = Not(BVULE(1 + chld[0], chld[1]))
