@@ -751,7 +751,8 @@ if _use_z3:
         except ValueError:
             return None
 
-    def eqs_from_ineqs(expr):
+    
+    def get_eqs_from_ineqs(expr):
         ###
         # check for equalities from inequalities:
         # Not(1 + x <= c) && x <= c  ==> x=c
@@ -763,12 +764,40 @@ if _use_z3:
                 nc = Not(1 + chld[0] <= chld[1])
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
-                else:
-                    nc = Not(chld[0] + 1 <= chld[1])
-                    if nc in clauses:
-                        eqs.append((clause, nc, chld[0] == chld[1]))
+                    continue
+                nc = Not(chld[0] + 1 <= chld[1])
+                if nc in clauses:
+                    eqs.append((clause, nc, chld[0] == chld[1]))
+                nc = (chld[1] <= chld[0])
+                if nc in clauses:
+                    eqs.append((clause, nc, chld[0] == chld[1]))
+                nc = (chld[0] >= chld[1])
+                if nc in clauses:
+                    eqs.append((clause, nc, chld[0] == chld[1]))
+            if is_app_of(clause, Z3_OP_ULEQ):
+                chld = clause.children()
+                nc = Not(ULE(1 + chld[0], chld[1]))
+                if nc in clauses:
+                    eqs.append((clause, nc, chld[0] == chld[1]))
+                    continue
+                nc = Not(ULE(chld[0] + 1, chld[1]))
+                if nc in clauses:
+                    eqs.append((clause, nc, chld[0] == chld[1]))
+                nc = UGE(chld[0], chld[1])
+                if nc in clauses:
+                    eqs.append((clause, nc, chld[0] == chld[1]))
+                nc = ULE(chld[1], chld[0])
+                if nc in clauses:
+                    eqs.append((clause, nc, chld[0] == chld[1]))
+        return eqs
 
+    def eqs_from_ineqs(expr):
+        ###
+        # check for equalities from inequalities:
+        # Not(1 + x <= c) && x <= c  ==> x=c
+        eqs = get_eqs_from_ineqs(expr)
         if eqs:
+            clauses = set(expr.children())
             for c, nc, e in eqs:
                 clauses.remove(c)
                 clauses.remove(nc)
@@ -1046,6 +1075,13 @@ class Expr(Value):
         if expr is None:
             return self
         return Expr(expr, self.type())
+
+    def infer_equalities(self):
+        # get equalities  from comparison
+        eqs = set(e for c1, c2, e in get_eqs_from_ineqs(self.unwrap()))
+        # get equalities right from the formula
+        eqs.update(e for e in self.unwrap().children() if is_eq(e))
+        return [Expr(expr, solver_to_sb_type(expr)) for expr in eqs]
 
     def eqs_from_ineqs(self):
         expr = eqs_from_ineqs(self.unwrap())

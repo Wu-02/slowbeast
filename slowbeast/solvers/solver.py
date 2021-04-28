@@ -287,7 +287,7 @@ def _rewrite_poly(em, exprs, assumptions=None):
         return em.conjunction(*A, expr1)
     return em.conjunction(expr1)
 
-def solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
+def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
     # check if we can evaluate some expression syntactically
     for a in assumptions:
         exprs = [em.substitute(e, (a, em.getTrue())) for e in exprs]
@@ -306,20 +306,17 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
 
     # First try to rewrite the formula into a simpler form
     expr = _rewrite_poly(em, exprs, assumptions)
+    eqs = expr.infer_equalities()
+    if eqs:
+        expr = _rewrite_poly(em, list(expr.children()), eqs)
     if expr.is_concrete():
         return bool(expr.value())
 
-    expreq = expr.eqs_from_ineqs()
-    if expreq is expr:
-        expr = expreq
-    else:
-        expr = _rewrite_poly(em, list(expr.children()))
-
     # FIXME try reduced bitwidth with propagating back models instead of this
     solver = IncrementalSolver()
-    for bw in (1, 2, 4, 8, 16, 24):
-        # FIXME: handle signed/unsinged correctly in reduce_arith_bitwidth
-        # and use that
+    for bw in (1, 2, 4, 8, 16):
+        # FIXME: handle signed/unsinged and negations correctly in
+        # reduce_arith_bitwidth and use that
         solver.add(expr.reduce_eq_bitwidth(bw).rewrite_and_simplify())
         r = solver.try_is_sat(bw*500)
         if r is False: return False
@@ -338,8 +335,10 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
     if rexpr:
         solver.push()
         solver.add(rexpr.rewrite_and_simplify())
+        n = 0
         for placeholder, e in _sort_subs(subs):
-            if solver.is_sat() is False:
+            n += 1
+            if solver.try_is_sat(n*to2) is False:
                 return False
             solver.add(em.Eq(e, placeholder))
         solver.pop()
