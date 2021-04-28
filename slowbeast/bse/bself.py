@@ -432,6 +432,14 @@ class BSELFChecker(BaseBSE):
 
         prestates = self._extend_one_step(L, target)
         if not prestates:
+            dbg("Cannot step into seqence...")
+            # this one can be removed from inductive sets
+            # xxx: target clearly describes a set of states that are
+            # unreachable in the state space. Couldn't we use it somehow?
+            loc = L.header()
+            IS = self.inductive_sets.get(loc)
+            if IS:
+                self.inductive_sets[loc] = [I for I in IS if not target.contains(I.I)]
             return
 
         toyield = []
@@ -495,8 +503,6 @@ class BSELFChecker(BaseBSE):
             else:
                 dbg("... (joining with previously unfinished sequences)")
                 Is = self.initial_sets_from_is(E, L)
-                if Is is None:
-                    Is = self.initial_sets_from_exits(E, L)
             if Is:
                 for s in (
                     InductiveSequence(I.as_assert_annotation(), None) for I in Is
