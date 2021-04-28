@@ -34,40 +34,44 @@ def _iter_read_pairs(reads):
             yield (ptr1, val1), (ptr2, val2)
 
 
-def _same_ptrs(em, ptr1, ptr2):
-    Eq, And = em.Eq, em.And
+def compare_reads(em, ptr1, ptr2, val1, val2):
+    """ Create an expression that says: if the pointers are the same, the values must be the same """
+    Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
+
     # pointers are equal?
-    return em.simplify(
+    ptreq = em.simplify(
         And(
             Eq(ptr1.object(), ptr2.object()),
             Eq(ptr1.offset(), ptr2.offset()),
         )
     )
-def _same_values(em, val1, val2):
-    """ Create an expression that says: if the pointers are the same, the values must be the same """
-    Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
+
+    # if we know that not already here, bail out
+    if ptreq.is_concrete() and ptreq.value() is False:
+        return em.simplify(em.getTrue())
 
     val1ptr, val2ptr = val1.is_pointer(), val2.is_pointer()
 
     if val1ptr and val2ptr:
-        return And(
+        expr = And(
             Eq(val1.object(), val2.object()),
             Eq(val1.offset(), val2.offset()),
         )
     elif val1ptr and not val2ptr:
         if val2.is_concrete() and val2.value() == 0:  # comparison to null
-            return And(Eq(val1.object(), val2), Eq(val1.offset(), val2))
+            expr = And(Eq(val1.object(), val2), Eq(val1.offset(), val2))
         else:
             raise NotImplementedError("Comparison of symbolic addreses not implemented")
     elif val2ptr and not val1ptr:
         if val1.is_concrete() and val1.value() == 0:  # comparison to null
-            return And(Eq(val2.object(), val1), Eq(val2.offset(), val1))
+            expr = And(Eq(val2.object(), val1), Eq(val2.offset(), val1))
         else:
+            print(ptr1, ptr2, val1, val2)
             raise NotImplementedError("Comparison of symbolic addreses not implemented")
     else:  # non is are pointer
-        return Eq(val1, val2)
+        expr = Eq(val1, val2)
 
-    raise NotImplementedError(f"Cannot compare values {val1} {val2}")
+    return Or(Not(ptreq), expr)
 
 
 class BSEState(LazySEState):
@@ -138,43 +142,21 @@ class BSEState(LazySEState):
         return constraints
 
     def _memory_constraints(self):
+        M = self.memory._reads
+        reads = list(M.items())
         constraints = []
         em = self.expr_manager()
-        for iptr, ipair in self.memory._input_reads.items():
-            ival, isize = ipair
-            # set of reads that may be the same read ordered from the
-            # oldest to the newest
-            matches = []
-            for ptr, val in reversed(self.memory._reads):
-                # we assume that such reads do not read the same memory
-                # TODO: this assumption may not be right
-                if ival is val or val.bytewidth() != isize:
-                        continue
-                # if pointers are surely the same, we may bail out
-                if ptr == iptr:
-                    matches.append((ptr, iptr, val, ival))
-                    break
-                # else if the pointers may be the same, add them to match
-                if self.is_sat(_same_ptrs(em, ptr, iptr)) is True:
-                    matches.append((ptr, iptr, val, ival))
-
-            # go from the newest read to the oldest -- every older read
-            # overwrites the newer read, which we must build into an expression
-            expr = None
-            Ite = em.Ite
-            for ptr, iptr, val, ival in reversed(matches):
-                if expr is None:
-                    expr = em.Or(em.Not(_same_ptrs(em, ptr, iptr)),
-                                 _same_values(em, val, ival))
-                else:
-                    expr = Ite(_same_ptrs(em, ptr, iptr),
-                               _same_values(em, val, ival),
-                               expr)
-
-            if expr:
-                if expr.is_concrete() and bool(expr.value()):
-                    continue
-                constraints.append(expr)
+        for r1, r2 in _iter_read_pairs(reads):
+            ptr1, val1 = r1
+            ptr2, val2 = r2
+            # we assume that such reads do not read the same memory
+            # TODO: this assumption may not be right
+            if val1 is val2 or val1.bitwidth() != val2.bitwidth():
+                continue
+            c = compare_reads(em, ptr1, ptr2, val1, val2)
+            if c.is_concrete() and bool(c.value()):
+                continue
+            constraints.append(c)
         return constraints
 
     def apply_postcondition(self, postcondition):
@@ -257,11 +239,17 @@ class BSEState(LazySEState):
             new_repl = tmp
 
     def _replace_value_in_memory(self, new_repl, newval, substitute, val):
-        # FIXME: remove reads that are for sure overwritten
-        # to not to carry them with us all the time
-        self.memory._reads = [
-            (_subst_val(substitute, cptr, (val, newval)),
-             _subst_val(substitute, cval, (val, newval))) for cptr, cval in self.memory._reads]
+        UP = self.memory._reads
+        nUP = {}
+        for cptr, cval in UP.items():
+            nptr = _subst_val(substitute, cptr, (val, newval))
+            nval = _subst_val(substitute, cval, (val, newval))
+
+            curval = nUP.get(nptr)
+            if curval:
+                new_repl.append((curval, nval))
+            nUP[nptr] = nval
+        self.memory._reads = nUP
 
         UP = self.memory._input_reads
         nUP = {}
@@ -279,7 +267,7 @@ class BSEState(LazySEState):
         symbols = set(
             s for e in self.constraints() for s in e.symbols() if not e.is_concrete()
         )
-        for ptr, val in self.memory._reads:
+        for ptr, val in self.memory._reads.items():
             symbols.update(ptr.symbols())
             symbols.update(val.symbols())
         for ptr, val in self.memory._input_reads.items():
@@ -340,7 +328,9 @@ class BSEState(LazySEState):
                     self.memory._input_reads.pop(ptr)
 
         ### copy the data from pre-state
-        self.memory._reads = prestate.memory._reads + self.memory._reads
+        for k, v in prestate.memory._reads.items():
+            if k not in self.memory._reads:
+                self.memory._reads[k] = v
         ireads = self.memory._input_reads
         self.memory._input_reads = prestate.memory._input_reads.copy()
         for k, v in ireads.items():
@@ -403,7 +393,7 @@ class BSEState(LazySEState):
             )
         if self.memory._reads:
             s += "\n" + "\n".join(
-                f"<- L({p.as_value()})={x}" for p, x in self.memory._reads
+                f"<- L({p.as_value()})={x}" for p, x in self.memory._reads.items()
             )
         if self._inputs:
             s += "\n" + "\n".join(

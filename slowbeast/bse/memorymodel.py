@@ -23,8 +23,7 @@ class BSEMemory(SEMemory):
     def __init__(self):
         super().__init__()
         # output state of memory
-        # xxx: rename to writes?
-        self._reads = []
+        self._reads = {}
         self._input_reads = {}
 
     def _copy_to(self, new):
@@ -33,20 +32,16 @@ class BSEMemory(SEMemory):
         new._input_reads = self._input_reads.copy()
         return new
 
-    def _try_read(self, ptr):
-        for p, v in reversed(self._reads):
-            if p == ptr:
-                return v
-        v = self._input_reads.get(ptr)
-        if v is not None:
-            return v[0]
-        return None
-
     def read_symbolic_ptr(self, state, toOp, fromOp, bitsnum=None):
         raise NotImplementedError("Not implemented yet")
 
+    # val = _nondet_value(state.solver().fresh_value, toOp, bitsnum)
+    # state.create_nondet(toOp, val)
+    # state.set(toOp, val)
+    # self._reads[fromOp] = val
+
     def _symbolic_read(self, state, ptr, valinst, bytesNum):
-        val = self._try_read(ptr)
+        val = self._reads.get(ptr)
         if val:
             if val.bytewidth() != bytesNum:
                 return None, MemError(
@@ -57,6 +52,7 @@ class BSEMemory(SEMemory):
         if not ptr.object().is_concrete() or not ptr.offset().is_concrete():
             val = _nondet_value(state.solver().fresh_value, valinst, bytesNum * 8)
             state.create_nondet(valinst, val)
+            self._reads[ptr] = val
             self._input_reads[ptr] = (val, bytesNum)
             return val, None
         # a read of a value from a concrete pointer
@@ -73,7 +69,7 @@ class BSEMemory(SEMemory):
         return None, MemError(MemError.UNINIT_READ, f"Read of uninitialized memory")
 
     def read(self, ptr, bytesNum):
-        v = self._try_read(ptr)
+        v = self._reads.get(ptr)
         if v is None:
             if ptr.is_concrete():  # this happens only in the initial state
                 mo = self.get_obj(ptr.object())
@@ -96,7 +92,7 @@ class BSEMemory(SEMemory):
         # self._reads[toOp] = value
 
     def symbolic_write(self, ptr, value):
-        self._reads.append((ptr, value))
+        self._reads[ptr] = value
 
     def dump(self, stream=stdout):
         stream.write("-- Global objects:\n")
@@ -110,10 +106,10 @@ class BSEMemory(SEMemory):
             o.dump(stream)
         stream.write("-- Reads:\n")
         if self._reads:
-            for p, x in self._reads:
+            for p, x in self._reads.items():
                 stream.write(f"L({p.as_value()})={x}\n")
         stream.write("-- Input reads:\n")
-        if self._input_reads:
+        if self._reads:
             for p, x in self._input_reads.items():
                 stream.write(f"L({p.as_value()})={x}\n")
         stream.write("-- Call stack:\n")
