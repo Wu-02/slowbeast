@@ -832,26 +832,17 @@ if _use_z3:
 
     def _rdw(expr, bw):
         oldbw = expr.size()
+        if oldbw <= bw:
+            return expr
         return BVZExt(oldbw - bw, BVExtract(bw-1, 0, expr))
 
     def _reduce_arith_bitwidth(expr, bw):
-        if is_const(expr):
-            return expr
-        chld = expr.children()
-        if is_app_of(expr, Z3_OP_BADD):
-            return simplify(
-                   _rdw(_reduce_arith_bitwidth(chld[0], bw), bw) +\
-                   _rdw(_reduce_arith_bitwidth(chld[1], bw), bw))
-        elif is_app_of(expr, Z3_OP_BSUB):
-            return simplify(
-                    _rdw(_reduce_arith_bitwidth(chld[0], bw), bw) -\
-                    _rdw(_reduce_arith_bitwidth(chld[1], bw), bw))
-        elif is_app_of(expr, Z3_OP_BMUL):
-            return simplify(
-                    _rdw(_reduce_arith_bitwidth(chld[0], bw), bw) *\
-                    _rdw(_reduce_arith_bitwidth(chld[1], bw), bw))
+        if is_bv(expr):
+            return _rdw(expr, bw)
+           #oldbw = expr.size()
+           #return BVExtract(bw-1, 0, expr) if oldbw > bw else expr
         else:
-            red = (_reduce_arith_bitwidth(c, bw) for c in chld)
+            red = (_reduce_arith_bitwidth(c, bw) for c in expr.children())
             if is_and(expr): return And(*red)
             elif is_or(expr): return Or(*red)
             return expr.decl()(*red)

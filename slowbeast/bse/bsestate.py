@@ -6,7 +6,7 @@ from slowbeast.domains.pointer import Pointer
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.util.debugging import ldbgv, print_stdout
-from slowbeast.solvers.solver import try_solve_incrementally
+from slowbeast.solvers.solver import solve_incrementally
 
 
 def _subst_val(substitute, val, subs):
@@ -381,12 +381,9 @@ class BSEState(LazySEState):
         r = self._solver.try_is_sat(500, *self.constraints(), *e)
         if r is not None:
             return r
-        r = try_solve_incrementally(
+        return solve_incrementally(
             self.constraints(), e, self.expr_manager(), 2000, 500
         )
-        if r is None:
-            return True
-        return r
 
     def __repr__(self):
         s = f"BSEState [{self.get_id()}]"

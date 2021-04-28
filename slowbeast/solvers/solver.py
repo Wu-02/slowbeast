@@ -287,7 +287,7 @@ def _rewrite_poly(em, exprs, assumptions=None):
         return em.conjunction(*A, expr1)
     return em.conjunction(expr1)
 
-def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
+def solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
     # check if we can evaluate some expression syntactically
     for a in assumptions:
         exprs = [em.substitute(e, (a, em.getTrue())) for e in exprs]
@@ -315,16 +315,19 @@ def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
     else:
         expr = _rewrite_poly(em, list(expr.children()))
 
+    # FIXME try reduced bitwidth with propagating back models instead of this
     solver = IncrementalSolver()
-    for bw in (2, 4, 8, 16):
-        solver.add(expr.reduce_arith_bitwidth(bw).rewrite_and_simplify())
+    for bw in (1, 2, 4, 8, 16, 24):
+        # FIXME: handle signed/unsinged correctly in reduce_arith_bitwidth
+        # and use that
+        solver.add(expr.reduce_eq_bitwidth(bw).rewrite_and_simplify())
         r = solver.try_is_sat(bw*500)
         if r is False: return False
         elif r is None:
             break
         assert r is True
-        # the reduce formula is sat. Try to check the original formula
-        # with the knowledge about the reduced formula stored in the solver
+        # the reduced subformulas are sat. Try to check the original formula
+        # with the knowledge about the reduced formulas stored in the solver
         r = solver.try_is_sat(bw*500, expr)
         if r is not None:
             return r
@@ -333,13 +336,12 @@ def try_solve_incrementally(assumptions, exprs, em, to1=3000, to2=1000):
     #
     rexpr, subs = expr.replace_arith_ops()
     if rexpr:
-        solver = IncrementalSolver()
+        solver.push()
         solver.add(rexpr.rewrite_and_simplify())
         for placeholder, e in _sort_subs(subs):
             if solver.is_sat() is False:
                 return False
             solver.add(em.Eq(e, placeholder))
-        # solve the un-abstracted expression
-        return solver.try_is_sat(to2)
-    # FIXME try reduced bitwidth and propagating back models
-    return None
+        solver.pop()
+    # fall-back to solving the un-abstracted expression
+    return solver.is_sat(expr)

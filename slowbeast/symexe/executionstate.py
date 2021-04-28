@@ -2,7 +2,7 @@ from slowbeast.core.executionstate import ExecutionState
 from slowbeast.util.debugging import warn, ldbgv
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
-from slowbeast.solvers.solver import try_solve_incrementally
+from slowbeast.solvers.solver import solve_incrementally
 from copy import copy
 from sys import stdout
 
@@ -99,10 +99,7 @@ class SEState(ExecutionState):
         if r is not None:
             return r
 
-        r = try_solve_incrementally(self.constraints(), e, self.expr_manager())
-        if r is not None:
-            return r
-        return self._solver.is_sat(self.expr_manager().conjunction(*e))
+        return solve_incrementally(self.constraints(), e, self.expr_manager())
 
     def try_is_sat(self, timeout, *e):
         return self._solver.try_is_sat(timeout, *self.constraints(), *e)
@@ -120,10 +117,7 @@ class SEState(ExecutionState):
             return r
 
         em = self.expr_manager()
-        r = try_solve_incrementally([], C, em)
-        if r is not None:
-            return r
-        return self._solver.is_sat(em.conjunction(*C))
+        return solve_incrementally([], C, em)
 
     def concretize(self, *e):
         return self._solver.concretize(self.constraints(), *e)
