@@ -55,6 +55,11 @@ def read_bytes(values, offval, size, bts, zeroed):
         # FIXME hack
         val._type = Bytes(val.bytewidth())
     else:
+        if offval + bts >= len(values):
+            return None, MemError(MemError.UNINIT_READ,
+                                  "Read of {bts} bytes on offset {offval} "
+                                  "from object with {len(values)} initialized "
+                                  "values.")
         if not all(values[i] for i in range(offval, offval + bts)):
             return None, MemError(MemError.UNINIT_READ, "Read of uninitialized byte")
         c = offval + bts - 1
