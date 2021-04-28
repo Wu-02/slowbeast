@@ -278,7 +278,10 @@ def _sort_subs(subs):
         yield (k, v)
 
 def _rewrite_poly(em, exprs, assumptions=None):
-    expr1 = em.conjunction(*exprs).rewrite_polynomials(assumptions)
+    expr = em.conjunction(*exprs)
+    if expr.is_concrete():
+        return expr
+    expr1 = expr.rewrite_polynomials(assumptions)
     if assumptions:
         A = []
         for i in range(len(assumptions)):
@@ -301,6 +304,8 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
 
     # First try to rewrite the formula into a simpler form
     expr = _rewrite_poly(em, exprs, assumptions)
+    if expr.is_concrete():
+        return bool(expr.value())
     eqs = expr.infer_equalities()
     if eqs:
         expr = _rewrite_poly(em, list(expr.children()), eqs)
