@@ -756,6 +756,8 @@ if _use_z3:
         ###
         # check for equalities from inequalities:
         # Not(1 + x <= c) && x <= c  ==> x=c
+
+        # NOTE: requires expr in CNF
         clauses = set(expr.children())
         eqs = []
         for clause in clauses:
@@ -1082,14 +1084,15 @@ class Expr(Value):
         return Expr(expr, self.type())
 
     def infer_equalities(self):
+        cnf = self.to_cnf().unwrap() # we need clauses
         # get equalities  from comparison
-        eqs = set(e for c1, c2, e in get_eqs_from_ineqs(self.unwrap()))
+        eqs = set(e for c1, c2, e in get_eqs_from_ineqs(cnf))
         # get equalities right from the formula
-        eqs.update(e for e in self.unwrap().children() if is_eq(e))
+        eqs.update(e for e in cnf.children() if is_eq(e))
         return [Expr(expr, solver_to_sb_type(expr)) for expr in eqs]
 
     def eqs_from_ineqs(self):
-        expr = eqs_from_ineqs(self.unwrap())
+        expr = eqs_from_ineqs(self.to_cnf().unwrap())
         if expr is None:
             return self
         return Expr(expr, self.type())

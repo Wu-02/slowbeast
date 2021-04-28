@@ -288,7 +288,7 @@ def _rewrite_poly(em, exprs, assumptions=None):
             a = assumptions[i]
             A.append(a.rewrite_polynomials(assumptions))
         return em.conjunction(*A, expr1)
-    return em.conjunction(expr1)
+    return expr1
 
 def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
     # check if we can evaluate some expression syntactically
@@ -306,14 +306,17 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
     expr = _rewrite_poly(em, exprs, assumptions)
     if expr.is_concrete():
         return bool(expr.value())
-    eqs = expr.infer_equalities()
+    exprcnf = expr.to_cnf()
+    eqs = exprcnf.infer_equalities()
     if eqs:
-        expr = _rewrite_poly(em, list(expr.children()), eqs)
+        expr = _rewrite_poly(em, list(exprcnf.children()), eqs)
         if not expr.is_concrete():
-            exprs, r = _remove_implied(eqs, em, expr.children())
+            exprs, r = _remove_implied(eqs, em, expr.to_cnf().children())
             if r is not None:
                 return r
             expr = em.conjunction(*exprs, *eqs)
+    # else: keep the last expr that we had
+
     if expr.is_concrete():
         return bool(expr.value())
 
