@@ -295,12 +295,7 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
     exprs = [e for e in exprs if not (e.is_concrete() and bool(e.value()))]
 
     if assumptions:
-        solver = IncrementalSolver()
-        solver.add(*assumptions)
-        # try to subsume the implied expressions
-        # assert solver.is_sat() is True # otherwise we'll subsume everything
-        exprs = [e for e in exprs if solver.try_is_sat(500, em.Not(e)) is not False]
-        r = solver.try_is_sat(1000, *exprs)
+        exprs, r = _remove_implied(assumptions, em, exprs)
         if r is not None:
             return r
 
@@ -309,10 +304,18 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
     eqs = expr.infer_equalities()
     if eqs:
         expr = _rewrite_poly(em, list(expr.children()), eqs)
+        if not expr.is_concrete():
+            exprs, r = _remove_implied(eqs, em, expr.children())
+            if r is not None:
+                return r
+            expr = em.conjunction(*exprs, *eqs)
     if expr.is_concrete():
         return bool(expr.value())
 
+
+    # FIXME: transfer state from _remove_implied
     solver = IncrementalSolver()
+
     # FIXME try reduced bitwidth with propagating back models instead of this
    #for bw in (1, 2, 4, 8, 16):
    #    # FIXME: handle signed/unsinged and negations correctly in
@@ -344,3 +347,19 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
         solver.pop()
     # fall-back to solving the un-abstracted expression
     return solver.is_sat(expr)
+
+
+def _remove_implied(assumptions, em, exprs):
+    solver = IncrementalSolver()
+    solver.add(*assumptions)
+    # check the assumpitons - if we are able to check them on their own,
+    r = solver.try_is_sat(1000)
+    if r is False:
+        return [em.getFalse()], False
+    # we're good and can continue -- the solver has built a state for faster solving now
+
+    # try to subsume the implied expressions
+    # assert solver.is_sat() is True # otherwise we'll subsume everything
+    exprs = [e for e in exprs if solver.try_is_sat(500, em.Not(e)) is not False]
+    r = solver.try_is_sat(1000, *exprs)
+    return exprs, r
