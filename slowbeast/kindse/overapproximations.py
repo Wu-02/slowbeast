@@ -452,7 +452,10 @@ class LoopStateOverapproximation:
 
     def commit(self):
         S = self.goal
-        S.reset_expr(self.expr_mgr.conjunction(*self.clauses).rewrite_and_simplify())
+        expr = self.expr_mgr.conjunction(*self.clauses)
+        if not expr.is_concrete():
+            expr = expr.rewrite_and_simplify()
+        S.reset_expr(expr)
         return S
 
     def overapproximate(self):
