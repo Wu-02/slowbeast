@@ -491,7 +491,10 @@ class BSELFChecker(BaseBSE):
         seq0 = InductiveSequence(S.as_assert_annotation(), None)
         if S.is_empty():
             return None, errs0
-        if not is_seq_inductive(seq0, self, L):
+        # FIXME: we do not do complements right now as that allows
+        # also inductive sets with array variables that we cannot handle
+        # (e.g., string-2-false.c test). This is a work-around for now.
+        if True or not is_seq_inductive(seq0, self, L):
             dbg("... (complement not inductive)")
             seqs = []
             if loop_hit_no == 1:
@@ -507,10 +510,11 @@ class BSELFChecker(BaseBSE):
                 for s in (
                     InductiveSequence(I.as_assert_annotation(), None) for I in Is
                 ):
-                    dbg("... (got first IS)")
-                    # should be inductive from construction
-                    assert is_seq_inductive(s, self, L), f"seq is not inductive: {s}"
-                    seqs.append(s)
+                    # should be inductive from construction - if it does not contain array variables
+                    # assert is_seq_inductive(s, self, L), f"seq is not inductive: {s}"
+                    if is_seq_inductive(s, self, L):
+                        dbg("... (got first IS)")
+                        seqs.append(s)
         else:
             dbg("... (complement is inductive)")
             seqs = [seq0]
