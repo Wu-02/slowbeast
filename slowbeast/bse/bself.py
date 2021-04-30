@@ -126,7 +126,7 @@ def _overapprox_with_assumptions(E, L, S, executor, s, target):
     if not R0:
         return
     yielded = False
-    prestates = executor._extend_one_step(L, S)
+    prestates = None #executor._extend_one_step(L, S)
     if prestates:
         Rc = set(get_const_cmp_relations(S.get_se_state()))
         for p in prestates:
