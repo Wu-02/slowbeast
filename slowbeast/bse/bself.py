@@ -357,20 +357,22 @@ class BSELFChecker(BaseBSE):
         unsafe = [errpre]
 
         # first try to unroll it in the case the loop is easy to verify
-        maxk = 1  # unroll the loop only once
-        dbg_sec(f"Unwinding the loop {maxk} steps")
-        res = self.unwind(loc, errpre, maxk=maxk)
-        dbg_sec()
-        if res is Result.SAFE:
-            if self.options.add_unwind_invariants:
-                self.add_invariant(
-                    loc, complement(self.create_set(errpre)).as_assume_annotation()
-                )
-            print_stdout(f"Loop {loc} proved by unwinding", color="GREEN")
-            return True
-        elif res is Result.UNSAFE:
-            self.no_sum_loops.add(loc)
-            return False
+        if loop_hit_no == 1:
+            maxk = 3  # unroll the loop only once
+            dbg_sec(f"Unwinding the loop {maxk} steps")
+            # FIXME: use unwind_iteration
+            res = self.unwind(loc, errpre, maxk=maxk)
+            dbg_sec()
+            if res is Result.SAFE:
+                if self.options.add_unwind_invariants:
+                    self.add_invariant(
+                        loc, complement(self.create_set(errpre)).as_assume_annotation()
+                    )
+                print_stdout(f"Loop {loc} proved by unwinding", color="GREEN")
+                return True
+            elif res is Result.UNSAFE:
+                self.no_sum_loops.add(loc)
+                return False
 
         L = self.get_loop(loc)
         if L is None:
