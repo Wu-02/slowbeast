@@ -302,3 +302,52 @@ class StronglyConnectedComponents:
         # TODO: make the functions use directly the methods
         edges = {l: [succ.target() for succ in l.successors()] for l in G.locations()}
         yield from strongly_connected_components_iterative(G.locations(), edges)
+
+class SCCCondensation:
+    class SCC:
+        def __init__(self, nodes):
+            assert len(nodes) >= 1
+            self.nodes = nodes
+            self._successors = set()
+            self._predecessors = set()
+
+        def successors(self):
+            return self._successors
+
+        def predecessors(self):
+            return self._predecessors
+
+        def has_successors(self):
+            return len(self._successors) > 0
+
+        def is_trivial(self):
+            return len(self.nodes) <= 1
+
+    def _add_edges(self):
+        for scc in self.sccs:
+            for n in scc.nodes:
+                for s in n.successors():
+                    t = self._node_to_scc[s.target()]
+                    scc._successors.add(t)
+                    t._predecessors.add(scc)
+
+    def __init__(self, G):
+        """ G - Directed graph, either CFG or CFA """
+
+        self._graph = G
+        self._node_to_scc = {}
+        self.sccs = []
+        for scc in StronglyConnectedComponents(G):
+            S = SCCCondensation.SCC(scc)
+            self.sccs.append(S)
+            for n in scc:
+                assert self._node_to_scc.get(n) is None
+                self._node_to_scc[n] = S
+        self._add_edges()
+
+    def roots(self):
+        return [s for s in self.sccs if not s.predecessors()]
+
+    def get(self, n):
+        return self._node_to_scc[n]
+
