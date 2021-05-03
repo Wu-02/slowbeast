@@ -10,10 +10,7 @@ from slowbeast.solvers.solver import getGlobalExprManager
 
 class InductiveSequence:
     """
-    A path that sumarizes several paths into
-    a sequence of sets of states such that
-    the or of this sequence is inductive on a
-    given location.
+    A sequence of states that are inductive towards each other.
     """
 
     class Frame:
