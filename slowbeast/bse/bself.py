@@ -162,6 +162,10 @@ def _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target):
 def is_seq_inductive(seq, executor, L: LoopInfo):
     return L.set_is_inductive(seq.as_set())
 
+def is_set_inductive(S, executor, L: LoopInfo):
+    return L.set_is_inductive(S)
+
+
 
 class BSELFChecker(BaseBSE):
     """
@@ -506,14 +510,12 @@ class BSELFChecker(BaseBSE):
                 dbg("... (joining with previously unfinished sequences)")
                 Is = self.initial_sets_from_is(E, L)
             if Is:
-                for s in (
-                    InductiveSequence(I) for I in Is
-                ):
+                for s in Is:
                     # should be inductive from construction - if it does not contain array variables
                     # assert is_seq_inductive(s, self, L), f"seq is not inductive: {s}"
-                    if is_seq_inductive(s, self, L):
+                    if is_set_inductive(s, self, L):
                         dbg("... (got first IS)")
-                        seqs.append(s)
+                        seqs.append(InductiveSequence(s))
         else:
             dbg("... (complement is inductive)")
             seqs = [seq0]
@@ -545,19 +547,17 @@ class BSELFChecker(BaseBSE):
 
         yielded_seqs = []
         for A in overapprox_state(self, S, unsafe, S, L):
-            seq = InductiveSequence(A)
-            if is_seq_inductive(seq, self, L):
+            if is_set_inductive(A, self, L):
                 # check if seq is a subset of some previously yielded sequence
                 yield_seq = True
-                seqa = seq.as_assume_annotation()
                 for s in yielded_seqs:
-                    if s.contains(seqa):
+                    if s.contains(A):
                         # seq is useless...
                         yield_seq = False
                         break
                 if yield_seq:
-                    yielded_seqs.append(create_set(seqa))
-                    yield seq
+                    yielded_seqs.append(A)
+                    yield InductiveSequence(A)
 
         # try without relations
         seq = InductiveSequence(
@@ -569,9 +569,8 @@ class BSELFChecker(BaseBSE):
         if is_seq_inductive(seq, self, L):
             # check if seq is a subset of some previously yielded sequence
             yield_seq = True
-            seqa = seq.as_assume_annotation()
             for s in yielded_seqs:
-                if s.contains(seqa):
+                if s.contains(seq.as_set()):
                     # seq is useless...
                     yield_seq = False
                     break
