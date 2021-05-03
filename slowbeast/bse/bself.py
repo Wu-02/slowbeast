@@ -358,8 +358,8 @@ class BSELFChecker(BaseBSE):
 
         # first try to unroll it in the case the loop is easy to verify
         if loop_hit_no == 1:
-            maxk = 3  # unroll the loop only once
-            dbg_sec(f"Unwinding the loop {maxk} steps")
+            maxk = 2  # unroll the loop only once
+            dbg_sec(f"Unwinding the loop {maxk} iterations")
             # FIXME: use unwind_iteration
             res = self.unwind(loc, errpre, maxk=maxk)
             dbg_sec()
