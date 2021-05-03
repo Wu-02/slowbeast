@@ -627,7 +627,7 @@ class BSELFChecker(BaseBSE):
             tmp.intersect(cE)
             if not tmp.is_empty():
                 sets.append(tmp)
-        return [union(*sets)]
+        return sets
 
     def _match_included_indsets(self, isets, sets):
         create_set = self.create_set
