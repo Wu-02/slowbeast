@@ -766,9 +766,14 @@ class BSELFChecker(BaseBSE):
         max_seq_len = 2 * len(L.paths())
         while True:
             print_stdout(
-                f"Got {len(sequences)} abstract path(s) of loop " f"{loc}",
+                f"Got {len(sequences)} abstract path(s) of loop {loc}",
                 color="dark_blue",
             )
+
+            # store the sequences for further re-use
+            for seq in sequences:
+                self.add_inductive_set(loc, seq.toannotation(True))
+
             # FIXME: check that all the sequences together cover the input paths
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
             for n, seq in enumerate(sequences):
@@ -777,12 +782,6 @@ class BSELFChecker(BaseBSE):
                 # FIXME: cache CTI's to perform fast checks of non-inductivness.
                 res, _ = self.check_loop_precondition(L, S)
                 if res is Result.SAFE:
-                    # store the other sequences for further processing
-                    for i, oseq in enumerate(sequences):
-                        if i == n:
-                            continue
-                        self.add_inductive_set(loc, oseq.toannotation(True))
-
                     # add the current sequence as invariant
                     self.add_invariant(loc, seq.toannotation(False))
                     return True
@@ -804,7 +803,6 @@ class BSELFChecker(BaseBSE):
 
                 if len(seq) >= max_seq_len:
                     dbg("Give up extending the sequence, it is too long")
-                    self.add_inductive_set(loc, seq.toannotation(True))
                     continue
 
                 # FIXME: we usually need seq[-1] as annotation, or not?
