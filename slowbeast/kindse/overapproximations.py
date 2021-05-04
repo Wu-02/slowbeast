@@ -813,7 +813,7 @@ def overapprox_set(
 
     expr = S.as_expr()
     if expr.is_concrete():
-        return InductiveSequence.Frame(S.as_assert_annotation(), None)
+        return S
 
     overapprox = LoopStateOverapproximation(S, executor, target, unsafe, L, EM)
     # overapprox.drop_disjuncts()
@@ -822,7 +822,7 @@ def overapprox_set(
     # NOTE: this works good alone sometimes
     if drop_only:
         S = overapprox.commit()
-        return InductiveSequence.Frame(S.as_assert_annotation(), None)
+        return S
 
     overapprox.overapproximate()
 
