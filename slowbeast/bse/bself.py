@@ -865,20 +865,17 @@ class BSELFChecker(BaseBSE):
                     # check whether we are not told to give up when hitting this loop this time
                     loc_hits = bsectx.loc_hits
                     lnm = loc_hits[fl] = loc_hits.get(fl, 0) + 1
-                    mlh = self._max_loop_hits
-                    if mlh and lnm > mlh:
-                        dbg("Hit limit of visits to a loop in this context")
-                        return Result.UNKNOWN, pre
-
                     if fl not in self.no_sum_loops:
                         if self.handle_loop(fl, pre, lnm):
                             dbg(
                                 f"Path with loop {fl} proved safe",
                                 color="dark_green",
                             )
-                        else:
-                            self.extend_state(bsectx, pre)
-                        continue
+                            continue # we're done with this path
+                    mlh = self._max_loop_hits
+                    if mlh and lnm >= mlh:
+                        dbg("Hit limit of visits to a loop in this context")
+                        return Result.UNKNOWN, pre
             self.extend_state(bsectx, pre)
 
         raise RuntimeError("Unreachable")
