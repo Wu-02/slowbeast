@@ -445,14 +445,15 @@ class BSELFChecker(BaseBSE):
             loc = L.header()
             IS = self.inductive_sets.get(loc)
             if IS:
-                self.inductive_sets[loc] = [I for I in IS if not target.contains(I.I)]
+                tmp = seq.as_set()
+                self.inductive_sets[loc] = [I for I in IS if not tmp.contains(I.I)]
             return
 
         toyield = []
         for s in prestates:
             if not intersection(E, s).is_empty():
                 dbg("Pre-image is not safe...")
-                # FIXME: should we do the intersection with complement of E?
+                # TODO: should we try the intersection with complement of E?
                 continue
             for A in overapprox_state(self, s, E, target, L):
                 if A is None:
@@ -464,7 +465,7 @@ class BSELFChecker(BaseBSE):
                         seq is None or intersection(A, E).is_empty()
                     ), f"Overapproximation is not safe: {A}"
 
-                # FIXME: intersect with all inductive sets?
+                # todo: check w.r.t seq?
                 if target.contains(A):
                     dbg("Did not extend (got included elem...)")
                     continue
@@ -497,6 +498,7 @@ class BSELFChecker(BaseBSE):
         # FIXME: we do not do complements right now as that allows
         # also inductive sets with array variables that we cannot handle
         # (e.g., string-2-false.c test). This is a work-around for now.
+        # Just fail and safely continue in BSE.
         if True or not is_seq_inductive(seq0, self, L):
             dbg("... (complement not inductive)")
             seqs = []
@@ -512,12 +514,15 @@ class BSELFChecker(BaseBSE):
                 Is = self.initial_sets_from_is(E, L)
             if Is:
                 for s in Is:
-                    # should be inductive from construction - if it does not contain array variables
+                    # should be inductive from construction - xxx: if it does
+                    # not contain array variables, that's why we check
+                    # explicitly for the inductiveness
                     # assert is_seq_inductive(s, self, L), f"seq is not inductive: {s}"
                     if is_set_inductive(s, self, L):
                         dbg("... (got first IS)")
                         seqs.append(InductiveSequence(s))
         else:
+            # dead-code for now
             dbg("... (complement is inductive)")
             seqs = [seq0]
 
