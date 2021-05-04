@@ -303,6 +303,7 @@ class StronglyConnectedComponents:
         edges = {l: [succ.target() for succ in l.successors()] for l in G.locations()}
         yield from strongly_connected_components_iterative(G.locations(), edges)
 
+
 class SCCCondensation:
     class SCC:
         def __init__(self, nodes):
@@ -350,4 +351,3 @@ class SCCCondensation:
 
     def get(self, n):
         return self._node_to_scc[n]
-

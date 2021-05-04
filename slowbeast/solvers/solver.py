@@ -76,6 +76,7 @@ if _use_z3:
                 raise KeyboardInterrupt
         return None
 
+
 else:
     from pysmt.shortcuts import is_sat
 
@@ -185,7 +186,9 @@ class SymbolicSolver(SolverIntf):
             map(lambda x: is_false(x) or (x.is_concrete() and x.value() is False), e)
         ):
             return False
-        return _is_sat(Z3Solver(), None, *(x.unwrap() for x in e if not x.is_concrete()))
+        return _is_sat(
+            Z3Solver(), None, *(x.unwrap() for x in e if not x.is_concrete())
+        )
 
     def try_is_sat(self, timeout, *e):
         if any(
@@ -277,6 +280,7 @@ def _sort_subs(subs):
     for k, v in V:
         yield (k, v)
 
+
 def _rewrite_poly(em, exprs, assumptions=None):
     expr = em.conjunction(*exprs)
     if expr.is_concrete():
@@ -289,6 +293,7 @@ def _rewrite_poly(em, exprs, assumptions=None):
             A.append(a.rewrite_polynomials(assumptions))
         return em.conjunction(*A, expr1)
     return expr1
+
 
 def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
     # check if we can evaluate some expression syntactically
@@ -320,25 +325,24 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
     if expr.is_concrete():
         return bool(expr.value())
 
-
     # FIXME: transfer state from _remove_implied
     solver = IncrementalSolver()
 
     # FIXME try reduced bitwidth with propagating back models instead of this
-   #for bw in (1, 2, 4, 8, 16):
-   #    # FIXME: handle signed/unsinged and negations correctly in
-   #    # reduce_arith_bitwidth and use that
-   #    solver.add(expr.reduce_eq_bitwidth(bw).rewrite_and_simplify())
-   #    r = solver.try_is_sat(bw*500)
-   #    if r is False: return False
-   #    elif r is None:
-   #        break
-   #    assert r is True
-   #    # the reduced subformulas are sat. Try to check the original formula
-   #    # with the knowledge about the reduced formulas stored in the solver
-   #    r = solver.try_is_sat(bw*500, expr)
-   #    if r is not None:
-   #        return r
+    # for bw in (1, 2, 4, 8, 16):
+    #    # FIXME: handle signed/unsinged and negations correctly in
+    #    # reduce_arith_bitwidth and use that
+    #    solver.add(expr.reduce_eq_bitwidth(bw).rewrite_and_simplify())
+    #    r = solver.try_is_sat(bw*500)
+    #    if r is False: return False
+    #    elif r is None:
+    #        break
+    #    assert r is True
+    #    # the reduced subformulas are sat. Try to check the original formula
+    #    # with the knowledge about the reduced formulas stored in the solver
+    #    r = solver.try_is_sat(bw*500, expr)
+    #    if r is not None:
+    #        return r
     ###
     # Now try abstractions
     #
@@ -349,7 +353,7 @@ def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
         n = 0
         for placeholder, e in _sort_subs(subs):
             n += 1
-            if solver.try_is_sat(n*to2) is False:
+            if solver.try_is_sat(n * to2) is False:
                 return False
             solver.add(em.Eq(e, placeholder))
         solver.pop()

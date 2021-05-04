@@ -21,7 +21,10 @@ def get_var_diff_relations(state):
 
     solver = IncrementalSolver()
     solver.add(*state.constraints())
-    def model(assumptions, *e): return solver.concretize(assumptions, *e)
+
+    def model(assumptions, *e):
+        return solver.concretize(assumptions, *e)
+
     is_sat = solver.is_sat
     try_is_sat = solver.try_is_sat
 
@@ -51,9 +54,7 @@ def get_var_diff_relations(state):
             cval = c_concr[0]
             nonunique = is_sat(expr, Ne(c, cval))
             if nonunique is False:
-                yield AssertAnnotation(
-                    simplify(substitute(expr, (c, cval))), subs, EM
-                )
+                yield AssertAnnotation(simplify(substitute(expr, (c, cval))), subs, EM)
 
         # relation between loads of the type l1 + l2 = constant
         expr = Eq(Add(l2, l1), c)
@@ -63,9 +64,7 @@ def get_var_diff_relations(state):
             cval = c_concr[0]
             nonunique = is_sat(expr, Ne(c, cval))
             if nonunique is False:
-                yield AssertAnnotation(
-                    simplify(substitute(expr, (c, cval))), subs, EM
-                )
+                yield AssertAnnotation(simplify(substitute(expr, (c, cval))), subs, EM)
 
         # relation between loads of the type l1 = c*l2
         expr = Eq(Mul(c, l1), l2)
@@ -75,9 +74,7 @@ def get_var_diff_relations(state):
             cval = c_concr[0]
             nonunique = try_is_sat(500, expr, Ne(c, cval))
             if nonunique is False:
-                yield AssertAnnotation(
-                    simplify(substitute(expr, (c, cval))), subs, EM
-                )
+                yield AssertAnnotation(simplify(substitute(expr, (c, cval))), subs, EM)
         # relation between loads of the type l2 = c*l1
         expr = Eq(Mul(c, l2), l1)
         c_concr = model([expr, Ne(c, ConcreteInt(0, bw))], c)
@@ -86,9 +83,7 @@ def get_var_diff_relations(state):
             cval = c_concr[0]
             nonunique = try_is_sat(500, expr, Ne(c, cval))
             if nonunique is False:
-                yield AssertAnnotation(
-                    simplify(substitute(expr, (c, cval))), subs, EM
-                )
+                yield AssertAnnotation(simplify(substitute(expr, (c, cval))), subs, EM)
 
         # check equalities to other loads: l1 - l2 = k*l3
         for nd3 in state.nondet_loads():
@@ -172,7 +167,10 @@ def _get_const_cmp_relations(state):
 
     solver = IncrementalSolver()
     solver.add(*state.constraints())
-    def model(assumptions, *e): return solver.concretize(assumptions, *e)
+
+    def model(assumptions, *e):
+        return solver.concretize(assumptions, *e)
+
     is_sat = solver.is_sat
 
     # equalities with constants
@@ -278,11 +276,7 @@ def get_var_subs_relations(state):
     for l, r in _get_eq_loads(state, is_sat):
         for expr in _iter_constraints(C):
             nexpr = substitute(expr, (r, l))
-            if (
-                not nexpr.is_concrete()
-                and expr != nexpr
-                and is_sat(nexpr) is True
-            ):
+            if not nexpr.is_concrete() and expr != nexpr and is_sat(nexpr) is True:
                 assert nexpr.isEq()
                 c1, c2 = list(nexpr.children())
                 if c1.is_concrete() or c2.is_concrete():
@@ -292,11 +286,7 @@ def get_var_subs_relations(state):
                 yielded.add((c1, c2))
                 yield AssertAnnotation(nexpr, subs, EM)
             nexpr = substitute(expr, (l, r))
-            if (
-                not nexpr.is_concrete()
-                and expr != nexpr
-                and is_sat(nexpr) is True
-            ):
+            if not nexpr.is_concrete() and expr != nexpr and is_sat(nexpr) is True:
                 assert nexpr.isEq()
                 c1, c2 = list(nexpr.children())
                 if c1.is_concrete() or c2.is_concrete():
@@ -315,12 +305,13 @@ def get_relations_to_prev_states(state, prev):
     Var, simplify, substitute = EM.Var, EM.simplify, EM.substitute
     conjunction = EM.conjunction
 
-
     solver = IncrementalSolver()
     solver.add(*state.constraints())
-    def model(assumptions, *e): return solver.concretize(assumptions, *e)
-    is_sat = solver.is_sat
 
+    def model(assumptions, *e):
+        return solver.concretize(assumptions, *e)
+
+    is_sat = solver.is_sat
 
     # relation between loads
     prevexpr = prev.translated(state).as_expr()
@@ -359,6 +350,7 @@ def get_relations_to_prev_states(state, prev):
                     )
                 yield AssertAnnotation(expr, subs, EM)
 
+
 def _get_var_relations(safe, prevsafe=None):
     if not hasattr(safe, "__iter__"):
         safe = (safe,)
@@ -384,14 +376,18 @@ def get_var_relations(safe, prevsafe=None, only_eq=False):
         solver.add(expr)
         yield_rel = True
         for e in (ee.expr() for ee in toyield):
-            if solver.try_is_sat(300, Not(e)) is False:  # included in some previous relation
+            if (
+                solver.try_is_sat(300, Not(e)) is False
+            ):  # included in some previous relation
                 yield_rel = False
         solver.pop()
         if yield_rel:
             solver.push()
             solver.add(Not(expr))
             # remove relations included in this one
-            toyield = set(e for e in toyield if solver.try_is_sat(300, e.expr()) is not False)
+            toyield = set(
+                e for e in toyield if solver.try_is_sat(300, e.expr()) is not False
+            )
             solver.pop()
             toyield.add(rel)
 

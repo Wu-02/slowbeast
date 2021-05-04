@@ -699,9 +699,7 @@ class KindSEChecker(BaseKindSE):
 
         # try without relations
         seq = InductiveSequence(
-            overapprox_set(
-                self, EM, S, unsafe, target, None, L
-            ).as_assert_annotation()
+            overapprox_set(self, EM, S, unsafe, target, None, L).as_assert_annotation()
         )
 
         if is_seq_inductive(seq, self, L):

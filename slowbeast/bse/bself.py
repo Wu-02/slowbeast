@@ -126,19 +126,23 @@ def _overapprox_with_assumptions(E, L, S, executor, s, target):
     if not R0:
         return
     yielded = False
-    prestates = None #executor._extend_one_step(L, S)
+    prestates = None  # executor._extend_one_step(L, S)
     if prestates:
         Rc = set(get_const_cmp_relations(S.get_se_state()))
         for p in prestates:
             # check whether the relation from R0 holds in 'p'
             # R1 = set(get_var_relations([p], prevsafe=S))
-            P =  create_set(p)
-            rels =  [r0 for r0 in R0 if not intersection(P, r0).is_empty()]
+            P = create_set(p)
+            rels = [r0 for r0 in R0 if not intersection(P, r0).is_empty()]
             yielded |= bool(rels)
-            yield from _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target)
+            yield from _yield_overapprox_with_assumption(
+                E, L, S, executor, rels, s, target
+            )
             # try constant relations too - if they hold in more steps, they may be invariant
-            rels =  [rc for rc in Rc if not intersection(P, rc).is_empty()]
-            yield from _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target)
+            rels = [rc for rc in Rc if not intersection(P, rc).is_empty()]
+            yield from _yield_overapprox_with_assumption(
+                E, L, S, executor, rels, s, target
+            )
 
     if not yielded:
         yield from _yield_overapprox_with_assumption(E, L, S, executor, R0, s, target)
@@ -162,9 +166,9 @@ def _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target):
 def is_seq_inductive(seq, executor, L: LoopInfo):
     return L.set_is_inductive(seq.as_set())
 
+
 def is_set_inductive(S, executor, L: LoopInfo):
     return L.set_is_inductive(S)
-
 
 
 class BSELFChecker(BaseBSE):
@@ -508,7 +512,7 @@ class BSELFChecker(BaseBSE):
                 # cont. of the workaround -- the same problem. The set may not
                 # be inductive due to dynamic inputs or array variables.
                 # see, e.g., array_3-2.c
-                #assert Is, "Failed getting sequence for first visit"
+                # assert Is, "Failed getting sequence for first visit"
             else:
                 dbg("... (joining with previously unfinished sequences)")
                 Is = self.initial_sets_from_is(E, L)
@@ -547,7 +551,7 @@ class BSELFChecker(BaseBSE):
 
         create_set = self.create_set
         target = seq0[-1]
-        S = seq0.as_set().copy() # we're going to change S
+        S = seq0.as_set().copy()  # we're going to change S
         assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
         EM = getGlobalExprManager()
 
@@ -566,11 +570,7 @@ class BSELFChecker(BaseBSE):
                     yield InductiveSequence(A)
 
         # try without relations
-        seq = InductiveSequence(
-            overapprox_set(
-                self, EM, S, unsafe, target, None, L
-            )
-        )
+        seq = InductiveSequence(overapprox_set(self, EM, S, unsafe, target, None, L))
 
         if is_seq_inductive(seq, self, L):
             # check if seq is a subset of some previously yielded sequence
@@ -622,7 +622,7 @@ class BSELFChecker(BaseBSE):
         # execute the safe path that avoids error and then jumps out of the loop
         # and also only paths that jump out of the loop, so that the set is inductive
         cE = complement(E)
-        tmpsets = self._last_k_iterations_states(L, k = 0)
+        tmpsets = self._last_k_iterations_states(L, k=0)
         sets = []
         for tmp in tmpsets:
             tmp.intersect(cE)
@@ -639,9 +639,7 @@ class BSELFChecker(BaseBSE):
         for s in sets:
             # gather the sets that subsume 's' and are disjunctive with unsafe
             # states
-            cov = [
-                I for I in isets if intersection(E, s).is_empty() and I.includes(s)
-            ]
+            cov = [I for I in isets if intersection(E, s).is_empty() and I.includes(s)]
             if cov:
                 dbg("Matched stored inductive sequences")
                 S = create_set() if union_matched else None
@@ -739,7 +737,9 @@ class BSELFChecker(BaseBSE):
 
         if __debug__:
             for seq0 in seqs0:
-                assert intersection(seq0.as_set(), E).is_empty(), "Initial sequence contains error states"
+                assert intersection(
+                    seq0.as_set(), E
+                ).is_empty(), "Initial sequence contains error states"
 
         # now we do not support empty sequences
         assert all(map(lambda s: s is not None, seqs0)), "A sequence is none"
@@ -793,7 +793,9 @@ class BSELFChecker(BaseBSE):
                 dbg(f"{seq}", color="dark_blue")
 
                 if __debug__:
-                    assert intersection( seq.as_set(), E ).is_empty(), "Sequence is not safe"
+                    assert intersection(
+                        seq.as_set(), E
+                    ).is_empty(), "Sequence is not safe"
 
                 if len(seq) >= max_seq_len:
                     dbg("Give up extending the sequence, it is too long")

@@ -136,9 +136,15 @@ class BSEState(LazySEState):
                 if mo.is_global() and mo.is_zeroed():
                     constraints.append(em.Eq(val[0], ConcreteInt(0, val[0].bitwidth())))
             else:
-                for g, ptr in ((g, ptr) for (g, ptr) in IM.bound_globals() if g.is_zeroed()):
-                    constraints.append(em.Or(em.Ne(obj, ptr.object()),
-                                             em.Eq(val[0], ConcreteInt(0, val[0].bitwidth()))))
+                for g, ptr in (
+                    (g, ptr) for (g, ptr) in IM.bound_globals() if g.is_zeroed()
+                ):
+                    constraints.append(
+                        em.Or(
+                            em.Ne(obj, ptr.object()),
+                            em.Eq(val[0], ConcreteInt(0, val[0].bitwidth())),
+                        )
+                    )
         return constraints
 
     def _memory_constraints(self):

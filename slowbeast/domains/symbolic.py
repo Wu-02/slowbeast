@@ -751,7 +751,6 @@ if _use_z3:
         except ValueError:
             return None
 
-    
     def get_eqs_from_ineqs(expr):
         ###
         # check for equalities from inequalities:
@@ -773,11 +772,11 @@ if _use_z3:
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
                     continue
-                nc = (chld[1] <= chld[0])
+                nc = chld[1] <= chld[0]
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
                     continue
-                nc = (chld[0] >= chld[1])
+                nc = chld[0] >= chld[1]
                 if nc in clauses:
                     eqs.append((clause, nc, chld[0] == chld[1]))
                     continue
@@ -850,8 +849,10 @@ if _use_z3:
             return expr
         else:
             red = [_reduce_eq_bitwidth(c, bw) for c in chld]
-            if is_and(expr): return mk_and(*red)
-            elif is_or(expr): return mk_or(*red)
+            if is_and(expr):
+                return mk_and(*red)
+            elif is_or(expr):
+                return mk_or(*red)
             else:
                 return expr.decl()(*red)
 
@@ -865,27 +866,27 @@ if _use_z3:
         except ValueError:
             return None
 
-
     def _rdw(expr, bw):
         oldbw = expr.size()
         if oldbw <= bw:
             return expr
-        return BVZExt(oldbw - bw, BVExtract(bw-1, 0, expr))
+        return BVZExt(oldbw - bw, BVExtract(bw - 1, 0, expr))
 
     def _reduce_arith_bitwidth(expr, bw):
         if is_bv(expr):
             return _rdw(expr, bw)
-           #oldbw = expr.size()
-           #return BVExtract(bw-1, 0, expr) if oldbw > bw else expr
+        # oldbw = expr.size()
+        # return BVExtract(bw-1, 0, expr) if oldbw > bw else expr
         else:
             red = (_reduce_arith_bitwidth(c, bw) for c in expr.children())
-            if is_and(expr): return And(*red)
-            elif is_or(expr): return Or(*red)
+            if is_and(expr):
+                return And(*red)
+            elif is_or(expr):
+                return Or(*red)
             return expr.decl()(*red)
 
-
     def reduce_arith_bitwidth(expr, bw):
-        #return _reduce_arith_bitwidth(expr, bw, variables)
+        # return _reduce_arith_bitwidth(expr, bw, variables)
         try:
             return _reduce_arith_bitwidth(expr, bw)
         except ValueError:
@@ -1078,13 +1079,15 @@ class Expr(Value):
         return Expr(expr, ty)
 
     def rewrite_polynomials(self, from_exprs):
-        expr = rewrite_polynomials(self.unwrap(), map(lambda x: x.unwrap(), from_exprs) if from_exprs else None)
+        expr = rewrite_polynomials(
+            self.unwrap(), map(lambda x: x.unwrap(), from_exprs) if from_exprs else None
+        )
         if expr is None:
             return self
         return Expr(expr, self.type())
 
     def infer_equalities(self):
-        cnf = self.to_cnf().unwrap() # we need clauses
+        cnf = self.to_cnf().unwrap()  # we need clauses
         # get equalities  from comparison
         eqs = set(e for c1, c2, e in get_eqs_from_ineqs(cnf))
         # get equalities right from the formula

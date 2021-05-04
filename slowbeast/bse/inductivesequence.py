@@ -121,4 +121,3 @@ class InductiveSequence:
 
     def check_ind_on_paths(self, executor, paths, target=None):
         return self.check_on_paths(executor, paths, target=target, self_as_pre=True)
-

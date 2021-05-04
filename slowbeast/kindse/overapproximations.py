@@ -329,7 +329,6 @@ class LoopStateOverapproximation:
         safesolver.add(unsafe.as_expr())
         self.safesolver = safesolver
 
-
     def drop_disjuncts(self):
         solver = IncrementalSolver()
         solver.add(*self.clauses)
@@ -349,7 +348,9 @@ class LoopStateOverapproximation:
                 if val is True:
                     continue
                 elif val is False:
-                    raise RuntimeError("BUG in dropping disjuncts! Made the expression unsat")
+                    raise RuntimeError(
+                        "BUG in dropping disjuncts! Made the expression unsat"
+                    )
                 raise RuntimeError(f"Invalid boolean value: {val}")
             if not c.isOr():
                 newclauses.append(c)
@@ -372,7 +373,9 @@ class LoopStateOverapproximation:
             if newd:
                 newclauses.append(disjunction(*newd))
             else:
-                raise RuntimeError("BUG in dropping disjuncts! Made the expression unsat")
+                raise RuntimeError(
+                    "BUG in dropping disjuncts! Made the expression unsat"
+                )
         self.clauses = [em.substitute(c, *subs) for c in newclauses]
 
     def _drop_clauses(self, clauses, assumptions):
@@ -813,7 +816,7 @@ def overapprox_set(
         return InductiveSequence.Frame(S.as_assert_annotation(), None)
 
     overapprox = LoopStateOverapproximation(S, executor, target, unsafe, L, EM)
-    #overapprox.drop_disjuncts()
+    # overapprox.drop_disjuncts()
     overapprox.drop_clauses(assumptions)
 
     # NOTE: this works good alone sometimes

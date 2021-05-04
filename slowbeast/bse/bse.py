@@ -248,9 +248,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             if state.join_prestate(ready[0], fromInit):
                 # This assertion must hold only if the execution was maximal
                 # - but that may not be tru
-               #assert (
-               #    not fromInit or not state.inputs()
-               #), f"Initial state has unresolved inputs: {state}"
+                # assert (
+                #    not fromInit or not state.inputs()
+                # ), f"Initial state has unresolved inputs: {state}"
                 return [state]
         return []
 
