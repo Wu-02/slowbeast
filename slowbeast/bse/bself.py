@@ -75,9 +75,9 @@ def _check_set(executor, S, L, target):
         )
         return False
     # --- workaround ends here...
-    if S.is_empty():
-        dbg("Starting sequence is empty")
-        return False
+   #if S.is_empty():
+   #    dbg("Starting sequence is empty")
+   #    return False
     return True
 
 
@@ -111,7 +111,7 @@ def overapprox_state(executor, s, E, target, L):
     yield from _overapprox_with_assumptions(E, L, S, executor, s, target)
 
     # try without any relation
-    assert not S.is_empty(), "Infeasible states given to overapproximate"
+    #assert not S.is_empty(), "Infeasible states given to overapproximate"
     yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
 
 
@@ -552,7 +552,7 @@ class BSELFChecker(BaseBSE):
         create_set = self.create_set
         target = seq0[-1]
         S = seq0.as_set().copy()  # we're going to change S
-        assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
+        #assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
         EM = getGlobalExprManager()
 
         yielded_seqs = []

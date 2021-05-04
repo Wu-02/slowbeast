@@ -795,7 +795,7 @@ def overapprox_set(
     if assumptions:
         assumptions = assumptions.translated(unsafe)
 
-    assert not S.is_empty(), "Overapproximating empty set"
+    #assert not S.is_empty(), "Overapproximating empty set"
     assert intersection(
         S, unsafe
     ).is_empty(), f"Whata? Unsafe states among one-step reachable safe states:\nS = {S},\nunsafe = {unsafe}"

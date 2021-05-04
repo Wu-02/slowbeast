@@ -95,10 +95,10 @@ class StatesSet:
         newexpr = EM.Or(expr, state.constraints_obj().as_formula(EM))
         if not newexpr.is_concrete():
             C.add(newexpr)
-        else:
-            # if newexpr is concrete, it must be True. And adding True is useless,
-            # its the same as empty constraints
-            assert newexpr.value() is True  # this is Or expr...
+       #else:
+       #    # if newexpr is concrete, it must be True. And adding True is useless,
+       #    # its the same as empty constraints
+       #    assert newexpr.value() is True  # this is Or expr...
         state.set_constraints(C)
 
     def model(self):
