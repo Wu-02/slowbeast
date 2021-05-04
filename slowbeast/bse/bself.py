@@ -630,30 +630,27 @@ class BSELFChecker(BaseBSE):
                 sets.append(tmp)
         return sets
 
-    def _match_included_indsets(self, isets, sets):
+    def _match_included_indsets(self, isets, sets, E):
         create_set = self.create_set
         # replace every set in 'sets' with an inductive set that we already have
         # if the IS already includes the set
         newsets = []
         union_matched = self.options.union_matched
         for s in sets:
+            # gather the sets that subsume 's' and are disjunctive with unsafe
+            # states
             cov = [
-                I for I in isets if intersection(I.I, s).is_empty() and I.I.contains(s)
+                I for I in isets if intersection(E, s).is_empty() and I.includes(s)
             ]
             if cov:
                 dbg("Matched stored inductive sequences")
                 S = create_set() if union_matched else None
                 for I in cov:
                     if union_matched:
-                        # and not S.contains(I.I):
-                        # todo: could the inclusion check break inferring relations from path condition? Probably yes.
+                        # todo: could the inclusion check weaken inferring relations from path condition? Probably yes.
                         S.add(I.I)
                     else:
                         newsets.append(I.I)
-                    # remove the matched set from inductive sets
-                # l = len(isets)
-                # isets.remove(I)
-                # assert l - 1 == len(isets), "Did not pop the element"
                 newsets.append(S)
             else:
                 newsets.append(s)
@@ -673,7 +670,7 @@ class BSELFChecker(BaseBSE):
         if isets is None:
             return sets
 
-        return self._match_included_indsets(isets, sets)
+        return self._match_included_indsets(isets, sets, E)
 
     def initial_sets_from_is(self, E, L):
         # get the inductive sets that we have created for this header.
@@ -688,15 +685,11 @@ class BSELFChecker(BaseBSE):
         dbg("Checking inductive sets that we have")
         sets = []
         included_sets = []
-        # newisets = []
         for I in isets:
             if intersection(I.I, E).is_empty():
                 sets.append(I.I)
-                if exit_sets and I.I.contains_any(*exit_sets):
+                if exit_sets and I.includes_any(*exit_sets):
                     included_sets.append(I.I)
-        #    else:
-        #        newisets.append(I)
-        # self.inductive_sets[L.header()] = newisets
 
         # use the sets that include some of the sets created for exit sets
         if included_sets:

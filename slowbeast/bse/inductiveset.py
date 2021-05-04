@@ -41,5 +41,11 @@ class InductiveSet:
         # intersection(complement(self.I), elem).is_empty()
         return self.cI.is_sat(elem.as_expr()) is False
 
+    def includes_any(self, *elems):
+        if isinstance(elem, InductiveSet):
+            elem = elem.I
+        is_sat = self.cI.is_sat
+        return any(is_sat(elem.as_expr()) is False, elems)
+
     def __repr__(self):
         return self.I.__repr__()
