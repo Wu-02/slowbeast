@@ -503,9 +503,10 @@ class BSELFChecker(BaseBSE):
             if loop_hit_no == 1:
                 dbg("... (getting sis for the 1st hit of the loop)")
                 Is = self.initial_sets_from_exits(E, L)
-                assert Is, "Failed getting sequence for first visit"
-                if not Is:
-                    Is = self.initial_sets_from_is(E, L)
+                # cont. of the workaround -- the same problem. The set may not
+                # be inductive due to dynamic inputs or array variables.
+                # see, e.g., array_3-2.c
+                #assert Is, "Failed getting sequence for first visit"
             else:
                 dbg("... (joining with previously unfinished sequences)")
                 Is = self.initial_sets_from_is(E, L)
@@ -805,10 +806,9 @@ class BSELFChecker(BaseBSE):
                     dbg(f"Extended with: {A}", color="brown")
                     tmp = seq.copy()
                     tmp.append(A)
-                    if __debug__:
-                        assert is_seq_inductive(
-                            tmp, self, L
-                        ), "Extended sequence is not inductive"
+                    if not is_seq_inductive(tmp, self, L):
+                        assert False, "Extended sequence is not inductive"
+                        continue
 
                     extended.append(tmp)
                 dbg("Extending the sequence finished")
