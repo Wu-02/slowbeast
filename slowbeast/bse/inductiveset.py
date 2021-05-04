@@ -42,10 +42,14 @@ class InductiveSet:
         return self.cI.is_sat(elem.as_expr()) is False
 
     def includes_any(self, *elems):
-        if isinstance(elem, InductiveSet):
-            elem = elem.I
         is_sat = self.cI.is_sat
-        return any(is_sat(elem.as_expr()) is False, elems)
+        return any(
+            map(
+                lambda e: is_sat((e.I if isinstance(e, InductiveSet) else e).as_expr())
+                is False,
+                elems,
+            )
+        )
 
     def __repr__(self):
         return self.I.__repr__()
