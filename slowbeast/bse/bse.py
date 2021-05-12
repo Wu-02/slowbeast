@@ -1,7 +1,7 @@
 from queue import Queue as FIFOQueue
 from typing import Optional  # , Union
 
-from slowbeast.kindse.programstructure import ProgramStructure
+from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.symexe.annotations import AssumeAnnotation
 from slowbeast.util.debugging import print_stdout, print_stderr
 from slowbeast.symexe.symbolicexecution import (

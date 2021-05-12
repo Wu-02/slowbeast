@@ -13,7 +13,7 @@ from slowbeast.symexe.statesset import intersection, union, complement, StatesSe
 from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
-from slowbeast.kindse.programstructure import ProgramStructure
+from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.kindse.naive.naivekindse import Result
 from slowbeast.kindse import KindSEOptions
 from slowbeast.kindse.overapproximations import overapprox_set
