@@ -1,4 +1,4 @@
-from slowbeast.kindse.annotatedcfg import CFGPath
+from slowbeast.cfkind.annotatedcfg import CFGPath
 from sys import stdout
 from copy import copy
 

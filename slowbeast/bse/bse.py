@@ -8,11 +8,11 @@ from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )
 from slowbeast.analysis.cfa import CFA
-from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
+from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.bse.memorymodel import BSEMemoryModel
-from slowbeast.kindse.naive.naivekindse import Result
-from slowbeast.kindse import KindSEOptions
+from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.cfkind import KindSEOptions
 
 from .bseexecutor import Executor as BSEExecutor
 from .bsestate import BSEState

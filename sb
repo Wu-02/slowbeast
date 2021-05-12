@@ -53,10 +53,10 @@ def createArgParser():
                         help='Use naive k-induction on CFG without any improvements')
     parser.add_argument('-kind-naive-impr', action='store_true',
                         help='Use improved naive k-induction')
-    parser.add_argument('-kindse', action='store_true',
+    parser.add_argument('-cfkind', action='store_true',
                         help='Use symbolic execution with k-induction and loop folding.')
-    parser.add_argument('-kindse-til', action='store_true', help='Target towards induction is the last element in KindSE')
-    parser.add_argument('-kindse-sis', action='store_true', help='Use simple starting inductive sets')
+    parser.add_argument('-cfkind-til', action='store_true', help='Target towards induction is the last element in KindSE')
+    parser.add_argument('-cfkind-sis', action='store_true', help='Use simple starting inductive sets')
     parser.add_argument('-kind-step', type=int,
                         help='Set the step for k-induction, positive number is a number of basic blocks by which to extend in each iteration, 0 is extend the paths until a join, -1 is extend the paths until a branch (default)', default=-1)
     parser.add_argument('-bse', action='store_true', help='Do backward symbolic execution')
@@ -375,7 +375,7 @@ def main():
 
     if args.bself:
         args.bse = True
-    if args.kindse:
+    if args.cfkind:
         args.kind = True
     if args.kind or args.bse: # kind implies se
         args.se = True
@@ -390,23 +390,23 @@ def main():
         from slowbeast.ai.abstractinterpreter import AbstractInterpreter
         interpreter = AbstractInterpreter(P, ohandler)
     elif args.kind:
-        from slowbeast.kindse import KindSEOptions
+        from slowbeast.cfkind import KindSEOptions
         opts = KindSEOptions()
 
-        if args.kindse:
-            from slowbeast.kindse.kindse import KindSEOptions
+        if args.cfkind:
+            from slowbeast.cfkind.kindse import KindSEOptions
             opts = KindSEOptions()
-            if args.kindse_til:
+            if args.cfkind_til:
                 opts.target_is_whole_seq = False
-            if args.kindse_sis:
+            if args.cfkind_sis:
                 opts.simple_sis = True
-            from slowbeast.kindse.kindse import KindSE as KindSymbolicExecutor
+            from slowbeast.cfkind.kindse import KindSE as KindSymbolicExecutor
         elif args.kind_naive:
-            from slowbeast.kindse.naive.naivekindse import KindSymbolicExecutor
+            from slowbeast.cfkind.naive.naivekindse import KindSymbolicExecutor
         elif args.kind_naive_impr:
-            from slowbeast.kindse.naive.naiveimprkindse import KindSymbolicExecutor
+            from slowbeast.cfkind.naive.naiveimprkindse import KindSymbolicExecutor
         else: # the default: if args.kind_noinv
-            from slowbeast.kindse.legacy.noinvkindse import KindSymbolicExecutor
+            from slowbeast.cfkind.legacy.noinvkindse import KindSymbolicExecutor
             # NOTE: now, -kind is the same as -bse. We must implement -bse
             # with precondition computation of every single step
         interpreter = KindSymbolicExecutor(P, ohandler, opts)

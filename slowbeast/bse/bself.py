@@ -12,12 +12,12 @@ from slowbeast.util.debugging import (
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.symexe.annotations import AssertAnnotation
-from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
+from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 from slowbeast.analysis.programstructure import ProgramStructure
-from slowbeast.kindse.naive.naivekindse import Result
-from slowbeast.kindse import KindSEOptions
-from slowbeast.kindse.overapproximations import overapprox_set
-from slowbeast.kindse.relations import get_const_cmp_relations, get_var_relations
+from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.cfkind import KindSEOptions
+from slowbeast.cfkind.overapproximations import overapprox_set
+from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
 from slowbeast.analysis.cfa import CFA
 from slowbeast.solvers.solver import getGlobalExprManager
 

@@ -1,12 +1,12 @@
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
-from slowbeast.kindse.annotatedcfg import CFG, CFGPath
-from slowbeast.kindse.naive.naivekindse import (
+from slowbeast.cfkind.annotatedcfg import CFG, CFGPath
+from slowbeast.cfkind.naive.naivekindse import (
     KindSymbolicExecutor as BasicKindSymbolicExecutor,
 )
-from slowbeast.kindse.naive.naivekindse import Result
-from slowbeast.kindse import KindSEOptions
-from slowbeast.kindse.naive.inductionpath import InductionPath
+from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.cfkind import KindSEOptions
+from slowbeast.cfkind.naive.inductionpath import InductionPath
 
 from copy import copy
 

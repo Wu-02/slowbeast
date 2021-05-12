@@ -8,8 +8,8 @@ from slowbeast.symexe.symbolicexecution import (
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.kindse.naive.naivekindse import Result
-from slowbeast.kindse import KindSEOptions
+from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.cfkind import KindSEOptions
 
 
 def report_state(stats, n, fn=print_stderr):

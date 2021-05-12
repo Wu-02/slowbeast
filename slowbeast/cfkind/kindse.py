@@ -10,9 +10,9 @@ from slowbeast.util.debugging import (
     ldbgv,
 )
 
-from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
-from slowbeast.kindse.naive.naivekindse import Result
-from slowbeast.kindse import KindSEOptions
+from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
+from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.cfkind import KindSEOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.analysis.loops import Loop
@@ -436,7 +436,7 @@ class KindSEChecker(BaseKindSE):
         assert unsafe, "No unsafe states, we should not get here at all"
 
         #   # first try to unroll it in the case the loop is easy to verify
-        #   kindse = BaseKindSE(self.getProgram())
+        #   cfkind = BaseKindSE(self.getProgram())
         maxk = 15
         dbg_sec(f"Unwinding the loop {maxk} steps")
         res, unwoundloop = self.unwind([path.copy()], maxk=maxk)

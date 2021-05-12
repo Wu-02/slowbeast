@@ -2,7 +2,7 @@ from slowbeast.util.debugging import dbg
 from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.scc import strongly_connected_components_iterative
-from slowbeast.kindse.annotatedcfa import AnnotatedCFAPath
+from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 
 
 class Loop:
