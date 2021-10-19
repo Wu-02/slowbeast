@@ -401,11 +401,13 @@ class Executor:
         ret = None
         if len(instr.operands()) != 0:  # returns something
             ret = state.eval(instr.operand(0))
+            assert ret is not None,\
+                    f"No return value even though there should be: {instr}"
 
         # pop the call frame and get the return site
         rs = state.pop_call()
         if rs is None:  # popped the last frame
-            if ret.is_pointer():
+            if ret is not None and ret.is_pointer():
                 state.set_error(GenericError("Returning a pointer from main function"))
                 return [state]
             # elif not ret.is_concrete():
