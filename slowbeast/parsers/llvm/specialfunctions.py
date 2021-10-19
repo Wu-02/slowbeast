@@ -38,6 +38,7 @@ special_functions = [
     "__VERIFIER_error",
     "__VERIFIER_assert",
     "__VERIFIER_assume",
+    "verifier.assume",
     "assume_abort_if_not",
     "__VERIFIER_assert",
     "__VERIFIER_silent_exit",
@@ -65,7 +66,7 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif fun == "__VERIFIER_error":
         A = Assert(ConstantFalse, "__VERIFIER_error called!")
         return A, [A]
-    elif fun in ("__VERIFIER_assume", "assume_abort_if_not"):
+    elif fun in ("__VERIFIER_assume", "assume_abort_if_not", "verifier.assume"):
         operands = getLLVMOperands(inst)
         cond = parser.operand(operands[0])
         C = Cmp(
