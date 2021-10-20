@@ -163,8 +163,6 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         # the executor for induction checks -- we need lazy memory access
         memorymodel = BSEMemoryModel(opts)
         indexecutor = BSEExecutor(self.solver(), opts, memorymodel)
-        # we handle calls explicitely here, so set this to true to catch problems
-        indexecutor.forbid_calls()
         self._indexecutor = indexecutor
 
         if programstructure is None:
