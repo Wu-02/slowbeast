@@ -788,7 +788,7 @@ class Ite(ValueTypedInstruction):
     """ if-then-else: assign a value based on a condition """
 
     def __init__(self, cond, op1, op2):
-        assert cond.type().is_bool()
+        assert cond.type().bitwidth() == 1
         assert op1.type() == op2.type(), "Invalid types in Ite"
         super().__init__(op1.type(), [op1, op2])
         self._cond = cond

@@ -42,17 +42,18 @@ def add_pointer_with_constant(E, op1, op2):
 
 
 def condition_to_bool(cond, EM):
+    if cond.type().is_bool():
+        return cond
+
     if cond.is_concrete():
         cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
     else:
         assert is_symbolic(cond)
-        if not cond.type().is_bool():
-            assert (
-                cond.type().bitwidth() == 1
-            ), f"Invalid condition in branching: {cond}"
-            cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
-        else:
-            cval = cond  # It already is a boolean expression
+        assert not cond.type().is_bool()
+        assert (
+            cond.type().bitwidth() == 1
+        ), f"Invalid condition in branching: {cond}"
+        cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
 
     assert cval.is_bool()
     return cval
@@ -472,8 +473,8 @@ class Executor(ConcreteExecutor):
         return states
 
     def exec_ite(self, state, instr):
-        cond = state.eval(instr.condition())
-        assert cond.is_bool(), cond
+        cond = condition_to_bool(state.eval(instr.condition()),
+                                 state.expr_manager())
         if cond.is_concrete():
             cval = cond.value()
             if cval is True:
