@@ -91,6 +91,10 @@ def createArgParser():
    #parser.add_argument('-ai-domain', action='store', default=True,
    #                    help='Perform abstract interpretation.')
     #parser.add_argument('-bmc', action='store_true', help='Perform bounded model checking.')
+    parser.add_argument('-external-invariants', action='store', default=None,
+                        help='Instrument code with external invariants '
+                             'before running any analysis. '
+                             'Available options: clam')
 
     return parser
 
@@ -237,15 +241,32 @@ def _run(cmd):
     if cp.returncode != 0:
         err("Failed running: {0}".format(" ".join(cmd)))
 
-def compile_c(path, outp=None):
+def compile_c(path, outp=None, addargs=None):
     dbg("Compiling {0}".format(path))
 
     if outp is None:
         outp = pathjoin('/tmp/', basename(path) + '.bc')
 
-    cmd = ['clang', '-emit-llvm', '-c', '-o', outp, path]
+    cmd = ['clang', '-emit-llvm', '-c']
+    if addargs:
+        cmd += addargs
+    cmd += ['-o', outp, path]
     _run(cmd)
     dbg("Compiled to {0}".format(outp))
+
+    return outp
+
+def add_clam_invariants(path, outp=None):
+    dbg("Running clam on {0}".format(path))
+
+    if outp is None:
+        outp = pathjoin('/tmp/', basename(path) + '.bc')
+
+    cmd = ['clam.py', '--crab-opt=add-invariants',
+           '--crab-opt-invariants-loc=loop-header',
+           '--crab-print-invariants=false', '-o', outp, path]
+    _run(cmd)
+    dbg("Instrumented to {0}".format(outp))
 
     return outp
 
@@ -275,11 +296,11 @@ def opt(path, opts=[], outp=None, outd='/tmp/'):
 
     return outp
 
-def compile_and_link(files, outd):
+def compile_and_link(files, outd, addargs=None):
     c_files, llvm_files = sort_input_files(files)
     if c_files:
         for f in c_files:
-            llvm_files.append(compile_c(f))
+            llvm_files.append(compile_c(f, addargs=addargs))
 
     assert len(llvm_files) > 0, "No input files"
     if len(llvm_files) > 1:
@@ -332,7 +353,12 @@ def main():
         from slowbeast.parsers.llvm.parser import Parser as LLVMParser
         error_funs = args.error_fn or None
         parser = LLVMParser(error_funs.split(',') if error_funs else None)
-        code = compile_and_link(args.prog, args.out_dir)
+        code = compile_and_link(args.prog, args.out_dir,
+                                ['-Xclang', '-disable-O0-optnone',
+                                 '-fno-vectorize', '-fno-slp-vectorize']
+                                if args.external_invariants == 'clam' else None)
+        if args.external_invariants == 'clam':
+            code = add_clam_invariants(code)
     try:
         P = parser.parse(code)
     except FileNotFoundError as e:
