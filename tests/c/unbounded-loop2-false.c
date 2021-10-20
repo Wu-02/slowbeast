@@ -1,8 +1,7 @@
 #include <assert.h>
 
-// RUN: clang %s -emit-llvm -g -c -o %t.bc
 // RUN: rm -rf %t-out
-// RUN: sb -out-dir=%t-out %opts %t.bc &>%t.log
+// RUN: sb -out-dir=%t-out %opts %s &>%t.log
 // RUN: cat %t.log | FileCheck %s
 
 extern unsigned nondet(void);

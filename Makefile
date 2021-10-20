@@ -28,6 +28,11 @@ check-bse:
 check-bself:
 	lit -j4 --path=$(shell pwd) -a -D OPTS="-bself" tests/
 
+check-clam:
+	lit -j4 --path=$(shell pwd) -v -D OPTS="-bse -external-invariants=clam" tests/
+	lit -j4 --path=$(shell pwd) -a -D OPTS="-bself -external-invariants=clam" tests/
+
+
 check-cfkind:
 	lit -j4 --path=$(shell pwd) -a -D OPTS="-cfkind" tests/
 
