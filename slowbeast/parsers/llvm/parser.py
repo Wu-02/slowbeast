@@ -742,12 +742,11 @@ class Parser:
         if c:
             # FIXME: add composed instruction
             G.set_init([Store(c, G, ts)])
-        # elif is_array_ty(g.initializer.type):
-        #    parts=str(g.initializer.type).split()
-        #    assert parts[1] == 'x'
-        #    if parts[2].startswith('i'):
-        #        print(parts)
-        #    # FIXME: add String type to represent strings
+            return
+       #elif is_array_ty(g.initializer.type):
+       #    parts=str(g.initializer.type).split()
+       #    if parts[1] == 'x' and parts[2] == 'i8]':
+       #    # FIXME: add String type to represent strings
         else:
             initsize = type_size(self.llvmmodule, g.initializer.type)
             if (
@@ -757,11 +756,11 @@ class Parser:
             ):
                 # this global is whole zero-initialized
                 G.set_zeroed()
-            else:
-                print_stderr(
-                    "Unsupported initializer: {0}".format(g.initializer),
-                    color="YELLOW",
-                )
+                return
+        print_stderr(
+            "Unsupported initializer: {0}".format(g.initializer),
+            color="YELLOW",
+        )
 
     def _parse_globals(self, m):
         for g in m.global_variables:

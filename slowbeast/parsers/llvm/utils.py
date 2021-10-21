@@ -163,15 +163,19 @@ def getFloatConstant(sval, isdouble=True):
         return _get_double(sval)
     return _get_float(sval)
 
+def get_pointer_constant(val):
+    assert is_pointer_ty(val.type)
+    parts = str(val).split()
+    if parts[-1] == "null":
+        return get_null_pointer()
+    return None
 
 def getConstant(val):
-    # good, this is so ugly. But llvmlite does
+    # My, this is so ugly... but llvmlite does
     # not provide any other way...
-    if val.type.is_pointer:
-        return None
+    if is_pointer_ty(val.type):
+        return get_pointer_constant(val)
 
-    if "*" in str(val):
-        return None
     parts = str(val).split()
     if len(parts) != 2:
         return None
