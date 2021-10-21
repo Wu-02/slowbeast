@@ -737,6 +737,32 @@ class Parser:
                     S.insert_before(B.last())
             self.phis = []  # we handled these PHI nodes
 
+    def _parse_initializer(self, G, g, ts):
+        c = getConstant(g.initializer)
+        if c:
+            # FIXME: add composed instruction
+            G.set_init([Store(c, G, ts)])
+        # elif is_array_ty(g.initializer.type):
+        #    parts=str(g.initializer.type).split()
+        #    assert parts[1] == 'x'
+        #    if parts[2].startswith('i'):
+        #        print(parts)
+        #    # FIXME: add String type to represent strings
+        else:
+            initsize = type_size(self.llvmmodule, g.initializer.type)
+            if (
+                    initsize
+                    and initsize == ts
+                    and "zeroinitializer" in str(g.initializer)
+            ):
+                # this global is whole zero-initialized
+                G.set_zeroed()
+            else:
+                print_stderr(
+                    "Unsupported initializer: {0}".format(g.initializer),
+                    color="YELLOW",
+                )
+
     def _parse_globals(self, m):
         for g in m.global_variables:
             assert g.type.is_pointer
@@ -744,30 +770,8 @@ class Parser:
             ts = type_size(self.llvmmodule, g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
             G = GlobalVariable(ConcreteVal(ts, get_size_type()), g.name)
-            c = getConstant(g.initializer)
-            if c:
-                # FIXME: add composed instruction
-                G.set_init([Store(c, G, ts)])
-            # elif is_array_ty(g.initializer.type):
-            #    parts=str(g.initializer.type).split()
-            #    assert parts[1] == 'x'
-            #    if parts[2].startswith('i'):
-            #        print(parts)
-            #    # FIXME: add String type to represent strings
-            else:
-                initsize = type_size(self.llvmmodule, g.initializer.type)
-                if (
-                    initsize
-                    and initsize == ts
-                    and "zeroinitializer" in str(g.initializer)
-                ):
-                    # this global is whole zero-initialized
-                    G.set_zeroed()
-                else:
-                    print_stderr(
-                        "Unsupported initializer: {0}".format(g.initializer),
-                        color="YELLOW",
-                    )
+            if g.initializer:
+                self._parse_initializer(G, g, ts)
             self.program.add_global(G)
             self._addMapping(g, G)
 
