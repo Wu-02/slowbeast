@@ -52,7 +52,7 @@ class LazySymbolicMemoryModel(CoreMM):
         state.set(instr, ptr)
         return [state]
 
-    def _havoc_ptr_target(self, state, ptr, without=[]):
+    def _havoc_ptr_target(self, state, ptr, without=None):
         """ Havoc memory possibly pointed by ptr"""
         # we do not know what we write where, so just clear all the information if possible
         mo = None
