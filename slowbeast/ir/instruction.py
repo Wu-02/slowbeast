@@ -37,6 +37,9 @@ class GlobalVariable(ProgramElement):
         """
         return self._init is not None or self._zeroed
 
+    def set_name(self, nm):
+        self._name = nm
+
     def set_zeroed(self):
         self.add_metadata("init", "zeroed")
         self._zeroed = True
@@ -147,11 +150,17 @@ class ValueInstruction(Instruction):
 
     def __init__(self, ops=None):
         super().__init__(ops or [])
+        self._name = None
 
     def is_concrete(self):
         return False
 
+    def set_name(self, nm):
+        self._name = nm
+
     def as_value(self):
+        if self._name:
+            return "{0}".format(self._name)
         return "x{0}".format(self.get_id())
 
 
@@ -238,8 +247,8 @@ class Alloc(ValueInstruction):
         return PointerType()
 
     def __str__(self):
-        return "x{0} = alloc {1} bytes{2}".format(
-            self.get_id(),
+        return "{0} = alloc {1} bytes{2}".format(
+            self.as_value(),
             self.size().as_value(),
             " on heap" if self._is_heap else "",
         )

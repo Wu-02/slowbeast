@@ -170,7 +170,9 @@ class Parser:
         self.error_funs = error_funs or []
         self._bblocks = {}
         self._mapping = {}
+        self._names = {}
         self._metadata_opts = ["llvm", "dbgloc", "dbgvar"]
+        self._name_vars = True
         # records about PHIs that we created. We must place
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
@@ -447,6 +449,14 @@ class Parser:
                 var, name, ty = llvm.parse_dbg_declare(inst)
                 varop = self.operand(var)
                 varop.add_metadata("dbgvar", (name, ty))
+                if self._name_vars:
+                    cnt = self._names.setdefault(name, None)
+                    if cnt is None:
+                        self._names[name] = 0
+                        varop.set_name(name.decode('utf-8'))
+                    else:
+                        self._names[name] += 1
+                        varop.set_name(f"{name.decode('utf-8')}_{cnt + 1}")
             return []
 
         if fun in unsupported_funs:
