@@ -6,7 +6,7 @@ from slowbeast.domains.concrete import ConcreteVal
 
 def _get_cannonic_var(val, x, EM):
     if isinstance(x, Load):
-        name = f"L({x.operand(0).as_value()})"
+        name = f"{x.operand(0).as_value()}"
     else:
         name = x.as_value()
     return EM.Var(name, val.type())
