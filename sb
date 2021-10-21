@@ -12,6 +12,7 @@ from time import time, process_time
 from slowbeast.parsers.llvm.parser import Parser as LLVMParser
 from slowbeast.symexe.symbolicexecution import SEOptions
 from slowbeast.util.debugging import set_debugging, dbg, print_stdout, print_stderr
+from slowbeast.ir.instruction import Call
 
 def err(msg):
     print_stderr(msg, color="RED")
@@ -95,6 +96,8 @@ def createArgParser():
                         help='Instrument code with external invariants '
                              'before running any analysis. '
                              'Available options: clam')
+    parser.add_argument('-svcomp-witness', action='store_true',
+                        help='Generate SV-COMP GraphML witnesses.')
 
     return parser
 
@@ -166,9 +169,10 @@ def print_stats(engine):
         color='CYAN')
 
 class TestCaseGenerator:
-    def __init__(self, outdir='sb-out', alltests=False):
+    def __init__(self, outdir='sb-out', alltests=False, svwit=False):
         self._outputdir = outdir
         self._alltests = alltests
+        self._svcomp_witness = svwit
 
     def _openfile(self, path):
         return open(pathjoin(self._outputdir, path), 'w')
@@ -186,6 +190,36 @@ class TestCaseGenerator:
                                                                       val.bitwidth()))))
         fl.write('\n')
         state.dump(stream=fl)
+
+    def generate_svcomp_witness(self, fl, state):
+        inpvec = state.input_vector()
+        fl.write("""
+<?xml version='1.0' encoding='UTF-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/    XMLSchema-instance">
+<graph edgedefault="directed">
+<node id="0">
+  <data key="entry">true</data>
+</node>\n
+""")
+        lid = 0
+        for var, val in zip(state.nondets(), inpvec):
+            instruction = var.instruction
+            if not isinstance(instruction, Call):
+                print("Unhandled nondet value: ", var)
+            var = instruction.called_function().name()
+
+            lid += 1
+            # dump as unsigned and signed
+            fl.write(f'<node id="{lid}">\n')
+            fl.write(f'<edge source="{lid-1}" target="{lid}">\n')
+            fl.write(f'  <data key="assumption">\\result=={val.value()}</data>\n')
+            fl.write(f'  <data key="assumption.resultfunction">{var}</data>\n')
+            #   <data key="startline">5501</data>
+            fl.write('</edge>\n')
+        fl.write(f'<node id="{lid+1}">\n')
+        fl.write('  <data key="violation">true</data>\n')
+        fl.write('</node>\n')
+        fl.write(f'<edge source="{lid}" target="{lid+1}"/>\n')
 
     def processState(self, state):
         assert not state.is_ready()
@@ -210,6 +244,10 @@ class TestCaseGenerator:
             else:
                 fl.write('\n')
                 state.dump(stream=fl)
+
+        if state.has_error() and self._svcomp_witness:
+            with self._openfile(f"witness-{state.get_id()}.graphml") as fl:
+                self.generate_svcomp_witness(fl, state)
 
 class OutputsHandler:
     def __init__(self, testgen, outdir):
@@ -392,7 +430,9 @@ def main():
             P.dump(f)
 
         if not args.no_tests:
-            testgen = TestCaseGenerator(args.out_dir, args.all_tests)
+            testgen = TestCaseGenerator(args.out_dir,
+                                        args.all_tests,
+                                        args.svcomp_witness)
 
     ohandler = OutputsHandler(testgen,
                               None if args.no_output else args.out_dir)
