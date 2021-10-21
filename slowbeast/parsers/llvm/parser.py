@@ -179,8 +179,6 @@ class Parser:
         ret = self._mapping.get(op)
         if not ret:
             ret = getConstant(op)
-        if not ret:
-            ret = getConstantPtr(op)
 
         assert ret, "Do not have an operand: {0}".format(op)
         return ret

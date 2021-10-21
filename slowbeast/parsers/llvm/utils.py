@@ -212,23 +212,9 @@ def bvToBoolElseId(bv):
     return bv
 
 
-def getConstantPtr(val):
-    # good, this is so ugly. But llvmlite does
-    # not provide any other way...
-    if not val.type.is_pointer:
-        return None
-
-    if str(val).endswith("null"):
-        return get_null_pointer()
-
-    # FIXME
-    return None
-
-
 def get_constant(val):
-    if val.type.is_pointer:
-        return getConstantPtr(val)
-
+    if is_pointer_ty(val.type):
+        return get_pointer_constant(val)
 
 def getLLVMOperands(inst):
     return [x for x in inst.operands]
