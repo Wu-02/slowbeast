@@ -179,7 +179,8 @@ class Parser:
         ret = self._mapping.get(op)
         if not ret:
             ret = getConstant(op)
-
+        if op.is_constantexpr:
+            ret = self._parse_ce(op)
         assert ret, "Do not have an operand: {0}".format(op)
         return ret
 
@@ -545,7 +546,7 @@ class Parser:
         self._mapping[inst] = op
         return []
 
-    def _createGep(self, inst):
+    def _parseGep(self, inst):
         operands = getLLVMOperands(inst)
         assert is_pointer_ty(operands[0].type), "First type of GEP is not a pointer"
         ty = operands[0].type
@@ -592,6 +593,10 @@ class Parser:
                     raise NotImplementedError(f"Invalid GEP type: {ty}")
 
         mem = self.operand(operands[0])
+        return mem, shift, varIdx
+
+    def _createGep(self, inst):
+        mem, shift, varIdx = self._parseGep(inst)
 
         if varIdx:
             A = Add(mem, varIdx[-1])
@@ -606,6 +611,23 @@ class Parser:
                 A = Add(mem, ConcreteVal(shift, get_size_type()))
                 self._addMapping(inst, A)
         return [A]
+
+    def _createCEGep(self, inst):
+        mem, shift, varIdx = self._parseGep(inst)
+        assert not varIdx, "CE GEP has variable indexes"
+        if shift == 0:
+            return mem
+        else:
+            return Add(mem, ConcreteVal(shift, get_size_type()))
+
+    def _parse_ce(self, ce):
+        assert ce.is_constantexpr, ce
+        # FIXME: we leak the instruction created from CE
+        inst = ce.ce_as_inst
+        opcode = inst.opcode
+        if opcode == "getelementptr":
+            return self._createCEGep(inst)
+        raise NotImplementedError(f"Unsupported constant expr: {ce}")
 
     def _handlePhi(self, inst):
         operands = getLLVMOperands(inst)
