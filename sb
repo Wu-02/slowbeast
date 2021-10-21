@@ -247,7 +247,7 @@ def compile_c(path, outp=None, addargs=None):
     if outp is None:
         outp = pathjoin('/tmp/', basename(path) + '.bc')
 
-    cmd = ['clang', '-emit-llvm', '-c']
+    cmd = ['clang', '-emit-llvm', '-c', '-g']
     if addargs:
         cmd += addargs
     cmd += ['-o', outp, path]
