@@ -44,17 +44,16 @@ class MemoryModel:
 
         assert isinstance(value, Value)
         assert to.is_pointer()
-        if not to.offset().is_concrete():
-            # FIXME: move this check to memory.write() object
-            state.set_killed("Write with non-constant offset not supported yet")
-            return [state]
         try:
             err = state.memory.write(to, value)
         except NotImplementedError as e:
             state.set_killed(str(e))
             return [state]
         if err:
-            state.set_error(err)
+            if err.is_memory_error() and err.is_unsupported():
+                state.set_killed(str(err))
+            else:
+                state.set_error(err)
         return [state]
 
     def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
@@ -64,16 +63,16 @@ class MemoryModel:
             return [state]
 
         assert frm.is_pointer()
-        if not frm.offset().is_concrete():
-            state.set_killed("Read with non-constant offset not supported yet")
-            return [state]
         try:
             val, err = state.memory.read(frm, bytesNum)
         except NotImplementedError as e:
             state.set_killed(str(e))
             return [state]
         if err:
-            state.set_error(err)
+            if err.is_memory_error() and err.is_unsupported():
+                state.set_killed(str(err))
+            else:
+                state.set_error(err)
         else:
             state.set(toOp, val)
         return [state]
