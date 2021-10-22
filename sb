@@ -215,7 +215,9 @@ class TestCaseGenerator:
             write(f'<edge source="{lid-1}" target="{lid}">\n')
             write(f'  <data key="assumption">\\result=={val.value()}</data>\n')
             write(f'  <data key="assumption.resultfunction">{var}</data>\n')
-            #   <data key="startline">5501</data>
+            dbgloc = instruction.get_metadata("dbgloc")
+            if dbgloc:
+                write(f'  <data key="startline">{dbgloc[1]}</data>\n')
             write('</edge>\n')
         write(f'<node id="{lid+1}">\n')
         write('  <data key="violation">true</data>\n')
