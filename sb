@@ -193,14 +193,13 @@ class TestCaseGenerator:
 
     def generate_svcomp_witness(self, fl, state):
         inpvec = state.input_vector()
-        fl.write("""
-<?xml version='1.0' encoding='UTF-8'?>
-<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/    XMLSchema-instance">
-<graph edgedefault="directed">
-<node id="0">
-  <data key="entry">true</data>
-</node>\n
-""")
+        fl.write("<?xml version='1.0' encoding='UTF-8'?>\n")
+        fl.write('<graphml xmlns="http://graphml.graphdrawing.org/xmlns" '
+                 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n')
+        fl.write('<graph edgedefault="directed">')
+        fl.write('<node id="0">\n')
+        fl.write('  <data key="entry">true</data>\n')
+        fl.write('</node>\n\n')
         lid = 0
         for var, val in zip(state.nondets(), inpvec):
             instruction = var.instruction
@@ -220,6 +219,8 @@ class TestCaseGenerator:
         fl.write('  <data key="violation">true</data>\n')
         fl.write('</node>\n')
         fl.write(f'<edge source="{lid}" target="{lid+1}"/>\n')
+        fl.write('</graph>\n')
+        fl.write('</graphml>\n')
 
     def processState(self, state):
         assert not state.is_ready()
