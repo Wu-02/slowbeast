@@ -185,21 +185,23 @@ class TestCaseGenerator:
         inpvec = state.input_vector()
         for var, val in zip(state.nondets(), inpvec):
             # dump as unsigned and signed
-            fl.write("  {0} -> {1} ({2})\n".format(var, val,
-                                                   (val.value() - (1 <<
-                                                                      val.bitwidth()))))
+            fl.write(f"  {var} -> {val.value()}u")
+            fl.write(" ({0})\n".format(val.value()
+                                       if val.value() < (1 << (val.bitwidth() - 1))
+                                       else (val.value() - (1 << val.bitwidth()))))
         fl.write('\n')
         state.dump(stream=fl)
 
     def generate_svcomp_witness(self, fl, state):
         inpvec = state.input_vector()
-        fl.write("<?xml version='1.0' encoding='UTF-8'?>\n")
-        fl.write('<graphml xmlns="http://graphml.graphdrawing.org/xmlns" '
+        write = fl.write
+        write("<?xml version='1.0' encoding='UTF-8'?>\n")
+        write('<graphml xmlns="http://graphml.graphdrawing.org/xmlns" '
                  'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n')
-        fl.write('<graph edgedefault="directed">')
-        fl.write('<node id="0">\n')
-        fl.write('  <data key="entry">true</data>\n')
-        fl.write('</node>\n\n')
+        write('<graph edgedefault="directed">\n\n')
+        write('<node id="0">\n')
+        write('  <data key="entry">true</data>\n')
+        write('</node>\n\n')
         lid = 0
         for var, val in zip(state.nondets(), inpvec):
             instruction = var.instruction
@@ -209,18 +211,18 @@ class TestCaseGenerator:
 
             lid += 1
             # dump as unsigned and signed
-            fl.write(f'<node id="{lid}">\n')
-            fl.write(f'<edge source="{lid-1}" target="{lid}">\n')
-            fl.write(f'  <data key="assumption">\\result=={val.value()}</data>\n')
-            fl.write(f'  <data key="assumption.resultfunction">{var}</data>\n')
+            write(f'<node id="{lid}"/>\n')
+            write(f'<edge source="{lid-1}" target="{lid}">\n')
+            write(f'  <data key="assumption">\\result=={val.value()}</data>\n')
+            write(f'  <data key="assumption.resultfunction">{var}</data>\n')
             #   <data key="startline">5501</data>
-            fl.write('</edge>\n')
-        fl.write(f'<node id="{lid+1}">\n')
-        fl.write('  <data key="violation">true</data>\n')
-        fl.write('</node>\n')
-        fl.write(f'<edge source="{lid}" target="{lid+1}"/>\n')
-        fl.write('</graph>\n')
-        fl.write('</graphml>\n')
+            write('</edge>\n')
+        write(f'<node id="{lid+1}">\n')
+        write('  <data key="violation">true</data>\n')
+        write('</node>\n\n')
+        write(f'<edge source="{lid}" target="{lid+1}"/>\n')
+        write('</graph>\n')
+        write('</graphml>\n')
 
     def processState(self, state):
         assert not state.is_ready()
