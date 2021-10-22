@@ -93,9 +93,17 @@ class SymbolicExecutor(Interpreter):
         if s.is_ready():
             self.states.append(s)
         elif s.has_error():
-            print_stderr(
-                "{0}: {1} @ {2}".format(s.get_id(), s.get_error(), s.pc), color="redul"
-            )
+            dbgloc = s.pc.get_metadata("dbgloc")
+            if dbgloc:
+                print_stderr(
+                    f"[{s.get_id()}] {dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]}: {s.get_error()}",
+                    color="redul"
+                )
+            else:
+                print_stderr(
+                    "{0}: {1} @ {2}".format(s.get_id(), s.get_error(), s.pc),
+                    color="redul"
+                )
             print_stderr("Error found.", color="red")
             stats.errors += 1
             stats.paths += 1

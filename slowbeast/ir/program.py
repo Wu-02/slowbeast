@@ -72,6 +72,13 @@ class ProgramElement:
     def metadata(self):
         return self._metadata
 
+    def get_metadata(self, key):
+        assert isinstance(key, str)
+        for k, v in self._metadata:
+            if k == key:
+                return v
+        return None
+
     def add_metadata(self, key, value):
         assert isinstance(key, str)
         self._metadata.append((key, value))
