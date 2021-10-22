@@ -170,6 +170,7 @@ class Parser:
         self.error_funs = error_funs or []
         self._bblocks = {}
         self._mapping = {}
+        self._funs = {}
         self._names = {}
         self._metadata_opts = ["llvm", "dbgloc", "dbgvar"]
         self._name_vars = True
@@ -184,6 +185,10 @@ class Parser:
         if not ret:
             if op.is_constantexpr:
                 ret = self._parse_ce(op)
+        if not ret:
+            # try if it is a function
+            ret = self._funs.get(op)
+
         assert ret, "Do not have an operand: {0}".format(op)
         return ret
 
@@ -827,7 +832,9 @@ class Parser:
                     "Cannot parse function return type: {0}".format(f.type.element_type)
                 )
             args = [Argument(get_sb_type(self.llvmmodule, a.type)) for a in f.arguments]
-            self.program.add_fun(Function(f.name, args, retty))
+            fun = Function(f.name, args, retty)
+            self.program.add_fun(fun)
+            self._funs[f] = fun
 
         for f in m.functions:
             if f.name in special_functions:
