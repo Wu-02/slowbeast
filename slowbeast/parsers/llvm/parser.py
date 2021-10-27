@@ -453,7 +453,8 @@ class Parser:
                "dbgvar" in self._metadata_opts:
                 var, name, ty = llvm.parse_dbg_declare(inst)
                 varop = self.operand(var)
-                varop.add_metadata("dbgvar", (name, ty))
+                varop.add_metadata("dbgvar", (name.decode('utf-8'),
+                                              ty.decode('utf-8')))
                 if self._name_vars:
                     cnt = self._names.setdefault(name, None)
                     if cnt is None:
