@@ -34,6 +34,9 @@ class ExecutionState:
         rhs._status = self._status.copy()
 
     def copy(self):
+        # do not use copy.copy() so that we bump the id counter
+        # also, use type(self) so that this method works also for
+        # child classes (if not overridden)
         new = type(self)()
         self._copy_to(new)
         return new

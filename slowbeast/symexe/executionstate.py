@@ -78,7 +78,7 @@ class SEState(ExecutionState):
         return self._executor
 
     def expr_manager(self):
-        return self._solver.expr_manager()
+        return self.solver().expr_manager()
 
     def is_sat(self, *e):
         # XXX: check whether this kind of preprocessing is not too costly
@@ -95,14 +95,14 @@ class SEState(ExecutionState):
         if not symb:
             return True
 
-        r = self._solver.try_is_sat(1000, *self.constraints(), *e)
+        r = self.solver().try_is_sat(1000, *self.constraints(), *e)
         if r is not None:
             return r
 
         return solve_incrementally(self.constraints(), e, self.expr_manager())
 
     def try_is_sat(self, timeout, *e):
-        return self._solver.try_is_sat(timeout, *self.constraints(), *e)
+        return self.solver().try_is_sat(timeout, *self.constraints(), *e)
 
     def is_feasible(self):
         """
@@ -112,7 +112,7 @@ class SEState(ExecutionState):
         C = self.constraints()
         if not C:
             return True
-        r = self._solver.try_is_sat(1000, *C)
+        r = self.solver().try_is_sat(1000, *C)
         if r is not None:
             return r
 
@@ -120,10 +120,10 @@ class SEState(ExecutionState):
         return solve_incrementally([], C, em)
 
     def concretize(self, *e):
-        return self._solver.concretize(self.constraints(), *e)
+        return self.solver().concretize(self.constraints(), *e)
 
     def concretize_with_assumptions(self, assumptions, *e):
-        return self._solver.concretize(self.constraints() + assumptions, *e)
+        return self.solver().concretize(self.constraints() + assumptions, *e)
 
     def input_vector(self):
         return self.concretize(*self.nondet_values())
@@ -137,9 +137,6 @@ class SEState(ExecutionState):
         }
 
     def _copy_to(self, new):
-        # do not use copy.copy() so that we bump the id counter
-        # also, use type(self) so that this method works also for
-        # child classes (if not overridden)
         super()._copy_to(new)  # cow copy of super class
 
         new._executor = self._executor
@@ -165,7 +162,7 @@ class SEState(ExecutionState):
         return self._constraints
 
     def path_condition(self):
-        return self._constraints.as_formula(self._solver.expr_manager())
+        return self._constraints.as_formula(self.solver().expr_manager())
 
     def add_constraint(self, *C):
         if self._constraints_ro:
@@ -248,12 +245,14 @@ class SEState(ExecutionState):
 
 
 class IncrementalSEState(SEState):
-    def __init__(self, executor=None, pc=None, m=None, solver=None):
-        if solver:  # copy ctor
-            super().__init__(executor, pc, m, None, None)
-        else:
-            C = IncrementalConstraintsSet()
-            super().__init__(executor, pc, m, C.solver(), C)
+    def __init__(self, executor=None, pc=None, m=None):
+        C = IncrementalConstraintsSet()
+        super().__init__(executor, pc, m,
+                         solver=None, constraints=C)
+
+    def solver(self):
+        return self._constraints.solver()
+
 
 
 class LazySEState(SEState):
