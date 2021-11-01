@@ -328,7 +328,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
                 return r
             elif r is Result.UNSAFE:
                 self.return_states = states
-                dbg("Error found.", color="RED")
+                print_stdout("Error found.", color="RED")
                 return r
             elif r is Result.UNKNOWN:
                 self.return_states = states

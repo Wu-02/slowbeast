@@ -115,6 +115,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
     def report(self, n):
         if n.has_error():
+            print_stderr("Error found.", color="red")
             print_stderr(
                 "{0}: {1}, {2}".format(n.get_id(), n.pc, n.get_error()), color="RED"
             )

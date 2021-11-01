@@ -137,7 +137,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             dbg("Extending base".format(k), color="BLUE")
             r = self.extendBase()
             if r == Result.UNSAFE:
-                dbg("Error found.", color="RED")
+                print_stdout("Error found.", color="RED")
                 return 1
             elif r is Result.SAFE:
                 print_stdout("We searched the whole program!", color="GREEN")
