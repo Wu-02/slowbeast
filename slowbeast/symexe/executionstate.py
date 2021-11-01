@@ -243,7 +243,6 @@ class SEState(ExecutionState):
         write(str(self.constraints_obj()))
         write("\n")
 
-
 class IncrementalSEState(SEState):
     def __init__(self, executor=None, pc=None, m=None):
         C = IncrementalConstraintsSet()
@@ -252,7 +251,6 @@ class IncrementalSEState(SEState):
 
     def solver(self):
         return self._constraints.solver()
-
 
 
 class LazySEState(SEState):
