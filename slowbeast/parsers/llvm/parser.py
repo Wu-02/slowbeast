@@ -476,7 +476,7 @@ class Parser:
             raise NotImplementedError("Unknown function: {0}".format(fun))
 
         ty = get_sb_type(self.llvmmodule, inst.type)
-        C = Call(F, ty, *[self.operand(x) for x in getLLVMOperands(inst)[:-1]])
+        C = Call(F, ty, *[self.operand(x) for x in operands[:-1]])
         self._addMapping(inst, C)
         return [C]
 
