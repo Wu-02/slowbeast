@@ -1,6 +1,6 @@
 from sys import stdout
 
-from .types import Type, IntType, BoolType, PointerType
+from .types import Type, IntType, BoolType, PointerType, get_offset_type
 from .bblock import BBlock  # due to assertions
 from .program import ProgramElement
 
@@ -312,6 +312,25 @@ class Call(ValueTypedInstruction):
 
     def __str__(self):
         r = "x{0} = call {1}(".format(self.get_id(), self.called_function().as_value())
+        r += ", ".join(map(lambda x: x.as_value(), self.operands()))
+        return r + f") -> {self._type}"
+
+class Thread(Call):
+    def __init__(self, wht, *operands):
+        super().__init__(wht, get_offset_type(), *operands)
+
+    def called_function(self):
+        return self._function
+
+    def type(self):
+        return self._function.type()
+
+    def return_value(self):
+        raise NotImplementedError("No return values in funs yet")
+        # return self._function
+
+    def __str__(self):
+        r = "x{0} = thread {1}(".format(self.get_id(), self.called_function().as_value())
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + f") -> {self._type}"
 

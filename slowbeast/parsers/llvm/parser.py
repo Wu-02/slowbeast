@@ -160,7 +160,8 @@ def offset_of_struct_elem(llvmmodule, ty, cval):
     return off
 
 
-unsupported_funs = []
+unsupported_funs = ["pthread_get_specific", "pthread_set_specific"]
+thread_funs = ["pthread_create", "pthread_join"]
 
 
 class Parser:
@@ -428,6 +429,17 @@ class Parser:
             self._addMapping(inst, mp)
         return seq
 
+    def _createThreadFun(self, inst, operands, fun):
+        if fun == "pthread_join":
+            raise NotImplementedError("Not supported yet")
+        if fun == "pthread_create":
+            assert len(operands) == 5 # +1 for called fun
+            t = Thread(self.operand(operands[2]),
+                       self.operand(operands[3]))
+            self._addMapping(inst, t)
+            return [t]
+        raise NotImplementedError("Not supported thread function")
+
     def _createCall(self, inst):
         operands = getLLVMOperands(inst)
         assert len(operands) > 0
@@ -467,6 +479,9 @@ class Parser:
 
         if fun in unsupported_funs:
             raise NotImplementedError("Unsupported function: {0}".format(fun))
+
+        if fun in thread_funs:
+            return self._createThreadFun(inst, operands, fun)
 
         if fun in special_functions or fun in self.error_funs:
             return self._createSpecialCall(inst, fun)
