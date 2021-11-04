@@ -644,6 +644,35 @@ class ThreadedExecutor(Executor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
+    def execRet(self, state, instr):
+        assert isinstance(instr, Return)
+
+        # obtain the return value (if any)
+        ret = None
+        if len(instr.operands()) != 0:  # returns something
+            ret = state.eval(instr.operand(0))
+            assert ret is not None,\
+                    f"No return value even though there should be: {instr}"
+
+        # pop the call frame and get the return site
+        rs = state.pop_call()
+        if rs is None:  # popped the last frame
+            if ret is not None and ret.is_pointer():
+                state.set_error(GenericError("Returning a pointer from main function"))
+                return [state]
+
+            if state.num_threads() == 1:
+                state.set_exited(ret)
+            else:
+                state.remove_thread()
+            return [state]
+
+        if ret:
+            state.set(rs, ret)
+
+        state.pc = rs.get_next_inst()
+        return [state]
+
 
     def execute(self, state, instr):
         if isinstance(instr, Thread):

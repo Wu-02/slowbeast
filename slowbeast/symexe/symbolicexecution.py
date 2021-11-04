@@ -1,6 +1,7 @@
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
+from slowbeast.ir.instruction import Load, Store, Call, Return, Alloc
 from .executor import Executor as SExecutor, ThreadedExecutor
 
 
@@ -159,28 +160,76 @@ class SymbolicExecutor(Interpreter):
             return None
         return handler.states[0]
 
+
+def may_be_glob_mem(mem):
+    if isinstance(mem, Alloc):
+        return False
+    return True
+
+def is_global_ev(pc):
+    if isinstance(pc, Load):
+        return may_be_glob_mem(pc.operand(0))
+    if isinstance(pc, Store):
+        return may_be_glob_mem(pc.operand(1))
+    return isinstance(pc, Call)
+
 class ThreadedSymbolicExecutor(SymbolicExecutor):
     def __init__(self, P, ohandler=None, opts=SEOptions()):
         super().__init__(P, ohandler, opts, ExecutorClass=ThreadedExecutor)
+
+    def schedule(self, state):
+        l = state.num_threads()
+        assert l > 0
+        if l < 2:
+            return [state]
+        print('SCHED', list(map(lambda t: t[0], state.threads())))
+        for idx, t in enumerate(state.threads()):
+            if not is_global_ev(t[0]):
+                print("continuing", idx)
+                state.schedule(idx)
+                return [state]
+            else:
+                print('GLOB', t[0])
+
+        states = []
+        for idx in range(l):
+            s = state.copy()
+            print('forked', s.get_id())
+            s.schedule(idx)
+            states.append(s)
+        return states
+
+    def prepare(self):
+        """
+        Prepare the interpreter for execution.
+        I.e. initialize static memory and push the call to
+        the main function to call stack.
+        Result is a set of states before starting executing
+        the entry function.
+        """
+        self.states = self.initialStates()
+        self.run_static()
+
+        # push call to main to call stack
+        entry = self.getProgram().entry()
+        for s in self.states:
+            s.push_call(None, entry)
+            assert s.num_threads() == 1
+            s.sync_pc()
 
     def run(self):
         self.prepare()
 
         # we're ready to go!
+        schedule = self.schedule
         try:
             while self.states:
                 newstates = []
                 state = self.getNextState()
                 self.interact_if_needed(state)
-                l = len(state.threads())
-                assert l > 0
-                for t in range(l):
-                    if l > 1:
-                        s = state.copy()
-                        s.schedule(t)
-                    else:
-                        s = state
+                for s in schedule(state):
                     newstates += self._executor.execute(s, s.pc)
+                    s.sync_pc()
 
                 # self.states_num += len(newstates)
                 # if self.states_num % 100 == 0:
