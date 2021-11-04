@@ -1,7 +1,7 @@
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
-from .executor import Executor as SExecutor
+from .executor import Executor as SExecutor, ThreadedExecutor
 
 
 class SEOptions(ExecutionOptions):
@@ -158,3 +158,41 @@ class SymbolicExecutor(Interpreter):
         if len(handler.states) != 1:
             return None
         return handler.states[0]
+
+class ThreadedSymbolicExecutor(SymbolicExecutor):
+    def __init__(self, P, ohandler=None, opts=SEOptions()):
+        super().__init__(P, ohandler, opts, ExecutorClass=ThreadedExecutor)
+
+    def run(self):
+        self.prepare()
+
+        # we're ready to go!
+        try:
+            while self.states:
+                newstates = []
+                state = self.getNextState()
+                self.interact_if_needed(state)
+                l = len(state.threads())
+                assert l > 0
+                for t in range(l):
+                    if l > 1:
+                        s = state.copy()
+                        s.schedule(t)
+                    else:
+                        s = state
+                    newstates += self._executor.execute(s, s.pc)
+
+                # self.states_num += len(newstates)
+                # if self.states_num % 100 == 0:
+                #    print("Searched states: {0}".format(self.states_num))
+                self.handleNewStates(newstates)
+        except Exception as e:
+            print_stderr(
+                "Fatal error while executing '{0}'".format(state.pc), color="RED"
+            )
+            state.dump()
+            raise e
+
+        self.report()
+
+        return 0

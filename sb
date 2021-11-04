@@ -87,6 +87,8 @@ def createArgParser():
                         help='Confirm errors by replaying them without symbolic values')
     parser.add_argument('-se-incremental-solving', action='store_true',
                         help='Use incremental SMT solving')
+    parser.add_argument('-threads', action='store_true', default=False,
+                        help='Enable handling threads')
     parser.add_argument('-ai', action='store_true', default=False,
                         help='Perform abstract interpretation.')
    #parser.add_argument('-ai-domain', action='store', default=True,
@@ -513,6 +515,8 @@ def main():
         elif args.future_se:
             assert not args.stateful_se, "Not compatible at this moment"
             from slowbeast.symexe.futuresymbolicexecution import FutureSymbolicExecutor as SymbolicExecutor
+        elif args.threads:
+            from slowbeast.symexe.symbolicexecution import ThreadedSymbolicExecutor as SymbolicExecutor
         else:
             from slowbeast.symexe.symbolicexecution import SymbolicExecutor
         interpreter = SymbolicExecutor(P, ohandler, opts)

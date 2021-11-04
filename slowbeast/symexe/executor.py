@@ -2,15 +2,14 @@ from slowbeast.ir.instruction import *
 from slowbeast.domains.value import Value
 from slowbeast.domains.constants import ConcreteBool
 from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.domains.symbolic import NondetInstrResult
 from slowbeast.domains.pointer import Pointer
 from slowbeast.core.executor import Executor as ConcreteExecutor
 from slowbeast.solvers.expressions import is_symbolic
 from slowbeast.util.debugging import dbgv, ldbgv
-from slowbeast.core.errors import AssertFailError
+from slowbeast.core.errors import AssertFailError, GenericError
 
 from .memorymodel import SymbolicMemoryModel
-from .executionstate import SEState, IncrementalSEState
+from .executionstate import SEState, IncrementalSEState, ThreadedSEState
 from .statesset import StatesSet
 
 from random import getrandbits
@@ -67,7 +66,6 @@ def eval_condition(state, cond):
     # take care of it here: if it is a bitvector, compare it to 0 (C
     # semantics)
     return condition_to_bool(c, state.expr_manager())
-
 
 class Executor(ConcreteExecutor):
     def __init__(self, solver, opts, memorymodel=None):
@@ -614,3 +612,40 @@ class Executor(ConcreteExecutor):
             return val
 
         return state.solver().concretize(val, *state.constraints())
+
+class ThreadedExecutor(Executor):
+    def __init__(self, solver, opts, memorymodel=None):
+        super().__init__(solver, opts, memorymodel)
+
+    def create_state(self, pc=None, m=None):
+        if m is None:
+            m = self.getMemoryModel().create_memory()
+       #if self.getOptions().incremental_solving:
+       #    return IncrementalSEState(self, pc, m)
+        return ThreadedSEState(self, pc, m, self.solver)
+
+    def exec_thread(self, state, instr):
+        fun = instr.called_function()
+        ldbgv("-- THREAD {0} --", (fun.name()))
+        if fun.is_undefined():
+            state.set_error(
+                GenericError("Spawning thread with undefined function: {0}".format(fun.name()))
+            )
+            return [state]
+        # map values to arguments
+        assert len(instr.operands()) == len(fun.arguments())
+        mapping = {
+            x: state.eval(y) for (x, y) in zip(fun.arguments(), instr.operands())
+        }
+        pc, mem = state.add_thread(fun.bblock(0).instruction(0))
+        mem.push_call(None, fun, mapping or {})
+
+        # we executed the thread inst, so move
+        state.pc = state.pc.get_next_inst()
+        return [state]
+
+
+    def execute(self, state, instr):
+        if isinstance(instr, Thread):
+            return self.exec_thread(state, instr)
+        return super().execute(state, instr)

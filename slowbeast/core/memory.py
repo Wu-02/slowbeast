@@ -179,6 +179,13 @@ class Memory:
 
         return obj.read(bytesNum, ptr.offset())
 
+    def get_cs(self):
+        return self._cs
+
+    def set_cs(self, cs):
+        assert isinstance(cs, CallStack)
+        self._cs = cs
+
     def set(self, what, v):
         self._cs.set(what, v)
 

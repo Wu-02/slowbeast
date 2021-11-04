@@ -297,3 +297,33 @@ class LazySEState(SEState):
             self.set(v, value)
             self.create_nondet(v, value)
         return value
+
+class ThreadedSEState(SEState):
+    __slots__ = "_threads", "_current_thread"
+
+    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
+        super().__init__(executor, pc, m, solver, constraints)
+        self._threads = [(pc, self.memory.get_cs() if m else None)]
+        self._current_thread = 0
+
+    def _copy_to(self, new):
+        super()._copy_to(new)
+        new._threads = [(self.pc, self.memory.get_cs()) if idx == self._current_thread else (t[0], t[1].copy()) for (idx, t) in enumerate(self._threads)]
+        new._current_thread = self._current_thread
+
+    def schedule(self, idx):
+        print('# scheduling ', idx)
+        assert idx < len(self._threads)
+        self._threads[self._current_thread] = (self.pc, self.memory.get_cs())
+
+        self.pc = self._threads[idx][0]
+        self.memory.set_cs(self._threads[idx][1])
+        self._current_thread = idx
+
+    def add_thread(self, pc):
+        pair = (pc, self.memory.get_cs().copy())
+        self._threads.append(pair)
+        return pair
+
+    def threads(self):
+        return self._threads
