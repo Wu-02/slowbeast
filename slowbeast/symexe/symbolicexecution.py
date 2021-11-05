@@ -182,19 +182,14 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         assert l > 0
         if l < 2:
             return [state]
-        print('SCHED', list(map(lambda t: t[0], state.threads())))
         for idx, t in enumerate(state.threads()):
             if not is_global_ev(t[0]):
-                print("continuing", idx)
                 state.schedule(idx)
                 return [state]
-            else:
-                print('GLOB', t[0])
 
         states = []
         for idx in range(l):
             s = state.copy()
-            print('forked', s.get_id())
             s.schedule(idx)
             states.append(s)
         return states

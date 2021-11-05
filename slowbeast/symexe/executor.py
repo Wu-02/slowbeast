@@ -644,6 +644,23 @@ class ThreadedExecutor(Executor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
+    def exec_thread_exit(self, state, instr):
+        assert isinstance(instr, ThreadExit)
+
+        # obtain the return value (if any)
+        ret = None
+        if len(instr.operands()) != 0:  # returns something
+            ret = state.eval(instr.operand(0))
+            assert ret is not None,\
+                    f"No return value even though there should be: {instr}"
+
+        state.remove_thread()
+        if state.num_threads() == 0:
+            state.set_exited(ret)
+        print("We ignore value returned from thread & we do not join the thread (sync to join)")
+
+        return [state]
+
     def execRet(self, state, instr):
         assert isinstance(instr, Return)
 
@@ -677,4 +694,6 @@ class ThreadedExecutor(Executor):
     def execute(self, state, instr):
         if isinstance(instr, Thread):
             return self.exec_thread(state, instr)
+        elif isinstance(instr, ThreadExit):
+            return self.exec_thread_exit(state, instr)
         return super().execute(state, instr)

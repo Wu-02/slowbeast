@@ -315,6 +315,18 @@ class Call(ValueTypedInstruction):
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + f") -> {self._type}"
 
+class Return(Instruction):
+    def __init__(self, val=None):
+        if val is None:
+            super().__init__([])
+        else:
+            super().__init__([val])
+
+    def __str__(self):
+        if len(self.operands()) == 0:
+            return "ret"
+        return "ret {0}".format(str(self.operand(0).as_value()))
+
 class Thread(Call):
     def __init__(self, wht, *operands):
         super().__init__(wht, get_offset_type(), *operands)
@@ -334,19 +346,14 @@ class Thread(Call):
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + f") -> {self._type}"
 
-
-class Return(Instruction):
+class ThreadExit(Return):
     def __init__(self, val=None):
-        if val is None:
-            super().__init__([])
-        else:
-            super().__init__([val])
+        super().__init__(val)
 
     def __str__(self):
         if len(self.operands()) == 0:
-            return "ret"
-        return "ret {0}".format(str(self.operand(0).as_value()))
-
+            return "thread exit"
+        return f"thread exit ret {self.operand(0).as_value()}"
 
 class Print(Instruction):
     def __init__(self, *operands):

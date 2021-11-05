@@ -313,7 +313,8 @@ class ThreadedSEState(SEState):
 
     def sync_pc(self):
         # FIXME: do not use tuples, use new obj where we can set just one elem
-        self._threads[self._current_thread] = (self.pc, self._threads[self._current_thread][1])
+        if self._threads:
+            self._threads[self._current_thread] = (self.pc, self._threads[self._current_thread][1])
 
     def schedule(self, idx):
         assert idx < len(self._threads)
@@ -336,10 +337,11 @@ class ThreadedSEState(SEState):
 
     def remove_thread(self, idx=None):
         self._threads.pop(self._current_thread if idx is None else idx)
-        # schedule thread 0 -- user will reschedule if desired
-        self.pc = self._threads[0][0]
-        self.memory.set_cs(self._threads[0][1])
-        self._current_thread = 0
+        # schedule thread 0 (if there is any) -- user will reschedule if desired
+        if self._threads:
+            self.pc = self._threads[0][0]
+            self.memory.set_cs(self._threads[0][1])
+            self._current_thread = 0
 
     def num_threads(self):
         return len(self._threads)
