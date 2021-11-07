@@ -299,13 +299,21 @@ class LazySEState(SEState):
         return value
 
 class Thread:
-    __slots__ = "pc", "cs"
+    __slots__ = "pc", "cs", "_id"
+
+    ids = 0
+
     def __init__(self, pc, callstack):
         self.pc = pc
         self.cs = callstack # callstack
+        self._id = Thread.ids
+        Thread.ids += 1
 
     def copy(self):
         return Thread(self.pc, self.cs.copy())
+
+    def get_id(self):
+        return self._id
 
     def __str__(self):
         return f"Thread({self.pc})"
@@ -333,7 +341,7 @@ class ThreadedSEState(SEState):
 
     def schedule(self, idx):
         assert idx < len(self._threads)
-        # save current thread
+        # sync current thread
         thr = self._threads[self._current_thread]
         thr.pc, thr.cs = self.pc, self.memory.get_cs()
 
