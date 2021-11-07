@@ -298,36 +298,56 @@ class LazySEState(SEState):
             self.create_nondet(v, value)
         return value
 
+class Thread:
+    __slots__ = "pc", "cs"
+    def __init__(self, pc, callstack):
+        self.pc = pc
+        self.cs = callstack # callstack
+
+    def copy(self):
+        return Thread(self.pc, self.cs.copy())
+
+    def __str__(self):
+        return f"Thread({self.pc})"
+
+    def __repr__(self):
+        return f"Thread[pc: {self.pc}, cs: {self.cs}]"
+
+
 class ThreadedSEState(SEState):
     __slots__ = "_threads", "_current_thread"
 
     def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
         super().__init__(executor, pc, m, solver, constraints)
-        self._threads = [(pc, self.memory.get_cs() if m else None)]
+        self._threads = [Thread(pc, self.memory.get_cs() if m else None)]
         self._current_thread = 0
 
     def _copy_to(self, new):
         super()._copy_to(new)
-        new._threads = [(self.pc, self.memory.get_cs()) if idx == self._current_thread else (t[0], t[1].copy()) for (idx, t) in enumerate(self._threads)]
+        new._threads = [t if idx == self._current_thread else t.copy() for (idx, t) in enumerate(self._threads)]
         new._current_thread = self._current_thread
 
     def sync_pc(self):
-        # FIXME: do not use tuples, use new obj where we can set just one elem
         if self._threads:
-            self._threads[self._current_thread] = (self.pc, self._threads[self._current_thread][1])
+            self._threads[self._current_thread].pc = self.pc
 
     def schedule(self, idx):
         assert idx < len(self._threads)
-        self._threads[self._current_thread] = (self.pc, self.memory.get_cs())
+        # save current thread
+        thr = self._threads[self._current_thread]
+        thr.pc, thr.cs = self.pc, self.memory.get_cs()
 
-        self.pc = self._threads[idx][0]
-        self.memory.set_cs(self._threads[idx][1])
+        # schedule new thread
+        thr : Thread = self._threads[idx]
+        assert thr, self._threads
+        self.pc = thr.pc
+        self.memory.set_cs(thr.cs)
         self._current_thread = idx
 
     def add_thread(self, pc):
-        pair = (pc, self.memory.get_cs().copy())
-        self._threads.append(pair)
-        return pair
+        t = Thread(pc, self.memory.get_cs().copy())
+        self._threads.append(t)
+        return t
 
     def current_thread(self):
         return self._current_thread
@@ -339,8 +359,8 @@ class ThreadedSEState(SEState):
         self._threads.pop(self._current_thread if idx is None else idx)
         # schedule thread 0 (if there is any) -- user will reschedule if desired
         if self._threads:
-            self.pc = self._threads[0][0]
-            self.memory.set_cs(self._threads[0][1])
+            self.pc = self._threads[0].pc
+            self.memory.set_cs(self._threads[0].cs)
             self._current_thread = 0
 
     def num_threads(self):

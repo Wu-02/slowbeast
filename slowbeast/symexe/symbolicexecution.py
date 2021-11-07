@@ -183,7 +183,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         if l < 2:
             return [state]
         for idx, t in enumerate(state.threads()):
-            if not is_global_ev(t[0]):
+            if not is_global_ev(t.pc):
                 state.schedule(idx)
                 return [state]
 
