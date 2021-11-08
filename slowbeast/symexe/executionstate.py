@@ -349,7 +349,7 @@ class Thread:
         return s + ")"
 
     def __repr__(self):
-        return f"Thread[{self.get_id()()}: pc: {self.pc}, cs: {self.cs}]"
+        return f"Thread[{self.get_id()}: pc: {self.pc}, cs: {self.cs}]"
 
 
 class ThreadedSEState(SEState):
@@ -388,6 +388,8 @@ class ThreadedSEState(SEState):
             self._threads[self._current_thread].pc = self.pc
 
     def schedule(self, idx):
+        if self._current_thread == idx:
+            return
         assert idx < len(self._threads)
         # sync current thread
         thr = self._threads[self._current_thread]
