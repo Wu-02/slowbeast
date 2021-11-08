@@ -2,7 +2,7 @@ from slowbeast.ir.instruction import *
 from slowbeast.ir.types import get_offset_type
 from slowbeast.domains.value import Value
 from slowbeast.domains.constants import ConcreteBool
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal, dom_is_concrete
 from slowbeast.domains.pointer import Pointer
 from slowbeast.core.executor import Executor as ConcreteExecutor
 from slowbeast.solvers.expressions import is_symbolic
@@ -288,6 +288,20 @@ class Executor(ConcreteExecutor):
         state.set_killed("Invalid pointer comparison")
         return [state]
 
+    def compare_ptr_and_nonptr(self, em, pred, op1, op2):
+        if pred not in (Cmp.EQ, Cmp.NE):
+            return None # we cannot handle that yet
+        if dom_is_concrete(op1):
+            op1, op2 = op2, op1
+        assert op1.is_pointer()
+        assert dom_is_concrete(op2)
+        if op2.is_zero():
+            obj, off = op1.object(), op1.offset()
+            expr = em.And(em.Eq(obj, em.ConcreteVal(0, obj.bitwidth())),
+                          em.Eq(off, em.ConcreteVal(0, off.bitwidth())))
+            return expr if pred == Cmp.EQ else em.Not(expr)
+        return None
+
     def exec_cmp(self, state, instr):
         assert isinstance(instr, Cmp)
         seval = state.eval
@@ -302,8 +316,8 @@ class Executor(ConcreteExecutor):
                 return self.compare_pointers(state, instr, op1, op2)
             else:
                 # we handle only comparison of symbolic constant (pointer) to null
+                E = state.expr_manager()
                 if op1isptr and op1.is_null():
-                    E = state.expr_manager()
                     state.set(
                         instr,
                         self.compare_values(
@@ -315,7 +329,6 @@ class Executor(ConcreteExecutor):
                         ),
                     )
                 elif op2isptr and op2.is_null():
-                    E = state.expr_manager()
                     state.set(
                         instr,
                         self.compare_values(
@@ -327,9 +340,14 @@ class Executor(ConcreteExecutor):
                         ),
                     )
                 else:
-                    state.set_killed(
-                        f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}"
-                    )
+                    expr = self.compare_ptr_and_nonptr(E, instr.predicate(), op1, op2)
+                    if expr is None:
+                        state.set_killed(
+                            f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}"
+                        )
+                        return [state]
+                    state.set(instr, expr)
+                state.pc = state.pc.get_next_inst()
                 return [state]
 
         x = self.compare_values(
@@ -682,9 +700,9 @@ class ThreadedExecutor(Executor):
         # pop the call frame and get the return site
         rs = state.pop_call()
         if rs is None:  # popped the last frame
-            if ret is not None and ret.is_pointer():
-                state.set_error(GenericError("Returning a pointer from main function"))
-                return [state]
+           #if ret is not None and ret.is_pointer():
+           #    state.set_error(GenericError("Returning a pointer from main function"))
+           #    return [state]
 
             if state.thread().get_id() == 0:
                 # this is the main thread exiting, exit the whole program
