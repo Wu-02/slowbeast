@@ -1,6 +1,7 @@
 from slowbeast.core.executionstate import ExecutionState
-from slowbeast.util.debugging import warn, ldbgv
-from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
+from slowbeast.core.errors import GenericError
+from slowbeast.util.debugging import warn, ldbgv, FIXME
+from slowbeast.ir.instruction import Alloc, GlobalVariable, Load, ThreadJoin
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
 from slowbeast.solvers.solver import solve_incrementally
 from copy import copy
@@ -233,7 +234,7 @@ class SEState(ExecutionState):
         return None
 
     def dump(self, stream=stdout):
-        ExecutionState.dump(self, stream)
+        super().dump(stream)
         write = stream.write
         write(" -- nondets --\n")
         for n in self._nondets:
@@ -299,41 +300,88 @@ class LazySEState(SEState):
         return value
 
 class Thread:
-    __slots__ = "pc", "cs", "_id"
+    __slots__ = "pc", "cs", "_id", "_paused", "_detached", "_exit_val"
 
-    ids = 0
+    #ids = 0
 
-    def __init__(self, pc, callstack):
+    def __init__(self, tid, pc, callstack):
         self.pc = pc
         self.cs = callstack # callstack
-        self._id = Thread.ids
-        Thread.ids += 1
+        self._id = tid #Thread.ids
+        self._paused = False
+        self._detached = False
+        self._exit_val = None
+        #Thread.ids += 1
 
     def copy(self):
-        return Thread(self.pc, self.cs.copy())
+        n = copy(self) # shallow copy
+        n.cs = self.cs.copy()
+        return n
 
     def get_id(self):
         return self._id
 
+    def is_detached(self):
+        return self._detached
+
+    def set_detached(self):
+        self._detached = True
+
+    def pause(self):
+        assert not self._paused
+        self._paused = True
+
+    def unpause(self):
+        assert self._paused
+        self._paused = False
+
+    def is_paused(self):
+        return self._paused
+
     def __str__(self):
-        return f"Thread({self.pc})"
+        s = f"Thread({self.get_id()}@{self.pc}"
+        if self.is_paused():
+            s += ", paused"
+        if self.is_detached():
+            s += ", detached"
+        if self._exit_val is not None:
+            s += f", exited with {self._exit_val}"
+        return s + ")"
 
     def __repr__(self):
-        return f"Thread[pc: {self.pc}, cs: {self.cs}]"
+        return f"Thread[{self.get_id()()}: pc: {self.pc}, cs: {self.cs}]"
 
 
 class ThreadedSEState(SEState):
-    __slots__ = "_threads", "_current_thread"
+    __slots__ = "_threads", "_current_thread", "_exited_threads", "_wait_join", "_last_tid", "_trace"
 
     def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
         super().__init__(executor, pc, m, solver, constraints)
-        self._threads = [Thread(pc, self.memory.get_cs() if m else None)]
+        self._last_tid = 0
         self._current_thread = 0
+        self._threads = [Thread(0, pc, self.memory.get_cs() if m else None)]
+        # threads waiting in join until the joined thread exits
+        self._wait_join = {}
+        self._exited_threads = {}
+        self._trace = []
+
+    def _thread_idx(self, thr):
+        if isinstance(thr, Thread):
+            return self._threads.index(thr)
+        else:
+            for idx, t in enumerate(self._threads):
+                if t.get_id() == thr:
+                    return idx
+        return None
 
     def _copy_to(self, new):
         super()._copy_to(new)
-        new._threads = [t if idx == self._current_thread else t.copy() for (idx, t) in enumerate(self._threads)]
+        new._threads = [t.copy() for t in self._threads]
+        new._wait_join = self._wait_join.copy()
+        new._exited_threads = self._exited_threads.copy()
+        new._last_tid = self._last_tid
         new._current_thread = self._current_thread
+        new._trace = self._trace.copy()
 
     def sync_pc(self):
         if self._threads:
@@ -353,8 +401,11 @@ class ThreadedSEState(SEState):
         self._current_thread = idx
 
     def add_thread(self, pc):
-        t = Thread(pc, self.memory.get_cs().copy())
+        self._last_tid += 1
+        t = Thread(self._last_tid, pc, self.memory.get_cs().copy())
+        assert not t.is_paused()
         self._threads.append(t)
+        self._trace.append(f"add thread {t.get_id()}")
         return t
 
     def current_thread(self):
@@ -363,7 +414,65 @@ class ThreadedSEState(SEState):
     def thread(self, idx=None):
         return self._threads[self._current_thread if idx is None else idx]
 
+    def pause_thread(self, idx=None):
+        self._trace.append(f"pause thread {self.thread(idx).get_id()}")
+        self._threads[self._current_thread if idx is None else idx].pause()
+
+    def unpause_thread(self, idx=None):
+        self._trace.append(f"unpause thread {self.thread(idx).get_id()}")
+        self._threads[self._current_thread if idx is None else idx].unpause()
+
+    def exit_thread(self, tid=None):
+        """ Exit thread and wait for join (if not detached) """
+        if tid is None:
+            tid = self.thread().get_id()
+        retval = self.eval(self.pc.operand(0))
+        self._trace.append(f"exit thread {tid} with val {retval}")
+        assert not tid in self._exited_threads
+        self._exited_threads[tid] = retval
+        tidx = self._thread_idx(tid)
+        self.remove_thread(tidx)
+
+        if tid in self._wait_join:
+            self._trace.append(f"thread {tid} was waited for by {self._wait_join[tid]}")
+            # idx of the thread that is waiting on 'tid' to exit
+            waitidx = self._thread_idx(self._wait_join[tid])
+            assert self.thread(waitidx).is_paused(), self._wait_join
+            self.unpause_thread(waitidx)
+            t = self.thread(waitidx)
+            # pass the return value
+            assert isinstance(t.pc, ThreadJoin), t
+            t.cs.set(t.pc, retval)
+            t.pc = t.pc.get_next_inst()
+            self._wait_join.pop(tid)
+
+    def join_threads(self, tid, totid=None):
+        """
+        tid: id of the thread to join
+        totid: id of the thread to which to join (None means the current thread)
+        """
+        self._trace.append(f"join thread {tid} to {self.thread().get_id() if totid is None else totid}")
+        if tid in self._exited_threads:
+            # pass the return value
+            retval = self._exited_threads.pop(tid)
+            self.set(self.pc, retval)
+            self.pc = self.pc.get_next_inst()
+            self._trace.append(f"thread {tid} waited for a join, joining with val {retval}")
+            return
+
+        assert not tid in self._wait_join, self._wait_join
+        if totid is None:
+            self._trace.append(f"thread {tid} is waited in join by {self.thread().get_id()}")
+            self._wait_join[tid] = self.thread().get_id()
+            toidx = self._current_thread
+        else:
+            self._trace.append(f"thread {tid} is waited in join by {totid}")
+            self._wait_join[tid] = totid
+            toidx = self._thread_idx(totid)
+        self.pause_thread(toidx)
+
     def remove_thread(self, idx=None):
+        self._trace.append(f"removing thread {self.thread(idx).get_id()}")
         self._threads.pop(self._current_thread if idx is None else idx)
         # schedule thread 0 (if there is any) -- user will reschedule if desired
         if self._threads:
@@ -371,8 +480,31 @@ class ThreadedSEState(SEState):
             self.memory.set_cs(self._threads[0].cs)
             self._current_thread = 0
 
+        # after the last thread terminates, exit(0) is called
+        # see man pthread_exit
+        if self.num_threads() == 0:
+            self.set_exited(0)
+
     def num_threads(self):
         return len(self._threads)
 
     def threads(self):
         return self._threads
+
+    def dump(self, stream=stdout):
+        super().dump(stream)
+        write = stream.write
+        write(" -- Threads --\n")
+        for idx, t in enumerate(self._threads):
+            write(f"  {idx}: {t}\n")
+        if self._exited_threads:
+            write(" -- Exited threads waiting for join: {self._wait_exit}\n")
+        else:
+            write (" -- No exited threads are waiting for join\n")
+        if self._wait_join:
+            write(" -- Threads waiting in join: {self._wait_join}\n")
+        else:
+            write(" -- No threads are waiting in join\n")
+        write(" -- Trace --\n")
+        for it in self._trace:
+            write(it + "\n")

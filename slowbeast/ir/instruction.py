@@ -355,6 +355,18 @@ class ThreadExit(Return):
             return "thread exit"
         return f"thread exit ret {self.operand(0).as_value()}"
 
+class ThreadJoin(ValueTypedInstruction):
+    def __init__(self, ty, ops=None):
+        super().__init__(ty, ops)
+
+    def __str__(self):
+        if len(self.operands()) == 0:
+            r = "thread join"
+        else:
+            r = f"x{self.get_id()} = thread join ("
+        r += ", ".join(map(lambda x: x.as_value(), self.operands()))
+        return r + ")"
+
 class Print(Instruction):
     def __init__(self, *operands):
         super().__init__([*operands])

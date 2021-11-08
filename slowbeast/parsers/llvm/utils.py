@@ -211,10 +211,5 @@ def bvToBoolElseId(bv):
             return ConstantTrue
     return bv
 
-
-def get_constant(val):
-    if is_pointer_ty(val.type):
-        return get_pointer_constant(val)
-
 def getLLVMOperands(inst):
     return [x for x in inst.operands]

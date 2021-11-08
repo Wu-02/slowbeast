@@ -2,6 +2,7 @@ from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from slowbeast.ir.instruction import Load, Store, Call, Return, Alloc
+from slowbeast.core.errors import GenericError
 from .executor import Executor as SExecutor, ThreadedExecutor
 
 
@@ -166,12 +167,12 @@ def may_be_glob_mem(mem):
         return False
     return True
 
-def is_global_ev(pc):
+def is_global_ev(pc, ismain):
     if isinstance(pc, Load):
         return may_be_glob_mem(pc.operand(0))
     if isinstance(pc, Store):
         return may_be_glob_mem(pc.operand(1))
-    return isinstance(pc, Call)
+    return isinstance(pc, Call) or (isinstance(pc, Return) and ismain)
 
 class ThreadedSymbolicExecutor(SymbolicExecutor):
     def __init__(self, P, ohandler=None, opts=SEOptions()):
@@ -180,19 +181,28 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
     def schedule(self, state):
         l = state.num_threads()
         assert l > 0
-        if l < 2:
-            return [state]
         for idx, t in enumerate(state.threads()):
-            if not is_global_ev(t.pc):
+            if t.is_paused():
+                continue
+            if not is_global_ev(t.pc, t.get_id() == 0):
                 state.schedule(idx)
                 return [state]
 
-        states = []
-        for idx in range(l):
-            s = state.copy()
-            s.schedule(idx)
-            states.append(s)
-        return states
+        can_run = [idx for idx, t in enumerate(state.threads()) if not t.is_paused()]
+        if len(can_run) == 1:
+            state.schedule(can_run[0])
+            return [state]
+        else:
+            states = []
+            for idx in can_run:
+                s = state.copy()
+                s.schedule(idx)
+                states.append(s)
+            if not states:
+                state.set_error(GenericError("Deadlock detected"))
+                return [state]
+            assert states
+            return states
 
     def prepare(self):
         """
@@ -223,8 +233,11 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
                 state = self.getNextState()
                 self.interact_if_needed(state)
                 for s in schedule(state):
-                    newstates += self._executor.execute(s, s.pc)
-                    s.sync_pc()
+                    if s.is_ready():
+                        newstates += self._executor.execute(s, s.pc)
+                        s.sync_pc()
+                    else:
+                        newstates.append(s)
 
                 # self.states_num += len(newstates)
                 # if self.states_num % 100 == 0:

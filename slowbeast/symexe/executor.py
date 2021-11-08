@@ -1,4 +1,5 @@
 from slowbeast.ir.instruction import *
+from slowbeast.ir.types import get_offset_type
 from slowbeast.domains.value import Value
 from slowbeast.domains.constants import ConcreteBool
 from slowbeast.domains.concrete import ConcreteVal
@@ -626,7 +627,7 @@ class ThreadedExecutor(Executor):
 
     def exec_thread(self, state, instr):
         fun = instr.called_function()
-        ldbgv("-- THREAD {0} --", (fun.name()))
+        ldbgv("-- THREAD {0} --", (fun.name(),))
         if fun.is_undefined():
             state.set_error(
                 GenericError("Spawning thread with undefined function: {0}".format(fun.name()))
@@ -642,6 +643,7 @@ class ThreadedExecutor(Executor):
 
         # we executed the thread inst, so move
         state.pc = state.pc.get_next_inst()
+        state.set(instr, ConcreteVal(t.get_id(), get_offset_type()))
         return [state]
 
     def exec_thread_exit(self, state, instr):
@@ -654,11 +656,17 @@ class ThreadedExecutor(Executor):
             assert ret is not None,\
                     f"No return value even though there should be: {instr}"
 
-        state.remove_thread()
-        if state.num_threads() == 0:
-            state.set_exited(ret)
-        print("We ignore value returned from thread & we do not join the thread (sync to join)")
+        state.exit_thread()
+        return [state]
 
+    def exec_thread_join(self, state, instr):
+        assert isinstance(instr, ThreadJoin)
+        assert len(instr.operands()) == 1
+        tid = state.eval(instr.operand(0))
+        if not tid.is_concrete():
+            state.set_killed("Symbolic thread values are unsupported yet")
+        else:
+            state.join_threads(tid.value())
         return [state]
 
     def execRet(self, state, instr):
@@ -678,10 +686,14 @@ class ThreadedExecutor(Executor):
                 state.set_error(GenericError("Returning a pointer from main function"))
                 return [state]
 
-            if state.num_threads() == 1:
-                state.set_exited(ret)
+            if state.thread().get_id() == 0:
+                # this is the main thread exiting, exit the whole program
+                # FIXME: we should call dtors and so on...
+                state.set_exited(0)
             else:
-                state.remove_thread()
+                # this is the same as calling pthread_exit
+                # FIXME: set the retval to 'ret'
+                state.exit_thread()
             return [state]
 
         if ret:
@@ -692,8 +704,19 @@ class ThreadedExecutor(Executor):
 
 
     def execute(self, state, instr):
+        state._trace.append(
+            "({2}) {0}: {1}".format
+            (
+                "--" if not instr.bblock() else instr.fun().name(),
+                instr,
+                state.thread().get_id(),
+            ),
+        )
+
         if isinstance(instr, Thread):
             return self.exec_thread(state, instr)
         elif isinstance(instr, ThreadExit):
             return self.exec_thread_exit(state, instr)
+        elif isinstance(instr, ThreadJoin):
+            return self.exec_thread_join(state, instr)
         return super().execute(state, instr)

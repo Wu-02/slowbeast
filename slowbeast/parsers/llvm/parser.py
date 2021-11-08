@@ -431,13 +431,22 @@ class Parser:
 
     def _createThreadFun(self, inst, operands, fun):
         if fun == "pthread_join":
-            raise NotImplementedError("Not supported yet")
+            assert len(operands) == 3 # +1 for called fun
+            ty = get_sb_type(self.llvmmodule, operands[1].type.element_type)
+            t = ThreadJoin(ty, [self.operand(operands[0])])
+            self._addMapping(inst, t)
+            ret = self.operand(operands[1])
+            if ret.is_concrete() and ret.is_null():
+                return [t]
+            s = Store(t, ret, PointerType())
+            return [t, s]
         if fun == "pthread_create":
             assert len(operands) == 5 # +1 for called fun
             t = Thread(self.operand(operands[2]),
                        self.operand(operands[3]))
+            s = Store(t, self.operand(operands[0]), get_offset_type_size())
             self._addMapping(inst, t)
-            return [t]
+            return [t,s]
         if fun == "pthread_exit":
             assert len(operands) == 2 # +1 for called fun
             t = ThreadExit(self.operand(operands[0]))
