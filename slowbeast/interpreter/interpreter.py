@@ -132,6 +132,22 @@ class Interpreter:
                         "Generated errorneous state during initialization of globals"
                     )
 
+    def _main_args(self, state):
+        """
+        Initialize argc and argv (if needed) for the main function
+        """
+        fun = self.getProgram().entry()
+        args = fun.arguments()
+        if len(args) == 0:
+            return None
+        argc = state.solver().fresh_value("argc", args[0].type())
+        argv_size = state.solver().fresh_value("argv_size", args[0].type())
+        # FIXME: this is only approximation...
+        # FIXME: argv should be terminated with 0, but our memory model does not handle
+        # symbolic writes yet
+        argv = state.memory.allocate(argv_size, nm="argv")
+        return {args[0] : argc, args[1] : argv}
+
     def prepare(self):
         """
         Prepare the interpreter for execution.
@@ -145,9 +161,8 @@ class Interpreter:
 
         # push call to main to call stack
         for s in self.states:
-            s.push_call(None, self.getProgram().entry())
-
-        # self.states_num += len(self.states)
+            main_args = self._main_args(s)
+            s.push_call(None, self.getProgram().entry(), argsMapping=main_args)
 
     def report(self):
         pass

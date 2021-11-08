@@ -453,7 +453,7 @@ class Parser:
             self._addMapping(inst, t)
             return [t]
  
-        raise NotImplementedError("Not supported thread function")
+        raise NotImplementedError(f"Unsupported thread function: {fun}")
 
     def _createCall(self, inst):
         operands = getLLVMOperands(inst)
@@ -495,7 +495,7 @@ class Parser:
         if fun in unsupported_funs:
             raise NotImplementedError("Unsupported function: {0}".format(fun))
 
-        if fun in thread_funs:
+        if fun in thread_funs or fun.startswith("pthread_"):
             return self._createThreadFun(inst, operands, fun)
 
         if fun in special_functions or fun in self.error_funs:

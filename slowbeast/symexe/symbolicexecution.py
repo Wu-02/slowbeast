@@ -218,7 +218,8 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         # push call to main to call stack
         entry = self.getProgram().entry()
         for s in self.states:
-            s.push_call(None, entry)
+            main_args = self._main_args(s)
+            s.push_call(None, entry, argsMapping=main_args)
             assert s.num_threads() == 1
             s.sync_pc()
 
