@@ -51,6 +51,7 @@ if _use_z3:
         Z3_OP_SIGN_EXT,
         Z3_OP_CONCAT,
         Z3_OP_EXTRACT,
+        Z3_OP_ITE
     )
     from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic, Then, With, Repeat, OrElse
@@ -189,6 +190,31 @@ if _use_z3:
 
     def bv_size(bw):
         return bw.sort().size()
+
+    def to_c_expression(expr):
+        "An auxiliary method for debugging that converts expr to C expression"
+
+        if is_and(expr):
+            return "({0})".format(" && ".join(map(to_c_expression, expr.children())))
+        if is_or(expr):
+            return "({0})".format(" || ".join(map(to_c_expression, expr.children())))
+        if is_not(expr):
+            return f"!({to_c_expression(expr.children()[0])})"
+
+        chlds = expr.children()
+        if is_app_of(expr, Z3_OP_ITE):
+            return f"({to_c_expression(chlds[0])} ? {to_c_expression(chlds[1])} : {to_c_expression(chlds[2])} )"
+        if is_app_of(expr, Z3_OP_SLEQ) or is_app_of(expr, Z3_OP_ULEQ):
+            return f"({to_c_expression(chlds[0])}) <= ({to_c_expression(chlds[1])})"
+        if is_app_of(expr, Z3_OP_SLT) or is_app_of(expr, Z3_OP_ULT):
+            return f"({to_c_expression(chlds[0])}) < ({to_c_expression(chlds[1])})"
+        if is_app_of(expr, Z3_OP_SGEQ) or is_app_of(expr, Z3_OP_UGEQ):
+            return f"({to_c_expression(chlds[0])}) >= ({to_c_expression(chlds[1])})"
+        if is_app_of(expr, Z3_OP_SGT) or is_app_of(expr, Z3_OP_UGT):
+            return f"({to_c_expression(chlds[0])}) > ({to_c_expression(chlds[1])})"
+
+        return str(expr)
+
 
     def _expr_op_to_formula_op(expr):
         if is_and(expr):
