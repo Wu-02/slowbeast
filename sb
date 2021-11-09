@@ -172,10 +172,10 @@ def print_stats(engine):
         color='CYAN')
 
 def _inv_to_c(inv):
-    return f"({to_c_expression(inv.get_cannonical().unwrap())})".replace("&&", "&amp;&amp;")
+    return f"({to_c_expression(inv.get_cannonical().unwrap())})"
 
 def inv_to_c(inv):
-    return str("amp;amp;".join(map(_inv_to_c, inv)))
+    return str(" && ".join(map(_inv_to_c, inv)))
 
 class TestCaseGenerator:
     def __init__(self, outdir='sb-out', alltests=False, svwit=False):
@@ -207,7 +207,16 @@ class TestCaseGenerator:
         with self._openfile(f"invariants.txt") as fl:
             write = fl.write
             for loc, inv in invariants.items():
-                write(f"{loc}: {inv}\n")
+                dbgloc = None
+                bblock = loc.elem()
+                for inst in bblock:
+                    dbgloc = inst.get_metadata("dbgloc")
+                    if dbgloc:
+                        break
+                if dbgloc:
+                    write(f"{dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]} {inv_to_c(inv)}\n")
+                else:
+                    write(f"{loc}: {inv_to_c(inv)}\n")
         if self._svcomp_witness:
             with self._openfile(f"correctness-witness.graphml") as fl:
                 self.generate_svcomp_correctness_witness(fl, invariants)
@@ -264,9 +273,11 @@ class TestCaseGenerator:
             lid += 1
             # dump as unsigned and signed
             write(f'<node id="{lid}">\n')
-            write(f'  <data key="invariant">{inv_to_c(inv)}</data>\n')
+            cinv = inv_to_c(inv).replace("&&", "&amp;&amp;")
+            write(f'  <data key="invariant">{cinv}</data>\n')
             write(f'</node>\n')
-            write(f'<edge source="{lid-1}" target="{lid}">\n')
+            #write(f'<edge source="{lid-1}" target="{lid}">\n')
+            write(f'<edge source="{0}" target="{lid}">\n')
             bblock = loc.elem()
             for inst in bblock:
                 dbgloc = inst.get_metadata("dbgloc")
