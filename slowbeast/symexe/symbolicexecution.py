@@ -16,7 +16,9 @@ class SEOptions(ExecutionOptions):
             self.uninit_is_nondet = opts.uninit_is_nondet
             self.exit_on_error = opts.exit_on_error
             self.error_funs = opts.error_funs
+            self.threads = opts.threads
         else:
+            self.threads = False
             self.incremental_solving = False
             self.replay_errors = False
             self.concretize_nondets = False
@@ -83,7 +85,7 @@ class SymbolicExecutor(Interpreter):
         testgen = self.ohandler.testgen if self.ohandler else None
         opts = self.getOptions()
         stats = self.stats
-        if opts.replay_errors and s.has_error():
+        if s.has_error() and opts.replay_errors and not opts.threads:
             print_stdout("Found an error, trying to replay it", color="white")
             repls = self.replay_state(s)
             if not repls or not repls.has_error():

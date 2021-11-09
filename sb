@@ -562,6 +562,7 @@ def main():
     elif args.se:
         opts = SEOptions()
 
+        opts.threads = args.threads
         opts.replay_errors = args.se_replay_errors
         opts.exit_on_error = args.se_exit_on_error
         opts.interactive = args.interactive
