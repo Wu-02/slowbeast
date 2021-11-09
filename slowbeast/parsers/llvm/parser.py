@@ -165,7 +165,7 @@ thread_funs = ["pthread_create", "pthread_join", "pthread_exit"]
 
 
 class Parser:
-    def __init__(self, error_funs=None):
+    def __init__(self, error_funs=None, allow_threads=True):
         self.llvmmodule = None
         self.program = Program()
         self.error_funs = error_funs or []
@@ -175,6 +175,7 @@ class Parser:
         self._names = {}
         self._metadata_opts = ["llvm", "dbgloc", "dbgvar"]
         self._name_vars = True
+        self._allow_threads = allow_threads
         # records about PHIs that we created. We must place
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
@@ -496,7 +497,9 @@ class Parser:
             raise NotImplementedError("Unsupported function: {0}".format(fun))
 
         if fun in thread_funs or fun.startswith("pthread_"):
-            return self._createThreadFun(inst, operands, fun)
+            if self._allow_threads:
+                return self._createThreadFun(inst, operands, fun)
+            raise NotImplementedError(f"Threads are forbiden: {fun}")
 
         if fun in special_functions or fun in self.error_funs:
             return self._createSpecialCall(inst, fun)

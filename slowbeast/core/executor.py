@@ -465,6 +465,10 @@ class Executor:
             states = self.exec_binary_op(state, instr)
         elif isinstance(instr, Ite):
             states = self.exec_ite(state, instr)
+        elif isinstance(instr, (Thread, ThreadExit, ThreadJoin)):
+            # XXX: must be before Call and Return
+            state.set_killed(f"Threads are not implemented by this executor: {instr}")
+            return [state]
         elif isinstance(instr, Call):
             states = self.exec_call(state, instr)
         elif isinstance(instr, Return):

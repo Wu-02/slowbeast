@@ -457,7 +457,8 @@ def main():
     elif lang == 'llvm':
         from slowbeast.parsers.llvm.parser import Parser as LLVMParser
         error_funs = args.error_fn or None
-        parser = LLVMParser(error_funs.split(',') if error_funs else None)
+        parser = LLVMParser(error_funs.split(',') if error_funs else None,
+                            args.threads)
         code = compile_and_link(args.prog, args.out_dir,
                                 ['-Xclang', '-disable-O0-optnone',
                                  '-fno-vectorize', '-fno-slp-vectorize']
