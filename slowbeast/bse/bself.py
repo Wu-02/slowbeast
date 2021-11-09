@@ -9,6 +9,7 @@ from slowbeast.util.debugging import (
     dec_print_indent,
 )
 
+from slowbeast.domains.symbolic import to_c_expression
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.symexe.annotations import AssertAnnotation
@@ -706,7 +707,11 @@ class BSELFChecker(BaseBSE):
         # I = create_set() # FIXME: cache the union of invariants
         # I.add(invs)
         # I.intersect()
-        print_stdout(f"{inv} holds on {loc}", color="BLUE")
+        dbgloc = loc.elem()[0].get_metadata("dbgloc")
+        if dbgloc:
+            print_stdout(f"{to_c_expression(inv.get_cannonical().unwrap())} holds at line {dbgloc[1]}", color="BLUE")
+        else:
+            print_stdout(f"{to_c_expression(inv.get_cannonical().unwrap())} holds at {loc}", color="BLUE")
 
     def add_inductive_set(self, loc, S):
         I = InductiveSet(self.create_set(S))
@@ -962,4 +967,7 @@ class BSELF:
             return Result.UNKNOWN
 
         print_stdout("No error found.", color="greenul")
+        ohandler = self.ohandler
+        if ohandler:
+            ohandler.testgen.generate_proof(self)
         return Result.SAFE

@@ -11,6 +11,7 @@ from time import time, process_time
 
 from slowbeast.parsers.llvm.parser import Parser as LLVMParser
 from slowbeast.symexe.symbolicexecution import SEOptions
+from slowbeast.domains.symbolic import to_c_expression
 from slowbeast.util.debugging import set_debugging, dbg, print_stdout, print_stderr
 from slowbeast.ir.instruction import Call
 
@@ -170,6 +171,12 @@ def print_stats(engine):
             engine.stats.errors),
         color='CYAN')
 
+def _inv_to_c(inv):
+    return f"({to_c_expression(inv.get_cannonical().unwrap())})".replace("&&", "&amp;&amp;")
+
+def inv_to_c(inv):
+    return str("amp;amp;".join(map(_inv_to_c, inv)))
+
 class TestCaseGenerator:
     def __init__(self, outdir='sb-out', alltests=False, svwit=False):
         self._outputdir = outdir
@@ -194,8 +201,19 @@ class TestCaseGenerator:
         fl.write('\n')
         state.dump(stream=fl)
 
-    def generate_svcomp_witness(self, fl, state):
-        inpvec = state.input_vector()
+    # FIXME: move out of testgen (it is not generating tests...)
+    def generate_proof(self, executor):
+        invariants = executor.invariants
+        with self._openfile(f"invariants.txt") as fl:
+            write = fl.write
+            for loc, inv in invariants.items():
+                write(f"{loc}: {inv}\n")
+        if self._svcomp_witness:
+            with self._openfile(f"correctness-witness.graphml") as fl:
+                self.generate_svcomp_correctness_witness(fl, invariants)
+
+
+    def _svcomp_header(self, fl):
         write = fl.write
         write("<?xml version='1.0' encoding='UTF-8'?>\n")
         write('<graphml xmlns="http://graphml.graphdrawing.org/xmlns" '
@@ -204,6 +222,17 @@ class TestCaseGenerator:
         write('<node id="0">\n')
         write('  <data key="entry">true</data>\n')
         write('</node>\n\n')
+
+    def _svcomp_footer(self, fl):
+        write = fl.write
+        write('</graph>\n')
+        write('</graphml>\n')
+
+    def generate_svcomp_violation_witness(self, fl, state):
+        inpvec = state.input_vector()
+        write = fl.write
+        self._svcomp_header(fl)
+
         lid = 0
         for var, val in zip(state.nondets(), inpvec):
             instruction = var.instruction
@@ -225,8 +254,28 @@ class TestCaseGenerator:
         write('  <data key="violation">true</data>\n')
         write('</node>\n\n')
         write(f'<edge source="{lid}" target="{lid+1}"/>\n')
-        write('</graph>\n')
-        write('</graphml>\n')
+        self._svcomp_footer(fl)
+
+    def generate_svcomp_correctness_witness(self, fl, invariants):
+        write = fl.write
+        self._svcomp_header(fl)
+        lid = 0
+        for loc, inv in invariants.items():
+            lid += 1
+            # dump as unsigned and signed
+            write(f'<node id="{lid}">\n')
+            write(f'  <data key="invariant">{inv_to_c(inv)}</data>\n')
+            write(f'</node>\n')
+            write(f'<edge source="{lid-1}" target="{lid}">\n')
+            bblock = loc.elem()
+            for inst in bblock:
+                dbgloc = inst.get_metadata("dbgloc")
+                if dbgloc:
+                    write(f'  <data key="startline">{dbgloc[1]}</data>\n')
+                    break
+            write('</edge>\n')
+
+        self._svcomp_footer(fl)
 
     def processState(self, state):
         assert not state.is_ready()
@@ -254,7 +303,7 @@ class TestCaseGenerator:
 
         if state.has_error() and self._svcomp_witness:
             with self._openfile(f"witness-{state.get_id()}.graphml") as fl:
-                self.generate_svcomp_witness(fl, state)
+                self.generate_svcomp_violation_witness(fl, state)
 
 class OutputsHandler:
     def __init__(self, testgen, outdir):
