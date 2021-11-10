@@ -1,9 +1,11 @@
+from slowbeast.symexe.pathexecutor import Executor as PathExecutor
+from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
 from slowbeast.bse.bse import report_state
 from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker
 from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.util.debugging import print_stdout
-from slowbeast.symexe.statesset import intersection
+from slowbeast.util.debugging import print_stdout, ldbgv
+from .loopinfo import LoopInfo
 
 from slowbeast.cfkind.relations import get_var_cmp_relations
 
@@ -16,18 +18,71 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
         self.programstructure = programstructure
         self._loop_headers = {loc.elem()[0] : loc for loc in self.programstructure.get_loop_headers()}
         self.forward_states = fwdstates
-        print(self._loop_headers)
+        self.loop_info = {}
+        memorymodel = LazySymbolicMemoryModel(opts)
+        self._indexecutor = PathExecutor(self.solver(), opts, memorymodel)
+
+        self.create_set = self._indexecutor.create_states_set
+
+    def ind_executor(self):
+        return self._indexecutor
+
+    def get_loop(self, loc):
+        L = self.loop_info.get(loc)
+        if L is None:
+            loop = self.programstructure.get_loop(loc)
+            if loop is None:
+                return None
+
+            L = LoopInfo(self, loop)
+            self.loop_info[loc] = L
+        return L
 
     def is_loop_header(self, inst):
         return inst in self._loop_headers
 
-   #def getNextState(self):
-   #    states = self.states
-   #    if not states:
-   #        return None
+    def execute_path(self, path, fromInit=False, invariants=None):
+        """
+        Execute the given path. The path is such that
+        it ends one step before possible error.
+        That is, after executing the path we must
+        perform one more step to check whether the
+        error is reachable
+        """
+        if fromInit:
+            # we must execute without lazy memory
+            executor = self.executor()
 
-   #    # DFS for now
-   #    return states.pop()
+            if not self.states:
+                self.prepare()
+            states = [s.copy() for s in self.states]
+            assert states
+
+            ldbgv("Executing (init) path: {0}", (path,), fn=print_stdout)
+        else:
+            executor = self.ind_executor()
+
+            s = executor.create_clean_state()
+            states = [s]
+
+            ldbgv("Executing path: {0}", (path,), fn=print_stdout, color="orange")
+
+        assert all(map(lambda s: not s.constraints(), states)), "The state is not clean"
+
+        # execute the annotated error path and generate also
+        # the states that can avoid the error at the end of the path
+        r = executor.execute_annotated_path(states, path, invariants)
+        self.stats.paths += 1
+
+        earl = r.early
+        if fromInit and earl:
+            # this is an initial path, so every error is taken as real
+            errs = r.errors or []
+            for e in (e for e in earl if e.has_error()):
+                errs.append(e)
+            r.errors = errs
+
+        return r
 
     def handleNewState(self, s):
         if s.is_ready() and self.is_loop_header(s.pc):
@@ -36,9 +91,22 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
 
     def _annotate_cfa(self, state):
         print("HEADER:", state.pc)
-        S = self.executor().create_states_set(state)
         loc = self._loop_headers[state.pc]
-        A, rels, states = self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
+        LI = self.get_loop(loc)
+        for path in LI.paths():
+            print(path)
+            nxtstates, _ = self.executor().execute_bblocks_path(state.copy(),
+                                                                path.bblocks())
+            if not nxtstates:
+                continue
+            assert len(nxtstates) == 1
+            nxtstates[0].dump()
+            print(list(get_var_cmp_relations(nxtstates[0], self.create_set(nxtstates[0]))))
+
+        assert False
+
+        # S = self.create_set(state)
+        # A, rels, states = self.forward_states.setdefault(loc, (self.create_set(), set(), []))
         cur_rels = set()
         for rel in (r for r in get_var_cmp_relations(state, A) if r not in rels):
             if rel.get_cannonical().is_concrete(): # True
@@ -47,9 +115,16 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
             cur_rels.add(rel)
             print('rel', rel)
             A.add(S)
+            #sts = LI.execute(pre=self.create_set(rel))
+            nxt_rels = set()
+            for s in (sts.ready or []):
+                for r in get_var_cmp_relations(s, S):
+                    if r in nxt_rels:
+                        continue
+                    nxt_rels.add(r)
+                    print('nxt', r)
+
         states.append((state, rels))
-        print(states)
-        print(A)
 
 
 class BSELFF(BSELF):

@@ -114,6 +114,9 @@ class CFA:
         def elems(self):
             return self._elems
 
+        def orig_elem(self):
+            return self._orig_elem
+
         def get_elem(self, idx):
             """ Get element on index 'idx' or None if such elem does not exists """
             if idx < len(self._elems):

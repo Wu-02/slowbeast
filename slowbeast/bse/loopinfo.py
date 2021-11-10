@@ -23,6 +23,9 @@ class LoopInfo:
     def paths(self):
         return self.loop.paths()
 
+    def execute(self, pre=None, post=None):
+        return check_paths(self.checker, self.loop.paths(), pre=pre, post=post)
+
     def set_is_inductive(self, S):
         r = check_paths(self.checker, self.loop.paths(), pre=S, post=S)
         if r.errors:

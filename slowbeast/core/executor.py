@@ -559,6 +559,7 @@ class Executor:
         assert not readystates
         return finalstates
 
+    # TODO: rename to execute_cfg_path
     def execute_path(self, state, path):
         """
         Execute the given path through CFG. Return two lists of states.
@@ -597,6 +598,51 @@ class Executor:
                 followsucc = curbb.last().true_successor() == succbb
                 newstates = []
                 assert followsucc or curbb.last().false_successor() == succbb
+                for s in states:
+                    assert s.is_ready()
+                    newstates += self.exec_branch_to(s, s.pc, followsucc)
+            else:  # this is the last location on path,
+                # so just normally execute the block instructions
+                newstates = self.executeTillBranch(states)
+            states = newstates
+
+        assert all(map(lambda x: not x.is_ready(), earlytermstates))
+
+        return states, earlytermstates
+
+
+    def execute_bblocks_path(self, state, path):
+        """
+        Execute the given path through CFG. Return two lists of states.
+        The first list contains the resulting states that reaches the
+        end of the path, the other list contains all other states, i.e.,
+        the error, killed or exited states reached during the execution of the CFG.
+        """
+
+        states = state if isinstance(state, list) else [state]
+        earlytermstates = []
+
+        # set the pc of the states to be the first instruction of the path
+        pc = path[0].first()
+        for s in states:
+            assert s.is_ready()
+            s.pc = pc
+
+        for idx in range(0, len(path)):
+            # execute the block till branch
+            newstates = self.executeTillBranch(states, stopBefore=True)
+
+            # get the ready states
+            states = []
+            for n in newstates:
+                (states, earlytermstates)[0 if n.is_ready() else 1].append(n)
+
+            # now execute the branch following the edge on the path
+            if idx + 1 < len(path):
+                curbb = path[idx]
+                followsucc = curbb.last().true_successor() == path[idx + 1]
+                newstates = []
+                assert followsucc or curbb.last().false_successor() == path[idx + 1]
                 for s in states:
                     assert s.is_ready()
                     newstates += self.exec_branch_to(s, s.pc, followsucc)

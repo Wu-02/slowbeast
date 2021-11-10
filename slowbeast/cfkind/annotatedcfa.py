@@ -212,6 +212,9 @@ class AnnotatedCFAPath:
         _copy_annots(n, self)
         return n
 
+    def bblocks(self):
+        return [e.source().elem() for e in self.edges() if not e.is_assume()]
+
     def __len__(self):
         return len(self._edges)
 
