@@ -167,34 +167,30 @@ class Interpreter:
     def report(self):
         pass
 
+    def do_step(self):
+        state = self.getNextState()
+        self.interact_if_needed(state)
+        if self._options.step == ExecutionOptions.INSTR_STEP:
+            newstates = self._executor.execute(state, state.pc)
+        elif self._options.step == ExecutionOptions.BLOCK_STEP:
+            newstates = self._executor.executeTillBranch(state)
+        else:
+            raise NotImplementedError(
+                "Invalid step: {0}".format(self._options.step)
+            )
+
+        # self.states_num += len(newstates)
+        # if self.states_num % 100 == 0:
+        #    print("Searched states: {0}".format(self.states_num))
+        self.handleNewStates(newstates)
+
     def run(self):
         self.prepare()
 
         # we're ready to go!
-        newstates = []
-        try:
-            while self.states:
-                state = self.getNextState()
-                self.interact_if_needed(state)
-                if self._options.step == ExecutionOptions.INSTR_STEP:
-                    newstates = self._executor.execute(state, state.pc)
-                elif self._options.step == ExecutionOptions.BLOCK_STEP:
-                    newstates = self._executor.executeTillBranch(state)
-                else:
-                    raise NotImplementedError(
-                        "Invalid step: {0}".format(self._options.step)
-                    )
-
-                # self.states_num += len(newstates)
-                # if self.states_num % 100 == 0:
-                #    print("Searched states: {0}".format(self.states_num))
-                self.handleNewStates(newstates)
-        except Exception as e:
-            print_stderr(
-                "Fatal error while executing '{0}'".format(state.pc), color="RED"
-            )
-            state.dump()
-            raise e
+        do_step = self.do_step
+        while self.states:
+            do_step()
 
         self.report()
 
