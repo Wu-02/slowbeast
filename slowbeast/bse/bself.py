@@ -256,6 +256,7 @@ class BSELFChecker(BaseBSE):
         dbg(f"Checking if {A} holds on {loc} finished")
         return result, states
 
+
     def execute_path(self, path, fromInit=False, invariants=None):
         """
         Execute the given path. The path is such that
@@ -834,7 +835,7 @@ class BSELFChecker(BaseBSE):
         assert isinstance(loc, CFA.Location)
         return loc in self.get_loop_headers()
 
-    def check(self, onlyedges=None):
+    def init_checker(self, onlyedges=None):
         # the initial error path that we check
         loc = self.location
         em = getGlobalExprManager()
@@ -846,44 +847,52 @@ class BSELFChecker(BaseBSE):
                 BSEContext(edge, state, errdescr=AssertFailError(f"{loc} reachable."))
             )
 
-        opt_fold_loops = self.getOptions().fold_loops
+    def do_step(self):
+        bsectx = self.get_next_state()
+        if bsectx is None:
+            return (
+                       Result.UNKNOWN if (self.problematic_states) else Result.SAFE
+                   ), self.problematic_paths_as_result()
+
+        r, pre = self.precondition(bsectx)
+        if r is Result.SAFE:
+            assert pre is None, "Feasible precondition for infeasible error path"
+            return None, None  # infeasible path
+        if r is Result.UNSAFE:  # real error
+            return r, pre
+        #  the error path is feasible, but the errors may not be real
+        assert r is Result.UNKNOWN
+        if self.getOptions().fold_loops:
+            # is this a path starting at a loop header?
+            fl = bsectx.path[0].source()
+            if self.is_loop_header(fl):
+                # check whether we are not told to give up when hitting this loop this time
+                loc_hits = bsectx.loc_hits
+                lnm = loc_hits[fl] = loc_hits.get(fl, 0) + 1
+                if fl not in self.no_sum_loops:
+                    if self.handle_loop(fl, pre, lnm):
+                        dbg(
+                            f"Path with loop {fl} proved safe",
+                            color="dark_green",
+                        )
+                        return None, None  # we're done with this path
+                mlh = self._max_loop_hits
+                if mlh and lnm >= mlh:
+                    dbg("Hit limit of visits to a loop in this context")
+                    return Result.UNKNOWN, pre
+        self.extend_state(bsectx, pre)
+        return None, None
+
+
+    def check(self, onlyedges=None):
+        # the initial error path that we check
+        self.init_checker(onlyedges)
+
+        do_step = self.do_step
         while True:
-            bsectx = self.get_next_state()
-            if bsectx is None:
-                return (
-                    Result.UNKNOWN if (self.problematic_states) else Result.SAFE
-                ), self.problematic_paths_as_result()
-
-            # ldbgv("Main loop state: {0}", (bsectx,))
-            r, pre = self.precondition(bsectx)
-            if r is Result.SAFE:
-                assert pre is None, "Feasible precondition for infeasible error path"
-                continue  # infeasible path
-            if r is Result.UNSAFE:  # real error
-                return r, pre
-            #  the error path is feasible, but the errors may not be real
-            assert r is Result.UNKNOWN
-            if opt_fold_loops:
-                # is this a path starting at a loop header?
-                fl = bsectx.path[0].source()
-                if self.is_loop_header(fl):
-                    # check whether we are not told to give up when hitting this loop this time
-                    loc_hits = bsectx.loc_hits
-                    lnm = loc_hits[fl] = loc_hits.get(fl, 0) + 1
-                    if fl not in self.no_sum_loops:
-                        if self.handle_loop(fl, pre, lnm):
-                            dbg(
-                                f"Path with loop {fl} proved safe",
-                                color="dark_green",
-                            )
-                            continue # we're done with this path
-                    mlh = self._max_loop_hits
-                    if mlh and lnm >= mlh:
-                        dbg("Hit limit of visits to a loop in this context")
-                        return Result.UNKNOWN, pre
-            self.extend_state(bsectx, pre)
-
-        raise RuntimeError("Unreachable")
+            res, pre = do_step()
+            if res is not None:
+                return res, pre
 
 
 class BSELF:
