@@ -45,6 +45,7 @@ class Interpreter:
         self._interactive = InteractiveHandler(self) if opts.interactive else None
 
         self.states = []
+        self.error_states = []
         # self.states_num = 0
 
     def getProgram(self):
@@ -83,6 +84,7 @@ class Interpreter:
         elif state.has_error():
             print_stderr("Error while executing '{0}'".format(state), color="RED")
             print_stderr(state.get_error(), color="BROWN")
+            self.error_states.append(state)
             state.dump()
         elif state.is_terminated():
             print_stderr(state.get_error(), color="BROWN")

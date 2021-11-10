@@ -74,6 +74,9 @@ def createArgParser():
     parser.add_argument('-bself-no-union-matched', action='store_true',
                         help='Do not union the sets matched in the stored inductive sequences '
                              'when getting starting inductive sequences')
+    parser.add_argument('-bselff', action='store_true',
+                        help='Do backward symbolic execution with loops folding '
+                             'and forward symbolic execution at the same time')
     parser.add_argument('-se', action='store_true', default=False,
                         help='Perform symbolic execution (default).')
     parser.add_argument('-stateful-se', action='store_true', default=False,
@@ -507,7 +510,7 @@ def main():
 
     P.set_entry(entry)
 
-    if args.bself:
+    if args.bself or args.bselff:
         args.bse = True
     if args.cfkind:
         args.kind = True
@@ -545,7 +548,7 @@ def main():
             # with precondition computation of every single step
         interpreter = KindSymbolicExecutor(P, ohandler, opts)
     elif args.bse:
-        from slowbeast.bse.bself import BSELF, BSELFOptions
+        from slowbeast.bse.bself import BSELFOptions
         opts = BSELFOptions()
         if args.bse and not args.bself:
             opts.fold_loops = False
@@ -558,7 +561,12 @@ def main():
         if args.bself_no_union_matched:
             assert opts.union_matched == True
             opts.union_matched = False
-        interpreter = BSELF(P, ohandler, opts)
+        if args.bselff:
+            opts.fold_loops = True
+            from slowbeast.bse.bselff import BSELFF as Executor
+        else:
+            from slowbeast.bse.bself import BSELF as Executor
+        interpreter = Executor(P, ohandler, opts)
     elif args.se:
         opts = SEOptions()
 

@@ -980,3 +980,4 @@ class BSELF:
         if ohandler:
             ohandler.testgen.generate_proof(self)
         return Result.SAFE
+

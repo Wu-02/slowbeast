@@ -1,5 +1,6 @@
 from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.types import IntType
+from slowbeast.ir.instruction import Load
 from slowbeast.symexe.annotations import AssertAnnotation, get_subs
 from slowbeast.solvers.solver import IncrementalSolver, getGlobalExprManager
 
@@ -9,6 +10,31 @@ def iter_nondet_load_pairs(state):
     for i in range(0, len(loads)):
         for j in range(i + 1, len(loads)):
             yield loads[i], loads[j]
+
+# def iter_concrete_pointers(state):
+#     vals = list(state.memory.get_cs().values_list())
+#     for i in range(0, len(vals)):
+#         p1 = state.try_eval(vals[i])
+#         if not(p1 and p1.is_concrete() and p1.is_pointer()):
+#             continue
+#         for j in range(i + 1, len(vals)):
+#             p2 = state.try_eval(vals[j])
+#             if p2 and p2.is_concrete() and p2.is_pointer():
+#                 yield vals[i], vals[j]
+def get_loads(state):
+    vals = state.memory.get_cs().values_list()
+    for v in vals:
+        if isinstance(v, Load):
+            yield v
+
+def iter_loads(state):
+    vals = list(state.memory.get_cs().values_list())
+    for i in range(0, len(vals)):
+        if not isinstance(vals[i], Load):
+            continue
+        for j in range(i + 1, len(vals)):
+            if isinstance(vals[j], Load):
+                yield vals[i], vals[j]
 
 
 def get_var_diff_relations(state):
@@ -117,49 +143,110 @@ def get_var_diff_relations(state):
                             EM,
                         )
 
+def _get_nd_val(l, lbw, Ss):
+    nd1 = Ss.nondet(l)
+    if not nd1:
+        ndval = Ss.solver().fresh_value(f"nd{l.as_value()}", IntType(8 * lbw))
+        Ss.create_nondet(l, ndval)
+    else:
+        ndval = nd1.value
+    return ndval
 
-# def _compare_two_loads(state, l1, l2):
-#     subs = get_subs(state)
-#     EM = state.expr_manager()
-#     Lt, Gt, Eq, = (
-#         EM.Lt,
-#         EM.Gt,
-#         EM.Eq,
-#     )
-#     simpl = EM.simplify
-#
-#     l1bw = l1.type().bitwidth()
-#     l2bw = l2.type().bitwidth()
-#
-#     bw = max(l1bw, l2bw)
-#     if l1bw != bw:
-#         l1 = EM.SExt(l1, ConcreteInt(bw, bw))
-#     if l2bw != bw:
-#         l2 = EM.SExt(l2, ConcreteInt(bw, bw))
-#
-#     lt = state.is_sat(Lt(l1, l2))
-#     gt = state.is_sat(Gt(l1, l2))
-#
-#     if lt is False:  # l1 >= l2
-#         if gt is False:  # l1 <= l2
-#             yield AssertAnnotation(simpl(Eq(l1, l2)), subs, EM)
-#         elif gt is True:  # l1 >= l2
-#             if state.is_sat(Eq(l1, l2)) is False:
-#                 yield AssertAnnotation(simpl(Gt(l1, l2)), subs, EM)
-#             else:
-#                 yield AssertAnnotation(simpl(EM.Ge(l1, l2)), subs, EM)
-#     elif lt is True:
-#         if gt is False:  # l1 <= l2
-#             if state.is_sat(Eq(l1, l2)) is False:
-#                 yield AssertAnnotation(simpl(Lt(l1, l2)), subs, EM)
-#             else:
-#                 yield AssertAnnotation(simpl(EM.Le(l1, l2)), subs, EM)
-#
-# def get_var_cmp_relations(state):
-#
-#     # comparision relations between loads
-#     for l1, l2 in iter_load_pairs(state):
-#        yield from _compare_two_loads(state, l1, l2)
+
+def _compare_two_loads(state, S, l1, l2):
+    EM = state.expr_manager()
+    Sub, Eq, Not = (
+        EM.Sub,
+        EM.Eq,
+        EM.Not,
+    )
+    simpl = EM.simplify
+
+    l1bw = l1.type().bytewidth()
+    l2bw = l2.type().bytewidth()
+    if l1bw != l2bw:
+        return
+
+    op = state.try_eval(l1.operand(0))
+    if not op:
+        return
+    l1val, err = state.memory.read(op, l1bw)
+    if err:
+        return
+
+    op = state.try_eval(l2.operand(0))
+    if not op:
+        return
+    l2val, err = state.memory.read(op, l1bw)
+    if err:
+        return
+
+    expr = Eq(l1val, l2val)
+    Ss = S.get_se_state()
+    fresh = Ss.solver().fresh_value
+    if state.is_sat(Not(expr)) is False:
+        ndval1, ndval2 = _get_nd_val(l1, l1bw, Ss), _get_nd_val(l2, l2bw, Ss)
+        subs = get_subs(Ss)
+        yield AssertAnnotation(simpl(Eq(ndval1, ndval2)), subs, EM)
+
+    solver = IncrementalSolver()
+    solver.add(*state.constraints())
+    is_sat = solver.is_sat
+
+    def model(assumptions, *e):
+        return solver.concretize(assumptions, *e)
+
+    c = EM.Var(f"c_coef_{l1.as_value()}{l2.as_value()}", IntType(8*l1bw))
+    expr = Eq(Sub(l1val, l2val), c)
+    c_concr = model([expr], c)
+    if c_concr is not None:
+        # is c unique?
+        cval = c_concr[0]
+        nonunique = is_sat(expr, EM.Ne(c, cval))
+        if nonunique is False:
+            ndval1, ndval2 = _get_nd_val(l1, l1bw, Ss), _get_nd_val(l2, l2bw, Ss)
+            subs = get_subs(Ss)
+            yield AssertAnnotation(simpl(Eq(Sub(ndval1, ndval2), cval)), subs, EM)
+
+    for l3 in get_loads(state):
+        if l3 is l1 or l3 is l2 or l3.type().bytewidth() != l1bw:
+            continue
+        op = state.try_eval(l3.operand(0))
+        if not op:
+            continue
+        l3val, err = state.memory.read(op, l1bw)
+        if err:
+            return
+
+        expr = Eq(Sub(l1val, l2val), l3val)
+        if is_sat(expr, Not(expr)) is False:
+            ndval1, ndval2, ndval3 = _get_nd_val(l1, l1bw, Ss), _get_nd_val(l2, l2bw, Ss), _get_nd_val(l3, l1bw, Ss)
+            subs = get_subs(Ss)
+            yield AssertAnnotation(simpl(Eq(Sub(ndval1, ndval2), ndval3)), subs, EM)
+
+
+   #lt = state.is_sat(Lt(l1, l2))
+   #gt = state.is_sat(Gt(l1, l2))
+
+   #if lt is False:  # l1 >= l2
+   #    if gt is False:  # l1 <= l2
+   #        yield AssertAnnotation(simpl(Eq(l1, l2)), subs, EM)
+   #    elif gt is True:  # l1 >= l2
+   #        if state.is_sat(Eq(l1, l2)) is False:
+   #            yield AssertAnnotation(simpl(Gt(l1, l2)), subs, EM)
+   #        else:
+   #            yield AssertAnnotation(simpl(EM.Ge(l1, l2)), subs, EM)
+   #elif lt is True:
+   #    if gt is False:  # l1 <= l2
+   #        if state.is_sat(Eq(l1, l2)) is False:
+   #            yield AssertAnnotation(simpl(Lt(l1, l2)), subs, EM)
+   #        else:
+   #            yield AssertAnnotation(simpl(EM.Le(l1, l2)), subs, EM)
+
+def get_var_cmp_relations(state, S):
+    # comparision relations between loads
+    for p1, p2 in iter_loads(state):
+        yield from _compare_two_loads(state, S, p1, p2)
 
 
 def _get_const_cmp_relations(state):
