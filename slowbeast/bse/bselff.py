@@ -30,6 +30,12 @@ class SEState(ExecutionState):
         n = self._loc_visits.setdefault(inst, 0)
         self._loc_visits[inst] = n + 1
 
+    def num_visits(self, inst=None):
+        if inst is None:
+            inst = self.pc
+        return self._loc_visits.get(inst)
+
+
 class Executor(SExecutor):
     def create_state(self, pc=None, m=None):
         if m is None:
@@ -63,25 +69,37 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
     def handleNewState(self, s):
         if s.is_ready() and self.is_loop_header(s.pc):
             s.visited(s.pc)
-            self._annotate_cfa(s)
+            self._register_loop_states(s)
         super().handleNewState(s)
 
-    def _annotate_cfa(self, state):
-        print("HEADER:", state.pc)
-        S = self.executor().create_states_set(state)
-        loc = self._loop_headers[state.pc]
-        A, rels, states = self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
-        cur_rels = set()
-        for rel in (r for r in get_var_cmp_relations(state, A) if r not in rels):
-            if rel.get_cannonical().is_concrete(): # True
-                continue
-            rels.add(rel)
-            cur_rels.add(rel)
-            print('rel', rel)
-            A.add(S)
-        states.append((state, rels))
-        print(states)
-        print(A)
+    def _register_loop_states(self, state):
+        n = state.num_visits()
+        assert n > 0, "Bug in counting visits"
+        states = self.forward_states.setdefault(state.pc, [])
+        # if we have a state that visited state.pc n times,
+        # we must have visited it also k times for all k < n
+        assert len(states) != 0 or n == 1, self.forward_states
+        assert len(states) >= n - 1, self.forward_states
+        if len(states) == n - 1:
+            states.append([state.copy()])
+        else:
+            assert len(states) >= n
+            states[n - 1].append(state.copy())
+
+       #S = self.executor().create_states_set(state)
+       #loc = self._loop_headers[state.pc]
+       #A, rels, states = self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
+       #cur_rels = set()
+       #for rel in (r for r in get_var_cmp_relations(state, A) if r not in rels):
+       #    if rel.get_cannonical().is_concrete(): # True
+       #        continue
+       #    rels.add(rel)
+       #    cur_rels.add(rel)
+       #    print('rel', rel)
+       #    A.add(S)
+       #states.append((state, rels))
+       #print(states)
+       #print(A)
 
 
 class BSELFF(BSELF):
