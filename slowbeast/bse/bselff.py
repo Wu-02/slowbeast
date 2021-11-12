@@ -58,13 +58,15 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
     def is_loop_header(self, inst):
         return inst in self._loop_headers
 
-   #def getNextState(self):
-   #    states = self.states
-   #    if not states:
-   #        return None
+    def getNextState(self):
+        states = self.states
+        if not states:
+            return None
 
-   #    # DFS for now
-   #    return states.pop()
+        # BFS for now
+        # FIXME: make this more efficient
+        # FIXME: go to non-searched locations if possible
+        return states.pop(0)
 
     def handleNewState(self, s):
         if s.is_ready() and self.is_loop_header(s.pc):
@@ -85,7 +87,6 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
         else:
             assert len(states) >= n
             states[n - 1].append(state.copy())
-
        #S = self.executor().create_states_set(state)
        #loc = self._loop_headers[state.pc]
        #A, rels, states = self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
