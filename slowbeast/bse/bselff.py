@@ -1,3 +1,4 @@
+from slowbeast.symexe.executionstate import SEState as ExecutionState
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
 from slowbeast.bse.bse import report_state
 from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker
@@ -7,11 +8,41 @@ from slowbeast.symexe.statesset import intersection
 
 from slowbeast.cfkind.relations import get_var_cmp_relations
 
+class SEState(ExecutionState):
+    """
+    Execution state of forward symbolic execution in BSELFF.
+    It is exactly the same as the parent class, but it also
+    computes the number of hits to a particular loop headers.
+    """
+
+    __slots__ = "_loc_visits"
+
+    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
+        super().__init__(executor, pc, m, solver, constraints)
+        self._loc_visits = {}
+
+    def _copy_to(self, new):
+        super()._copy_to(new)
+        # FIXME: use COW
+        new._loc_visits = self._loc_visits.copy()
+
+    def visited(self, inst):
+        n = self._loc_visits.setdefault(inst, 0)
+        self._loc_visits[inst] = n + 1
+
+class Executor(SExecutor):
+    def create_state(self, pc=None, m=None):
+        if m is None:
+            m = self.getMemoryModel().create_memory()
+        s = SEState(self, pc, m, self.solver)
+        assert not s.constraints(), "the state is not clean"
+        return s
+
+
 class BSELFFSymbolicExecutor(SymbolicExecutor):
     def __init__(
-            self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=SExecutor, programstructure=None, fwdstates=None
+            self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=Executor, programstructure=None, fwdstates=None
     ):
-        #opts.incremental_solving = True
         super().__init__(P, ohandler, opts, executor, ExecutorClass)
         self.programstructure = programstructure
         self._loop_headers = {loc.elem()[0] : loc for loc in self.programstructure.get_loop_headers()}
@@ -31,6 +62,7 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
 
     def handleNewState(self, s):
         if s.is_ready() and self.is_loop_header(s.pc):
+            s.visited(s.pc)
             self._annotate_cfa(s)
         super().handleNewState(s)
 
