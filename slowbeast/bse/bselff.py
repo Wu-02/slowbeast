@@ -52,8 +52,8 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
         super().__init__(P, ohandler, opts, executor, ExecutorClass)
         self.programstructure = programstructure
         self._loop_headers = {loc.elem()[0] : loc for loc in self.programstructure.get_loop_headers()}
+        self._covered_insts = set()
         self.forward_states = fwdstates
-        print(self._loop_headers)
 
     def is_loop_header(self, inst):
         return inst in self._loop_headers
@@ -63,14 +63,42 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
         if not states:
             return None
 
-        # BFS for now
-        # FIXME: make this more efficient
-        # FIXME: go to non-searched locations if possible
-        return states.pop(0)
+        none_num = 0
+        state_idx = None
+        some_state_idx = None
+        covered = self._covered_insts
+        for idx in range(len(states)):
+            state = states[idx]
+            if state is None:
+                none_num += 1
+                continue
+            if some_state_idx is None:
+                some_state_idx = idx
+            if state.pc not in covered:
+                state_idx = idx
+                break
+
+        if state_idx is None:
+            state_idx = some_state_idx
+        if state_idx is None:
+            assert all(map(lambda x: x is None, states))
+            return None
+
+        assert state_idx is not None
+        state = states[state_idx]
+        states[state_idx] = None
+
+        # don't care about the +1 from prev line...
+        if none_num > 20 and (none_num / len(states)) >= 0.5:
+            self.states = [s for s in states if s is not None]
+        return state
 
     def handleNewState(self, s):
-        if s.is_ready() and self.is_loop_header(s.pc):
-            s.visited(s.pc)
+        pc = s.pc
+        self._covered_insts.add(pc)
+
+        if s.is_ready() and self.is_loop_header(pc):
+            s.visited(pc)
             self._register_loop_states(s)
         super().handleNewState(s)
 
@@ -87,6 +115,7 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
         else:
             assert len(states) >= n
             states[n - 1].append(state.copy())
+
        #S = self.executor().create_states_set(state)
        #loc = self._loop_headers[state.pc]
        #A, rels, states = self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
