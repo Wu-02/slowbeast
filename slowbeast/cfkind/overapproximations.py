@@ -429,7 +429,7 @@ class LoopStateOverapproximation:
         return newclauses
 
     def _drop_clauses_fixpoint(self, assumptions):
-        """ Drop clauses until fixpoint """
+        """Drop clauses until fixpoint"""
         newclauses = self.clauses
         _drop_clauses = self._drop_clauses
         while True:
@@ -777,7 +777,7 @@ def break_eqs(expr):
 
 
 def is_overapprox_of(A, B):
-    """ Return true if B is overapproximation of A """
+    """Return true if B is overapproximation of A"""
     return intersection(complement(B), A).is_empty()
 
 
@@ -795,7 +795,7 @@ def overapprox_set(
     if assumptions:
         assumptions = assumptions.translated(unsafe)
 
-    #assert not S.is_empty(), "Overapproximating empty set"
+    # assert not S.is_empty(), "Overapproximating empty set"
     assert intersection(
         S, unsafe
     ).is_empty(), f"Whata? Unsafe states among one-step reachable safe states:\nS = {S},\nunsafe = {unsafe}"

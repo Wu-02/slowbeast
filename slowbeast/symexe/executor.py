@@ -50,9 +50,7 @@ def condition_to_bool(cond, EM):
     else:
         assert is_symbolic(cond)
         assert not cond.type().is_bool()
-        assert (
-            cond.type().bitwidth() == 1
-        ), f"Invalid condition in branching: {cond}"
+        assert cond.type().bitwidth() == 1, f"Invalid condition in branching: {cond}"
         cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
 
     assert cval.is_bool()
@@ -67,6 +65,7 @@ def eval_condition(state, cond):
     # take care of it here: if it is a bitvector, compare it to 0 (C
     # semantics)
     return condition_to_bool(c, state.expr_manager())
+
 
 class Executor(ConcreteExecutor):
     def __init__(self, solver, opts, memorymodel=None):
@@ -290,15 +289,17 @@ class Executor(ConcreteExecutor):
 
     def compare_ptr_and_nonptr(self, em, pred, op1, op2):
         if pred not in (Cmp.EQ, Cmp.NE):
-            return None # we cannot handle that yet
+            return None  # we cannot handle that yet
         if dom_is_concrete(op1):
             op1, op2 = op2, op1
         assert op1.is_pointer()
         assert dom_is_concrete(op2)
         if op2.is_zero():
             obj, off = op1.object(), op1.offset()
-            expr = em.And(em.Eq(obj, em.ConcreteVal(0, obj.bitwidth())),
-                          em.Eq(off, em.ConcreteVal(0, off.bitwidth())))
+            expr = em.And(
+                em.Eq(obj, em.ConcreteVal(0, obj.bitwidth())),
+                em.Eq(off, em.ConcreteVal(0, off.bitwidth())),
+            )
             return expr if pred == Cmp.EQ else em.Not(expr)
         return None
 
@@ -490,8 +491,7 @@ class Executor(ConcreteExecutor):
         return states
 
     def exec_ite(self, state, instr):
-        cond = condition_to_bool(state.eval(instr.condition()),
-                                 state.expr_manager())
+        cond = condition_to_bool(state.eval(instr.condition()), state.expr_manager())
         if cond.is_concrete():
             cval = cond.value()
             if cval is True:
@@ -632,6 +632,7 @@ class Executor(ConcreteExecutor):
 
         return state.solver().concretize(val, *state.constraints())
 
+
 class ThreadedExecutor(Executor):
     def __init__(self, solver, opts, memorymodel=None):
         super().__init__(solver, opts, memorymodel)
@@ -639,8 +640,8 @@ class ThreadedExecutor(Executor):
     def create_state(self, pc=None, m=None):
         if m is None:
             m = self.getMemoryModel().create_memory()
-       #if self.getOptions().incremental_solving:
-       #    return IncrementalSEState(self, pc, m)
+        # if self.getOptions().incremental_solving:
+        #    return IncrementalSEState(self, pc, m)
         return ThreadedSEState(self, pc, m, self.solver)
 
     def exec_thread(self, state, instr):
@@ -648,7 +649,9 @@ class ThreadedExecutor(Executor):
         ldbgv("-- THREAD {0} --", (fun.name(),))
         if fun.is_undefined():
             state.set_error(
-                GenericError("Spawning thread with undefined function: {0}".format(fun.name()))
+                GenericError(
+                    "Spawning thread with undefined function: {0}".format(fun.name())
+                )
             )
             return [state]
         # map values to arguments
@@ -671,8 +674,9 @@ class ThreadedExecutor(Executor):
         ret = None
         if len(instr.operands()) != 0:  # returns something
             ret = state.eval(instr.operand(0))
-            assert ret is not None,\
-                    f"No return value even though there should be: {instr}"
+            assert (
+                ret is not None
+            ), f"No return value even though there should be: {instr}"
 
         state.exit_thread()
         return [state]
@@ -694,15 +698,16 @@ class ThreadedExecutor(Executor):
         ret = None
         if len(instr.operands()) != 0:  # returns something
             ret = state.eval(instr.operand(0))
-            assert ret is not None,\
-                    f"No return value even though there should be: {instr}"
+            assert (
+                ret is not None
+            ), f"No return value even though there should be: {instr}"
 
         # pop the call frame and get the return site
         rs = state.pop_call()
         if rs is None:  # popped the last frame
-           #if ret is not None and ret.is_pointer():
-           #    state.set_error(GenericError("Returning a pointer from main function"))
-           #    return [state]
+            # if ret is not None and ret.is_pointer():
+            #    state.set_error(GenericError("Returning a pointer from main function"))
+            #    return [state]
 
             if state.thread().get_id() == 0:
                 # this is the main thread exiting, exit the whole program
@@ -720,11 +725,9 @@ class ThreadedExecutor(Executor):
         state.pc = rs.get_next_inst()
         return [state]
 
-
     def execute(self, state, instr):
         state._trace.append(
-            "({2}) {0}: {1}".format
-            (
+            "({2}) {0}: {1}".format(
                 "--" if not instr.bblock() else instr.fun().name(),
                 instr,
                 state.thread().get_id(),

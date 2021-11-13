@@ -84,7 +84,7 @@ class ProgramElement:
         self._metadata.append((key, value))
 
     def is_global(self):
-        """ Is visible everywhere in the program? """
+        """Is visible everywhere in the program?"""
         return False
 
     def get_id(self):

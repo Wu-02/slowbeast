@@ -8,6 +8,7 @@ from slowbeast.symexe.statesset import intersection
 
 from slowbeast.cfkind.relations import get_var_cmp_relations
 
+
 class SEState(ExecutionState):
     """
     Execution state of forward symbolic execution in BSELFF.
@@ -47,11 +48,20 @@ class Executor(SExecutor):
 
 class BSELFFSymbolicExecutor(SymbolicExecutor):
     def __init__(
-            self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=Executor, programstructure=None, fwdstates=None
+        self,
+        P,
+        ohandler=None,
+        opts=SEOptions(),
+        executor=None,
+        ExecutorClass=Executor,
+        programstructure=None,
+        fwdstates=None,
     ):
         super().__init__(P, ohandler, opts, executor, ExecutorClass)
         self.programstructure = programstructure
-        self._loop_headers = {loc.elem()[0] : loc for loc in self.programstructure.get_loop_headers()}
+        self._loop_headers = {
+            loc.elem()[0]: loc for loc in self.programstructure.get_loop_headers()
+        }
         self._covered_insts = set()
         self.forward_states = fwdstates
 
@@ -116,20 +126,20 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
             assert len(states) >= n
             states[n - 1].append(state.copy())
 
-       #S = self.executor().create_states_set(state)
-       #loc = self._loop_headers[state.pc]
-       #A, rels, states = self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
-       #cur_rels = set()
-       #for rel in (r for r in get_var_cmp_relations(state, A) if r not in rels):
-       #    if rel.get_cannonical().is_concrete(): # True
-       #        continue
-       #    rels.add(rel)
-       #    cur_rels.add(rel)
-       #    print('rel', rel)
-       #    A.add(S)
-       #states.append((state, rels))
-       #print(states)
-       #print(A)
+    # S = self.executor().create_states_set(state)
+    # loc = self._loop_headers[state.pc]
+    # A, rels, states = self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
+    # cur_rels = set()
+    # for rel in (r for r in get_var_cmp_relations(state, A) if r not in rels):
+    #    if rel.get_cannonical().is_concrete(): # True
+    #        continue
+    #    rels.add(rel)
+    #    cur_rels.add(rel)
+    #    print('rel', rel)
+    #    A.add(S)
+    # states.append((state, rels))
+    # print(states)
+    # print(A)
 
 
 class BSELFF(BSELF):
@@ -143,11 +153,14 @@ class BSELFF(BSELF):
         self.forward_states = {}
         # self.create_set = self.ind_executor().create_states_set
 
-
     def run(self):
-        se = BSELFFSymbolicExecutor(self.program, self.ohandler, self.options,
-                                    programstructure=self.programstructure,
-                                    fwdstates=self.forward_states)
+        se = BSELFFSymbolicExecutor(
+            self.program,
+            self.ohandler,
+            self.options,
+            programstructure=self.programstructure,
+            fwdstates=self.forward_states,
+        )
         se.prepare()
         se_checkers = [se]
 
@@ -199,9 +212,13 @@ class BSELFF(BSELF):
                     )
                     remove_checkers.append(checker)
                 elif result is Result.UNKNOWN:
-                    print_stdout(f"Checking {A} at {loc} was unsuccessful.", color="yellow")
+                    print_stdout(
+                        f"Checking {A} at {loc} was unsuccessful.", color="yellow"
+                    )
                     bself_has_unknown = True
-                    assert checker.problematic_states, "Unknown with no problematic paths?"
+                    assert (
+                        checker.problematic_states
+                    ), "Unknown with no problematic paths?"
                     for p in checker.problematic_states:
                         report_state(self.stats, p)
 

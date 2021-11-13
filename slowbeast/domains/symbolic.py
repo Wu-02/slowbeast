@@ -51,7 +51,7 @@ if _use_z3:
         Z3_OP_SIGN_EXT,
         Z3_OP_CONCAT,
         Z3_OP_EXTRACT,
-        Z3_OP_ITE
+        Z3_OP_ITE,
     )
     from z3 import is_true, is_false, simplify, substitute
     from z3 import Goal, Tactic, Then, With, Repeat, OrElse
@@ -215,7 +215,6 @@ if _use_z3:
 
         return str(expr)
 
-
     def _expr_op_to_formula_op(expr):
         if is_and(expr):
             return ArithFormula.AND
@@ -260,7 +259,7 @@ if _use_z3:
             raise NotImplementedError("Must be overridden")
 
         def expr(self):
-            " Transform to Z3 expressions "
+            "Transform to Z3 expressions"
             V = self.vars
             if not V:
                 return None
@@ -382,7 +381,7 @@ if _use_z3:
             # raise NotImplementedError(f"Unhandeld expression: {expr}")
 
         def expr(self):
-            " Transform to Z3 expressions "
+            "Transform to Z3 expressions"
             M = self.monomials
             if not M:
                 return bv_const(0, self._bw)
@@ -523,7 +522,7 @@ if _use_z3:
             _get_replacable(c, atoms)
 
     def _desimplify_ext(expr):
-        " replace concat with singext if possible -- due to debugging "
+        "replace concat with singext if possible -- due to debugging"
         if is_app_of(expr, Z3_OP_CONCAT):
             chld = expr.children()
             c0 = chld[0]
@@ -564,7 +563,7 @@ if _use_z3:
                 return expr
 
     def _rewrite_sext(expr):
-        " replace sext(x + c) with sext(x) + c if possible "
+        "replace sext(x + c) with sext(x) + c if possible"
         if is_const(expr):
             return expr
         chld = expr.children()
@@ -1026,7 +1025,7 @@ class Expr(Value):
         return str(self)
 
     def subexpressions(self):
-        """ Traverse the expression and return its all subexpressions """
+        """Traverse the expression and return its all subexpressions"""
         return (
             ConcreteVal(s.as_long(), solver_to_sb_type(s))
             if is_bv_value(s)
@@ -1203,7 +1202,7 @@ class Expr(Value):
 
 
 class NondetInstrResult(Expr):
-    """ Expression representing a result of instruction that is unknown - non-deterministic """
+    """Expression representing a result of instruction that is unknown - non-deterministic"""
 
     __slots__ = "_instr"
 
@@ -1480,7 +1479,7 @@ class BVSymbolicDomain:
         return Expr(BVSExt(bw - a.bitwidth(), ae), IntType(bw))
 
     def BitCast(a: Value, ty: Type):
-        """ Static cast """
+        """Static cast"""
         assert BVSymbolicDomain.belongto(a)
         tybw = ty.bitwidth()
         if ty.is_float() and a.is_bytes():
@@ -1509,7 +1508,7 @@ class BVSymbolicDomain:
         return None  # unsupported conversion
 
     def Cast(a: Value, ty: Type, signed: bool = True):
-        """ Reinterpret cast """
+        """Reinterpret cast"""
         assert BVSymbolicDomain.belongto(a)
         tybw = ty.bitwidth()
         if ty.is_float():
@@ -1736,7 +1735,7 @@ class BVSymbolicDomain:
         return Expr(If(expr < 0, -expr, expr), a.type())
 
     def Neg(a, isfloat):
-        """ Return the negated number """
+        """Return the negated number"""
         assert BVSymbolicDomain.belongto(a)
         bw = a.bitwidth()
         if isfloat:

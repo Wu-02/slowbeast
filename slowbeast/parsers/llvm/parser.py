@@ -432,7 +432,7 @@ class Parser:
 
     def _createThreadFun(self, inst, operands, fun):
         if fun == "pthread_join":
-            assert len(operands) == 3 # +1 for called fun
+            assert len(operands) == 3  # +1 for called fun
             ty = get_sb_type(self.llvmmodule, operands[1].type.element_type)
             t = ThreadJoin(ty, [self.operand(operands[0])])
             self._addMapping(inst, t)
@@ -442,18 +442,17 @@ class Parser:
             s = Store(t, ret, PointerType())
             return [t, s]
         if fun == "pthread_create":
-            assert len(operands) == 5 # +1 for called fun
-            t = Thread(self.operand(operands[2]),
-                       self.operand(operands[3]))
+            assert len(operands) == 5  # +1 for called fun
+            t = Thread(self.operand(operands[2]), self.operand(operands[3]))
             s = Store(t, self.operand(operands[0]), get_offset_type_size())
             self._addMapping(inst, t)
-            return [t,s]
+            return [t, s]
         if fun == "pthread_exit":
-            assert len(operands) == 2 # +1 for called fun
+            assert len(operands) == 2  # +1 for called fun
             t = ThreadExit(self.operand(operands[0]))
             self._addMapping(inst, t)
             return [t]
- 
+
         raise NotImplementedError(f"Unsupported thread function: {fun}")
 
     def _createCall(self, inst):
@@ -477,17 +476,21 @@ class Parser:
             raise NotImplementedError("Unsupported call: {0}".format(inst))
 
         if fun.startswith("llvm.dbg"):
-            if fun in ('llvm.dbg.declare', 'llvm.dbg.value') and\
-               "dbgvar" in self._metadata_opts:
+            if (
+                fun in ("llvm.dbg.declare", "llvm.dbg.value")
+                and "dbgvar" in self._metadata_opts
+            ):
                 var, name, ty = llvm.parse_dbg_declare(inst)
                 varop = self.operand(var)
-                varop.add_metadata("dbgvar", (name.decode('utf-8', 'replace'),
-                                              ty.decode('utf-8', 'replace')))
+                varop.add_metadata(
+                    "dbgvar",
+                    (name.decode("utf-8", "replace"), ty.decode("utf-8", "replace")),
+                )
                 if self._name_vars:
                     cnt = self._names.setdefault(name, None)
                     if cnt is None:
                         self._names[name] = 0
-                        varop.set_name(name.decode('utf-8'))
+                        varop.set_name(name.decode("utf-8"))
                     else:
                         self._names[name] += 1
                         varop.set_name(f"{name.decode('utf-8')}_{cnt + 1}")
@@ -822,17 +825,13 @@ class Parser:
             # FIXME: add composed instruction
             G.set_init([Store(c, G, ts)])
             return
-       #elif is_array_ty(g.initializer.type):
-       #    parts=str(g.initializer.type).split()
-       #    if parts[1] == 'x' and parts[2] == 'i8]':
-       #    # FIXME: add String type to represent strings
+        # elif is_array_ty(g.initializer.type):
+        #    parts=str(g.initializer.type).split()
+        #    if parts[1] == 'x' and parts[2] == 'i8]':
+        #    # FIXME: add String type to represent strings
         else:
             initsize = type_size(self.llvmmodule, g.initializer.type)
-            if (
-                    initsize
-                    and initsize == ts
-                    and "zeroinitializer" in str(g.initializer)
-            ):
+            if initsize and initsize == ts and "zeroinitializer" in str(g.initializer):
                 # this global is whole zero-initialized
                 G.set_zeroed()
                 return

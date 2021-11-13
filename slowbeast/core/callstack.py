@@ -98,7 +98,7 @@ class CallStack:
         return self._cs[idx]
 
     def set(self, what, v):
-        """ Set a value in the current frame """
+        """Set a value in the current frame"""
         self._cow_reown()
         if self.frame()._is_ro():
             self._cs[-1] = self.frame().writable_copy()
@@ -106,11 +106,11 @@ class CallStack:
         self.frame().set(what, v)
 
     def get(self, v):
-        """ Set a value from the current frame """
+        """Set a value from the current frame"""
         return self.frame().get(v)
 
     def values_list(self, frameidx=-1):
-        """ Set a value from the current frame """
+        """Set a value from the current frame"""
         return self.frame(frameidx).values_list()
 
     def push_call(self, callsite, fun, argsMap):

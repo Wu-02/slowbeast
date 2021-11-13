@@ -61,7 +61,7 @@ class StateDescription:
         return self._expr
 
     def set_expr(self, expr):
-        """ Set expression in this states decriptior. Use responsibly!"""
+        """Set expression in this states decriptior. Use responsibly!"""
         self._expr = expr
 
     def substitutions(self):

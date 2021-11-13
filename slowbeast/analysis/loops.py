@@ -197,7 +197,7 @@ def _construct_simple_loop(vertices, parent, loc):
 
 
 def _compute_loops(vertices, edges, result):
-    """ Compute loops in the graph given by vertices and edges """
+    """Compute loops in the graph given by vertices and edges"""
     for C in strongly_connected_components_iterative(vertices, edges):
         if len(C) <= 1:
             continue

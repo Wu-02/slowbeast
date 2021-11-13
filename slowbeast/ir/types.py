@@ -59,7 +59,7 @@ class Type:
         return False
 
     def is_bytes(self):
-        """ Uninterpreted sequence of bytes """
+        """Uninterpreted sequence of bytes"""
         return False
 
     def is_bool(self):

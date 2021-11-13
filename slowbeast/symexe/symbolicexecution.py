@@ -101,12 +101,12 @@ class SymbolicExecutor(Interpreter):
             if dbgloc:
                 print_stderr(
                     f"[{s.get_id()}] {dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]}: {s.get_error()}",
-                    color="redul"
+                    color="redul",
                 )
             else:
                 print_stderr(
                     "{0}: {1} @ {2}".format(s.get_id(), s.get_error(), s.pc),
-                    color="redul"
+                    color="redul",
                 )
             print_stderr("Error found.", color="red")
             stats.errors += 1
@@ -169,12 +169,14 @@ def may_be_glob_mem(mem):
         return False
     return True
 
+
 def is_global_ev(pc, ismain):
     if isinstance(pc, Load):
         return may_be_glob_mem(pc.operand(0))
     if isinstance(pc, Store):
         return may_be_glob_mem(pc.operand(1))
     return isinstance(pc, (Thread, ThreadJoin)) or (isinstance(pc, Return) and ismain)
+
 
 def is_same_mem(state, mem1, mem2, bytesNum):
     p1 = state.eval(mem1)
@@ -187,12 +189,13 @@ def is_same_mem(state, mem1, mem2, bytesNum):
 
 
 def is_same_val(state, op1, op2):
-    """ Return if True if reading mem1 and mem2 must result in the same value """
+    """Return if True if reading mem1 and mem2 must result in the same value"""
     val1 = state.try_eval(op1)
     val2 = state.try_eval(op2)
     if val1 is None or val2 is None:
         return False
     return val1 == val2
+
 
 def reads_same_val(state, loadop, storevalop, bytesNum):
     p1 = state.eval(loadop)
@@ -202,7 +205,7 @@ def reads_same_val(state, loadop, storevalop, bytesNum):
     lval, err = state.memory.read(p1, bytesNum)
     if err:
         return False
-    #TODO: handle symbolic values?
+    # TODO: handle symbolic values?
     return lval == val
 
 
@@ -215,12 +218,13 @@ def get_conflicting(state, thr):
         return confl
     bytesNum = pc.bytewidth()
     for idx, t in enumerate(state.threads()):
-        if idx == thr: continue
+        if idx == thr:
+            continue
         tpc = t.pc
         # we handle this differently
-       #if isinstance(tpc, Return) and idx == 0:
-       #    # return from main is always conflicting
-       #    confl.append(idx)
+        # if isinstance(tpc, Return) and idx == 0:
+        #    # return from main is always conflicting
+        #    confl.append(idx)
         if isload and isinstance(tpc, Store):
             if is_same_mem(state, pc.operand(0), tpc.operand(1), bytesNum):
                 if not reads_same_val(state, pc.operand(0), tpc.operand(0), bytesNum):
@@ -267,33 +271,34 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
             return states
 
         # this is not CORRECT!
-       #can_run = set(idx for idx, t in enumerate(state.threads()) if not t.is_paused())
-       #if not can_run:
-       #    state.set_error(GenericError("Deadlock detected"))
-       #    return [state]
 
-       #thr = can_run.pop()
-       #if len(can_run) > 0 and thr == 0 and isinstance(state.thread(0).pc, Return):
-       #    # defer scheduling the return from the main thread as the last possible event,
-       #    # so that we do not try only partial executions
-       #    # FIXME: this is incorrect if we are interested e.g., in memory leaks
-       #    # if we get rid of this hack, we must return all threads as possibly conflicting
-       #    # from 'get_conflicting' if thr == 0 and pc is a return
-       #    thr = can_run.pop()
-       #state.schedule(thr)
-       #if len(can_run) == 0:
-       #    return [state]
-       #else:
-       #    conflicting = get_conflicting(state, thr)
-       #    if not conflicting:
-       #        return [state]
-       #    states = [state]
-       #    for idx in conflicting:
-       #        s = state.copy()
-       #        s.schedule(idx)
-       #        states.append(s)
-       #    assert states
-       #    return states
+    # can_run = set(idx for idx, t in enumerate(state.threads()) if not t.is_paused())
+    # if not can_run:
+    #    state.set_error(GenericError("Deadlock detected"))
+    #    return [state]
+
+    # thr = can_run.pop()
+    # if len(can_run) > 0 and thr == 0 and isinstance(state.thread(0).pc, Return):
+    #    # defer scheduling the return from the main thread as the last possible event,
+    #    # so that we do not try only partial executions
+    #    # FIXME: this is incorrect if we are interested e.g., in memory leaks
+    #    # if we get rid of this hack, we must return all threads as possibly conflicting
+    #    # from 'get_conflicting' if thr == 0 and pc is a return
+    #    thr = can_run.pop()
+    # state.schedule(thr)
+    # if len(can_run) == 0:
+    #    return [state]
+    # else:
+    #    conflicting = get_conflicting(state, thr)
+    #    if not conflicting:
+    #        return [state]
+    #    states = [state]
+    #    for idx in conflicting:
+    #        s = state.copy()
+    #        s.schedule(idx)
+    #        states.append(s)
+    #    assert states
+    #    return states
 
     def prepare(self):
         """

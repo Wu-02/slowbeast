@@ -6,7 +6,7 @@ from slowbeast.domains.concrete import ConcreteVal
 
 
 class AbstractState(ExecutionState):
-    """ State of abstract interpretation """
+    """State of abstract interpretation"""
 
     # XXX do not store warnings in the state but keep them in a map in the interpreter or so?
     # FIXME: move this to the super class?

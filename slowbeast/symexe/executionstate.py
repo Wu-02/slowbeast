@@ -29,7 +29,7 @@ class Nondet:
 
 
 class SEState(ExecutionState):
-    """ Execution state of symbolic execution """
+    """Execution state of symbolic execution"""
 
     # XXX do not store warnings in the state but keep them in a map in the interpreter or so?
     __slots__ = (
@@ -66,7 +66,7 @@ class SEState(ExecutionState):
         return self._id
 
     def __eq__(self, rhs):
-        """ Syntactic comparison """
+        """Syntactic comparison"""
         assert (
             self._executor is rhs._executor
         ), "Comparing execution states of different executors"
@@ -244,11 +244,11 @@ class SEState(ExecutionState):
         write(str(self.constraints_obj()))
         write("\n")
 
+
 class IncrementalSEState(SEState):
     def __init__(self, executor=None, pc=None, m=None):
         C = IncrementalConstraintsSet()
-        super().__init__(executor, pc, m,
-                         solver=None, constraints=C)
+        super().__init__(executor, pc, m, solver=None, constraints=C)
 
     def solver(self):
         return self._constraints.solver()
@@ -299,22 +299,23 @@ class LazySEState(SEState):
             self.create_nondet(v, value)
         return value
 
+
 class Thread:
     __slots__ = "pc", "cs", "_id", "_paused", "_detached", "_exit_val"
 
-    #ids = 0
+    # ids = 0
 
     def __init__(self, tid, pc, callstack):
         self.pc = pc
-        self.cs = callstack # callstack
-        self._id = tid #Thread.ids
+        self.cs = callstack  # callstack
+        self._id = tid  # Thread.ids
         self._paused = False
         self._detached = False
         self._exit_val = None
-        #Thread.ids += 1
+        # Thread.ids += 1
 
     def copy(self):
-        n = copy(self) # shallow copy
+        n = copy(self)  # shallow copy
         n.cs = self.cs.copy()
         return n
 
@@ -353,7 +354,14 @@ class Thread:
 
 
 class ThreadedSEState(SEState):
-    __slots__ = "_threads", "_current_thread", "_exited_threads", "_wait_join", "_last_tid", "_trace"
+    __slots__ = (
+        "_threads",
+        "_current_thread",
+        "_exited_threads",
+        "_wait_join",
+        "_last_tid",
+        "_trace",
+    )
 
     def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
         super().__init__(executor, pc, m, solver, constraints)
@@ -396,7 +404,7 @@ class ThreadedSEState(SEState):
         thr.pc, thr.cs = self.pc, self.memory.get_cs()
 
         # schedule new thread
-        thr : Thread = self._threads[idx]
+        thr: Thread = self._threads[idx]
         assert thr, self._threads
         self.pc = thr.pc
         self.memory.set_cs(thr.cs)
@@ -425,7 +433,7 @@ class ThreadedSEState(SEState):
         self._threads[self._current_thread if idx is None else idx].unpause()
 
     def exit_thread(self, tid=None):
-        """ Exit thread and wait for join (if not detached) """
+        """Exit thread and wait for join (if not detached)"""
         if tid is None:
             tid = self.thread().get_id()
         retval = self.eval(self.pc.operand(0))
@@ -453,18 +461,24 @@ class ThreadedSEState(SEState):
         tid: id of the thread to join
         totid: id of the thread to which to join (None means the current thread)
         """
-        self._trace.append(f"join thread {tid} to {self.thread().get_id() if totid is None else totid}")
+        self._trace.append(
+            f"join thread {tid} to {self.thread().get_id() if totid is None else totid}"
+        )
         if tid in self._exited_threads:
             # pass the return value
             retval = self._exited_threads.pop(tid)
             self.set(self.pc, retval)
             self.pc = self.pc.get_next_inst()
-            self._trace.append(f"thread {tid} waited for a join, joining with val {retval}")
+            self._trace.append(
+                f"thread {tid} waited for a join, joining with val {retval}"
+            )
             return
 
         assert not tid in self._wait_join, self._wait_join
         if totid is None:
-            self._trace.append(f"thread {tid} is waited in join by {self.thread().get_id()}")
+            self._trace.append(
+                f"thread {tid} is waited in join by {self.thread().get_id()}"
+            )
             self._wait_join[tid] = self.thread().get_id()
             toidx = self._current_thread
         else:
@@ -502,7 +516,7 @@ class ThreadedSEState(SEState):
         if self._exited_threads:
             write(" -- Exited threads waiting for join: {self._wait_exit}\n")
         else:
-            write (" -- No exited threads are waiting for join\n")
+            write(" -- No exited threads are waiting for join\n")
         if self._wait_join:
             write(" -- Threads waiting in join: {self._wait_join}\n")
         else:

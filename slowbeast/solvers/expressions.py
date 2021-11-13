@@ -21,7 +21,7 @@ class ExprOptIntf:
     """
 
     def optimize(expr, *assumptions):
-        """ Optimize the expression given the assumptions """
+        """Optimize the expression given the assumptions"""
         return expr
 
 
@@ -222,7 +222,7 @@ class ExprManager:
         return opt(SymbolicDomain.Not(self.lift(a)))
 
     def Neg(self, a, isfloat):
-        """ Return the negated number """
+        """Return the negated number"""
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.Neg(a, isfloat)
         return opt(SymbolicDomain.Neg(self.lift(a), isfloat))
@@ -251,7 +251,7 @@ class ExprManager:
         return opt(SymbolicDomain.SExt(a, b))
 
     def Cast(self, a: Value, ty: Type):
-        """ reinterpret cast"""
+        """reinterpret cast"""
         assert isinstance(ty, Type)
         if a.type() == ty:
             return a
@@ -264,7 +264,7 @@ class ExprManager:
         return SymbolicDomain.Cast(a, ty)
 
     def BitCast(self, a: Value, ty: Type):
-        """ static cast"""
+        """static cast"""
         assert isinstance(ty, Type)
         if a.type() == ty:
             return a

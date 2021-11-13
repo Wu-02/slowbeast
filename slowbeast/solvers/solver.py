@@ -92,7 +92,7 @@ def getGlobalExprManager():
 
 
 class SolverIntf:
-    """ Interface of solvers """
+    """Interface of solvers"""
 
     __slots__ = "_exprmanager"
 
@@ -110,11 +110,11 @@ class SolverIntf:
         raise NotImplementedError("Must be overriden")
 
     def fresh_value(self, name, ty):
-        """ ty = type """
+        """ty = type"""
         return self._exprmanager.fresh_value(name, ty)
 
     def Var(self, name, ty):
-        """ ty = type """
+        """ty = type"""
         return self._exprmanager.Var(name, ty)
 
 
@@ -255,7 +255,7 @@ class IncrementalSolver(SymbolicSolver):
         return map_model(m, e)
 
     def _model(self):
-        """ Debugging feature atm. Must follow is_sat() that is True """
+        """Debugging feature atm. Must follow is_sat() that is True"""
         return self._solver.model()
 
     def __repr__(self):

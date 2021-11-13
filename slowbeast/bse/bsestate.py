@@ -43,8 +43,10 @@ def _same_ptrs(em, ptr1, ptr2):
             Eq(ptr1.offset(), ptr2.offset()),
         )
     )
+
+
 def _same_values(em, val1, val2):
-    """ Create an expression that says: if the pointers are the same, the values must be the same """
+    """Create an expression that says: if the pointers are the same, the values must be the same"""
     Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
 
     val1ptr, val2ptr = val1.is_pointer(), val2.is_pointer()
@@ -155,7 +157,7 @@ class BSEState(LazySEState):
                 # we assume that such reads do not read the same memory
                 # TODO: this assumption may not be right
                 if ival is val or val.bytewidth() != isize:
-                        continue
+                    continue
                 # if pointers are surely the same, we may bail out
                 if ptr == iptr:
                     matches.append((ptr, iptr, val, ival))
@@ -170,12 +172,13 @@ class BSEState(LazySEState):
             Ite = em.Ite
             for ptr, iptr, val, ival in reversed(matches):
                 if expr is None:
-                    expr = em.Or(em.Not(_same_ptrs(em, ptr, iptr)),
-                                 _same_values(em, val, ival))
+                    expr = em.Or(
+                        em.Not(_same_ptrs(em, ptr, iptr)), _same_values(em, val, ival)
+                    )
                 else:
-                    expr = Ite(_same_ptrs(em, ptr, iptr),
-                               _same_values(em, val, ival),
-                               expr)
+                    expr = Ite(
+                        _same_ptrs(em, ptr, iptr), _same_values(em, val, ival), expr
+                    )
 
             if expr:
                 if expr.is_concrete() and bool(expr.value()):
@@ -266,8 +269,12 @@ class BSEState(LazySEState):
         # FIXME: remove reads that are for sure overwritten
         # to not to carry them with us all the time
         self.memory._reads = [
-            (_subst_val(substitute, cptr, (val, newval)),
-             _subst_val(substitute, cval, (val, newval))) for cptr, cval in self.memory._reads]
+            (
+                _subst_val(substitute, cptr, (val, newval)),
+                _subst_val(substitute, cval, (val, newval)),
+            )
+            for cptr, cval in self.memory._reads
+        ]
 
         UP = self.memory._input_reads
         nUP = {}

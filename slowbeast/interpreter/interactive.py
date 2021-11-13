@@ -44,7 +44,7 @@ class InteractiveHandler:
         self._last_query = q
 
     def handle(self, q, s):
-        """ Return False for new prompt (the handling was unsuccessful) """
+        """Return False for new prompt (the handling was unsuccessful)"""
         try:
             return self._handle(q, s)
         except KeyboardInterrupt:

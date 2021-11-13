@@ -178,7 +178,7 @@ class ValueTypedInstruction(ValueInstruction):
 
 
 class Store(Instruction):
-    """ Store 'val' which has 'bw' bytes to 'to' """
+    """Store 'val' which has 'bw' bytes to 'to'"""
 
     # NOTE: having 'bw' is important for lazy allocation of objects
     # since when we create SMT bitvector objects, we must specify
@@ -211,7 +211,7 @@ class Store(Instruction):
 
 
 class Load(ValueTypedInstruction):
-    """ Load value of type 'ty' from 'frm' """
+    """Load value of type 'ty' from 'frm'"""
 
     def __init__(self, frm, ty):
         assert isinstance(ty, Type), ty
@@ -315,6 +315,7 @@ class Call(ValueTypedInstruction):
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + f") -> {self._type}"
 
+
 class Return(Instruction):
     def __init__(self, val=None):
         if val is None:
@@ -326,6 +327,7 @@ class Return(Instruction):
         if len(self.operands()) == 0:
             return "ret"
         return "ret {0}".format(str(self.operand(0).as_value()))
+
 
 class Thread(Call):
     def __init__(self, wht, *operands):
@@ -342,9 +344,12 @@ class Thread(Call):
         # return self._function
 
     def __str__(self):
-        r = "x{0} = thread {1}(".format(self.get_id(), self.called_function().as_value())
+        r = "x{0} = thread {1}(".format(
+            self.get_id(), self.called_function().as_value()
+        )
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + f") -> {self._type}"
+
 
 class ThreadExit(Return):
     def __init__(self, val=None):
@@ -354,6 +359,7 @@ class ThreadExit(Return):
         if len(self.operands()) == 0:
             return "thread exit"
         return f"thread exit ret {self.operand(0).as_value()}"
+
 
 class ThreadJoin(ValueTypedInstruction):
     def __init__(self, ty, ops=None):
@@ -366,6 +372,7 @@ class ThreadJoin(ValueTypedInstruction):
             r = f"x{self.get_id()} = thread join ("
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + ")"
+
 
 class Print(Instruction):
     def __init__(self, *operands):
@@ -465,14 +472,14 @@ class Cmp(ValueTypedInstruction):
         self._fp = fp
 
     def set_float(self):
-        """ Set that this comparison is on floating-point numbers """
+        """Set that this comparison is on floating-point numbers"""
         self._fp = True
 
     def is_float(self):
         return self._fp
 
     def set_unsigned(self):
-        """ Set that this comparison is unsigned """
+        """Set that this comparison is unsigned"""
         self._unsigned = True
 
     def is_unsigned(self):
@@ -506,7 +513,7 @@ class UnaryOperation(ValueTypedInstruction):
         assert UnaryOperation.NEG <= op <= UnaryOperation.LAST_UNARY_OP
 
     def __init__(self, op, a, ty=None):
-        """ Some unary operations do not inherit the type -- set it in 'ty'"""
+        """Some unary operations do not inherit the type -- set it in 'ty'"""
         super().__init__(ty or a.type(), [a])
         UnaryOperation.__check(op)
         self._op = op
@@ -516,7 +523,7 @@ class UnaryOperation(ValueTypedInstruction):
 
 
 class Abs(UnaryOperation):
-    """ Absolute value """
+    """Absolute value"""
 
     def __init__(self, val):
         super().__init__(UnaryOperation.ABS, val)
@@ -577,7 +584,7 @@ class Cast(UnaryOperation):
 
 
 class Neg(UnaryOperation):
-    """ Negate the number (return the same number with opposite sign) """
+    """Negate the number (return the same number with opposite sign)"""
 
     def __init__(self, val, fp):
         super().__init__(UnaryOperation.NEG, val)
@@ -618,7 +625,7 @@ class ExtractBits(UnaryOperation):
 
 
 class FpOp(UnaryOperation):
-    """ Floating-point special operations """
+    """Floating-point special operations"""
 
     IS_INF = 1
     IS_NAN = 2
@@ -832,7 +839,7 @@ class Xor(BinaryOperation):
 # TODO: do we want this instruction? (can we replace it somehow without
 # creating an artificial braching?).
 class Ite(ValueTypedInstruction):
-    """ if-then-else: assign a value based on a condition """
+    """if-then-else: assign a value based on a condition"""
 
     def __init__(self, cond, op1, op2):
         assert cond.type().bitwidth() == 1

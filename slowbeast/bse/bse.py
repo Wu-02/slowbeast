@@ -99,7 +99,7 @@ class BSEPath:
 
 
 class BSEContext:
-    """ Class that keeps the state of BSE search """
+    """Class that keeps the state of BSE search"""
 
     __slots__ = "path", "loc_hits", "errorstate", "errordescr"
 
@@ -253,7 +253,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         return []
 
     def precondition(self, bsectx: BSEContext) -> (Result, Optional[BSEState]):
-        """ Compute precondition of the given BSEContext. """
+        """Compute precondition of the given BSEContext."""
 
         assert isinstance(bsectx.path.source(), CFA.Location)
         assert isinstance(self._entry_loc, CFA.Location)

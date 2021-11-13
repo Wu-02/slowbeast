@@ -4,7 +4,7 @@ from slowbeast.ir.instruction import Branch, Call, Assert, Return
 
 
 class CFA:
-    """ Control flow automaton """
+    """Control flow automaton"""
 
     class Location:
         _counter = 0
@@ -115,7 +115,7 @@ class CFA:
             return self._elems
 
         def get_elem(self, idx):
-            """ Get element on index 'idx' or None if such elem does not exists """
+            """Get element on index 'idx' or None if such elem does not exists"""
             if idx < len(self._elems):
                 return self._elems[idx]
             return None

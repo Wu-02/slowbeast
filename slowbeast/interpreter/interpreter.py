@@ -107,7 +107,7 @@ class Interpreter:
         self._interactive.prompt(s)
 
     def run_static(self):
-        """ Run static ctors (e.g. initialize globals) """
+        """Run static ctors (e.g. initialize globals)"""
         # fake the program counter for the executor
         ginit = GlobalInit()
         states = self.states
@@ -148,7 +148,7 @@ class Interpreter:
         # FIXME: argv should be terminated with 0, but our memory model does not handle
         # symbolic writes yet
         argv = state.memory.allocate(argv_size, nm="argv")
-        return {args[0] : argc, args[1] : argv}
+        return {args[0]: argc, args[1]: argv}
 
     def prepare(self):
         """
@@ -177,9 +177,7 @@ class Interpreter:
         elif self._options.step == ExecutionOptions.BLOCK_STEP:
             newstates = self._executor.executeTillBranch(state)
         else:
-            raise NotImplementedError(
-                "Invalid step: {0}".format(self._options.step)
-            )
+            raise NotImplementedError("Invalid step: {0}".format(self._options.step))
 
         # self.states_num += len(newstates)
         # if self.states_num % 100 == 0:

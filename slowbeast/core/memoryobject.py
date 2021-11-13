@@ -179,7 +179,7 @@ class MemoryObject:
         return val, None
 
     def offsets(self):
-        """ Get offsets on which something is written """
+        """Get offsets on which something is written"""
         return self._values.keys()
 
     def __repr__(self):

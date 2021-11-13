@@ -18,7 +18,7 @@ def trunc_to_float(x, bw):
 
 
 def to_unsigned(x, bw):
-    """ Get unsigned value for signed in 2's complement """
+    """Get unsigned value for signed in 2's complement"""
     if isinstance(x, float):
         return int(abs(x))
     if x >= 0:
@@ -27,7 +27,7 @@ def to_unsigned(x, bw):
 
 
 def to_signed(x, bw):
-    """ Get signed value for number in 2's complement """
+    """Get signed value for number in 2's complement"""
     if x < (1 << (bw - 1)):
         return x
     return x - (1 << bw)
@@ -290,7 +290,7 @@ class ConcreteDomain:
         return None  # unsupported conversion
 
     def BitCast(a: ConcreteVal, ty: Type):
-        """ static cast """
+        """static cast"""
         assert ConcreteDomain.belongto(a)
         if a.is_bool() and ty.is_int():
             return ConcreteVal(1 if a.value() else 0, IntType(ty.bitwidth()))
@@ -370,7 +370,7 @@ class ConcreteDomain:
         return ConcreteVal(a.value() % b.value(), a.type())
 
     def Neg(a, isfloat):
-        """ Return the negated number """
+        """Return the negated number"""
         assert ConcreteDomain.belongto(a)
         ty = a.type()
         bw = ty.bitwidth()

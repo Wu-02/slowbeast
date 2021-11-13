@@ -101,7 +101,7 @@ class ExecutionState:
         return self.get(v)
 
     def set(self, what, v):
-        """ Associate a value to a register (in the current stack frame) """
+        """Associate a value to a register (in the current stack frame)"""
         # if __debug__:
         #   h = f" ({hex(v.value())})" if v and v.is_concrete() and v.is_int() else ""
         #   dbgv("[{0}] -> {1}{2}".format(what, v, h), color="GREEN")
@@ -115,7 +115,7 @@ class ExecutionState:
         return self.memory.get(v)
 
     def globals_list(self):
-        """ Return the list of globals in this state """
+        """Return the list of globals in this state"""
         return self.memory.globals_list()
 
     def values_list(self):

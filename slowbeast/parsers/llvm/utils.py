@@ -163,12 +163,14 @@ def getFloatConstant(sval, isdouble=True):
         return _get_double(sval)
     return _get_float(sval)
 
+
 def get_pointer_constant(val):
     assert is_pointer_ty(val.type)
     parts = str(val).split()
     if parts[-1] == "null":
         return get_null_pointer()
     return None
+
 
 def getConstant(val):
     # My, this is so ugly... but llvmlite does
@@ -210,6 +212,7 @@ def bvToBoolElseId(bv):
         else:
             return ConstantTrue
     return bv
+
 
 def getLLVMOperands(inst):
     return [x for x in inst.operands]

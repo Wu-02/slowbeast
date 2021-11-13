@@ -32,7 +32,7 @@ class StatesSet:
     __slots__ = "_state"
 
     def __init__(self, state: SEState):
-        """ Create new states set from the given states """
+        """Create new states set from the given states"""
 
         assert state is not None and isinstance(state, SEState)
         # assert state.is_feasible(), "Infeasible state given"
@@ -53,7 +53,7 @@ class StatesSet:
         return state_to_description(self.get_se_state())
 
     def as_expr(self):
-        """ NOTE: use carefully, only when you know what you do... """
+        """NOTE: use carefully, only when you know what you do..."""
         return self._state.constraints_obj().as_formula(self.expr_manager())
 
     def rewrite_and_simplify(self):
@@ -73,7 +73,7 @@ class StatesSet:
         )
 
     def reset_expr(self, expr=None):
-        """ NOTE: use carefully, only when you know what you do... """
+        """NOTE: use carefully, only when you know what you do..."""
         C = ConstraintsSet()
         if expr is not None:
             C.add(expr)
@@ -95,10 +95,10 @@ class StatesSet:
         newexpr = EM.Or(expr, state.constraints_obj().as_formula(EM))
         if not newexpr.is_concrete():
             C.add(newexpr)
-       #else:
-       #    # if newexpr is concrete, it must be True. And adding True is useless,
-       #    # its the same as empty constraints
-       #    assert newexpr.value() is True  # this is Or expr...
+        # else:
+        #    # if newexpr is concrete, it must be True. And adding True is useless,
+        #    # its the same as empty constraints
+        #    assert newexpr.value() is True  # this is Or expr...
         state.set_constraints(C)
 
     def model(self):
@@ -165,7 +165,7 @@ class StatesSet:
         return self
 
     def is_empty(self):
-        """ Check whether the set is empty. Involves a solver call """
+        """Check whether the set is empty. Involves a solver call"""
         return not self._state.is_feasible()
 
     def contains(self, S):

@@ -11,6 +11,7 @@ def iter_nondet_load_pairs(state):
         for j in range(i + 1, len(loads)):
             yield loads[i], loads[j]
 
+
 # def iter_concrete_pointers(state):
 #     vals = list(state.memory.get_cs().values_list())
 #     for i in range(0, len(vals)):
@@ -26,6 +27,7 @@ def get_loads(state):
     for v in vals:
         if isinstance(v, Load):
             yield v
+
 
 def iter_loads(state):
     vals = list(state.memory.get_cs().values_list())
@@ -163,6 +165,7 @@ def _do_load(state, l):
         return None
     return lval
 
+
 def _compare_two_loads(state, S, l1, l2):
     EM = state.expr_manager()
     Sub, Eq, Not = (
@@ -194,7 +197,7 @@ def _compare_two_loads(state, S, l1, l2):
     def model(assumptions, *e):
         return solver.concretize(assumptions, *e)
 
-    c = EM.Var(f"c_coef_{l1.as_value()}{l2.as_value()}", IntType(8*l1bw))
+    c = EM.Var(f"c_coef_{l1.as_value()}{l2.as_value()}", IntType(8 * l1bw))
     expr = Eq(Sub(l1val, l2val), c)
     c_concr = model([expr], c)
     if c_concr is not None:
@@ -207,23 +210,24 @@ def _compare_two_loads(state, S, l1, l2):
             yield AssertAnnotation(simpl(Eq(Sub(ndval1, ndval2), cval)), subs, EM)
 
 
-   #lt = state.is_sat(Lt(l1, l2))
-   #gt = state.is_sat(Gt(l1, l2))
+# lt = state.is_sat(Lt(l1, l2))
+# gt = state.is_sat(Gt(l1, l2))
 
-   #if lt is False:  # l1 >= l2
-   #    if gt is False:  # l1 <= l2
-   #        yield AssertAnnotation(simpl(Eq(l1, l2)), subs, EM)
-   #    elif gt is True:  # l1 >= l2
-   #        if state.is_sat(Eq(l1, l2)) is False:
-   #            yield AssertAnnotation(simpl(Gt(l1, l2)), subs, EM)
-   #        else:
-   #            yield AssertAnnotation(simpl(EM.Ge(l1, l2)), subs, EM)
-   #elif lt is True:
-   #    if gt is False:  # l1 <= l2
-   #        if state.is_sat(Eq(l1, l2)) is False:
-   #            yield AssertAnnotation(simpl(Lt(l1, l2)), subs, EM)
-   #        else:
-   #            yield AssertAnnotation(simpl(EM.Le(l1, l2)), subs, EM)
+# if lt is False:  # l1 >= l2
+#    if gt is False:  # l1 <= l2
+#        yield AssertAnnotation(simpl(Eq(l1, l2)), subs, EM)
+#    elif gt is True:  # l1 >= l2
+#        if state.is_sat(Eq(l1, l2)) is False:
+#            yield AssertAnnotation(simpl(Gt(l1, l2)), subs, EM)
+#        else:
+#            yield AssertAnnotation(simpl(EM.Ge(l1, l2)), subs, EM)
+# elif lt is True:
+#    if gt is False:  # l1 <= l2
+#        if state.is_sat(Eq(l1, l2)) is False:
+#            yield AssertAnnotation(simpl(Lt(l1, l2)), subs, EM)
+#        else:
+#            yield AssertAnnotation(simpl(EM.Le(l1, l2)), subs, EM)
+
 
 def get_var_cmp_relations(state, S):
     # comparision relations between loads

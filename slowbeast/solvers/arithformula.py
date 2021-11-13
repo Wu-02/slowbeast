@@ -1,5 +1,5 @@
 class Monomial:
-    """ Monomial (power product) """
+    """Monomial (power product)"""
 
     def __init__(self, *variables):
         self.vars = {v: e for v, e in variables if e != 0}
@@ -19,7 +19,7 @@ class Monomial:
         return sum(self.vars.values())
 
     def multiplied(self, *rhss):
-        """ product of self and monomials in rhss. Returns a new object """
+        """product of self and monomials in rhss. Returns a new object"""
 
         V = self.vars
         newV = {}
@@ -412,7 +412,7 @@ class ArithFormula:
         return self._ty == ArithFormula.MT_VALUES
 
     def substitute_inplace(self, *subs):
-        """ Return True if the formula gets modified """
+        """Return True if the formula gets modified"""
         changed = False
         newchldrn = []
         for op in self._children:

@@ -85,7 +85,7 @@ def print_stdout(msg, prefix=None, print_ws="\n", color=None):
 
 
 def print_highlight(s, words, prefix=None, stream=sys.stdout):
-    """ Words: dictionary words -> colors """
+    """Words: dictionary words -> colors"""
     if prefix:
         print_stream(prefix, print_ws=None, stream=stream)
     for w in s.split():
@@ -180,7 +180,7 @@ def dbg_sec(msg=None, color="WHITE"):
 
 
 def dbgv_sec(msg=None, verbose_lvl=2, color="WHITE"):
-    """ Exactly as dbg sec, but uses dbgv """
+    """Exactly as dbg sec, but uses dbgv"""
     if msg is None:
         dec_debugging_lvl()
     else:

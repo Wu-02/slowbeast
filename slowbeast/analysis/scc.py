@@ -333,7 +333,7 @@ class SCCCondensation:
                     t._predecessors.add(scc)
 
     def __init__(self, G):
-        """ G - Directed graph, either CFG or CFA """
+        """G - Directed graph, either CFG or CFA"""
 
         self._graph = G
         self._node_to_scc = {}

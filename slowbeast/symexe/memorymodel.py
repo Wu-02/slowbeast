@@ -13,7 +13,7 @@ class SymbolicMemoryModel(CoreMM):
         super().__init__(opts)
 
     def create_memory(self):
-        """ Create a memory object that is going to be a part of a state. """
+        """Create a memory object that is going to be a part of a state."""
         return Memory()
 
 
@@ -53,7 +53,7 @@ class LazySymbolicMemoryModel(CoreMM):
         return [state]
 
     def _havoc_ptr_target(self, state, ptr, without=None):
-        """ Havoc memory possibly pointed by ptr"""
+        """Havoc memory possibly pointed by ptr"""
         # we do not know what we write where, so just clear all the information if possible
         mo = None
         if ptr.is_pointer():

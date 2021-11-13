@@ -76,9 +76,9 @@ def _check_set(executor, S, L, target):
         )
         return False
     # --- workaround ends here...
-   #if S.is_empty():
-   #    dbg("Starting sequence is empty")
-   #    return False
+    # if S.is_empty():
+    #    dbg("Starting sequence is empty")
+    #    return False
     return True
 
 
@@ -112,7 +112,7 @@ def overapprox_state(executor, s, E, target, L):
     yield from _overapprox_with_assumptions(E, L, S, executor, s, target)
 
     # try without any relation
-    #assert not S.is_empty(), "Infeasible states given to overapproximate"
+    # assert not S.is_empty(), "Infeasible states given to overapproximate"
     yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
 
 
@@ -255,7 +255,6 @@ class BSELFChecker(BaseBSE):
         dec_print_indent()
         dbg(f"Checking if {A} holds on {loc} finished")
         return result, states
-
 
     def execute_path(self, path, fromInit=False, invariants=None):
         """
@@ -554,7 +553,7 @@ class BSELFChecker(BaseBSE):
         create_set = self.create_set
         target = seq0[-1]
         S = seq0.as_set().copy()  # we're going to change S
-        #assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
+        # assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
         EM = getGlobalExprManager()
 
         yielded_seqs = []
@@ -586,7 +585,7 @@ class BSELFChecker(BaseBSE):
                 yield seq
 
     def _last_k_iteration_paths(self, L, k=0):
-        """ Obtain the paths that correspond to the last k iterations of the loop """
+        """Obtain the paths that correspond to the last k iterations of the loop"""
         is_error_loc = L.cfa().is_err
         exits = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
         if k == 0:
@@ -710,9 +709,15 @@ class BSELFChecker(BaseBSE):
         # I.intersect()
         dbgloc = loc.elem()[0].get_metadata("dbgloc")
         if dbgloc:
-            print_stdout(f"{to_c_expression(inv.get_cannonical().unwrap())} holds at line {dbgloc[1]}", color="BLUE")
+            print_stdout(
+                f"{to_c_expression(inv.get_cannonical().unwrap())} holds at line {dbgloc[1]}",
+                color="BLUE",
+            )
         else:
-            print_stdout(f"{to_c_expression(inv.get_cannonical().unwrap())} holds at {loc}", color="BLUE")
+            print_stdout(
+                f"{to_c_expression(inv.get_cannonical().unwrap())} holds at {loc}",
+                color="BLUE",
+            )
 
     def add_inductive_set(self, loc, S):
         I = InductiveSet(self.create_set(S))
@@ -851,8 +856,8 @@ class BSELFChecker(BaseBSE):
         bsectx = self.get_next_state()
         if bsectx is None:
             return (
-                       Result.UNKNOWN if (self.problematic_states) else Result.SAFE
-                   ), self.problematic_paths_as_result()
+                Result.UNKNOWN if (self.problematic_states) else Result.SAFE
+            ), self.problematic_paths_as_result()
 
         r, pre = self.precondition(bsectx)
         if r is Result.SAFE:
@@ -882,7 +887,6 @@ class BSELFChecker(BaseBSE):
                     return Result.UNKNOWN, pre
         self.extend_state(bsectx, pre)
         return None, None
-
 
     def check(self, onlyedges=None):
         # the initial error path that we check
@@ -980,4 +984,3 @@ class BSELF:
         if ohandler:
             ohandler.testgen.generate_proof(self)
         return Result.SAFE
-

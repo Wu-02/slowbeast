@@ -401,8 +401,9 @@ class Executor:
         ret = None
         if len(instr.operands()) != 0:  # returns something
             ret = state.eval(instr.operand(0))
-            assert ret is not None,\
-                    f"No return value even though there should be: {instr}"
+            assert (
+                ret is not None
+            ), f"No return value even though there should be: {instr}"
 
         # pop the call frame and get the return site
         rs = state.pop_call()

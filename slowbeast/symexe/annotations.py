@@ -253,7 +253,7 @@ def _execute_expr_annotation(executor, states, annot):
 
 
 def execute_annotation(executor, states, annot):
-    """ Execute the given annotation on states """
+    """Execute the given annotation on states"""
 
     assert isinstance(annot, Annotation), annot
     assert all(map(lambda s: s.is_ready(), states))

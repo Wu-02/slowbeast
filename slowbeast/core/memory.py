@@ -83,7 +83,7 @@ class Memory:
         return self._objects == rhs._objects and self._cs == self._cs
 
     def _allocate(self, size, instr=None, nm=None, objid=None, is_glob=False):
-        """ Allocate a new memory object and return it """
+        """Allocate a new memory object and return it"""
         o = self.create_memory_object(size, nm, objid, is_glob)
         assert o._is_ro() is False, "Created object is read-only (COW bug)"
 
@@ -93,7 +93,7 @@ class Memory:
         return o
 
     def allocate(self, size, instr=None, nm=None, objid=None):
-        """ Allocate a new memory object and return a pointer to it """
+        """Allocate a new memory object and return a pointer to it"""
         assert (
             objid is None or self._objects.get(objid) is None
         ), "Already has an object with id {0}".format(objid)
@@ -107,7 +107,7 @@ class Memory:
         return Pointer(ConcreteVal(o.get_id(), get_size_type()))
 
     def allocate_global(self, G, objid=None, zeroed=False):
-        """ Allocate a new memory object and return a pointer to it """
+        """Allocate a new memory object and return a pointer to it"""
         assert (
             objid is None or self._glob_objects.get(objid) is None
         ), "Already has a global object with id {0}".format(objid)
@@ -196,11 +196,11 @@ class Memory:
         return ret
 
     def bound_globals(self):
-        """ Return the bound globals in this state """
+        """Return the bound globals in this state"""
         return self._glob_bindings.items()
 
     def globals_list(self):
-        """ Return the list of globals in this state """
+        """Return the list of globals in this state"""
         # return only list, so that we must get them through "get"
         return self._glob_bindings.keys()
 
@@ -252,7 +252,7 @@ class Memory:
             obj.clear()
 
     def havoc(self, objs=None, without=None):
-        """ Havoc the contents of memory """
+        """Havoc the contents of memory"""
         # FIXME: we do not have to havoc constants and some other values
         if objs:
             havoc_obj = self.havoc_obj
