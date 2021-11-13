@@ -143,6 +143,7 @@ def get_var_diff_relations(state):
                             EM,
                         )
 
+
 def _get_nd_val(l, lbw, Ss):
     nd1 = Ss.nondet(l)
     if not nd1:
@@ -152,6 +153,15 @@ def _get_nd_val(l, lbw, Ss):
         ndval = nd1.value
     return ndval
 
+
+def _do_load(state, l):
+    op = state.try_eval(l.operand(0))
+    if not op:
+        return None
+    lval, err = state.memory.read(op, l.bytewidth())
+    if err:
+        return None
+    return lval
 
 def _compare_two_loads(state, S, l1, l2):
     EM = state.expr_manager()
@@ -167,23 +177,11 @@ def _compare_two_loads(state, S, l1, l2):
     if l1bw != l2bw:
         return
 
-    op = state.try_eval(l1.operand(0))
-    if not op:
-        return
-    l1val, err = state.memory.read(op, l1bw)
-    if err:
-        return
-
-    op = state.try_eval(l2.operand(0))
-    if not op:
-        return
-    l2val, err = state.memory.read(op, l1bw)
-    if err:
-        return
+    l1val = _do_load(state, l1)
+    l2val = _do_load(state, l2)
 
     expr = Eq(l1val, l2val)
     Ss = S.get_se_state()
-    fresh = Ss.solver().fresh_value
     if state.is_sat(Not(expr)) is False:
         ndval1, ndval2 = _get_nd_val(l1, l1bw, Ss), _get_nd_val(l2, l2bw, Ss)
         subs = get_subs(Ss)
@@ -208,22 +206,6 @@ def _compare_two_loads(state, S, l1, l2):
             subs = get_subs(Ss)
             yield AssertAnnotation(simpl(Eq(Sub(ndval1, ndval2), cval)), subs, EM)
 
-    for l3 in get_loads(state):
-        if l3 is l1 or l3 is l2 or l3.type().bytewidth() != l1bw:
-            continue
-        op = state.try_eval(l3.operand(0))
-        if not op:
-            continue
-        l3val, err = state.memory.read(op, l1bw)
-        if err:
-            return
-
-        expr = Eq(Sub(l1val, l2val), l3val)
-        if is_sat(expr, Not(expr)) is False:
-            ndval1, ndval2, ndval3 = _get_nd_val(l1, l1bw, Ss), _get_nd_val(l2, l2bw, Ss), _get_nd_val(l3, l1bw, Ss)
-            subs = get_subs(Ss)
-            yield AssertAnnotation(simpl(Eq(Sub(ndval1, ndval2), ndval3)), subs, EM)
-
 
    #lt = state.is_sat(Lt(l1, l2))
    #gt = state.is_sat(Gt(l1, l2))
@@ -245,8 +227,12 @@ def _compare_two_loads(state, S, l1, l2):
 
 def get_var_cmp_relations(state, S):
     # comparision relations between loads
+    rels = set()
     for p1, p2 in iter_loads(state):
-        yield from _compare_two_loads(state, S, p1, p2)
+        for rel in _compare_two_loads(state, S, p1, p2):
+            if rel not in rels:
+                rels.add(rel)
+                yield rel
 
 
 def _get_const_cmp_relations(state):
