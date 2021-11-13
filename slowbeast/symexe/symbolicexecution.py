@@ -76,12 +76,12 @@ class SymbolicExecutor(Interpreter):
         # DFS for now
         return states.pop()
 
-    def handleNewStates(self, newstates):
-        hs = self.handleNewState
+    def handle_new_states(self, newstates):
+        hs = self.handle_new_state
         for s in newstates:
             hs(s)
 
-    def handleNewState(self, s):
+    def handle_new_state(self, s):
         testgen = self.ohandler.testgen if self.ohandler else None
         opts = self.getOptions()
         stats = self.stats
@@ -334,7 +334,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
                 # self.states_num += len(newstates)
                 # if self.states_num % 100 == 0:
                 #    print("Searched states: {0}".format(self.states_num))
-                self.handleNewStates(newstates)
+                self.handle_new_states(newstates)
         except Exception as e:
             print_stderr(
                 "Fatal error while executing '{0}'".format(state.pc), color="RED"

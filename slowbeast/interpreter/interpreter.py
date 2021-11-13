@@ -77,7 +77,7 @@ class Interpreter:
         assert len(self.states) == 0
         return s
 
-    def handleNewState(self, state):
+    def handle_new_state(self, state):
         if state.is_ready():
             assert len(self.states) == 0
             self.states.append(state)
@@ -96,9 +96,9 @@ class Interpreter:
 
         raise RuntimeError("This line should be unreachable")
 
-    def handleNewStates(self, newstates):
+    def handle_new_states(self, newstates):
         assert len(newstates) == 1, "Concrete execution returned more than one state"
-        self.handleNewState(newstates[0])
+        self.handle_new_state(newstates[0])
 
     def interact_if_needed(self, s):
         if self._interactive is None:
@@ -184,7 +184,7 @@ class Interpreter:
         # self.states_num += len(newstates)
         # if self.states_num % 100 == 0:
         #    print("Searched states: {0}".format(self.states_num))
-        self.handleNewStates(newstates)
+        self.handle_new_states(newstates)
 
     def run(self):
         self.prepare()

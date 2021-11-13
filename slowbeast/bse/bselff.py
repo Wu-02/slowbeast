@@ -93,14 +93,14 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
             self.states = [s for s in states if s is not None]
         return state
 
-    def handleNewState(self, s):
+    def handle_new_state(self, s):
         pc = s.pc
         self._covered_insts.add(pc)
 
         if s.is_ready() and self.is_loop_header(pc):
             s.visited(pc)
             self._register_loop_states(s)
-        super().handleNewState(s)
+        super().handle_new_state(s)
 
     def _register_loop_states(self, state):
         n = state.num_visits()

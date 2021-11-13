@@ -37,13 +37,13 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
         )
         self.explored_states = {}
 
-    def handleNewState(self, state):
+    def handle_new_state(self, state):
         if self.is_subsumed(state):
             return
         if state.is_ready():
             self.states.append(state)
         else:
-            super().handleNewState(state)
+            super().handle_new_state(state)
 
     def is_subsumed(self, state):
         """

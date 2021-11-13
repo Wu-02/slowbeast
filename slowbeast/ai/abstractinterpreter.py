@@ -46,12 +46,12 @@ class AbstractInterpreter(Interpreter):
         # DFS for now
         return states.pop()
 
-    def handleNewStates(self, newstates):
-        hs = self.handleNewState
+    def handle_new_states(self, newstates):
+        hs = self.handle_new_state
         for s in newstates:
             hs(s)
 
-    def handleNewState(self, s):
+    def handle_new_state(self, s):
         pc = s.pc
         if s in self.explored_states.setdefault(pc, set()):
             dbg("Already have this state")

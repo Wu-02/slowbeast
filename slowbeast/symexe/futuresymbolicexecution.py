@@ -105,12 +105,12 @@ class FutureSymbolicExecutor(Interpreter):
         # DFS for now
         return states.pop()
 
-    def handleNewStates(self, newstates):
-        hs = self.handleNewState
+    def handle_new_states(self, newstates):
+        hs = self.handle_new_state
         for s in newstates:
             hs(s)
 
-    def handleNewState(self, s):
+    def handle_new_state(self, s):
         testgen = self.ohandler.testgen if self.ohandler else None
         stats = self.stats
         if s.is_ready():
