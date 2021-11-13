@@ -97,7 +97,7 @@ class FutureSymbolicExecutor(Interpreter):
     def solver(self):
         return self.solver
 
-    def getNextState(self):
+    def get_next_state(self):
         states = self.states
         if not states:
             return None

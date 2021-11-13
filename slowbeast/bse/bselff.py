@@ -58,7 +58,7 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
     def is_loop_header(self, inst):
         return inst in self._loop_headers
 
-    def getNextState(self):
+    def get_next_state(self):
         states = self.states
         if not states:
             return None

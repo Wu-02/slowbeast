@@ -38,7 +38,7 @@ class AbstractInterpreter(Interpreter):
         odir = self.ohandler.outdir if self.ohandler else None
         return open("{0}/{1}".format(odir or ".", name), "w")
 
-    def getNextState(self):
+    def get_next_state(self):
         states = self.states
         if not states:
             return None

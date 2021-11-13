@@ -68,7 +68,7 @@ class SymbolicExecutor(Interpreter):
     def solver(self):
         return self._solver
 
-    def getNextState(self):
+    def get_next_state(self):
         states = self.states
         if not states:
             return None
@@ -322,7 +322,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         try:
             while self.states:
                 newstates = []
-                state = self.getNextState()
+                state = self.get_next_state()
                 self.interact_if_needed(state)
                 for s in schedule(state):
                     if s.is_ready():

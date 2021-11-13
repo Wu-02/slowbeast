@@ -67,7 +67,7 @@ class Interpreter:
         """
         return [self._executor.create_state()]
 
-    def getNextState(self):
+    def get_next_state(self):
         if not self.states:
             return None
 
@@ -170,7 +170,7 @@ class Interpreter:
         pass
 
     def do_step(self):
-        state = self.getNextState()
+        state = self.get_next_state()
         self.interact_if_needed(state)
         if self._options.step == ExecutionOptions.INSTR_STEP:
             newstates = self._executor.execute(state, state.pc)
