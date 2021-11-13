@@ -856,7 +856,7 @@ class BSELFChecker(BaseBSE):
         bsectx = self.get_next_state()
         if bsectx is None:
             return (
-                Result.UNKNOWN if (self.problematic_states) else Result.SAFE
+                Result.UNKNOWN if self.problematic_states else Result.SAFE
             ), self.problematic_paths_as_result()
 
         r, pre = self.precondition(bsectx)
