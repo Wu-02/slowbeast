@@ -1,14 +1,16 @@
 from slowbeast.symexe.executionstate import SEState as ExecutionState
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
 from slowbeast.bse.bse import report_state
-from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker
+from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker as BSELFCheckerVanilla
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.util.debugging import print_stdout
-from slowbeast.symexe.statesset import intersection
 
 from slowbeast.cfkind.relations import get_var_cmp_relations
 
 
+#####################################################################
+# Forward execution
+#####################################################################
 class SEState(ExecutionState):
     """
     Execution state of forward symbolic execution in BSELFF.
@@ -140,6 +142,38 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
     # states.append((state, rels))
     # print(states)
     # print(A)
+
+
+#####################################################################
+# Backward execution
+#####################################################################
+
+
+class BSELFChecker(BSELFCheckerVanilla):
+    def __init__(
+        self,
+        loc,
+        A,
+        program,
+        programstructure,
+        opts,
+        invariants=None,
+        indsets=None,
+        max_loop_hits=None,
+        forward_states=None,
+    ):
+        super().__init__(
+            loc, A, program, programstructure, opts, invariants, indsets, max_loop_hits
+        )
+        self.forward_states = forward_states
+
+    def do_step(self):
+        bsectx = self.get_next_state()
+        if bsectx is None:
+            return (
+                Result.UNKNOWN if self.problematic_states else Result.SAFE
+            ), self.problematic_paths_as_result()
+        return self._do_step(bsectx)
 
 
 class BSELFF(BSELF):

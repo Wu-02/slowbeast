@@ -858,7 +858,10 @@ class BSELFChecker(BaseBSE):
             return (
                 Result.UNKNOWN if self.problematic_states else Result.SAFE
             ), self.problematic_paths_as_result()
+        return self._do_step(bsectx)
 
+    def _do_step(self, bsectx):
+        assert bsectx is not None
         r, pre = self.precondition(bsectx)
         if r is Result.SAFE:
             assert pre is None, "Feasible precondition for infeasible error path"
