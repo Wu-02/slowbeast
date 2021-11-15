@@ -411,6 +411,29 @@ class ThreadedSEState(SEState):
         new._mutexes = self._mutexes.copy()
         new._wait_mutex = self._wait_mutex.copy()
 
+    def lazy_eval(self, v):
+        value = self.try_eval(v)
+        if value is None:
+            vtype = v.type()
+            if vtype.is_pointer():
+                if isinstance(
+                    v, (Alloc, GlobalVariable)
+                ):  # FIXME: this is hack, do it generally for pointers
+                    self.executor().memorymodel.lazyAllocate(self, v)
+                    return self.try_eval(v)
+                name = f"unknown_ptr_{v.as_value()}"
+            else:
+                name = f"unknown_{v.as_value()}"
+            value = self.solver().Var(name, v.type())
+            ldbgv(
+                "Created new nondet value {0} = {1}",
+                (v.as_value(), value),
+                color="dark_blue",
+            )
+            self.set(v, value)
+            self.create_nondet(v, value)
+        return value
+
     def sync_pc(self):
         if self._threads:
             self._threads[self._current_thread].pc = self.pc
@@ -460,7 +483,7 @@ class ThreadedSEState(SEState):
         self._threads[self._current_thread if idx is None else idx].set_atomic(True)
 
     def end_atomic(self, idx=None):
-        self._trace.append(f"thread {self.thread(idx).get_id()} begins atomic sequence")
+        self._trace.append(f"thread {self.thread(idx).get_id()} ends atomic sequence")
         assert self._threads[self._current_thread if idx is None else idx].in_atomic()
         self._threads[self._current_thread if idx is None else idx].set_atomic(False)
 
@@ -510,7 +533,7 @@ class ThreadedSEState(SEState):
         """Exit thread and wait for join (if not detached)"""
         if tid is None:
             tid = self.thread().get_id()
-        retval = self.eval(self.pc.operand(0))
+        retval = self.lazy_eval(self.pc.operand(0))
         self._trace.append(f"exit thread {tid} with val {retval}")
         assert not tid in self._exited_threads
         self._exited_threads[tid] = retval
