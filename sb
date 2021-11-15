@@ -104,6 +104,11 @@ def createArgParser():
                              'Available options: clam')
     parser.add_argument('-svcomp-witness', action='store_true',
                         help='Generate SV-COMP GraphML witnesses.')
+    parser.add_argument('-only-tests', action='store',
+                        help='Generate only tests of a given type. Types can '
+                             'be "err", "killed", "abort", "exited" corresponding '
+                             'to different state statuses',
+                        default=None)
 
     return parser
 
@@ -181,10 +186,11 @@ def inv_to_c(inv):
     return str(" && ".join(map(_inv_to_c, inv)))
 
 class TestCaseGenerator:
-    def __init__(self, outdir='sb-out', alltests=False, svwit=False):
+    def __init__(self, outdir='sb-out', alltests=False, svwit=False, only_tests=None):
         self._outputdir = outdir
         self._alltests = alltests
         self._svcomp_witness = svwit
+        self._only_tests = only_tests
 
     def _openfile(self, path):
         return open(pathjoin(self._outputdir, path), 'w')
@@ -297,14 +303,20 @@ class TestCaseGenerator:
         if not self._alltests and state.exited():
             return
 
-        filename=str(state.get_id())
+        testty = None
         if state.has_error():
-            filename+= ".err"
+            testty = "err"
         elif state.was_killed():
-            filename+= ".killed"
+            testty = "killed"
         elif state.is_terminated():
-            filename+= ".abort"
-        filename+=".test"
+            testty = "abort"
+        else:
+            testty = "exited"
+
+        if self._only_tests and testty not in self._only_tests:
+            return
+
+        filename=f"{state.get_id()}.{testty}.test"
 
         with self._openfile(filename) as fl:
             fl.write(str(state.status()))
@@ -501,9 +513,11 @@ def main():
             P.dump(f)
 
         if not args.no_tests:
+            only_tests = args.only_tests
             testgen = TestCaseGenerator(args.out_dir,
                                         args.all_tests,
-                                        args.svcomp_witness)
+                                        args.svcomp_witness,
+                                        only_tests=only_tests.split(",") if only_tests else None)
 
     ohandler = OutputsHandler(testgen,
                               None if args.no_output else args.out_dir)
