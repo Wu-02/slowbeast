@@ -398,6 +398,10 @@ class Executor(ConcreteExecutor):
         return [state]
 
     def exec_undef_fun(self, state, instr, fun):
+        fnname = fun.name()
+        if fnname in ("exit", "_exit"):
+            state.set_exited(state.eval(instr.operand(0)))
+            return [state]
         retTy = fun.return_type()
         if retTy:
             if self.getOptions().concretize_nondets:
