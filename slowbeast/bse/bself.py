@@ -867,7 +867,13 @@ class BSELFChecker(BaseBSE):
             assert pre is None, "Feasible precondition for infeasible error path"
             return None, None  # infeasible path
         if r is Result.UNSAFE:  # real error
-            return r, pre
+            if self.options.replay_errors:
+                s = self.replay_state(pre)
+                r = Result.UNSAFE if s.has_error() else Result.UNKNOWN
+            if r is Result.UNSAFE:  # real error
+                return r, pre
+            assert self.options.replay_errors
+            dbg("Replaying error failed")
         #  the error path is feasible, but the errors may not be real
         assert r is Result.UNKNOWN
         if self.getOptions().fold_loops:

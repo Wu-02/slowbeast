@@ -3,9 +3,10 @@ from typing import Optional  # , Union
 
 from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.symexe.annotations import AssumeAnnotation
-from slowbeast.util.debugging import print_stdout, print_stderr
+from slowbeast.util.debugging import print_stdout, print_stderr, dbg
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
+    SEOptions,
 )
 from slowbeast.analysis.cfa import CFA
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
@@ -234,7 +235,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         ready, nonready = executor.execute_bse_path(
             states, bsectx.path, invariants=invariants
         )
-        for s in (s for s in nonready if s.was_killed() or s.has_error()):
+        for s in (s for s in nonready if s.was_killed()):
             report_state(
                 self.stats, s, fn=self.reportfn, msg=f"Executing {bsectx.path}"
             )
@@ -280,6 +281,34 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def queue_state(self, s):
         self.queue.put_nowait(s)
         assert not self.queue.empty(), list(self.queue)
+
+    def replay_state(self, state):
+        # FIXME: we do redundant copy, set_input_vector will copy and reverse the list on its own
+        ivec = state.input_vector().copy()
+        ivec.reverse()
+        dbg(f"Input vector: {ivec}")
+
+        class GatherStates:
+            class Handler:
+                def __init__(self):
+                    self.states = []
+
+                def processState(self, s):
+                    self.states.append(s)
+
+            def __init__(self):
+                self.testgen = GatherStates.Handler()
+                self.states = self.testgen.states
+
+        opts = SEOptions(self.getOptions())
+        opts.replay_errors = False
+        handler = GatherStates()
+        SE = SymbolicInterpreter(self.getProgram(), handler, opts)
+        SE.set_input_vector(ivec)
+        SE.run()
+        if len(handler.states) != 1:
+            return None
+        return handler.states[0]
 
     def extend_state(self, bsectx, postcondition):
         assert postcondition, postcondition

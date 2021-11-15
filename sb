@@ -550,6 +550,7 @@ def main():
     elif args.bse:
         from slowbeast.bse.bself import BSELFOptions
         opts = BSELFOptions()
+        opts.replay_errors = args.se_replay_errors
         if args.bse and not args.bself:
             opts.fold_loops = False
         if args.bse_add_unwind_inv:

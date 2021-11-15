@@ -87,7 +87,7 @@ class Executor(ConcreteExecutor):
 
     def set_input_vector(self, ivec):
         self._input_vector = ivec.copy()
-        # reverse the vector so thawe can pop from it
+        # reverse the vector so that we can pop from it
         self._input_vector.reverse()
 
     def create_state(self, pc=None, m=None):
