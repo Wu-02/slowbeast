@@ -693,6 +693,9 @@ class ThreadedExecutor(Executor):
                     state.mutex_unlock(mtx)
                     state.pc = state.pc.get_next_inst()
             return [state]
+        if fnname.startswith("pthread_"):
+            state.set_killed(f"Unsupported pthread_* API: {fnname}")
+            return [state]
         return super().exec_undef_fun(state, instr, fun)
 
     def exec_thread(self, state, instr):
