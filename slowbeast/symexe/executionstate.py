@@ -409,7 +409,7 @@ class ThreadedSEState(SEState):
         new._trace = self._trace.copy()
         # FIXME: do COW (also for wait and exited threads ...)
         new._mutexes = self._mutexes.copy()
-        new._wait_mutex = self._wait_mutex.copy()
+        new._wait_mutex = {mtx: W.copy() for mtx, W in self._wait_mutex.items() if W}
 
     def lazy_eval(self, v):
         value = self.try_eval(v)
