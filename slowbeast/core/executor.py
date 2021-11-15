@@ -173,7 +173,7 @@ class Executor:
     def forbid_calls(self):
         self._opts.no_calls = True
 
-    def callsForbidden(self):
+    def calls_forbidden(self):
         return self._opts.no_calls
 
     def execStore(self, state, instr):
@@ -375,7 +375,7 @@ class Executor:
     def exec_call(self, state, instr):
         assert isinstance(instr, Call)
 
-        if self.callsForbidden():
+        if self.calls_forbidden():
             state.set_killed("Calls are forbidden")
             return [state]
 

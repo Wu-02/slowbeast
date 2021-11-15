@@ -274,7 +274,7 @@ class Executor(ConcreteExecutor):
         if fun.is_undefined():
             return self.exec_undef_fun(state, instr, fun)
 
-        if self.callsForbidden():
+        if self.calls_forbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
             state.set_killed(
                 "calling '{0}', but calls are forbidden".format(fun.name())
