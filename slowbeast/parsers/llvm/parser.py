@@ -160,7 +160,14 @@ def offset_of_struct_elem(llvmmodule, ty, cval):
     return off
 
 
-unsupported_funs = ["pthread_get_specific", "pthread_set_specific"]
+unsupported_funs = [
+    "pthread_get_specific",
+    "pthread_set_specific",
+    "pthread_cond_signal",
+    "pthread_cond_broadcast",
+    "pthread_cond_wait",
+    "pthread_cond_timedwait",
+]
 thread_funs = ["pthread_create", "pthread_join", "pthread_exit"]
 
 
@@ -499,7 +506,7 @@ class Parser:
         if fun in unsupported_funs:
             raise NotImplementedError("Unsupported function: {0}".format(fun))
 
-        if fun in thread_funs or fun.startswith("pthread_"):
+        if fun in thread_funs:
             if self._allow_threads:
                 return self._createThreadFun(inst, operands, fun)
             raise NotImplementedError(f"Threads are forbiden: {fun}")
