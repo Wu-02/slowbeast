@@ -664,9 +664,10 @@ class ThreadedExecutor(Executor):
             return [state]
         if fnname == "pthread_mutex_lock":
             mtx = state.eval(instr.operand(0))
-            if not state.has_mutex(mtx):
-                state.set_killed("Locking unknown mutex")
-                return [state]
+            # TODO: This does not work with mutexes initialized via assignment...
+            # if not state.has_mutex(mtx):
+            #    state.set_killed("Locking unknown mutex")
+            #    return [state]
             lckd = state.mutex_locked_by(mtx)
             if lckd is not None:
                 if lckd == state.thread().get_id():
