@@ -470,6 +470,9 @@ class ThreadedSEState(SEState):
     def mutex_init(self, mtx):
         self._mutexes[mtx] = None
 
+    def mutex_destroy(self, mtx):
+        self._mutexes.pop(mtx)
+
     def has_mutex(self, mtx):
         return mtx in self._mutexes
 
