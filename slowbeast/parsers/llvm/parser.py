@@ -689,6 +689,10 @@ class Parser:
         opcode = inst.opcode
         if opcode == "getelementptr":
             return self._createCEGep(inst)
+        if opcode == "bitcast":
+            operands = getLLVMOperands(inst)
+            assert len(operands) == 1
+            return self.operand(operands[0])
         raise NotImplementedError(f"Unsupported constant expr: {ce}")
 
     def _handlePhi(self, inst):
