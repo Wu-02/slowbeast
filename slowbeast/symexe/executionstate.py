@@ -581,11 +581,11 @@ class ThreadedSEState(SEState):
         for idx, t in enumerate(self._threads):
             write(f"  {idx}: {t}\n")
         if self._exited_threads:
-            write(" -- Exited threads waiting for join: {self._wait_exit}\n")
+            write(f" -- Exited threads waiting for join: {self._wait_exit}\n")
         else:
             write(" -- No exited threads are waiting for join\n")
         if self._wait_join:
-            write(" -- Threads waiting in join: {self._wait_join}\n")
+            write(f" -- Threads waiting in join: {self._wait_join}\n")
         else:
             write(" -- No threads are waiting in join\n")
         write(" -- Trace --\n")
