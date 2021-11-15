@@ -1,7 +1,15 @@
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
-from slowbeast.ir.instruction import Load, Store, Thread, ThreadJoin, Return, Alloc
+from slowbeast.ir.instruction import (
+    Load,
+    Store,
+    Call,
+    Thread,
+    ThreadJoin,
+    Return,
+    Alloc,
+)
 from slowbeast.core.errors import GenericError
 from .executor import Executor as SExecutor, ThreadedExecutor
 
@@ -175,6 +183,9 @@ def is_global_ev(pc, ismain):
         return may_be_glob_mem(pc.operand(0))
     if isinstance(pc, Store):
         return may_be_glob_mem(pc.operand(1))
+    if isinstance(pc, Call):
+        fn = pc.called_function()
+        return not fn or fn.is_undefined()
     return isinstance(pc, (Thread, ThreadJoin)) or (isinstance(pc, Return) and ismain)
 
 
