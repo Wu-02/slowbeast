@@ -135,6 +135,9 @@ class ExecutionState:
     def pop_call(self):
         return self.memory.pop_call()
 
+    def frame(self, idx=-1):
+        return self.memory.frame(idx)
+
     def dump(self, stream=stdout):
         stream.write("---- State ----\n")
         self._status.dump(stream)

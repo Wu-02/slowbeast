@@ -700,6 +700,11 @@ class ThreadedExecutor(Executor):
             return [state]
         return super().exec_undef_fun(state, instr, fun)
 
+    def call_fun(self, state, instr, fun):
+        if fun.name().startswith("__VERIFIER_atomic_"):
+            state.start_atomic()
+        return super().call_fun(state, instr, fun)
+
     def exec_thread(self, state, instr):
         fun = instr.called_function()
         ldbgv("-- THREAD {0} --", (fun.name(),))
@@ -764,6 +769,8 @@ class ThreadedExecutor(Executor):
                 ret is not None
             ), f"No return value even though there should be: {instr}"
 
+        if state.frame().function.name().startswith("__VERIFIER_atomic_"):
+            state.end_atomic()
         # pop the call frame and get the return site
         rs = state.pop_call()
         if rs is None:  # popped the last frame

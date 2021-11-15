@@ -341,10 +341,14 @@ class Thread:
         return self._paused
 
     def set_atomic(self, b: bool):
-        self._in_atomic = b
+        if b:
+            self._in_atomic += 1
+        else:
+            self._in_atomic -= 1
+        assert self._in_atomic >= 0
 
     def in_atomic(self):
-        return self._in_atomic
+        return self._in_atomic > 0
 
     def __str__(self):
         s = f"Thread({self.get_id()}@{self.pc}"
@@ -353,7 +357,7 @@ class Thread:
         if self.is_detached():
             s += ", detached"
         if self.in_atomic():
-            s += ", in atomic seq"
+            s += f", in atomic seq (nest lvl {self._in_atomic})"
         if self._exit_val is not None:
             s += f", exited with {self._exit_val}"
         return s + ")"

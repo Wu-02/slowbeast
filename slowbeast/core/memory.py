@@ -186,6 +186,9 @@ class Memory:
         assert isinstance(cs, CallStack)
         self._cs = cs
 
+    def frame(self, idx=-1):
+        return self._cs.frame(idx)
+
     def set(self, what, v):
         self._cs.set(what, v)
 
