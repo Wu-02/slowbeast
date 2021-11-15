@@ -1,4 +1,5 @@
 from slowbeast.ir.instruction import *
+from slowbeast.ir.function import Function
 from slowbeast.ir.types import get_offset_type
 from slowbeast.domains.value import Value
 from slowbeast.domains.constants import ConcreteBool
@@ -68,10 +69,10 @@ def eval_condition(state, cond):
 
 
 class Executor(ConcreteExecutor):
-    def __init__(self, solver, opts, memorymodel=None):
+    def __init__(self, program, solver, opts, memorymodel=None):
         if memorymodel is None:
             memorymodel = SymbolicMemoryModel(opts)
-        super().__init__(opts, memorymodel)
+        super().__init__(program, opts, memorymodel)
         self.solver = solver
         self.stats = SEStats()
         # use these values in place of nondet values
@@ -364,9 +365,31 @@ class Executor(ConcreteExecutor):
 
         return [state]
 
+    def _resolve_function_pointer(self, state, funptr):
+        ptr = state.try_eval(funptr)
+        if ptr is None:
+            return None
+        # FIXME: should we use a pointer instead of funs id?
+        if not isinstance(ptr, ConcreteVal):
+            return None
+
+        for f in self._program:
+            if f.get_id() == ptr.value():
+                return f
+        return None
+
     def exec_call(self, state, instr):
         assert isinstance(instr, Call)
         fun = instr.called_function()
+        if not isinstance(fun, Function):
+            fun = self._resolve_function_pointer(state, fun)
+            if fun is None:
+                state.set_killed(
+                    f"Failed resolving function pointer: {instr.called_function()}"
+                )
+                return [state]
+            assert isinstance(fun, Function)
+
         if self.is_error_fn(fun):
             state.set_error(AssertFailError(f"Called '{fun.name()}'"))
             return [state]
@@ -640,8 +663,8 @@ class Executor(ConcreteExecutor):
 
 
 class ThreadedExecutor(Executor):
-    def __init__(self, solver, opts, memorymodel=None):
-        super().__init__(solver, opts, memorymodel)
+    def __init__(self, program, solver, opts, memorymodel=None):
+        super().__init__(program, solver, opts, memorymodel)
 
     def create_state(self, pc=None, m=None):
         if m is None:

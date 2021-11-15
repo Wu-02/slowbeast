@@ -58,7 +58,7 @@ class SymbolicExecutor(Interpreter):
         self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=SExecutor
     ):
         self._solver = Solver()
-        super().__init__(P, opts, executor or ExecutorClass(self._solver, opts))
+        super().__init__(P, opts, executor or ExecutorClass(P, self._solver, opts))
         self.stats = SEStats()
         # outputs handler
         self.ohandler = ohandler

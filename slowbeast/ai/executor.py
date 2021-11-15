@@ -48,10 +48,10 @@ def evalCond(state, cond):
 
 
 class Executor(ConcreteExecutor):
-    def __init__(self, opts, memorymodel=None):
+    def __init__(self, program, opts, memorymodel=None):
         if memorymodel is None:
             memorymodel = AIMemoryModel(opts)
-        super(Executor, self).__init__(opts, memorymodel)
+        super(Executor, self).__init__(program, opts, memorymodel)
         self.stats = AIStats()
 
     def is_error_fn(self, fun):

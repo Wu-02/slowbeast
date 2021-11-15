@@ -15,8 +15,8 @@ class Executor(SExecutor):
     CFA paths possibly annotated with formulas.
     """
 
-    def __init__(self, solver, opts, memorymodel=None):
-        super().__init__(solver, opts, memorymodel)
+    def __init__(self, program, solver, opts, memorymodel=None):
+        super().__init__(program, solver, opts, memorymodel)
 
     def create_state(self, pc=None, m=None):
         """
@@ -241,8 +241,8 @@ class CFGExecutor(SExecutor):
     The paths are supposed to be AnnotatedCFGPaths (paths in CFG)
     """
 
-    def __init__(self, solver, opts, memorymodel=None):
-        super(Executor, self).__init__(solver, opts, memorymodel)
+    def __init__(self, program, solver, opts, memorymodel=None):
+        super().__init__(program, solver, opts, memorymodel)
 
     def executeAnnotations(self, states, annots):
         # if there are no annotations, return the original states

@@ -139,9 +139,10 @@ class Executor:
     and generates new states.
     """
 
-    def __init__(self, opts, memorymodel=None):
+    def __init__(self, program, opts, memorymodel=None):
         self.memorymodel = memorymodel or MemoryModel(opts)
 
+        self._program = program
         self._opts = opts
         self._executed_instrs = 0
         self._executed_blks = 0

@@ -53,7 +53,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts)
-        indexecutor = PathExecutor(self.solver(), opts, memorymodel)
+        indexecutor = PathExecutor(prog, self.solver(), opts, memorymodel)
         # add error funs and forbid defined calls...
         dbg("Forbidding calls in induction step for now with k-induction")
         indexecutor.forbid_calls()

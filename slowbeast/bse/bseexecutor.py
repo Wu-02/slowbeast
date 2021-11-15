@@ -11,8 +11,8 @@ class Executor(PathExecutor):
     CFA paths possibly annotated with formulas.
     """
 
-    def __init__(self, solver, opts, memorymodel=None):
-        super().__init__(solver, opts, memorymodel or BSEMemoryModel(opts))
+    def __init__(self, program, solver, opts, memorymodel=None):
+        super().__init__(program, solver, opts, memorymodel or BSEMemoryModel(opts))
 
     def create_state(self, pc=None, m=None):
         """

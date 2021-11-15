@@ -187,7 +187,7 @@ class Parser:
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
 
-    def operand(self, op):
+    def try_get_operand(self, op):
         ret = self._mapping.get(op)
         if not ret:
             ret = getConstant(op)
@@ -198,6 +198,10 @@ class Parser:
             # try if it is a function
             ret = self._funs.get(op)
 
+        return ret
+
+    def operand(self, op):
+        ret = self.try_get_operand(op)
         assert ret, "Do not have an operand: {0}".format(op)
         return ret
 
@@ -496,7 +500,14 @@ class Parser:
                         else:
                             fun = None
         if not fun:
-            raise NotImplementedError("Unsupported call: {0}".format(inst))
+            op = self.try_get_operand(operands[-1])
+            if op is None:
+                raise NotImplementedError("Unsupported call: {0}".format(inst))
+            # function pointer call
+            ty = get_sb_type(self.llvmmodule, inst.type)
+            C = Call(op, ty, *[self.operand(x) for x in operands[:-1]])
+            self._addMapping(inst, C)
+            return [C]
 
         if fun.startswith("llvm.dbg"):
             if (

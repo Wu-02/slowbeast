@@ -1,5 +1,7 @@
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import Pointer
+from slowbeast.ir.function import Function
+from slowbeast.ir.types import get_offset_type
 from slowbeast.core.executionstatus import ExecutionStatus
 from sys import stdout
 
@@ -88,6 +90,8 @@ class ExecutionState:
             return v
         if isinstance(v, Pointer) and v.is_null():
             return v
+        if isinstance(v, Function):
+            return ConcreteVal(v.get_id(), get_offset_type())
         value = self.get(v)
         if value is None:
             raise RuntimeError(f"Use of uninitialized/unknown variable {v}")
