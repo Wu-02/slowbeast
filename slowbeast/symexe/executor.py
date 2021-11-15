@@ -392,6 +392,9 @@ class Executor(ConcreteExecutor):
             )
             return [state]
 
+        return self.call_fun(state, instr, fun)
+
+    def call_fun(self, state, instr, fun):
         # map values to arguments
         assert len(instr.operands()) == len(fun.arguments())
         mapping = {
