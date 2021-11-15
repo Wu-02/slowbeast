@@ -644,6 +644,18 @@ class ThreadedExecutor(Executor):
         #    return IncrementalSEState(self, pc, m)
         return ThreadedSEState(self, pc, m, self.solver)
 
+    def exec_undef_fun(self, state, instr, fun):
+        fnname = fun.name()
+        if fnname == "__VERIFIER_atomic_begin":
+            state.start_atomic()
+            state.pc = state.pc.get_next_inst()
+            return [state]
+        elif fnname == "__VERIFIER_atomic_end":
+            state.end_atomic()
+            state.pc = state.pc.get_next_inst()
+            return [state]
+        return super().exec_undef_fun(state, instr, fun)
+
     def exec_thread(self, state, instr):
         fun = instr.called_function()
         ldbgv("-- THREAD {0} --", (fun.name(),))
@@ -655,7 +667,13 @@ class ThreadedExecutor(Executor):
             )
             return [state]
         # map values to arguments
-        assert len(instr.operands()) == len(fun.arguments())
+        # TODO: do we want to allow this? Less actual parameters than formal parameters?
+        # assert len(instr.operands()) == len(fun.arguments())
+        if len(instr.operands()) > len(fun.arguments()):
+            dbgv(
+                "Thread created with less actual arguments than with formal arguments..."
+            )
+        assert len(instr.operands()) >= len(fun.arguments())
         mapping = {
             x: state.eval(y) for (x, y) in zip(fun.arguments(), instr.operands())
         }

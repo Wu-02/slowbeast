@@ -247,6 +247,10 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
     def schedule(self, state):
         l = state.num_threads()
         assert l > 0
+        # if the thread is in an atomic sequence, continue it...
+        if state.thread().in_atomic():
+            return [state]
+
         for idx, t in enumerate(state.threads()):
             if t.is_paused():
                 continue

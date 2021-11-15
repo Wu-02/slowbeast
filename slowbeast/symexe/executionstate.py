@@ -301,7 +301,7 @@ class LazySEState(SEState):
 
 
 class Thread:
-    __slots__ = "pc", "cs", "_id", "_paused", "_detached", "_exit_val"
+    __slots__ = "pc", "cs", "_id", "_paused", "_detached", "_in_atomic", "_exit_val"
 
     # ids = 0
 
@@ -311,6 +311,7 @@ class Thread:
         self._id = tid  # Thread.ids
         self._paused = False
         self._detached = False
+        self._in_atomic = False
         self._exit_val = None
         # Thread.ids += 1
 
@@ -339,12 +340,20 @@ class Thread:
     def is_paused(self):
         return self._paused
 
+    def set_atomic(self, b: bool):
+        self._in_atomic = b
+
+    def in_atomic(self):
+        return self._in_atomic
+
     def __str__(self):
         s = f"Thread({self.get_id()}@{self.pc}"
         if self.is_paused():
             s += ", paused"
         if self.is_detached():
             s += ", detached"
+        if self.in_atomic():
+            s += ", in atomic seq"
         if self._exit_val is not None:
             s += f", exited with {self._exit_val}"
         return s + ")"
@@ -431,6 +440,18 @@ class ThreadedSEState(SEState):
     def unpause_thread(self, idx=None):
         self._trace.append(f"unpause thread {self.thread(idx).get_id()}")
         self._threads[self._current_thread if idx is None else idx].unpause()
+
+    def start_atomic(self, idx=None):
+        self._trace.append(f"thread {self.thread(idx).get_id()} begins atomic sequence")
+        assert not self._threads[
+            self._current_thread if idx is None else idx
+        ].in_atomic()
+        self._threads[self._current_thread if idx is None else idx].set_atomic(True)
+
+    def end_atomic(self, idx=None):
+        self._trace.append(f"thread {self.thread(idx).get_id()} begins atomic sequence")
+        assert self._threads[self._current_thread if idx is None else idx].in_atomic()
+        self._threads[self._current_thread if idx is None else idx].set_atomic(False)
 
     def exit_thread(self, tid=None):
         """Exit thread and wait for join (if not detached)"""
