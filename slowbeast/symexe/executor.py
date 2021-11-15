@@ -662,12 +662,14 @@ class ThreadedExecutor(Executor):
             return [state]
         if fnname == "pthread_mutex_init":
             state.mutex_init(state.eval(instr.operand(0)))
-            state.pc = state.pc.get_next_inst()
-            return [state]
+            # return non-det value for the init
+            # TODO: we should connect the returned value with the
+            # effect of init...
+            return super().exec_undef_fun(state, instr, fun)
         if fnname == "pthread_mutex_destroy":
             state.mutex_destroy(state.eval(instr.operand(0)))
-            state.pc = state.pc.get_next_inst()
-            return [state]
+            # the same as for init...
+            return super().exec_undef_fun(state, instr, fun)
         if fnname == "pthread_mutex_lock":
             mtx = state.eval(instr.operand(0))
             # TODO: This does not work with mutexes initialized via assignment...
