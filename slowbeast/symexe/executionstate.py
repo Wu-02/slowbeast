@@ -368,6 +368,8 @@ class ThreadedSEState(SEState):
         "_current_thread",
         "_exited_threads",
         "_wait_join",
+        "_wait_mutex",
+        "_mutexes",
         "_last_tid",
         "_trace",
     )
@@ -381,6 +383,8 @@ class ThreadedSEState(SEState):
         self._wait_join = {}
         self._exited_threads = {}
         self._trace = []
+        self._mutexes = {}
+        self._wait_mutex = {}
 
     def _thread_idx(self, thr):
         if isinstance(thr, Thread):
@@ -399,6 +403,9 @@ class ThreadedSEState(SEState):
         new._last_tid = self._last_tid
         new._current_thread = self._current_thread
         new._trace = self._trace.copy()
+        # FIXME: do COW (also for wait and exited threads ...)
+        new._mutexes = self._mutexes.copy()
+        new._wait_mutex = self._wait_mutex.copy()
 
     def sync_pc(self):
         if self._threads:
@@ -452,6 +459,45 @@ class ThreadedSEState(SEState):
         self._trace.append(f"thread {self.thread(idx).get_id()} begins atomic sequence")
         assert self._threads[self._current_thread if idx is None else idx].in_atomic()
         self._threads[self._current_thread if idx is None else idx].set_atomic(False)
+
+    def mutex_locked_by(self, mtx):
+        return self._mutexes.get(mtx)
+
+    def mutex_init(self, mtx):
+        self._mutexes[mtx] = None
+
+    def has_mutex(self, mtx):
+        return mtx in self._mutexes
+
+    def mutex_lock(self, mtx, idx=None):
+        self._trace.append(f"thread {self.thread(idx).get_id()} locks mutex {mtx}")
+        tid = self.thread(self._current_thread if idx is None else idx).get_id()
+        assert self.mutex_locked_by(mtx) is None, "Locking locked mutex"
+        self._mutexes[mtx] = tid
+
+    def mutex_unlock(self, mtx, idx=None):
+        self._trace.append(f"thread {self.thread(idx).get_id()} unlocks mutex {mtx}")
+        assert (
+            self.mutex_locked_by(mtx)
+            == self.thread(self._current_thread if idx is None else idx).get_id()
+        ), "Unlocking wrong mutex"
+        self._mutexes[mtx] = None
+        tidx = self._thread_idx
+        unpause = self.unpause_thread
+        W = self._wait_mutex.get(mtx)
+        if W is not None:
+            for tid in W:
+                unpause(tidx(tid))
+            self._wait_mutex[mtx] = set()
+
+    def mutex_wait(self, mtx, idx=None):
+        "Thread idx waits for mutex mtx"
+
+        self._trace.append(f"thread {self.thread(idx).get_id()} waits for mutex {mtx}")
+        tid = self._current_thread if idx is None else idx
+        assert self.mutex_locked_by(mtx) is not None, "Waiting for unlocked mutex"
+        self.pause_thread(idx)
+        self._wait_mutex.setdefault(mtx, set()).add(self.thread(tid).get_id())
 
     def exit_thread(self, tid=None):
         """Exit thread and wait for join (if not detached)"""

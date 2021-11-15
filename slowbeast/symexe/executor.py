@@ -654,6 +654,40 @@ class ThreadedExecutor(Executor):
             state.end_atomic()
             state.pc = state.pc.get_next_inst()
             return [state]
+        if fnname == "pthread_mutex_init":
+            state.mutex_init(state.eval(instr.operand(0)))
+            state.pc = state.pc.get_next_inst()
+            return [state]
+        if fnname == "pthread_mutex_lock":
+            mtx = state.eval(instr.operand(0))
+            if not state.has_mutex(mtx):
+                state.set_killed("Locking unknown mutex")
+                return [state]
+            lckd = state.mutex_locked_by(mtx)
+            if lckd is not None:
+                if lckd == state.thread().get_id():
+                    state.set_killed("Double lock")
+                else:
+                    state.mutex_wait(mtx)
+            else:
+                state.mutex_lock(mtx)
+                state.pc = state.pc.get_next_inst()
+            return [state]
+        if fnname == "pthread_mutex_unlock":
+            mtx = state.eval(instr.operand(0))
+            if not state.has_mutex(mtx):
+                state.set_killed("Unlocking unknown mutex")
+                return [state]
+            lckd = state.mutex_locked_by(mtx)
+            if lckd is None:
+                state.set_killed("Unlocking unlocked lock")
+            else:
+                if lckd != state.thread().get_id():
+                    state.set_killed("Unlocking un-owned mutex")
+                else:
+                    state.mutex_unlock(mtx)
+                    state.pc = state.pc.get_next_inst()
+            return [state]
         return super().exec_undef_fun(state, instr, fun)
 
     def exec_thread(self, state, instr):
