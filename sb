@@ -93,8 +93,8 @@ def createArgParser():
                         help='Use incremental SMT solving')
     parser.add_argument('-threads', action='store_true', default=False,
                         help='Enable handling threads')
-    parser.add_argument('-se-threads-dpor', action='store_true', default=True,
-                        help='Enable DPOR when handling threads (default=true)')
+    parser.add_argument('-se-threads-dpor', action='store_true', default=False,
+                        help='Enable DPOR when handling threads (default=false)')
     parser.add_argument('-ai', action='store_true', default=False,
                         help='Perform abstract interpretation.')
    #parser.add_argument('-ai-domain', action='store', default=True,
