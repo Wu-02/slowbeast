@@ -178,15 +178,26 @@ def may_be_glob_mem(mem):
     return True
 
 
+def _is_global_undef(name):
+    # FIXME: what if another thread is writing to arguments of pthread_create?
+    # return name.startswith("pthread_")  or name.startswith("__VERIFIER_atomic")
+    return name.startswith("__VERIFIER_atomic") or name in (
+        "pthread_mutex_lock",
+        "pthread_mutex_unlock",
+    )
+
+
 def is_global_ev(pc):
     if isinstance(pc, Load):
         return may_be_glob_mem(pc.operand(0))
     if isinstance(pc, Store):
         return may_be_glob_mem(pc.operand(1))
+    if isinstance(pc, (Thread, ThreadJoin)):
+        return True
     if isinstance(pc, Call):
         fn = pc.called_function()
-        return not fn or (fn.is_undefined() and fn.name().startswith("pthread_"))
-    return isinstance(pc, (Thread, ThreadJoin))
+        return not fn or (fn.is_undefined() and _is_global_undef(fn.name()))
+    return False
 
 
 #
