@@ -184,10 +184,13 @@ def may_be_glob_mem(state, mem):
     return True
 
 
-def _is_global_undef(name):
+def _is_global_event_fun(fn):
     # FIXME: what if another thread is writing to arguments of pthread_create?
     # return name.startswith("pthread_")  or name.startswith("__VERIFIER_atomic")
-    return name.startswith("__VERIFIER_atomic") or name in (
+    name = fn.name()
+    if name.startswith("__VERIFIER_atomic"):
+        return True
+    return fn.is_undefined() or name in (
         "pthread_mutex_lock",
         "pthread_mutex_unlock",
     )
