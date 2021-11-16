@@ -10,6 +10,7 @@ from slowbeast.ir.instruction import (
     Return,
     Alloc,
 )
+from slowbeast.ir.function import Function
 from slowbeast.core.errors import GenericError
 from .executor import Executor as SExecutor, ThreadedExecutor
 
@@ -172,9 +173,14 @@ class SymbolicExecutor(Interpreter):
         return handler.states[0]
 
 
-def may_be_glob_mem(mem):
+def may_be_glob_mem(state, mem):
     if isinstance(mem, Alloc):
         return False
+    ptr = state.try_eval(mem)
+    if ptr and ptr.object().is_concrete():
+        mo = state.memory.get_obj(ptr.object().value())
+        if mo and isinstance(mo.allocation(), Alloc):
+            return False
     return True
 
 
@@ -186,18 +192,6 @@ def _is_global_undef(name):
         "pthread_mutex_unlock",
     )
 
-
-def is_global_ev(pc):
-    if isinstance(pc, Load):
-        return may_be_glob_mem(pc.operand(0))
-    if isinstance(pc, Store):
-        return may_be_glob_mem(pc.operand(1))
-    if isinstance(pc, (Thread, ThreadJoin)):
-        return True
-    if isinstance(pc, Call):
-        fn = pc.called_function()
-        return not fn or (fn.is_undefined() and _is_global_undef(fn.name()))
-    return False
 
 
 #
@@ -268,6 +262,27 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
     def __init__(self, P, ohandler=None, opts=SEOptions()):
         super().__init__(P, ohandler, opts, ExecutorClass=ThreadedExecutor)
 
+
+    def _is_global_event(self, state, pc):
+        if isinstance(pc, Load):
+            return may_be_glob_mem(state, pc.operand(0))
+        if isinstance(pc, Store):
+            return may_be_glob_mem(state, pc.operand(1))
+        if isinstance(pc, (Thread, ThreadJoin)):
+            return True
+        if isinstance(pc, Call):
+            fn = pc.called_function()
+            if not isinstance(fn, Function):
+                fun = state.try_eval(fn)
+                if fun is None:
+                    return True
+                fn = self.executor()._resolve_function_pointer(state, fun)
+                if fn is None: return True
+                assert isinstance(fn, Function)
+            return fn.is_undefined() and _is_global_undef(fn.name())
+        return False
+
+
     def schedule(self, state):
         l = state.num_threads()
         if l == 0:
@@ -276,10 +291,11 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         if state.thread().in_atomic():
             return [state]
 
+        is_global_ev = self._is_global_event
         for idx, t in enumerate(state.threads()):
             if t.is_paused():
                 continue
-            if not is_global_ev(t.pc):
+            if not is_global_ev(state, t.pc):
                 state.schedule(idx)
                 return [state]
 
@@ -364,10 +380,11 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
         if state.thread().in_atomic():
             return [state]
 
+        is_global_ev = self._is_global_event
         for idx, t in enumerate(state.threads()):
             if t.is_paused():
                 continue
-            if not is_global_ev(t.pc):
+            if not is_global_ev(state, t.pc):
                 state.schedule(idx)
                 return [state]
 
