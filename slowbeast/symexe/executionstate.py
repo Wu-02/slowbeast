@@ -1,7 +1,15 @@
 from slowbeast.core.executionstate import ExecutionState
 from slowbeast.core.errors import GenericError
 from slowbeast.util.debugging import warn, ldbgv, FIXME
-from slowbeast.ir.instruction import Alloc, GlobalVariable, Load, ThreadJoin
+from slowbeast.ir.instruction import (
+    Alloc,
+    GlobalVariable,
+    Load,
+    ThreadJoin,
+    Store,
+    Call,
+    Return,
+)
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
 from slowbeast.solvers.solver import solve_incrementally
 from copy import copy
@@ -366,6 +374,108 @@ class Thread:
         return f"Thread[{self.get_id()}: pc: {self.pc}, cs: {self.cs}]"
 
 
+def _get_event(pc):
+    if isinstance(pc, Store):
+        return Event.WRITE
+    if isinstance(pc, Load):
+        return Event.READ
+    if isinstance(pc, Call):
+        if pc.called_function().name() == "pthread_mutex_lock":
+            return Event.LOCK
+        if pc.called_function().name() == "pthread_mutex_unlock":
+            return Event.UNLOCK
+        return Event.CALL
+    if isinstance(pc, ThreadJoin):
+        return Event.CALL
+    if isinstance(pc, Return):
+        return Event.RET
+    raise NotImplementedError(f"Unknown event: {pc}")
+
+
+def _get_mem(evty, pc, state):
+    if evty == Event.WRITE:
+        return state.eval(pc.operand(1))
+    if evty in (Event.READ, Event.LOCK, Event.UNLOCK):
+        return state.eval(pc.operand(0))
+    if evty == Event.CALL:
+        if isinstance(pc, ThreadJoin):
+            return "join"
+        return pc.called_function().name()
+    if evty == Event.RET:
+        return None
+    raise NotImplementedError(f"Unknown event: {pc}")
+
+
+def _get_val(evty, pc, state):
+    if evty == Event.WRITE:
+        return state.eval(pc.operand(0))
+    return None
+
+
+def _evty_to_str(ty):
+    if ty == Event.WRITE:
+        return "write"
+    if ty == Event.READ:
+        return "read"
+    if ty == Event.LOCK:
+        return "lock"
+    if ty == Event.UNLOCK:
+        return "unlock"
+    if ty == Event.CALL:
+        return "call"
+    if ty == Event.RET:
+        return "ret"
+    return "invalid event"
+
+
+class Event:
+    WRITE = 1
+    READ = 2
+    LOCK = 3
+    UNLOCK = 4
+    CALL = 5
+    RET = 6
+
+    __slots__ = "ty", "mem", "val"
+
+    def __init__(self, state):
+        pc = state.pc
+        self.ty = _get_event(pc)
+        self.mem = _get_mem(self.ty, pc, state)
+        self.val = _get_val(self.ty, pc, state)
+
+    def conflicts(self, ev):
+        """Does this event conflicts with the given event 'ev'?"""
+        ty, evty = self.ty, ev.ty
+        mem, evmem = self.mem, ev.mem
+        if ty == Event.READ:
+            if evty == Event.READ:
+                return False
+            if evty == Event.WRITE:
+                if mem.is_concrete() and evmem.is_concrete():
+                    return mem == evmem
+            return True  # are we conflicting with all the locks?
+        if ty == Event.WRITE:
+            if evty == Event.WRITE:
+                if mem.is_concrete() and evmem.is_concrete():
+                    if mem == evmem:
+                        if self.val == ev.val:
+                            return False
+                        return True
+                return True
+            if evty == Event.READ:
+                if mem.is_concrete() and evmem.is_concrete():
+                    return mem == evmem
+            return True  # are we conflicting with all the locks?
+        if ty in (Event.LOCK, Event.UNLOCK) and evty in (Event.LOCK, Event.ULOCK):
+            return mem == evmem
+        # FIXME: we should probably do better
+        return True
+
+    def __str__(self):
+        return f"{_evty_to_str(self.ty)} of {self.mem}, val: {self.val}"
+
+
 class ThreadedSEState(SEState):
     __slots__ = (
         "_threads",
@@ -376,6 +486,8 @@ class ThreadedSEState(SEState):
         "_mutexes",
         "_last_tid",
         "_trace",
+        "_events",
+        "_conflicts",
     )
 
     def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
@@ -387,8 +499,10 @@ class ThreadedSEState(SEState):
         self._wait_join = {}
         self._exited_threads = {}
         self._trace = []
+        self._events = []  # the sequence of events (for DPOR)
         self._mutexes = {}
         self._wait_mutex = {}
+        self._conflicts = []
 
     def _thread_idx(self, thr):
         if isinstance(thr, Thread):
@@ -407,6 +521,8 @@ class ThreadedSEState(SEState):
         new._last_tid = self._last_tid
         new._current_thread = self._current_thread
         new._trace = self._trace.copy()
+        new._events = self._events.copy()
+        new._conflicts = self._conflicts.copy()
         # FIXME: do COW (also for wait and exited threads ...)
         new._mutexes = self._mutexes.copy()
         new._wait_mutex = {mtx: W.copy() for mtx, W in self._wait_mutex.items() if W}
@@ -437,6 +553,14 @@ class ThreadedSEState(SEState):
     def sync_pc(self):
         if self._threads:
             self._threads[self._current_thread].pc = self.pc
+
+    def add_event(self):
+        self._events.append(Event(self))
+
+    def get_last_event(self):
+        if self._events:
+            return self._events[-1]
+        return None
 
     def schedule(self, idx):
         if self._current_thread == idx:
@@ -604,6 +728,22 @@ class ThreadedSEState(SEState):
     def threads(self):
         return self._threads
 
+    def add_conflict(self, state):
+        self._conflicts.append((state.get_last_event(), state))
+
+    def filter_conflicts(self, ev=None):
+        if ev is None:
+            ev = self.get_last_event()
+        ret, newc = [], []
+        conflicts = ev.conflicts
+        for (cev, s) in self._conflicts:
+            if conflicts(cev):
+                ret.append(s)
+            else:
+                newc.append((cev, s))
+        self._conflicts = newc
+        return ret
+
     def dump(self, stream=stdout):
         super().dump(stream)
         write = stream.write
@@ -615,6 +755,9 @@ class ThreadedSEState(SEState):
         write(f" -- Threads waiting in join: {self._wait_join}\n")
         write(f" -- Mutexes (locked by): {self._mutexes}\n")
         write(f" -- Threads waiting for mutexes: {self._wait_mutex}\n")
+        write(" -- Events --\n")
+        for it in self._events:
+            write(str(it) + "\n")
         write(" -- Trace --\n")
         for it in self._trace:
             write(it + "\n")

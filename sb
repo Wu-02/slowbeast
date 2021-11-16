@@ -93,6 +93,8 @@ def createArgParser():
                         help='Use incremental SMT solving')
     parser.add_argument('-threads', action='store_true', default=False,
                         help='Enable handling threads')
+    parser.add_argument('-se-threads-dpor', action='store_true', default=True,
+                        help='Enable DPOR when handling threads (default=true)')
     parser.add_argument('-ai', action='store_true', default=False,
                         help='Perform abstract interpretation.')
    #parser.add_argument('-ai-domain', action='store', default=True,
@@ -601,7 +603,10 @@ def main():
             assert not args.stateful_se, "Not compatible at this moment"
             from slowbeast.symexe.futuresymbolicexecution import FutureSymbolicExecutor as SymbolicExecutor
         elif args.threads:
-            from slowbeast.symexe.symbolicexecution import ThreadedSymbolicExecutor as SymbolicExecutor
+            if args.se_threads_dpor:
+                from slowbeast.symexe.symbolicexecution import ThreadedDPORSymbolicExecutor as SymbolicExecutor
+            else:
+                from slowbeast.symexe.symbolicexecution import ThreadedSymbolicExecutor as SymbolicExecutor
         else:
             from slowbeast.symexe.symbolicexecution import SymbolicExecutor
         interpreter = SymbolicExecutor(P, ohandler, opts)

@@ -365,3 +365,42 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         self.report()
 
         return 0
+
+
+class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
+    def __init__(self, P, ohandler=None, opts=SEOptions()):
+        super().__init__(P, ohandler, opts)
+        print("DPOR")
+
+    def schedule(self, state):
+        l = state.num_threads()
+        assert l > 0
+        # if the thread is in an atomic sequence, continue it...
+        if state.thread().in_atomic():
+            return [state]
+
+        for idx, t in enumerate(state.threads()):
+            if t.is_paused():
+                continue
+            if not is_global_ev(t.pc, t.get_id() == 0):
+                state.schedule(idx)
+                return [state]
+
+        # Here, all the threads are either paused or at a global event.
+        # Get those that can run (that are not paused)
+        can_run = [idx for idx, t in enumerate(state.threads()) if not t.is_paused()]
+        if not can_run:
+            state.set_error(GenericError("Deadlock detected"))
+            return [state]
+
+        state.schedule(can_run[0])
+        state.add_event()
+        if len(can_run) == 1:
+            return [state]
+        for idx in can_run[1:]:
+            s = state.copy()
+            s.schedule(idx)
+            s.add_event()
+            state.add_conflict(s)
+        ev = state.get_last_event()
+        return [state] + state.filter_conflicts(ev)
