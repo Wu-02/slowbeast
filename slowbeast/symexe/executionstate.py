@@ -486,6 +486,7 @@ class ThreadedSEState(SEState):
         "_mutexes",
         "_last_tid",
         "_trace",
+        "_event_trace",
         "_events",
         "_conflicts",
     )
@@ -498,6 +499,7 @@ class ThreadedSEState(SEState):
         # threads waiting in join until the joined thread exits
         self._wait_join = {}
         self._exited_threads = {}
+        self._event_trace = []
         self._trace = []
         self._events = []  # the sequence of events (for DPOR)
         self._mutexes = {}
@@ -521,11 +523,15 @@ class ThreadedSEState(SEState):
         new._last_tid = self._last_tid
         new._current_thread = self._current_thread
         new._trace = self._trace.copy()
+        new._event_trace = self._event_trace.copy()
         new._events = self._events.copy()
         new._conflicts = self._conflicts.copy()
         # FIXME: do COW (also for wait and exited threads ...)
         new._mutexes = self._mutexes.copy()
         new._wait_mutex = {mtx: W.copy() for mtx, W in self._wait_mutex.items() if W}
+
+    def trace(self):
+        return self._event_trace
 
     def lazy_eval(self, v):
         value = self.try_eval(v)
@@ -577,6 +583,8 @@ class ThreadedSEState(SEState):
         self.memory.set_cs(thr.cs)
         self._current_thread = idx
 
+        self._event_trace.append((self.thread_id(), self.pc))
+
     def add_thread(self, pc):
         self._last_tid += 1
         t = Thread(self._last_tid, pc, self.memory.get_cs().copy())
@@ -590,6 +598,9 @@ class ThreadedSEState(SEState):
 
     def thread(self, idx=None):
         return self._threads[self._current_thread if idx is None else idx]
+
+    def thread_id(self, idx=None):
+        return self._threads[self._current_thread if idx is None else idx].get_id()
 
     def pause_thread(self, idx=None):
         self._trace.append(f"pause thread {self.thread(idx).get_id()}")

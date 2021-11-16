@@ -266,9 +266,12 @@ class TestCaseGenerator:
             write(f'<edge source="{lid-1}" target="{lid}">\n')
             write(f'  <data key="assumption">\\result=={val.value()}</data>\n')
             write(f'  <data key="assumption.resultfunction">{var}</data>\n')
-            dbgloc = instruction.get_metadata("dbgloc")
-            if dbgloc:
-                write(f'  <data key="startline">{dbgloc[1]}</data>\n')
+            bblock = instruction.bblock()
+            for inst in bblock:
+                dbgloc = inst.get_metadata("dbgloc")
+                if dbgloc:
+                    write(f'  <data key="startline">{dbgloc[1]}</data>\n')
+                    break
             write('</edge>\n')
         write(f'<node id="{lid+1}">\n')
         write('  <data key="violation">true</data>\n')
@@ -332,6 +335,37 @@ class TestCaseGenerator:
         if state.has_error() and self._svcomp_witness:
             with self._openfile(f"witness-{state.get_id()}.graphml") as fl:
                 self.generate_svcomp_violation_witness(fl, state)
+
+class ThreadedTestCaseGenerator(TestCaseGenerator):
+
+    def generate_svcomp_violation_witness(self, fl, state):
+        inpvec = state.input_vector()
+        write = fl.write
+        self._svcomp_header(fl)
+
+        lid = 0
+        for tid, pc in state.trace():
+            print(tid, pc)
+
+            lid += 1
+            # dump as unsigned and signed
+            write(f'<node id="{lid}"/>\n')
+            write(f'<edge source="{lid-1}" target="{lid}">\n')
+            write(f'  <data key="threadId">{tid}</data>\n')
+            bblock = pc.bblock()
+            for inst in bblock:
+                dbgloc = inst.get_metadata("dbgloc")
+                if dbgloc:
+                    write(f'  <data key="startline">{dbgloc[1]}</data>\n')
+                    break
+            write('</edge>\n')
+        write(f'<node id="{lid+1}">\n')
+        write('  <data key="violation">true</data>\n')
+        write('</node>\n\n')
+        write(f'<edge source="{lid}" target="{lid+1}"/>\n')
+        self._svcomp_footer(fl)
+
+
 
 class OutputsHandler:
     def __init__(self, testgen, outdir):
@@ -516,10 +550,11 @@ def main():
 
         if not args.no_tests:
             only_tests = args.only_tests
-            testgen = TestCaseGenerator(args.out_dir,
-                                        args.all_tests,
-                                        args.svcomp_witness,
-                                        only_tests=only_tests.split(",") if only_tests else None)
+            Cls = ThreadedTestCaseGenerator if args.threads else TestCaseGenerator
+            testgen = Cls(args.out_dir,
+                          args.all_tests,
+                          args.svcomp_witness,
+                          only_tests=only_tests.split(",") if only_tests else None)
 
     ohandler = OutputsHandler(testgen,
                               None if args.no_output else args.out_dir)

@@ -278,7 +278,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
                 if fn is None:
                     return True
                 assert isinstance(fn, Function)
-            return fn.is_undefined() and _is_global_undef(fn.name())
+            return _is_global_event_fun(fn)
         return False
 
     def schedule(self, state):
