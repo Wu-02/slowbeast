@@ -185,7 +185,7 @@ def is_global_ev(pc):
         return may_be_glob_mem(pc.operand(1))
     if isinstance(pc, Call):
         fn = pc.called_function()
-        return not fn or fn.is_undefined()
+        return not fn or (fn.is_undefined() and fn.name().startswith("pthread_"))
     return isinstance(pc, (Thread, ThreadJoin))
 
 
