@@ -871,7 +871,7 @@ class BSELFChecker(BaseBSE):
                 s = self.replay_state(pre)
                 r = Result.UNSAFE if s.has_error() else Result.UNKNOWN
             if r is Result.UNSAFE:  # real error
-                return r, pre
+                return r, s
             s.set_killed("Replay failed")
             self.problematic_states.append(s)
             assert self.options.replay_errors
@@ -963,17 +963,19 @@ class BSELF:
                 self.options,
                 invariants=self.invariants,
             )
-            result, states = checker.check()
+            result, state = checker.check()
             self.stats.add(checker.stats)
             if result is Result.UNSAFE:
                 # FIXME: report the error from bsecontext
                 print_stdout(
-                    f"{states.get_id()}: [assertion error]: {loc} reachable.",
+                    f"{state.get_id()}: [assertion error]: {loc} reachable.",
                     color="redul",
                 )
-                print_stdout(str(states), color="wine")
+                print_stdout(str(state), color="wine")
                 print_stdout("Error found.", color="redul")
                 self.stats.errors += 1
+                if self.ohandler:
+                    self.ohandler.testgen.processState(state)
                 return result
             if result is Result.SAFE:
                 print_stdout(

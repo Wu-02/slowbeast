@@ -193,7 +193,6 @@ def _is_global_undef(name):
     )
 
 
-
 #
 # def is_same_mem(state, mem1, mem2, bytesNum):
 #     p1 = state.eval(mem1)
@@ -262,7 +261,6 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
     def __init__(self, P, ohandler=None, opts=SEOptions()):
         super().__init__(P, ohandler, opts, ExecutorClass=ThreadedExecutor)
 
-
     def _is_global_event(self, state, pc):
         if isinstance(pc, Load):
             return may_be_glob_mem(state, pc.operand(0))
@@ -277,11 +275,11 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
                 if fun is None:
                     return True
                 fn = self.executor()._resolve_function_pointer(state, fun)
-                if fn is None: return True
+                if fn is None:
+                    return True
                 assert isinstance(fn, Function)
             return fn.is_undefined() and _is_global_undef(fn.name())
         return False
-
 
     def schedule(self, state):
         l = state.num_threads()
