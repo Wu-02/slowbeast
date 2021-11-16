@@ -807,14 +807,15 @@ class ThreadedExecutor(Executor):
             #    state.set_error(GenericError("Returning a pointer from main function"))
             #    return [state]
 
-            if state.thread().get_id() == 0:
-                # this is the main thread exiting, exit the whole program
-                # FIXME: we should call dtors and so on...
-                state.set_exited(0)
-            else:
-                # this is the same as calling pthread_exit
-                # FIXME: set the retval to 'ret'
-                state.exit_thread()
+            # if state.thread().get_id() == 0:
+            #    # this is the main thread exiting, exit the whole program
+            #    # FIXME: we should call dtors and so on...
+            #    state.set_exited(0)
+            # else:
+            #    # this is the same as calling pthread_exit
+            #    # FIXME: set the retval to 'ret'
+            #    state.exit_thread()
+            state.exit_thread()
             return [state]
 
         if ret:

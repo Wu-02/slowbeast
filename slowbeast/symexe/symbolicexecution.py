@@ -178,7 +178,7 @@ def may_be_glob_mem(mem):
     return True
 
 
-def is_global_ev(pc, ismain):
+def is_global_ev(pc):
     if isinstance(pc, Load):
         return may_be_glob_mem(pc.operand(0))
     if isinstance(pc, Store):
@@ -186,69 +186,71 @@ def is_global_ev(pc, ismain):
     if isinstance(pc, Call):
         fn = pc.called_function()
         return not fn or fn.is_undefined()
-    return isinstance(pc, (Thread, ThreadJoin)) or (isinstance(pc, Return) and ismain)
+    return isinstance(pc, (Thread, ThreadJoin))
 
 
-def is_same_mem(state, mem1, mem2, bytesNum):
-    p1 = state.eval(mem1)
-    p2 = state.eval(mem2)
-    if p1.is_concrete() and p2.is_concrete():
-        # FIXME: compare also offsets
-        return p1.object() == p2.object()
-    # TODO: fork?
-    return True
-
-
-def is_same_val(state, op1, op2):
-    """Return if True if reading mem1 and mem2 must result in the same value"""
-    val1 = state.try_eval(op1)
-    val2 = state.try_eval(op2)
-    if val1 is None or val2 is None:
-        return False
-    return val1 == val2
-
-
-def reads_same_val(state, loadop, storevalop, bytesNum):
-    p1 = state.eval(loadop)
-    val = state.try_eval(storevalop)
-    if val is None:
-        return False
-    lval, err = state.memory.read(p1, bytesNum)
-    if err:
-        return False
-    # TODO: handle symbolic values?
-    return lval == val
-
-
-def get_conflicting(state, thr):
-    "Get threads that will conflict with 'thr' if executed"
-    confl = []
-    pc = state.thread(thr).pc
-    isload, iswrite = isinstance(pc, Load), isinstance(pc, Store)
-    if not isload and not iswrite:
-        return confl
-    bytesNum = pc.bytewidth()
-    for idx, t in enumerate(state.threads()):
-        if idx == thr:
-            continue
-        tpc = t.pc
-        # we handle this differently
-        # if isinstance(tpc, Return) and idx == 0:
-        #    # return from main is always conflicting
-        #    confl.append(idx)
-        if isload and isinstance(tpc, Store):
-            if is_same_mem(state, pc.operand(0), tpc.operand(1), bytesNum):
-                if not reads_same_val(state, pc.operand(0), tpc.operand(0), bytesNum):
-                    confl.append(idx)
-        elif iswrite:
-            if isinstance(tpc, Store):
-                if is_same_mem(state, pc.operand(1), tpc.operand(1), bytesNum):
-                    if not is_same_val(state, pc.operand(0), tpc.operand(0)):
-                        confl.append(idx)
-            elif isinstance(tpc, Load):
-                if is_same_mem(state, pc.operand(1), tpc.operand(0), bytesNum):
-                    confl.append(idx)
-    return confl
+#
+# def is_same_mem(state, mem1, mem2, bytesNum):
+#     p1 = state.eval(mem1)
+#     p2 = state.eval(mem2)
+#     if p1.is_concrete() and p2.is_concrete():
+#         # FIXME: compare also offsets
+#         return p1.object() == p2.object()
+#     # TODO: fork?
+#     return True
+#
+#
+# def is_same_val(state, op1, op2):
+#     """Return if True if reading mem1 and mem2 must result in the same value"""
+#     val1 = state.try_eval(op1)
+#     val2 = state.try_eval(op2)
+#     if val1 is None or val2 is None:
+#         return False
+#     return val1 == val2
+#
+#
+# def reads_same_val(state, loadop, storevalop, bytesNum):
+#     p1 = state.eval(loadop)
+#     val = state.try_eval(storevalop)
+#     if val is None:
+#         return False
+#     lval, err = state.memory.read(p1, bytesNum)
+#     if err:
+#         return False
+#     # TODO: handle symbolic values?
+#     return lval == val
+#
+#
+# def get_conflicting(state, thr):
+#     "Get threads that will conflict with 'thr' if executed"
+#     confl = []
+#     pc = state.thread(thr).pc
+#     isload, iswrite = isinstance(pc, Load), isinstance(pc, Store)
+#     if not isload and not iswrite:
+#         return confl
+#     bytesNum = pc.bytewidth()
+#     for idx, t in enumerate(state.threads()):
+#         if idx == thr:
+#             continue
+#         tpc = t.pc
+#         # we handle this differently
+#         # if isinstance(tpc, Return) and idx == 0:
+#         #    # return from main is always conflicting
+#         #    confl.append(idx)
+#         if isload and isinstance(tpc, Store):
+#             if is_same_mem(state, pc.operand(0), tpc.operand(1), bytesNum):
+#                 if not reads_same_val(state, pc.operand(0), tpc.operand(0), bytesNum):
+#                     confl.append(idx)
+#         elif iswrite:
+#             if isinstance(tpc, Store):
+#                 if is_same_mem(state, pc.operand(1), tpc.operand(1), bytesNum):
+#                     if not is_same_val(state, pc.operand(0), tpc.operand(0)):
+#                         confl.append(idx)
+#             elif isinstance(tpc, Load):
+#                 if is_same_mem(state, pc.operand(1), tpc.operand(0), bytesNum):
+#                     confl.append(idx)
+#     return confl
+#
 
 
 class ThreadedSymbolicExecutor(SymbolicExecutor):
@@ -257,7 +259,8 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
 
     def schedule(self, state):
         l = state.num_threads()
-        assert l > 0
+        if l == 0:
+            return []
         # if the thread is in an atomic sequence, continue it...
         if state.thread().in_atomic():
             return [state]
@@ -265,7 +268,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         for idx, t in enumerate(state.threads()):
             if t.is_paused():
                 continue
-            if not is_global_ev(t.pc, t.get_id() == 0):
+            if not is_global_ev(t.pc):
                 state.schedule(idx)
                 return [state]
 
@@ -284,36 +287,6 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
                 return [state]
             assert states
             return states
-
-        # this is not CORRECT!
-
-    # can_run = set(idx for idx, t in enumerate(state.threads()) if not t.is_paused())
-    # if not can_run:
-    #    state.set_error(GenericError("Deadlock detected"))
-    #    return [state]
-
-    # thr = can_run.pop()
-    # if len(can_run) > 0 and thr == 0 and isinstance(state.thread(0).pc, Return):
-    #    # defer scheduling the return from the main thread as the last possible event,
-    #    # so that we do not try only partial executions
-    #    # FIXME: this is incorrect if we are interested e.g., in memory leaks
-    #    # if we get rid of this hack, we must return all threads as possibly conflicting
-    #    # from 'get_conflicting' if thr == 0 and pc is a return
-    #    thr = can_run.pop()
-    # state.schedule(thr)
-    # if len(can_run) == 0:
-    #    return [state]
-    # else:
-    #    conflicting = get_conflicting(state, thr)
-    #    if not conflicting:
-    #        return [state]
-    #    states = [state]
-    #    for idx in conflicting:
-    #        s = state.copy()
-    #        s.schedule(idx)
-    #        states.append(s)
-    #    assert states
-    #    return states
 
     def prepare(self):
         """
@@ -374,7 +347,8 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
 
     def schedule(self, state):
         l = state.num_threads()
-        assert l > 0
+        if l == 0:
+            return []
         # if the thread is in an atomic sequence, continue it...
         if state.thread().in_atomic():
             return [state]
@@ -382,7 +356,7 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
         for idx, t in enumerate(state.threads()):
             if t.is_paused():
                 continue
-            if not is_global_ev(t.pc, t.get_id() == 0):
+            if not is_global_ev(t.pc):
                 state.schedule(idx)
                 return [state]
 
