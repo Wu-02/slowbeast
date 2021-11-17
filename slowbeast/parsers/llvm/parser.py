@@ -524,10 +524,10 @@ class Parser:
                     cnt = self._names.setdefault(name, None)
                     if cnt is None:
                         self._names[name] = 0
-                        varop.set_name(name.decode("utf-8"))
+                        varop.set_name(name.decode("utf-8", "replace"))
                     else:
                         self._names[name] += 1
-                        varop.set_name(f"{name.decode('utf-8')}_{cnt + 1}")
+                        varop.set_name(f"{name.decode('utf-8', 'replace')}_{cnt + 1}")
             return []
 
         if fun in unsupported_funs:
