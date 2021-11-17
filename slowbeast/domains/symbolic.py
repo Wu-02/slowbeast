@@ -135,15 +135,20 @@ if _use_z3:
 
         return x.unwrap()
 
+    def _bv_to_bool(b):
+        if is_bool(b):
+            return b
+        return If(b != bv_const(0, b.sort().size()), TRUE(), FALSE())
+
     def mk_or(*e):
         if len(e) == 1:
             return e[0]
-        return Or(*e)
+        return Or(*map(_bv_to_bool, e))
 
     def mk_and(*e):
         if len(e) == 1:
             return e[0]
-        return And(*e)
+        return And(*map(_bv_to_bool, e))
 
     def mk_add(*e):
         if len(e) < 2:
@@ -172,6 +177,11 @@ if _use_z3:
 
     def bv_const(v, bw):
         return BitVecVal(v, bw)
+
+    def bool_to_bv(b):
+        if not is_bool(b):
+            return b
+        return If(b, bv_const(1, 1), bv_const(0, 1))
 
     def boolToBV(b):
         if not b.is_bool():
@@ -388,7 +398,7 @@ if _use_z3:
 
             it = iter(M.items())
             m, c = next(it)
-            mexpr = m.expr()
+            mexpr = bool_to_bv(m.expr())
             expr = c if mexpr is None else c * mexpr
             for m, c in it:
                 mexpr = m.expr()
@@ -451,7 +461,7 @@ if _use_z3:
                 return mk_or(*(c.expr() for c in self._children))
             if ty == ArithFormula.NOT:
                 assert len(self._children) == 1
-                return Not(self._children[0].expr())
+                return Not(_bv_to_bool(self._children[0].expr()))
 
             chlds = self._children
             if len(chlds) != 2:
@@ -1407,7 +1417,7 @@ class BVSymbolicDomain:
         """
         assert BVSymbolicDomain.belongto(*args)
         assert all(map(lambda x: x.is_bool(), args))
-        return Expr(And(*map(lambda x: x.unwrap(), args)), BoolType())
+        return Expr(And(*map(lambda x: _bv_to_bool(x.unwrap()), args)), BoolType())
 
     def disjunction(*args):
         """
@@ -1417,13 +1427,13 @@ class BVSymbolicDomain:
         """
         assert BVSymbolicDomain.belongto(*args)
         assert all(map(lambda x: x.is_bool(), args))
-        return Expr(Or(*map(lambda x: x.unwrap(), args)), BoolType())
+        return Expr(Or(*map(lambda x: _bv_to_bool(x.unwrap()), args)), BoolType())
 
     def Ite(c, a, b):
         assert BVSymbolicDomain.belongto(c)
         assert c.is_bool(), c
         assert a.type() == b.type(), f"{a}, {b}"
-        return Expr(If(c.unwrap(), a.unwrap(), b.unwrap()), a.type())
+        return Expr(If(_bv_to_bool(c.unwrap()), a.unwrap(), b.unwrap()), a.type())
 
     def And(a, b):
         assert BVSymbolicDomain.belongto(a, b)
