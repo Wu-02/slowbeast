@@ -133,7 +133,7 @@ class Executor(ConcreteExecutor):
         csat = state.is_sat(cond)
         if csat is None:
             T = state.copy()
-            T.set_killed("Solver failure: {0}".format(ncsat))
+            T.set_killed("Solver failure: {0}".format(csat))
 
         ncond = state.expr_manager().Not(cond)
         ncsat = state.is_sat(ncond)
