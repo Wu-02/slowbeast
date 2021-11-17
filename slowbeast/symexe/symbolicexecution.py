@@ -289,8 +289,17 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         if l == 0:
             return []
         # if the thread is in an atomic sequence, continue it...
-        if state.thread().in_atomic():
-            return [state]
+        t = state.thread()
+        if t.in_atomic():
+            if not t.is_paused():
+                return [state]
+            else:
+                # this thread is dead-locked, but other can continue
+                state.set_killed(
+                    f"Thread {t.get_id()} is stucked "
+                    "(waits for a mutex inside an atomic sequence)"
+                )
+                return [state]
 
         is_global_ev = self._is_global_event
         for idx, t in enumerate(state.threads()):
