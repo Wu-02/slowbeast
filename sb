@@ -303,7 +303,7 @@ class TestCaseGenerator:
         self._svcomp_footer(fl)
 
     def processState(self, state):
-        assert not state.is_ready()
+        assert not state.is_ready(), state
 
         if not self._alltests and state.exited():
             return

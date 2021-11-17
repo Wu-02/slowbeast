@@ -870,12 +870,14 @@ class BSELFChecker(BaseBSE):
             if self.options.replay_errors:
                 s = self.replay_state(pre)
                 r = Result.UNSAFE if s.has_error() else Result.UNKNOWN
-            if r is Result.UNSAFE:  # real error
-                return r, s
-            s.set_killed("Replay failed")
-            self.problematic_states.append(s)
-            assert self.options.replay_errors
-            dbg("Replaying error failed")
+                if r is Result.UNSAFE:  # real error
+                    return r, s
+                dbg("Replaying error failed")
+                s.set_killed("Replay failed")
+                self.problematic_states.append(s)
+            else:
+                pre.set_error(bsectx.errordescr)
+                return r, pre
         #  the error path is feasible, but the errors may not be real
         assert r is Result.UNKNOWN
         if self.getOptions().fold_loops:
