@@ -6,7 +6,12 @@ from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.bse.bse import report_state
 from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker as BSELFCheckerVanilla
 from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.util.debugging import print_stdout
+from slowbeast.util.debugging import (
+    print_stdout,
+    inc_print_indent,
+    dec_print_indent,
+    dbg,
+)
 
 from slowbeast.cfkind.relations import get_var_cmp_relations
 
@@ -177,21 +182,44 @@ class BSELFChecker(BSELFCheckerVanilla):
         self._pathexecutor = pathexecutor
 
     def check_loop_precondition(self, L, A):
-        print_stdout(f"Checking if {str(A)} holds", color="purple")
+        loc = L.header()
+        print_stdout(f"Checking if {str(A)} holds on {loc}", color="purple")
+
+        # "fast" path -- check with the forward states that we have
         fstates = self.forward_states.get(L.header().elem()[0])
         if fstates:
-            # use only the states from the first iteration for now
+            # use only the states from entering the loop -- those are most likely to work
             states = [s.copy() for s in fstates[0]]
             r, n = execute_annotation(self._pathexecutor, states, A)
             if n and any(map(lambda s: s.has_error(), n)):
+                print("Fast check succ")
                 return Result.UNKNOWN, None
-        return super().check_loop_precondition(L, A)
+            print("Fast check FAILED")
+        inc_print_indent()
+        # run recursively BSELFChecker with already computed inductive sets
+        checker = BSELFChecker(
+            loc,
+            A,
+            self.program,
+            self.programstructure,
+            self.options,
+            indsets=self.inductive_sets,
+            invariants=self.invariant_sets,
+            max_loop_hits=1,
+            forward_states=self.forward_states,
+        )
+        result, states = checker.check(L.entries())
+
+        dec_print_indent()
+        dbg(f"Checking if {A} holds on {loc} finished")
+        return result, states
 
     def fold_loop(self, loc, L, unsafe, loop_hit_no):
         fstates = self.forward_states.get(L.header().elem()[0])
         if fstates is None:
-            self.max_seq_len = 1
+            self.max_seq_len = 2
         else:
+            print("HAVE FORWARD STATES TO USE")
             self.max_seq_len = 2  # * len(L.paths())
         return super().fold_loop(loc, L, unsafe, loop_hit_no)
 
