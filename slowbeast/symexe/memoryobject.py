@@ -78,6 +78,11 @@ def mo_to_bytes(values, size):
         tmp = write_bytes(o, newvalues, size, val)
         if not tmp is None:
             return None, tmp
+    # if __debug__:
+    #    rval, err = read_bytes(newvalues, o, size, val.bytewidth(), False)
+    #    assert err is None
+    #    crval = getGlobalExprManager().Cast(rval, val.type())
+    #    assert val == crval, f"{cval} ({rval}) != {val}"
     return newvalues, None
 
 
