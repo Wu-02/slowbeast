@@ -76,7 +76,6 @@ class StateDescription:
                 return False
         return True
 
-
     def eval_subs(self, state):
         get = state.get
         for v, x in self._subs.items():

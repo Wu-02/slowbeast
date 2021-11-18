@@ -48,6 +48,8 @@ def createArgParser():
     parser.add_argument('-dump', action='store_true', default=False, help='dump the program after parsing')
     parser.add_argument('-parse-only', action='store_true', help='only parse program and dump it (for debugging)')
     parser.add_argument('-error-fn', action='store', help='Error function (calling this function amounts to calling assert(false)')
+    parser.add_argument('-unsupported-undefs', action='store',
+                        help='Abort on these undefined functions when parsing program (for debugging)')
     parser.add_argument('-kind', action='store_true', help='Use k-induction in SE (implies SE)')
     parser.add_argument('-kind-noinv', action='store_true',
                         help='Use k-induction without (internal) invariant generation')
@@ -508,8 +510,10 @@ def main():
     elif lang == 'llvm':
         from slowbeast.parsers.llvm.parser import Parser as LLVMParser
         error_funs = args.error_fn or None
+        unsupp_undefs = args.unsupported_undefs or None
         parser = LLVMParser(error_funs.split(',') if error_funs else None,
-                            args.threads)
+                            args.threads,
+                            unsupp_undefs.split(",") if unsupp_undefs else None)
         code = compile_and_link(args.prog, args.out_dir,
                                 ['-Xclang', '-disable-O0-optnone',
                                  '-fno-vectorize', '-fno-slp-vectorize']

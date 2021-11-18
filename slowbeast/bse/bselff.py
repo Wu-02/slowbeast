@@ -175,7 +175,6 @@ class BSELFChecker(BSELFCheckerVanilla):
         pathexecutor.forbid_calls()
         self._pathexecutor = pathexecutor
 
-
     def check_loop_precondition(self, L, A):
         print_stdout(f"Checking if {str(A)} holds", color="purple")
         fstates = self.forward_states.get(L.header().elem()[0])

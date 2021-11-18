@@ -172,7 +172,7 @@ thread_funs = ["pthread_create", "pthread_join", "pthread_exit"]
 
 
 class Parser:
-    def __init__(self, error_funs=None, allow_threads=True):
+    def __init__(self, error_funs=None, allow_threads=True, unsupp_funs=None):
         self.llvmmodule = None
         self.program = Program()
         self.error_funs = error_funs or []
@@ -186,6 +186,10 @@ class Parser:
         # records about PHIs that we created. We must place
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
+
+        if unsupp_funs:
+            global unsupported_funs
+            unsupported_funs += unsupp_funs
 
     def try_get_operand(self, op):
         ret = self._mapping.get(op)
