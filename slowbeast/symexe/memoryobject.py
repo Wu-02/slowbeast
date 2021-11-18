@@ -39,8 +39,8 @@ def write_bytes(offval, values, size, x):
 
 def read_bytes(values, offval, size, bts, zeroed):
     assert bts > 0, bts
-    assert size > 0, bts
-    assert offval >= 0, bts
+    assert size > 0, size
+    assert offval >= 0, offval
     EM = getGlobalExprManager()
     if zeroed:
         c = offval + bts - 1
@@ -85,6 +85,8 @@ MAX_BYTES_SIZE = 64
 
 
 class MemoryObject(CoreMO):
+    __slots__ = ()
+
     # FIXME: refactor
     def read(self, bts, off=None):
         """
@@ -126,15 +128,15 @@ class MemoryObject(CoreMO):
                 values, err = mo_to_bytes(values, size)
                 if err:
                     return None, err
-                self.values = values
-                assert isinstance(self.values, list)
+                self._values = values
+                assert isinstance(self._values, list)
                 return read_bytes(values, offval, size, bts, self._zeroed)
 
             if self._zeroed:
                 return ConcreteVal(0, IntType(bts * 8)), None
             return None, MemError(
                 MemError.UNINIT_READ,
-                f"uninitialized or unaligned read (the latter is unsupported)\n"
+                "uninitialized or unaligned read (the latter is unsupported)\n"
                 f"Reading bytes {offval}-{offval+bts-1} from obj {self._id} with contents:\n"
                 f"{values}",
             )
@@ -150,7 +152,7 @@ class MemoryObject(CoreMO):
 
             return None, MemError(
                 MemError.UNSUPPORTED,
-                f"Reading bytes from object defined by parts is unsupported atm: "
+                "Reading bytes from object defined by parts is unsupported atm: "
                 f"reading {bts} bytes from off {offval} where is value with "
                 f"{val.bytewidth()} bytes",
             )
@@ -210,7 +212,7 @@ class MemoryObject(CoreMO):
                         tmp, err = mo_to_bytes(values, size)
                         if err:
                             return err
-                        self.values = tmp
+                        self._values = tmp
                         return write_bytes(offval, tmp, size, x)
                     return MemError(
                         MemError.UNSUPPORTED, "Overlapping writes to memory"
