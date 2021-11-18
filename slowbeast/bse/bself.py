@@ -205,6 +205,7 @@ class BSELFChecker(BaseBSE):
 
         self.options = opts
         self._target_is_whole_seq = opts.target_is_whole_seq
+        self.max_seq_len = None
 
         self.create_set = self.ind_executor().create_states_set
         self.get_loop_headers = programstructure.get_loop_headers
@@ -766,7 +767,7 @@ class BSELFChecker(BaseBSE):
         # take effect. If we start creating starting inductive sets
         # from several states, the length could decrease to 2
         # max_seq_len = max(3, 2 * len(L.paths()))
-        max_seq_len = 2 * len(L.paths())
+        max_seq_len = self.max_seq_len or (2 * len(L.paths()))
         while True:
             print_stdout(
                 f"Got {len(sequences)} abstract path(s) of loop {loc}",

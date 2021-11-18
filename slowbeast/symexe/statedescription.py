@@ -67,6 +67,16 @@ class StateDescription:
     def substitutions(self):
         return self._subs
 
+    def has_all_substitutions(self, state):
+        get = state.get
+        for v, x in self._subs.items():
+            assert v, (v, x)
+            xx = get(x)
+            if xx is None:
+                return False
+        return True
+
+
     def eval_subs(self, state):
         get = state.get
         for v, x in self._subs.items():

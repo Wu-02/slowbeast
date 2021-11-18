@@ -1,5 +1,8 @@
 from slowbeast.symexe.executionstate import SEState as ExecutionState
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
+from slowbeast.symexe.annotations import execute_annotation
+from slowbeast.symexe.pathexecutor import Executor as PathExecutor
+from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.bse.bse import report_state
 from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker as BSELFCheckerVanilla
 from slowbeast.cfkind.naive.naivekindse import Result
@@ -166,6 +169,33 @@ class BSELFChecker(BSELFCheckerVanilla):
             loc, A, program, programstructure, opts, invariants, indsets, max_loop_hits
         )
         self.forward_states = forward_states
+        memorymodel = LazySymbolicMemoryModel(opts)
+        pathexecutor = PathExecutor(program, self.solver(), opts, memorymodel)
+        # add error funs and forbid defined calls...
+        pathexecutor.forbid_calls()
+        self._pathexecutor = pathexecutor
+
+
+    def check_loop_precondition(self, L, A):
+        print_stdout(f"Checking if {str(A)} holds", color="purple")
+        fstates = self.forward_states.get(L.header().elem()[0])
+        if fstates:
+            # use only the states from the first iteration for now
+            states = [s.copy() for s in fstates[0]]
+            r, n = execute_annotation(self._pathexecutor, states, A)
+            if n and any(map(lambda s: s.has_error(), n)):
+                print("Fastly failed")
+                return Result.UNKNOWN, None
+        return super().check_loop_precondition(L, A)
+
+    def fold_loop(self, loc, L, unsafe, loop_hit_no):
+        fstates = self.forward_states.get(L.header().elem()[0])
+        if fstates is None:
+            self.max_seq_len = 1
+        else:
+            self.max_seq_len = 2# * len(L.paths())
+        return super().fold_loop(loc, L, unsafe, loop_hit_no)
+
 
     def do_step(self):
         bsectx = self.get_next_state()
@@ -208,24 +238,27 @@ class BSELFF(BSELF):
                 self.programstructure,
                 self.options,
                 invariants=self.invariants,
+                forward_states=self.forward_states
             )
             checker.init_checker()
             bself_checkers.append(checker)
 
         while True:
             for checker in se_checkers:
-                checker.do_step()
-                # forward SE found an error
-                if checker.stats.errors > 0:
-                    return Result.UNSAFE
-                # forward SE searched whole program and found not error
-                if not checker.states and checker.stats.killed_paths == 0:
-                    return Result.SAFE
+                for i in range(10):
+                    print("... forward step")
+                    checker.do_step()
+                    # forward SE found an error
+                    if checker.stats.errors > 0:
+                        return Result.UNSAFE
+                    # forward SE searched whole program and found not error
+                    if not checker.states and checker.stats.killed_paths == 0:
+                        return Result.SAFE
 
             bself_has_unknown = False
             remove_checkers = []
             for checker in bself_checkers:
-                continue
+                print("... backward step")
                 result, states = checker.do_step()
                 if result is None:
                     continue
