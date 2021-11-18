@@ -171,6 +171,8 @@ class Interpreter:
 
     def do_step(self):
         state = self.get_next_state()
+        if state is None:
+            return
         self.interact_if_needed(state)
         if self._options.step == ExecutionOptions.INSTR_STEP:
             newstates = self._executor.execute(state, state.pc)

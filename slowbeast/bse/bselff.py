@@ -97,6 +97,7 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
             state_idx = some_state_idx
         if state_idx is None:
             assert all(map(lambda x: x is None, states))
+            self.states = None
             return None
 
         assert state_idx is not None
@@ -104,7 +105,7 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
         states[state_idx] = None
 
         # don't care about the +1 from prev line...
-        if none_num > 20 and (none_num / len(states)) >= 0.5:
+        if state is None or (none_num > 20 and (none_num / len(states)) >= 0.5):
             self.states = [s for s in states if s is not None]
         return state
 
@@ -183,7 +184,6 @@ class BSELFChecker(BSELFCheckerVanilla):
             states = [s.copy() for s in fstates[0]]
             r, n = execute_annotation(self._pathexecutor, states, A)
             if n and any(map(lambda s: s.has_error(), n)):
-                print("Fastly failed")
                 return Result.UNKNOWN, None
         return super().check_loop_precondition(L, A)
 
@@ -242,16 +242,25 @@ class BSELFF(BSELF):
             bself_checkers.append(checker)
 
         while True:
+            remove_checkers = []
             for checker in se_checkers:
-                for i in range(10):
+                for i in range(7):
                     print("... forward step")
                     checker.do_step()
+
                     # forward SE found an error
                     if checker.stats.errors > 0:
                         return Result.UNSAFE
-                    # forward SE searched whole program and found not error
-                    if not checker.states and checker.stats.killed_paths == 0:
-                        return Result.SAFE
+                    # forward SE searched whole program and found no error
+                    if not checker.states:
+                        if checker.stats.killed_paths == 0:
+                            return Result.SAFE
+                        else:
+                            # BSELF can still prove the program correct if we failed here,
+                            # just remove this checker
+                            remove_checkers.append(checker)
+            for c in remove_checkers:
+                se_checkers.remove(c)
 
             bself_has_unknown = False
             remove_checkers = []
