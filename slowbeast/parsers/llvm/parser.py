@@ -544,16 +544,16 @@ class Parser:
                 varop = self.operand(var)
                 varop.add_metadata(
                     "dbgvar",
-                    (name.decode("utf-8", "replace"), ty.decode("utf-8", "replace")),
+                    (name.decode("utf-8", "ignore"), ty.decode("utf-8", "ignore")),
                 )
                 if self._name_vars:
                     cnt = self._names.setdefault(name, None)
                     if cnt is None:
                         self._names[name] = 0
-                        varop.set_name(name.decode("utf-8", "replace"))
+                        varop.set_name(name.decode("utf-8", "ignore"))
                     else:
                         self._names[name] += 1
-                        varop.set_name(f"{name.decode('utf-8', 'replace')}_{cnt + 1}")
+                        varop.set_name(f"{name.decode('utf-8', 'ignore')}_{cnt + 1}")
             return []
 
         if fun in unsupported_funs:
