@@ -192,9 +192,8 @@ class BSELFChecker(BSELFCheckerVanilla):
         if fstates is None:
             self.max_seq_len = 1
         else:
-            self.max_seq_len = 2# * len(L.paths())
+            self.max_seq_len = 2  # * len(L.paths())
         return super().fold_loop(loc, L, unsafe, loop_hit_no)
-
 
     def do_step(self):
         bsectx = self.get_next_state()
@@ -237,7 +236,7 @@ class BSELFF(BSELF):
                 self.programstructure,
                 self.options,
                 invariants=self.invariants,
-                forward_states=self.forward_states
+                forward_states=self.forward_states,
             )
             checker.init_checker()
             bself_checkers.append(checker)

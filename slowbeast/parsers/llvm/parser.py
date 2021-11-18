@@ -276,7 +276,17 @@ class Parser:
         if len(operands) == 0:
             R = Return()
         else:
-            R = Return(self.operand(operands[0]))
+            op = self.try_get_operand(operands[0])
+            if op is None:
+                # uhhh, hack...)
+                if str(operands[0]).endswith("undef"):
+                    ty = operands[0].type
+                    op = self.create_nondet_call(f"undef_{ty}".replace(" ", "_"), ty)
+                R = Return(op)
+                self._addMapping(inst, R)
+                return [op, R]
+            else:
+                R = Return(op)
 
         self._addMapping(inst, R)
         return [R]
