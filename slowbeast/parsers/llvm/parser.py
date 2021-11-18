@@ -172,7 +172,9 @@ thread_funs = ["pthread_create", "pthread_join", "pthread_exit"]
 
 
 class Parser:
-    def __init__(self, error_funs=None, allow_threads=True, unsupp_funs=None):
+    def __init__(
+        self, error_funs=None, allow_threads=True, forbid_floats=False, unsupp_funs=None
+    ):
         self.llvmmodule = None
         self.program = Program()
         self.error_funs = error_funs or []
@@ -190,6 +192,7 @@ class Parser:
         if unsupp_funs:
             global unsupported_funs
             unsupported_funs += unsupp_funs
+        self._forbid_floats = forbid_floats
 
     def try_get_operand(self, op):
         ret = self._mapping.get(op)
@@ -302,6 +305,9 @@ class Parser:
             op1 = to_float_ty(op1)
             op2 = to_float_ty(op2)
             isfloat = True
+        if isfloat and self._forbid_floats:
+            raise RuntimeError("Floating artihmetic forbidden: {0}".format(inst))
+
         if opcode in ("add", "fadd"):
             I = Add(op1, op2, isfloat)
         elif opcode in ("sub", "fsub"):
@@ -397,6 +403,9 @@ class Parser:
         return [I]
 
     def _createFNeg(self, inst):
+        if self._forbid_floats:
+            raise RuntimeError("Floating operations forbidden: {0}".format(inst))
+
         operands = getLLVMOperands(inst)
         assert len(operands) == 1, "Invalid number of operands for fneg"
         I = Neg(to_float_ty(self.operand(operands[0])), fp=True)
@@ -409,6 +418,9 @@ class Parser:
         op1 = self.operand(operands[0])
         op2 = self.operand(operands[1])
         if isfloat:
+            if self._forbid_floats:
+                raise RuntimeError("Floating operations forbidden: {0}".format(inst))
+
             P, is_unordered = parseFCmp(inst)
             op1 = to_float_ty(op1)
             op2 = to_float_ty(op2)

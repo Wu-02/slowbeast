@@ -45,6 +45,8 @@ def createArgParser():
                         help='Use random value for nondet values, thus follow one random path during execution.')
     parser.add_argument('-uninitialized-nondet', action='store_true', default=False,
                         help='Use nondet value for reads from uninitialized memory (instead of issuing an error).')
+    parser.add_argument('-forbid-floats', action='store_true', default=False,
+                        help='Forbid floating-point instructions')
     parser.add_argument('-dump', action='store_true', default=False, help='dump the program after parsing')
     parser.add_argument('-parse-only', action='store_true', help='only parse program and dump it (for debugging)')
     parser.add_argument('-error-fn', action='store', help='Error function (calling this function amounts to calling assert(false)')
@@ -512,7 +514,7 @@ def main():
         error_funs = args.error_fn or None
         unsupp_undefs = args.unsupported_undefs or None
         parser = LLVMParser(error_funs.split(',') if error_funs else None,
-                            args.threads,
+                            args.threads, args.forbid_floats,
                             unsupp_undefs.split(",") if unsupp_undefs else None)
         code = compile_and_link(args.prog, args.out_dir,
                                 ['-Xclang', '-disable-O0-optnone',
