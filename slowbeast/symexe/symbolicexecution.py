@@ -405,11 +405,11 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
             state.set_error(GenericError("Deadlock detected"))
             return [state]
 
-        state.schedule(can_run[0])
-        state.add_event()
         if len(can_run) == 1:
+            state.schedule(can_run[0])
+            state.add_event()
             return [state]
-        for idx in can_run[1:]:
+        for idx in can_run:
             s = state.copy()
             s.schedule(idx)
             s.add_event()

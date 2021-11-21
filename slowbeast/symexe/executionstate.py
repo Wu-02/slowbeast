@@ -467,7 +467,7 @@ class Event:
                 if mem.is_concrete() and evmem.is_concrete():
                     return mem == evmem
             return True  # are we conflicting with all the locks?
-        if ty in (Event.LOCK, Event.UNLOCK) and evty in (Event.LOCK, Event.ULOCK):
+        if ty in (Event.LOCK, Event.UNLOCK) and evty in (Event.LOCK, Event.UNLOCK):
             return mem == evmem
         # FIXME: we should probably do better
         return True
