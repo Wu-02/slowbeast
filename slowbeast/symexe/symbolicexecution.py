@@ -318,7 +318,10 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
                 return [state]
 
         can_run = [idx for idx, t in enumerate(state.threads()) if not t.is_paused()]
-        if len(can_run) == 1:
+        if len(can_run) == 0:
+            state.set_error(GenericError("Deadlock detected"))
+            return [state]
+        elif len(can_run) == 1:
             state.schedule(can_run[0])
             return [state]
         else:
@@ -327,9 +330,6 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
                 s = state.copy()
                 s.schedule(idx)
                 states.append(s)
-            if not states:
-                state.set_error(GenericError("Deadlock detected"))
-                return [state]
             assert states
             return states
 
@@ -392,7 +392,6 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
         print("Running symbolic execution with DPOR")
 
     def _schedule_atomic(self, state):
-        assert state not in self.states, "Running on queued state"
         assert state.num_threads() > 0
         # if the thread is in an atomic sequence, continue it...
         t = state.thread()
@@ -418,7 +417,6 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
 
     def do_step(self, state):
         # execute a step and then finish any atomic/non-global events that follow
-        print("--- step ---")
         assert state.is_ready()
         queue, states = [], []
         tmp = self._executor.execute(state, state.pc)
@@ -437,21 +435,20 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
                         (newq, states)[0 if ns.is_ready() else 1].append(ns)
                 else:
                     states.append(s)
-            states += newq
             queue = newq
-        print("--- step done ---")
         return states
 
     def run(self):
         self.prepare()
 
         # we're ready to go!
-        states = self.states
         get_next = self.get_next_state
         do_step = self.do_step
+        handle_new_states = self.handle_new_states
         try:
-            while states:
+            while self.states:
                 state = get_next()
+                assert state.is_ready(), state.status()
                 can_run = [
                     idx for idx, t in enumerate(state.threads()) if not t.is_paused()
                 ]
@@ -466,12 +463,9 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
                     for idx in can_run:
                         s = state.copy()
                         s.schedule(idx)
-                        newstates += do_step(state)
+                        newstates += do_step(s)
 
-                # self.states_num += len(newstates)
-                # if self.states_num % 100 == 0:
-                #    print("Searched states: {0}".format(self.states_num))
-                self.handle_new_states(newstates)
+                handle_new_states(newstates)
         except Exception as e:
             print_stderr(
                 "Fatal error while executing '{0}'".format(state.pc), color="RED"
