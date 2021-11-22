@@ -190,10 +190,12 @@ def _is_global_event_fun(fn):
     name = fn.name()
     if name.startswith("__VERIFIER_atomic"):
         return True
-    return fn.is_undefined() or name in (
+    if fn.is_undefined() and name in (
         "pthread_mutex_lock",
         "pthread_mutex_unlock",
-    )
+    ):
+        return True
+    return False
 
 
 #
@@ -357,7 +359,8 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
                 for s in schedule(state):
                     if s.is_ready():
                         newstates += self._executor.execute(s, s.pc)
-                        s.sync_pc()
+                        for ns in newstates:
+                            ns.sync_pc()
                     else:
                         newstates.append(s)
 
