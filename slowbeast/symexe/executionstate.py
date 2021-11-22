@@ -77,7 +77,7 @@ class SEState(ExecutionState):
         """Syntactic comparison"""
         assert (
             self._executor is rhs._executor
-        ), "Comparing execution states of different executors"
+        ), f"Comparing execution states of different executors: {self._executor}, {rhs.executor}"
         return super().__eq__(rhs) and self._constraints == rhs._constraints
 
     def solver(self):
@@ -146,6 +146,8 @@ class SEState(ExecutionState):
         }
 
     def _copy_to(self, new):
+        assert new is not self
+        assert new.get_id() != self.get_id()
         super()._copy_to(new)  # cow copy of super class
 
         new._executor = self._executor
