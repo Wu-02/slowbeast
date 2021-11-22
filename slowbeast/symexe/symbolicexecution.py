@@ -419,7 +419,8 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
         # execute a step and then finish any atomic/non-global events that follow
         assert state.is_ready()
         queue, states = [], []
-        tmp = self._executor.execute(state, state.pc)
+        execute = self._executor.execute
+        tmp = execute(state, state.pc)
         for ns in tmp:
             ns.sync_pc()
             (queue, states)[0 if ns.is_ready() else 1].append(ns)
@@ -429,7 +430,7 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
             newq = []
             for s in queue:
                 if sched_atomic(state):
-                    tmp = self._executor.execute(s, s.pc)
+                    tmp = execute(s, s.pc)
                     for ns in tmp:
                         ns.sync_pc()
                         (newq, states)[0 if ns.is_ready() else 1].append(ns)
