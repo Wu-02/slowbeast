@@ -32,7 +32,10 @@ if _use_z3:
         solver.push()
         for a in assumpt:
             assert a.is_bool()
-            solver.add(a.unwrap())
+            if a.is_concrete():
+                solver.add(a.value())
+            else:
+                solver.add(a.unwrap())
         r = solver.check()
         if r != sat:
             solver.pop()

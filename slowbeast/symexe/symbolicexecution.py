@@ -107,9 +107,9 @@ class SymbolicExecutor(Interpreter):
                 dbg("The replay succeeded.")
 
         if s.is_ready():
-            assert s.get_id() not in (
-                st.get_id() for st in self.states
-            ), f"State already in queue: {s} ... {self.states}"
+            # assert s.get_id() not in (
+            #    st.get_id() for st in self.states
+            # ), f"State already in queue: {s} ... {self.states}"
             self.states.append(s)
         elif s.has_error():
             dbgloc = s.pc.get_metadata("dbgloc")
