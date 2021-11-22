@@ -706,7 +706,7 @@ class ThreadedSEState(SEState):
             # )
             return
 
-        assert not tid in self._wait_join, self._wait_join
+        assert not tid in self._wait_join, f"{tid} :: {self._wait_join}"
         if totid is None:
             # self._trace.append(
             #    f"thread {tid} is waited in join by {self.thread().get_id()}"
