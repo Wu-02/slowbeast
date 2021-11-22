@@ -485,7 +485,7 @@ class ThreadedSEState(SEState):
         "_wait_mutex",
         "_mutexes",
         "_last_tid",
-        # "_trace",
+        "_trace",
         "_event_trace",
         "_events",
         "_conflicts",
@@ -500,7 +500,7 @@ class ThreadedSEState(SEState):
         self._wait_join = {}
         self._exited_threads = {}
         self._event_trace = []
-        # self._trace = []
+        self._trace = []
         self._events = []  # the sequence of events (for DPOR)
         self._mutexes = {}
         self._wait_mutex = {}
@@ -522,7 +522,7 @@ class ThreadedSEState(SEState):
         new._exited_threads = self._exited_threads.copy()
         new._last_tid = self._last_tid
         new._current_thread = self._current_thread
-        # new._trace = self._trace.copy()
+        new._trace = self._trace.copy()
         new._event_trace = self._event_trace.copy()
         new._events = self._events.copy()
         new._conflicts = self._conflicts.copy()
@@ -590,7 +590,7 @@ class ThreadedSEState(SEState):
         t = Thread(self._last_tid, pc, self.memory.get_cs().copy())
         assert not t.is_paused()
         self._threads.append(t)
-        # self._trace.append(f"add thread {t.get_id()}")
+        self._trace.append(f"add thread {t.get_id()}")
         return t
 
     def current_thread(self):
@@ -603,22 +603,22 @@ class ThreadedSEState(SEState):
         return self._threads[self._current_thread if idx is None else idx].get_id()
 
     def pause_thread(self, idx=None):
-        # self._trace.append(f"pause thread {self.thread(idx).get_id()}")
+        self._trace.append(f"pause thread {self.thread(idx).get_id()}")
         self._threads[self._current_thread if idx is None else idx].pause()
 
     def unpause_thread(self, idx=None):
-        # self._trace.append(f"unpause thread {self.thread(idx).get_id()}")
+        self._trace.append(f"unpause thread {self.thread(idx).get_id()}")
         self._threads[self._current_thread if idx is None else idx].unpause()
 
     def start_atomic(self, idx=None):
-        # self._trace.append(f"thread {self.thread(idx).get_id()} begins atomic sequence")
+        self._trace.append(f"thread {self.thread(idx).get_id()} begins atomic sequence")
         assert not self._threads[
             self._current_thread if idx is None else idx
         ].in_atomic()
         self._threads[self._current_thread if idx is None else idx].set_atomic(True)
 
     def end_atomic(self, idx=None):
-        # self._trace.append(f"thread {self.thread(idx).get_id()} ends atomic sequence")
+        self._trace.append(f"thread {self.thread(idx).get_id()} ends atomic sequence")
         assert self._threads[self._current_thread if idx is None else idx].in_atomic()
         self._threads[self._current_thread if idx is None else idx].set_atomic(False)
 
@@ -635,13 +635,13 @@ class ThreadedSEState(SEState):
         return mtx in self._mutexes
 
     def mutex_lock(self, mtx, idx=None):
-        # self._trace.append(f"thread {self.thread(idx).get_id()} locks mutex {mtx}")
+        self._trace.append(f"thread {self.thread(idx).get_id()} locks mutex {mtx}")
         tid = self.thread(self._current_thread if idx is None else idx).get_id()
         assert self.mutex_locked_by(mtx) is None, "Locking locked mutex"
         self._mutexes[mtx] = tid
 
     def mutex_unlock(self, mtx, idx=None):
-        # self._trace.append(f"thread {self.thread(idx).get_id()} unlocks mutex {mtx}")
+        self._trace.append(f"thread {self.thread(idx).get_id()} unlocks mutex {mtx}")
         assert (
             self.mutex_locked_by(mtx)
             == self.thread(self._current_thread if idx is None else idx).get_id()
@@ -658,7 +658,7 @@ class ThreadedSEState(SEState):
     def mutex_wait(self, mtx, idx=None):
         "Thread idx waits for mutex mtx"
 
-        # self._trace.append(f"thread {self.thread(idx).get_id()} waits for mutex {mtx}")
+        self._trace.append(f"thread {self.thread(idx).get_id()} waits for mutex {mtx}")
         tid = self._current_thread if idx is None else idx
         assert self.mutex_locked_by(mtx) is not None, "Waiting for unlocked mutex"
         self.pause_thread(idx)
@@ -669,14 +669,14 @@ class ThreadedSEState(SEState):
         if tid is None:
             tid = self.thread().get_id()
         retval = self.lazy_eval(self.pc.operand(0))
-        # self._trace.append(f"exit thread {tid} with val {retval}")
+        self._trace.append(f"exit thread {tid} with val {retval}")
         assert not tid in self._exited_threads
         self._exited_threads[tid] = retval
         tidx = self._thread_idx(tid)
         self.remove_thread(tidx)
 
         if tid in self._wait_join:
-            # self._trace.append(f"thread {tid} was waited for by {self._wait_join[tid]}")
+            self._trace.append(f"thread {tid} was waited for by {self._wait_join[tid]}")
             # idx of the thread that is waiting on 'tid' to exit
             waitidx = self._thread_idx(self._wait_join[tid])
             assert self.thread(waitidx).is_paused(), self._wait_join
@@ -693,34 +693,34 @@ class ThreadedSEState(SEState):
         tid: id of the thread to join
         totid: id of the thread to which to join (None means the current thread)
         """
-        # self._trace.append(
-        #    f"join thread {tid} to {self.thread().get_id() if totid is None else totid}"
-        # )
+        self._trace.append(
+            f"join thread {tid} to {self.thread().get_id() if totid is None else totid}"
+        )
         if tid in self._exited_threads:
             # pass the return value
             retval = self._exited_threads.pop(tid)
             self.set(self.pc, retval)
             self.pc = self.pc.get_next_inst()
-            # self._trace.append(
-            #    f"thread {tid} waited for a join, joining with val {retval}"
-            # )
+            self._trace.append(
+                f"thread {tid} waited for a join, joining with val {retval}"
+            )
             return
 
         assert not tid in self._wait_join, f"{tid} :: {self._wait_join}"
         if totid is None:
-            # self._trace.append(
-            #    f"thread {tid} is waited in join by {self.thread().get_id()}"
-            # )
+            self._trace.append(
+                f"thread {tid} is waited in join by {self.thread().get_id()}"
+            )
             self._wait_join[tid] = self.thread().get_id()
             toidx = self._current_thread
         else:
-            # self._trace.append(f"thread {tid} is waited in join by {totid}")
+            self._trace.append(f"thread {tid} is waited in join by {totid}")
             self._wait_join[tid] = totid
             toidx = self._thread_idx(totid)
         self.pause_thread(toidx)
 
     def remove_thread(self, idx=None):
-        # self._trace.append(f"removing thread {self.thread(idx).get_id()}")
+        self._trace.append(f"removing thread {self.thread(idx).get_id()}")
         self._threads.pop(self._current_thread if idx is None else idx)
         # schedule thread 0 (if there is any) -- user will reschedule if desired
         if self._threads:
@@ -769,7 +769,6 @@ class ThreadedSEState(SEState):
         write(" -- Events --\n")
         for it in self._events:
             write(str(it) + "\n")
-
-    # write(" -- Trace --\n")
-    # for it in self._trace:
-    #    write(it + "\n")
+        write(" -- Trace --\n")
+        for it in self._trace:
+            write(it + "\n")

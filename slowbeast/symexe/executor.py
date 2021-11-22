@@ -825,13 +825,13 @@ class ThreadedExecutor(Executor):
         return [state]
 
     def execute(self, state, instr):
-        # state._trace.append(
-        #    "({2}) {0}: {1}".format(
-        #        "--" if not instr.bblock() else instr.fun().name(),
-        #        instr,
-        #        state.thread().get_id(),
-        #    ),
-        # )
+        state._trace.append(
+            "({2}) {0}: {1}".format(
+                "--" if not instr.bblock() else instr.fun().name(),
+                instr,
+                state.thread().get_id(),
+            ),
+        )
 
         if isinstance(instr, Thread):
             return self.exec_thread(state, instr)
