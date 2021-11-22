@@ -177,8 +177,8 @@ class BSELFChecker(BSELFCheckerVanilla):
         self.forward_states = forward_states
         memorymodel = LazySymbolicMemoryModel(opts)
         pathexecutor = PathExecutor(program, self.solver(), opts, memorymodel)
-        # add error funs and forbid defined calls...
-        pathexecutor.forbid_calls()
+        # forbid defined calls...
+        # pathexecutor.forbid_calls()
         self._pathexecutor = pathexecutor
 
     def check_loop_precondition(self, L, A):
