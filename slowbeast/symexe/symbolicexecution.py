@@ -386,6 +386,31 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         return 0
 
 
+def events_conflict(events, othevents):
+    for ev in (
+        e
+        for e in events
+        if not e.is_call_of(("__VERIFIER_atomic_begin", "__VERIFIER_atomic_end"))
+    ):
+        for oev in (
+            e
+            for e in othevents
+            if not e.is_call_of(("__VERIFIER_atomic_begin", "__VERIFIER_atomic_end"))
+        ):
+            if ev.conflicts(oev):
+                return True
+    return False
+
+
+def has_conflicts(state, events, states_with_events):
+    for idx, othstate, othevents in states_with_events:
+        if state is othstate:
+            continue
+        if events_conflict(events, othevents):
+            return True
+    return False
+
+
 class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
     def __init__(self, P, ohandler=None, opts=SEOptions()):
         super().__init__(P, ohandler, opts)
@@ -444,12 +469,68 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
             queue = newq
         return states
 
+    def step_thread(self, state, idx):
+        # execute a step and then finish any atomic/non-global events that follow
+        assert state.is_ready()
+        queue, states = [], []
+        execute = self._executor.execute
+        is_global_ev = self._is_global_event
+        state.schedule(idx)
+        if is_global_ev(state, state.pc):
+            state.add_event()
+        tmp = execute(state, state.pc)
+        for ns in tmp:
+            ns.sync_pc()
+            (queue, states)[0 if ns.is_ready() else 1].append(ns)
+
+        is_global_ev = self._is_global_event
+        while queue:
+            newq = []
+            for s in queue:
+                assert s.num_threads() > 0
+                t = s.thread()
+                # if the thread is in an atomic sequence, continue it...
+                if t.is_paused():
+                    if t.in_atomic():
+                        state.set_killed(
+                            f"Thread {t.get_id()} is stucked "
+                            "(waits for a mutex inside an atomic sequence)"
+                        )
+                    states.append(state)
+                    continue
+                if is_global_ev(s, s.pc):
+                    if not t.in_atomic():
+                        states.append(state)
+                        continue
+                    s.add_event()
+                tmp = execute(s, s.pc)
+                for ns in tmp:
+                    ns.sync_pc()
+                    (newq, states)[0 if ns.is_ready() else 1].append(ns)
+            queue = newq
+        return states
+
+    def step_threads(self, state, tids):
+        step_thread = self.step_thread
+        ready, nonready = [state], []
+        for tid in tids:
+            newready = []
+            for s in ready:
+                idx = s._thread_idx(tid)
+                assert idx is not None
+                tmp = step_thread(s, idx)
+                for ts in tmp:
+                    (newready, nonready)[0 if ts.is_ready() else 1].append(ts)
+            ready = newready
+        return ready + nonready
+
     def run(self):
         self.prepare()
 
         # we're ready to go!
         get_next = self.get_next_state
         do_step = self.do_step
+        step_thread = self.step_thread
         handle_new_states = self.handle_new_states
         try:
             while self.states:
@@ -458,18 +539,47 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
                 can_run = [
                     idx for idx, t in enumerate(state.threads()) if not t.is_paused()
                 ]
-                if len(can_run) == 0:
+                if len(can_run) == 0:  # nothing to run
                     state.set_error(GenericError("Deadlock detected"))
                     newstates = [state]
-                elif len(can_run) == 1:
+                elif len(can_run) == 1:  # only one possible thread to run
                     state.schedule(can_run[0])
                     newstates = do_step(state)
                 else:
+                    # more options, fork!
                     newstates = []
+                    oldevs = state.events()
+                    ev = state.get_last_event()
+                    states_with_events = []
+                    # execute an event in each thread and gather all the new states and events
                     for idx in can_run:
                         s = state.copy()
-                        s.schedule(idx)
-                        newstates += do_step(s)
+                        tid = state.thread_id(idx)
+                        tmp = step_thread(s, idx)
+                        for ns in tmp:
+                            if not ns.is_ready():
+                                newstates.append(ns)
+                                continue
+                            events = ns.events()
+                            assert events[len(oldevs) - 1] is ev
+                            states_with_events.append((tid, ns, events[len(oldevs) :]))
+
+                    independent = set()
+                    for tid, ns, events in states_with_events:
+                        if not has_conflicts(ns, events, states_with_events):
+                            independent.add(tid)
+                    # move all independent threads
+                    if independent:
+                        if len(independent) == len(states_with_events):
+                            # if all threads did an independent event, pick one and move the others
+                            independent.remove(states_with_events[0][0])
+                            states_with_events = [states_with_events[0]]
+                        for tid, ns, events in states_with_events:
+                            if tid in independent:
+                                continue
+                            newstates += self.step_threads(ns, independent)
+                    else:
+                        newstates += [s for _, s, _ in states_with_events]
 
                 handle_new_states(newstates)
         except Exception as e:

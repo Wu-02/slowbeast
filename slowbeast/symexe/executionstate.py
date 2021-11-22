@@ -446,10 +446,17 @@ class Event:
         self.mem = _get_mem(self.ty, pc, state)
         self.val = _get_val(self.ty, pc, state)
 
+    def is_call_of(self, call):
+        if isinstance(call, str):
+            return self.ty == Event.CALL and self.mem == call
+        return self.ty == Event.CALL and self.mem in call
+
     def conflicts(self, ev):
         """Does this event conflicts with the given event 'ev'?"""
         ty, evty = self.ty, ev.ty
         mem, evmem = self.mem, ev.mem
+        # joins are not conflicting
+
         if ty == Event.READ:
             if evty == Event.READ:
                 return False
@@ -569,6 +576,9 @@ class ThreadedSEState(SEState):
         if self._events:
             return self._events[-1]
         return None
+
+    def events(self):
+        return self._events
 
     def schedule(self, idx):
         if self._current_thread == idx:
