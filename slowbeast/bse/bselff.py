@@ -192,9 +192,7 @@ class BSELFChecker(BSELFCheckerVanilla):
             states = [s.copy() for s in fstates[0]]
             r, n = execute_annotation(self._pathexecutor, states, A)
             if n and any(map(lambda s: s.has_error(), n)):
-                print("Fast check succ")
                 return Result.UNKNOWN, None
-            print("Fast check FAILED")
         inc_print_indent()
         # run recursively BSELFChecker with already computed inductive sets
         checker = BSELFChecker(
@@ -219,7 +217,6 @@ class BSELFChecker(BSELFCheckerVanilla):
         if fstates is None:
             self.max_seq_len = 2
         else:
-            print("HAVE FORWARD STATES TO USE")
             self.max_seq_len = 2  # * len(L.paths())
         return super().fold_loop(loc, L, unsafe, loop_hit_no)
 
@@ -273,7 +270,7 @@ class BSELFF(BSELF):
             remove_checkers = []
             for checker in se_checkers:
                 for i in range(7):
-                    print("... forward step")
+                    # print("... forward step")
                     checker.do_step()
 
                     # forward SE found an error
@@ -293,7 +290,7 @@ class BSELFF(BSELF):
             bself_has_unknown = False
             remove_checkers = []
             for checker in bself_checkers:
-                print("... backward step")
+                # print("... backward step")
                 result, states = checker.do_step()
                 if result is None:
                     continue
