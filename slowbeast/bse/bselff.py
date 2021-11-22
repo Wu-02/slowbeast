@@ -267,7 +267,7 @@ class BSELFF(BSELF):
             bself_checkers.append(checker)
 
         while True:
-            remove_checkers = []
+            remove_checkers = set()
             for checker in se_checkers:
                 for i in range(7):
                     # print("... forward step")
@@ -283,12 +283,12 @@ class BSELFF(BSELF):
                         else:
                             # BSELF can still prove the program correct if we failed here,
                             # just remove this checker
-                            remove_checkers.append(checker)
+                            remove_checkers.add(checker)
             for c in remove_checkers:
                 se_checkers.remove(c)
 
             bself_has_unknown = False
-            remove_checkers = []
+            remove_checkers = set()
             for checker in bself_checkers:
                 # print("... backward step")
                 result, states = checker.do_step()
@@ -309,7 +309,7 @@ class BSELFF(BSELF):
                     print_stdout(
                         f"Error condition {A.expr()} at {loc} is safe!.", color="green"
                     )
-                    remove_checkers.append(checker)
+                    remove_checkers.add(checker)
                 elif result is Result.UNKNOWN:
                     print_stdout(
                         f"Checking {A} at {loc} was unsuccessful.", color="yellow"
