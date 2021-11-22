@@ -81,9 +81,12 @@ class SymbolicExecutor(Interpreter):
         states = self.states
         if not states:
             return None
-
         # DFS for now
-        return states.pop()
+        state = states.pop()
+        assert state.get_id() not in (
+            st.get_id() for st in self.states
+        ), f"State already in queue: {state} ... {self.states}"
+        return state
 
     def handle_new_states(self, newstates):
         hs = self.handle_new_state
@@ -104,6 +107,9 @@ class SymbolicExecutor(Interpreter):
                 dbg("The replay succeeded.")
 
         if s.is_ready():
+            assert s.get_id() not in (
+                st.get_id() for st in self.states
+            ), f"State already in queue: {s} ... {self.states}"
             self.states.append(s)
         elif s.has_error():
             dbgloc = s.pc.get_metadata("dbgloc")
@@ -386,6 +392,7 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
         print("Running symbolic execution with DPOR")
 
     def _schedule_atomic(self, state):
+        assert state not in self.states, "Running on queued state"
         assert state.num_threads() > 0
         # if the thread is in an atomic sequence, continue it...
         t = state.thread()
