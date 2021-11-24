@@ -51,7 +51,7 @@ class Interpreter:
     def getProgram(self):
         return self._program
 
-    def getOptions(self):
+    def get_options(self):
         return self._options
 
     def executor(self):

@@ -301,7 +301,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 self.testgen = GatherStates.Handler()
                 self.states = self.testgen.states
 
-        opts = SEOptions(self.getOptions())
+        opts = SEOptions(self.get_options())
         opts.replay_errors = False
         handler = GatherStates()
         SE = SymbolicInterpreter(self.getProgram(), handler, opts)

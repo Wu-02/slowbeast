@@ -56,11 +56,11 @@ class Executor(ConcreteExecutor):
 
     def is_error_fn(self, fun):
         if isinstance(fun, str):
-            return fun in self.getOptions().error_funs
-        return fun.name() in self.getOptions().error_funs
+            return fun in self.get_options().error_funs
+        return fun.name() in self.get_options().error_funs
 
     def error_funs(self):
-        return self.getOptions()._error_funs
+        return self.get_options()._error_funs
 
     def create_state(self, pc=None, m=None):
         if m is None:

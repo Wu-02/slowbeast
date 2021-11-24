@@ -288,7 +288,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             if oth and any(map(lambda s: s.was_killed(), oth)):
                 return Result.UNKNOWN, oth
 
-            step = -1  # self.getOptions().step
+            step = -1  # self.get_options().step
             if r.errors:
                 has_err = True
                 newpaths += self.extend_path(path, r, steps=step, atmost=step != 1)

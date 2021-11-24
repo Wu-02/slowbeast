@@ -1125,7 +1125,7 @@ class KindSEChecker(BaseKindSE):
             path.add_annot_after(self.assertion)
             self.extend_and_queue_paths(path, states=None)
 
-        opt_fold_loops = self.getOptions().fold_loops
+        opt_fold_loops = self.get_options().fold_loops
         while True:
             path = self.get_path_to_run()
             if path is None:
