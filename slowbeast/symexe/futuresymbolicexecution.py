@@ -123,7 +123,7 @@ class FutureSymbolicExecutor(Interpreter):
             stats.paths += 1
             if testgen:
                 testgen.processState(s)
-            if self.getOptions().exit_on_error:
+            if self.get_options().exit_on_error:
                 dbg("Found an error, terminating the search.")
                 self.states = []
                 return

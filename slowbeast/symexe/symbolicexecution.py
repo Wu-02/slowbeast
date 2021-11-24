@@ -95,7 +95,7 @@ class SymbolicExecutor(Interpreter):
 
     def handle_new_state(self, s):
         testgen = self.ohandler.testgen if self.ohandler else None
-        opts = self.getOptions()
+        opts = self.get_options()
         stats = self.stats
         if s.has_error() and opts.replay_errors and not opts.threads:
             print_stdout("Found an error, trying to replay it", color="white")
@@ -168,7 +168,7 @@ class SymbolicExecutor(Interpreter):
                 self.testgen = GatherStates.Handler()
                 self.states = self.testgen.states
 
-        opts = SEOptions(self.getOptions())
+        opts = SEOptions(self.get_options())
         opts.replay_errors = False
         handler = GatherStates()
         SE = SymbolicExecutor(self.getProgram(), handler, opts)

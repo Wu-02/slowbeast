@@ -888,7 +888,7 @@ class BSELFChecker(BaseBSE):
                 return r, pre
         #  the error path is feasible, but the errors may not be real
         assert r is Result.UNKNOWN
-        if self.getOptions().fold_loops:
+        if self.get_options().fold_loops:
             # is this a path starting at a loop header?
             fl = bsectx.path[0].source()
             if self.is_loop_header(fl):

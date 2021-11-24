@@ -168,7 +168,7 @@ class Executor:
     def getExecStepNum(self):
         return self._executed_blks
 
-    def getOptions(self):
+    def get_options(self):
         return self._opts
 
     def forbid_calls(self):

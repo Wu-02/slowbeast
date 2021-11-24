@@ -80,8 +80,8 @@ class Executor(ConcreteExecutor):
 
     def is_error_fn(self, fun):
         if isinstance(fun, str):
-            return fun in self.getOptions().error_funs
-        return fun.name() in self.getOptions().error_funs
+            return fun in self.get_options().error_funs
+        return fun.name() in self.get_options().error_funs
 
     def error_funs(self):
         return self._error_funs
@@ -94,7 +94,7 @@ class Executor(ConcreteExecutor):
     def create_state(self, pc=None, m=None):
         if m is None:
             m = self.getMemoryModel().create_memory()
-        if self.getOptions().incremental_solving:
+        if self.get_options().incremental_solving:
             s = IncrementalSEState(self, pc, m)
         else:
             # FIXME: we do not use the solver...
@@ -429,7 +429,7 @@ class Executor(ConcreteExecutor):
     def exec_undef_fun(self, state, instr, fun):
         retTy = fun.return_type()
         if retTy:
-            if self.getOptions().concretize_nondets:
+            if self.get_options().concretize_nondets:
                 val = ConcreteVal(getrandbits(32), retTy)
             elif self._input_vector:
                 val = self._input_vector.pop()
@@ -676,7 +676,7 @@ class ThreadedExecutor(Executor):
     def create_state(self, pc=None, m=None):
         if m is None:
             m = self.getMemoryModel().create_memory()
-        # if self.getOptions().incremental_solving:
+        # if self.get_options().incremental_solving:
         #    return IncrementalSEState(self, pc, m)
         return ThreadedSEState(self, pc, m, self.solver)
 
