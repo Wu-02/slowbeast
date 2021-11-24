@@ -794,7 +794,7 @@ class ThreadedExecutor(Executor):
             state.join_threads(tid.value())
         return [state]
 
-    def execRet(self, state, instr):
+    def exec_ret(self, state, instr):
         assert isinstance(instr, Return)
 
         # obtain the return value (if any)

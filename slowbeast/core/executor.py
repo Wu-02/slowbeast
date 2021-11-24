@@ -395,7 +395,7 @@ class Executor:
         state.push_call(instr, fun, mapping)
         return [state]
 
-    def execRet(self, state, instr):
+    def exec_ret(self, state, instr):
         assert isinstance(instr, Return)
 
         # obtain the return value (if any)
@@ -474,7 +474,7 @@ class Executor:
         elif isinstance(instr, Call):
             states = self.exec_call(state, instr)
         elif isinstance(instr, Return):
-            states = self.execRet(state, instr)
+            states = self.exec_ret(state, instr)
         else:
             state.set_killed("Not implemented instruction: {0}".format(instr))
             return [state]
