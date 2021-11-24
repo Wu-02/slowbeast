@@ -781,7 +781,7 @@ class ThreadedExecutor(Executor):
                 ret is not None
             ), f"No return value even though there should be: {instr}"
 
-        state.exit_thread()
+        state.exit_thread(ret)
         return [state]
 
     def exec_thread_join(self, state, instr):
@@ -822,7 +822,7 @@ class ThreadedExecutor(Executor):
             #    # this is the same as calling pthread_exit
             #    # FIXME: set the retval to 'ret'
             #    state.exit_thread()
-            state.exit_thread()
+            state.exit_thread(ret)
             return [state]
 
         if ret:

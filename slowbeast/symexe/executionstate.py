@@ -676,11 +676,10 @@ class ThreadedSEState(SEState):
         self.pause_thread(idx)
         self._wait_mutex.setdefault(mtx, set()).add(self.thread(tid).get_id())
 
-    def exit_thread(self, tid=None):
+    def exit_thread(self, retval, tid=None):
         """Exit thread and wait for join (if not detached)"""
         if tid is None:
             tid = self.thread().get_id()
-        retval = self.lazy_eval(self.pc.operand(0))
         # self._trace.append(f"exit thread {tid} with val {retval}")
         assert not tid in self._exited_threads
         self._exited_threads[tid] = retval
