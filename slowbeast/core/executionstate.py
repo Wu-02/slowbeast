@@ -53,7 +53,7 @@ class ExecutionState:
         return self._status.is_error()
 
     def get_error(self):
-        assert self.has_error() or self.is_terminated() or self.was_killed()
+        assert self.has_error() or self.is_terminated() or self.was_killed(), self
         return self._status.detail()
 
     def was_killed(self):

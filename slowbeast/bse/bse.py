@@ -262,6 +262,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             prestates = self._execute_path(bsectx, fromInit=True)
             assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
             if prestates:
+                prestates[0].set_error(bsectx.errordescr)
                 return Result.UNSAFE, prestates[0]
             if not self._entry_loc.has_predecessors():
                 return Result.SAFE, None
