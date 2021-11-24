@@ -434,7 +434,14 @@ class Executor(ConcreteExecutor):
             elif self._input_vector:
                 val = self._input_vector.pop()
                 ldbgv(f"Using value from input vector: {0}", (val,))
-                assert val.type() == retTy
+                assert val.type() == retTy, f"{val.type()} != {retTy}"
+                # if assertions are turned off, just return nondet-value
+                if val.type() != retTy:
+                    dbg(
+                        f"Input value type does not match ({val.type()} != {retTy}). "
+                        "Using nondet value"
+                    )
+                    val = state.solver().fresh_value(fun.name(), retTy)
             else:
                 val = state.solver().fresh_value(fun.name(), retTy)
                 state.create_nondet(instr, val)
