@@ -89,7 +89,7 @@ else:
 global_expr_manager = ExprManager()
 
 
-def getGlobalExprManager():
+def global_expr_mgr():
     global global_expr_manager
     return global_expr_manager
 

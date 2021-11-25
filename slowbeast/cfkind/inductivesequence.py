@@ -5,7 +5,7 @@ from slowbeast.symexe.annotations import (
     or_annotations,
 )
 from slowbeast.symexe.statesset import union
-from slowbeast.solvers.solver import getGlobalExprManager
+from slowbeast.solvers.solver import global_expr_mgr
 
 
 class InductiveSequence:
@@ -37,7 +37,7 @@ class InductiveSequence:
             ), strengthening
 
         def toannot(self):
-            EM = getGlobalExprManager()
+            EM = global_expr_mgr()
             states = self.states
             stren = self.strengthening
 
@@ -49,11 +49,11 @@ class InductiveSequence:
             return expr, states.substitutions()
 
         def toassert(self):
-            EM = getGlobalExprManager()
+            EM = global_expr_mgr()
             return AssertAnnotation(*self.toannot(), EM)
 
         def toassume(self):
-            EM = getGlobalExprManager()
+            EM = global_expr_mgr()
             return AssumeAnnotation(*self.toannot(), EM)
 
         def __eq__(self, rhs):
@@ -92,7 +92,7 @@ class InductiveSequence:
         self.frames[idx].strengthen(annot)
 
     def toannotation(self, toassert=True):
-        EM = getGlobalExprManager()
+        EM = global_expr_mgr()
         A = or_annotations(EM, toassert, *map(lambda f: f.toassume(), self.frames))
         assert toassert or A.is_assume()
         assert not toassert or A.is_assert()
@@ -209,7 +209,7 @@ class InductiveSequence:
 #     newrhs = []
 #     newsingletons = []
 #     solver = Solver()
-#     EM = getGlobalExprManager()
+#     EM = global_expr_mgr()
 #     Not = EM.Not
 #     for c in rest:
 #         newliterals = []
@@ -267,4 +267,4 @@ class InductiveSequence:
 #         singletons, rhs, changed = _simplify_with_assumption(lhs, rhs)
 #         lhs += singletons
 #
-#     return getGlobalExprManager().conjunction(*rhs)
+#     return global_expr_mgr().conjunction(*rhs)

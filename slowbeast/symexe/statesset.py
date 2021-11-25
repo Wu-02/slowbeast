@@ -14,7 +14,7 @@ from slowbeast.symexe.annotations import (
 from slowbeast.domains.symbolic import Expr
 from slowbeast.domains.concrete import ConcreteVal
 
-from slowbeast.solvers.solver import getGlobalExprManager
+from slowbeast.solvers.solver import global_expr_mgr
 
 
 class StatesSet:
@@ -44,7 +44,7 @@ class StatesSet:
         return StatesSet(self.get_se_state().copy())
 
     def expr_manager(self):
-        return getGlobalExprManager()
+        return global_expr_mgr()
 
     def get_se_state(self):
         return self._state
@@ -190,7 +190,7 @@ class StatesSet:
 
 
 def to_states_descr(S) -> StateDescription:
-    EM = getGlobalExprManager()
+    EM = global_expr_mgr()
 
     if isinstance(S, StatesSet):
         return S.as_description()
@@ -316,7 +316,7 @@ def complement(S) -> StatesSet:
 #
 #
 # def to_states_descr(S) -> StateDescription:
-#     EM = getGlobalExprManager()
+#     EM = global_expr_mgr()
 #
 #     if isinstance(S, StatesSet):
 #         return S.descr()

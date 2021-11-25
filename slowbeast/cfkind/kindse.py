@@ -24,7 +24,7 @@ from slowbeast.symexe.annotations import (
     execute_annotation_substitutions,
 )
 
-from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
+from slowbeast.solvers.solver import global_expr_mgr, IncrementalSolver
 
 from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
@@ -245,7 +245,7 @@ class LoopInfo:
         return self.loop.paths()
 
     def set_is_inductive(self, S):
-        em = getGlobalExprManager()
+        em = global_expr_mgr()
         solver = IncrementalSolver()
 
         annot = S.as_assume_annotation()
@@ -271,7 +271,7 @@ class LoopInfo:
         return True
 
     def set_is_inductive_towards(self, S, target, allow_infeasible_only=False):
-        em = getGlobalExprManager()
+        em = global_expr_mgr()
         solver = IncrementalSolver()
 
         preannot = S.as_assume_annotation()
@@ -533,7 +533,7 @@ class KindSEChecker(BaseKindSE):
     #        return seq
 
     #    # replace last two frames with one merged frame
-    #    EM = getGlobalExprManager()
+    #    EM = global_expr_mgr()
     #    seq.pop()
 
     #    seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.substitutions(), EM)
@@ -664,7 +664,7 @@ class KindSEChecker(BaseKindSE):
         unsafe = create_set(errs0.toassert())
         S = create_set(seq0.toannotation(True))
         assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
-        EM = getGlobalExprManager()
+        EM = global_expr_mgr()
 
         # add relations
         for rel in get_const_cmp_relations(S.get_se_state()):
@@ -706,7 +706,7 @@ class KindSEChecker(BaseKindSE):
             yield seq
 
     def _safe_paths_err_outside(self, E, path, L):
-        EM = getGlobalExprManager()
+        EM = global_expr_mgr()
         create_set = self.create_set
         added = False
         I = create_set()
@@ -1189,7 +1189,7 @@ class KindSE:
         return open("{0}/{1}".format(odir or ".", name), "w")
 
     def _get_possible_errors(self):
-        EM = getGlobalExprManager()
+        EM = global_expr_mgr()
         for F in self.programstructure.callgraph.funs():
             if F.is_undefined():
                 continue

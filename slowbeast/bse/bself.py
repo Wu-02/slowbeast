@@ -20,7 +20,7 @@ from slowbeast.cfkind import KindSEOptions
 from slowbeast.cfkind.overapproximations import overapprox_set
 from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
 from slowbeast.analysis.cfa import CFA
-from slowbeast.solvers.solver import getGlobalExprManager
+from slowbeast.solvers.solver import global_expr_mgr
 
 from .bse import (
     BackwardSymbolicInterpreter as BaseBSE,
@@ -555,7 +555,7 @@ class BSELFChecker(BaseBSE):
         target = seq0[-1]
         S = seq0.as_set().copy()  # we're going to change S
         # assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
-        EM = getGlobalExprManager()
+        EM = global_expr_mgr()
 
         yielded_seqs = []
         for A in overapprox_state(self, S, unsafe, S, L):
@@ -703,7 +703,7 @@ class BSELFChecker(BaseBSE):
 
     def add_invariant(self, loc, inv):
         invs = self.invariant_sets.setdefault(loc, [])
-        invs.append(inv.to_assume(getGlobalExprManager()))
+        invs.append(inv.to_assume(global_expr_mgr()))
         # FIXME: check that the invariant gives us a new information
         # I = create_set() # FIXME: cache the union of invariants
         # I.add(invs)
@@ -844,7 +844,7 @@ class BSELFChecker(BaseBSE):
     def init_checker(self, onlyedges=None):
         # the initial error path that we check
         loc = self.location
-        em = getGlobalExprManager()
+        em = global_expr_mgr()
         notA = self.assertion.assume_not(em)
         for edge in onlyedges if onlyedges else loc.predecessors():
             state = self.ind_executor().create_clean_state()
@@ -949,7 +949,7 @@ class BSELF:
         return open("{0}/{1}".format(odir or ".", name), "w")
 
     def _get_possible_errors(self):
-        EM = getGlobalExprManager()
+        EM = global_expr_mgr()
         for F in self.programstructure.callgraph.funs():
             if F.is_undefined():
                 continue
