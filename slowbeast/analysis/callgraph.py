@@ -53,7 +53,7 @@ class CallGraph:
 
         self._build()
 
-    def createNode(self, *args):
+    def create_node(self, *args):
         """Override this method in child classes
         to get nodes with more data
         """
@@ -71,7 +71,7 @@ class CallGraph:
 
     def _build(self):
         for F in self._program.funs():
-            self._nodes[F] = self.createNode(F)
+            self._nodes[F] = self.create_node(F)
 
         for _fun, node in self._nodes.items():
             self._build_fun(_fun, node)

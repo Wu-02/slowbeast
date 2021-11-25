@@ -59,7 +59,7 @@ class CFG(PureCFG):
     def __init__(self, F):
         super().__init__(F)
 
-    def createNode(self, *args):
+    def create_node(self, *args):
         assert len(args) == 1
         return CFG.AnnotatedNode(self, *args)
 

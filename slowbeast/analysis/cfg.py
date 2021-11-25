@@ -52,7 +52,7 @@ class CFG:
     def fun(self):
         return self._fun
 
-    def createNode(self, *args):
+    def create_node(self, *args):
         """Override this method in child classes
         to get nodes with more data
         """
@@ -80,7 +80,7 @@ class CFG:
         fun = self._fun
 
         for B in fun.bblocks():
-            self._nodes[B] = self.createNode(B)
+            self._nodes[B] = self.create_node(B)
 
         for block, node in self._nodes.items():
             br = block.last()
