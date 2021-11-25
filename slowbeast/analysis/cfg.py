@@ -17,10 +17,10 @@ class CFG:
         def bblock(self):
             return self._block
 
-        def getSuccessors(self):
+        def successors(self):
             return self._successors
 
-        def getPredecessors(self):
+        def predecessors(self):
             return self._predecessors
 
         def addSuccessor(self, succ):
@@ -73,7 +73,7 @@ class CFG:
         if not isinstance(n, CFG.Node):
             n = self.getNode(n)
 
-        assert hasattr(n, "getSuccessors")
+        assert hasattr(n, "successors")
         self._entry = n
 
     def _build(self):
@@ -97,7 +97,7 @@ class CFG:
 
     def dump(self, stream=stdout):
         for node in self._nodes.values():
-            for succ in node.getSuccessors():
+            for succ in node.successors():
                 stream.write(
                     "{0} -> {1}\n".format(
                         node.bblock().get_id(), succ.bblock().get_id()

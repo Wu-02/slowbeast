@@ -31,13 +31,13 @@ class CallGraph:
             for f in funs:
                 f._callers.append((self, callsite))
 
-        def getPredecessors(self):
+        def predecessors(self):
             """
             Simple predecessors (over functios)
             """
             return (f for (f, cs) in self._callers)
 
-        def getSuccessors(self):
+        def successors(self):
             """
             Simple successors (over functios)
             """
@@ -95,7 +95,7 @@ class CallGraph:
         while queue:
             n = queue.pop()
             reachable.add(n)
-            for s in n.getSuccessors():
+            for s in n.successors():
                 if s not in reachable:
                     queue.append(s)
 

@@ -71,7 +71,7 @@ class DFSVisitor:
 
         only_vertices = self._vertices
         stop_verts = self._stop_vertices
-        for succ in node.getSuccessors():
+        for succ in node.successors():
             if only_vertices and succ not in only_vertices:
                 continue
 
