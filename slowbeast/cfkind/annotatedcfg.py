@@ -98,8 +98,8 @@ class AnnotatedCFGPath(CFGPath):
         super().__init__(locs or [])
         self.locannotations = {}
         self.locannotationsafter = {}
-        self.precondition = []
-        self.postcondition = []
+        self._precondition = []
+        self._postcondition = []
 
     def addLocAnnotationAfter(self, annot, loc):
         self.locannotationsafter.setdefault(_get_loc_key(loc), []).append(annot)
@@ -114,17 +114,17 @@ class AnnotatedCFGPath(CFGPath):
         return self.locannotations.get(_get_loc_key(loc))
 
     # FIXME: this can be also assert, do we want to call it post-condition?
-    def addPostcondition(self, p):
-        self.postcondition.append(p)
+    def add_postcondition(self, p):
+        self._postcondition.append(p)
 
-    def addPrecondition(self, p):
-        self.precondition.append(p)
+    def add_precondition(self, p):
+        self._precondition.append(p)
 
-    def getPostcondition(self):
-        return self.postcondition
+    def get_postcondition(self):
+        return self._postcondition
 
-    def getPrecondition(self):
-        return self.precondition
+    def get_precondition(self):
+        return self._precondition
 
     # def addAnnotationAfter(self, annot, idx=0):
     #    """
@@ -148,8 +148,8 @@ class AnnotatedCFGPath(CFGPath):
         n = AnnotatedCFGPath(self.locations())
         n.locannotations = self.locannotations.copy()
         n.locannotationsafter = self.locannotationsafter.copy()
-        n.postcondition = self.postcondition.copy()
-        n.precondition = self.precondition.copy()
+        n._postcondition = self._postcondition.copy()
+        n._precondition = self._precondition.copy()
         return n
 
     def copyandprepend(self, loc):
@@ -158,8 +158,8 @@ class AnnotatedCFGPath(CFGPath):
         # FIXME: do cow?
         n.locannotations = self.locannotations.copy()
         n.locannotationsafter = self.locannotationsafter.copy()
-        n.postcondition = self.postcondition.copy()
-        n.precondition = self.precondition.copy()
+        n._postcondition = self._postcondition.copy()
+        n._precondition = self._precondition.copy()
 
         return n
 
@@ -168,8 +168,8 @@ class AnnotatedCFGPath(CFGPath):
         # FIXME: do cow?
         n.locannotations = self.locannotations.copy()
         n.locannotationsafter = self.locannotationsafter.copy()
-        n.postcondition = self.postcondition.copy()
-        n.precondition = self.precondition.copy()
+        n._postcondition = self._postcondition.copy()
+        n._precondition = self._precondition.copy()
 
         return n
 
@@ -183,7 +183,7 @@ class AnnotatedCFGPath(CFGPath):
             )
 
         return "{0}{1}{2}".format(
-            "pre " if self.precondition else "",
+            "pre " if self._precondition else "",
             " -> ".join(map(loc_str, self.locations())),
-            " post" if self.postcondition else "",
+            " post" if self._postcondition else "",
         )
