@@ -17,7 +17,7 @@ class ProgramStructure:
             with new_dbg_file("callgraph-full.txt") as f:
                 callgraph.dump(f)
 
-        callgraph.pruneUnreachable(prog.entry())
+        callgraph.prune_unreachable(prog.entry())
         if __debug__:
             with new_dbg_file("callgraph.txt") as f:
                 callgraph.dump(f)
