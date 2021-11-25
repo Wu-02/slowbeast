@@ -2,7 +2,7 @@ from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.types import IntType
 from slowbeast.ir.instruction import Load
 from slowbeast.symexe.annotations import AssertAnnotation, get_subs
-from slowbeast.solvers.solver import IncrementalSolver, getGlobalExprManager
+from slowbeast.solvers.solver import IncrementalSolver, global_expr_mgr
 
 
 def iter_nondet_load_pairs(state):
@@ -444,7 +444,7 @@ def _get_var_relations(safe, prevsafe=None):
 def get_var_relations(safe, prevsafe=None, only_eq=False):
     solver = IncrementalSolver()
     toyield = set()
-    Not = getGlobalExprManager().Not
+    Not = global_expr_mgr().Not
     for rel in _get_var_relations(safe, prevsafe):
         expr = rel.expr()
         if only_eq and not expr.isEq():

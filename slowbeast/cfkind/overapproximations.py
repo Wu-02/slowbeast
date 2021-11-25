@@ -2,7 +2,7 @@ from functools import partial
 from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.util.debugging import dbg, dbgv
 from slowbeast.solvers.expressions import em_optimize_expressions
-from slowbeast.solvers.solver import getGlobalExprManager, IncrementalSolver
+from slowbeast.solvers.solver import global_expr_mgr, IncrementalSolver
 from slowbeast.symexe.statesset import union, intersection, complement
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.annotations import (
@@ -32,7 +32,7 @@ def remove_implied_literals(clauses):
             singletons.append(c)
             solver.add(c)
 
-    EM = getGlobalExprManager()
+    EM = global_expr_mgr()
     Not = EM.Not
     newclauses = []
     # NOTE: we could do this until a fixpoint, but...
@@ -102,7 +102,7 @@ def literals(c):
 
 
 def get_predicate(l):
-    EM = getGlobalExprManager()
+    EM = global_expr_mgr()
     if l.isSLe():
         return EM.Le
     if l.isSGe():
@@ -142,7 +142,7 @@ def _decompose_literal(l):
 
     if isnot:
         addtoleft = not addtoleft
-        EM = getGlobalExprManager()
+        EM = global_expr_mgr()
         binop = P
         P = lambda a, b: EM.Not(binop(a, b))
 
@@ -169,7 +169,7 @@ class DecomposedLiteral:
         return None
 
     def extended(self, num):
-        EM = getGlobalExprManager()
+        EM = global_expr_mgr()
         left, right = self.left, self.right
         if self.addtoleft:
             left = EM.Add(left, num)
@@ -745,7 +745,7 @@ class LiteralOverapproximationData:
 
 
 def break_eqs(expr):
-    EM = getGlobalExprManager()
+    EM = global_expr_mgr()
     clauses = []
 
     def break_eq(c):

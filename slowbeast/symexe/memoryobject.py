@@ -3,7 +3,7 @@ from slowbeast.core.memoryobject import MemoryObject as CoreMO
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type, IntType, Bytes
-from slowbeast.solvers.solver import getGlobalExprManager
+from slowbeast.solvers.solver import global_expr_mgr
 from slowbeast.util.debugging import dbgv
 
 
@@ -19,7 +19,7 @@ def get_byte(EM, x, bw, i):
 
 
 def write_bytes(offval, values, size, x):
-    EM = getGlobalExprManager()
+    EM = global_expr_mgr()
     bw = x.bytewidth()
     if not x.is_int():
         # rename to Cast and Cast to ReinterpretCast
@@ -41,7 +41,7 @@ def read_bytes(values, offval, size, bts, zeroed):
     assert bts > 0, bts
     assert size > 0, size
     assert offval >= 0, offval
-    EM = getGlobalExprManager()
+    EM = global_expr_mgr()
     if zeroed:
         c = offval + bts - 1
         # just make Extract return Bytes and it should work well then
@@ -81,7 +81,7 @@ def mo_to_bytes(values, size):
     # if __debug__:
     #    rval, err = read_bytes(newvalues, o, size, val.bytewidth(), False)
     #    assert err is None
-    #    crval = getGlobalExprManager().Cast(rval, val.type())
+    #    crval = global_expr_mgr().Cast(rval, val.type())
     #    assert val == crval, f"{cval} ({rval}) != {val}"
     return newvalues, None
 

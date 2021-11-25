@@ -29,7 +29,7 @@ class LoopInfo:
             return False
         return True
 
-    # em = getGlobalExprManager()
+    # em = global_expr_mgr()
     # solver = IncrementalSolver()
 
     # annot = S.as_assume_annotation()
@@ -60,7 +60,7 @@ class LoopInfo:
             return False
         return bool(r.ready) or allow_infeasible_only
 
-    # em = getGlobalExprManager()
+    # em = global_expr_mgr()
     # solver = IncrementalSolver()
 
     # preannot = S.as_assume_annotation()
