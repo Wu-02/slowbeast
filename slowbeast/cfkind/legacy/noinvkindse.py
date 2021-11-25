@@ -177,7 +177,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         paths = []
         cfg = self.getCFG(self.getProgram().entry())
         nodes = cfg.get_nodes()
-        paths = [CFGPath([n]) for n in nodes if n.hasAssert()]
+        paths = [CFGPath([n]) for n in nodes if n.has_assert()]
         step = self.get_options().step
         while k > 0:
             paths = [

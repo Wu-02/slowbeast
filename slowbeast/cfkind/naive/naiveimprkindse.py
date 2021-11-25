@@ -40,7 +40,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         found_err = False
 
         for p in path.extend():
-            if not p.reachesAssert():
+            if not p.reaches_assert():
                 newpaths.append(p)
                 continue
 

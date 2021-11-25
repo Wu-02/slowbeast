@@ -12,7 +12,7 @@ class CFG(PureCFG):
     """
 
     class AnnotatedNode(PureCFG.Node):
-        __slots__ = ["_has_assert", "annotationsAfter", "annotationsBefore"]
+        __slots__ = ["_has_assert", "_annotations_after", "_annotations_before"]
 
         def __init__(self, cfg, B):
             super(CFG.AnnotatedNode, self).__init__(cfg, B)
@@ -24,36 +24,36 @@ class CFG(PureCFG):
                     break
 
             # after _header execution
-            self.annotationsAfter = []
+            self._annotations_after = []
             # before _header execution
-            self.annotationsBefore = []
+            self._annotations_before = []
 
         def __repr__(self):
             return "{0}{1}{2}{3}".format(
-                "a" if self.annotationsBefore else "",
-                self.bblockID(),
-                "a" if self.annotationsAfter else "",
+                "a" if self._annotations_before else "",
+                self.bblock_id(),
+                "a" if self._annotations_after else "",
                 "!" if self._has_assert else "",
             )
 
-        def hasAssert(self):
+        def has_assert(self):
             return self._has_assert
 
-        def addAnnotationAfter(self, annot):
+        def add_annotation_after(self, annot):
             """
             The annotation should be evaluated "after"
             executing the location.
             """
-            self.annotationsAfter.append(annot)
+            self._annotations_after.append(annot)
 
-        def addAnnotationBefore(self, annot):
+        def add_annotation_before(self, annot):
             """
             The annotation should be evaluated "before"
             executing the location.
             """
-            self.annotationsBefore.append(annot)
+            self._annotations_before.append(annot)
 
-        def bblockID(self):
+        def bblock_id(self):
             return self.bblock().get_id()
 
     def __init__(self, F):
@@ -68,11 +68,11 @@ class CFGPath(PureCFGPath):
     def __init__(self, locs=None):
         super().__init__(locs or [])
 
-    def reachesAssert(self):
+    def reaches_assert(self):
         if len(self.locations()) <= 0:
             return False
 
-        return self.locations()[-1].hasAssert()
+        return self.locations()[-1].has_assert()
 
 
 def _get_loc_key(loc):
@@ -126,23 +126,23 @@ class AnnotatedCFGPath(CFGPath):
     def get_precondition(self):
         return self._precondition
 
-    # def addAnnotationAfter(self, annot, idx=0):
+    # def add_annotation_after(self, annot, idx=0):
     #    """
     #    Add annotation to the given location on the path.
     #    The annotation should be evaluated "after"
     #    executing the location.
     #    """
     #    assert idx < self.length()
-    #    self.locations()[idx].annotationsAfter.append(annot)
+    #    self.locations()[idx]._annotations_after.append(annot)
 
-    # def addAnnotationBefore(self, annot, idx=0):
+    # def add_annotation_before(self, annot, idx=0):
     #    """
     #    Add annotation to the given location on the path.
     #    The annotation should be evaluated "before"
     #    executing the location.
     #    """
     #    assert idx < self.length()
-    #    self.locations()[idx].annotationsBefore.append(annot)
+    #    self.locations()[idx]._annotations_before.append(annot)
 
     def copy(self):
         n = AnnotatedCFGPath(self.locations())

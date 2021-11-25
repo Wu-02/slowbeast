@@ -30,8 +30,8 @@ class InductionPath:
         self.path.append(loc)
         return self
 
-    def reachesAssert(self):
-        return self.path.reachesAssert()
+    def reaches_assert(self):
+        return self.path.reaches_assert()
 
     def extend(self):
         last = self.path.last()
@@ -53,7 +53,7 @@ class InductionPath:
         else:
             succs = [self.cfg.get_node(self.state.pc.bblock())]
 
-        return [s for s in succs if s.hasAssert()]
+        return [s for s in succs if s.has_assert()]
 
     def dump(self, stream=stdout):
         stream.write("state: {0}\n".format(self.state.get_id()))
