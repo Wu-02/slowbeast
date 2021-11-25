@@ -93,7 +93,7 @@ class Executor(ConcreteExecutor):
 
     def create_state(self, pc=None, m=None):
         if m is None:
-            m = self.getMemoryModel().create_memory()
+            m = self.get_memory_model().create_memory()
         if self.get_options().incremental_solving:
             s = IncrementalSEState(self, pc, m)
         else:
@@ -675,7 +675,7 @@ class ThreadedExecutor(Executor):
 
     def create_state(self, pc=None, m=None):
         if m is None:
-            m = self.getMemoryModel().create_memory()
+            m = self.get_memory_model().create_memory()
         # if self.get_options().incremental_solving:
         #    return IncrementalSEState(self, pc, m)
         return ThreadedSEState(self, pc, m, self.solver)

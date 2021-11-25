@@ -25,7 +25,7 @@ class Executor(SExecutor):
         that are able to lazily create unknown values
         """
         if m is None:
-            m = self.getMemoryModel().create_memory()
+            m = self.get_memory_model().create_memory()
         s = LazySEState(self, pc, m, self.solver)
         assert not s.constraints(), "the state is not clean"
         return s

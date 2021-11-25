@@ -150,7 +150,7 @@ class Executor:
     # def setMemoryModel(self, mm):
     #    self.memorymodel = mm
 
-    def getMemoryModel(self):
+    def get_memory_model(self):
         assert self.memorymodel is not None
         return self.memorymodel
 
