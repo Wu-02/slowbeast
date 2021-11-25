@@ -26,7 +26,7 @@ class AIStats:
         self.forks = 0
 
 
-def addPointerWithConstant(E, op1, op2):
+def add_pointer_with_constant(E, op1, op2):
     return Pointer(op1.object(), Domain.Add(op1.offset(), op2))
 
 
@@ -312,7 +312,7 @@ class Executor(ConcreteExecutor):
         r = None
         if op1.is_pointer():
             if not op2.is_pointer():
-                r = addPointerWithConstant(Domain, op1, op2)
+                r = add_pointer_with_constant(Domain, op1, op2)
             else:
                 state.set_killed(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
@@ -320,7 +320,7 @@ class Executor(ConcreteExecutor):
                 return [state]
         elif op2.is_pointer():
             if not op1.is_pointer():
-                r = addPointerWithConstant(Domain, op2, op1)
+                r = add_pointer_with_constant(Domain, op2, op1)
             else:
                 state.set_killed(
                     "Arithmetic on pointers not implemented yet: {0}".format(instr)
