@@ -319,7 +319,7 @@ class CFGExecutor(SExecutor):
         earlytermstates = []
         idx = 0
 
-        locs = path.getLocations()
+        locs = path.locations()
         # set the pc of the states to be the first instruction of the path
         newpc = locs[0].bblock().first()
         for s in states:

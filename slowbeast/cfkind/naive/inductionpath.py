@@ -17,7 +17,7 @@ class InductionPath:
 
     def copy(self):
         return InductionPath(
-            self.cfg, self.state.copy(), copy(self.path.getLocations())
+            self.cfg, self.state.copy(), copy(self.path.locations())
         )
 
     def getState(self):

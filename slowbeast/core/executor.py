@@ -577,7 +577,7 @@ class Executor:
         earlytermstates = []
         idx = 0
 
-        locs = path.getLocations()
+        locs = path.locations()
         # set the pc of the states to be the first instruction of the path
         for s in states:
             assert s.is_ready()
