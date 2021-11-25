@@ -122,7 +122,7 @@ class FutureSymbolicExecutor(Interpreter):
             stats.errors += 1
             stats.paths += 1
             if testgen:
-                testgen.processState(s)
+                testgen.process_state(s)
             if self.get_options().exit_on_error:
                 dbg("Found an error, terminating the search.")
                 self.states = []
@@ -132,17 +132,17 @@ class FutureSymbolicExecutor(Interpreter):
             stats.paths += 1
             stats.terminated_paths += 1
             if testgen:
-                testgen.processState(s)
+                testgen.process_state(s)
         elif s.was_killed():
             stats.paths += 1
             stats.killed_paths += 1
             print_stderr(s.status_detail(), prefix="KILLED STATE: ", color="WINE")
             if testgen:
-                testgen.processState(s)
+                testgen.process_state(s)
         else:
             assert s.exited()
             dbg("state exited with exitcode {0}".format(s.get_exit_code()))
             stats.paths += 1
             stats.exited_paths += 1
             if testgen:
-                testgen.processState(s)
+                testgen.process_state(s)
