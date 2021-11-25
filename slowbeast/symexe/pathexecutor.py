@@ -326,7 +326,7 @@ class CFGExecutor(SExecutor):
             s.pc = newpc
 
         # execute the precondition of the path
-        pre = path.getPrecondition()
+        pre = path.get_precondition()
         if pre:
             states, tu = self.executeAnnotations(states, pre)
             earlytermstates += tu
@@ -369,7 +369,7 @@ class CFGExecutor(SExecutor):
                 break
 
         # execute the postcondition of the path
-        post = path.getPostcondition()
+        post = path.get_postcondition()
         if post:
             states, tu = self.executeAnnotations(states, post)
             result.errors, result.other = split_nonready_states(tu)

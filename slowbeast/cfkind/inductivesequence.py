@@ -160,12 +160,12 @@ class InductiveSequence:
         for path in paths:
             p = path.copy()
             # the post-condition is the whole frame
-            p.addPostcondition(frameassert)
+            p.add_postcondition(frameassert)
             for e in post or ():
-                p.addPostcondition(e)
+                p.add_postcondition(e)
 
             for e in pre or ():
-                p.addPrecondition(e)
+                p.add_precondition(e)
 
             r = executor.execute_edge(p)
             result.merge(r)
