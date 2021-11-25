@@ -26,7 +26,7 @@ class LazySymbolicMemoryModel(CoreMM):
         # over-approximate unsupported operations
         self._overapprox_unsupported = True
 
-    def lazyAllocate(self, state, op):
+    def lazy_allocate(self, state, op):
         assert isinstance(op, (Alloc, GlobalVariable)), op
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
@@ -67,7 +67,7 @@ class LazySymbolicMemoryModel(CoreMM):
     def write(self, state, instr, valueOp, toOp):
         to = state.get(toOp)
         if to is None:
-            self.lazyAllocate(state, toOp)
+            self.lazy_allocate(state, toOp)
             to = state.get(
                 toOp
             )  # FIXME "We're calling get() method but we could return the value..."
@@ -105,7 +105,7 @@ class LazySymbolicMemoryModel(CoreMM):
                 state.set_error(err)
         return [state]
 
-    def uninitializedRead(self, state, frm, ptr, bitsnum):
+    def uninitialized_read(self, state, frm, ptr, bitsnum):
         dbgv(
             "Reading nondet for uninitialized value: {0}".format(ptr),
             color="white",
@@ -125,7 +125,7 @@ class LazySymbolicMemoryModel(CoreMM):
 
     def _nondet_value(self, state, frm, ptr, bitsnum):
         if ptr.is_pointer() and ptr.offset().is_concrete():
-            return self.uninitializedRead(state, frm, ptr, bitsnum)
+            return self.uninitialized_read(state, frm, ptr, bitsnum)
         # return val, err
         # FIXME: it is not always int type... we should at least use bytes type
         return (
@@ -156,7 +156,7 @@ class LazySymbolicMemoryModel(CoreMM):
                 state.set(toOp, val)
                 return [state]
             else:
-                self.lazyAllocate(state, fromOp)
+                self.lazy_allocate(state, fromOp)
                 frm = state.get(fromOp)
 
         if not frm.is_pointer() and self._overapprox_unsupported:
@@ -185,7 +185,7 @@ class LazySymbolicMemoryModel(CoreMM):
         if err:
             assert err.is_memory_error(), err
             if err.is_uninit_read():
-                val, err = self.uninitializedRead(
+                val, err = self.uninitialized_read(
                     state, fromOp, frm, bitsnum or bytesNum * 8
                 )
                 assert isinstance(toOp, Load)

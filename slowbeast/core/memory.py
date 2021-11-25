@@ -88,7 +88,7 @@ class Memory:
         assert o._is_ro() is False, "Created object is read-only (COW bug)"
 
         if instr:
-            o.setAllocation(instr)
+            o.set_allocation(instr)
 
         return o
 
