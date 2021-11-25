@@ -6,47 +6,49 @@ from slowbeast.ir.instruction import Call
 
 class CallGraph:
     class Node:
-        __slots__ = "_fun", "callsites", "callers"
+        __slots__ = "_fun", "_callsites", "_callers"
 
         def __init__(self, F):
             self._fun = F
-            self.callers = []
-            self.callsites = {}
+            self._callers = []
+            self._callsites = {}
 
         def fun(self):
             return self._fun
 
         def getCallSites(self):
-            return self.callsites
+            return self._callsites
 
         def getCallers(self):
-            return self.callers
+            return self._callers
 
         def add_callsite(self, callsite, funs):
             """
             This node contains a call-site 'callsite'
             that calls funs
             """
-            self.callsites[callsite] = funs
+            self._callsites[callsite] = funs
             for f in funs:
-                f.callers.append((self, callsite))
+                f._callers.append((self, callsite))
 
         def getPredecessors(self):
             """
             Simple predecessors (over functios)
             """
-            return (f for (f, cs) in self.callers)
+            return (f for (f, cs) in self._callers)
 
         def getSuccessors(self):
             """
             Simple successors (over functios)
             """
-            return set((v for funs in self.callsites.values() for v in funs)).__iter__()
+            return set(
+                (v for funs in self._callsites.values() for v in funs)
+            ).__iter__()
 
-    __slots__ = "program", "_nodes"
+    __slots__ = "_program", "_nodes"
 
     def __init__(self, P):
-        self.program = P
+        self._program = P
         self._nodes = {}
 
         self._build()
@@ -68,7 +70,7 @@ class CallGraph:
         return (f.fun() for f in self._nodes.values())
 
     def _build(self):
-        for F in self.program.funs():
+        for F in self._program.funs():
             self._nodes[F] = self.createNode(F)
 
         for _fun, node in self._nodes.items():
