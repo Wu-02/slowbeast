@@ -147,7 +147,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
     # fun = path[0].source().cfa().fun()
     # PS = self.programstructure
-    # cgnode = PS.callgraph.getNode(fun)
+    # cgnode = PS.callgraph.get_node(fun)
     # paths = []
     # assert states.errors
     # for s in states.errors:

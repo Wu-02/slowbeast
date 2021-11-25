@@ -184,7 +184,7 @@ class DFSVisitor:
         if isinstance(graph, CFA):
             nodes = graph.locations()
         else:
-            nodes = graph.getNodes()
+            nodes = graph.get_nodes()
         for n in nodes:
             print("  {0}".format(_get_id(n)), file=out)
 

@@ -506,7 +506,7 @@ class CFGExecutor(SExecutor):
 #        for s in r.ready:
 #            # get the CFG node that is going to be executed
 #            # (executeAnnotatedPath transferd the control to the right bblocks)
-#            loc = cfg.getNode(s.pc.bblock())
+#            loc = cfg.get_node(s.pc.bblock())
 #            ts, tu = self.executeAnnotatedLoc([s], loc, prefix)
 #            tmpready += ts
 #            nonready += tu

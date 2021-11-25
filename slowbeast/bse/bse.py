@@ -340,7 +340,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def extend_to_callers(self, cfa, bsectx, postcondition):
         fun = cfa.fun()
         PS = self.programstructure
-        for _, callsite in PS.callgraph.getNode(fun).callers():
+        for _, callsite in PS.callgraph.get_node(fun).callers():
             calledge = PS.calls[callsite]
             if not calledge.has_predecessors():
                 state = postcondition.copy()
