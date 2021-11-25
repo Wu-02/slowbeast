@@ -64,7 +64,7 @@ class Executor(ConcreteExecutor):
 
     def create_state(self, pc=None, m=None):
         if m is None:
-            m = self.getMemoryModel().create_memory()
+            m = self.get_memory_model().create_memory()
         return AbstractState(self, pc, m)
 
     def create_clean_state(self, pc=None, m=None):

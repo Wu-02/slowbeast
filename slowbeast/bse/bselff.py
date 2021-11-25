@@ -50,7 +50,7 @@ class SEState(ExecutionState):
 class Executor(SExecutor):
     def create_state(self, pc=None, m=None):
         if m is None:
-            m = self.getMemoryModel().create_memory()
+            m = self.get_memory_model().create_memory()
         s = SEState(self, pc, m, self.solver)
         assert not s.constraints(), "the state is not clean"
         return s
