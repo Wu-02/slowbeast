@@ -30,7 +30,7 @@ def add_pointer_with_constant(E, op1, op2):
     return Pointer(op1.object(), Domain.Add(op1.offset(), op2))
 
 
-def evalCond(state, cond):
+def eval_condition(state, cond):
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
     c = state.eval(cond)
     assert isinstance(c, Value)
@@ -150,7 +150,7 @@ class Executor(ConcreteExecutor):
         self.stats.branchings += 1
 
         cond = instr.condition()
-        cval = evalCond(state, cond)
+        cval = eval_condition(state, cond)
 
         succ = None
         if to is True:
@@ -176,7 +176,7 @@ class Executor(ConcreteExecutor):
         self.stats.branchings += 1
 
         cond = instr.condition()
-        cval = evalCond(state, cond)
+        cval = eval_condition(state, cond)
 
         trueBranch, falseBranch = self.fork(state, cond, cval)
         # at least one must be feasable...
