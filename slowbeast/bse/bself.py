@@ -872,6 +872,7 @@ class BSELFChecker(BaseBSE):
                 found_error = pre.get_error()
                 s = self.replay_state(pre)
                 if s.has_error() and found_error.type() == s.get_error().type():
+                    # FIXME: check that even the instructions match!
                     r = Result.UNSAFE
                 else:
                     dbg(
