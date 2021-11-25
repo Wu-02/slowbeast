@@ -16,10 +16,10 @@ class CallGraph:
         def fun(self):
             return self._fun
 
-        def getCallSites(self):
+        def callsites(self):
             return self._callsites
 
-        def getCallers(self):
+        def callers(self):
             return self._callers
 
         def add_callsite(self, callsite, funs):
@@ -85,7 +85,7 @@ class CallGraph:
                 # this function (node) contains call I that calls ...
                 node.add_callsite(I, [self._nodes[I.called_function()]])
 
-    def getReachable(self, node):
+    def get_reachable(self, node):
         if isinstance(node, Function):
             node = self.getNode(node)
         assert isinstance(node, CallGraph.Node)
@@ -101,8 +101,8 @@ class CallGraph:
 
         return reachable
 
-    def pruneUnreachable(self, frm):
-        reach = self.getReachable(frm)
+    def prune_unreachable(self, frm):
+        reach = self.get_reachable(frm)
         nonreach = [(k, n) for (k, n) in self._nodes.items() if n not in reach]
         for (k, n) in nonreach:
             self._nodes.pop(k)
@@ -110,7 +110,7 @@ class CallGraph:
     def dump(self, stream=stdout):
         for f, node in self._nodes.items():
             stream.write("Fun '{0}' calls\n".format(f.name()))
-            for cs, funs in node.getCallSites().items():
+            for cs, funs in node.callsites().items():
                 for n, cf in enumerate(funs):
                     if n == 0:
                         stream.write(

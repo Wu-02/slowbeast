@@ -151,7 +151,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     # paths = []
     # assert states.errors
     # for s in states.errors:
-    #    for callerfun, callsite in cgnode.getCallers():
+    #    for callerfun, callsite in cgnode.callers():
     #        for pred in PS.calls[callsite].predecessors():
     #            p = AnnotatedCFAPath([pred])
     #            p.add_annot_after(state_to_annotation(s, toassert=True))
