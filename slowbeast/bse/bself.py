@@ -986,7 +986,7 @@ class BSELF:
                 print_stdout("Error found.", color="redul")
                 self.stats.errors += 1
                 if self.ohandler:
-                    self.ohandler.testgen.processState(state)
+                    self.ohandler.testgen.process_state(state)
                 return result
             if result is Result.SAFE:
                 print_stdout(

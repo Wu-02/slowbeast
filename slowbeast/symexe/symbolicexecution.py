@@ -127,7 +127,7 @@ class SymbolicExecutor(Interpreter):
             stats.errors += 1
             stats.paths += 1
             if testgen:
-                testgen.processState(s)
+                testgen.process_state(s)
             if opts.exit_on_error:
                 dbg("Found an error, terminating the search.")
                 self.states = []
@@ -137,20 +137,20 @@ class SymbolicExecutor(Interpreter):
             stats.paths += 1
             stats.terminated_paths += 1
             if testgen:
-                testgen.processState(s)
+                testgen.process_state(s)
         elif s.was_killed():
             stats.paths += 1
             stats.killed_paths += 1
             print_stderr(s.status_detail(), prefix="KILLED STATE: ", color="WINE")
             if testgen:
-                testgen.processState(s)
+                testgen.process_state(s)
         else:
             assert s.exited()
             dbg("state exited with exitcode {0}".format(s.get_exit_code()))
             stats.paths += 1
             stats.exited_paths += 1
             if testgen:
-                testgen.processState(s)
+                testgen.process_state(s)
 
     def replay_state(self, state):
         ivec = state.input_vector()
@@ -161,7 +161,7 @@ class SymbolicExecutor(Interpreter):
                 def __init__(self):
                     self.states = []
 
-                def processState(self, s):
+                def process_state(self, s):
                     self.states.append(s)
 
             def __init__(self):

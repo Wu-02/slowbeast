@@ -294,7 +294,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 def __init__(self):
                     self.states = []
 
-                def processState(self, s):
+                def process_state(self, s):
                     self.states.append(s)
 
             def __init__(self):
