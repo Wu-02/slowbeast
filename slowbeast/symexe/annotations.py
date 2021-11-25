@@ -345,7 +345,7 @@ def states_to_annotation(states):
         a = or_annotations(
             EM,
             False,
-            a or AssumeAnnotation(EM.getFalse(), {}, EM),
+            a or AssumeAnnotation(EM.get_false(), {}, EM),
             state_to_annotation(s),
         )
     return a

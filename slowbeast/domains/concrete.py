@@ -190,10 +190,10 @@ class ConcreteDomain:
             return ConcreteBool(c)
         return ConcreteInt(c, bw)
 
-    def getTrue():
+    def get_true():
         return ConcreteBool(True)
 
-    def getFalse():
+    def get_false():
         return ConcreteBool(False)
 
     def conjunction(*args):

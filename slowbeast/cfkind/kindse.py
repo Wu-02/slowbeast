@@ -1200,7 +1200,7 @@ class KindSE:
 
             for l in locs:
                 if iserr(l):
-                    yield l, AssertAnnotation(EM.getFalse(), {}, EM)
+                    yield l, AssertAnnotation(EM.get_false(), {}, EM)
 
     def run(self):
         has_unknown = False
