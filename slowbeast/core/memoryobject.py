@@ -77,7 +77,7 @@ class MemoryObject:
     def size(self):
         return self._size
 
-    def setAllocation(self, a):
+    def set_allocation(self, a):
         self._allocation = a
 
     def allocation(self):

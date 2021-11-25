@@ -50,7 +50,7 @@ class AIMemoryObject:
     def get_size(self):
         return self._size
 
-    def setAllocation(self, a):
+    def set_allocation(self, a):
         self._allocation = a
 
     def write(self, x, off=None):
@@ -150,7 +150,7 @@ class AIMemoryModel(MemoryModel):
     def create_memory(self):
         return AIMemory()
 
-    def lazyAllocate(self, state, op):
+    def lazy_allocate(self, state, op):
         assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
@@ -161,7 +161,7 @@ class AIMemoryModel(MemoryModel):
         value = state.eval(valueOp)
         to = state.get(toOp)
         if to is None:
-            self.lazyAllocate(state, toOp)
+            self.lazy_allocate(state, toOp)
             # FIXME "We're calling get() method but we could return the value..."
             to = state.get(toOp)
 
@@ -180,7 +180,7 @@ class AIMemoryModel(MemoryModel):
             state.set_error(err)
         return [state]
 
-    def uninitializedRead(self, state, frm, ptr, bytesNum):
+    def uninitialized_read(self, state, frm, ptr, bytesNum):
         dbgv("Reading nondet for uninitialized value: {0}".format(ptr), color="WHITE")
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
@@ -197,7 +197,7 @@ class AIMemoryModel(MemoryModel):
         assert isinstance(bytesNum, int), f"Invalid number of bytes: {bytesNum}"
         frm = state.get(fromOp)
         if frm is None:
-            self.lazyAllocate(state, fromOp)
+            self.lazy_allocate(state, fromOp)
             frm = state.get(fromOp)
 
         assert frm.is_pointer()
@@ -209,7 +209,7 @@ class AIMemoryModel(MemoryModel):
             if err:
                 assert err.is_memory_error()
                 if err.is_uninit_read():
-                    val, err = self.uninitializedRead(state, fromOp, frm, bytesNum)
+                    val, err = self.uninitialized_read(state, fromOp, frm, bytesNum)
                     assert isinstance(toOp, Load)
                     state.add_nondet(NondetLoad.fromExpr(val, toOp, fromOp))
 

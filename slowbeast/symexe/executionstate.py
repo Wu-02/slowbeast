@@ -294,7 +294,7 @@ class LazySEState(SEState):
                 if isinstance(
                     v, (Alloc, GlobalVariable)
                 ):  # FIXME: this is hack, do it generally for pointers
-                    self.executor().memorymodel.lazyAllocate(self, v)
+                    self.executor().memorymodel.lazy_allocate(self, v)
                     return self.try_eval(v)
                 name = f"unknown_ptr_{v.as_value()}"
             else:
@@ -550,7 +550,7 @@ class ThreadedSEState(SEState):
                 if isinstance(
                     v, (Alloc, GlobalVariable)
                 ):  # FIXME: this is hack, do it generally for pointers
-                    self.executor().memorymodel.lazyAllocate(self, v)
+                    self.executor().memorymodel.lazy_allocate(self, v)
                     return self.try_eval(v)
                 name = f"unknown_ptr_{v.as_value()}"
             else:
