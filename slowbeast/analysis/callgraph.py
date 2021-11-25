@@ -60,10 +60,10 @@ class CallGraph:
         assert len(args) == 1
         return CallGraph.Node(*args)
 
-    def getNode(self, B):
+    def get_node(self, B):
         return self._nodes.get(B)
 
-    def getNodes(self):
+    def get_nodes(self):
         return self._nodes.values()
 
     def funs(self):
@@ -87,7 +87,7 @@ class CallGraph:
 
     def get_reachable(self, node):
         if isinstance(node, Function):
-            node = self.getNode(node)
+            node = self.get_node(node)
         assert isinstance(node, CallGraph.Node)
 
         queue = [node]

@@ -59,10 +59,10 @@ class CFG:
         assert len(args) == 1
         return CFG.Node(self, *args)
 
-    def getNode(self, B):
+    def get_node(self, B):
         return self._nodes.get(B)
 
-    def getNodes(self):
+    def get_nodes(self):
         return self._nodes.values()
 
     def entry(self):
@@ -71,7 +71,7 @@ class CFG:
 
     def set_entry(self, n):
         if not isinstance(n, CFG.Node):
-            n = self.getNode(n)
+            n = self.get_node(n)
 
         assert hasattr(n, "successors")
         self._entry = n
@@ -92,7 +92,7 @@ class CFG:
 
         # the entry should be the first bblock in the function
         entrybb = fun.bblock(0)
-        assert self.getNode(entrybb)
+        assert self.get_node(entrybb)
         self.set_entry(entrybb)
 
     def dump(self, stream=stdout):
