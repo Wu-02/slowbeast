@@ -51,7 +51,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     #    # FIXME: do not do this prepend, we always construct a new list....
     #    # rather do append and then execute in reverse order (do a reverse
     #    # iterator)
-    #    newpaths = [CFGPath([p] + path.getLocations()) for p in preds]
+    #    newpaths = [CFGPath([p] + path.locations()) for p in preds]
 
     #    if atmost and len(preds) == 0:
     #        assert len(newpaths) == 0
@@ -97,7 +97,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     # FIXME: do not do this prepend, we always construct a new list....
                     # rather do append and then execute in reverse order (do a reverse
                     # iterator?)
-                    newpath = CFGPath([pred] + p.getLocations())
+                    newpath = CFGPath([pred] + p.locations())
 
                     if steps > 0 and num != steps:
                         newworklist.append(newpath)

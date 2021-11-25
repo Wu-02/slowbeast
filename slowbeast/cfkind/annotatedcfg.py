@@ -1,7 +1,7 @@
-from ..analysis.cfg import CFG as PureCFG
-from ..analysis.cfg import CFGPath as PureCFGPath
-from ..ir.instruction import Assert
-from ..ir.bblock import BBlock
+from slowbeast.analysis.cfg import CFG as PureCFG
+from slowbeast.analysis.cfg import CFGPath as PureCFGPath
+from slowbeast.ir.instruction import Assert
+from slowbeast.ir.bblock import BBlock
 
 
 class CFG(PureCFG):
@@ -69,10 +69,10 @@ class CFGPath(PureCFGPath):
         super().__init__(locs or [])
 
     def reachesAssert(self):
-        if len(self.locations) <= 0:
+        if len(self.locations()) <= 0:
             return False
 
-        return self.locations[-1].hasAssert()
+        return self.locations()[-1].hasAssert()
 
 
 def _get_loc_key(loc):
@@ -133,7 +133,7 @@ class AnnotatedCFGPath(CFGPath):
     #    executing the location.
     #    """
     #    assert idx < self.length()
-    #    self.locations[idx].annotationsAfter.append(annot)
+    #    self.locations()[idx].annotationsAfter.append(annot)
 
     # def addAnnotationBefore(self, annot, idx=0):
     #    """
@@ -142,10 +142,10 @@ class AnnotatedCFGPath(CFGPath):
     #    executing the location.
     #    """
     #    assert idx < self.length()
-    #    self.locations[idx].annotationsBefore.append(annot)
+    #    self.locations()[idx].annotationsBefore.append(annot)
 
     def copy(self):
-        n = AnnotatedCFGPath(self.getLocations())
+        n = AnnotatedCFGPath(self.locations())
         n.locannotations = self.locannotations.copy()
         n.locannotationsafter = self.locannotationsafter.copy()
         n.postcondition = self.postcondition.copy()
@@ -154,7 +154,7 @@ class AnnotatedCFGPath(CFGPath):
 
     def copyandprepend(self, loc):
         # FIXME: this is not efficient...
-        n = AnnotatedCFGPath([loc] + self.locations)
+        n = AnnotatedCFGPath([loc] + self.locations())
         # FIXME: do cow?
         n.locannotations = self.locannotations.copy()
         n.locannotationsafter = self.locannotationsafter.copy()
@@ -184,6 +184,6 @@ class AnnotatedCFGPath(CFGPath):
 
         return "{0}{1}{2}".format(
             "pre " if self.precondition else "",
-            " -> ".join(map(loc_str, self.getLocations())),
+            " -> ".join(map(loc_str, self.locations())),
             " post" if self.postcondition else "",
         )

@@ -110,39 +110,39 @@ class CFGPath:
         if locs:
             assert isinstance(locs, list)
             assert all(map(lambda x: isinstance(x, CFG.Node), locs))
-            self.locations = locs
+            self._locations = locs
         else:
-            self.locations = []
+            self._locations = []
 
     def __len__(self):
-        return len(self.locations)
+        return len(self._locations)
 
     def __getitem__(self, idx):
-        assert idx < len(self.locations)
-        return self.locations[idx]
+        assert idx < len(self._locations)
+        return self._locations[idx]
 
     def __iter__(self):
-        return self.locations.__iter__()
+        return self._locations.__iter__()
 
     def copy(self):
         return copy(self)
 
     def subpath(self, start, end):
         n = copy(self)
-        n.locations = self.locations[start:end]
+        n._locations = self._locations[start:end]
 
     def append(self, l):
-        self.locations.append(l)
+        self._locations.append(l)
 
     def first(self):
-        if len(self.locations) == 0:
+        if len(self._locations) == 0:
             return None
-        return self.locations[0]
+        return self._locations[0]
 
     def last(self):
-        if len(self.locations) == 0:
+        if len(self._locations) == 0:
             return None
-        return self.locations[-1]
+        return self._locations[-1]
 
     def endswith(self, path):
         if len(self) < len(path):
@@ -154,19 +154,19 @@ class CFGPath:
         pl = len(path) - 1
         sl = len(self) - 1
         for idx in range(0, len(path)):
-            if path.locations[pl - idx] != self.locations[sl - idx]:
+            if path._locations[pl - idx] != self._locations[sl - idx]:
                 return False
         return True
 
-    def getLocations(self):
-        return self.locations
+    def locations(self):
+        return self._locations
 
     def length(self):
-        return len(self.locations)
+        return len(self._locations)
 
     def dump(self, stream=stdout):
         stream.write(str(self))
         stream.write("\n")
 
     def __repr__(self):
-        return " -> ".join(map(lambda x: str(x.bblock().get_id()), self.locations))
+        return " -> ".join(map(lambda x: str(x.bblock().get_id()), self._locations))
