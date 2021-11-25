@@ -244,7 +244,7 @@ class CFGExecutor(SExecutor):
     def __init__(self, program, solver, opts, memorymodel=None):
         super().__init__(program, solver, opts, memorymodel)
 
-    def executeAnnotations(self, states, annots):
+    def execute_annotations(self, states, annots):
         # if there are no annotations, return the original states
         if not annots:
             return states, []
@@ -262,10 +262,10 @@ class CFGExecutor(SExecutor):
         dbgv(f"vv ----- Loc {loc.bblock().get_id()} ----- vv", verbose_lvl=3)
 
         # execute annotations before bblock
-        ready, nonready = self.executeAnnotations(states, loc._annotations_before)
+        ready, nonready = self.execute_annotations(states, loc._annotations_before)
         locannot = path.getLocAnnotationsBefore(loc) if path else None
         if locannot:
-            ready, tu = self.executeAnnotations(ready, locannot)
+            ready, tu = self.execute_annotations(ready, locannot)
             nonready += tu
 
         # execute the block till branch
@@ -276,12 +276,12 @@ class CFGExecutor(SExecutor):
         nonready += tmpnonready
 
         # execute annotations after
-        ready, tmpnonready = self.executeAnnotations(ready, loc._annotations_after)
+        ready, tmpnonready = self.execute_annotations(ready, loc._annotations_after)
         nonready += tmpnonready
 
         locannot = path.getLocAnnotationsAfter(loc) if path else None
         if locannot:
-            ready, tu = self.executeAnnotations(ready, locannot)
+            ready, tu = self.execute_annotations(ready, locannot)
             nonready += tu
 
         dbgv(f"^^ ----- Loc {loc.bblock().get_id()} ----- ^^")
@@ -328,7 +328,7 @@ class CFGExecutor(SExecutor):
         # execute the precondition of the path
         pre = path.get_precondition()
         if pre:
-            states, tu = self.executeAnnotations(states, pre)
+            states, tu = self.execute_annotations(states, pre)
             earlytermstates += tu
 
         locsnum = len(locs)
@@ -371,7 +371,7 @@ class CFGExecutor(SExecutor):
         # execute the postcondition of the path
         post = path.get_postcondition()
         if post:
-            states, tu = self.executeAnnotations(states, post)
+            states, tu = self.execute_annotations(states, post)
             result.errors, result.other = split_nonready_states(tu)
 
         result.ready = states or None
