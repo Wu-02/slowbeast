@@ -262,7 +262,7 @@ class CFGExecutor(SExecutor):
         dbgv(f"vv ----- Loc {loc.bblock().get_id()} ----- vv", verbose_lvl=3)
 
         # execute annotations before bblock
-        ready, nonready = self.executeAnnotations(states, loc.annotationsBefore)
+        ready, nonready = self.executeAnnotations(states, loc._annotations_before)
         locannot = path.getLocAnnotationsBefore(loc) if path else None
         if locannot:
             ready, tu = self.executeAnnotations(ready, locannot)
@@ -276,7 +276,7 @@ class CFGExecutor(SExecutor):
         nonready += tmpnonready
 
         # execute annotations after
-        ready, tmpnonready = self.executeAnnotations(ready, loc.annotationsAfter)
+        ready, tmpnonready = self.executeAnnotations(ready, loc._annotations_after)
         nonready += tmpnonready
 
         locannot = path.getLocAnnotationsAfter(loc) if path else None
