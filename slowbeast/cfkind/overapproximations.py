@@ -335,7 +335,7 @@ class LoopStateOverapproximation:
         assert solver.is_sat(), "The clauses are unsat!"
         em = self.expr_mgr
         disjunction, conjunction, Not = em.disjunction, em.conjunction, em.Not
-        false, true = em.getFalse(), em.getTrue()
+        false, true = em.get_false(), em.get_true()
         substitute = em.substitute
 
         subs = []
@@ -392,7 +392,7 @@ class LoopStateOverapproximation:
             if c.is_concrete():
                 if c.value() is False:
                     dbg("  ... got FALSE in clauses, returning FALSE")
-                    return [em.getFalse()]
+                    return [em.get_false()]
                 dbg("  ... dropping True clause")
             else:
                 expressions.add(c)
@@ -523,14 +523,14 @@ class LoopStateOverapproximation:
                     if self.loop.set_is_inductive_towards(
                         intersection(R, lt), target, allow_infeasible_only=True
                     )
-                    else em.getFalse()
+                    else em.get_false()
                 )
                 new_gt = (
                     overapprox_clause(gt, R)
                     if self.loop.set_is_inductive_towards(
                         intersection(R, gt), target, allow_infeasible_only=True
                     )
-                    else em.getFalse()
+                    else em.get_false()
                 )
                 if (
                     new_lt

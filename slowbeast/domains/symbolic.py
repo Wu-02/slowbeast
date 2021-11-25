@@ -1592,10 +1592,10 @@ class BVSymbolicDomain:
         assert b.is_int(), b
         return Expr(BVLShR(to_bv(a), b.unwrap()), IntType(a.bitwidth()))
 
-    def getTrue():
+    def get_true():
         return Expr(TRUE(), BoolType())
 
-    def getFalse():
+    def get_false():
         return Expr(FALSE(), BoolType())
 
     ##

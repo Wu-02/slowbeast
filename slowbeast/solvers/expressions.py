@@ -146,11 +146,11 @@ class ExprManager:
     def lift(self, v):
         return SymbolicDomain.lift(v)
 
-    def getTrue(self):
-        return SymbolicDomain.getTrue()
+    def get_true(self):
+        return SymbolicDomain.get_true()
 
-    def getFalse(self):
-        return SymbolicDomain.getFalse()
+    def get_false(self):
+        return SymbolicDomain.get_false()
 
     def conjunction(self, *args):
         """
@@ -161,7 +161,7 @@ class ExprManager:
         """
         assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
-            return ConcreteDomain.getTrue()
+            return ConcreteDomain.get_true()
         if len(args) == 1:
             return args[0]
         if ConcreteDomain.belongto(*args):
@@ -178,7 +178,7 @@ class ExprManager:
         """
         assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
-            return ConcreteDomain.getFalse()
+            return ConcreteDomain.get_false()
         if len(args) == 1:
             return args[0]
         if ConcreteDomain.belongto(*args):

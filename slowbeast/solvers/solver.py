@@ -301,7 +301,7 @@ def _rewrite_poly(em, exprs, assumptions=None):
 def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
     # check if we can evaluate some expression syntactically
     for a in assumptions:
-        exprs = [em.substitute(e, (a, em.getTrue())) for e in exprs]
+        exprs = [em.substitute(e, (a, em.get_true())) for e in exprs]
     # filter out expressions that are 'true'
     exprs = [e for e in exprs if not (e.is_concrete() and bool(e.value()))]
 
@@ -370,7 +370,7 @@ def _remove_implied(assumptions, em, exprs):
     # check the assumpitons - if we are able to check them on their own,
     r = solver.try_is_sat(1000)
     if r is False:
-        return [em.getFalse()], False
+        return [em.get_false()], False
     # we're good and can continue -- the solver has built a state for faster solving now
 
     # try to subsume the implied expressions
