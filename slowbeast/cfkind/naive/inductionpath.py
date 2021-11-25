@@ -36,7 +36,7 @@ class InductionPath:
     def extend(self):
         last = self.path.last()
         if last:
-            succs = last.getSuccessors()
+            succs = last.successors()
         else:
             succs = [self.cfg.getNode(self.state.pc.bblock())]
 
@@ -49,7 +49,7 @@ class InductionPath:
     def successorsWithAssert(self):
         last = self.path.last()
         if last:
-            succs = last.getSuccessors()
+            succs = last.successors()
         else:
             succs = [self.cfg.getNode(self.state.pc.bblock())]
 

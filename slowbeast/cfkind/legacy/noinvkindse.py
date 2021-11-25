@@ -47,7 +47,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     # def extendPath(self, path, atmost=False):
     #    front = path.first()
 
-    #    preds = front.getPredecessors()
+    #    preds = front.predecessors()
     #    # FIXME: do not do this prepend, we always construct a new list....
     #    # rather do append and then execute in reverse order (do a reverse
     #    # iterator)
@@ -85,7 +85,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
             for p in worklist:
                 front = p.first()
-                preds = front.getPredecessors()
+                preds = front.predecessors()
                 predsnum = len(preds)
 
                 # no predecessors, we're done with this path
@@ -142,7 +142,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 # try executing the path from initial states
                 _, notready = self.execute_path(path, fromInit=True)
                 if not notready:
-                    if len(first_loc.getPredecessors()) == 0:
+                    if len(first_loc.predecessors()) == 0:
                         # this path is safe and we do not need to extend it
                         continue
                     # else just fall-through to execution from clear state
