@@ -979,7 +979,6 @@ if _use_z3:
             return Float128()
         raise NotImplementedError("Invalid FP type")
 
-
 else:
     from pysmt.shortcuts import Or, And, Not, Symbol, BV, TRUE, FALSE
     from pysmt.shortcuts import BVULT, BVULE, BVUGT, BVUGE

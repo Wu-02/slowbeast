@@ -79,7 +79,6 @@ if _use_z3:
                 raise KeyboardInterrupt
         return None
 
-
 else:
     from pysmt.shortcuts import is_sat
 
