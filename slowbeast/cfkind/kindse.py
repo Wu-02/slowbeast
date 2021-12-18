@@ -544,7 +544,7 @@ class KindSEChecker(BaseKindSE):
     #    # FIXME: we are still precise, use abstraction here...
     #    return seq
 
-    def initial_seq_from_last_iter(self, E: StatesSet, path, L: Loop):
+    def initial_seq_from_last_iter(self, E: StatesSet, path, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -565,7 +565,9 @@ class KindSEChecker(BaseKindSE):
         dbg("... (got non-inductive set)")
         return None
 
-    def get_simple_initial_seqs(self, unsafe: list, path: AnnotatedCFAPath, L: Loop):
+    def get_simple_initial_seqs(
+        self, unsafe: list, path: AnnotatedCFAPath, L: LoopInfo
+    ):
         E = self.create_set(unsafe[0])
 
         S = E.copy()
@@ -600,7 +602,7 @@ class KindSEChecker(BaseKindSE):
 
         return target0, seqs, errs0
 
-    def get_acc_initial_seqs(self, unsafe: list, path: AnnotatedCFAPath, L: Loop):
+    def get_acc_initial_seqs(self, unsafe: list, path: AnnotatedCFAPath, L: LoopInfo):
         # TODO: self-loops? Those are probably OK as that would be only assume edge
         errstate = unsafe[0]
         EM = errstate.expr_manager()
@@ -637,7 +639,7 @@ class KindSEChecker(BaseKindSE):
 
         return target0, seqs, errs0
 
-    def get_initial_seqs(self, unsafe: list, path: AnnotatedCFAPath, L: Loop):
+    def get_initial_seqs(self, unsafe: list, path: AnnotatedCFAPath, L: LoopInfo):
         assert len(unsafe) == 1, "One path raises multiple unsafe states"
 
         if self._simple_sis:
@@ -782,7 +784,7 @@ class KindSEChecker(BaseKindSE):
             return I
         return None
 
-    def safe_path_with_last_iter(self, E, path, L: Loop):
+    def safe_path_with_last_iter(self, E, path, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -822,7 +824,7 @@ class KindSEChecker(BaseKindSE):
 
         return None
 
-    def initial_sets_from_exits(self, E, path, L: Loop):
+    def initial_sets_from_exits(self, E, path, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -849,7 +851,7 @@ class KindSEChecker(BaseKindSE):
                 sets.append(tmp)
         return sets
 
-    def initial_sets_from_is(self, E, L):
+    def initial_sets_from_is(self, E, L: LoopInfo):
         # get the inductive sets that we have created for this header.
         # Since we go iteration over iteration, adding this sequence
         # to the previous ones must yield an inductive sequence
@@ -868,7 +870,7 @@ class KindSEChecker(BaseKindSE):
             return [R]
         return None
 
-    def strengthen_initial_seq(self, seq0, E, path, L: Loop):
+    def strengthen_initial_seq(self, seq0, E, path, L: LoopInfo):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
 
@@ -920,7 +922,7 @@ class KindSEChecker(BaseKindSE):
         dbg("Failed strengthening the initial sequence")
         return []
 
-    def fold_loop(self, path, loc, L: Loop, unsafe):
+    def fold_loop(self, path, loc, L: LoopInfo, unsafe):
         dbg(f"========== Folding loop {loc} ===========")
         if __debug__:
             _dump_inductive_sets(self, loc)
@@ -1028,7 +1030,7 @@ class KindSEChecker(BaseKindSE):
                     if __debug__:
                         assert is_seq_inductive(
                             tmp, self, L
-                        ), f"Extended sequence is not inductive (CTI: {r.errors[0].model()})"
+                        ), f"Extended sequence is not inductive"
 
                     # extended.append(self.abstract_seq(e, errs0, L))
                     extended.append(tmp)
