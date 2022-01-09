@@ -67,7 +67,7 @@ class InductiveSequence:
         result = PathExecutionResult()
         oldframes = self.frames
         self.frames = oldframes + (tmpframes or [])
-        selfassert = self.to_assert_annotation()
+        selfassert = self.as_assert_annotation()
         for path in paths:
             p = path.copy()
             # the post-condition is the whole frame
