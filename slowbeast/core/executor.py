@@ -177,7 +177,7 @@ class Executor:
     def calls_forbidden(self):
         return self._opts.no_calls
 
-    def execStore(self, state, instr):
+    def exec_store(self, state, instr):
         assert isinstance(instr, Store)
 
         states = self.memorymodel.write(
@@ -189,7 +189,7 @@ class Executor:
                 s.pc = s.pc.get_next_inst()
         return states
 
-    def execLoad(self, state, instr):
+    def exec_load(self, state, instr):
         assert isinstance(instr, Load)
 
         states = self.memorymodel.read(
@@ -201,7 +201,7 @@ class Executor:
                 s.pc = s.pc.get_next_inst()
         return states
 
-    def execAlloc(self, state, instr):
+    def exec_alloc(self, state, instr):
         states = self.memorymodel.allocate(state, instr)
         for s in states:
             if s.is_ready():
@@ -446,11 +446,11 @@ class Executor:
         # TODO: add an opcode to instruction and check only the opcode
         states = None
         if isinstance(instr, Store):
-            states = self.execStore(state, instr)
+            states = self.exec_store(state, instr)
         elif isinstance(instr, Load):
-            states = self.execLoad(state, instr)
+            states = self.exec_load(state, instr)
         elif isinstance(instr, Alloc):
-            states = self.execAlloc(state, instr)
+            states = self.exec_alloc(state, instr)
         elif isinstance(instr, Cmp):
             states = self.exec_cmp(state, instr)
         elif isinstance(instr, Print):
