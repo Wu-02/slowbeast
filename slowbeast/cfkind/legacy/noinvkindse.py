@@ -44,7 +44,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         self.stats.paths += 1
         return ready, notready
 
-    # def extendPath(self, path, atmost=False):
+    # def extend_path(self, path, atmost=False):
     #    front = path.first()
 
     #    preds = front.predecessors()
@@ -59,7 +59,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
     #    return newpaths
 
-    def extendPath(self, path, steps=0, atmost=False):
+    def extend_path(self, path, steps=0, atmost=False):
         """
         Take a path and extend it by prepending one or more
         predecessors.
@@ -161,7 +161,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             for n in notready:
                 if n.has_error():
                     has_err = True
-                    newpaths += self.extendPath(path, steps=step)
+                    newpaths += self.extend_path(path, steps=step)
                     break
                 if n.was_killed():
                     return self.report(n)
@@ -181,7 +181,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         step = self.get_options().step
         while k > 0:
             paths = [
-                np for p in paths for np in self.extendPath(p, steps=step, atmost=True)
+                np for p in paths for np in self.extend_path(p, steps=step, atmost=True)
             ]
             k -= 1
         return paths

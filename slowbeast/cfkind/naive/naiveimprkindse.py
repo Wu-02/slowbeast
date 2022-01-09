@@ -77,7 +77,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return newpaths, Result.UNSAFE if found_err else Result.SAFE
 
-    def extendPaths(self, ind):
+    def extend_paths(self, ind):
         found_err = False
         newpaths = []
         for path in ind:
@@ -93,7 +93,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         pass  # we do all the work in checkInd
 
     def checkInd(self):
-        self.ind, safe = self.extendPaths(self.ind)
+        self.ind, safe = self.extend_paths(self.ind)
         return safe
 
     def initializeInduction(self):
@@ -103,4 +103,4 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             return [], True
         # we do the first extension here, so that we can do the rest of the
         # work in checkInd and do not execute the paths repeatedly
-        return self.extendPaths([InductionPath(cfg, s) for s in ind])
+        return self.extend_paths([InductionPath(cfg, s) for s in ind])
