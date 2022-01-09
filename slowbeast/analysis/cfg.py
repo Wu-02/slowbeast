@@ -23,7 +23,7 @@ class CFG:
         def predecessors(self):
             return self._predecessors
 
-        def addSuccessor(self, succ):
+        def add_successor(self, succ):
             for s in self._successors:
                 if s == succ:
                     return
@@ -87,8 +87,8 @@ class CFG:
             if not isinstance(br, Branch):
                 continue
 
-            node.addSuccessor(self._nodes[br.true_successor()])
-            node.addSuccessor(self._nodes[br.false_successor()])
+            node.add_successor(self._nodes[br.true_successor()])
+            node.add_successor(self._nodes[br.false_successor()])
 
         # the entry should be the first bblock in the function
         entrybb = fun.bblock(0)
