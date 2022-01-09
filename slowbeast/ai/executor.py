@@ -178,19 +178,19 @@ class Executor(ConcreteExecutor):
         cond = instr.condition()
         cval = eval_condition(state, cond)
 
-        trueBranch, falseBranch = self.fork(state, cond, cval)
+        true_branch, false_branch = self.fork(state, cond, cval)
         # at least one must be feasable...
-        assert trueBranch or falseBranch, "Fatal Error: failed forking condition"
+        assert true_branch or false_branch, "Fatal Error: failed forking condition"
 
         states = []
-        if trueBranch:
-            trueBranch.pc = instr.true_successor().instruction(0)
-            states.append(trueBranch)
-        if falseBranch:
-            falseBranch.pc = instr.false_successor().instruction(0)
-            states.append(falseBranch)
+        if true_branch:
+            true_branch.pc = instr.true_successor().instruction(0)
+            states.append(true_branch)
+        if false_branch:
+            false_branch.pc = instr.false_successor().instruction(0)
+            states.append(false_branch)
 
-        if trueBranch and falseBranch:
+        if true_branch and false_branch:
             self.stats.branch_forks += 1
 
         return states
@@ -295,9 +295,9 @@ class Executor(ConcreteExecutor):
             state.set_terminated("Aborted via an abort() call")
             return [state]
 
-        retTy = fun.return_type()
-        if retTy:
-            val = Domain.Var(retTy)
+        ret_ty = fun.return_type()
+        if ret_ty:
+            val = Domain.Var(ret_ty)
             # state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
@@ -423,13 +423,13 @@ class Executor(ConcreteExecutor):
                 state.pc = state.pc.get_next_inst()
             states.append(state)
         else:
-            okBranch, errBranch = self.fork(state, o, v)
-            if okBranch:
-                okBranch.pc = okBranch.pc.get_next_inst()
-                states.append(okBranch)
-            if errBranch:
-                errBranch.set_error(AssertFailError(msg))
-                states.append(errBranch)
+            ok_branch, err_branch = self.fork(state, o, v)
+            if ok_branch:
+                ok_branch.pc = ok_branch.pc.get_next_inst()
+                states.append(ok_branch)
+            if err_branch:
+                err_branch.set_error(AssertFailError(msg))
+                states.append(err_branch)
 
         assert states, "Generated no states"
         return states

@@ -14,13 +14,13 @@ class AbstractState(ExecutionState):
         "_executor",
         "_id",
     )
-    _statesCounter = 0
+    _states_counter = 0
 
     def __init__(self, executor, pc, m):
         super().__init__(pc, m)
 
-        AbstractState._statesCounter += 1
-        self._id = AbstractState._statesCounter
+        AbstractState._states_counter += 1
+        self._id = AbstractState._states_counter
 
         self._executor = executor
 

@@ -157,13 +157,13 @@ class AIMemoryModel(MemoryModel):
         dbgv("Lazily allocated {0}".format(op), color="WHITE")
         assert state.get(op), "Did not bind an allocated value"
 
-    def write(self, state, valueOp, toOp):
-        value = state.eval(valueOp)
-        to = state.get(toOp)
+    def write(self, state, value_op, to_op):
+        value = state.eval(value_op)
+        to = state.get(to_op)
         if to is None:
-            self.lazy_allocate(state, toOp)
+            self.lazy_allocate(state, to_op)
             # FIXME "We're calling get() method but we could return the value..."
-            to = state.get(toOp)
+            to = state.get(to_op)
 
         assert isinstance(value, Value)
         assert to.is_pointer()
@@ -180,12 +180,12 @@ class AIMemoryModel(MemoryModel):
             state.set_error(err)
         return [state]
 
-    def uninitialized_read(self, state, frm, ptr, bytesNum):
+    def uninitialized_read(self, state, frm, ptr, bytes_num):
         dbgv("Reading nondet for uninitialized value: {0}".format(ptr), color="WHITE")
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
-        val = self.solver().Var(f"load_of_{frm.as_value()}", IntType(8 * bytesNum))
+        val = self.solver().Var(f"load_of_{frm.as_value()}", IntType(8 * bytes_num))
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
@@ -193,25 +193,25 @@ class AIMemoryModel(MemoryModel):
 
         return val, err
 
-    def read(self, state, toOp, fromOp, bytesNum):
-        assert isinstance(bytesNum, int), f"Invalid number of bytes: {bytesNum}"
-        frm = state.get(fromOp)
+    def read(self, state, to_op, from_op, bytes_num):
+        assert isinstance(bytes_num, int), f"Invalid number of bytes: {bytes_num}"
+        frm = state.get(from_op)
         if frm is None:
-            self.lazy_allocate(state, fromOp)
-            frm = state.get(fromOp)
+            self.lazy_allocate(state, from_op)
+            frm = state.get(from_op)
 
         assert frm.is_pointer()
         if not frm.offset().is_concrete():
             state.set_killed("Read with non-constant offset not supported yet")
             return [state]
         try:
-            val, err = state.memory.read(frm, bytesNum)
+            val, err = state.memory.read(frm, bytes_num)
             if err:
                 assert err.is_memory_error()
                 if err.is_uninit_read():
-                    val, err = self.uninitialized_read(state, fromOp, frm, bytesNum)
-                    assert isinstance(toOp, Load)
-                    state.add_nondet(NondetLoad.fromExpr(val, toOp, fromOp))
+                    val, err = self.uninitialized_read(state, from_op, frm, bytes_num)
+                    assert isinstance(to_op, Load)
+                    state.add_nondet(NondetLoad.fromExpr(val, to_op, from_op))
 
         except NotImplementedError as e:
             state.set_killed(str(e))
@@ -219,5 +219,5 @@ class AIMemoryModel(MemoryModel):
         if err:
             state.set_error(err)
         else:
-            state.set(toOp, val)
+            state.set(to_op, val)
         return [state]
