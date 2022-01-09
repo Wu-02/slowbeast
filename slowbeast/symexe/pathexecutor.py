@@ -499,7 +499,7 @@ class CFGExecutor(SExecutor):
 #    dbg("Prefix executed, executing one more step")
 
 #    # execute the last step -- all unsafe states are now really unsafe
-#    cfg = prefix[0].getCFG()
+#    cfg = prefix[0].get_cfg()
 #    tmpready = []
 #    nonready = []
 #    if r.ready:

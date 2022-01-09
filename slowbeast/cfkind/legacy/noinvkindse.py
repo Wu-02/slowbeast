@@ -18,7 +18,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         self.cfgs = {}
         self.paths = []
 
-    def getCFG(self, F):
+    def get_cfg(self, F):
         return self.cfgs.setdefault(F, CFG(F))
 
     def execute_path(self, path, fromInit=False):
@@ -32,7 +32,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             executor = self.executor()
         else:
             s = self.ind_executor().create_state()
-            s.push_call(None, self.getProgram().entry())
+            s.push_call(None, self.get_program().entry())
             states = [s]
             executor = self.ind_executor()
 
@@ -111,7 +111,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return newpaths
 
     def _is_init(self, loc):
-        return loc.bblock() is self.getProgram().entry().bblock(0)
+        return loc.bblock() is self.get_program().entry().bblock(0)
 
     def report(self, n):
         if n.has_error():
@@ -175,7 +175,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
     def initializePaths(self, k=1):
         paths = []
-        cfg = self.getCFG(self.getProgram().entry())
+        cfg = self.get_cfg(self.get_program().entry())
         nodes = cfg.get_nodes()
         paths = [CFGPath([n]) for n in nodes if n.has_assert()]
         step = self.get_options().step

@@ -170,7 +170,7 @@ class SymbolicExecutor(Interpreter):
         opts = SEOptions(self.get_options())
         opts.replay_errors = False
         handler = GatherStates()
-        SE = SymbolicExecutor(self.getProgram(), handler, opts)
+        SE = SymbolicExecutor(self.get_program(), handler, opts)
         SE.set_input_vector(ivec)
         SE.run()
         if len(handler.states) != 1:
@@ -343,7 +343,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         self.run_static()
 
         # push call to main to call stack
-        entry = self.getProgram().entry()
+        entry = self.get_program().entry()
         for s in self.states:
             main_args = self._main_args(s)
             s.push_call(None, entry, argsMapping=main_args)

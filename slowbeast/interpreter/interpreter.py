@@ -48,7 +48,7 @@ class Interpreter:
         self.error_states = []
         # self.states_num = 0
 
-    def getProgram(self):
+    def get_program(self):
         return self._program
 
     def get_options(self):
@@ -57,7 +57,7 @@ class Interpreter:
     def executor(self):
         return self._executor
 
-    def getStates(self):
+    def get_states(self):
         return self.states
 
     def initialStates(self):
@@ -138,7 +138,7 @@ class Interpreter:
         """
         Initialize argc and argv (if needed) for the main function
         """
-        fun = self.getProgram().entry()
+        fun = self.get_program().entry()
         args = fun.arguments()
         if len(args) == 0:
             return None
@@ -164,7 +164,7 @@ class Interpreter:
         # push call to main to call stack
         for s in self.states:
             main_args = self._main_args(s)
-            s.push_call(None, self.getProgram().entry(), argsMapping=main_args)
+            s.push_call(None, self.get_program().entry(), argsMapping=main_args)
 
     def report(self):
         pass

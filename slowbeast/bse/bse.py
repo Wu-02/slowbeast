@@ -313,7 +313,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         opts = SEOptions(self.get_options())
         opts.replay_errors = False
         handler = GatherStates()
-        SE = SymbolicInterpreter(self.getProgram(), handler, opts)
+        SE = SymbolicInterpreter(self.get_program(), handler, opts)
         SE.set_input_vector(ivec)
         SE.run()
         if len(handler.states) != 1:

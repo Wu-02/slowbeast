@@ -31,7 +31,7 @@ class CFG:
             self._successors.append(succ)
             succ._predecessors.append(self)
 
-        def getCFG(self):
+        def get_cfg(self):
             return self._cfg
 
         def isJoin(self):

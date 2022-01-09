@@ -19,7 +19,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         self.cfgs = {}
         self._infeasibleSuffixes = []
 
-    def getCFG(self, F):
+    def get_cfg(self, F):
         return self.cfgs.setdefault(F, CFG(F))
 
     def hasInfeasibleSuffix(self, path):
@@ -97,7 +97,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return safe
 
     def initializeInduction(self):
-        cfg = self.getCFG(self.getProgram().entry())
+        cfg = self.get_cfg(self.get_program().entry())
         ind, done = super(KindSymbolicExecutor, self).initializeInduction()
         if done:
             return [], True

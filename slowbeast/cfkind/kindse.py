@@ -436,7 +436,7 @@ class KindSEChecker(BaseKindSE):
         assert unsafe, "No unsafe states, we should not get here at all"
 
         #   # first try to unroll it in the case the loop is easy to verify
-        #   cfkind = BaseKindSE(self.getProgram())
+        #   cfkind = BaseKindSE(self.get_program())
         maxk = 15
         dbg_sec(f"Unwinding the loop {maxk} steps")
         res, unwoundloop = self.unwind([path.copy()], maxk=maxk)

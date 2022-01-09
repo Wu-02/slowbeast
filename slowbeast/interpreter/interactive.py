@@ -87,7 +87,7 @@ class InteractiveHandler:
         return False
 
     def _getstate(self, i):
-        for s in self.interpreter.getStates():
+        for s in self.interpreter.get_states():
             if s.get_id() == i:
                 return s
         return None
@@ -109,9 +109,9 @@ class InteractiveHandler:
         if not query:
             raise RuntimeError("Invalid arguments to print")
         if query[0] == "states":
-            print([x.get_id() for x in self.interpreter.getStates()])
+            print([x.get_id() for x in self.interpreter.get_states()])
         elif query[0] in ["new", "newstates"]:
-            print([x.get_id() for x in self.interpreter.getStates()])
+            print([x.get_id() for x in self.interpreter.get_states()])
         elif query[0] in ["s", "state"]:
             if len(query) == 1:
                 assert state, "No current state"
