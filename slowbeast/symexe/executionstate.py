@@ -1,6 +1,7 @@
+from copy import copy
+from sys import stdout
 from slowbeast.core.executionstate import ExecutionState
-from slowbeast.core.errors import GenericError
-from slowbeast.util.debugging import warn, ldbgv, FIXME
+from slowbeast.util.debugging import warn, ldbgv
 from slowbeast.ir.instruction import (
     Alloc,
     GlobalVariable,
@@ -10,10 +11,8 @@ from slowbeast.ir.instruction import (
     Call,
     Return,
 )
-from .constraints import ConstraintsSet, IncrementalConstraintsSet
 from slowbeast.solvers.solver import solve_incrementally
-from copy import copy
-from sys import stdout
+from .constraints import ConstraintsSet, IncrementalConstraintsSet
 
 
 class Nondet:
@@ -97,10 +96,8 @@ class SEState(ExecutionState):
                 assert isinstance(x.value(), bool)
                 if not x.value():
                     return False
-                else:
-                    continue
-            else:
-                symb.append(x)
+                continue
+            symb.append(x)
         if not symb:
             return True
 
@@ -138,12 +135,7 @@ class SEState(ExecutionState):
         return self.concretize(*self.nondet_values())
 
     def model(self):
-        return {
-            x: c
-            for (x, c) in zip(
-                self.nondet_values(), self.concretize(*self.nondet_values())
-            )
-        }
+        return dict(zip(self.nondet_values(), self.concretize(*self.nondet_values())))
 
     def _copy_to(self, new):
         assert new is not self
@@ -199,7 +191,7 @@ class SEState(ExecutionState):
             self._warnings_ro = False
         self._warnings.append(msg)
 
-    def warnings(self, msg):
+    def warnings(self):
         return self._warnings
 
     def create_nondet(self, instr, val):
@@ -214,7 +206,8 @@ class SEState(ExecutionState):
         # we can have only one nonded for a given allocation
         if n.is_nondet_load() and self.nondet_load_of(n.alloc) is not None:
             raise RuntimeError(
-                f"Multiple nondets of the same load unsupported atm: n:{n}, nondets: {self._nondets}"
+                "Multiple nondets of the same load unsupported atm: "
+                f"n:{n}, nondets: {self._nondets}"
             )
         self._nondets.append(n)
 
@@ -237,11 +230,11 @@ class SEState(ExecutionState):
         return (l for l in self._nondets if isinstance(l.instruction, Load))
 
     def nondet_load_of(self, alloc):
-        raise NotImplemented("Not Implemented")
-        for n in self._nondets:
-            if n.is_nondet_load() and n.alloc == alloc:
-                return n
-        return None
+        raise NotImplementedError("Not Implemented")
+        #  for n in self._nondets:
+        #      if n.is_nondet_load() and n.alloc == alloc:
+        #          return n
+        #  return None
 
     def dump(self, stream=stdout):
         super().dump(stream)
@@ -265,8 +258,8 @@ class IncrementalSEState(SEState):
 
 
 class LazySEState(SEState):
-    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
-        super().__init__(executor, pc, m, solver, constraints)
+    # def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
+    #    super().__init__(executor, pc, m, solver, constraints)
 
     def get_nondet_instr_result(self):
         return (l for l in self._nondets if l.is_nondet_instr_result())
@@ -518,10 +511,9 @@ class ThreadedSEState(SEState):
     def _thread_idx(self, thr):
         if isinstance(thr, Thread):
             return self._threads.index(thr)
-        else:
-            for idx, t in enumerate(self._threads):
-                if t.get_id() == thr:
-                    return idx
+        for idx, t in enumerate(self._threads):
+            if t.get_id() == thr:
+                return idx
         return None
 
     def _copy_to(self, new):
