@@ -5,7 +5,7 @@ from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.domains.pointer import Pointer
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
-from slowbeast.util.debugging import ldbgv, print_stdout
+from slowbeast.util.debugging import ldbgv
 from slowbeast.solvers.solver import solve_incrementally
 
 
@@ -47,7 +47,7 @@ def _same_ptrs(em, ptr1, ptr2):
 
 def _same_values(em, val1, val2):
     """Create an expression that says: if the pointers are the same, the values must be the same"""
-    Eq, And, Or, Not = em.Eq, em.And, em.Or, em.Not
+    Eq, And = em.Eq, em.And
 
     val1ptr, val2ptr = val1.is_pointer(), val2.is_pointer()
 
@@ -56,20 +56,16 @@ def _same_values(em, val1, val2):
             Eq(val1.object(), val2.object()),
             Eq(val1.offset(), val2.offset()),
         )
-    elif val1ptr and not val2ptr:
+    if val1ptr and not val2ptr:
         if val2.is_concrete() and val2.value() == 0:  # comparison to null
             return And(Eq(val1.object(), val2), Eq(val1.offset(), val2))
-        else:
-            raise NotImplementedError("Comparison of symbolic addreses not implemented")
-    elif val2ptr and not val1ptr:
+        raise NotImplementedError("Comparison of symbolic addreses not implemented")
+    if val2ptr and not val1ptr:
         if val1.is_concrete() and val1.value() == 0:  # comparison to null
             return And(Eq(val2.object(), val1), Eq(val2.offset(), val1))
-        else:
-            raise NotImplementedError("Comparison of symbolic addreses not implemented")
-    else:  # non is are pointer
-        return Eq(val1, val2)
-
-    raise NotImplementedError(f"Cannot compare values {val1} {val2}")
+        raise NotImplementedError("Comparison of symbolic addreses not implemented")
+    # none is pointer
+    return Eq(val1, val2)
 
 
 class BSEState(LazySEState):
@@ -134,12 +130,12 @@ class BSEState(LazySEState):
                 if mo.is_global() and mo.is_zeroed():
                     constraints.append(em.Eq(val[0], ConcreteInt(0, val[0].bitwidth())))
             else:
-                for g, ptr in (
-                    (g, ptr) for (g, ptr) in IM.bound_globals() if g.is_zeroed()
+                for g, xptr in (
+                    (g, xptr) for (g, xptr) in IM.bound_globals() if g.is_zeroed()
                 ):
                     constraints.append(
                         em.Or(
-                            em.Ne(obj, ptr.object()),
+                            em.Ne(obj, xptr.object()),
                             em.Eq(val[0], ConcreteInt(0, val[0].bitwidth())),
                         )
                     )
@@ -170,14 +166,14 @@ class BSEState(LazySEState):
             # overwrites the newer read, which we must build into an expression
             expr = None
             Ite = em.Ite
-            for ptr, iptr, val, ival in reversed(matches):
+            for ptr, iptr2, val, ival in reversed(matches):
                 if expr is None:
                     expr = em.Or(
-                        em.Not(_same_ptrs(em, ptr, iptr)), _same_values(em, val, ival)
+                        em.Not(_same_ptrs(em, ptr, iptr2)), _same_values(em, val, ival)
                     )
                 else:
                     expr = Ite(
-                        _same_ptrs(em, ptr, iptr), _same_values(em, val, ival), expr
+                        _same_ptrs(em, ptr, iptr2), _same_values(em, val, ival), expr
                     )
 
             if expr:
@@ -394,10 +390,8 @@ class BSEState(LazySEState):
                 assert isinstance(x.value(), bool)
                 if not x.value():
                     return False
-                else:
-                    continue
-            else:
-                symb.append(x)
+                continue
+            symb.append(x)
         if not symb:
             return True
 
