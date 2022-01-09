@@ -63,14 +63,14 @@ class BSEMemory(SEMemory):
         # for which we do not have an entry
         mo = self.get_obj(ptr.object())
         if mo is None:
-            return None, MemError(MemError.INVALID_OBJ, f"Read of unknown object")
+            return None, MemError(MemError.INVALID_OBJ, "Read of unknown object")
         if mo.is_global():
             return None, MemError(
                 MemError.UNSUPPORTED,
-                f"Reading uninitialized globals is unsupported atm.",
+                "Reading uninitialized globals is unsupported atm.",
             )
 
-        return None, MemError(MemError.UNINIT_READ, f"Read of uninitialized memory")
+        return None, MemError(MemError.UNINIT_READ, "Read of uninitialized memory")
 
     def read(self, ptr, bytesNum):
         v = self._try_read(ptr)
@@ -104,7 +104,7 @@ class BSEMemory(SEMemory):
             o.dump(stream)
         stream.write("-- Global bindings:\n")
         for g, v in self._glob_bindings.items():
-            stream.write("{0} -> {1}\n".format(g.as_value(), v.as_value()))
+            stream.write(f"{g.as_value()} -> {v.as_value()}\n")
         stream.write("-- Objects:\n")
         for o in self._objects.values():
             o.dump(stream)
@@ -124,9 +124,6 @@ class BSEMemory(SEMemory):
 # symexe.Memory overrides uninitialized reads in the Memory() object
 # in a way that is not suitable for lazy memory
 class BSEMemoryModel(CoreMM):
-    def __init__(self, opts):
-        super().__init__(opts)
-
     def create_memory(self):
         """
         Create a memory object that is going to be a part
