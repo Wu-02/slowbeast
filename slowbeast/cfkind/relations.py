@@ -320,7 +320,7 @@ def get_const_subs_relations(state):
                     c1, c2 = list(nexpr.children())
                     if c1.is_concrete() or c2.is_concrete():
                         continue
-                if nexpr.isOr():
+                if nexpr.is_or():
                     for c in nexpr.children():
                         # only a part of the disjunction may be sat in the state
                         if state.is_sat(c) is True:
@@ -331,7 +331,7 @@ def get_const_subs_relations(state):
 
 def _iter_constraints(C):
     for c in C:
-        if c.isOr():
+        if c.is_or():
             for cc in c.children():
                 if cc.isEq():
                     yield cc

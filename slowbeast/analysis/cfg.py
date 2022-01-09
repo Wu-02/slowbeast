@@ -34,11 +34,11 @@ class CFG:
         def get_cfg(self):
             return self._cfg
 
-        def isJoin(self):
+        def is_join(self):
             "This bblock Has several predecessors"
             return len(self._predecessors) > 1
 
-        def isBranch(self):
+        def is_branch(self):
             "This bblock Has several successors"
             return len(self._successors) > 1
 

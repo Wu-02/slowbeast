@@ -1149,13 +1149,13 @@ class Expr(Value):
             for k, v in subs.items()
         }
 
-    def isAnd(self):
+    def is_and(self):
         return is_and(self.unwrap())
 
-    def isOr(self):
+    def is_or(self):
         return is_or(self.unwrap())
 
-    def isNot(self):
+    def is_not(self):
         return is_not(self.unwrap())
 
     def isEq(self):

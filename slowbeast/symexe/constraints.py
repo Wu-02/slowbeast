@@ -32,7 +32,7 @@ class ConstraintsSet:
                     ret = True
                     break
                 # we can ignore True...
-            elif c.isAnd():
+            elif c.is_and():
                 constr.extend(c.children())
                 ret = True
             else:

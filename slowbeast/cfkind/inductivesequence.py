@@ -197,7 +197,7 @@ class InductiveSequence:
 #     singletons = []
 #     rest = []
 #     for c in rhs:
-#         if c.isOr():
+#         if c.is_or():
 #             rest.append(c)
 #         else:  # the formula is in CNF, so this must be a singleton
 #             singletons.append(c)

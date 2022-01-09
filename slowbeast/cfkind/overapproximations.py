@@ -26,7 +26,7 @@ def remove_implied_literals(clauses):
     for c in clauses:
         if c.is_concrete() and c.value() is True:
             continue
-        if c.isOr():
+        if c.is_or():
             rest.append(c)
         else:  # the formula is in CNF, so this must be a singleton
             singletons.append(c)
@@ -95,7 +95,7 @@ def poststates(executor, paths, prestate):
 
 
 def literals(c):
-    if c.isOr():
+    if c.is_or():
         yield from c.children()
     else:
         yield c
@@ -125,7 +125,7 @@ def get_predicate(l):
 
 def _decompose_literal(l):
     isnot = False
-    if l.isNot():
+    if l.is_not():
         isnot = True
         l = list(l.children())[0]
 
@@ -181,7 +181,7 @@ class DecomposedLiteral:
 
 
 def get_left_right(l):
-    if l.isNot():
+    if l.is_not():
         l = list(l.children())[0]
 
     chld = list(l.children())
@@ -352,20 +352,20 @@ class LoopStateOverapproximation:
                         "BUG in dropping disjuncts! Made the expression unsat"
                     )
                 raise RuntimeError(f"Invalid boolean value: {val}")
-            if not c.isOr():
+            if not c.is_or():
                 newclauses.append(c)
                 continue
 
             for d in c.children():
                 nd = Not(d)
                 if solver.try_is_sat(100, nd) is False:
-                    if nd.isNot():
+                    if nd.is_not():
                         subs.append((d, true))
                         newd.append(true)
                         continue
                     subs.append((nd, false))
                 if solver.try_is_sat(100, d) is False:
-                    if d.isNot():
+                    if d.is_not():
                         subs.append((next(d.children()), true))
                     subs.append((d, false))
                 else:
@@ -513,7 +513,7 @@ class LoopStateOverapproximation:
                     newclauses.append(le)
                     continue
                 newclauses.append(c)
-            elif c.isNot() and next(c.children()).isEq():
+            elif c.is_not() and next(c.children()).isEq():
                 chld = list(next(c.children()).children())
                 assert len(chld) == 2, c
                 lt = Lt(chld[0], chld[1])
@@ -641,7 +641,7 @@ class LoopStateOverapproximation:
         unsafe - set of unsafe states
         target - set of safe states that we want to keep reachable
         """
-        assert not l.isAnd() and not l.isOr(), f"Input is not a literal: {l}"
+        assert not l.is_and() and not l.is_or(), f"Input is not a literal: {l}"
         assert intersection(S, l, self.unsafe).is_empty(), "Unsafe states in input"
 
         EM = self.expr_mgr
@@ -761,7 +761,7 @@ def break_eqs(expr):
     # break equalities that have a constant on one side,
     # so that we can generalize them
     for c in expr.children():
-        if c.isNot():
+        if c.is_not():
             d = next(c.children())
             if d.isEq():
                 cls = break_eq(d)
