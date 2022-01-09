@@ -87,11 +87,11 @@ def is_array_ty(ty):
     return ty.is_array
 
 
-def parseArrayTyByParts(ty):
+def parse_array_ty_by_parts(ty):
     print(parts)
 
 
-def getArrayTySize(m, ty):
+def get_array_ty_size(m, ty):
     assert is_array_ty(ty)
     sty = str(ty)
     parts = sty.split()
@@ -116,7 +116,7 @@ def type_size_in_bits(m, ty):
 
     sty = str(ty)
     if is_array_ty(ty):
-        return getArrayTySize(m, ty)
+        return get_array_ty_size(m, ty)
     elif is_pointer_ty(ty):
         return POINTER_SIZE
     elif sty == "double":
@@ -158,7 +158,7 @@ def get_sb_type(m, ty):
     return None
 
 
-def getFloatConstant(sval, isdouble=True):
+def get_float_constant(sval, isdouble=True):
     if isdouble:
         return _get_double(sval)
     return _get_float(sval)
@@ -172,7 +172,7 @@ def get_pointer_constant(val):
     return None
 
 
-def getConstant(val):
+def get_constant(val):
     # My, this is so ugly... but llvmlite does
     # not provide any other way...
     if is_pointer_ty(val.type):
@@ -189,7 +189,7 @@ def getConstant(val):
     isfloating = parts[0] == "float" or isdouble
 
     if isfloating:
-        c = getFloatConstant(parts[1], isdouble)
+        c = get_float_constant(parts[1], isdouble)
     else:
         c = _getInt(parts[1])
     if c is None:
@@ -205,7 +205,7 @@ def getConstant(val):
     return ConcreteVal(c, FloatType(bw) if isfloating else IntType(bw))
 
 
-def bvToBoolElseId(bv):
+def bv_to_bool_else_id(bv):
     if bv.is_concrete():
         if bv.value() == 0:
             return ConstantFalse
@@ -214,5 +214,5 @@ def bvToBoolElseId(bv):
     return bv
 
 
-def getLLVMOperands(inst):
+def get_llvm_operands(inst):
     return [x for x in inst.operands]

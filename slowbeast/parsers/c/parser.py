@@ -47,7 +47,7 @@ class Parser:
                 print("  ", c.is_definition())
                 print(dir(c))
 
-            # succ, retty = parseFunctionRetTy(self.llvmmodule, f.type.element_type)
+            # succ, retty = parse_fun_ret_ty(self.llvmmodule, f.type.element_type)
             # if not succ:
             #    raise NotImplementedError(
             #        "Cannot parse function return type: {0}".format(f.type.element_type)

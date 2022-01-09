@@ -23,7 +23,7 @@ def _get_llvm_module(path):
             return llvm.parse_bitcode(f.read())
 
 
-def parseSpecialFCmp(inst, op1, op2):
+def parse_special_fcmp(inst, op1, op2):
     seq = []
     parts = str(inst).split()
     if parts[1] != "=":
@@ -55,7 +55,7 @@ def parseSpecialFCmp(inst, op1, op2):
     return None
 
 
-def parseFCmp(inst):
+def parse_fcmp(inst):
     parts = str(inst).split()
     if parts[1] != "=":
         return None, False
@@ -91,7 +91,7 @@ def parseFCmp(inst):
     return None, False
 
 
-def parseCmp(inst):
+def parse_cmp(inst):
     parts = str(inst).split()
     if parts[1] != "=":
         return None, False
@@ -123,7 +123,7 @@ def parseCmp(inst):
     return None, False
 
 
-def parseFunctionRetTy(m, ty):
+def parse_fun_ret_ty(m, ty):
     parts = str(ty).split()
     if len(parts) < 2:
         return False, None
@@ -139,7 +139,7 @@ def parseFunctionRetTy(m, ty):
     return False, None
 
 
-def countSyms(s, sym):
+def count_symbols(s, sym):
     cnt = 0
     for x in s:
         if x == sym:
@@ -197,7 +197,7 @@ class Parser:
     def try_get_operand(self, op):
         ret = self._mapping.get(op)
         if not ret:
-            ret = getConstant(op)
+            ret = get_constant(op)
         if not ret:
             if op.is_constantexpr:
                 ret = self._parse_ce(op)
@@ -229,7 +229,7 @@ class Parser:
         self._mapping[llinst] = sbinst
 
     def _createAlloca(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Array allocations not supported yet"
 
         tySize = type_size(self.llvmmodule, inst.type.element_type)
@@ -256,7 +256,7 @@ class Parser:
             return [A]
 
     def _createStore(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
         bytes_num = type_size(self.llvmmodule, operands[0].type)
@@ -265,7 +265,7 @@ class Parser:
         return [S]
 
     def _createLoad(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
 
         L = Load(self.operand(operands[0]), get_sb_type(self.llvmmodule, inst.type))
@@ -273,7 +273,7 @@ class Parser:
         return [L]
 
     def _createRet(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) <= 1, "Invalid number of operands for ret"
 
         if len(operands) == 0:
@@ -295,7 +295,7 @@ class Parser:
         return [R]
 
     def _createArith(self, inst, opcode):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
         op1 = self.operand(operands[0])
@@ -327,7 +327,7 @@ class Parser:
         return [I]
 
     def _createShift(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for shift"
 
         op1 = self.operand(operands[0])
@@ -347,7 +347,7 @@ class Parser:
         return [I]
 
     def _createLogicOp(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for logic op"
 
         op1 = self.operand(operands[0])
@@ -356,7 +356,7 @@ class Parser:
 
         # make sure both operands are bool if one is bool
         if op1.type().is_bool() or op2.type().is_bool():
-            op1, op2 = bvToBoolElseId(op1), bvToBoolElseId(op2)
+            op1, op2 = bv_to_bool_else_id(op1), bv_to_bool_else_id(op2)
 
         if opcode == "and":
             I = And(op1, op2)
@@ -371,7 +371,7 @@ class Parser:
         return [I]
 
     def _createSelect(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 3, "Invalid number of operands for select"
 
         cond = self.operand(operands[0])
@@ -383,7 +383,7 @@ class Parser:
         return [I]
 
     def _createRem(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for rem"
 
         op1 = self.operand(operands[0])
@@ -406,14 +406,14 @@ class Parser:
         if self._forbid_floats:
             raise RuntimeError("Floating operations forbidden: {0}".format(inst))
 
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for fneg"
         I = Neg(to_float_ty(self.operand(operands[0])), fp=True)
         self._addMapping(inst, I)
         return [I]
 
     def _createCmp(self, inst, isfloat=False):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
         op1 = self.operand(operands[0])
         op2 = self.operand(operands[1])
@@ -421,11 +421,11 @@ class Parser:
             if self._forbid_floats:
                 raise RuntimeError("Floating operations forbidden: {0}".format(inst))
 
-            P, is_unordered = parseFCmp(inst)
+            P, is_unordered = parse_fcmp(inst)
             op1 = to_float_ty(op1)
             op2 = to_float_ty(op2)
             if not P:
-                seq = parseSpecialFCmp(inst, op1, op2)
+                seq = parse_special_fcmp(inst, op1, op2)
                 if seq:
                     self._addMapping(inst, seq[-1])
                     return seq
@@ -434,7 +434,7 @@ class Parser:
                 )
             C = Cmp(P, op1, op2, is_unordered, fp=True)
         else:
-            P, is_unsigned = parseCmp(inst)
+            P, is_unsigned = parse_cmp(inst)
             if not P:
                 raise NotImplementedError(
                     "Unsupported cmp instruction: {0}".format(inst)
@@ -445,7 +445,7 @@ class Parser:
         return [C]
 
     def _createBranch(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         if len(operands) == 3:
             cond = self.operand(operands[0])
             # XXX: whaat? for some reason, the bindings return
@@ -509,7 +509,7 @@ class Parser:
         raise NotImplementedError(f"Unsupported thread function: {fun}")
 
     def _createCall(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) > 0
 
         # uffff, llvmlite really sucks in parsing LLVM.
@@ -582,7 +582,7 @@ class Parser:
         return [A]
 
     def _createZExt(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
             self.operand(operands[0]),
@@ -592,7 +592,7 @@ class Parser:
         return [zext]
 
     def _createSExt(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no SExt for now
         sext = SExt(
@@ -603,7 +603,7 @@ class Parser:
         return [sext]
 
     def _createReinterpCast(self, inst, sgn):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for cast"
         insttype = inst.type
         ty = None
@@ -632,7 +632,7 @@ class Parser:
     def _createPtrToInt(self, inst):
         return self._createCast(inst)
 
-    # operands = getLLVMOperands(inst)
+    # operands = get_llvm_operands(inst)
     # assert len(operands) == 1, "Invalid number of operands for cast"
     # cast = Cast(self.operand(operands[0]),
     #            IntType(type_size_in_bits(self.llvmmodule, inst.type)))
@@ -642,14 +642,14 @@ class Parser:
     def _createIntToPtr(self, inst):
         return self._createCast(inst)
 
-    # operands = getLLVMOperands(inst)
+    # operands = get_llvm_operands(inst)
     # assert len(operands) == 1, "Invalid number of operands for cast"
     # cast = Cast(self.operand(operands[0]), PointerType())
     # self._addMapping(inst, cast)
     # return [cast]
 
     def _createTrunc(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no ZExt for now
         bits = type_size_in_bits(self.llvmmodule, inst.type)
@@ -662,20 +662,20 @@ class Parser:
         return [ext]
 
     def _createCast(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for cast"
         op = self.operand(operands[0])
         self._mapping[inst] = op
         return []
 
     def _parseGep(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         assert is_pointer_ty(operands[0].type), "First type of GEP is not a pointer"
         ty = operands[0].type
         shift = 0
         varIdx = []
         for idx in operands[1:]:
-            c = getConstant(idx)
+            c = get_constant(idx)
             if not c:
                 var = self.operand(idx)
                 assert var, "Unsupported GEP instruction"
@@ -750,13 +750,13 @@ class Parser:
         if opcode == "getelementptr":
             return self._createCEGep(inst)
         if opcode == "bitcast":
-            operands = getLLVMOperands(inst)
+            operands = get_llvm_operands(inst)
             assert len(operands) == 1
             return self.operand(operands[0])
         raise NotImplementedError(f"Unsupported constant expr: {ce}")
 
     def _handlePhi(self, inst):
-        operands = getLLVMOperands(inst)
+        operands = get_llvm_operands(inst)
         bnum = type_size(self.llvmmodule, inst.type)
         phivar = Alloc(ConcreteVal(bnum, get_size_type()))
         L = Load(phivar, get_sb_type(self.llvmmodule, inst.type))
@@ -884,7 +884,7 @@ class Parser:
             self.phis = []  # we handled these PHI nodes
 
     def _parse_initializer(self, G, g, ts):
-        c = getConstant(g.initializer)
+        c = get_constant(g.initializer)
         if c:
             # FIXME: add composed instruction
             G.set_init([Store(c, G, ts)])
@@ -923,7 +923,7 @@ class Parser:
         # because they may be operands of calls
         for f in m.functions:
             assert f.type.is_pointer, "Function pointer type is not a pointer"
-            succ, retty = parseFunctionRetTy(self.llvmmodule, f.type.element_type)
+            succ, retty = parse_fun_ret_ty(self.llvmmodule, f.type.element_type)
             if not succ:
                 raise NotImplementedError(
                     "Cannot parse function return type: {0}".format(f.type.element_type)

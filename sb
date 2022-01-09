@@ -19,7 +19,7 @@ def err(msg):
     print_stderr(msg, color="RED")
     exit(1)
 
-def createArgParser():
+def create_arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('prog', nargs='+', help='program to be analyzed')
     parser.add_argument('-dbg', action='store_true', help='write debugging messages')
@@ -118,8 +118,8 @@ def createArgParser():
 
     return parser
 
-def parseArgs():
-    parser = createArgParser()
+def parse_arguments():
+    parser = create_arg_parser()
     args = parser.parse_args()
 
     valid_step = ['block', 'instr']
@@ -489,7 +489,7 @@ def main():
     from sys import setswitchinterval
     setswitchinterval(100)
 
-    args = parseArgs()
+    args = parse_arguments()
 
     setup_debugging(args)
 
