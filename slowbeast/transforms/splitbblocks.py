@@ -5,7 +5,7 @@ from slowbeast.domains.constants import ConstantTrue
 
 # FIXME: not efficient, but let's fix that once
 # it is a problem
-def splitAfter(block, after):
+def split_after(block, after):
     B = BBlock(block.fun())
     blocks = [block]
     last = block.last()
@@ -32,7 +32,7 @@ def splitAfter(block, after):
 # it is a problem
 
 
-def splitAround(block, P):
+def split_around(block, P):
     B = BBlock(block.fun())
     blocks = [block]
     last = block.last()
@@ -63,22 +63,22 @@ def splitAround(block, P):
     return blocks
 
 
-def splitBlockAroundCalls(block):
+def split_bblock_around_calls(block):
     if block.size() == 0:
         return [block]
 
     def iscall(c):
         return isinstance(c, Call)
 
-    return splitAround(block, iscall)
+    return split_around(block, iscall)
 
 
-def splitFunAroundCalls(F):
+def split_fun_around_calls(F):
     F._bblocks = [
-        b for block in F.bblocks().copy() for b in splitBlockAroundCalls(block)
+        b for block in F.bblocks().copy() for b in split_bblock_around_calls(block)
     ]
 
 
-def splitProgAroundCalls(P):
+def split_program_around_calls(P):
     for F in P:
-        splitFunAroundCalls(F)
+        split_fun_around_calls(F)
