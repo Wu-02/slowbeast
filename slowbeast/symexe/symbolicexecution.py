@@ -7,7 +7,6 @@ from slowbeast.ir.instruction import (
     Call,
     Thread,
     ThreadJoin,
-    Return,
     Alloc,
 )
 from slowbeast.ir.function import Function
@@ -146,7 +145,7 @@ class SymbolicExecutor(Interpreter):
                 testgen.process_state(s)
         else:
             assert s.exited()
-            dbg("state exited with exitcode {0}".format(s.get_exit_code()))
+            # dbg(f"state exited with exitcode {s.get_exit_code()}")
             stats.paths += 1
             stats.exited_paths += 1
             if testgen:
@@ -301,13 +300,12 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         if t.in_atomic():
             if not t.is_paused():
                 return [state]
-            else:
-                # this thread is dead-locked, but other can continue
-                state.set_killed(
-                    f"Thread {t.get_id()} is stucked "
-                    "(waits for a mutex inside an atomic sequence)"
-                )
-                return [state]
+            # this thread is dead-locked, but other can continue
+            state.set_killed(
+                f"Thread {t.get_id()} is stucked "
+                "(waits for a mutex inside an atomic sequence)"
+            )
+            return [state]
 
         is_global_ev = self._is_global_event
         for idx, t in enumerate(state.threads()):
@@ -321,17 +319,17 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         if len(can_run) == 0:
             state.set_error(GenericError("Deadlock detected"))
             return [state]
-        elif len(can_run) == 1:
+        if len(can_run) == 1:
             state.schedule(can_run[0])
             return [state]
-        else:
-            states = []
-            for idx in can_run:
-                s = state.copy()
-                s.schedule(idx)
-                states.append(s)
-            assert states
-            return states
+
+        states = []
+        for idx in can_run:
+            s = state.copy()
+            s.schedule(idx)
+            states.append(s)
+        assert states
+        return states
 
     def prepare(self):
         """
@@ -375,9 +373,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
                 #    print("Searched states: {0}".format(self.states_num))
                 self.handle_new_states(newstates)
         except Exception as e:
-            print_stderr(
-                "Fatal error while executing '{0}'".format(state.pc), color="RED"
-            )
+            print_stderr(f"Fatal error while executing '{state.pc}'", color="red")
             state.dump()
             raise e
 
@@ -403,7 +399,7 @@ def events_conflict(events, othevents):
 
 
 def has_conflicts(state, events, states_with_events):
-    for idx, othstate, othevents in states_with_events:
+    for _, othstate, othevents in states_with_events:
         if state is othstate:
             continue
         if events_conflict(events, othevents):
@@ -423,13 +419,12 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
         if t.in_atomic():
             if not t.is_paused():
                 return True
-            else:
-                # this thread is dead-locked, but other can continue
-                state.set_killed(
-                    f"Thread {t.get_id()} is stucked "
-                    "(waits for a mutex inside an atomic sequence)"
-                )
-                return False
+            # this thread is dead-locked, but other can continue
+            state.set_killed(
+                f"Thread {t.get_id()} is stucked "
+                "(waits for a mutex inside an atomic sequence)"
+            )
+            return False
 
         is_global_ev = self._is_global_event
         for idx, t in enumerate(state.threads()):
@@ -583,9 +578,7 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
 
                 handle_new_states(newstates)
         except Exception as e:
-            print_stderr(
-                "Fatal error while executing '{0}'".format(state.pc), color="RED"
-            )
+            print_stderr(f"Fatal error while executing '{state.pc}'", color="red")
             state.dump()
             raise e
 
