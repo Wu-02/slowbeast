@@ -189,7 +189,7 @@ class LazySymbolicMemoryModel(CoreMM):
                     state, fromOp, frm, bitsnum or bytesNum * 8
                 )
                 assert isinstance(toOp, Load)
-                state.create_nondet(toOp, NondetLoad.fromExpr(val, toOp, fromOp))
+                state.create_nondet(toOp, NondetLoad.from_expr(val, toOp, fromOp))
             elif err.is_unsupported() and self._overapprox_unsupported:
                 val, err = self._nondet_value(
                     state, fromOp, frm, bitsnum or bytesNum * 8

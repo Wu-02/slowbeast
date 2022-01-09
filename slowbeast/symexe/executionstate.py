@@ -195,7 +195,7 @@ class SEState(ExecutionState):
         return self._warnings
 
     def create_nondet(self, instr, val):
-        # self.add_nondet(Nondet(instr, NondetInstrResult.fromExpr(val, instr)))
+        # self.add_nondet(Nondet(instr, NondetInstrResult.from_expr(val, instr)))
         self.add_nondet(Nondet(instr, val))
 
     def add_nondet(self, n):

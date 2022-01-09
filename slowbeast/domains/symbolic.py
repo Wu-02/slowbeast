@@ -1225,7 +1225,7 @@ class NondetInstrResult(Expr):
     def instruction(self):
         return self._instr
 
-    def fromExpr(expr, instr):
+    def from_expr(expr, instr):
         assert isinstance(expr, Expr)
         return NondetInstrResult(expr.unwrap(), expr.type(), instr)
 
@@ -1246,7 +1246,7 @@ class NondetLoad(NondetInstrResult):
     def load(self):
         return self._instr
 
-    def fromExpr(expr, load, alloc):
+    def from_expr(expr, load, alloc):
         assert isinstance(expr, Expr)
         return NondetLoad(expr.unwrap(), expr.type(), load, alloc)
 
