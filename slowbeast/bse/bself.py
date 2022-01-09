@@ -258,7 +258,7 @@ class BSELFChecker(BaseBSE):
         dbg(f"Checking if {A} holds on {loc} finished")
         return result, states
 
-    def execute_path(self, path, fromInit=False, invariants=None):
+    def execute_path(self, path, from_init=False, invariants=None):
         """
         Execute the given path. The path is such that
         it ends one step before possible error.
@@ -266,7 +266,7 @@ class BSELFChecker(BaseBSE):
         perform one more step to check whether the
         error is reachable
         """
-        if fromInit:
+        if from_init:
             # we must execute without lazy memory
             executor = self.executor()
 
@@ -292,7 +292,7 @@ class BSELFChecker(BaseBSE):
         self.stats.paths += 1
 
         earl = r.early
-        if fromInit and earl:
+        if from_init and earl:
             # this is an initial path, so every error is taken as real
             errs = r.errors or []
             for e in (e for e in earl if e.has_error()):

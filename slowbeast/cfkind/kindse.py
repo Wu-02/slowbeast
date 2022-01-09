@@ -375,12 +375,12 @@ class KindSEChecker(BaseKindSE):
             self.loop_info[loc] = L
         return L
 
-    def execute_path(self, path, fromInit=False):
+    def execute_path(self, path, from_init=False):
         """
         Override execute_path such that it uses invariants that we have
         """
         return super().execute_path(
-            path, fromInit=fromInit, invariants=self.invariant_sets
+            path, from_init=from_init, invariants=self.invariant_sets
         )
 
     def unfinished_paths(self):

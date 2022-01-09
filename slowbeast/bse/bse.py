@@ -211,7 +211,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         """
         return self.return_states
 
-    def _execute_path(self, bsectx, fromInit=False, invariants=None):
+    def _execute_path(self, bsectx, from_init=False, invariants=None):
         """
         Execute the given path. The path is such that
         it ends one step before possible error.
@@ -220,7 +220,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         error is reachable
         """
         assert isinstance(bsectx, BSEContext), bsectx
-        if fromInit:
+        if from_init:
             # we must execute without lazy memory
             executor = self.executor()
             if not self.states:
@@ -253,11 +253,11 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         state = bsectx.errorstate
         assert len(ready) <= 1, "We support only one pre-state"
         if ready:
-            if state.join_prestate(ready[0], fromInit):
+            if state.join_prestate(ready[0], from_init):
                 # This assertion must hold only if the execution was maximal
                 # - but that may not be tru
                 # assert (
-                #    not fromInit or not state.inputs()
+                #    not from_init or not state.inputs()
                 # ), f"Initial state has unresolved inputs: {state}"
                 return [state]
         return []
@@ -268,7 +268,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         assert isinstance(bsectx.path.source(), CFA.Location)
         assert isinstance(self._entry_loc, CFA.Location)
         if bsectx.path.source() is self._entry_loc:
-            prestates = self._execute_path(bsectx, fromInit=True)
+            prestates = self._execute_path(bsectx, from_init=True)
             assert len(prestates) <= 1, "Maximally one pre-states is supported atm"
             if prestates:
                 prestates[0].set_error(bsectx.errordescr)

@@ -93,7 +93,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         """
         return self.return_states
 
-    def execute_path(self, path, fromInit=False, invariants=None):
+    def execute_path(self, path, from_init=False, invariants=None):
         """
         Execute the given path. The path is such that
         it ends one step before possible error.
@@ -101,7 +101,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         perform one more step to check whether the
         error is reachable
         """
-        if fromInit:
+        if from_init:
             # we must execute without lazy memory
             executor = self.executor()
 
@@ -127,7 +127,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         self.stats.paths += 1
 
         earl = r.early
-        if fromInit and earl:
+        if from_init and earl:
             # this is an initial path, so every error is taken as real
             errs = r.errors or []
             for e in (e for e in earl if e.has_error()):
@@ -249,7 +249,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         \requires an initial path
         """
 
-        r = self.execute_path(path, fromInit=True)
+        r = self.execute_path(path, from_init=True)
         if not r.errors:
             killed = any(True for s in r.early if s.was_killed()) if r.early else None
             if killed:

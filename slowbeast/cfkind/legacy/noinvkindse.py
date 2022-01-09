@@ -21,8 +21,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def get_cfg(self, F):
         return self.cfgs.setdefault(F, CFG(F))
 
-    def execute_path(self, path, fromInit=False):
-        if fromInit:
+    def execute_path(self, path, from_init=False):
+        if from_init:
             if not self.states:
                 self.prepare()
             states = self.states
@@ -140,7 +140,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             first_loc = path.first()
             if self._is_init(first_loc):
                 # try executing the path from initial states
-                _, notready = self.execute_path(path, fromInit=True)
+                _, notready = self.execute_path(path, from_init=True)
                 if not notready:
                     if len(first_loc.predecessors()) == 0:
                         # this path is safe and we do not need to extend it
