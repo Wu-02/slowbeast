@@ -24,7 +24,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
     def ind_executor(self):
         return self.indexecutor
 
-    def extendBase(self):
+    def extend_base_step(self):
         states = self.executor().execute_till_branch(self.base)
         self.base = []
         for ns in states:
@@ -58,7 +58,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         return None
 
-    def extendInd(self):
+    def extend_induction_hypothesis(self):
         states = self.indexecutor.execute_till_branch(self.ind)
 
         self.ind = []
@@ -84,7 +84,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         return Result.UNSAFE if found_err else Result.SAFE
 
-    def checkInd(self):
+    def check_induction_step(self):
         frontier = [s.copy() for s in self.ind]
         states = self.indexecutor.execute_till_branch(frontier)
 
@@ -105,7 +105,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         return Result.UNSAFE if has_error else Result.SAFE
 
-    def initializeInduction(self):
+    def initialize_induction(self):
         ind = []
         bblocks = self.get_program().entry().bblocks()
         executor = self.indexecutor
@@ -125,7 +125,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         k = 1
         self.base = self.states  # start from the initial states
-        self.ind, safe = self.initializeInduction()
+        self.ind, safe = self.initialize_induction()
 
         if safe:
             print_stdout("Found no error state!", color="GREEN")
@@ -135,7 +135,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             print_stdout("-- starting iteration {0} --".format(k))
 
             dbg("Extending base".format(k), color="BLUE")
-            r = self.extendBase()
+            r = self.extend_base_step()
             if r == Result.UNSAFE:
                 print_stdout("Error found.", color="RED")
                 return 1
@@ -147,7 +147,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
                 return 1
 
             dbg("Extending induction step".format(k), color="BLUE")
-            r = self.extendInd()
+            r = self.extend_induction_hypothesis()
             if r == Result.SAFE:
                 print_stdout(
                     "Did not hit any possible error while building "
@@ -160,7 +160,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
                 return 1
 
             dbg("Checking induction step".format(k), color="BLUE")
-            r = self.checkInd()
+            r = self.check_induction_step()
             if r == Result.SAFE:
                 print_stdout("Induction step succeeded!", color="GREEN")
                 return 0

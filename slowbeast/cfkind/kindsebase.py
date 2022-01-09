@@ -267,7 +267,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         return None, r
 
-    def checkPaths(self):
+    def check_paths(self):
         newpaths = []
         has_err = False
 
@@ -321,7 +321,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             dbg("-- starting iteration {0} --".format(k))
             dbg("Got {0} paths in queue".format(len(self.paths)))
 
-            r, states = self.checkPaths()
+            r, states = self.check_paths()
             if r is Result.SAFE:
                 dbg("All possible error paths ruled out!", color="GREEN")
                 dbg("Induction step succeeded!", color="GREEN")

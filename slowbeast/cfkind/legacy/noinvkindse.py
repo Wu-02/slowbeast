@@ -128,7 +128,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return None
 
-    def checkPaths(self):
+    def check_paths(self):
         newpaths = []
         has_err = False
 
@@ -173,7 +173,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return None
 
-    def initializePaths(self, k=1):
+    def initialize_paths(self, k=1):
         paths = []
         cfg = self.get_cfg(self.get_program().entry())
         nodes = cfg.get_nodes()
@@ -191,7 +191,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         k = 1
 
-        self.paths = self.initializePaths()
+        self.paths = self.initialize_paths()
 
         if len(self.paths) == 0:
             print_stdout("Found no error state!", color="GREEN")
@@ -201,7 +201,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             print_stdout("-- starting iteration {0} --".format(k))
             dbg("Got {0} paths in queue".format(len(self.paths)))
 
-            r = self.checkPaths()
+            r = self.check_paths()
             if r is Result.SAFE:
                 print_stdout("All possible error paths ruled out!", color="GREEN")
                 print_stdout("Induction step succeeded!", color="GREEN")

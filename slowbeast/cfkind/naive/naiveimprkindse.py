@@ -22,20 +22,20 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def get_cfg(self, F):
         return self.cfgs.setdefault(F, CFG(F))
 
-    def hasInfeasibleSuffix(self, path):
+    def has_infeasible_suffix(self, path):
         for p in self._infeasibleSuffixes:
-            if path.getPath().endswith(p):
+            if path.get_path().endswith(p):
                 return True
         return False
 
     def execute_path(self, path):
         print_stdout("Executing path: {0}".format(path), color="ORANGE")
         ready, notready = self.ind_executor().execute_edge(
-            path.getState(), path.getPath()
+            path.get_state(), path.get_path()
         )
         return ready, notready
 
-    def extendIndPath(self, path):
+    def extend_induction_hypothesisPath(self, path):
         newpaths = []
         found_err = False
 
@@ -44,7 +44,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 newpaths.append(p)
                 continue
 
-            if self.hasInfeasibleSuffix(p):
+            if self.has_infeasible_suffix(p):
                 # FIXME: this works only for "assert False" as it is in its own
                 # block...
                 dbg("Skipping path with infeasible suffix: {0}".format(p))
@@ -58,7 +58,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             newpaths += [InductionPath(r) for r in ready]
 
             if len(notready) == 0 and len(ready) == 0:
-                self._infeasibleSuffixes.append(p.getPath())
+                self._infeasibleSuffixes.append(p.get_path())
 
             for ns in notready:
                 if ns.has_error():
@@ -81,7 +81,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         found_err = False
         newpaths = []
         for path in ind:
-            tmp, f_err = self.extendIndPath(path)
+            tmp, f_err = self.extend_induction_hypothesisPath(path)
             if f_err == Result.UNKNOWN:
                 return [], Result.UNKNOWN
             newpaths += tmp
@@ -89,18 +89,18 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return newpaths, Result.UNSAFE if found_err else Result.SAFE
 
-    def extendInd(self):
-        pass  # we do all the work in checkInd
+    def extend_induction_hypothesis(self):
+        pass  # we do all the work in check_induction_step
 
-    def checkInd(self):
+    def check_induction_step(self):
         self.ind, safe = self.extend_paths(self.ind)
         return safe
 
-    def initializeInduction(self):
+    def initialize_induction(self):
         cfg = self.get_cfg(self.get_program().entry())
-        ind, done = super(KindSymbolicExecutor, self).initializeInduction()
+        ind, done = super(KindSymbolicExecutor, self).initialize_induction()
         if done:
             return [], True
         # we do the first extension here, so that we can do the rest of the
-        # work in checkInd and do not execute the paths repeatedly
+        # work in check_induction_step and do not execute the paths repeatedly
         return self.extend_paths([InductionPath(cfg, s) for s in ind])

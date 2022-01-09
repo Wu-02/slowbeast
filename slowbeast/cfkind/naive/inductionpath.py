@@ -18,13 +18,13 @@ class InductionPath:
     def copy(self):
         return InductionPath(self.cfg, self.state.copy(), copy(self.path.locations()))
 
-    def getState(self):
+    def get_state(self):
         return self.state
 
-    def getPath(self):
+    def get_path(self):
         return self.path
 
-    def appendLoc(self, loc):
+    def append_location(self, loc):
         self.path.append(loc)
         return self
 
@@ -42,9 +42,9 @@ class InductionPath:
             self.path.append(succs[0])
             return [self]
         else:
-            return [self.copy().appendLoc(s) for s in succs]
+            return [self.copy().append_location(s) for s in succs]
 
-    def successorsWithAssert(self):
+    def has_successors_with_assert(self):
         last = self.path.last()
         if last:
             succs = last.successors()
