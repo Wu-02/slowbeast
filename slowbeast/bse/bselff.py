@@ -238,7 +238,7 @@ class BSELFF(BSELF):
         self.forward_states = {}
         # self.create_set = self.ind_executor().create_states_set
 
-    def run(self):
+    def init_se_checkers(self):
         se = BSELFFSymbolicExecutor(
             self.program,
             self.ohandler,
@@ -247,8 +247,9 @@ class BSELFF(BSELF):
             fwdstates=self.forward_states,
         )
         se.prepare()
-        se_checkers = [se]
+        return [se]
 
+    def init_bself_checkers(self):
         bself_checkers = []
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
@@ -263,6 +264,11 @@ class BSELFF(BSELF):
             )
             checker.init_checker()
             bself_checkers.append(checker)
+        return bself_checkers
+
+    def run(self):
+        se_checkers = self.init_se_checkers()
+        bself_checkers = self.init_bself_checkers()
 
         while True:
             remove_checkers = set()
