@@ -149,6 +149,9 @@ class BSEContext:
             self.errordescr,
         )
 
+    def target_loc(self):
+        return self.path[-1].target()
+
     def __repr__(self):
         return f"BSE-ctx[{self.path}:{self.errorstate}]"
 

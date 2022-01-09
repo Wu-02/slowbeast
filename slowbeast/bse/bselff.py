@@ -13,9 +13,6 @@ from slowbeast.util.debugging import (
     dbg,
 )
 
-from slowbeast.cfkind.relations import get_var_cmp_relations
-
-
 #####################################################################
 # Forward execution
 #####################################################################
@@ -139,7 +136,8 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
 
     # S = self.executor().create_states_set(state)
     # loc = self._loop_headers[state.pc]
-    # A, rels, states = self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
+    # A, rels, states =\
+    #   self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
     # cur_rels = set()
     # for rel in (r for r in get_var_cmp_relations(state, A) if r not in rels):
     #    if rel.get_cannonical().is_concrete(): # True
@@ -190,7 +188,7 @@ class BSELFChecker(BSELFCheckerVanilla):
         if fstates:
             # use only the states from entering the loop -- those are most likely to work
             states = [s.copy() for s in fstates[0]]
-            r, n = execute_annotation(self._pathexecutor, states, A)
+            _, n = execute_annotation(self._pathexecutor, states, A)
             if n and any(map(lambda s: s.has_error(), n)):
                 return Result.UNKNOWN, None
         inc_print_indent()
@@ -269,21 +267,35 @@ class BSELFF(BSELF):
         while True:
             remove_checkers = set()
             for checker in se_checkers:
-                for i in range(7):
+                for _ in range(7):
                     # print("... forward step")
                     checker.do_step()
 
                     # forward SE found an error
                     if checker.stats.errors > 0:
+                        assert (
+                            checker.error_states
+                        ), "Have no error states after hitting an error"
+                        for e in checker.error_states:
+                            print_stdout(
+                                f"{e.get_id()}: {e.get_error()}",
+                                color="redul",
+                            )
+                        print_stdout("Error found.", color="redul")
                         return Result.UNSAFE
                     # forward SE searched whole program and found no error
                     if not checker.states:
                         if checker.stats.killed_paths == 0:
+                            print_stdout(
+                                "All paths searched, program is safe!", color="green"
+                            )
                             return Result.SAFE
-                        else:
-                            # BSELF can still prove the program correct if we failed here,
-                            # just remove this checker
-                            remove_checkers.add(checker)
+                        # BSELF can still prove the program correct if we failed here,
+                        # just remove this checker
+                        print_stdout(
+                            "Forward SE failed, aborting it...", color="yellow"
+                        )
+                        remove_checkers.add(checker)
             for c in remove_checkers:
                 se_checkers.remove(c)
 
@@ -298,7 +310,7 @@ class BSELFF(BSELF):
                 if result is Result.UNSAFE:
                     # FIXME: report the error from bsecontext
                     print_stdout(
-                        f"{states.get_id()}: [assertion error]: {loc} reachable.",
+                        f"{states.get_id()}: [assertion error]: {checker.location} reachable.",
                         color="redul",
                     )
                     print_stdout(str(states), color="wine")
@@ -307,12 +319,15 @@ class BSELFF(BSELF):
                     return result
                 if result is Result.SAFE:
                     print_stdout(
-                        f"Error condition {A.expr()} at {loc} is safe!.", color="green"
+                        f"Error condition {checker.assertion.expr()} "
+                        f"at {checker.location} is safe!",
+                        color="green",
                     )
                     remove_checkers.add(checker)
                 elif result is Result.UNKNOWN:
                     print_stdout(
-                        f"Checking {A} at {loc} was unsuccessful.", color="yellow"
+                        f"Checking {checker.assertion} at {checker.location} was unsuccessful.",
+                        color="yellow",
                     )
                     bself_has_unknown = True
                     assert (
