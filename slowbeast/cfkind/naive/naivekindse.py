@@ -25,7 +25,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         return self.indexecutor
 
     def extendBase(self):
-        states = self.executor().executeTillBranch(self.base)
+        states = self.executor().execute_till_branch(self.base)
         self.base = []
         for ns in states:
             if ns.has_error():
@@ -59,7 +59,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         return None
 
     def extendInd(self):
-        states = self.indexecutor.executeTillBranch(self.ind)
+        states = self.indexecutor.execute_till_branch(self.ind)
 
         self.ind = []
         found_err = False
@@ -86,7 +86,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
     def checkInd(self):
         frontier = [s.copy() for s in self.ind]
-        states = self.indexecutor.executeTillBranch(frontier)
+        states = self.indexecutor.execute_till_branch(frontier)
 
         has_error = False
         for ns in states:

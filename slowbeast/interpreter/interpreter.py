@@ -164,7 +164,7 @@ class Interpreter:
         # push call to main to call stack
         for s in self.states:
             main_args = self._main_args(s)
-            s.push_call(None, self.get_program().entry(), argsMapping=main_args)
+            s.push_call(None, self.get_program().entry(), args_mapping=main_args)
 
     def report(self):
         pass
@@ -177,7 +177,7 @@ class Interpreter:
         if self._options.step == ExecutionOptions.INSTR_STEP:
             newstates = self._executor.execute(state, state.pc)
         elif self._options.step == ExecutionOptions.BLOCK_STEP:
-            newstates = self._executor.executeTillBranch(state)
+            newstates = self._executor.execute_till_branch(state)
         else:
             raise NotImplementedError("Invalid step: {0}".format(self._options.step))
 

@@ -269,7 +269,7 @@ class CFGExecutor(SExecutor):
             nonready += tu
 
         # execute the block till branch
-        states = self.executeTillBranch(ready, stopBefore=True)
+        states = self.execute_till_branch(ready, stopBefore=True)
 
         # get the ready states
         ready, tmpnonready = split_ready_states(states)
@@ -346,7 +346,7 @@ class CFGExecutor(SExecutor):
 
                 # if this is the last edge and we should branch, do it
                 if branch_on_last and idx == locsnum - 2:
-                    newstates = self.executeTillBranch(ready)
+                    newstates = self.execute_till_branch(ready)
                     assert all(map(lambda x: x.is_ready(), newstates))
                 else:
                     curbb = loc.bblock()
@@ -358,7 +358,7 @@ class CFGExecutor(SExecutor):
                         newstates += self.exec_branch_to(s, s.pc, followsucc)
             else:  # this is the last location on path,
                 # so just normally execute the branch instruction in the block
-                newstates = self.executeTillBranch(ready)
+                newstates = self.execute_till_branch(ready)
                 # we executed only the branch inst, so the states still must be
                 # ready
                 assert all(map(lambda x: x.is_ready(), newstates))
@@ -467,7 +467,7 @@ class CFGExecutor(SExecutor):
 #     ready = []
 #     for s in fromstates:
 #         s.pc = blk.first()
-#         rdy = self.executeTillBranch(s)
+#         rdy = self.execute_till_branch(s)
 #         for r in rdy:
 #             if r.is_ready():
 #                 ready.append(r)

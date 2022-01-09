@@ -169,7 +169,7 @@ class Memory:
 
         return obj.write(x, ptr.offset())
 
-    def read(self, ptr, bytesNum):
+    def read(self, ptr, bytes_num):
         obj = self._objects.get(ptr.object().value())
         if obj is None:
             obj = self._glob_objects.get(ptr.object().value())
@@ -177,7 +177,7 @@ class Memory:
         if obj is None:
             return None, MemError(MemError.INVALID_OBJ, str(ptr.object()))
 
-        return obj.read(bytesNum, ptr.offset())
+        return obj.read(bytes_num, ptr.offset())
 
     def get_cs(self):
         return self._cs
@@ -210,8 +210,8 @@ class Memory:
     def values_list(self):
         return self._cs.values_list()
 
-    def push_call(self, callsite, fun, argsMapping={}):
-        self._cs.push_call(callsite, fun, argsMapping)
+    def push_call(self, callsite, fun, args_mapping={}):
+        self._cs.push_call(callsite, fun, args_mapping)
 
     def pop_call(self):
         return self._cs.pop_call()

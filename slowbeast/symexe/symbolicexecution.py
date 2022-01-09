@@ -204,7 +204,7 @@ def _is_global_event_fun(fn):
 
 
 #
-# def is_same_mem(state, mem1, mem2, bytesNum):
+# def is_same_mem(state, mem1, mem2, bytes_num):
 #     p1 = state.eval(mem1)
 #     p2 = state.eval(mem2)
 #     if p1.is_concrete() and p2.is_concrete():
@@ -223,12 +223,12 @@ def _is_global_event_fun(fn):
 #     return val1 == val2
 #
 #
-# def reads_same_val(state, loadop, storevalop, bytesNum):
+# def reads_same_val(state, loadop, storevalop, bytes_num):
 #     p1 = state.eval(loadop)
 #     val = state.try_eval(storevalop)
 #     if val is None:
 #         return False
-#     lval, err = state.memory.read(p1, bytesNum)
+#     lval, err = state.memory.read(p1, bytes_num)
 #     if err:
 #         return False
 #     # TODO: handle symbolic values?
@@ -242,7 +242,7 @@ def _is_global_event_fun(fn):
 #     isload, iswrite = isinstance(pc, Load), isinstance(pc, Store)
 #     if not isload and not iswrite:
 #         return confl
-#     bytesNum = pc.bytewidth()
+#     bytes_num = pc.bytewidth()
 #     for idx, t in enumerate(state.threads()):
 #         if idx == thr:
 #             continue
@@ -252,16 +252,16 @@ def _is_global_event_fun(fn):
 #         #    # return from main is always conflicting
 #         #    confl.append(idx)
 #         if isload and isinstance(tpc, Store):
-#             if is_same_mem(state, pc.operand(0), tpc.operand(1), bytesNum):
-#                 if not reads_same_val(state, pc.operand(0), tpc.operand(0), bytesNum):
+#             if is_same_mem(state, pc.operand(0), tpc.operand(1), bytes_num):
+#                 if not reads_same_val(state, pc.operand(0), tpc.operand(0), bytes_num):
 #                     confl.append(idx)
 #         elif iswrite:
 #             if isinstance(tpc, Store):
-#                 if is_same_mem(state, pc.operand(1), tpc.operand(1), bytesNum):
+#                 if is_same_mem(state, pc.operand(1), tpc.operand(1), bytes_num):
 #                     if not is_same_val(state, pc.operand(0), tpc.operand(0)):
 #                         confl.append(idx)
 #             elif isinstance(tpc, Load):
-#                 if is_same_mem(state, pc.operand(1), tpc.operand(0), bytesNum):
+#                 if is_same_mem(state, pc.operand(1), tpc.operand(0), bytes_num):
 #                     confl.append(idx)
 #     return confl
 #
@@ -346,7 +346,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         entry = self.get_program().entry()
         for s in self.states:
             main_args = self._main_args(s)
-            s.push_call(None, entry, argsMapping=main_args)
+            s.push_call(None, entry, args_mapping=main_args)
             assert s.num_threads() == 1
             s.sync_pc()
 

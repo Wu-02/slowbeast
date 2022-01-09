@@ -134,11 +134,11 @@ def print_stats(engine):
         executor = engine.executor()
         print_stdout(
             "Executed steps till branch: {0}".format(
-                executor.getExecStepNum()),
+                executor.get_exec_step_num()),
             color='CYAN')
         print_stdout(
             "Executed instructions: {0}".format(
-                executor.getExecInstrNum()),
+                executor.get_exec_instr_num()),
             color='CYAN')
         print_stdout(
             "Executed branch instructions: {0}".format(

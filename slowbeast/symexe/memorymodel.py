@@ -64,12 +64,12 @@ class LazySymbolicMemoryModel(CoreMM):
             state.havoc()
         return None
 
-    def write(self, state, instr, valueOp, toOp):
-        to = state.get(toOp)
+    def write(self, state, instr, value_op, to_op):
+        to = state.get(to_op)
         if to is None:
-            self.lazy_allocate(state, toOp)
+            self.lazy_allocate(state, to_op)
             to = state.get(
-                toOp
+                to_op
             )  # FIXME "We're calling get() method but we could return the value..."
             assert to
         if not to.is_pointer():
@@ -89,10 +89,10 @@ class LazySymbolicMemoryModel(CoreMM):
                 state.set_killed("Write with non-constant offset not supported yet")
             return [state]
 
-        value = state.try_eval(valueOp)
+        value = state.try_eval(value_op)
         if value is None:
             value = state.solver().Var(
-                f"uninit_{valueOp.as_value()}", IntType(8 * instr.bytewidth())
+                f"uninit_{value_op.as_value()}", IntType(8 * instr.bytewidth())
             )
         assert isinstance(value, Value)
 
@@ -114,7 +114,7 @@ class LazySymbolicMemoryModel(CoreMM):
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
-        # val = self.solver().fresh_value(f"uninit_{frm.as_value()}", 8 * bytesNum)
+        # val = self.solver().fresh_value(f"uninit_{frm.as_value()}", 8 * bytes_num)
         val = state.solver().Var(f"uninit_{frm.as_value()}", IntType(bitsnum))
         # write the fresh value into memory, so that
         # later reads see the same value.
@@ -133,69 +133,69 @@ class LazySymbolicMemoryModel(CoreMM):
             None,
         )
 
-    def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
+    def read(self, state, to_op, from_op, bytes_num, bitsnum=None):
         """
         We want to read 'bitsnum' of bits and in order to do that
-        we read 'bytesNum' of bytes
+        we read 'bytes_num' of bytes
         """
         assert (
-            bitsnum is None or max(1, int(bitsnum / 8)) == bytesNum
-        ), f"{bytesNum} {bitsnum}"
-        assert isinstance(bytesNum, int), f"Invalid number of bytes: {bytesNum}"
+            bitsnum is None or max(1, int(bitsnum / 8)) == bytes_num
+        ), f"{bytes_num} {bitsnum}"
+        assert isinstance(bytes_num, int), f"Invalid number of bytes: {bytes_num}"
 
-        frm = state.get(fromOp)
+        frm = state.get(from_op)
         if frm is None:
             if (
-                not isinstance(fromOp, (Alloc, GlobalVariable))
+                not isinstance(from_op, (Alloc, GlobalVariable))
                 and self._overapprox_unsupported
             ):
                 val = state.solver().Var(
-                    f"unknown_ptr_{fromOp.as_value()}",
-                    IntType(bitsnum or 8 * bytesNum()),
+                    f"unknown_ptr_{from_op.as_value()}",
+                    IntType(bitsnum or 8 * bytes_num()),
                 )
-                state.set(toOp, val)
+                state.set(to_op, val)
                 return [state]
             else:
-                self.lazy_allocate(state, fromOp)
-                frm = state.get(fromOp)
+                self.lazy_allocate(state, from_op)
+                frm = state.get(from_op)
 
         if not frm.is_pointer() and self._overapprox_unsupported:
-            val, err = self._nondet_value(state, fromOp, frm, bitsnum or bytesNum * 8)
+            val, err = self._nondet_value(state, from_op, frm, bitsnum or bytes_num * 8)
             if err:
                 state.set_error(err)
             else:
-                state.set(toOp, val)
+                state.set(to_op, val)
             return [state]
         else:
             assert frm.is_pointer(), frm
         if not frm.offset().is_concrete():
             if self._overapprox_unsupported:
                 val, err = self._nondet_value(
-                    state, fromOp, frm, bitsnum or bytesNum * 8
+                    state, from_op, frm, bitsnum or bytes_num * 8
                 )
                 if err:
                     state.set_error(err)
                 else:
-                    state.set(toOp, val)
+                    state.set(to_op, val)
                 return [state]
             else:
                 state.set_killed("Read with non-constant offset not supported yet")
             return [state]
-        val, err = state.memory.read(frm, bytesNum)
+        val, err = state.memory.read(frm, bytes_num)
         if err:
             assert err.is_memory_error(), err
             if err.is_uninit_read():
                 val, err = self.uninitialized_read(
-                    state, fromOp, frm, bitsnum or bytesNum * 8
+                    state, from_op, frm, bitsnum or bytes_num * 8
                 )
-                assert isinstance(toOp, Load)
-                state.create_nondet(toOp, NondetLoad.from_expr(val, toOp, fromOp))
+                assert isinstance(to_op, Load)
+                state.create_nondet(to_op, NondetLoad.from_expr(val, to_op, from_op))
             elif err.is_unsupported() and self._overapprox_unsupported:
                 val, err = self._nondet_value(
-                    state, fromOp, frm, bitsnum or bytesNum * 8
+                    state, from_op, frm, bitsnum or bytes_num * 8
                 )
         if err:
             state.set_error(err)
         else:
-            state.set(toOp, val)
+            state.set(to_op, val)
         return [state]

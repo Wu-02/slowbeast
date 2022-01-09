@@ -42,22 +42,22 @@ class BSEMemory(SEMemory):
             return v[0]
         return None
 
-    def read_symbolic_ptr(self, state, toOp, fromOp, bitsnum=None):
+    def read_symbolic_ptr(self, state, to_op, from_op, bitsnum=None):
         raise NotImplementedError("Not implemented yet")
 
-    def _symbolic_read(self, state, ptr, valinst, bytesNum):
+    def _symbolic_read(self, state, ptr, valinst, bytes_num):
         val = self._try_read(ptr)
         if val:
-            if val.bytewidth() != bytesNum:
+            if val.bytewidth() != bytes_num:
                 return None, MemError(
                     MemError.UNSUPPORTED,
-                    f"Read of value with different sizes: {val} {bytesNum}",
+                    f"Read of value with different sizes: {val} {bytes_num}",
                 )
             return val, None
         if not ptr.object().is_concrete() or not ptr.offset().is_concrete():
-            val = _nondet_value(state.solver().fresh_value, valinst, bytesNum * 8)
+            val = _nondet_value(state.solver().fresh_value, valinst, bytes_num * 8)
             state.create_nondet(valinst, val)
-            self._input_reads[ptr] = (val, bytesNum)
+            self._input_reads[ptr] = (val, bytes_num)
             return val, None
         # a read of a value from a concrete pointer
         # for which we do not have an entry
@@ -72,28 +72,28 @@ class BSEMemory(SEMemory):
 
         return None, MemError(MemError.UNINIT_READ, "Read of uninitialized memory")
 
-    def read(self, ptr, bytesNum):
+    def read(self, ptr, bytes_num):
         v = self._try_read(ptr)
         if v is None:
             if ptr.is_concrete():  # this happens only in the initial state
                 mo = self.get_obj(ptr.object())
                 if mo:
-                    return mo.read(bytesNum, ptr.offset())
+                    return mo.read(bytes_num, ptr.offset())
         if v is None:
             return None, MemError(
                 MemError.UNSUPPORTED, f"Read of unknown value; pointer: {ptr}"
             )
-        if v.bytewidth() != bytesNum:
+        if v.bytewidth() != bytes_num:
             return None, MemError(
                 MemError.UNSUPPORTED,
-                f"Read of value with different sizes: {v} {bytesNum}",
+                f"Read of value with different sizes: {v} {bytes_num}",
             )
         return v, None
 
-    def write_symbolic_ptr(self, state, toOp, value):
+    def write_symbolic_ptr(self, state, to_op, value):
         raise NotImplementedError("Not implemented yet")
         # reading from this pointer must equal value in the future
-        # self._reads[toOp] = value
+        # self._reads[to_op] = value
 
     def symbolic_write(self, ptr, value):
         self._reads.append((ptr, value))
@@ -150,41 +150,41 @@ class BSEMemoryModel(CoreMM):
         state.set(instr, ptr)
         return [state]
 
-    def write(self, state, instr, valueOp, toOp):
+    def write(self, state, instr, value_op, to_op):
         M = state.memory
 
-        value = state.eval(valueOp)
+        value = state.eval(value_op)
         assert value, "Have no value after (symbolic) eval"
         assert isinstance(value, Value)
 
-        to = state.eval(toOp)
+        to = state.eval(to_op)
         if not to.is_pointer():
-            M.write_symbolic_ptr(state, toOp, value)
+            M.write_symbolic_ptr(state, to_op, value)
             return [state]
 
         M.symbolic_write(to, value)
         return [state]
 
-    def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
+    def read(self, state, to_op, from_op, bytes_num, bitsnum=None):
         """
         We want to read 'bitsnum' of bits and in order to do that
-        we read 'bytesNum' of bytes
+        we read 'bytes_num' of bytes
         """
         assert (
-            bitsnum is None or max(1, int(bitsnum / 8)) == bytesNum
-        ), f"{bytesNum} {bitsnum}"
-        assert isinstance(bytesNum, int), f"Invalid number of bytes: {bytesNum}"
+            bitsnum is None or max(1, int(bitsnum / 8)) == bytes_num
+        ), f"{bytes_num} {bitsnum}"
+        assert isinstance(bytes_num, int), f"Invalid number of bytes: {bytes_num}"
         M = state.memory
-        frm = state.eval(fromOp)
+        frm = state.eval(from_op)
         if not frm.is_pointer():
-            M.read_symbolic_ptr(state, toOp, fromOp, bitsnum or bytesNum * 8)
+            M.read_symbolic_ptr(state, to_op, from_op, bitsnum or bytes_num * 8)
             return [state]
 
         assert frm.is_pointer(), frm
-        val, err = M._symbolic_read(state, frm, toOp, bytesNum)
+        val, err = M._symbolic_read(state, frm, to_op, bytes_num)
         if err:
             assert err.is_memory_error(), err
             state.set_error(err)
         else:
-            state.set(toOp, val)
+            state.set(to_op, val)
         return [state]

@@ -259,8 +259,8 @@ class Parser:
         operands = getLLVMOperands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
-        bytesNum = type_size(self.llvmmodule, operands[0].type)
-        S = Store(self.operand(operands[0]), self.operand(operands[1]), bytesNum)
+        bytes_num = type_size(self.llvmmodule, operands[0].type)
+        S = Store(self.operand(operands[0]), self.operand(operands[1]), bytes_num)
         self._addMapping(inst, S)
         return [S]
 

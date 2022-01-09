@@ -162,10 +162,10 @@ class Executor:
             m = self.memorymodel.create_memory()
         return ExecutionState(pc, m)
 
-    def getExecInstrNum(self):
+    def get_exec_instr_num(self):
         return self._executed_instrs
 
-    def getExecStepNum(self):
+    def get_exec_step_num(self):
         return self._executed_blks
 
     def get_options(self):
@@ -242,7 +242,7 @@ class Executor:
 
         return [state]
 
-    def execPrint(self, state, instr):
+    def exec_print(self, state, instr):
         assert isinstance(instr, Print)
         for x in instr.operands():
             v = state.eval(x)
@@ -454,7 +454,7 @@ class Executor:
         elif isinstance(instr, Cmp):
             states = self.exec_cmp(state, instr)
         elif isinstance(instr, Print):
-            states = self.execPrint(state, instr)
+            states = self.exec_print(state, instr)
         elif isinstance(instr, Branch):
             states = self.exec_branch(state, instr)
         elif isinstance(instr, Assert):
@@ -515,7 +515,7 @@ class Executor:
 
         return readystates, nonreadystates
 
-    def executeTillBranch(self, state, stopBefore=False):
+    def execute_till_branch(self, state, stopBefore=False):
         """
         Start executing from 'state' and stop execution after executing a
         branch instruction.  This will typically execute exactly one basic block
@@ -585,7 +585,7 @@ class Executor:
 
         for idx in range(0, len(locs)):
             # execute the block till branch
-            newstates = self.executeTillBranch(states, stopBefore=True)
+            newstates = self.execute_till_branch(states, stopBefore=True)
 
             # get the ready states
             states = []
@@ -604,7 +604,7 @@ class Executor:
                     newstates += self.exec_branch_to(s, s.pc, followsucc)
             else:  # this is the last location on path,
                 # so just normally execute the block instructions
-                newstates = self.executeTillBranch(states)
+                newstates = self.execute_till_branch(states)
             states = newstates
 
         assert all(map(lambda x: not x.is_ready(), earlytermstates))

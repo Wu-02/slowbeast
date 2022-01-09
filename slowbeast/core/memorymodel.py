@@ -35,11 +35,11 @@ class MemoryModel:
         state.set(instr, ptr)
         return [state]
 
-    def write(self, state, instr, valueOp, toOp):
-        value = state.eval(valueOp)
-        to = state.get(toOp)
+    def write(self, state, instr, value_op, to_op):
+        value = state.eval(value_op)
+        to = state.get(to_op)
         if to is None:
-            state.set_killed("Use of unknown variable: {0}".format(toOp))
+            state.set_killed("Use of unknown variable: {0}".format(to_op))
             return [state]
 
         assert isinstance(value, Value)
@@ -56,15 +56,15 @@ class MemoryModel:
                 state.set_error(err)
         return [state]
 
-    def read(self, state, toOp, fromOp, bytesNum, bitsnum=None):
-        frm = state.get(fromOp)
+    def read(self, state, to_op, from_op, bytes_num, bitsnum=None):
+        frm = state.get(from_op)
         if frm is None:
-            state.set_killed("Use of unknown variable: {0}".format(fromOp))
+            state.set_killed("Use of unknown variable: {0}".format(from_op))
             return [state]
 
         assert frm.is_pointer()
         try:
-            val, err = state.memory.read(frm, bytesNum)
+            val, err = state.memory.read(frm, bytes_num)
         except NotImplementedError as e:
             state.set_killed(str(e))
             return [state]
@@ -74,5 +74,5 @@ class MemoryModel:
             else:
                 state.set_error(err)
         else:
-            state.set(toOp, val)
+            state.set(to_op, val)
         return [state]
