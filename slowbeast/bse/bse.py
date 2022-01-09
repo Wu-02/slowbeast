@@ -37,6 +37,8 @@ def report_state(stats, n, msg=None, fn=print_stderr):
 
 
 class BSEPath:
+    __slots__ = "_edges"
+
     def __init__(self, *edges):
         # we keep the edges in reversed order to do efficient prepends
         # (= append in the reversed case)
@@ -56,6 +58,9 @@ class BSEPath:
         assert all(
             map(lambda x: x[1] == self[x[0]], enumerate(self))
         ), "Invalid iterators and getteres"
+
+    def edges(self):
+        return self._edges
 
     def copy(self):
         n = BSEPath()
@@ -220,7 +225,8 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             states = [s.copy() for s in self.states]
             assert states
 
-            # ldbgv("Computing (init) precondition: {0}", (bsectx,), fn=self.reportfn, color="orange")
+            # ldbgv("Computing (init) precondition: {0}", (bsectx,),
+            #       fn=self.reportfn, color="orange")
         else:
             executor = self.ind_executor()
             s = executor.create_clean_state()
@@ -357,11 +363,10 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 for op in callsite.operands():
                     arg = fun.argument(n)
                     argval = state.input(arg)
-                    val = state.eval(op)
                     if argval is None:
                         n += 1
                         continue
-                    state.replace_input_value(argval.value, val)
+                    state.replace_input_value(argval.value, state.eval(op))
                     n += 1
                 self.queue_state(bsectx.extension(pedge, state))
 
