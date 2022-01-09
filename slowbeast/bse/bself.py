@@ -72,7 +72,8 @@ def _check_set(executor, S, L, target):
     r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
     if r.errors:
         dbg(
-            "FIXME: pre-image is not inductive cause we do not support nondets() in lazy execution yet"
+            "FIXME: pre-image is not inductive cause we do not support "
+            "nondets() in lazy execution yet"
         )
         return False
     # --- workaround ends here...
@@ -164,11 +165,11 @@ def _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target):
         yield overapprox_set(executor, s.expr_manager(), S, E, target, assumptions, L)
 
 
-def is_seq_inductive(seq, executor, L: LoopInfo):
+def is_seq_inductive(seq, L: LoopInfo):
     return L.set_is_inductive(seq.as_set())
 
 
-def is_set_inductive(S, executor, L: LoopInfo):
+def is_set_inductive(S, L: LoopInfo):
     return L.set_is_inductive(S)
 
 
@@ -335,7 +336,7 @@ class BSELFChecker(BaseBSE):
                 r, pre = self.precondition(bsectx)
                 if r is Result.SAFE:
                     continue
-                elif r is Result.UNSAFE:
+                if r is Result.UNSAFE:
                     return Result.UNSAFE
 
                 if bsectx.path.source() == loc:
@@ -380,7 +381,7 @@ class BSELFChecker(BaseBSE):
                     )
                 print_stdout(f"Loop {loc} proved by unwinding", color="GREEN")
                 return True
-            elif res is Result.UNSAFE:
+            if res is Result.UNSAFE:
                 self.no_sum_loops.add(loc)
                 return False
 
@@ -498,39 +499,31 @@ class BSELFChecker(BaseBSE):
         S = E.copy()
         S.complement()
 
-        seq0 = InductiveSequence(S)
         if S.is_empty():
             return None
-        # FIXME: we do not do complements right now as that allows
-        # also inductive sets with array variables that we cannot handle
-        # (e.g., string-2-false.c test). This is a work-around for now.
-        # Just fail and safely continue in BSE.
-        if True or not is_seq_inductive(seq0, self, L):
-            dbg("... (complement not inductive)")
-            seqs = []
-            if loop_hit_no == 1:
-                dbg("... (getting sis for the 1st hit of the loop)")
-                Is = self.initial_sets_from_exits(E, L)
-                # cont. of the workaround -- the same problem. The set may not
-                # be inductive due to dynamic inputs or array variables.
-                # see, e.g., array_3-2.c
-                # assert Is, "Failed getting sequence for first visit"
-            else:
-                dbg("... (joining with previously unfinished sequences)")
-                Is = self.initial_sets_from_is(E, L)
-            if Is:
-                for s in Is:
-                    # should be inductive from construction - xxx: if it does
-                    # not contain array variables, that's why we check
-                    # explicitly for the inductiveness
-                    # assert is_seq_inductive(s, self, L), f"seq is not inductive: {s}"
-                    if is_set_inductive(s, self, L):
-                        dbg("... (got first IS)")
-                        seqs.append(InductiveSequence(s))
+        # FIXME: we do not check and return inductive complements as the init
+        # seq right now as that allows also inductive sets with array variables
+        # that we cannot handle # (e.g., string-2-false.c test).
+        seqs = []
+        if loop_hit_no == 1:
+            dbg("... (getting sis for the 1st hit of the loop)")
+            Is = self.initial_sets_from_exits(E, L)
+            # cont. of the workaround -- the same problem. The set may not
+            # be inductive due to dynamic inputs or array variables.
+            # see, e.g., array_3-2.c
+            # assert Is, "Failed getting sequence for first visit"
         else:
-            # dead-code for now
-            dbg("... (complement is inductive)")
-            seqs = [seq0]
+            dbg("... (joining with previously unfinished sequences)")
+            Is = self.initial_sets_from_is(E, L)
+        if Is:
+            for s in Is:
+                # should be inductive from construction - xxx: if it does
+                # not contain array variables, that's why we check
+                # explicitly for the inductiveness
+                # assert is_seq_inductive(s, L), f"seq is not inductive: {s}"
+                if is_set_inductive(s, L):
+                    dbg("... (got first IS)")
+                    seqs.append(InductiveSequence(s))
 
         ### reduce and over-approximate the initial sequence
         if seqs:
@@ -547,11 +540,10 @@ class BSELFChecker(BaseBSE):
         return seqs or None
 
     def overapprox_init_seq(self, seq0, unsafe, L):
-        assert is_seq_inductive(seq0, self, L), "seq is not inductive"
+        assert is_seq_inductive(seq0, L), "seq is not inductive"
         dbg("Overapproximating initial sequence")
         dbg(str(seq0))
 
-        create_set = self.create_set
         target = seq0[-1]
         S = seq0.as_set().copy()  # we're going to change S
         # assert not S.is_empty(), f"Starting sequence is infeasible!: {seq0}"
@@ -559,7 +551,7 @@ class BSELFChecker(BaseBSE):
 
         yielded_seqs = []
         for A in overapprox_state(self, S, unsafe, S, L):
-            if is_set_inductive(A, self, L):
+            if is_set_inductive(A, L):
                 # check if seq is a subset of some previously yielded sequence
                 yield_seq = True
                 for s in yielded_seqs:
@@ -574,7 +566,7 @@ class BSELFChecker(BaseBSE):
         # try without relations
         seq = InductiveSequence(overapprox_set(self, EM, S, unsafe, target, None, L))
 
-        if is_seq_inductive(seq, self, L):
+        if is_seq_inductive(seq, L):
             # check if seq is a subset of some previously yielded sequence
             yield_seq = True
             for s in yielded_seqs:
@@ -647,7 +639,8 @@ class BSELFChecker(BaseBSE):
                 S = create_set() if union_matched else None
                 for I in cov:
                     if union_matched:
-                        # todo: could the inclusion check weaken inferring relations from path condition? Probably yes.
+                        # todo: could the inclusion check weaken inferring
+                        # relations from path condition? Probably yes.
                         S.add(I.I)
                     else:
                         newsets.append(I.I)
@@ -784,10 +777,9 @@ class BSELFChecker(BaseBSE):
 
             # FIXME: check that all the sequences together cover the input paths
             # FIXME: rule out the sequences that are irrelevant here? How to find that out?
-            for n, seq in enumerate(sequences):
+            for _, seq in enumerate(sequences):
                 assert seq, sequences
                 S = seq.as_assert_annotation()
-                # FIXME: cache CTI's to perform fast checks of non-inductivness.
                 res, _ = self.check_loop_precondition(L, S)
                 if res is Result.SAFE:
                     # add the current sequence as invariant
@@ -818,7 +810,7 @@ class BSELFChecker(BaseBSE):
                     dbg(f"Extended with: {A}", color="brown")
                     tmp = seq.copy()
                     tmp.append(A)
-                    if not is_seq_inductive(tmp, self, L):
+                    if not is_seq_inductive(tmp, L):
                         assert False, "Extended sequence is not inductive"
                         continue
 
