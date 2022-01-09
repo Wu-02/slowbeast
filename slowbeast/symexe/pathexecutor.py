@@ -258,7 +258,7 @@ class CFGExecutor(SExecutor):
             nonready += tu
         return ready, nonready
 
-    def executeAnnotatedLoc(self, states, loc, path=None):
+    def execute_annotated_loc(self, states, loc, path=None):
         dbgv(f"vv ----- Loc {loc.bblock().get_id()} ----- vv", verbose_lvl=3)
 
         # execute annotations before bblock
@@ -287,7 +287,7 @@ class CFGExecutor(SExecutor):
         dbgv(f"^^ ----- Loc {loc.bblock().get_id()} ----- ^^")
         return ready, nonready
 
-    def executeAnnotatedPath(self, state, path, branch_on_last=False):
+    def execute_annotated_path(self, state, path, branch_on_last=False):
         """
         Execute the given path through CFG with annotations from the given
         state. NOTE: the passed states may be modified.
@@ -334,7 +334,7 @@ class CFGExecutor(SExecutor):
         locsnum = len(locs)
         for idx in range(0, locsnum):
             loc = locs[idx]
-            ready, nonready = self.executeAnnotatedLoc(states, loc, path)
+            ready, nonready = self.execute_annotated_loc(states, loc, path)
             assert all(map(lambda x: x.is_ready(), ready))
             assert all(map(lambda x: isinstance(x.pc, Branch), ready)), [
                 s.pc for s in ready
@@ -395,7 +395,7 @@ class CFGExecutor(SExecutor):
 #             newC.append(expr)
 #     return newC
 
-# def joinStates(self, fromstates, tostates):
+# def join_states(self, fromstates, tostates):
 #    dbg_sec("Joining states")
 #    # join the states
 #    finalstates = []
@@ -445,8 +445,8 @@ class CFGExecutor(SExecutor):
 
 #    # execute the given path/block from 'fromstates'
 #    dbg_sec("Computing preimage")
-#    r = self.executeAnnotatedPath(fromstate, path)
-#    finalstates = self.joinStates(r.ready or [], tostates)
+#    r = self.execute_annotated_path(fromstate, path)
+#    finalstates = self.join_states(r.ready or [], tostates)
 
 #    dbg_sec()
 #    return finalstates
@@ -472,12 +472,12 @@ class CFGExecutor(SExecutor):
 #             if r.is_ready():
 #                 ready.append(r)
 
-#     finalstates = self.joinStates(ready, tostates)
+#     finalstates = self.join_states(ready, tostates)
 
 #     dbg_sec()
 #     return finalstates
 
-# def executeAnnotatedStepWithPrefix(self, state, prefix):
+# def execute_annotated_step_with_prefixh(self, state, prefix):
 #    """
 #    Execute the given path through CFG with annotations from the given
 #    state and then do one more step in CFG.
@@ -492,7 +492,7 @@ class CFGExecutor(SExecutor):
 #    step.
 #    """
 
-#    r = self.executeAnnotatedPath(state, prefix)
+#    r = self.execute_annotated_path(state, prefix)
 #    r.errorsToEarly()
 #    r.otherToEarly()
 
@@ -505,9 +505,9 @@ class CFGExecutor(SExecutor):
 #    if r.ready:
 #        for s in r.ready:
 #            # get the CFG node that is going to be executed
-#            # (executeAnnotatedPath transferd the control to the right bblocks)
+#            # (execute_annotated_path transferd the control to the right bblocks)
 #            loc = cfg.get_node(s.pc.bblock())
-#            ts, tu = self.executeAnnotatedLoc([s], loc, prefix)
+#            ts, tu = self.execute_annotated_loc([s], loc, prefix)
 #            tmpready += ts
 #            nonready += tu
 
