@@ -493,8 +493,8 @@ class CFGExecutor(SExecutor):
 #    """
 
 #    r = self.execute_annotated_path(state, prefix)
-#    r.errorsToEarly()
-#    r.otherToEarly()
+#    r.errors_to_early()
+#    r.other_to_early()
 
 #    dbg("Prefix executed, executing one more step")
 

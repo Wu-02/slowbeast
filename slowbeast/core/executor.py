@@ -42,7 +42,7 @@ class PathExecutionResult:
         # of the last point on the path
         self.other = other
 
-    def errorsToEarly(self):
+    def errors_to_early(self):
         errs = self.errors
         earl = self.early
         if earl and errs:
@@ -51,7 +51,7 @@ class PathExecutionResult:
             self.early = errs
         self.errors = None
 
-    def otherToEarly(self):
+    def other_to_early(self):
         oth = self.other
         earl = self.early
         if earl and oth:
