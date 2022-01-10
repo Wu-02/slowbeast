@@ -339,7 +339,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         Result is a set of states before starting executing
         the entry function.
         """
-        self.states = self.initialStates()
+        self.states = self.initial_states()
         self.run_static()
 
         # push call to main to call stack

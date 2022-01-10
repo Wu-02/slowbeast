@@ -68,9 +68,9 @@ class InteractiveHandler:
             self._stop_next_time = True
             return True
         if query[0] == "p":
-            self.handlePrint(query[1:], s)
+            self.handle_print(query[1:], s)
         elif query[0] == "b":
-            self.handleBreak(query[1:])
+            self.handle_break(query[1:])
         elif query[0] in ["l", "list"]:
             if len(query) == 1:
                 i = s.pc
@@ -92,7 +92,7 @@ class InteractiveHandler:
                 return s
         return None
 
-    def handleBreak(self, query):
+    def handle_break(self, query):
         if not query:
             print("Break on instructions: ", self._break_inst)
             print("Break on path ID: ", self._break_pathid)
@@ -105,7 +105,7 @@ class InteractiveHandler:
         # elif query[0] in ['s', 'state']: # NOTE: will not work, states do not
         # have any unique id
 
-    def handlePrint(self, query, state):
+    def handle_print(self, query, state):
         if not query:
             raise RuntimeError("Invalid arguments to print")
         if query[0] == "states":

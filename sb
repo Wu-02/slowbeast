@@ -635,7 +635,7 @@ def main():
         opts.incremental_solving = args.se_incremental_solving
 
         if args.se_step == 'block':
-            opts.setBlockStep()
+            opts.set_block_step()
 
         if args.stateful_se:
             assert not args.future_se, "Not compatible at this moment"

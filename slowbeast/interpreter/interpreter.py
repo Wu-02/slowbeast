@@ -20,7 +20,7 @@ class ExecutionOptions:
             self.no_calls = False
             self.lazy_mem_access = False
 
-    def setBlockStep(self):
+    def set_block_step(self):
         self.step = ExecutionOptions.BLOCK_STEP
         return self
 
@@ -60,7 +60,7 @@ class Interpreter:
     def get_states(self):
         return self.states
 
-    def initialStates(self):
+    def initial_states(self):
         """
         Get state(s) from which to start execution.
         May be overriden by child classes
@@ -158,7 +158,7 @@ class Interpreter:
         Result is a set of states before starting executing
         the entry function.
         """
-        self.states = self.initialStates()
+        self.states = self.initial_states()
         self.run_static()
 
         # push call to main to call stack
