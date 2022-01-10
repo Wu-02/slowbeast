@@ -101,16 +101,16 @@ class AnnotatedCFGPath(CFGPath):
         self._precondition = []
         self._postcondition = []
 
-    def addLocAnnotationAfter(self, annot, loc):
+    def add_loc_annot_after(self, annot, loc):
         self.locannotationsafter.setdefault(_get_loc_key(loc), []).append(annot)
 
-    def getLocAnnotationsAfter(self, loc):
+    def get_loc_annots_after(self, loc):
         return self.locannotationsafter.get(_get_loc_key(loc))
 
-    def addLocAnnotationBefore(self, annot, loc):
+    def add_loc_annot_before(self, annot, loc):
         self.locannotations.setdefault(_get_loc_key(loc), []).append(annot)
 
-    def getLocAnnotationsBefore(self, loc):
+    def get_loc_annots_before(self, loc):
         return self.locannotations.get(_get_loc_key(loc))
 
     # FIXME: this can be also assert, do we want to call it post-condition?
@@ -177,9 +177,9 @@ class AnnotatedCFGPath(CFGPath):
         def loc_str(x):
             blk = x.bblock()
             return "{0}{1}{2}".format(
-                "a" if self.getLocAnnotationsBefore(blk) else "",
+                "a" if self.get_loc_annots_before(blk) else "",
                 blk.get_id(),
-                "a" if self.getLocAnnotationsAfter(blk) else "",
+                "a" if self.get_loc_annots_after(blk) else "",
             )
 
         return "{0}{1}{2}".format(

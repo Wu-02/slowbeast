@@ -263,7 +263,7 @@ class CFGExecutor(SExecutor):
 
         # execute annotations before bblock
         ready, nonready = self.execute_annotations(states, loc._annotations_before)
-        locannot = path.getLocAnnotationsBefore(loc) if path else None
+        locannot = path.get_loc_annots_before(loc) if path else None
         if locannot:
             ready, tu = self.execute_annotations(ready, locannot)
             nonready += tu
@@ -279,7 +279,7 @@ class CFGExecutor(SExecutor):
         ready, tmpnonready = self.execute_annotations(ready, loc._annotations_after)
         nonready += tmpnonready
 
-        locannot = path.getLocAnnotationsAfter(loc) if path else None
+        locannot = path.get_loc_annots_after(loc) if path else None
         if locannot:
             ready, tu = self.execute_annotations(ready, locannot)
             nonready += tu
