@@ -33,7 +33,7 @@ class SymbolicExprOpt(ExprOptIntf):
         optexpr = SymbolicDomain.simplify(expr, *assumptions)
         # lower the symbolic expression into a concrete value
         # if possible
-        const = SymbolicDomain.pythonConstant(optexpr)
+        const = SymbolicDomain.to_python_constant(optexpr)
         if const is not None:
             return ConcreteVal(const, optexpr.type())
         return optexpr

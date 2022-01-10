@@ -316,7 +316,7 @@ def get_const_subs_relations(state):
                 and expr != nexpr
                 and state.is_sat(nexpr) is True
             ):
-                if nexpr.isEq():
+                if nexpr.is_eq():
                     c1, c2 = list(nexpr.children())
                     if c1.is_concrete() or c2.is_concrete():
                         continue
@@ -333,9 +333,9 @@ def _iter_constraints(C):
     for c in C:
         if c.is_or():
             for cc in c.children():
-                if cc.isEq():
+                if cc.is_eq():
                     yield cc
-        elif c.isEq():
+        elif c.is_eq():
             yield c
 
 
@@ -354,7 +354,7 @@ def get_var_subs_relations(state):
         for expr in _iter_constraints(C):
             nexpr = substitute(expr, (r, l))
             if not nexpr.is_concrete() and expr != nexpr and is_sat(nexpr) is True:
-                assert nexpr.isEq()
+                assert nexpr.is_eq()
                 c1, c2 = list(nexpr.children())
                 if c1.is_concrete() or c2.is_concrete():
                     continue
@@ -364,7 +364,7 @@ def get_var_subs_relations(state):
                 yield AssertAnnotation(nexpr, subs, EM)
             nexpr = substitute(expr, (l, r))
             if not nexpr.is_concrete() and expr != nexpr and is_sat(nexpr) is True:
-                assert nexpr.isEq()
+                assert nexpr.is_eq()
                 c1, c2 = list(nexpr.children())
                 if c1.is_concrete() or c2.is_concrete():
                     continue
@@ -447,7 +447,7 @@ def get_var_relations(safe, prevsafe=None, only_eq=False):
     Not = global_expr_mgr().Not
     for rel in _get_var_relations(safe, prevsafe):
         expr = rel.expr()
-        if only_eq and not expr.isEq():
+        if only_eq and not expr.is_eq():
             continue
         solver.push()
         solver.add(expr)

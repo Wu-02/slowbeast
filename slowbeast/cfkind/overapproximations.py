@@ -103,21 +103,21 @@ def literals(c):
 
 def get_predicate(l):
     EM = global_expr_mgr()
-    if l.isSLe():
+    if l.is_sle():
         return EM.Le
-    if l.isSGe():
+    if l.is_sge():
         return EM.Ge
-    if l.isSLt():
+    if l.is_slt():
         return EM.Lt
-    if l.isSGt():
+    if l.is_sgt():
         return EM.Gt
-    if l.isULe():
+    if l.is_ule():
         return partial(EM.Le, unsigned=True)
-    if l.isUGe():
+    if l.is_uge():
         return partial(EM.Ge, unsigned=True)
-    if l.isULt():
+    if l.is_ult():
         return partial(EM.Lt, unsigned=True)
-    if l.isUGt():
+    if l.is_ugt():
         return partial(EM.Gt, unsigned=True)
 
     raise NotImplementedError(f"Unhandled predicate in expr {l}")
@@ -129,9 +129,9 @@ def _decompose_literal(l):
         isnot = True
         l = list(l.children())[0]
 
-    if l.isLt() or l.isLe():
+    if l.is_lt() or l.is_le():
         addtoleft = False
-    elif l.isGt() or l.isGe():
+    elif l.is_gt() or l.is_ge():
         addtoleft = True
     else:
         return None, None, None, None
@@ -480,7 +480,7 @@ class LoopStateOverapproximation:
             # try breaking equalities into inequalities. We do it here so that we preserve the equality
             # if we fail overapproximating. This is because when we later derive relations from path condition,
             # we want the equalities there.
-            if c.isEq():
+            if c.is_eq():
                 chld = list(c.children())
                 assert len(chld) == 2, c
                 le = Le(chld[0], chld[1])
@@ -513,7 +513,7 @@ class LoopStateOverapproximation:
                     newclauses.append(le)
                     continue
                 newclauses.append(c)
-            elif c.is_not() and next(c.children()).isEq():
+            elif c.is_not() and next(c.children()).is_eq():
                 chld = list(next(c.children()).children())
                 assert len(chld) == 2, c
                 lt = Lt(chld[0], chld[1])
@@ -763,12 +763,12 @@ def break_eqs(expr):
     for c in expr.children():
         if c.is_not():
             d = next(c.children())
-            if d.isEq():
+            if d.is_eq():
                 cls = break_eq(d)
                 clauses.append(EM.disjunction(*(EM.Not(x) for x in cls)) if cls else c)
             else:
                 clauses.append(c)
-        elif c.isEq():
+        elif c.is_eq():
             clauses.extend(break_eq(c))
         else:
             clauses.append(c)

@@ -1158,46 +1158,46 @@ class Expr(Value):
     def is_not(self):
         return is_not(self.unwrap())
 
-    def isEq(self):
+    def is_eq(self):
         return is_app_of(self._expr, Z3_OP_EQ)
 
-    def isLe(self):
+    def is_le(self):
         return is_app_of(self._expr, Z3_OP_SLEQ) or is_app_of(self._expr, Z3_OP_ULEQ)
 
-    def isGe(self):
+    def is_ge(self):
         return is_app_of(self._expr, Z3_OP_SGEQ) or is_app_of(self._expr, Z3_OP_UGEQ)
 
-    def isLt(self):
+    def is_lt(self):
         return is_app_of(self._expr, Z3_OP_SLT) or is_app_of(self._expr, Z3_OP_ULT)
 
-    def isGt(self):
+    def is_gt(self):
         return is_app_of(self._expr, Z3_OP_SGT) or is_app_of(self._expr, Z3_OP_UGT)
 
-    def isSLe(self):
+    def is_sle(self):
         return is_app_of(self._expr, Z3_OP_SLEQ)
 
-    def isSGe(self):
+    def is_sge(self):
         return is_app_of(self._expr, Z3_OP_SGEQ)
 
-    def isSLt(self):
+    def is_slt(self):
         return is_app_of(self._expr, Z3_OP_SLT)
 
-    def isSGt(self):
+    def is_sgt(self):
         return is_app_of(self._expr, Z3_OP_SGT)
 
-    def isULe(self):
+    def is_ule(self):
         return is_app_of(self._expr, Z3_OP_ULEQ)
 
-    def isUGe(self):
+    def is_uge(self):
         return is_app_of(self._expr, Z3_OP_UGEQ)
 
-    def isULt(self):
+    def is_ult(self):
         return is_app_of(self._expr, Z3_OP_ULT)
 
-    def isUGt(self):
+    def is_ugt(self):
         return is_app_of(self._expr, Z3_OP_UGT)
 
-    def isMul(self):
+    def is_mul(self):
         return is_app_of(self._expr, Z3_OP_BMUL)  # or is_app_of(self._expr, Z3_OP_MUL)
 
     def __hash__(self):
@@ -1353,7 +1353,7 @@ class BVSymbolicDomain:
             simplify(expr.unwrap(), arith_ineq_lhs=True, sort_sums=True), expr.type()
         )
 
-    def pythonConstant(expr):
+    def to_python_constant(expr):
         return python_constant(expr.unwrap())
 
     def substitute(expr, *what):
