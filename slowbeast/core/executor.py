@@ -147,7 +147,7 @@ class Executor:
         self._executed_instrs = 0
         self._executed_blks = 0
 
-    # def setMemoryModel(self, mm):
+    # def set_memory_model(self, mm):
     #    self.memorymodel = mm
 
     def get_memory_model(self):

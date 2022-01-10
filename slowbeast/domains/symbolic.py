@@ -118,17 +118,17 @@ if _use_z3:
             assert r.sort().size() == x.bitwidth(), f"{r.sort()}, {x.type()}"
             return r
         if x.is_bool():
-            return boolToBV(x)
+            return bool_to_ubv(x)
         return x.unwrap()
 
-    def floatToUBV(x, ty=None):
+    def float_to_ubv(x, ty=None):
         if x.is_float():
             bw = ty.bitwidth() if ty else x.bitwidth()
             return simplify(fpToUBV(RNE(), x._expr, BitVecSort(bw)))
 
         return x.unwrap()
 
-    def floatToSBV(x, ty=None):
+    def float_to_sbv(x, ty=None):
         if x.is_float():
             bw = ty.bitwidth() if ty else x.bitwidth()
             return simplify(fpToUBV(RNE(), x._expr, BitVecSort(bw)))
@@ -183,17 +183,17 @@ if _use_z3:
             return b
         return If(b, bv_const(1, 1), bv_const(0, 1))
 
-    def boolToBV(b):
+    def bool_to_ubv(b):
         if not b.is_bool():
             return b.unwrap()
         return If(b.unwrap(), bv_const(1, 1), bv_const(0, 1))
 
-    def castToFP(b):
+    def cast_to_fp(b):
         if b.is_float():
             return b.unwrap()
         return fpToFP(b.unwrap(), get_fp_sort(b.type().bitwidth()))
 
-    def castToBool(b):
+    def cast_to_bool(b):
         if b.is_bool():
             return b.unwrap()
         return If(b.unwrap() != bv_const(0, b.bitwidth()), TRUE(), FALSE())
@@ -1287,11 +1287,11 @@ class Future(Expr):
 
 
 def zext_expr(a, bw):
-    return BVZExt(bw - a.bitwidth(), boolToBV(a))
+    return BVZExt(bw - a.bitwidth(), bool_to_ubv(a))
 
 
 def sext_expr(a, bw):
-    return BVSExt(bw - a.bitwidth(), boolToBV(a))
+    return BVSExt(bw - a.bitwidth(), bool_to_ubv(a))
 
 
 def python_constant(val):
@@ -1474,7 +1474,7 @@ class BVSymbolicDomain:
         bw = b.value()
         assert a.bitwidth() <= bw, "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
-        ae = to_bv(a) if a.is_float() else boolToBV(a)
+        ae = to_bv(a) if a.is_float() else bool_to_ubv(a)
         return Expr(BVZExt(bw - a.bitwidth(), ae), IntType(bw))
 
     def SExt(a, b):
@@ -1484,7 +1484,7 @@ class BVSymbolicDomain:
         bw = b.value()
         assert a.bitwidth() <= bw, f"Invalid sext argument: {a} to {bw} bits"
 
-        ae = to_bv(a) if a.is_float() else boolToBV(a)
+        ae = to_bv(a) if a.is_float() else bool_to_ubv(a)
         return Expr(BVSExt(bw - a.bitwidth(), ae), IntType(bw))
 
     def BitCast(a: Value, ty: Type):
@@ -1540,9 +1540,9 @@ class BVSymbolicDomain:
                 return Expr(expr, ty)
         elif a.is_float() and ty.is_int():
             if signed:
-                ae = floatToSBV(a, ty)
+                ae = float_to_sbv(a, ty)
             else:
-                ae = floatToUBV(a, ty)
+                ae = float_to_ubv(a, ty)
             # ae = fpToIEEEBV(a._expr)
             return Expr(ae, ty)
         elif a.is_bool() and ty.is_int():
@@ -1606,7 +1606,7 @@ class BVSymbolicDomain:
         # we need this explicit float cast for the cases when a or b are
         # nondet loads (in which case they are bitvectors)
         if floats:
-            a, b = castToFP(a), castToFP(b)
+            a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpLEQ(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
@@ -1619,7 +1619,7 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            a, b = castToFP(a), castToFP(b)
+            a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpLT(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
@@ -1632,7 +1632,7 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            a, b = castToFP(a), castToFP(b)
+            a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpGEQ(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
@@ -1645,7 +1645,7 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            a, b = castToFP(a), castToFP(b)
+            a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpGT(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
@@ -1658,7 +1658,7 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a} != {b}"
         if floats:
-            a, b = castToFP(a), castToFP(b)
+            a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpEQ(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
@@ -1671,7 +1671,7 @@ class BVSymbolicDomain:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
-            a, b = castToFP(a), castToFP(b)
+            a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpNEQ(a, b)
             if not unsigned:
                 expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
