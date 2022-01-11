@@ -1557,9 +1557,9 @@ class BVSymbolicDomain:
         return None  # unsupported conversion
 
     def Extract(a, start, end):
-        assert BVSymbolicDomain.belongto(a)
-        assert start.is_concrete()
-        assert end.is_concrete()
+        assert BVSymbolicDomain.belongto(a), a
+        assert start.is_concrete(), start
+        assert end.is_concrete(), end
         return Expr(
             BVExtract(end.value(), start.value(), a.unwrap()),
             IntType(end.value() - start.value() + 1),
