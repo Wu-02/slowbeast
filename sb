@@ -26,6 +26,7 @@ def create_arg_parser():
     parser.add_argument('-lang', action='store', help='Specify the input'
                         'language: C, LLVM (forces the file to be compiled to LLVM if'
                         'lang is LLVM and input file is C)')
+    parser.add_argument('-opt', action='store', help='Use opt with the given arguments (for LLVM only)')
     parser.add_argument('-entry', default='main', help='entry function')
     parser.add_argument('-out-dir', default='sb-out', help='Directory for output files')
     parser.add_argument('-interactive', action='store_true', default=False, help='Introspect the run of the algorithm')
@@ -520,6 +521,8 @@ def main():
                                 ['-Xclang', '-disable-O0-optnone',
                                  '-fno-vectorize', '-fno-slp-vectorize']
                                 if args.external_invariants == 'clam' else None)
+        if args.opt:
+            code = opt(code, args.opt.split(','))
         if args.external_invariants == 'clam':
             code = add_clam_invariants(code)
     try:
