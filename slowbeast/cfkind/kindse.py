@@ -15,7 +15,6 @@ from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.cfkind import KindSEOptions
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.symexe.symbolicexecution import SEStats
-from slowbeast.analysis.loops import Loop
 from slowbeast.analysis.programstructure import ProgramStructure
 
 from slowbeast.symexe.annotations import (
@@ -1053,10 +1052,10 @@ class KindSEChecker(BaseKindSE):
             if r is Result.UNSAFE:
                 self.reportfn(f"Error path: {path}", color="red")
                 return r, states  # found a real error
-            elif r is Result.SAFE:
+            if r is Result.SAFE:
                 # dbgv(f"Safe (init) path: {path}", color="dark_green")
                 return None, states  # this path is safe
-            elif r is Result.UNKNOWN:
+            if r is Result.UNKNOWN:
                 for s in states.killed():
                     report_state(self.stats, s, self.reportfn)
                 # dbgv(f"Inconclusive (init) path: {path}")
