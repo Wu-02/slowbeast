@@ -1,10 +1,10 @@
-from sys import stdout
 from copy import copy
+from sys import stdout
 
-from slowbeast.domains.value import Value
-from slowbeast.domains.concrete import ConcreteVal, ConcreteInt
-from slowbeast.ir.types import get_offset_type
 from slowbeast.core.errors import MemError
+from slowbeast.domains.concrete import ConcreteVal, ConcreteInt
+from slowbeast.domains.value import Value
+from slowbeast.ir.types import get_offset_type
 
 
 class MemoryObject:
@@ -162,7 +162,7 @@ class MemoryObject:
             return None, MemError(
                 MemError.UNINIT_READ,
                 f"Read from uninitialized memory (or unaligned read (not supp.  yet)).\n"
-                f"Reading bytes {offval}-{offval+bts-1} from obj {self._id} with contents:\n"
+                f"Reading bytes {offval}-{offval + bts - 1} from obj {self._id} with contents:\n"
                 f"{self._values}",
             )
 

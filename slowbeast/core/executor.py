@@ -1,13 +1,13 @@
 import sys
 from itertools import chain
 
-from slowbeast.domains.pointer import Pointer
-from slowbeast.util.debugging import ldbgv
-from slowbeast.ir.instruction import *
 from slowbeast.domains.concrete import ConcreteInt
+from slowbeast.domains.pointer import Pointer
+from slowbeast.ir.instruction import *
+from slowbeast.util.debugging import ldbgv
 from .errors import GenericError
-from .memorymodel import MemoryModel
 from .executionstate import ExecutionState
+from .memorymodel import MemoryModel
 
 
 def split_ready_states(states):

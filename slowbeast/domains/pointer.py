@@ -1,10 +1,9 @@
 from slowbeast.domains.concrete import ConcreteInt
-from slowbeast.ir.types import get_offset_type_size, PointerType
 from slowbeast.domains.value import Value
+from slowbeast.ir.types import get_offset_type_size, PointerType
 
 
 class Pointer(Value):
-
     __slots__ = "_object", "_offset"
     KIND = 5
 

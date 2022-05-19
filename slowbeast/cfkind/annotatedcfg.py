@@ -1,7 +1,7 @@
 from slowbeast.analysis.cfg import CFG as PureCFG
 from slowbeast.analysis.cfg import CFGPath as PureCFGPath
-from slowbeast.ir.instruction import Assert
 from slowbeast.ir.bblock import BBlock
+from slowbeast.ir.instruction import Assert
 
 
 class CFG(PureCFG):

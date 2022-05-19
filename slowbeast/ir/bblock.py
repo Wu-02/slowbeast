@@ -1,9 +1,9 @@
 from sys import stdout
+
 from .program import ProgramElement
 
 
 class BBlock(ProgramElement):
-
     __slots__ = ["_instructions", "_function"]
 
     def __init__(self, f=None):

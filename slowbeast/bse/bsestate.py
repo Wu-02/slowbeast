@@ -3,10 +3,10 @@ from sys import stdout
 from slowbeast.bse.memorymodel import _nondet_value
 from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.domains.pointer import Pointer
+from slowbeast.solvers.solver import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.util.debugging import ldbgv
-from slowbeast.solvers.solver import solve_incrementally
 
 
 def _subst_val(substitute, val, subs):
@@ -116,7 +116,8 @@ class BSEState(LazySEState):
         constraints = []
         # FIXME: we target globals, but we could in fact just try reading from initstate
         # to get, e.g., values of bytes from objects.
-        # However, the problem is that symbolic offsets are not supported, so...
+        # However, the problem is that symbolic offsets are not supported,
+        # so...
         for ptr, val in R.items():
             obj = ptr.object()
             # this can happen if we execute a path that does not contain all information
@@ -219,7 +220,8 @@ class BSEState(LazySEState):
             assert (
                 val.offset().is_concrete() or val.offset().is_symbol()
             ), f"Cannot replace {val} with {newval}"
-            # if the value is pointer, we must substitute it also in the state of the memory
+            # if the value is pointer, we must substitute it also in the state
+            # of the memory
             assert newval.is_pointer(), newval
             pc = substitute(
                 pc, (val.object(), newval.object()), (val.offset(), newval.offset())
@@ -301,7 +303,8 @@ class BSEState(LazySEState):
         if is_init:
             # we have feasible state in init, we must check whether it is really feasible
             # by adding the omitted memory constraints
-            # FIXME: can we somehow easily check that we do not have to do this?
+            # FIXME: can we somehow easily check that we do not have to do
+            # this?
             self.add_constraint(*self._memory_constraints())
             self.add_constraint(*self._init_memory_constraints(prestate))
 
@@ -324,7 +327,7 @@ class BSEState(LazySEState):
         try_eval = prestate.try_eval
         add_input = self.add_input
 
-        ### modify the state according to the pre-state
+        # modify the state according to the pre-state
         replace_value = self.replace_value
         new_inputs = []
         for inp in self.inputs():
@@ -348,7 +351,7 @@ class BSEState(LazySEState):
                     # we matched the input read, so remove it
                     self.memory._input_reads.pop(ptr)
 
-        ### copy the data from pre-state
+        # copy the data from pre-state
         self.memory._reads = prestate.memory._reads + self.memory._reads
         ireads = self.memory._input_reads
         self.memory._input_reads = prestate.memory._input_reads.copy()

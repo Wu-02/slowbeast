@@ -1,11 +1,11 @@
 from slowbeast.core.executor import PathExecutionResult
+from slowbeast.solvers.solver import global_expr_mgr
 from slowbeast.symexe.annotations import (
     AssumeAnnotation,
     AssertAnnotation,
     or_annotations,
 )
 from slowbeast.symexe.statesset import union
-from slowbeast.solvers.solver import global_expr_mgr
 
 
 class InductiveSequence:

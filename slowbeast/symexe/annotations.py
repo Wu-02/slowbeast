@@ -1,7 +1,8 @@
 from copy import copy
-from slowbeast.util.debugging import dbgv_sec, ldbgv
+
 from slowbeast.core.executor import split_ready_states
 from slowbeast.symexe.executionstate import ExecutionState
+from slowbeast.util.debugging import dbgv_sec, ldbgv
 from .statedescription import StateDescription, unify_state_descriptions
 
 
@@ -63,7 +64,6 @@ class InstrsAnnotation(Annotation):
 
 
 class ExprAnnotation(Annotation):
-
     __slots__ = "_sd", "cannonical"
 
     def __init__(self, ty, expr, subs, EM):
@@ -197,7 +197,8 @@ def _execute_instr(executor, states, instr):
     newstates = []
     dummypc = DummyInst()
     for state in states:
-        # FIXME: get rid of this -- make a version of execute() that does not mess with pc
+        # FIXME: get rid of this -- make a version of execute() that does not
+        # mess with pc
         oldpc = state.pc
         state.pc = dummypc
         assert state.is_ready()

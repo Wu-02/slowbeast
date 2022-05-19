@@ -1,10 +1,10 @@
-from slowbeast.ir.types import IntType, BoolType, Type, PointerType, FloatType
+from math import isinf, isnan, isfinite
+from struct import pack, unpack
+
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
+from slowbeast.ir.types import IntType, BoolType, Type, PointerType, FloatType
 from slowbeast.util.debugging import FIXME
-from math import isinf, isnan, isfinite
-
-from struct import pack, unpack
 
 
 def trunc_to_float(x, bw):

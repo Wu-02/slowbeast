@@ -1,8 +1,8 @@
 from slowbeast.domains.concrete import ConcreteInt
-from slowbeast.ir.types import IntType
 from slowbeast.ir.instruction import Load
-from slowbeast.symexe.annotations import AssertAnnotation, get_subs
+from slowbeast.ir.types import IntType
 from slowbeast.solvers.solver import IncrementalSolver, global_expr_mgr
+from slowbeast.symexe.annotations import AssertAnnotation, get_subs
 
 
 def iter_nondet_load_pairs(state):
@@ -322,7 +322,8 @@ def get_const_subs_relations(state):
                         continue
                 if nexpr.is_or():
                     for c in nexpr.children():
-                        # only a part of the disjunction may be sat in the state
+                        # only a part of the disjunction may be sat in the
+                        # state
                         if state.is_sat(c) is True:
                             yield AssertAnnotation(c, subs, EM)
                 else:

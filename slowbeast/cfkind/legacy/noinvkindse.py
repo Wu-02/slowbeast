@@ -1,14 +1,13 @@
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg
+from copy import copy
 
+from slowbeast.cfkind import KindSEOptions
 from slowbeast.cfkind.annotatedcfg import CFG, CFGPath
+from slowbeast.cfkind.naive.inductionpath import InductionPath
 from slowbeast.cfkind.naive.naivekindse import (
     KindSymbolicExecutor as BasicKindSymbolicExecutor,
 )
 from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.cfkind import KindSEOptions
-from slowbeast.cfkind.naive.inductionpath import InductionPath
-
-from copy import copy
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
@@ -64,11 +63,11 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         Take a path and extend it by prepending one or more
         predecessors.
 
-        \param steps     Number of predecessors to prepend.
+        \\param steps     Number of predecessors to prepend.
                          Values less or equal to 0 have a special
                          meaning:
                            0 -> prepend until a join is find
-        \param atmost    if set to True, we allow to extend
+        \\param atmost    if set to True, we allow to extend
                          less than the specified number of steps
                          if there are no predecessors.
                          If set to False, the path is dropped

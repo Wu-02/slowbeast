@@ -4,11 +4,10 @@ except ImportError as e:
     raise ImportError(f"Need clang bindings: {e}")
 
 from slowbeast.domains.concrete import ConcreteVal, ConcreteInt
-from slowbeast.ir.program import Program
 from slowbeast.ir.function import Function
-
-from slowbeast.ir.types import *
 from slowbeast.ir.instruction import *
+from slowbeast.ir.program import Program
+from slowbeast.ir.types import *
 
 
 class Parser:

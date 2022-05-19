@@ -76,7 +76,7 @@ def mo_to_bytes(values, size):
     newvalues = [None] * size
     for o, val in values.items():
         tmp = write_bytes(o, newvalues, size, val)
-        if not tmp is None:
+        if tmp is not None:
             return None, tmp
     # if __debug__:
     #    rval, err = read_bytes(newvalues, o, size, val.bytewidth(), False)
@@ -142,7 +142,7 @@ class MemoryObject(CoreMO):
             return None, MemError(
                 MemError.UNINIT_READ,
                 "uninitialized or unaligned read (the latter is unsupported)\n"
-                f"Reading bytes {offval}-{offval+bts-1} from obj {self._id} with contents:\n"
+                f"Reading bytes {offval}-{offval + bts - 1} from obj {self._id} with contents:\n"
                 f"{values}",
             )
 

@@ -1,9 +1,11 @@
+from sys import stdout
+
+from slowbeast.core.executionstatus import ExecutionStatus
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.function import Function
 from slowbeast.ir.types import get_offset_type
-from slowbeast.core.executionstatus import ExecutionStatus
-from sys import stdout
+
 
 # from slowbeast.util.debugging import dbgv
 
@@ -109,7 +111,7 @@ class ExecutionState:
         # if __debug__:
         #   h = f" ({hex(v.value())})" if v and v.is_concrete() and v.is_int() else ""
         #   dbgv("[{0}] -> {1}{2}".format(what, v, h), color="GREEN")
-        ## XXX: rename to bind?
+        # XXX: rename to bind?
         self.memory.set(what, v)
 
     def get(self, v):

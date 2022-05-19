@@ -1,9 +1,9 @@
 from sys import stdout
+
 from slowbeast.util.debugging import print_stream
 
 
 class Program:
-
     __slots__ = ["_functions", "_entry", "_metadata", "_globals"]
 
     def __init__(self):

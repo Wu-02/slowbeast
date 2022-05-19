@@ -1,7 +1,6 @@
 from .executor import Executor as SExecutor
-from ..util.debugging import print_stderr, print_stdout, dbg
-
 from .symbolicexecution import SEOptions, SymbolicExecutor
+from ..util.debugging import print_stderr, print_stdout, dbg
 
 
 def subsumed_memory(s, state):
@@ -55,7 +54,8 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
         EM = state.expr_manager()
         for s in self.explored_states.setdefault(pc, []):
             # FIXME: will not work with incremental solving, there may be a symbol collision
-            # every value in the state must be included in the corresponding value of s
+            # every value in the state must be included in the corresponding
+            # value of s
             assert state.pc is s.pc
             if s.status != state.status:
                 continue

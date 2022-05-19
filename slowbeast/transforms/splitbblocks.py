@@ -1,6 +1,6 @@
+from slowbeast.domains.constants import ConstantTrue
 from slowbeast.ir.bblock import BBlock
 from slowbeast.ir.instruction import Call, Branch
-from slowbeast.domains.constants import ConstantTrue
 
 
 # FIXME: not efficient, but let's fix that once

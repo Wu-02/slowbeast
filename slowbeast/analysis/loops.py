@@ -1,8 +1,8 @@
-from slowbeast.util.debugging import dbg
-from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.analysis.cfa import CFA
+from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.analysis.scc import strongly_connected_components_iterative
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
+from slowbeast.util.debugging import dbg
 
 
 class Loop:
@@ -156,7 +156,8 @@ def _construct_simple_loop(vertices, parent, loc):
     entries = set()
     inedges = set()
     exits = set()
-    # FIXME: do not store this, just return generators from getters (except for exits, those need to be precomputed)
+    # FIXME: do not store this, just return generators from getters (except
+    # for exits, those need to be precomputed)
     for edge in loc.successors():
         if edge.target() in locs:
             inedges.add(edge)
@@ -213,7 +214,8 @@ def _compute_loops(vertices, edges, result):
             dbg(f"SCC with multiple entries: {C}")
             continue
         entry = next(iter(entries))
-        # FIXME: handle nested loops by removing backedges to entry from the SCC and recursing into the SCC
+        # FIXME: handle nested loops by removing backedges to entry from the
+        # SCC and recursing into the SCC
         loop = _construct_simple_loop(list(C), None, entry)
         result[entry] = loop
 
@@ -342,7 +344,8 @@ class SimpleLoop:
         entries = set()
         inedges = set()
         exits = set()
-        # FIXME: do not store this, just return generators from getters (except for exits, those need to be precomputed)
+        # FIXME: do not store this, just return generators from getters (except
+        # for exits, those need to be precomputed)
         for edge in loc.successors():
             if edge.target() in locs:
                 inedges.add(edge)

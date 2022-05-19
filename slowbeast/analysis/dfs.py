@@ -99,7 +99,8 @@ class DFSVisitor:
         if backtrackfun:
             backtrackfun(prevnode, node)
 
-    # FIXME: we don't need to duplicate the code, just need to unify the API for CFG and CFA
+    # FIXME: we don't need to duplicate the code, just need to unify the API
+    # for CFG and CFA
     def _foreachedge_cfa(self, fun, backtrackfun, backtrackedge, loc, counter):
         getdata = self._getdata
         counter.counter += 1

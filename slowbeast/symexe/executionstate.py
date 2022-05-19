@@ -1,7 +1,7 @@
 from copy import copy
 from sys import stdout
+
 from slowbeast.core.executionstate import ExecutionState
-from slowbeast.util.debugging import warn, ldbgv
 from slowbeast.ir.instruction import (
     Alloc,
     GlobalVariable,
@@ -12,6 +12,7 @@ from slowbeast.ir.instruction import (
     Return,
 )
 from slowbeast.solvers.solver import solve_incrementally
+from slowbeast.util.debugging import warn, ldbgv
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
 
 
@@ -38,7 +39,8 @@ class Nondet:
 class SEState(ExecutionState):
     """Execution state of symbolic execution"""
 
-    # XXX do not store warnings in the state but keep them in a map in the interpreter or so?
+    # XXX do not store warnings in the state but keep them in a map in the
+    # interpreter or so?
     __slots__ = (
         "_executor",
         "_solver",
@@ -673,7 +675,7 @@ class ThreadedSEState(SEState):
         if tid is None:
             tid = self.thread().get_id()
         # self._trace.append(f"exit thread {tid} with val {retval}")
-        assert not tid in self._exited_threads
+        assert tid not in self._exited_threads
         self._exited_threads[tid] = retval
         tidx = self._thread_idx(tid)
         self.remove_thread(tidx)
@@ -709,7 +711,7 @@ class ThreadedSEState(SEState):
             # )
             return
 
-        assert not tid in self._wait_join, f"{tid} :: {self._wait_join}"
+        assert tid not in self._wait_join, f"{tid} :: {self._wait_join}"
         if totid is None:
             # self._trace.append(
             #    f"thread {tid} is waited in join by {self.thread().get_id()}"
@@ -725,7 +727,8 @@ class ThreadedSEState(SEState):
     def remove_thread(self, idx=None):
         # self._trace.append(f"removing thread {self.thread(idx).get_id()}")
         self._threads.pop(self._current_thread if idx is None else idx)
-        # schedule thread 0 (if there is any) -- user will reschedule if desired
+        # schedule thread 0 (if there is any) -- user will reschedule if
+        # desired
         if self._threads:
             self.pc = self._threads[0].pc
             self.memory.set_cs(self._threads[0].cs)

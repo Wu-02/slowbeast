@@ -1,7 +1,7 @@
 from slowbeast.domains.concrete import ConcreteDomain, ConcreteVal
 from slowbeast.domains.symbolic import SymbolicDomain
-from slowbeast.ir.types import Type, IntType, BoolType
 from slowbeast.domains.value import Value
+from slowbeast.ir.types import Type, IntType, BoolType
 
 optimize_exprs = True
 

@@ -1,8 +1,8 @@
 from slowbeast.core.executionstate import ExecutionState
+from slowbeast.domains.concrete import ConcreteVal
 
 # from slowbeast.domains.sign import ZODomain
 from slowbeast.domains.signul import SignULDomain as Domain
-from slowbeast.domains.concrete import ConcreteVal
 
 
 class AbstractState(ExecutionState):

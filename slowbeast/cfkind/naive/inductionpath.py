@@ -1,6 +1,7 @@
-from slowbeast.cfkind.annotatedcfg import CFGPath
-from sys import stdout
 from copy import copy
+from sys import stdout
+
+from slowbeast.cfkind.annotatedcfg import CFGPath
 
 
 class InductionPath:

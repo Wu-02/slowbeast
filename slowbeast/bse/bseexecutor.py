@@ -1,5 +1,5 @@
-from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.executionstate import LazySEState
+from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.util.debugging import ldbgv
 from .bsestate import BSEState
 from .memorymodel import BSEMemoryModel
@@ -49,7 +49,8 @@ class Executor(PathExecutor):
             ready, tmpnonready = self._exec_assume_edge(ready, edge)
             nonready += tmpnonready
         elif edge.is_ret():
-            # we handle passing return values manually in BSE, so just skip the return
+            # we handle passing return values manually in BSE, so just skip the
+            # return
             ldbgv("Skipping ret edge: {0}", (edge[0],))
         elif edge.is_call() and not edge.called_function().is_undefined():
             fn = edge.called_function().name()

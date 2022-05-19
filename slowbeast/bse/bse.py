@@ -1,20 +1,19 @@
 from queue import Queue as FIFOQueue
 from typing import Optional  # , Union
 
+from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.programstructure import ProgramStructure
+from slowbeast.bse.memorymodel import BSEMemoryModel
+from slowbeast.cfkind import KindSEOptions
+from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
+from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.annotations import AssumeAnnotation
-from slowbeast.util.debugging import print_stdout, print_stderr, dbg
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
     SEOptions,
 )
-from slowbeast.analysis.cfa import CFA
-from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
-from slowbeast.core.executor import PathExecutionResult
-from slowbeast.bse.memorymodel import BSEMemoryModel
-from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.cfkind import KindSEOptions
-
+from slowbeast.util.debugging import print_stdout, print_stderr, dbg
 from .bseexecutor import Executor as BSEExecutor
 from .bsestate import BSEState
 
@@ -293,7 +292,8 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         assert not self.queue.empty(), list(self.queue)
 
     def replay_state(self, state):
-        # FIXME: we do redundant copy, set_input_vector will copy and reverse the list on its own
+        # FIXME: we do redundant copy, set_input_vector will copy and reverse
+        # the list on its own
         ivec = state.input_vector().copy()
         ivec.reverse()
         dbg(f"Input vector: {ivec}")

@@ -1,8 +1,8 @@
-from slowbeast.symexe.symbolicexecution import SymbolicExecutor
+from slowbeast.cfkind import KindSEOptions
 from slowbeast.symexe.executor import Executor as SExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
+from slowbeast.symexe.symbolicexecution import SymbolicExecutor
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
-from slowbeast.cfkind import KindSEOptions
 
 
 class Result:

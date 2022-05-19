@@ -1,20 +1,19 @@
-from slowbeast.ir.instruction import *
-from slowbeast.ir.function import Function
-from slowbeast.ir.types import get_offset_type
-from slowbeast.domains.value import Value
-from slowbeast.domains.constants import ConcreteBool
-from slowbeast.domains.concrete import ConcreteVal, dom_is_concrete
-from slowbeast.domains.pointer import Pointer
+from random import getrandbits
+
+from slowbeast.core.errors import AssertFailError, GenericError
 from slowbeast.core.executor import Executor as ConcreteExecutor
+from slowbeast.domains.concrete import ConcreteVal, dom_is_concrete
+from slowbeast.domains.constants import ConcreteBool
+from slowbeast.domains.pointer import Pointer
+from slowbeast.domains.value import Value
+from slowbeast.ir.function import Function
+from slowbeast.ir.instruction import *
+from slowbeast.ir.types import get_offset_type
 from slowbeast.solvers.expressions import is_symbolic
 from slowbeast.util.debugging import dbgv, ldbgv
-from slowbeast.core.errors import AssertFailError, GenericError
-
-from .memorymodel import SymbolicMemoryModel
 from .executionstate import SEState, IncrementalSEState, ThreadedSEState
+from .memorymodel import SymbolicMemoryModel
 from .statesset import StatesSet
-
-from random import getrandbits
 
 unsupported_funs = [
     "memmove",
@@ -317,7 +316,8 @@ class Executor(ConcreteExecutor):
             if op1isptr and op2isptr:
                 return self.compare_pointers(state, instr, op1, op2)
             else:
-                # we handle only comparison of symbolic constant (pointer) to null
+                # we handle only comparison of symbolic constant (pointer) to
+                # null
                 E = state.expr_manager()
                 if op1isptr and op1.is_null():
                     state.set(

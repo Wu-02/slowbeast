@@ -1,11 +1,11 @@
-from slowbeast.util.debugging import dbgv
+from slowbeast.core.memorymodel import MemoryModel as CoreMM
+from slowbeast.domains.symbolic import NondetLoad
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
 from slowbeast.ir.types import IntType
-from slowbeast.domains.symbolic import NondetLoad
-from slowbeast.symexe.memory import Memory
-from slowbeast.core.memorymodel import MemoryModel as CoreMM
 from slowbeast.ir.types import get_size_type
+from slowbeast.symexe.memory import Memory
+from slowbeast.util.debugging import dbgv
 
 
 class SymbolicMemoryModel(CoreMM):
@@ -54,7 +54,8 @@ class LazySymbolicMemoryModel(CoreMM):
 
     def _havoc_ptr_target(self, state, ptr, without=None):
         """Havoc memory possibly pointed by ptr"""
-        # we do not know what we write where, so just clear all the information if possible
+        # we do not know what we write where, so just clear all the information
+        # if possible
         mo = None
         if ptr.is_pointer():
             mo = state.memory.get_obj(ptr.object())
@@ -68,9 +69,9 @@ class LazySymbolicMemoryModel(CoreMM):
         to = state.get(to_op)
         if to is None:
             self.lazy_allocate(state, to_op)
-            to = state.get(
-                to_op
-            )  # FIXME "We're calling get() method but we could return the value..."
+            # FIXME "We're calling get() method but we could return the
+            # value..."
+            to = state.get(to_op)
             assert to
         if not to.is_pointer():
             if self._overapprox_unsupported:

@@ -1,7 +1,6 @@
-from ..core.executor import Executor
-
-from ..util.debugging import print_stderr, dbg
 from .interactive import InteractiveHandler
+from ..core.executor import Executor
+from ..util.debugging import print_stderr, dbg
 
 
 class ExecutionOptions:

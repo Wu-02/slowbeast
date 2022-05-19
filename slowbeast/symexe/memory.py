@@ -1,5 +1,5 @@
-from slowbeast.symexe.memoryobject import MemoryObject
 from slowbeast.core.memory import Memory as CoreMemory
+from slowbeast.symexe.memoryobject import MemoryObject
 
 
 class Memory(CoreMemory):

@@ -1,6 +1,6 @@
-from ..ir.instruction import Alloc, GlobalVariable
 from slowbeast.domains.value import Value
 from .memory import Memory
+from ..ir.instruction import Alloc, GlobalVariable
 
 
 class MemoryModel:

@@ -1,5 +1,5 @@
-from sys import stdout
 from copy import copy
+from sys import stdout
 
 from slowbeast.ir.instruction import Branch
 

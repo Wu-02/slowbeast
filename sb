@@ -1,19 +1,20 @@
 #!/usr/bin/python3
 
-from sys import exit
 import argparse
 from os import mkdir
-from shutil import rmtree
-from os.path import join as pathjoin
 from os.path import basename
+from os.path import join as pathjoin
+from shutil import rmtree
 from subprocess import run
+from sys import exit
 from time import time, process_time
 
+from slowbeast.domains.symbolic import to_c_expression
+from slowbeast.ir.instruction import Call
 from slowbeast.parsers.llvm.parser import Parser as LLVMParser
 from slowbeast.symexe.symbolicexecution import SEOptions
-from slowbeast.domains.symbolic import to_c_expression
 from slowbeast.util.debugging import set_debugging, dbg, print_stdout, print_stderr
-from slowbeast.ir.instruction import Call
+
 
 def err(msg):
     print_stderr(msg, color="RED")

@@ -1,10 +1,11 @@
 from sys import stdout
-from slowbeast.domains.value import Value
-from slowbeast.domains.pointer import Pointer
-from slowbeast.ir.instruction import Alloc, GlobalVariable
-from slowbeast.ir.types import IntType, BoolType, get_offset_type, get_size_type
+
 from slowbeast.core.errors import MemError
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
+from slowbeast.domains.pointer import Pointer
+from slowbeast.domains.value import Value
+from slowbeast.ir.instruction import Alloc, GlobalVariable
+from slowbeast.ir.types import IntType, BoolType, get_offset_type, get_size_type
 from slowbeast.symexe.memory import Memory as SEMemory
 
 
@@ -18,7 +19,8 @@ def _nondet_value(fresh, op, bitsnum):
     return fresh(f"{op.as_value()}", IntType(bitsnum))
 
 
-# FIXME: do we need to inherit from SEMemory? We need that only for the initial states...
+# FIXME: do we need to inherit from SEMemory? We need that only for the
+# initial states...
 class BSEMemory(SEMemory):
     def __init__(self):
         super().__init__()

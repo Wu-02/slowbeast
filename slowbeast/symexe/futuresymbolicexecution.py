@@ -1,10 +1,9 @@
-from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
-from slowbeast.solvers.solver import Solver
-from slowbeast.domains.symbolic import Future
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from slowbeast.core.errors import AssertFailError
+from slowbeast.domains.symbolic import Future
+from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.ir.instruction import Call
-
+from slowbeast.solvers.solver import Solver
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from .executor import Executor as SExecutor
 
 

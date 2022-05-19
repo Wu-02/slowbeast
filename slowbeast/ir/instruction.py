@@ -1,10 +1,9 @@
 from sys import stdout
 
-from .types import Type, IntType, BoolType, PointerType, get_offset_type
+from slowbeast.util.debugging import print_highlight
 from .bblock import BBlock  # due to assertions
 from .program import ProgramElement
-
-from slowbeast.util.debugging import print_highlight
+from .types import Type, IntType, BoolType, PointerType, get_offset_type
 
 
 class GlobalVariable(ProgramElement):
@@ -507,6 +506,7 @@ class UnaryOperation(ValueTypedInstruction):
     ABS = 6
     FP_OP = 7  # floating-point operation
     LAST_UNARY_OP = 7
+
     # TODO make SEXT and ZEXT also reinterpret cast?
 
     def __check(op):

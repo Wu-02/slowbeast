@@ -1,12 +1,12 @@
-from slowbeast.util.debugging import dbgv, ldbgv
-from .executor import Executor as SExecutor
-from .annotations import execute_annotations
-from .executionstate import LazySEState
 from slowbeast.core.executor import (
     PathExecutionResult,
     split_ready_states,
     split_nonready_states,
 )
+from slowbeast.util.debugging import dbgv, ldbgv
+from .annotations import execute_annotations
+from .executionstate import LazySEState
+from .executor import Executor as SExecutor
 
 
 class Executor(SExecutor):

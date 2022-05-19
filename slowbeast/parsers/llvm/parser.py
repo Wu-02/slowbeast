@@ -1,17 +1,14 @@
+import llvmlite.binding as llvm
+
 from slowbeast.domains.concrete import ConcreteVal, ConcreteInt
-from slowbeast.ir.program import Program
-from slowbeast.ir.function import Function
 from slowbeast.ir.argument import Argument
-
-from slowbeast.ir.types import *
+from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
-
+from slowbeast.ir.program import Program
+from slowbeast.ir.types import *
 from slowbeast.util.debugging import print_stderr
-
 from .specialfunctions import special_functions, create_special_fun
 from .utils import *
-
-import llvmlite.binding as llvm
 
 
 def _get_llvm_module(path):

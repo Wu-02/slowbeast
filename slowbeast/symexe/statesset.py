@@ -1,20 +1,19 @@
+from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.symbolic import Expr
+from slowbeast.solvers.solver import global_expr_mgr
+from slowbeast.symexe.annotations import (
+    ExprAnnotation,
+    AssertAnnotation,
+    AssumeAnnotation,
+)
+from slowbeast.symexe.constraints import ConstraintsSet
+from slowbeast.symexe.executionstate import SEState
 from slowbeast.symexe.statedescription import (
     StateDescription,
     state_to_description,
     unify_state_descriptions,
     eval_state_description,
 )
-from slowbeast.symexe.constraints import ConstraintsSet
-from slowbeast.symexe.executionstate import SEState
-from slowbeast.symexe.annotations import (
-    ExprAnnotation,
-    AssertAnnotation,
-    AssumeAnnotation,
-)
-from slowbeast.domains.symbolic import Expr
-from slowbeast.domains.concrete import ConcreteVal
-
-from slowbeast.solvers.solver import global_expr_mgr
 
 
 class StatesSet:

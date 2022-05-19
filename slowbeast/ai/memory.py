@@ -1,18 +1,17 @@
-from sys import stdout
 from copy import copy
 from functools import reduce
 from operator import xor
+from sys import stdout
 
-from slowbeast.util.debugging import dbgv
-from slowbeast.core.memorymodel import MemoryModel
-from slowbeast.core.memory import Memory as CoreMemory
 from slowbeast.core.errors import MemError
-from slowbeast.domains.value import Value
+from slowbeast.core.memory import Memory as CoreMemory
+from slowbeast.core.memorymodel import MemoryModel
 from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.symbolic import NondetLoad
+from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
 from slowbeast.ir.types import OffsetType, IntType
-
-from slowbeast.domains.symbolic import NondetLoad
+from slowbeast.util.debugging import dbgv
 
 
 class AIMemoryObject:
@@ -78,7 +77,7 @@ class AIMemoryObject:
             return None, MemError(
                 MemError.UNINIT_READ,
                 f"Read from uninitialized memory (or unaligned read (not supp.  yet)).\n"
-                f"Reading bytes {offval}-{offval}+{bts-1} from obj {self._id} with contents:\n"
+                f"Reading bytes {offval}-{offval}+{bts - 1} from obj {self._id} with contents:\n"
                 f"{self._values}",
             )
 
@@ -162,7 +161,8 @@ class AIMemoryModel(MemoryModel):
         to = state.get(to_op)
         if to is None:
             self.lazy_allocate(state, to_op)
-            # FIXME "We're calling get() method but we could return the value..."
+            # FIXME "We're calling get() method but we could return the
+            # value..."
             to = state.get(to_op)
 
         assert isinstance(value, Value)

@@ -1,5 +1,5 @@
-from slowbeast.domains.symbolic import _use_z3
 from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.symbolic import _use_z3
 from .expressions import ExprManager
 
 if _use_z3:
@@ -81,7 +81,6 @@ if _use_z3:
 
 else:
     from pysmt.shortcuts import is_sat
-
 
 # FIXME add support for incremental solving
 
@@ -370,7 +369,8 @@ def _remove_implied(assumptions, em, exprs):
     r = solver.try_is_sat(1000)
     if r is False:
         return [em.get_false()], False
-    # we're good and can continue -- the solver has built a state for faster solving now
+    # we're good and can continue -- the solver has built a state for faster
+    # solving now
 
     # try to subsume the implied expressions
     # assert solver.is_sat() is True # otherwise we'll subsume everything

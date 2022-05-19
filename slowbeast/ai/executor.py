@@ -1,17 +1,16 @@
-from ..ir.instruction import *
-from slowbeast.domains.value import Value
+from slowbeast.domains.concrete import ConcreteDomain, ConcreteInt
 from slowbeast.domains.constants import ConcreteBool
 from slowbeast.domains.pointer import Pointer
-from ..core.executor import Executor as ConcreteExecutor
-from ..util.debugging import dbgv
-from ..core.errors import AssertFailError
-from slowbeast.domains.concrete import ConcreteDomain, ConcreteInt
 
 # from slowbeast.domains.sign import ZODomain
 from slowbeast.domains.signul import SignULDomain as Domain
-
-from .memory import AIMemoryModel
+from slowbeast.domains.value import Value
 from .executionstate import AbstractState
+from .memory import AIMemoryModel
+from ..core.errors import AssertFailError
+from ..core.executor import Executor as ConcreteExecutor
+from ..ir.instruction import *
+from ..util.debugging import dbgv
 
 
 class AIStats:

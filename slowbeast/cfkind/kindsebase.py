@@ -1,15 +1,14 @@
-from slowbeast.analysis.programstructure import ProgramStructure
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg, ldbgv
-
 from slowbeast.analysis.cfa import CFA
+from slowbeast.analysis.programstructure import ProgramStructure
+from slowbeast.cfkind import KindSEOptions
+from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.core.executor import PathExecutionResult
+from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
+from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )
-from slowbeast.core.executor import PathExecutionResult
-from slowbeast.symexe.pathexecutor import Executor as PathExecutor
-from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.cfkind import KindSEOptions
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg, ldbgv
 
 
 def report_state(stats, n, fn=print_stderr):
@@ -164,12 +163,12 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         Take a path and extend it by prepending one or more
         predecessors.
 
-        \param steps     Number of predecessors to prepend.
+        \\param steps     Number of predecessors to prepend.
                          Values less or equal to 0 have a special
                          meaning:
                            0  -> prepend until a join is find
                            -1 -> prepend until a branch is find
-        \param atmost    if set to True, we allow to extend
+        \\param atmost    if set to True, we allow to extend
                          less than the specified number of steps
                          if there are no predecessors.
                          If set to False, the path is dropped
@@ -187,7 +186,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             newworklist = []
 
             for p in worklist:
-                front = p[-1]  # the list is reversed, so the front is at the end
+                # the list is reversed, so the front is at the end
+                front = p[-1]
                 preds = front.source().predecessors()
                 predsnum = len(preds)
 

@@ -1,5 +1,18 @@
 from heapq import heappush, heappop
 from itertools import chain
+
+from slowbeast.analysis.programstructure import ProgramStructure
+from slowbeast.cfkind import KindSEOptions
+from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
+from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.solvers.solver import global_expr_mgr, IncrementalSolver
+from slowbeast.symexe.annotations import (
+    AssertAnnotation,
+    state_to_annotation,
+    execute_annotation_substitutions,
+)
+from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
+from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.util.debugging import (
     print_stderr,
     print_stdout,
@@ -9,24 +22,8 @@ from slowbeast.util.debugging import (
     ldbg,
     ldbgv,
 )
-
-from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
-from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.cfkind import KindSEOptions
-from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
-from slowbeast.symexe.symbolicexecution import SEStats
-from slowbeast.analysis.programstructure import ProgramStructure
-
-from slowbeast.symexe.annotations import (
-    AssertAnnotation,
-    state_to_annotation,
-    execute_annotation_substitutions,
-)
-
-from slowbeast.solvers.solver import global_expr_mgr, IncrementalSolver
-
-from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .inductivesequence import InductiveSequence
+from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .overapproximations import overapprox_set
 from .relations import get_const_cmp_relations, get_var_relations
 
@@ -68,7 +65,8 @@ def overapprox(executor, s, E, target, L):
     create_set = executor.create_set
     S = create_set(s)
 
-    # FIXME: this is a workaround until we support nondet() calls in lazy execution
+    # FIXME: this is a workaround until we support nondet() calls in lazy
+    # execution
     r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
     if r.errors:
         dbg(
@@ -137,21 +135,24 @@ def report_state(stats, n, fn=print_stderr):
 
 def strip_first_assume_edge(path: AnnotatedCFAPath):
     idx = path.first_assume_edge_idx()
-    # we use this func only on loop edges, so it must contain the entry condition
+    # we use this func only on loop edges, so it must contain the entry
+    # condition
     assert idx is not None and idx + 1 < len(path)
     return path.subpath(idx + 1)
 
 
 def strip_last_assume_edge(path: AnnotatedCFAPath):
     idx = path.last_assume_edge_idx()
-    # we use this func only on loop edges, so it must contain the entry condition
+    # we use this func only on loop edges, so it must contain the entry
+    # condition
     assert idx is not None and idx + 1 < len(path)
     return path.subpath(0, idx - 1)
 
 
 def strip_last_exit_edge(path: AnnotatedCFAPath, exits):
     idx = path.last_edge_of_idx(exits)
-    # we use this func only on loop edges, so it must contain the entry condition
+    # we use this func only on loop edges, so it must contain the entry
+    # condition
     assert idx is not None and idx + 1 < len(path), idx
     return path.subpath(0, idx - 1)
 
@@ -602,7 +603,8 @@ class KindSEChecker(BaseKindSE):
         return target0, seqs, errs0
 
     def get_acc_initial_seqs(self, unsafe: list, path: AnnotatedCFAPath, L: LoopInfo):
-        # TODO: self-loops? Those are probably OK as that would be only assume edge
+        # TODO: self-loops? Those are probably OK as that would be only assume
+        # edge
         errstate = unsafe[0]
         EM = errstate.expr_manager()
         isfirst = path.num_of_occurences(L.header()) == 1
@@ -654,7 +656,8 @@ class KindSEChecker(BaseKindSE):
             if tmp:
                 seqs = tmp
 
-        # inductive sequence is either inductive now, or it is None and we'll use non-inductive E
+        # inductive sequence is either inductive now, or it is None and we'll
+        # use non-inductive E
         return target0, seqs, errs0
 
     def overapprox_init_seq(self, seq0, errs0, L):
@@ -714,7 +717,8 @@ class KindSEChecker(BaseKindSE):
 
         for suffix in suffixes_starting_with([path], L.header()):
             # execute the safe path that avoids error and then jumps out of the loop
-            # and also only paths that jump out of the loop, so that the set is inductive
+            # and also only paths that jump out of the loop, so that the set is
+            # inductive
             r = check_paths(self, [suffix])
             if r.errors is None:
                 continue
@@ -753,7 +757,8 @@ class KindSEChecker(BaseKindSE):
 
         for suffix in suffixes_starting_with(paths, L.header()):
             # execute the safe path that avoids error and then jumps out of the loop
-            # and also only paths that jump out of the loop, so that the set is inductive
+            # and also only paths that jump out of the loop, so that the set is
+            # inductive
             r = check_paths(self, [suffix])
             if not r.ready:
                 continue
@@ -806,7 +811,8 @@ class KindSEChecker(BaseKindSE):
 
         create_set = self.create_set
         # execute the safe path that avoids error and then jumps out of the loop
-        # and also only paths that jump out of the loop, so that the set is inductive
+        # and also only paths that jump out of the loop, so that the set is
+        # inductive
         r = check_paths(self, chain(invpaths, iter(suff)))
         if r.ready is None:
             return None
@@ -835,7 +841,8 @@ class KindSEChecker(BaseKindSE):
         is_error_loc = L.cfa().is_err
         create_set = self.create_set
         # execute the safe path that avoids error and then jumps out of the loop
-        # and also only paths that jump out of the loop, so that the set is inductive
+        # and also only paths that jump out of the loop, so that the set is
+        # inductive
         cE = complement(E)
         sets = []
         for p in (p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())):
@@ -961,7 +968,8 @@ class KindSEChecker(BaseKindSE):
                 color="GRAY",
             )
             # FIXME: check that all the sequences together cover the input paths
-            # FIXME: rule out the sequences that are irrelevant here? How to find that out?
+            # FIXME: rule out the sequences that are irrelevant here? How to
+            # find that out?
             for seq in sequences:
                 if seq:
                     S = seq.toannotation(True)

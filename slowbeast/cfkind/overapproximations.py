@@ -1,15 +1,15 @@
 from functools import partial
+
+from slowbeast.core.executor import PathExecutionResult
 from slowbeast.domains.concrete import ConcreteInt
-from slowbeast.util.debugging import dbg, dbgv
 from slowbeast.solvers.expressions import em_optimize_expressions
 from slowbeast.solvers.solver import global_expr_mgr, IncrementalSolver
-from slowbeast.symexe.statesset import union, intersection, complement
-from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
     execute_annotation_substitutions,
 )
-
+from slowbeast.symexe.statesset import union, intersection, complement
+from slowbeast.util.debugging import dbg, dbgv
 from .inductivesequence import InductiveSequence
 
 
@@ -144,7 +144,9 @@ def _decompose_literal(l):
         addtoleft = not addtoleft
         EM = global_expr_mgr()
         binop = P
-        P = lambda a, b: EM.Not(binop(a, b))
+
+        def P(a, b):
+            return EM.Not(binop(a, b))
 
     return left, right, P, addtoleft
 
@@ -260,7 +262,7 @@ def extend_with_num(dliteral, constadd, num, maxnum, ldata, EM):
     newretval = Add(retval, num)
     newl = dliteral.extended(newretval)
 
-    ### push as far as we can with this num
+    # push as far as we can with this num
     while check_literal(EM, newl, ldata):
         # the tried value is ok, so set it as the new final value
         retval = newretval
@@ -283,7 +285,7 @@ def extend_literal(ldata, EM):
     bw = dliteral.bitwidth()
     two = ConcreteInt(2, bw)
     # adding 2 ** bw would be like adding 0, stop before that
-    maxnum = 2 ** bw - 1
+    maxnum = 2**bw - 1
 
     # a fast path where we try shift just by one.  If we cant, we can give up
     # FIXME: try more low values (e.g., to 10)
@@ -322,7 +324,8 @@ class LoopStateOverapproximation:
 
         self.goal = S
         # clauses are our internal working structure. Any change that we do is not visible until we do commit().
-        # Note: break equalities to <= && >= so that we can overapproximate them
+        # Note: break equalities to <= && >= so that we can overapproximate
+        # them
         self.clauses = list(S.as_expr().rewrite_and_simplify().to_cnf().children())
 
         safesolver = IncrementalSolver()
@@ -443,7 +446,8 @@ class LoopStateOverapproximation:
 
     def drop_clauses(self, assumptions=None):
         newclauses = self._drop_clauses_fixpoint(assumptions)
-        # new add the assumptions (without them the formula is not equivalent to expr now)
+        # new add the assumptions (without them the formula is not equivalent
+        # to expr now)
         if assumptions:
             newclauses.extend(list(assumptions.as_expr().to_cnf().children()))
         clauses = remove_implied_literals(newclauses)
@@ -647,7 +651,8 @@ class LoopStateOverapproximation:
         EM = self.expr_mgr
         executor = self.executor
 
-        # create a fresh literal that we use as a placeholder instead of our literal during extending
+        # create a fresh literal that we use as a placeholder instead of our
+        # literal during extending
         placeholder = EM.Bool("litext")
         # X is the original formula with 'placeholder' instead of 'l'
         clause_without_lit = list(x for x in rl if x != l)
@@ -660,7 +665,8 @@ class LoopStateOverapproximation:
         # U is allowed reachable set of states
         U = union(self.target, X)
         indset_with_placeholder = U.as_assume_annotation()
-        # execute the instructions from annotations, so that the substitutions have up-to-date value
+        # execute the instructions from annotations, so that the substitutions
+        # have up-to-date value
         poststates_with_placeholder, nonr = execute_annotation_substitutions(
             executor.ind_executor(), post, indset_with_placeholder
         )
@@ -693,7 +699,8 @@ class LoopStateOverapproximation:
         assert isinstance(ldata.decomposed_literal, DecomposedLiteral)
 
         em_optimize_expressions(False)
-        # the optimizer could make And or Or from the literal, we do not want that...
+        # the optimizer could make And or Or from the literal, we do not want
+        # that...
         l = extend_literal(ldata, EM)
         em_optimize_expressions(True)
 

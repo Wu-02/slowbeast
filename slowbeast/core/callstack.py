@@ -1,7 +1,7 @@
 from copy import copy
-from sys import stdout
 from functools import reduce
 from operator import xor
+from sys import stdout
 
 
 class CallStack:

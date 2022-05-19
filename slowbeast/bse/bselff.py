@@ -1,11 +1,11 @@
-from slowbeast.symexe.executionstate import SEState as ExecutionState
-from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
-from slowbeast.symexe.annotations import execute_annotation
-from slowbeast.symexe.pathexecutor import Executor as PathExecutor
-from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.bse.bse import report_state
 from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker as BSELFCheckerVanilla
 from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.symexe.annotations import execute_annotation
+from slowbeast.symexe.executionstate import SEState as ExecutionState
+from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
+from slowbeast.symexe.pathexecutor import Executor as PathExecutor
+from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
 from slowbeast.util.debugging import (
     print_stdout,
     inc_print_indent,
@@ -13,9 +13,12 @@ from slowbeast.util.debugging import (
     dbg,
 )
 
+
 #####################################################################
 # Forward execution
 #####################################################################
+
+
 class SEState(ExecutionState):
     """
     Execution state of forward symbolic execution in BSELFF.
@@ -186,7 +189,8 @@ class BSELFChecker(BSELFCheckerVanilla):
         # "fast" path -- check with the forward states that we have
         fstates = self.forward_states.get(L.header().elem()[0])
         if fstates:
-            # use only the states from entering the loop -- those are most likely to work
+            # use only the states from entering the loop -- those are most
+            # likely to work
             states = [s.copy() for s in fstates[0]]
             _, n = execute_annotation(self._pathexecutor, states, A)
             if n and any(map(lambda s: s.has_error(), n)):

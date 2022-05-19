@@ -1,7 +1,7 @@
-from slowbeast.domains.value import Value
 from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.ir.types import Type, IntType, BoolType, FloatType
+from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
+from slowbeast.ir.types import Type, IntType, BoolType, FloatType
 from slowbeast.solvers.arithformula import Monomial, Polynomial, ArithFormula
 from slowbeast.util.debugging import FIXME
 
@@ -598,7 +598,7 @@ if _use_z3:
                                 # expr)
                                 BVSExt(ebw - bw, x) + bv_const(1, ebw),
                                 simplify(
-                                    BVSExt(ebw - bw, bv_const(2 ** bw - 1, bw) + 1)
+                                    BVSExt(ebw - bw, bv_const(2**bw - 1, bw) + 1)
                                 ),
                             )
                         # expr = sext(x + (-1))
@@ -609,7 +609,7 @@ if _use_z3:
                                 # expr)
                                 BVSExt(ebw - bw, x) + bv_const(-1, ebw),
                                 simplify(
-                                    BVSExt(ebw - bw, bv_const(2 ** bw - 1, bw) - 1)
+                                    BVSExt(ebw - bw, bv_const(2**bw - 1, bw) - 1)
                                 ),
                             )
                         # FIXME: do this for generic values
@@ -1198,7 +1198,8 @@ class Expr(Value):
         return is_app_of(self._expr, Z3_OP_UGT)
 
     def is_mul(self):
-        return is_app_of(self._expr, Z3_OP_BMUL)  # or is_app_of(self._expr, Z3_OP_MUL)
+        # or is_app_of(self._expr, Z3_OP_MUL)
+        return is_app_of(self._expr, Z3_OP_BMUL)
 
     def __hash__(self):
         return self._expr.__hash__()

@@ -1,3 +1,4 @@
+from slowbeast.domains.constants import ConstantTrue, ConstantFalse
 from slowbeast.ir.instruction import (
     Alloc,
     Assume,
@@ -9,10 +10,9 @@ from slowbeast.ir.instruction import (
     ZExt,
     Cast,
 )
-from slowbeast.domains.constants import ConstantTrue, ConstantFalse
-from ...domains.concrete import ConcreteVal
 from slowbeast.ir.types import FloatType, IntType, get_size_type
 from .utils import get_llvm_operands, type_size_in_bits, to_float_ty
+from ...domains.concrete import ConcreteVal
 
 # FIXME: turn to a dict with separate handlers
 special_functions = [

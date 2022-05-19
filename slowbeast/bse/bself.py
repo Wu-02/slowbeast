@@ -1,4 +1,16 @@
+from slowbeast.analysis.cfa import CFA
+from slowbeast.analysis.programstructure import ProgramStructure
+from slowbeast.cfkind import KindSEOptions
+from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
+from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.cfkind.overapproximations import overapprox_set
+from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
 from slowbeast.core.errors import AssertFailError
+from slowbeast.domains.symbolic import to_c_expression
+from slowbeast.solvers.solver import global_expr_mgr
+from slowbeast.symexe.annotations import AssertAnnotation
+from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
+from slowbeast.symexe.symbolicexecution import SEStats
 from slowbeast.util.debugging import (
     print_stdout,
     dbg,
@@ -8,20 +20,6 @@ from slowbeast.util.debugging import (
     inc_print_indent,
     dec_print_indent,
 )
-
-from slowbeast.domains.symbolic import to_c_expression
-from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
-from slowbeast.symexe.symbolicexecution import SEStats
-from slowbeast.symexe.annotations import AssertAnnotation
-from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
-from slowbeast.analysis.programstructure import ProgramStructure
-from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.cfkind import KindSEOptions
-from slowbeast.cfkind.overapproximations import overapprox_set
-from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
-from slowbeast.analysis.cfa import CFA
-from slowbeast.solvers.solver import global_expr_mgr
-
 from .bse import (
     BackwardSymbolicInterpreter as BaseBSE,
     BSEContext,
@@ -68,7 +66,8 @@ def _dump_inductive_sets(checker, loc, fn=dbg):
 
 
 def _check_set(executor, S, L, target):
-    # FIXME: this is a workaround until we support nondet() calls in lazy execution
+    # FIXME: this is a workaround until we support nondet() calls in lazy
+    # execution
     r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
     if r.errors:
         dbg(
@@ -140,7 +139,8 @@ def _overapprox_with_assumptions(E, L, S, executor, s, target):
             yield from _yield_overapprox_with_assumption(
                 E, L, S, executor, rels, s, target
             )
-            # try constant relations too - if they hold in more steps, they may be invariant
+            # try constant relations too - if they hold in more steps, they may
+            # be invariant
             rels = [rc for rc in Rc if not intersection(P, rc).is_empty()]
             yield from _yield_overapprox_with_assumption(
                 E, L, S, executor, rels, s, target
@@ -477,7 +477,7 @@ class BSELFChecker(BaseBSE):
                     dbg("Did not extend (got included elem...)")
                     continue
 
-                ### keep only the overapproximations with the most models
+                # keep only the overapproximations with the most models
                 yield_seq = True
                 # is A subsumed?
                 for y in toyield:
@@ -525,7 +525,7 @@ class BSELFChecker(BaseBSE):
                     dbg("... (got first IS)")
                     seqs.append(InductiveSequence(s))
 
-        ### reduce and over-approximate the initial sequence
+        # reduce and over-approximate the initial sequence
         if seqs:
             tmp = []
             print_stdout(
@@ -536,7 +536,8 @@ class BSELFChecker(BaseBSE):
             if tmp:
                 seqs = tmp
 
-        # inductive sequence is either inductive now, or it is None and we'll use non-inductive E
+        # inductive sequence is either inductive now, or it is None and we'll
+        # use non-inductive E
         return seqs or None
 
     def overapprox_init_seq(self, seq0, unsafe, L):
@@ -586,7 +587,8 @@ class BSELFChecker(BaseBSE):
         loop_paths = L.paths()
         paths = [e.edges() for e in exits]
         while k > 0:
-            # we loose annotations if any -- but there should be none in this case
+            # we loose annotations if any -- but there should be none in this
+            # case
             paths = [l.edges() + s for l in loop_paths for s in paths]
             k -= 1
         return [AnnotatedCFAPath(p) for p in paths]
@@ -614,7 +616,8 @@ class BSELFChecker(BaseBSE):
         last safe iteration of the loop.
         """
         # execute the safe path that avoids error and then jumps out of the loop
-        # and also only paths that jump out of the loop, so that the set is inductive
+        # and also only paths that jump out of the loop, so that the set is
+        # inductive
         cE = complement(E)
         tmpsets = self._last_k_iterations_states(L, k=0)
         sets = []
@@ -656,7 +659,8 @@ class BSELFChecker(BaseBSE):
         """
 
         # execute the safe path that avoids error and then jumps out of the loop
-        # and also only paths that jump out of the loop, so that the set is inductive
+        # and also only paths that jump out of the loop, so that the set is
+        # inductive
         sets = self._initial_sets_from_exits(E, L)
         # try to match the sets with inductive sets that we already have
         isets = self.inductive_sets.get(L.header())
@@ -776,7 +780,8 @@ class BSELFChecker(BaseBSE):
                 self.add_inductive_set(loc, seq.as_assert_annotation())
 
             # FIXME: check that all the sequences together cover the input paths
-            # FIXME: rule out the sequences that are irrelevant here? How to find that out?
+            # FIXME: rule out the sequences that are irrelevant here? How to
+            # find that out?
             for _, seq in enumerate(sequences):
                 assert seq, sequences
                 S = seq.as_assert_annotation()
@@ -885,7 +890,8 @@ class BSELFChecker(BaseBSE):
             # is this a path starting at a loop header?
             fl = bsectx.path[0].source()
             if self.is_loop_header(fl):
-                # check whether we are not told to give up when hitting this loop this time
+                # check whether we are not told to give up when hitting this
+                # loop this time
                 loc_hits = bsectx.loc_hits
                 lnm = loc_hits[fl] = loc_hits.get(fl, 0) + 1
                 if fl not in self.no_sum_loops:

@@ -1,7 +1,7 @@
-from slowbeast.domains.symbolic import Expr
-from slowbeast.domains.pointer import Pointer
-from slowbeast.ir.instruction import Instruction, Load
 from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.pointer import Pointer
+from slowbeast.domains.symbolic import Expr
+from slowbeast.ir.instruction import Instruction, Load
 
 
 def _get_cannonic_var(val, x, EM):
@@ -239,7 +239,8 @@ def _execute_instr(executor, state, instr):
             return self
 
     assert state.is_ready()
-    # FIXME: get rid of this -- make a version of execute() that does not mess with pc
+    # FIXME: get rid of this -- make a version of execute() that does not mess
+    # with pc
     oldpc, state.pc = state.pc, DummyInstr()
     newstates = executor.execute(state, instr)
     assert newstates, "Executing instruction resulted in no state"

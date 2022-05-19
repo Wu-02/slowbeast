@@ -1,11 +1,11 @@
 from sys import stdout
+
 from .argument import Argument
-from .program import ProgramElement
 from .instruction import Return
+from .program import ProgramElement
 
 
 class Function(ProgramElement):
-
     __slots__ = "_name", "_bblocks", "_arguments", "_retty"
 
     def __init__(self, name, args, retty=None):

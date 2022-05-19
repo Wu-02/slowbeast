@@ -170,7 +170,7 @@ class SignULDomain:
     #    assert dom_is_signul(a, b)
     #    assert a.type() == b.type()
     #    if a.is_bool():
-    #        return SignULDomain(1 if (a.value() != 0 and b.value() != 0) else 0)
+    # return SignULDomain(1 if (a.value() != 0 and b.value() != 0) else 0)
 
     #    aval = a.value()
     #    bval = b.value()

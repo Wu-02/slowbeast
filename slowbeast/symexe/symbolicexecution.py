@@ -1,6 +1,8 @@
+from slowbeast.core.errors import GenericError
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, inc_print_indent, dec_print_indent
+from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import (
     Load,
     Store,
@@ -9,8 +11,6 @@ from slowbeast.ir.instruction import (
     ThreadJoin,
     Alloc,
 )
-from slowbeast.ir.function import Function
-from slowbeast.core.errors import GenericError
 from .executor import Executor as SExecutor, ThreadedExecutor
 
 
@@ -195,7 +195,8 @@ def may_be_glob_mem(state, mem):
 
 def _is_global_event_fun(fn):
     # FIXME: what if another thread is writing to arguments of pthread_create?
-    # return name.startswith("pthread_")  or name.startswith("__VERIFIER_atomic")
+    # return name.startswith("pthread_")  or
+    # name.startswith("__VERIFIER_atomic")
     name = fn.name()
     if name.startswith("__VERIFIER_atomic"):
         return True
@@ -440,7 +441,8 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
         return False
 
     def do_step(self, state):
-        # execute a step and then finish any atomic/non-global events that follow
+        # execute a step and then finish any atomic/non-global events that
+        # follow
         assert state.is_ready()
         queue, states = [], []
         execute = self._executor.execute
@@ -469,7 +471,8 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
         return states
 
     def step_thread(self, state, idx):
-        # execute a step and then finish any atomic/non-global events that follow
+        # execute a step and then finish any atomic/non-global events that
+        # follow
         assert state.is_ready()
         queue, states = [], []
         execute = self._executor.execute
@@ -550,7 +553,8 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
                     oldevs = state.events()
                     ev = state.get_last_event()
                     states_with_events = []
-                    # execute an event in each thread and gather all the new states and events
+                    # execute an event in each thread and gather all the new
+                    # states and events
                     for idx in can_run:
                         s = state.copy()
                         tid = state.thread_id(idx)
@@ -570,7 +574,8 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
                     # move all independent threads
                     if independent:
                         if len(independent) == len(states_with_events):
-                            # if all threads did an independent event, pick one and move the others
+                            # if all threads did an independent event, pick one
+                            # and move the others
                             independent.remove(states_with_events[0][0])
                             states_with_events = [states_with_events[0]]
                         for tid, ns, events in states_with_events:
