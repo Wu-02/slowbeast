@@ -23,7 +23,7 @@ class InteractiveHandler:
         newstates = states generated
         """
         try:
-            return self._prompt(s)
+            self._prompt(s)
         except EOFError:
             print("Exiting...")
             exit(0)
@@ -34,7 +34,7 @@ class InteractiveHandler:
 
         self._stop_next_time = False
 
-        print("Stopped before executing: ({0}) {1}".format(s.get_id(), str(s.pc)))
+        print(f"Stopped before executing: ({s.get_id()}) {s.pc}")
         q = input("> ")
         if q == "":
             q = self._last_query
@@ -51,13 +51,13 @@ class InteractiveHandler:
             print("Interrupted")
             return False
         except Exception as e:
-            print("An exception occured during handling '{0}'".format(q))
+            print(f"An exception occured during handling '{q}'")
             print(str(e))
             return False
         return False
 
     def _handle(self, q, s):
-        dbg("query: {0}".format(q))
+        dbg(f"query: {q}")
         query = q.split()
         if len(query) < 1:
             return False
@@ -82,7 +82,7 @@ class InteractiveHandler:
             elif query[1] in ["b", "bblock", "block"]:
                 s.pc.bblock().dump()
         else:
-            print("Unknown query: {0}".format(q))
+            print(f"Unknown query: {1}")
             print("FIXME: ... print help ...")
         return False
 
