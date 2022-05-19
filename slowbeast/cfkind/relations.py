@@ -269,8 +269,7 @@ def _get_const_cmp_relations(state):
 
 def _get_eq_loads(state, is_sat):
     EM = state.expr_manager()
-    Eq, Ne = EM.Eq, EM.Ne
-    Var, simplify = EM.Var, EM.simplify
+    Ne = EM.Ne
 
     for nd1, nd2 in iter_nondet_load_pairs(state):
         l1, l2 = nd1.value, nd2.value
@@ -279,7 +278,6 @@ def _get_eq_loads(state, is_sat):
         if l1.is_pointer() or l2.is_pointer():
             continue
 
-        l1name, l2name = nd1.instruction.as_value(), nd2.instruction.as_value()
         l1bw = l1.type().bitwidth()
         l2bw = l2.type().bitwidth()
 
@@ -290,7 +288,6 @@ def _get_eq_loads(state, is_sat):
             l2 = EM.SExt(l2, ConcreteInt(bw, bw))
 
         # relation between loads of the type l1 - l2 = constant
-        c = Var(f"c_{l1name}_{l2name}", IntType(bw))
         if is_sat(Ne(l1, l2)) is False:
             yield l1, l2
 
@@ -344,7 +341,7 @@ def get_var_subs_relations(state):
     EM = state.expr_manager()
     subs = get_subs(state)
     C = state.constraints()
-    substitute, simplify = EM.substitute, EM.simplify
+    substitute = EM.substitute
 
     solver = IncrementalSolver()
     solver.add(*state.constraints())
@@ -378,9 +375,9 @@ def get_var_subs_relations(state):
 def get_relations_to_prev_states(state, prev):
     subs = get_subs(state)
     EM = state.expr_manager()
-    Eq, Ne, Le, Ge = EM.Eq, EM.Ne, EM.Le, EM.Ge
-    Add, Sub, Mul, Rem = EM.Add, EM.Sub, EM.Mul, EM.Rem
-    Var, simplify, substitute = EM.Var, EM.simplify, EM.substitute
+    Eq, Le, Ge = EM.Eq, EM.Le, EM.Ge
+    Add, Sub, Rem = EM.Add, EM.Sub, EM.Rem
+    Var, substitute = EM.Var, EM.substitute
     conjunction = EM.conjunction
 
     solver = IncrementalSolver()
