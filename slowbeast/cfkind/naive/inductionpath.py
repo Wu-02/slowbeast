@@ -55,9 +55,9 @@ class InductionPath:
         return [s for s in succs if s.has_assert()]
 
     def dump(self, stream=stdout):
-        stream.write("state: {0}\n".format(self.state.get_id()))
+        stream.write(f"state: {self.state.get_id()}\n")
         stream.write("path: ")
         self.path.dump(stream)
 
     def __repr__(self):
-        return "({0}):: {1}".format(self.state.get_id(), self.path)
+        return f"({self.state.get_id()}):: {self.path}"

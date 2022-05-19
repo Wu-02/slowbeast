@@ -285,7 +285,7 @@ class Executor:
             if v.value() != True:
                 state.set_error(
                     AssertFailError(
-                        "Assertion failed: {0} is {1} (!= True)".format(o, v)
+                        f"Assertion failed: {o} is {v} (!= True)"
                     )
                 )
                 return [state]
@@ -301,7 +301,7 @@ class Executor:
             assert v.is_concrete()
             assert v.is_bool()
             if v.value() != True:
-                print("Assumption failed: {0} == {1} (!= True)".format(o, v))
+                print(f"Assumption failed: {o} == {v} (!= True)")
                 state.dump()
                 break
 
@@ -384,7 +384,7 @@ class Executor:
         ldbgv("-- CALL {0} --", (fun.name()))
         if fun.is_undefined():
             state.set_error(
-                GenericError("Called undefined function: {0}".format(fun.name()))
+                GenericError(f"Called undefined function: {fun.name()}")
             )
             return [state]
         # map values to arguments
@@ -476,7 +476,7 @@ class Executor:
         elif isinstance(instr, Return):
             states = self.exec_ret(state, instr)
         else:
-            state.set_killed("Not implemented instruction: {0}".format(instr))
+            state.set_killed(f"Not implemented instruction: {instr}")
             return [state]
 
         return states

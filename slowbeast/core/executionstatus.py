@@ -79,4 +79,4 @@ class ExecutionStatus:
         raise RuntimeError("Invalid state status")
 
     def dump(self, stream=stdout):
-        stream.write("status: {0}\n".format(str(self)))
+        stream.write(f"status: {str(self)}\n")

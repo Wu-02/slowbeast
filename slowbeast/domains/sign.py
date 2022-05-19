@@ -74,7 +74,7 @@ class ZOValue(Value):
         return self.value() == rhs.value()
 
     def __repr__(self):
-        return "<{0}:{1}>".format(ZOValue.val_to_str(self.value()), self.type())
+        return f"<{ZOValue.val_to_str(self.value())}:{self.type()}>"
 
 
 def get_unsigned(v):

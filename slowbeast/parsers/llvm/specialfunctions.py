@@ -141,4 +141,4 @@ def create_special_fun(parser, inst, fun, error_funs):
         P = Print(*[parser.operand(x) for x in get_llvm_operands(inst)[:-1]])
         return P, [P]
     else:
-        raise NotImplementedError("Unknown special function: {0}".format(fun))
+        raise NotImplementedError(f"Unknown special function: {fun}")

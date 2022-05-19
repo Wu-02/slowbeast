@@ -127,7 +127,7 @@ class ConcreteVal(Value):
         assert self.is_bool() or isinstance(c, (int, float))
 
     def as_value(self):
-        return "{0}:{1}".format(str(self._value), self.type())
+        return f"{str(self._value)}:{self.type()}"
 
     def value(self):
         return self._value

@@ -55,16 +55,14 @@ class GlobalVariable(ProgramElement):
         self._init = I
 
     def as_value(self):
-        return "g{0}".format(self.get_id())
+        return f"g{self.get_id()}"
 
     def __str__(self):
-        return "{0} = global {1} of size {2}".format(
-            self.as_value(), self.name(), self.size()
-        )
+        return f"{self.as_value()} = global {self.name()} of size {self.size()}"
 
     def dump(self, ind=0, stream=stdout, color=True):
         super().dump(ind, stream, color)
-        stream.write("{0}{1}\n".format(" " * ind, self))
+        stream.write(f"{' ' * ind}{self}\n")
 
 
 class Instruction(ProgramElement):
@@ -124,7 +122,7 @@ class Instruction(ProgramElement):
                 stream=stream,
             )
         else:
-            stream.write("{0}{1}\n".format(" " * ind, self))
+            stream.write(f"{' ' * ind}{self}\n")
 
     ###
     # Helper methods
@@ -159,8 +157,8 @@ class ValueInstruction(Instruction):
 
     def as_value(self):
         if self._name:
-            return "{0}".format(self._name)
-        return "x{0}".format(self.get_id())
+            return f"{self._name}"
+        return f"x{self.get_id()}"
 
 
 class ValueTypedInstruction(ValueInstruction):
@@ -310,7 +308,7 @@ class Call(ValueTypedInstruction):
         # return self._function
 
     def __str__(self):
-        r = "x{0} = call {1}(".format(self.get_id(), self.called_function().as_value())
+        r = f"x{self.get_id()} = call {self.called_function().as_value()}("
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + f") -> {self._type}"
 
@@ -325,7 +323,7 @@ class Return(Instruction):
     def __str__(self):
         if len(self.operands()) == 0:
             return "ret"
-        return "ret {0}".format(str(self.operand(0).as_value()))
+        return f"ret {str(self.operand(0).as_value())}"
 
 
 class Thread(Call):
@@ -343,9 +341,7 @@ class Thread(Call):
         # return self._function
 
     def __str__(self):
-        r = "x{0} = thread {1}(".format(
-            self.get_id(), self.called_function().as_value()
-        )
+        r = f"x{self.get_id()} = thread {self.called_function().as_value()}("
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + f") -> {self._type}"
 
@@ -399,10 +395,10 @@ class Assert(Instruction):
         return self.operand(0)
 
     def __str__(self):
-        r = "assert {0}".format(self.condition().as_value())
+        r = f"assert {self.condition().as_value()}"
         m = self.msg()
         if m:
-            r += ', "{0}"'.format(m)
+            r += f', "{m}"'
         return r
 
 
@@ -529,7 +525,7 @@ class Abs(UnaryOperation):
         super().__init__(UnaryOperation.ABS, val)
 
     def __str__(self):
-        return "x{0} = abs({1})".format(self.get_id(), self.operand(0).as_value())
+        return f"x{self.get_id()} = abs({self.operand(0).as_value()})"
 
 
 class Extend(UnaryOperation):

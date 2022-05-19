@@ -205,9 +205,9 @@ if _use_z3:
         "An auxiliary method for debugging that converts expr to C expression"
 
         if is_and(expr):
-            return "({0})".format(" && ".join(map(to_c_expression, expr.children())))
+            return f"({' && '.join(map(to_c_expression, expr.children()))})"
         if is_or(expr):
-            return "({0})".format(" || ".join(map(to_c_expression, expr.children())))
+            return f"({' || '.join(map(to_c_expression, expr.children()))})"
         if is_not(expr):
             return f"!({to_c_expression(expr.children()[0])})"
 
@@ -1208,7 +1208,7 @@ class Expr(Value):
         return self._expr == rhs._expr if isinstance(rhs, Expr) else False
 
     def __repr__(self):
-        return "<{0}:{1}>".format(self._expr, self.type())
+        return f"<{self._expr}:{self.type()}>"
 
 
 class NondetInstrResult(Expr):
@@ -1335,7 +1335,7 @@ class BVSymbolicDomain:
         return True
 
     def lift(v):
-        assert isinstance(v, Value), "Invalid value for lifting: {0}".format(v)
+        assert isinstance(v, Value), f"Invalid value for lifting: {v}"
         if isinstance(v, Expr):
             return v
 
@@ -1347,7 +1347,7 @@ class BVSymbolicDomain:
                 return Expr(FPVal(v.value(), get_fp_sort(ty.bitwidth())), ty)
             return Expr(bv_const(v.value(), ty.bitwidth()), ty)
 
-        raise NotImplementedError("Invalid value for lifting: {0}".format(v))
+        raise NotImplementedError(f"Invalid value for lifting: {v}")
 
     def simplify(expr):
         return Expr(

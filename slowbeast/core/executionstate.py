@@ -148,6 +148,6 @@ class ExecutionState:
         stream.write("---- State ----\n")
         self._status.dump(stream)
         stream.write(" -- program counter --\n")
-        stream.write("{0}\n".format(self.pc))
+        stream.write(f"{self.pc}\n")
         stream.write("-- Memory:\n")
         self.memory.dump(stream)

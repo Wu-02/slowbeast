@@ -104,4 +104,4 @@ class MemError(Error):
         return "[memory error] - {1}".format(super(MemError, self).__repr__(), detail)
 
     def __str__(self):
-        return "{0} ({1})".format(self.__repr__(), self.descr())
+        return f"{self.__repr__()} ({self.descr()})"

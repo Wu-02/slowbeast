@@ -15,7 +15,7 @@ def report_state(stats, n, fn=print_stderr):
     if n.has_error():
         if fn:
             fn(
-                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.get_error()),
+                f"state {n.get_id()}: {n.pc}, {n.get_error()}",
                 color="RED",
             )
         stats.errors += 1
@@ -318,8 +318,8 @@ class KindSymbolicExecutor(SymbolicInterpreter):
             return 0
 
         while True:
-            dbg("-- starting iteration {0} --".format(k))
-            dbg("Got {0} paths in queue".format(len(self.paths)))
+            dbg(f"-- starting iteration {k} --")
+            dbg(f"Got {len(self.paths)} paths in queue")
 
             r, states = self.check_paths()
             if r is Result.SAFE:

@@ -27,7 +27,7 @@ class Tool(benchexec.tools.template.BaseTool):
 
     def determine_result(self, returncode, returnsignal, output, isTimeout):
         if output is None:
-            return "{0}(no output)".format(result.RESULT_ERROR)
+            return f"{result.RESULT_ERROR}(no output)"
 
         noerrsline = False # the last line
         noerrs = False
@@ -56,13 +56,9 @@ class Tool(benchexec.tools.template.BaseTool):
         if isTimeout:
             return res
         elif returnsignal != 0:
-            return "KILLED (signal {0}, {1})".format(
-                returnsignal, res
-            )
+            return f"KILLED (signal {returnsignal}, {res})"
         elif returncode != 0:
-            return "{0}(returned {1}, {2})".format(
-                result.RESULT_ERROR, returncode, res
-            )
+            return f"{result.RESULT_ERROR}(returned {returncode}, {res})"
         else:
             return res
 

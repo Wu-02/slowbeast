@@ -26,7 +26,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                 self.prepare()
             states = self.states
             assert states
-            print_stdout("Executing path from init: {0}".format(path), color="ORANGE")
+            print_stdout(f"Executing path from init: {path}", color="ORANGE")
             # we must execute without lazy memory
             executor = self.executor()
         else:
@@ -35,7 +35,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             states = [s]
             executor = self.ind_executor()
 
-            print_stdout("Executing path: {0}".format(path), color="ORANGE")
+            print_stdout(f"Executing path: {path}", color="ORANGE")
 
         assert states
 
@@ -116,7 +116,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         if n.has_error():
             print_stderr("Error found.", color="red")
             print_stderr(
-                "{0}: {1}, {2}".format(n.get_id(), n.pc, n.get_error()), color="RED"
+                f"{n.get_id()}: {n.pc}, {n.get_error()}", color="RED"
             )
             self.stats.errors += 1
             return Result.UNSAFE
@@ -197,8 +197,8 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             return 0
 
         while True:
-            print_stdout("-- starting iteration {0} --".format(k))
-            dbg("Got {0} paths in queue".format(len(self.paths)))
+            print_stdout(f"-- starting iteration {k} --")
+            dbg(f"Got {len(self.paths)} paths in queue")
 
             r = self.check_paths()
             if r is Result.SAFE:

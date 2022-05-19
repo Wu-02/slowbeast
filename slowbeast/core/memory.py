@@ -95,7 +95,7 @@ class Memory:
         """Allocate a new memory object and return a pointer to it"""
         assert (
             objid is None or self._objects.get(objid) is None
-        ), "Already has an object with id {0}".format(objid)
+        ), f"Already has an object with id {objid}"
 
         o = self._allocate(size, instr, nm, objid)
 
@@ -109,7 +109,7 @@ class Memory:
         """Allocate a new memory object and return a pointer to it"""
         assert (
             objid is None or self._glob_objects.get(objid) is None
-        ), "Already has a global object with id {0}".format(objid)
+        ), f"Already has a global object with id {objid}"
 
         o = self._allocate(G.size(), G, G.name(), objid, is_glob=True)
         if zeroed:
@@ -221,7 +221,7 @@ class Memory:
             o.dump(stream)
         stream.write("-- Global bindings:\n")
         for g, v in self._glob_bindings.items():
-            stream.write("{0} -> {1}\n".format(g.as_value(), v.as_value()))
+            stream.write(f"{g.as_value()} -> {v.as_value()}\n")
         stream.write("-- Objects:\n")
         for o in self._objects.values():
             o.dump(stream)

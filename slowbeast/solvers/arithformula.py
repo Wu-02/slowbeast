@@ -84,9 +84,7 @@ class Monomial:
         V = self.vars
         if not V:
             return "[1]"
-        return "[{0}]".format(
-            "·".join(f"{v}^{e}" if e != 1 else str(v) for v, e in V.items())
-        )
+        return f"[{'·'.join(f'{v}^{e}' if e != 1 else str(v) for v, e in V.items())}]"
 
 
 class Polynomial:
@@ -458,7 +456,7 @@ class ArithFormula:
             return str(self._value)
         op = ArithFormula.__op_to_str(ty)
         assert op
-        return "({0})".format(op.join(map(str, self._children)))
+        return f"({op.join(map(str, self._children))})"
 
     def __str__(self):
         ty = self._ty
@@ -466,11 +464,11 @@ class ArithFormula:
             assert len(self._children) == 1, self._children
             if self._children[0]._ty == ArithFormula.EQ:
                 assert len(self._children[0]._children) >= 2, self._children
-                return "({0})".format("≠".join(map(str, self._children[0]._children)))
+                return f"({'≠'.join(map(str, self._children[0]._children))})"
             return f"¬({self._children[0]})"
         elif ty > ArithFormula.MT_VALUES:
             assert len(self._children) == 0
             return str(self._value)
         op = ArithFormula.__op_to_str(ty)
         assert op
-        return "({0})".format(op.join(map(str, self._children)))
+        return f"({op.join(map(str, self._children))})"

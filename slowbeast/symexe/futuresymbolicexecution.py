@@ -21,7 +21,7 @@ class FutureExecutor(SExecutor):
         if self.calls_forbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
             state.set_killed(
-                "calling '{0}', but calls are forbidden".format(fun.name())
+                f"calling '{fun.name()}', but calls are forbidden"
             )
             return [state]
 
@@ -91,7 +91,7 @@ class FutureSymbolicExecutor(Interpreter):
 
     def new_output_file(self, name):
         odir = self.ohandler.outdir if self.ohandler else None
-        return open("{0}/{1}".format(odir or ".", name), "w")
+        return open(f"{odir or '.'}/{name}", "w")
 
     def solver(self):
         return self.solver
@@ -116,7 +116,7 @@ class FutureSymbolicExecutor(Interpreter):
             self.states.append(s)
         elif s.has_error():
             print_stderr(
-                "{0}: {1}, {2}".format(s.get_id(), s.pc, s.get_error()), color="RED"
+                f"{s.get_id()}: {s.pc}, {s.get_error()}", color="RED"
             )
             stats.errors += 1
             stats.paths += 1
@@ -140,7 +140,7 @@ class FutureSymbolicExecutor(Interpreter):
                 testgen.process_state(s)
         else:
             assert s.exited()
-            dbg("state exited with exitcode {0}".format(s.get_exit_code()))
+            dbg(f"state exited with exitcode {s.get_exit_code()}")
             stats.paths += 1
             stats.exited_paths += 1
             if testgen:

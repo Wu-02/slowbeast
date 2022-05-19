@@ -54,7 +54,7 @@ class InstrsAnnotation(Annotation):
         return self.instrs.__iter__()
 
     def __repr__(self):
-        return "[{0}]".format(", ".join(map(lambda i: i.as_value(), self.instrs)))
+        return f"[{', '.join(map(lambda i: i.as_value(), self.instrs))}]"
 
     def dump(self):
         print("InstrsAnnotation[")

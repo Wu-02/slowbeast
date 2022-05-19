@@ -92,11 +92,11 @@ class AIMemoryObject:
             self._size,
         )
         for k, v in self._values.items():
-            s += "\n  {0} -> {1}".format(k, v)
+            s += f"\n  {k} -> {v}"
         return s
 
     def as_value(self):
-        return "ai-mo{0}".format(self._id)
+        return f"ai-mo{self._id}"
 
     def dump(self, stream=stdout):
         stream.write(str(self))
@@ -153,7 +153,7 @@ class AIMemoryModel(MemoryModel):
         assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
-        dbgv("Lazily allocated {0}".format(op), color="WHITE")
+        dbgv(f"Lazily allocated {op}", color="WHITE")
         assert state.get(op), "Did not bind an allocated value"
 
     def write(self, state, value_op, to_op):
@@ -181,7 +181,7 @@ class AIMemoryModel(MemoryModel):
         return [state]
 
     def uninitialized_read(self, state, frm, ptr, bytes_num):
-        dbgv("Reading nondet for uninitialized value: {0}".format(ptr), color="WHITE")
+        dbgv(f"Reading nondet for uninitialized value: {ptr}", color="WHITE")
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name

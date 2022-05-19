@@ -78,11 +78,11 @@ class Type:
         if self.is_bool():
             return "bool"
         if self.is_float():
-            s = "f{0}b".format(self._bitwidth)
+            s = f"f{self._bitwidth}b"
         elif self.is_bytes():
-            s = "x{0}".format(self._bitwidth)
+            s = f"x{self._bitwidth}"
         else:
-            s = "{0}b".format(self._bitwidth)
+            s = f"{self._bitwidth}b"
         if self.is_pointer():
             s += "*"
         return s

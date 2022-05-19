@@ -123,7 +123,7 @@ def report_state(stats, n, fn=print_stderr):
     if n.has_error():
         if fn:
             fn(
-                "state {0}: {1}, {2}".format(n.get_id(), n.pc, n.get_error()),
+                f"state {n.get_id()}: {n.pc}, {n.get_error()}",
                 color="RED",
             )
         stats.errors += 1
@@ -1195,7 +1195,7 @@ class KindSE:
     # FIXME: copied from BaseKindSE
     def new_output_file(self, name):
         odir = self.ohandler.outdir if self.ohandler else None
-        return open("{0}/{1}".format(odir or ".", name), "w")
+        return open(f"{odir or '.'}/{name}", "w")
 
     def _get_possible_errors(self):
         EM = global_expr_mgr()

@@ -206,7 +206,7 @@ class Parser:
 
     def operand(self, op):
         ret = self.try_get_operand(op)
-        assert ret, "Do not have an operand: {0}".format(op)
+        assert ret, f"Do not have an operand: {op}"
         return ret
 
     def bblock(self, llvmb):
@@ -303,7 +303,7 @@ class Parser:
             op2 = to_float_ty(op2)
             isfloat = True
         if isfloat and self._forbid_floats:
-            raise RuntimeError("Floating artihmetic forbidden: {0}".format(inst))
+            raise RuntimeError(f"Floating artihmetic forbidden: {inst}")
 
         if opcode in ("add", "fadd"):
             I = Add(op1, op2, isfloat)
@@ -317,7 +317,7 @@ class Parser:
             I = Div(op1, op2, unsigned=True, fp=isfloat)
         else:
             raise NotImplementedError(
-                "Artihmetic operation unsupported: {0}".format(inst)
+                f"Artihmetic operation unsupported: {inst}"
             )
 
         self._addMapping(inst, I)
@@ -338,7 +338,7 @@ class Parser:
         elif opcode == "ashr":
             I = AShr(op1, op2)
         else:
-            raise NotImplementedError("Shift operation unsupported: {0}".format(inst))
+            raise NotImplementedError(f"Shift operation unsupported: {inst}")
 
         self._addMapping(inst, I)
         return [I]
@@ -362,7 +362,7 @@ class Parser:
         elif opcode == "xor":
             I = Xor(op1, op2)
         else:
-            raise NotImplementedError("Logic operation unsupported: {0}".format(inst))
+            raise NotImplementedError(f"Logic operation unsupported: {inst}")
 
         self._addMapping(inst, I)
         return [I]
@@ -393,7 +393,7 @@ class Parser:
             I = Rem(op1, op2, unsigned=True)
         else:
             raise NotImplementedError(
-                "Remainder operation unsupported: {0}".format(inst)
+                f"Remainder operation unsupported: {inst}"
             )
 
         self._addMapping(inst, I)
@@ -401,7 +401,7 @@ class Parser:
 
     def _createFNeg(self, inst):
         if self._forbid_floats:
-            raise RuntimeError("Floating operations forbidden: {0}".format(inst))
+            raise RuntimeError(f"Floating operations forbidden: {inst}")
 
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for fneg"
@@ -416,7 +416,7 @@ class Parser:
         op2 = self.operand(operands[1])
         if isfloat:
             if self._forbid_floats:
-                raise RuntimeError("Floating operations forbidden: {0}".format(inst))
+                raise RuntimeError(f"Floating operations forbidden: {inst}")
 
             P, is_unordered = parse_fcmp(inst)
             op1 = to_float_ty(op1)
@@ -427,14 +427,14 @@ class Parser:
                     self._addMapping(inst, seq[-1])
                     return seq
                 raise NotImplementedError(
-                    "Unsupported fcmp instruction: {0}".format(inst)
+                    f"Unsupported fcmp instruction: {inst}"
                 )
             C = Cmp(P, op1, op2, is_unordered, fp=True)
         else:
             P, is_unsigned = parse_cmp(inst)
             if not P:
                 raise NotImplementedError(
-                    "Unsupported cmp instruction: {0}".format(inst)
+                    f"Unsupported cmp instruction: {inst}"
                 )
             C = Cmp(P, op1, op2, is_unsigned)
 
@@ -525,7 +525,7 @@ class Parser:
         if not fun:
             op = self.try_get_operand(operands[-1])
             if op is None:
-                raise NotImplementedError("Unsupported call: {0}".format(inst))
+                raise NotImplementedError(f"Unsupported call: {inst}")
             # function pointer call
             ty = get_sb_type(self.llvmmodule, inst.type)
             C = Call(op, ty, *[self.operand(x) for x in operands[:-1]])
@@ -554,7 +554,7 @@ class Parser:
             return []
 
         if fun in unsupported_funs:
-            raise NotImplementedError("Unsupported function: {0}".format(fun))
+            raise NotImplementedError(f"Unsupported function: {fun}")
 
         if fun in thread_funs:
             if self._allow_threads:
@@ -566,7 +566,7 @@ class Parser:
 
         F = self.fun(fun)
         if not F:
-            raise NotImplementedError("Unknown function: {0}".format(fun))
+            raise NotImplementedError(f"Unknown function: {fun}")
 
         ty = get_sb_type(self.llvmmodule, inst.type)
         C = Call(F, ty, *[self.operand(x) for x in operands[:-1]])
@@ -822,7 +822,7 @@ class Parser:
         elif opcode == "phi":
             return self._handlePhi(inst)
         else:
-            raise NotImplementedError("Unsupported instruction: {0}".format(inst))
+            raise NotImplementedError(f"Unsupported instruction: {inst}")
 
     def _parse_block(self, F, block):
         """
@@ -846,7 +846,7 @@ class Parser:
                     B.append(I)
             except Exception as e:
                 print_stderr(
-                    "Failed parsing llvm while parsing: {0}".format(inst), color="RED"
+                    f"Failed parsing llvm while parsing: {inst}", color="RED"
                 )
                 raise e
 
@@ -897,7 +897,7 @@ class Parser:
                 G.set_zeroed()
                 return
         print_stderr(
-            "Unsupported initializer: {0}".format(g.initializer),
+            f"Unsupported initializer: {g.initializer}",
             color="YELLOW",
         )
 
@@ -923,7 +923,7 @@ class Parser:
             succ, retty = parse_fun_ret_ty(self.llvmmodule, f.type.element_type)
             if not succ:
                 raise NotImplementedError(
-                    "Cannot parse function return type: {0}".format(f.type.element_type)
+                    f"Cannot parse function return type: {f.type.element_type}"
                 )
             args = [Argument(get_sb_type(self.llvmmodule, a.type)) for a in f.arguments]
             fun = Function(f.name, args, retty)

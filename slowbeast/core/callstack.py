@@ -56,7 +56,7 @@ class CallStack:
 
         def dump(self, stream=stdout):
             for x, v in self.values.items():
-                stream.write("{0} -> {1}\n".format(x.as_value(), v.as_value()))
+                stream.write(f"{x.as_value()} -> {v.as_value()}\n")
 
     def __init__(self):
         self._cs = []

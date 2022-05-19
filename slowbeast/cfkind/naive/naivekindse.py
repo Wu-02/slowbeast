@@ -30,7 +30,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         for ns in states:
             if ns.has_error():
                 print_stderr(
-                    "{0}: {1}, {2}".format(ns.get_id(), ns.pc, ns.get_error()),
+                    f"{ns.get_id()}: {ns.pc}, {ns.get_error()}",
                     color="RED",
                 )
                 self.stats.errors += 1
@@ -132,7 +132,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             return 0
 
         while True:
-            print_stdout("-- starting iteration {0} --".format(k))
+            print_stdout(f"-- starting iteration {k} --")
 
             dbg("Extending base".format(k), color="BLUE")
             r = self.extend_base_step()

@@ -39,7 +39,7 @@ class MemoryModel:
         value = state.eval(value_op)
         to = state.get(to_op)
         if to is None:
-            state.set_killed("Use of unknown variable: {0}".format(to_op))
+            state.set_killed(f"Use of unknown variable: {to_op}")
             return [state]
 
         assert isinstance(value, Value)
@@ -59,7 +59,7 @@ class MemoryModel:
     def read(self, state, to_op, from_op, bytes_num, bitsnum=None):
         frm = state.get(from_op)
         if frm is None:
-            state.set_killed("Use of unknown variable: {0}".format(from_op))
+            state.set_killed(f"Use of unknown variable: {from_op}")
             return [state]
 
         assert frm.is_pointer()

@@ -152,7 +152,7 @@ class MemoryObject:
         if self._is_oob(bts):
             return None, MemError(
                 MemError.OOB_ACCESS,
-                "Read {0}B from object of size {1}B".format(bts, self._size),
+                f"Read {bts}B from object of size {self._size}B",
             )
 
         val = self._values.get(offval)
@@ -192,11 +192,11 @@ class MemoryObject:
             self._size,
         )
         for k, v in self._values.items():
-            s += "\n  {0} -> {1}".format(k, v)
+            s += f"\n  {k} -> {v}"
         return s
 
     def as_value(self):
-        return "mo{0}".format(self._id)
+        return f"mo{self._id}"
 
     def dump(self, stream=stdout):
         stream.write(str(self))

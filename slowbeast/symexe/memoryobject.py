@@ -238,5 +238,5 @@ class MemoryObject(CoreMO):
         )
         vals = self._values
         for k, v in enumerate(vals) if isinstance(vals, list) else vals.items():
-            s += "\n  {0} -> {1}".format(k, v)
+            s += f"\n  {k} -> {v}"
         return s

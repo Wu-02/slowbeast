@@ -81,7 +81,7 @@ class Interpreter:
             assert len(self.states) == 0
             self.states.append(state)
         elif state.has_error():
-            print_stderr("Error while executing '{0}'".format(state), color="RED")
+            print_stderr(f"Error while executing '{state}'", color="RED")
             print_stderr(state.get_error(), color="BROWN")
             self.error_states.append(state)
             state.dump()
@@ -178,7 +178,7 @@ class Interpreter:
         elif self._options.step == ExecutionOptions.BLOCK_STEP:
             newstates = self._executor.execute_till_branch(state)
         else:
-            raise NotImplementedError("Invalid step: {0}".format(self._options.step))
+            raise NotImplementedError(f"Invalid step: {self._options.step}")
 
         # self.states_num += len(newstates)
         # if self.states_num % 100 == 0:

@@ -187,7 +187,7 @@ class DFSVisitor:
         else:
             nodes = graph.get_nodes()
         for n in nodes:
-            print("  {0}".format(_get_id(n)), file=out)
+            print(f"  {_get_id(n)}", file=out)
 
         # dump edges
         print("", file=out)

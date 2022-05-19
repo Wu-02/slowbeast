@@ -71,7 +71,7 @@ class SymbolicExecutor(Interpreter):
     # after all, we want such functionality with every analysis
     def new_output_file(self, name):
         odir = self.ohandler.outdir if self.ohandler else None
-        return open("{0}/{1}".format(odir or ".", name), "w")
+        return open(f"{odir or '.'}/{name}", "w")
 
     def solver(self):
         return self._solver
@@ -113,6 +113,7 @@ class SymbolicExecutor(Interpreter):
             # ), f"State already in queue: {s} ... {self.states}"
             self.states.append(s)
         elif s.has_error():
+<<<<<<< HEAD
             if not opts.replay_errors:
                 dbgloc = s.pc.get_metadata("dbgloc")
                 if dbgloc:
@@ -122,11 +123,12 @@ class SymbolicExecutor(Interpreter):
                     )
                 else:
                     print_stderr(
-                        "{0}: {1} @ {2}".format(s.get_id(), s.get_error(), s.pc),
+                        f"{s.get_id()}: {s.get_error()} @ {s.pc}",
                         color="redul",
                     )
                 print_stderr("Error found.", color="red")
             # else: we already printed this message
+
             stats.errors += 1
             stats.paths += 1
             if testgen:

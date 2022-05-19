@@ -126,19 +126,19 @@ class Executor(ConcreteExecutor):
             elif not cond.value():
                 return None, state
             else:
-                raise RuntimeError("Invalid condition: {0}".format(cond.value()))
+                raise RuntimeError(f"Invalid condition: {cond.value()}")
 
         # check SAT of cond and its negation
         csat = state.is_sat(cond)
         if csat is None:
             T = state.copy()
-            T.set_killed("Solver failure: {0}".format(csat))
+            T.set_killed(f"Solver failure: {csat}")
 
         ncond = state.expr_manager().Not(cond)
         ncsat = state.is_sat(ncond)
         if ncsat is None:
             F = state.copy()
-            F.set_killed("Solver failure: {0}".format(ncsat))
+            F.set_killed(f"Solver failure: {ncsat}")
 
         # is one of the conditions implied?
         # in that case we do not need to add any constraint
@@ -202,7 +202,7 @@ class Executor(ConcreteExecutor):
             s = self.assume(state, state.expr_manager().Not(cval))
             succ = instr.false_successor()
         else:
-            raise RuntimeError("Invalid branch successor: {0}".format(to))
+            raise RuntimeError(f"Invalid branch successor: {to}")
 
         if s is None:
             dbgv("branching is not feasible!")
@@ -258,7 +258,7 @@ class Executor(ConcreteExecutor):
         mo2id = p2.object()
         if is_symbolic(mo1id) or is_symbolic(mo2id):
             state.set_killed(
-                "Comparison of symbolic pointers unimplemented: {0}".format(instr)
+                f"Comparison of symbolic pointers unimplemented: {instr}"
             )
             return [state]
 
@@ -411,7 +411,7 @@ class Executor(ConcreteExecutor):
         if self.calls_forbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
             state.set_killed(
-                "calling '{0}', but calls are forbidden".format(fun.name())
+                f"calling '{fun.name()}', but calls are forbidden"
             )
             return [state]
 
@@ -467,7 +467,7 @@ class Executor(ConcreteExecutor):
                 r = add_pointer_with_constant(E, op1, op2)
             else:
                 state.set_killed(
-                    "Arithmetic on pointers not implemented yet: {0}".format(instr)
+                    f"Arithmetic on pointers not implemented yet: {instr}"
                 )
                 return [state]
         elif op2ptr:
@@ -475,7 +475,7 @@ class Executor(ConcreteExecutor):
                 r = add_pointer_with_constant(E, op2, op1)
             else:
                 state.set_killed(
-                    "Arithmetic on pointers not implemented yet: {0}".format(instr)
+                    f"Arithmetic on pointers not implemented yet: {instr}"
                 )
                 return [state]
         else:
@@ -516,7 +516,7 @@ class Executor(ConcreteExecutor):
             elif opcode == BinaryOperation.XOR:
                 r = E.Xor(op1, op2)
             else:
-                state.set_killed("Not implemented binary operation: {0}".format(instr))
+                state.set_killed(f"Not implemented binary operation: {instr}")
                 return [state]
 
         assert r, "Bug in creating a binary op expression"
@@ -558,7 +558,7 @@ class Executor(ConcreteExecutor):
         elif opcode == UnaryOperation.CAST:
             r = E.Cast(op1, instr.casttype())
             if r is None:
-                state.set_killed("Unsupported/invalid cast: {0}".format(instr))
+                state.set_killed(f"Unsupported/invalid cast: {instr}")
                 return [state]
         elif opcode == UnaryOperation.EXTRACT:
             start, end = instr.range()
@@ -573,7 +573,7 @@ class Executor(ConcreteExecutor):
                 state.set_killed(f"Unsupported FP operation: {instr}")
                 return [state]
         else:
-            state.set_killed("Unary instruction not implemented: {0}".format(instr))
+            state.set_killed(f"Unary instruction not implemented: {instr}")
             return [state]
 
         state.set(instr, r)
@@ -609,7 +609,7 @@ class Executor(ConcreteExecutor):
 
             if isunsat:
                 state.set_terminated(
-                    "Assumption unsat: {0} == {1} (!= True)".format(o, v)
+                    f"Assumption unsat: {o} == {v} (!= True)"
                 )
                 return [state]
 
@@ -747,7 +747,7 @@ class ThreadedExecutor(Executor):
         if fun.is_undefined():
             state.set_error(
                 GenericError(
-                    "Spawning thread with undefined function: {0}".format(fun.name())
+                    f"Spawning thread with undefined function: {fun.name()}"
                 )
             )
             return [state]

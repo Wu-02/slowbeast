@@ -14,7 +14,7 @@ def _getInt(s):
         else:
             if "e" in s:  # scientific notation
                 if float(s) > 0 or float(s) < 0:
-                    warn("Concretized float number: {0}".format(s))
+                    warn(f"Concretized float number: {s}")
                     # return None
                 return int(float(s))
             else:
@@ -124,7 +124,7 @@ def type_size_in_bits(m, ty):
     elif sty == "float":
         return 32
     else:
-        assert "*" not in sty, "Unsupported type: {0}".format(sty)
+        assert "*" not in sty, f"Unsupported type: {sty}"
         return _bitwidth(sty)
     return None
 

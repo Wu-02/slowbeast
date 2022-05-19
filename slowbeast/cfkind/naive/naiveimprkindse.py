@@ -28,7 +28,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
         return False
 
     def execute_path(self, path):
-        print_stdout("Executing path: {0}".format(path), color="ORANGE")
+        print_stdout(f"Executing path: {path}", color="ORANGE")
         ready, notready = self.ind_executor().execute_edge(
             path.get_state(), path.get_path()
         )
@@ -46,7 +46,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             if self.has_infeasible_suffix(p):
                 # FIXME: this works only for "assert False" as it is in its own
                 # block...
-                dbg("Skipping path with infeasible suffix: {0}".format(p))
+                dbg(f"Skipping path with infeasible suffix: {p}")
                 continue
 
             # this path may reach an assert

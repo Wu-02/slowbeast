@@ -35,7 +35,7 @@ class AbstractState(ExecutionState):
             return Domain.lift(v)
         value = self.get(v)
         if value is None:
-            raise RuntimeError("Use of uninitialized/unknown variable {0}".format(v))
+            raise RuntimeError(f"Use of uninitialized/unknown variable {v}")
         return value
 
     def is_feasible(self):

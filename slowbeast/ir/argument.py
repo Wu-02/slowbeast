@@ -10,7 +10,7 @@ class Argument(ProgramElement):
         return self._type
 
     def __str__(self):
-        return "a{0}:{1}".format(self.get_id(), self._type)
+        return f"a{self.get_id()}:{self._type}"
 
     def as_value(self):
-        return "a{0}".format(self.get_id())
+        return f"a{self.get_id()}"

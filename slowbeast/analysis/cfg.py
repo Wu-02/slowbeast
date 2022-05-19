@@ -99,9 +99,7 @@ class CFG:
         for node in self._nodes.values():
             for succ in node.successors():
                 stream.write(
-                    "{0} -> {1}\n".format(
-                        node.bblock().get_id(), succ.bblock().get_id()
-                    )
+                    f"{node.bblock().get_id()} -> {succ.bblock().get_id()}\n"
                 )
 
 

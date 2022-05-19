@@ -30,7 +30,7 @@ class LazySymbolicMemoryModel(CoreMM):
         assert isinstance(op, (Alloc, GlobalVariable)), op
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
-        dbgv("Lazily allocated {0}".format(op), color="white", verbose_lvl=3)
+        dbgv(f"Lazily allocated {op}", color="white", verbose_lvl=3)
         assert state.get(op), "Did not bind an allocated value"
 
     def allocate(self, state, instr):
@@ -108,7 +108,7 @@ class LazySymbolicMemoryModel(CoreMM):
 
     def uninitialized_read(self, state, frm, ptr, bitsnum):
         dbgv(
-            "Reading nondet for uninitialized value: {0}".format(ptr),
+            f"Reading nondet for uninitialized value: {ptr}",
             color="white",
             verbose_lvl=3,
         )

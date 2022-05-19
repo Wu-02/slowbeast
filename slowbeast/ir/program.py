@@ -103,5 +103,5 @@ class ProgramElement:
         col = "GRAY" if color else "BLACK"
         for k, v in self._metadata:
             print_stream(
-                "{0} ; {1} : {2}".format(" " * ind, k, v), color=col, stream=stream
+                f"{' ' * ind} ; {k} : {v}", color=col, stream=stream
             )
