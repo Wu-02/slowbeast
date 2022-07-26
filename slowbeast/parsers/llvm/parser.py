@@ -746,7 +746,7 @@ class Parser:
         opcode = inst.opcode
         if opcode == "getelementptr":
             return self._createCEGep(inst)
-        if opcode == "bitcast":
+        if opcode in ("bitcast", "ptrtoint", "inttoptr"):
             operands = get_llvm_operands(inst)
             assert len(operands) == 1
             return self.operand(operands[0])
