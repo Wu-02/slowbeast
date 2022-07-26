@@ -47,7 +47,7 @@ def read_bytes(values, offval, size, bts, zeroed):
         # just make Extract return Bytes and it should work well then
         val = EM.Concat(
             *(
-                values[c - i] if values[c - i] else ConcreteVal(0, 8)
+                values[c - i] if values[c - i] else ConcreteVal(0, IntType(8))
                 for i in range(0, bts)
             )
         )

@@ -258,7 +258,7 @@ class ConcreteDomain:
     def SExt(a, b):
         assert ConcreteDomain.belongto(a, b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        assert a.is_int(), a
+        assert a.is_int() is not None, a
         # FIXME: support bytes...
         # sb = 1 << (b.value() - 1)
         # aval = to_bv(a, unsigned=False)
