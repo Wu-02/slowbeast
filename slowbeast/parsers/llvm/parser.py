@@ -531,6 +531,8 @@ class Parser:
                             break
                         else:
                             fun = None
+            if " asm " in sop:
+                return self._handleAsm(inst)
         if not fun:
             op = self.try_get_operand(operands[-1])
             if op is None:
@@ -579,6 +581,14 @@ class Parser:
 
         ty = get_sb_type(self.llvmmodule, inst.type)
         C = Call(F, ty, *[self.operand(x) for x in operands[:-1]])
+        self._addMapping(inst, C)
+        return [C]
+
+    def _handleAsm(self, inst):
+        ty = inst.type
+        print_stderr(f"Unsupported ASM, taking as noop with nondet return value:", color="yellow")
+        print_stderr(str(inst))
+        C = self.create_nondet_call(f"asm_{ty}".replace(" ", "_"), ty)
         self._addMapping(inst, C)
         return [C]
 
