@@ -753,7 +753,6 @@ class Parser:
         raise NotImplementedError(f"Unsupported constant expr: {ce}")
 
     def _handlePhi(self, inst):
-        operands = get_llvm_operands(inst)
         bnum = type_size(self.llvmmodule, inst.type)
         phivar = Alloc(ConcreteVal(bnum, get_size_type()))
         L = Load(phivar, get_sb_type(self.llvmmodule, inst.type))
