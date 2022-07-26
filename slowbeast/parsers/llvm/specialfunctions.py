@@ -12,6 +12,7 @@ from slowbeast.ir.instruction import (
 )
 from slowbeast.ir.types import FloatType, IntType, get_size_type
 from .utils import get_llvm_operands, type_size_in_bits, to_float_ty
+from slowbeast.util.debugging import print_stderr
 from ...domains.concrete import ConcreteVal
 
 # FIXME: turn to a dict with separate handlers
@@ -45,6 +46,7 @@ special_functions = [
     "__INSTR_check_assume",
     "__INSTR_fail",
     "__slowbeast_print",
+    "ldv_stop",
 ]
 
 
@@ -74,7 +76,8 @@ def create_special_fun(parser, inst, fun, error_funs):
         )
         A = Assume(C)
         return A, [C, A]
-    elif fun == "__VERIFIER_silent_exit":
+    elif fun in ("__VERIFIER_silent_exit", "ldv_stop"):
+        print_stderr("Assuming that ldv_stop is assume(false)...", color="orange")
         A = Assume(ConstantFalse)
         return A, [A]
     elif  fun == "__INSTR_check_assume":
