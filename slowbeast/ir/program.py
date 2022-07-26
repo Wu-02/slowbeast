@@ -102,6 +102,4 @@ class ProgramElement:
     def dump(self, ind=0, stream=stdout, color=True):
         col = "GRAY" if color else "BLACK"
         for k, v in self._metadata:
-            print_stream(
-                f"{' ' * ind} ; {k} : {v}", color=col, stream=stream
-            )
+            print_stream(f"{' ' * ind} ; {k} : {v}", color=col, stream=stream)

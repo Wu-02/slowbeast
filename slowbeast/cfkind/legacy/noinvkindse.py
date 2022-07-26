@@ -115,9 +115,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def report(self, n):
         if n.has_error():
             print_stderr("Error found.", color="red")
-            print_stderr(
-                f"{n.get_id()}: {n.pc}, {n.get_error()}", color="RED"
-            )
+            print_stderr(f"{n.get_id()}: {n.pc}, {n.get_error()}", color="RED")
             self.stats.errors += 1
             return Result.UNSAFE
         elif n.was_killed():

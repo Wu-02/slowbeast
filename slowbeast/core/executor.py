@@ -291,9 +291,7 @@ class Executor:
             assert v.is_concrete()
             if v.value() != True:
                 state.set_error(
-                    AssertFailError(
-                        f"Assertion failed: {o} is {v} (!= True)"
-                    )
+                    AssertFailError(f"Assertion failed: {o} is {v} (!= True)")
                 )
                 return [state]
 
@@ -390,9 +388,7 @@ class Executor:
         fun = instr.called_function()
         ldbgv("-- CALL {0} --", (fun.name()))
         if fun.is_undefined():
-            state.set_error(
-                GenericError(f"Called undefined function: {fun.name()}")
-            )
+            state.set_error(GenericError(f"Called undefined function: {fun.name()}"))
             return [state]
         # map values to arguments
         assert len(instr.operands()) == len(fun.arguments())

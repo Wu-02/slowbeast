@@ -69,9 +69,7 @@ class AbstractInterpreter(Interpreter):
         if s.is_ready():
             self.states.append(s)
         elif s.has_error():
-            print_stderr(
-                f"{s.get_id()}: {s.pc}, {s.get_error()}", color="RED"
-            )
+            print_stderr(f"{s.get_id()}: {s.pc}, {s.get_error()}", color="RED")
             stats.errors += 1
             stats.paths += 1
             if testgen:

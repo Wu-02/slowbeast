@@ -214,9 +214,7 @@ class Executor(ConcreteExecutor):
         mo1 = p1.object()
         mo2 = p2.object()
         if not ConcreteDomain.belongto(mo1, mo2):
-            state.set_killed(
-                f"Comparison of symbolic pointers unimplemented: {instr}"
-            )
+            state.set_killed(f"Comparison of symbolic pointers unimplemented: {instr}")
             return [state]
 
         p = instr.predicate()
@@ -275,9 +273,7 @@ class Executor(ConcreteExecutor):
 
         if self.calls_forbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.set_killed(
-                f"calling '{fun.name()}', but calls are forbidden"
-            )
+            state.set_killed(f"calling '{fun.name()}', but calls are forbidden")
             return [state]
 
         # map values to arguments
@@ -313,17 +309,13 @@ class Executor(ConcreteExecutor):
             if not op2.is_pointer():
                 r = add_pointer_with_constant(Domain, op1, op2)
             else:
-                state.set_killed(
-                    f"Arithmetic on pointers not implemented yet: {instr}"
-                )
+                state.set_killed(f"Arithmetic on pointers not implemented yet: {instr}")
                 return [state]
         elif op2.is_pointer():
             if not op1.is_pointer():
                 r = add_pointer_with_constant(Domain, op2, op1)
             else:
-                state.set_killed(
-                    f"Arithmetic on pointers not implemented yet: {instr}"
-                )
+                state.set_killed(f"Arithmetic on pointers not implemented yet: {instr}")
                 return [state]
         else:
             if instr.operation() == BinaryOperation.ADD:
@@ -398,9 +390,7 @@ class Executor(ConcreteExecutor):
                 isunsat = tmp is None
 
             if isunsat:
-                state.set_terminated(
-                    f"Assumption unsat: {o} == {v} (!= True)"
-                )
+                state.set_terminated(f"Assumption unsat: {o} == {v} (!= True)")
                 return [state]
 
         state.pc = state.pc.get_next_inst()

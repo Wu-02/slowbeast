@@ -113,8 +113,6 @@ class CallGraph:
             for cs, funs in node.callsites().items():
                 for n, cf in enumerate(funs):
                     if n == 0:
-                        stream.write(
-                            f"  {cs.get_id()} -> {cf.fun().name()}\n"
-                        )
+                        stream.write(f"  {cs.get_id()} -> {cf.fun().name()}\n")
                     else:
                         stream.write(f"     -> {cf.fun().name()}\n")

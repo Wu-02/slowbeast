@@ -98,9 +98,7 @@ class CFG:
     def dump(self, stream=stdout):
         for node in self._nodes.values():
             for succ in node.successors():
-                stream.write(
-                    f"{node.bblock().get_id()} -> {succ.bblock().get_id()}\n"
-                )
+                stream.write(f"{node.bblock().get_id()} -> {succ.bblock().get_id()}\n")
 
 
 class CFGPath:

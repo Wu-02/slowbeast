@@ -20,9 +20,7 @@ class FutureExecutor(SExecutor):
 
         if self.calls_forbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.set_killed(
-                f"calling '{fun.name()}', but calls are forbidden"
-            )
+            state.set_killed(f"calling '{fun.name()}', but calls are forbidden")
             return [state]
 
         nexti = instr.get_next_inst()
@@ -115,9 +113,7 @@ class FutureSymbolicExecutor(Interpreter):
         if s.is_ready():
             self.states.append(s)
         elif s.has_error():
-            print_stderr(
-                f"{s.get_id()}: {s.pc}, {s.get_error()}", color="RED"
-            )
+            print_stderr(f"{s.get_id()}: {s.pc}, {s.get_error()}", color="RED")
             stats.errors += 1
             stats.paths += 1
             if testgen:

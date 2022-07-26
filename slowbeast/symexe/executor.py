@@ -281,9 +281,7 @@ class Executor(ConcreteExecutor):
         mo1id = p1.object()
         mo2id = p2.object()
         if is_symbolic(mo1id) or is_symbolic(mo2id):
-            state.set_killed(
-                f"Comparison of symbolic pointers unimplemented: {instr}"
-            )
+            state.set_killed(f"Comparison of symbolic pointers unimplemented: {instr}")
             return [state]
 
         E = state.expr_manager()
@@ -434,9 +432,7 @@ class Executor(ConcreteExecutor):
 
         if self.calls_forbidden():
             # FIXME: make this more fine-grained, which calls are forbidden?
-            state.set_killed(
-                f"calling '{fun.name()}', but calls are forbidden"
-            )
+            state.set_killed(f"calling '{fun.name()}', but calls are forbidden")
             return [state]
 
         return self.call_fun(state, instr, fun)
@@ -490,17 +486,13 @@ class Executor(ConcreteExecutor):
             if not op2ptr:
                 r = add_pointer_with_constant(E, op1, op2)
             else:
-                state.set_killed(
-                    f"Arithmetic on pointers not implemented yet: {instr}"
-                )
+                state.set_killed(f"Arithmetic on pointers not implemented yet: {instr}")
                 return [state]
         elif op2ptr:
             if not op1ptr:
                 r = add_pointer_with_constant(E, op2, op1)
             else:
-                state.set_killed(
-                    f"Arithmetic on pointers not implemented yet: {instr}"
-                )
+                state.set_killed(f"Arithmetic on pointers not implemented yet: {instr}")
                 return [state]
         else:
             opcode = instr.operation()
@@ -632,9 +624,7 @@ class Executor(ConcreteExecutor):
                 isunsat = tmp is None
 
             if isunsat:
-                state.set_terminated(
-                    f"Assumption unsat: {o} == {v} (!= True)"
-                )
+                state.set_terminated(f"Assumption unsat: {o} == {v} (!= True)")
                 return [state]
 
         state.pc = state.pc.get_next_inst()
@@ -770,9 +760,7 @@ class ThreadedExecutor(Executor):
         ldbgv("-- THREAD {0} --", (fun.name(),))
         if fun.is_undefined():
             state.set_error(
-                GenericError(
-                    f"Spawning thread with undefined function: {fun.name()}"
-                )
+                GenericError(f"Spawning thread with undefined function: {fun.name()}")
             )
             return [state]
         # map values to arguments

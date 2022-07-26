@@ -316,9 +316,7 @@ class Parser:
         elif opcode == "udiv":
             I = Div(op1, op2, unsigned=True, fp=isfloat)
         else:
-            raise NotImplementedError(
-                f"Artihmetic operation unsupported: {inst}"
-            )
+            raise NotImplementedError(f"Artihmetic operation unsupported: {inst}")
 
         self._addMapping(inst, I)
         return [I]
@@ -392,9 +390,7 @@ class Parser:
         elif opcode == "urem":
             I = Rem(op1, op2, unsigned=True)
         else:
-            raise NotImplementedError(
-                f"Remainder operation unsupported: {inst}"
-            )
+            raise NotImplementedError(f"Remainder operation unsupported: {inst}")
 
         self._addMapping(inst, I)
         return [I]
@@ -426,16 +422,12 @@ class Parser:
                 if seq:
                     self._addMapping(inst, seq[-1])
                     return seq
-                raise NotImplementedError(
-                    f"Unsupported fcmp instruction: {inst}"
-                )
+                raise NotImplementedError(f"Unsupported fcmp instruction: {inst}")
             C = Cmp(P, op1, op2, is_unordered, fp=True)
         else:
             P, is_unsigned = parse_cmp(inst)
             if not P:
-                raise NotImplementedError(
-                    f"Unsupported cmp instruction: {inst}"
-                )
+                raise NotImplementedError(f"Unsupported cmp instruction: {inst}")
             C = Cmp(P, op1, op2, is_unsigned)
 
         self._addMapping(inst, C)
@@ -592,7 +584,9 @@ class Parser:
 
     def _handleAsm(self, inst):
         ty = inst.type
-        print_stderr(f"Unsupported ASM, taking as noop with nondet return value:", color="yellow")
+        print_stderr(
+            f"Unsupported ASM, taking as noop with nondet return value:", color="yellow"
+        )
         print_stderr(str(inst))
         C = self.create_nondet_call(f"asm_{ty}".replace(" ", "_"), ty)
         self._addMapping(inst, C)
@@ -871,9 +865,7 @@ class Parser:
                 for I in instrs:
                     B.append(I)
             except Exception as e:
-                print_stderr(
-                    f"Failed parsing llvm while parsing: {inst}", color="RED"
-                )
+                print_stderr(f"Failed parsing llvm while parsing: {inst}", color="RED")
                 raise e
 
         assert B.fun() is F
