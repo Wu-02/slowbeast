@@ -462,8 +462,14 @@ class Parser:
         toop = self.operand
         tobb = self.bblock
         operands = get_llvm_operands(inst)
-        S = Switch(toop(operands[0]), tobb(operands[1]),
-                   [(toop(operands[i]), tobb(operands[i + 1])) for i in range(2, len(operands), 2)])
+        S = Switch(
+            toop(operands[0]),
+            tobb(operands[1]),
+            [
+                (toop(operands[i]), tobb(operands[i + 1]))
+                for i in range(2, len(operands), 2)
+            ],
+        )
         self._addMapping(inst, S)
         return [S]
 

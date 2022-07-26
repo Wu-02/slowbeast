@@ -237,6 +237,30 @@ class Executor(ConcreteExecutor):
 
         return states
 
+    def exec_switch(self, state, instr):
+        assert isinstance(instr, Switch)
+        self.stats.branchings += 1
+
+        cond = state.eval(instr.condition())
+        Eq = state.expr_manager().Eq
+        fork = self.fork
+        states = []
+        for v, bb in instr.cases():
+            true_branch, state = fork(state, Eq(cond, v))
+            if true_branch:
+                true_branch.pc = bb.instruction(0)
+                states.append(true_branch)
+            if state is None:
+                break
+
+        # the default branch
+        if state:
+            state.pc = instr.default_bblock().instruction(0)
+            states.append(state)
+
+        self.stats.branch_forks += len(states) - 1
+        return states
+
     def compare_values(self, E, p, op1, op2, unsgn, flt=False):
         if p == Cmp.LE:
             return E.Le(op1, op2, unsgn, flt)

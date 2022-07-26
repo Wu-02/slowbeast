@@ -311,10 +311,15 @@ class Switch(Instruction):
         return self.operands()[2:]
 
     def __str__(self):
-        return "switch on {0}:\n  {1}".format(
-            self.condition().as_value(),
-            "\n  ".join(f"{v.as_value() : >7} -> {c.as_value()}" for (v, c) in self.cases())) + \
-            f"\n  default -> {self.default_bblock().as_value()}"
+        return (
+            "switch on {0}:\n  {1}".format(
+                self.condition().as_value(),
+                "\n  ".join(
+                    f"{v.as_value() : >7} -> {c.as_value()}" for (v, c) in self.cases()
+                ),
+            )
+            + f"\n  default -> {self.default_bblock().as_value()}"
+        )
 
 
 class Call(ValueTypedInstruction):

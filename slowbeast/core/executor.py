@@ -277,6 +277,13 @@ class Executor:
 
         return [state]
 
+    def exec_switch(self, state, instr):
+        assert isinstance(instr, Switch)
+        # c = instr.condition()
+        # assert isinstance(c, ValueInstruction) or c.is_concrete()
+        # cv = state.eval(instr.condition()).value()
+        raise RuntimeError("Not implemented")
+
     def exec_assert(self, state, instr):
         assert isinstance(instr, Assert)
         for o in instr.operands():
@@ -475,6 +482,8 @@ class Executor:
             states = self.exec_call(state, instr)
         elif isinstance(instr, Return):
             states = self.exec_ret(state, instr)
+        elif isinstance(instr, Switch):
+            states = self.exec_switch(state, instr)
         else:
             state.set_killed(f"Not implemented instruction: {instr}")
             return [state]
