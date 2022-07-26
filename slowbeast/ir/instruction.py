@@ -292,6 +292,31 @@ class Branch(Instruction):
         )
 
 
+class Switch(Instruction):
+    def __init__(self, val, default, cases: list):
+        super().__init__([val, default] + cases)
+        assert isinstance(val, ValueInstruction), val
+        assert isinstance(default, BBlock), default
+        assert isinstance(cases, list), cases
+        assert all(map(lambda p: p[0].type().is_int(), cases)), cases
+        assert all(map(lambda p: isinstance(p[1], BBlock), cases)), cases
+
+    def condition(self):
+        return self.operand(0)
+
+    def default_bblock(self):
+        return self.operand(1)
+
+    def cases(self):
+        return self.operands()[2:]
+
+    def __str__(self):
+        return "switch on {0}:\n  {1}".format(
+            self.condition().as_value(),
+            "\n  ".join(f"{v.as_value() : >7} -> {c.as_value()}" for (v, c) in self.cases())) + \
+            f"\n  default -> {self.default_bblock().as_value()}"
+
+
 class Call(ValueTypedInstruction):
     def __init__(self, wht, ty, *operands):
         super().__init__(ty, [*operands])

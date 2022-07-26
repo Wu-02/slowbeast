@@ -458,6 +458,15 @@ class Parser:
         self._addMapping(inst, B)
         return [B]
 
+    def _handleSwitch(self, inst):
+        toop = self.operand
+        tobb = self.bblock
+        operands = get_llvm_operands(inst)
+        S = Switch(toop(operands[0]), tobb(operands[1]),
+                   [(toop(operands[i]), tobb(operands[i + 1])) for i in range(2, len(operands), 2)])
+        self._addMapping(inst, S)
+        return [S]
+
     def create_nondet_call(self, name, ty):
         fun = self._funs.get(name)
         if fun is None:
@@ -820,6 +829,8 @@ class Parser:
             return self._createSelect(inst)
         elif opcode == "phi":
             return self._handlePhi(inst)
+        elif opcode == "switch":
+            return self._handleSwitch(inst)
         else:
             raise NotImplementedError(f"Unsupported instruction: {inst}")
 
