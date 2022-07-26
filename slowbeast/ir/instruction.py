@@ -295,7 +295,6 @@ class Branch(Instruction):
 class Switch(Instruction):
     def __init__(self, val, default, cases: list):
         super().__init__([val, default] + cases)
-        assert isinstance(val, ValueInstruction), val
         assert isinstance(default, BBlock), default
         assert isinstance(cases, list), cases
         assert all(map(lambda p: p[0].type().is_int(), cases)), cases
