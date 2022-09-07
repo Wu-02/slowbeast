@@ -1,6 +1,6 @@
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.symbolic import _use_z3
-from .expressions import SymcreteDomain
+from ..domains.symcrete import SymcreteDomain
 
 if _use_z3:
     from z3 import Solver as Z3Solver

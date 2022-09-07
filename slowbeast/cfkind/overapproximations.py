@@ -2,7 +2,7 @@ from functools import partial
 
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.domains.concrete import ConcreteInt
-from slowbeast.solvers.expressions import em_optimize_expressions
+from ..domains.symcrete import em_optimize_expressions
 from slowbeast.solvers.solver import global_expr_mgr, IncrementalSolver
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
