@@ -9,7 +9,6 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
 from slowbeast.ir.types import get_offset_type
-from slowbeast.solvers.expressions import is_symbolic
 from slowbeast.util.debugging import dbgv, ldbgv
 from .executionstate import SEState, IncrementalSEState, ThreadedSEState
 from .memorymodel import SymbolicMemoryModel
@@ -48,7 +47,7 @@ def condition_to_bool(cond, EM):
     if cond.is_concrete():
         cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
     else:
-        assert is_symbolic(cond)
+        assert cond.is_symbolic()
         assert not cond.type().is_bool()
         assert cond.type().bitwidth() == 1, f"Invalid condition in branching: {cond}"
         cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
@@ -280,7 +279,7 @@ class Executor(ConcreteExecutor):
     def compare_pointers(self, state, instr, p1, p2):
         mo1id = p1.object()
         mo2id = p2.object()
-        if is_symbolic(mo1id) or is_symbolic(mo2id):
+        if mo1id.is_symbolic() or mo2id.is_symbolic():
             state.set_killed(f"Comparison of symbolic pointers unimplemented: {instr}")
             return [state]
 

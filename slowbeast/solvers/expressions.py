@@ -5,16 +5,6 @@ from slowbeast.ir.types import Type, IntType, BoolType
 
 optimize_exprs = True
 
-
-def is_symbolic(v):
-    return SymbolicDomain.belongto(v)
-
-
-def is_concrete(v):
-    assert not ConcreteDomain.belongto(v) or not is_symbolic(v)
-    return ConcreteDomain.belongto(v)
-
-
 class ExprOptIntf:
     """
     Expressions optimizer interface

@@ -1030,6 +1030,9 @@ class Expr(Value):
     def is_concrete(self):
         return False
 
+    def is_symbolic(self):
+        return True
+
     def as_value(self):
         return str(self)
 
