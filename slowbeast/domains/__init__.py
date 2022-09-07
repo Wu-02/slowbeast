@@ -1,0 +1,6 @@
+CONCRETE_DOMAIN_KIND = 1
+SYMCRETE_DOMAIN_KIND = 2
+
+
+def dom_is_concrete(v):
+    return v.KIND == CONCRETE_DOMAIN_KIND
