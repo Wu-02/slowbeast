@@ -15,13 +15,6 @@ class ConcreteSolver(SolverIntf):
         assert all(map(lambda x: x.is_bool() and isinstance(x.value(), bool), e)), e
         return all(map(lambda x: x.value(), e))
 
-    # for x in e:
-    #    assert x.is_bool()
-    #    assert isinstance(x.value(), bool)
-    #    if x.value() is False:
-    #        return False
-    # return True
-
     def try_is_sat(self, timeout, *e):
         assert all(map(lambda x: x.is_bool() and isinstance(x.value(), bool), e)), e
         return all(map(lambda x: x.value(), e))
