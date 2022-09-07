@@ -49,4 +49,3 @@ class Value:
         Is this a concrete value? (syntactically)
         """
         return not self.is_symbolic()
-

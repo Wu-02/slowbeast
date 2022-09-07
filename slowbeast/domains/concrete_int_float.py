@@ -103,8 +103,6 @@ def wrap_to_bw(x, bw):
 # return x
 
 
-
-
 class ConcreteVal(Value):
     """
     Integer constant or boolean
