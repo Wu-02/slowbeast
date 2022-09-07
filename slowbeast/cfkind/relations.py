@@ -1,7 +1,7 @@
 from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.ir.instruction import Load
 from slowbeast.ir.types import IntType
-from slowbeast.solvers.solver import IncrementalSolver, global_expr_mgr
+from slowbeast.solvers.symcrete import IncrementalSolver, global_expr_mgr
 from slowbeast.symexe.annotations import AssertAnnotation, get_subs
 
 

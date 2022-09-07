@@ -1,5 +1,5 @@
 from slowbeast.core.executor import PathExecutionResult
-from slowbeast.solvers.solver import global_expr_mgr
+from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.symexe.annotations import (
     AssumeAnnotation,
     AssertAnnotation,

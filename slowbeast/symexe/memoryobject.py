@@ -3,7 +3,7 @@ from slowbeast.core.memoryobject import MemoryObject as CoreMO
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type, IntType, Bytes
-from slowbeast.solvers.solver import global_expr_mgr
+from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
 
 

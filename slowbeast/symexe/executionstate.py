@@ -11,7 +11,7 @@ from slowbeast.ir.instruction import (
     Call,
     Return,
 )
-from slowbeast.solvers.solver import solve_incrementally
+from ..solvers.symcrete import solve_incrementally
 from slowbeast.util.debugging import warn, ldbgv
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
 

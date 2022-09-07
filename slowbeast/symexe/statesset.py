@@ -1,6 +1,6 @@
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.symbolic import Expr
-from slowbeast.solvers.solver import global_expr_mgr
+from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.symexe.annotations import (
     ExprAnnotation,
     AssertAnnotation,

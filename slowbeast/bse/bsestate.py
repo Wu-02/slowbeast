@@ -3,7 +3,7 @@ from sys import stdout
 from slowbeast.bse.memorymodel import _nondet_value
 from slowbeast.domains.concrete import ConcreteInt
 from slowbeast.domains.pointer import Pointer
-from slowbeast.solvers.solver import solve_incrementally
+from slowbeast.solvers.symcrete import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.util.debugging import ldbgv

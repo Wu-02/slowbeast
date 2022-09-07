@@ -1,4 +1,4 @@
-from slowbeast.solvers.solver import IncrementalSolver
+from slowbeast.solvers.symcrete import IncrementalSolver
 
 
 class ConstraintsSet:

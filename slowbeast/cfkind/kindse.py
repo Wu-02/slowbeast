@@ -5,7 +5,7 @@ from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.cfkind import KindSEOptions
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.solvers.solver import global_expr_mgr, IncrementalSolver
+from ..solvers.symcrete import IncrementalSolver, global_expr_mgr
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
     state_to_annotation,
