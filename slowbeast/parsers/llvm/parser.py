@@ -1,6 +1,6 @@
 import llvmlite.binding as llvm
 
-from slowbeast.domains.concrete_int_float import ConcreteVal, ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteInt
 from slowbeast.ir.argument import Argument
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *

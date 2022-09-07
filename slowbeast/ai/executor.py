@@ -1,5 +1,4 @@
-from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain, ConcreteInt
-from slowbeast.domains.constants import ConcreteBool
+from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain, ConcreteInt, ConcreteBool
 from slowbeast.domains.pointer import Pointer
 
 # from slowbeast.domains.sign import ZODomain

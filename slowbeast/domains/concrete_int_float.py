@@ -590,3 +590,7 @@ class ConcreteIntFloatDomain:
         if unsigned:
             return ConcreteVal(to_unsigned(aval, bw) / to_unsigned(bval, bw), result_ty)
         return ConcreteVal(wrap_to_bw(int(aval / bval), bw), result_ty)
+
+
+ConstantTrue = ConcreteBool(True)
+ConstantFalse = ConcreteBool(False)
