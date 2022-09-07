@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete import ConcreteVal, ConcreteDomain
+from slowbeast.domains.concrete import ConcreteVal, ConcreteIntFloatDomain
 from slowbeast.domains.symbolic import SymbolicDomain
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import BoolType, IntType, Type
@@ -51,7 +51,7 @@ class SymcreteDomain:
         self._names = {}
 
     def ConcreteVal(self, c, bw):
-        return ConcreteDomain.Value(c, bw)
+        return ConcreteIntFloatDomain.Value(c, bw)
 
     def Var(self, name, ty):
         assert isinstance(name, str)
@@ -102,7 +102,7 @@ class SymcreteDomain:
         return s
 
     def substitute(self, expr, *vals):
-        if ConcreteDomain.belongto(expr):
+        if ConcreteIntFloatDomain.belongto(expr):
             return expr
         lift = self.lift
         return SymbolicDomain.substitute(expr, *((lift(a), lift(b)) for (a, b) in vals))
@@ -111,7 +111,7 @@ class SymcreteDomain:
         """
         Values are syntactically equal
         """
-        if ConcreteDomain.belongto(e1, e2):
+        if ConcreteIntFloatDomain.belongto(e1, e2):
             return e1 == e2
         lift = self.lift
         return lift(e1) == lift(e2)
@@ -152,11 +152,11 @@ class SymcreteDomain:
         """
         assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
-            return ConcreteDomain.get_true()
+            return ConcreteIntFloatDomain.get_true()
         if len(args) == 1:
             return args[0]
-        if ConcreteDomain.belongto(*args):
-            return ConcreteDomain.conjunction(*args)
+        if ConcreteIntFloatDomain.belongto(*args):
+            return ConcreteIntFloatDomain.conjunction(*args)
         lift = self.lift
         return opt(SymbolicDomain.conjunction(*map(lift, args)))
 
@@ -169,76 +169,76 @@ class SymcreteDomain:
         """
         assert all(map(lambda a: a.is_bool(), args))
         if len(args) == 0:
-            return ConcreteDomain.get_false()
+            return ConcreteIntFloatDomain.get_false()
         if len(args) == 1:
             return args[0]
-        if ConcreteDomain.belongto(*args):
-            return ConcreteDomain.disjunction(*args)
+        if ConcreteIntFloatDomain.belongto(*args):
+            return ConcreteIntFloatDomain.disjunction(*args)
         lift = self.lift
         return opt(SymbolicDomain.disjunction(*map(lift, args)))
 
     def Ite(self, c, a, b):
-        if ConcreteDomain.belongto(c):
+        if ConcreteIntFloatDomain.belongto(c):
             cval = c.value()
             if cval is True:
                 return a
             if cval is False:
                 return b
             raise RuntimeError(f"Invalid bool: {cval}")
-            # return ConcreteDomain.And(a, b)
+            # return ConcreteIntFloatDomain.And(a, b)
         lift = self.lift
         return opt(SymbolicDomain.Ite(lift(c), lift(a), lift(b)))
 
     def And(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.And(a, b)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.And(a, b)
         lift = self.lift
         return opt(SymbolicDomain.And(lift(a), lift(b)))
 
     def Or(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Or(a, b)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Or(a, b)
         lift = self.lift
         return opt(SymbolicDomain.Or(lift(a), lift(b)))
 
     def Xor(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Xor(a, b)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Xor(a, b)
         lift = self.lift
         return opt(SymbolicDomain.Xor(lift(a), lift(b)))
 
     def Not(self, a):
-        if ConcreteDomain.belongto(a):
-            return ConcreteDomain.Not(a)
+        if ConcreteIntFloatDomain.belongto(a):
+            return ConcreteIntFloatDomain.Not(a)
         return opt(SymbolicDomain.Not(self.lift(a)))
 
     def Neg(self, a, isfloat):
         """Return the negated number"""
-        if ConcreteDomain.belongto(a):
-            return ConcreteDomain.Neg(a, isfloat)
+        if ConcreteIntFloatDomain.belongto(a):
+            return ConcreteIntFloatDomain.Neg(a, isfloat)
         return opt(SymbolicDomain.Neg(self.lift(a), isfloat))
 
     def Abs(self, a):
-        if ConcreteDomain.belongto(a):
-            return ConcreteDomain.Abs(a)
+        if ConcreteIntFloatDomain.belongto(a):
+            return ConcreteIntFloatDomain.Abs(a)
         return opt(SymbolicDomain.Abs(self.lift(a)))
 
     def FpOp(self, op, val):
-        if ConcreteDomain.belongto(val):
-            return ConcreteDomain.FpOp(op, val)
+        if ConcreteIntFloatDomain.belongto(val):
+            return ConcreteIntFloatDomain.FpOp(op, val)
         r = SymbolicDomain.FpOp(op, self.lift(val))
         return opt(r) if r else r  # FpOp may return None
 
     def ZExt(self, a, b):
-        assert ConcreteDomain.belongto(b), "Invalid zext argument"
-        if ConcreteDomain.belongto(a):
-            return ConcreteDomain.ZExt(a, b)
+        assert ConcreteIntFloatDomain.belongto(b), "Invalid zext argument"
+        if ConcreteIntFloatDomain.belongto(a):
+            return ConcreteIntFloatDomain.ZExt(a, b)
         return opt(SymbolicDomain.ZExt(a, b))
 
     def SExt(self, a, b):
-        assert ConcreteDomain.belongto(b), "Invalid sext argument"
-        if ConcreteDomain.belongto(a):
-            return ConcreteDomain.SExt(a, b)
+        assert ConcreteIntFloatDomain.belongto(b), "Invalid sext argument"
+        if ConcreteIntFloatDomain.belongto(a):
+            return ConcreteIntFloatDomain.SExt(a, b)
         return opt(SymbolicDomain.SExt(a, b))
 
     def Cast(self, a: Value, ty: Type):
@@ -250,8 +250,8 @@ class SymcreteDomain:
             # pointer to int or int to pointer (where the int is actually
             # a pointer as we do not change its value)
             return a
-        if ConcreteDomain.belongto(a):
-            return ConcreteDomain.Cast(a, ty)
+        if ConcreteIntFloatDomain.belongto(a):
+            return ConcreteIntFloatDomain.Cast(a, ty)
         return SymbolicDomain.Cast(a, ty)
 
     def BitCast(self, a: Value, ty: Type):
@@ -263,127 +263,127 @@ class SymcreteDomain:
             # pointer to int or int to pointer (where the int is actually
             # a pointer as we do not change its value)
             return a
-        if ConcreteDomain.belongto(a):
-            return ConcreteDomain.BitCast(a, ty)
+        if ConcreteIntFloatDomain.belongto(a):
+            return ConcreteIntFloatDomain.BitCast(a, ty)
         return SymbolicDomain.BitCast(a, ty)
 
     def Extract(self, a, start, end):
-        assert ConcreteDomain.belongto(start, end), "Invalid sext argument"
-        if ConcreteDomain.belongto(a):
-            return ConcreteDomain.Extract(a, start, end)
+        assert ConcreteIntFloatDomain.belongto(start, end), "Invalid sext argument"
+        if ConcreteIntFloatDomain.belongto(a):
+            return ConcreteIntFloatDomain.Extract(a, start, end)
         return opt(SymbolicDomain.Extract(a, start, end))
 
     def Concat(self, *args):
-        if ConcreteDomain.belongto(*args):
-            return ConcreteDomain.Concat(*args)
+        if ConcreteIntFloatDomain.belongto(*args):
+            return ConcreteIntFloatDomain.Concat(*args)
         lift = self.lift
         return opt(SymbolicDomain.Concat(*map(lift, args)))
 
     def Shl(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Shl(a, b)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Shl(a, b)
         return opt(SymbolicDomain.Shl(self.lift(a), self.lift(b)))
 
     def AShr(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.AShr(a, b)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.AShr(a, b)
         return opt(SymbolicDomain.AShr(self.lift(a), self.lift(b)))
 
     def LShr(self, a, b):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.LShr(a, b)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.LShr(a, b)
         return opt(SymbolicDomain.LShr(self.lift(a), self.lift(b)))
 
     ##
     # Relational operators
 
     def Le(self, a, b, unsigned=False, isfloat=False):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Le(a, b, unsigned, isfloat)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Le(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Le(lift(a), lift(b), unsigned, isfloat))
 
     def Lt(self, a, b, unsigned=False, isfloat=False):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Lt(a, b, unsigned, isfloat)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Lt(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Lt(lift(a), lift(b), unsigned, isfloat))
 
     def Ge(self, a, b, unsigned=False, isfloat=False):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ge(a, b, unsigned, isfloat)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Ge(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Ge(lift(a), lift(b), unsigned, isfloat))
 
     def Gt(self, a, b, unsigned=False, isfloat=False):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Gt(a, b, unsigned, isfloat)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Gt(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned, isfloat))
 
     def Eq(self, a, b, unsigned=False, isfloat=False):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Eq(a, b, unsigned, isfloat)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Eq(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Eq(lift(a), lift(b), unsigned, isfloat))
 
     def Ne(self, a, b, unsigned=False, isfloat=False):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Ne(a, b, unsigned, isfloat)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Ne(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Ne(lift(a), lift(b), unsigned, isfloat))
 
     ##
     # Artihmetic operations
     def Add(self, a, b, isfloat=False):
-        if ConcreteDomain.belongto(a):
+        if ConcreteIntFloatDomain.belongto(a):
             if a.value() == 0:
                 return b
-            if ConcreteDomain.belongto(b):
+            if ConcreteIntFloatDomain.belongto(b):
                 if b.value() == 0:
                     return a
-                return ConcreteDomain.Add(a, b, isfloat)
+                return ConcreteIntFloatDomain.Add(a, b, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Add(lift(a), lift(b), isfloat))
 
     def Sub(self, a, b, isfloat=False):
-        if ConcreteDomain.belongto(b):
+        if ConcreteIntFloatDomain.belongto(b):
             if b.value() == 0:
                 return a
-            if ConcreteDomain.belongto(a):
-                return ConcreteDomain.Sub(a, b, isfloat)
+            if ConcreteIntFloatDomain.belongto(a):
+                return ConcreteIntFloatDomain.Sub(a, b, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Sub(lift(a), lift(b), isfloat))
 
     def Mul(self, a, b, isfloat=False):
-        if ConcreteDomain.belongto(a):
+        if ConcreteIntFloatDomain.belongto(a):
             if a.value() == 0:
                 return a
             if a.value() == 1:
                 return b
-            if ConcreteDomain.belongto(b):
+            if ConcreteIntFloatDomain.belongto(b):
                 if b.value() == 0:
                     return b
                 if b.value() == 1:
                     return a
-                return ConcreteDomain.Mul(a, b, isfloat)
-        elif ConcreteDomain.belongto(b):
+                return ConcreteIntFloatDomain.Mul(a, b, isfloat)
+        elif ConcreteIntFloatDomain.belongto(b):
             if b.value() == 1:
                 return a
         lift = self.lift
         return opt(SymbolicDomain.Mul(lift(a), lift(b), isfloat))
 
     def Div(self, a, b, unsigned=False, isfloat=False):
-        if ConcreteDomain.belongto(a):
+        if ConcreteIntFloatDomain.belongto(a):
             if a.value() == 0:
                 return a
-            if ConcreteDomain.belongto(b):
-                return ConcreteDomain.Div(a, b, unsigned, isfloat)
+            if ConcreteIntFloatDomain.belongto(b):
+                return ConcreteIntFloatDomain.Div(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Div(lift(a), lift(b), unsigned, isfloat))
 
     def Rem(self, a, b, unsigned=False):
-        if ConcreteDomain.belongto(a, b):
-            return ConcreteDomain.Rem(a, b, unsigned)
+        if ConcreteIntFloatDomain.belongto(a, b):
+            return ConcreteIntFloatDomain.Rem(a, b, unsigned)
         lift = self.lift
         return opt(SymbolicDomain.Rem(lift(a), lift(b), unsigned))
