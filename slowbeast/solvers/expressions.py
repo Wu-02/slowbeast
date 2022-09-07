@@ -37,7 +37,7 @@ def em_optimize_expressions(b=True):
 opt = SymbolicExprOpt.optimize
 
 
-class ExprManager:
+class SymcreteDomain:
     """
     Takes care of creating (caching and optimizing) expressions.
     The default mode (right now) is just to create Bare

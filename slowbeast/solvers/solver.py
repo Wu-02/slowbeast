@@ -1,6 +1,6 @@
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.symbolic import _use_z3
-from .expressions import ExprManager
+from .expressions import SymcreteDomain
 
 if _use_z3:
     from z3 import Solver as Z3Solver
@@ -84,7 +84,7 @@ else:
 
 # FIXME add support for incremental solving
 
-global_expr_manager = ExprManager()
+global_expr_manager = SymcreteDomain()
 
 
 def global_expr_mgr():
@@ -125,7 +125,7 @@ class ConcreteSolver(SolverIntf):
     wrapped to the interface solver.
     """
 
-    def __init__(self, em=ExprManager()):
+    def __init__(self, em=SymcreteDomain()):
         super().__init__(em)
 
     def is_sat(self, *e):
