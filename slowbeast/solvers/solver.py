@@ -23,4 +23,3 @@ class SolverIntf:
     def Var(self, name, ty):
         """ty = type"""
         return self._exprmanager.Var(name, ty)
-

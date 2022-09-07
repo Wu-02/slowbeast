@@ -85,6 +85,7 @@ from z3 import (
     fpLT,
 )
 
+
 def _is_symbol(expr):
     return (
         is_const(expr)
@@ -93,8 +94,10 @@ def _is_symbol(expr):
         and not is_fprm_value(expr)
     )
 
+
 def trunc_fp(fexpr, bw):
     return simplify(fpFPToFP(RNE(), fexpr, get_fp_sort(bw)))
+
 
 def to_double(x):
     bw = x.bitwidth()
@@ -110,6 +113,7 @@ def to_double(x):
     r = simplify(fpFPToFP(RNE(), r, Float64()))
     return r
 
+
 def to_bv(x):
     if x.is_float():
         r = simplify(fpToIEEEBV(x._expr))
@@ -119,12 +123,14 @@ def to_bv(x):
         return bool_to_ubv(x)
     return x.unwrap()
 
+
 def float_to_ubv(x, ty=None):
     if x.is_float():
         bw = ty.bitwidth() if ty else x.bitwidth()
         return simplify(fpToUBV(RNE(), x._expr, BitVecSort(bw)))
 
     return x.unwrap()
+
 
 def float_to_sbv(x, ty=None):
     if x.is_float():
@@ -133,20 +139,24 @@ def float_to_sbv(x, ty=None):
 
     return x.unwrap()
 
+
 def _bv_to_bool(b):
     if is_bool(b):
         return b
     return If(b != bv_const(0, b.sort().size()), TRUE(), FALSE())
+
 
 def mk_or(*e):
     if len(e) == 1:
         return e[0]
     return Or(*map(_bv_to_bool, e))
 
+
 def mk_and(*e):
     if len(e) == 1:
         return e[0]
     return And(*map(_bv_to_bool, e))
+
 
 def mk_add(*e):
     if len(e) < 2:
@@ -156,6 +166,7 @@ def mk_add(*e):
         expr = expr + e[i]
     return expr
 
+
 def mk_mul(*e):
     if len(e) < 2:
         return e[0]
@@ -164,40 +175,50 @@ def mk_mul(*e):
         expr = expr * e[i]
     return expr
 
+
 def TRUE():
     return BoolVal(True)
+
 
 def FALSE():
     return BoolVal(False)
 
+
 def bv(name, bw):
     return BitVec(name, bw)
 
+
 def bv_const(v, bw):
     return BitVecVal(v, bw)
+
 
 def bool_to_bv(b):
     if not is_bool(b):
         return b
     return If(b, bv_const(1, 1), bv_const(0, 1))
 
+
 def bool_to_ubv(b):
     if not b.is_bool():
         return b.unwrap()
     return If(b.unwrap(), bv_const(1, 1), bv_const(0, 1))
+
 
 def cast_to_fp(b):
     if b.is_float():
         return b.unwrap()
     return fpToFP(b.unwrap(), get_fp_sort(b.type().bitwidth()))
 
+
 def cast_to_bool(b):
     if b.is_bool():
         return b.unwrap()
     return If(b.unwrap() != bv_const(0, b.bitwidth()), TRUE(), FALSE())
 
+
 def bv_size(bw):
     return bw.sort().size()
+
 
 def to_c_expression(expr):
     "An auxiliary method for debugging that converts expr to C expression"
@@ -222,6 +243,7 @@ def to_c_expression(expr):
         return f"({to_c_expression(chlds[0])}) > ({to_c_expression(chlds[1])})"
 
     return str(expr)
+
 
 def _expr_op_to_formula_op(expr):
     if is_and(expr):
@@ -253,6 +275,7 @@ def _expr_op_to_formula_op(expr):
     # raise NotImplementedError(f"Unhandled operation: {expr}")
     return None
 
+
 class BVMonomial(Monomial):
     """
     Helper class for representing formulas in LIA or BV theory.
@@ -282,6 +305,7 @@ class BVMonomial(Monomial):
                 expr = expr * m
                 c -= 1
         return simplify(expr)
+
 
 class BVPolynomial(Polynomial):
     """
@@ -355,9 +379,7 @@ class BVPolynomial(Polynomial):
     def create(expr):
         bw = 1 if is_bool(expr) else expr.size()
         if is_app_of(expr, Z3_OP_BADD):
-            return BVPolynomial(
-                bw, *(BVPolynomial.create(e) for e in expr.children())
-            )
+            return BVPolynomial(bw, *(BVPolynomial.create(e) for e in expr.children()))
         elif is_app_of(expr, Z3_OP_BMUL):
             pols = [BVPolynomial.create(e) for e in expr.children()]
             P = pols[0]
@@ -402,6 +424,7 @@ class BVPolynomial(Polynomial):
             mexpr = m.expr()
             expr += c if mexpr is None else c * mexpr
         return simplify(expr)
+
 
 class BVFormula(ArithFormula):
     """
@@ -487,11 +510,13 @@ class BVFormula(ArithFormula):
         raise NotImplementedError(f"Not implemented yet: {self}")
         return None
 
+
 def subexpressions(expr):
     children = expr.children()
     for c in children:
         yield from subexpressions(c)
     yield expr
+
 
 def _symbols(expr, ret: set):
     if _is_symbol(expr):
@@ -500,10 +525,12 @@ def _symbols(expr, ret: set):
         for c in expr.children():
             _symbols(c, ret)
 
+
 def symbols(expr):
     ret = set()
     _symbols(expr, ret)
     return ret
+
 
 def is_lit(e):
     return is_const(e) or (
@@ -516,9 +543,11 @@ def is_lit(e):
         and is_lit(e.children()[0])
     )
 
+
 def _is_const_mul(expr):
     chld = expr.children()
     return is_app_of(expr, Z3_OP_BMUL) and is_lit(chld[0]) and is_lit(chld[1])
+
 
 def _get_replacable(expr, atoms):
     chld = expr.children()
@@ -528,6 +557,7 @@ def _get_replacable(expr, atoms):
         return
     for c in chld:
         _get_replacable(c, atoms)
+
 
 def _desimplify_ext(expr):
     "replace concat with singext if possible -- due to debugging"
@@ -570,6 +600,7 @@ def _desimplify_ext(expr):
             return expr.decl()(*(_desimplify_ext(c) for c in expr.children()))
             return expr
 
+
 def _rewrite_sext(expr):
     "replace sext(x + c) with sext(x) + c if possible"
     if is_const(expr):
@@ -595,9 +626,7 @@ def _rewrite_sext(expr):
                             # BVSExt(ebw - bw, x) + BVZExt(ebw - bw, c),
                             # expr)
                             BVSExt(ebw - bw, x) + bv_const(1, ebw),
-                            simplify(
-                                BVSExt(ebw - bw, bv_const(2**bw - 1, bw) + 1)
-                            ),
+                            simplify(BVSExt(ebw - bw, bv_const(2**bw - 1, bw) + 1)),
                         )
                     # expr = sext(x + (-1))
                     elif simplify(c == -1).__bool__():
@@ -606,9 +635,7 @@ def _rewrite_sext(expr):
                             # BVSExt(ebw - bw, x) + BVSExt(ebw - bw, c),
                             # expr)
                             BVSExt(ebw - bw, x) + bv_const(-1, ebw),
-                            simplify(
-                                BVSExt(ebw - bw, bv_const(2**bw - 1, bw) - 1)
-                            ),
+                            simplify(BVSExt(ebw - bw, bv_const(2**bw - 1, bw) - 1)),
                         )
                     # FIXME: do this for generic values
         return expr
@@ -633,17 +660,17 @@ def _rewrite_sext(expr):
         else:
             return expr
 
+
 def _get_common_monomials(P1, P2, same_coef=False):
     monomials = []
     for p1m, c1 in P1.monomials.items():
         c2 = P2.get_coef(p1m)
         if c2 is None:
             continue
-        if not same_coef or (
-            c1.size() == c2.size() and simplify(c1 == c2).__bool__()
-        ):
+        if not same_coef or (c1.size() == c2.size() and simplify(c1 == c2).__bool__()):
             monomials.append(p1m)
     return monomials
+
 
 class PolynomialSimplifier:
     def __init__(self, *args):
@@ -736,10 +763,12 @@ class PolynomialSimplifier:
                 changed |= self.simplify_formula(c)
         return changed
 
+
 def simplify_polynomial_formula(formula, polynoms):
     simplifier = PolynomialSimplifier(*polynoms)
     while simplifier.simplify_formula(formula):
         pass
+
 
 def rewrite_polynomials(expr_to, exprs_from):
     """
@@ -783,6 +812,7 @@ def rewrite_polynomials(expr_to, exprs_from):
         return e
     except ValueError:
         return None
+
 
 def get_eqs_from_ineqs(expr):
     ###
@@ -834,6 +864,7 @@ def get_eqs_from_ineqs(expr):
                 continue
     return eqs
 
+
 def eqs_from_ineqs(expr):
     ###
     # check for equalities from inequalities:
@@ -847,6 +878,7 @@ def eqs_from_ineqs(expr):
             clauses.add(e)
         return And(*clauses)
     return None
+
 
 def replace_arith_ops(expr):
     """
@@ -869,6 +901,7 @@ def replace_arith_ops(expr):
     except ValueError:
         return None, None
 
+
 def _reduce_eq_bitwidth(expr, bw):
     if is_const(expr):
         return expr
@@ -889,6 +922,7 @@ def _reduce_eq_bitwidth(expr, bw):
         else:
             return expr.decl()(*red)
 
+
 def reduce_eq_bitwidth(expr, bw):
     # return _reduce_eq_bitwidth(expr, bw, variables)
     try:
@@ -899,11 +933,13 @@ def reduce_eq_bitwidth(expr, bw):
     except ValueError:
         return None
 
+
 def _rdw(expr, bw):
     oldbw = expr.size()
     if oldbw <= bw:
         return expr
     return BVZExt(oldbw - bw, BVExtract(bw - 1, 0, expr))
+
 
 def _reduce_arith_bitwidth(expr, bw):
     if is_bv(expr):
@@ -918,12 +954,14 @@ def _reduce_arith_bitwidth(expr, bw):
             return Or(*red)
         return expr.decl()(*red)
 
+
 def reduce_arith_bitwidth(expr, bw):
     # return _reduce_arith_bitwidth(expr, bw, variables)
     try:
         return _reduce_arith_bitwidth(expr, bw)
     except ValueError:
         return None
+
 
 def to_cnf(*exprs):
     g = Goal()
@@ -933,6 +971,7 @@ def to_cnf(*exprs):
     assert len(goal) == 1
     return goal[0]
 
+
 def to_nnf(*exprs):
     g = Goal()
     g.add(*exprs)
@@ -940,6 +979,7 @@ def to_nnf(*exprs):
     goal = t(g)
     assert len(goal) == 1
     return goal[0]
+
 
 def rewrite_simplify(*exprs):
     g = Goal()
@@ -953,11 +993,13 @@ def rewrite_simplify(*exprs):
     )
     return t(g)
 
+
 def split_clauses(*exprs):
     g = Goal()
     g.add(*exprs)
     t = Repeat(OrElse(Tactic("split-clause"), Tactic("skip")))
     return t(g)
+
 
 def solver_to_sb_type(s):
     if is_bv(s):
@@ -968,6 +1010,7 @@ def solver_to_sb_type(s):
     assert is_bool(s), f"Unhandled expression: {s}"
     return BoolType()
 
+
 def get_fp_sort(bw):
     if bw == 32:
         return Float32()
@@ -977,8 +1020,10 @@ def get_fp_sort(bw):
         return Float128()
     raise NotImplementedError("Invalid FP type")
 
+
 def dom_is_symbolic(v):
     return v.KIND == 2
+
 
 class Expr(Value):
     """

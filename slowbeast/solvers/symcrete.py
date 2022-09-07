@@ -6,6 +6,7 @@ from z3 import Solver as Z3Solver, is_false, BoolVal
 
 global_expr_manager = SymcreteDomain()
 
+
 def global_expr_mgr():
     global global_expr_manager
     return global_expr_manager
@@ -211,5 +212,6 @@ def _remove_implied(assumptions, em, exprs):
     exprs = [e for e in exprs if solver.try_is_sat(500, em.Not(e)) is not False]
     r = solver.try_is_sat(1000, *exprs)
     return exprs, r
+
 
 Solver = SymbolicSolver

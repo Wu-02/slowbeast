@@ -37,6 +37,7 @@ def em_optimize_expressions(b=True):
 
 opt = SymbolicExprOpt.optimize
 
+
 class SymcreteDomain:
     """
     Takes care of creating (caching and optimizing) expressions.
