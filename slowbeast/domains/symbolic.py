@@ -44,7 +44,6 @@ from z3 import (
     Z3_OP_EQ,
     Z3_OP_BMUL,
     Z3_OP_BADD,
-    Z3_OP_BSUB,
     Z3_OP_ZERO_EXT,
     Z3_OP_SIGN_EXT,
     Z3_OP_CONCAT,
@@ -1019,10 +1018,6 @@ def get_fp_sort(bw):
     elif bw == 128:
         return Float128()
     raise NotImplementedError("Invalid FP type")
-
-
-def dom_is_symbolic(v):
-    return v.KIND == 2
 
 
 class Expr(Value):

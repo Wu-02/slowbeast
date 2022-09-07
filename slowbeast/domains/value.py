@@ -37,9 +37,16 @@ class Value:
     def is_bytes(self):
         return self._type.is_bytes()
 
-    def is_concrete(self):
+    def is_symbolic(self):
         """
         Is integer constant or boolean constant?
         Overriden by the ConcreteVal class
         """
         raise NotImplementedError("Must be overriden")
+
+    def is_concrete(self):
+        """
+        Is this a concrete value? (syntactically)
+        """
+        return not self.is_symbolic()
+
