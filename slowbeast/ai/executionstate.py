@@ -1,5 +1,5 @@
 from slowbeast.core.executionstate import ExecutionState
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_int_float import ConcreteVal
 
 # from slowbeast.domains.sign import ZODomain
 from slowbeast.domains.signul import SignULDomain as Domain

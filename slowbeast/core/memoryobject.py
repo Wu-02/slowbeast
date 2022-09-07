@@ -2,7 +2,7 @@ from copy import copy
 from sys import stdout
 
 from slowbeast.core.errors import MemError
-from slowbeast.domains.concrete import ConcreteVal, ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteVal, ConcreteInt
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type
 

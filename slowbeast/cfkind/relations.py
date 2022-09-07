@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete import ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteInt
 from slowbeast.ir.instruction import Load
 from slowbeast.ir.types import IntType
 from slowbeast.solvers.symcrete import IncrementalSolver, global_expr_mgr

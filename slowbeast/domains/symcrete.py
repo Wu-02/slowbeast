@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete import ConcreteVal, ConcreteIntFloatDomain
+from slowbeast.domains.concrete_int_float import ConcreteVal, ConcreteIntFloatDomain
 from slowbeast.domains.symbolic import SymbolicDomain
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import BoolType, IntType, Type

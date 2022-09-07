@@ -1,7 +1,7 @@
 from sys import stdout
 
 from slowbeast.bse.memorymodel import _nondet_value
-from slowbeast.domains.concrete import ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteInt
 from slowbeast.domains.pointer import Pointer
 from slowbeast.solvers.symcrete import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation

@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete import ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteInt
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type_size, PointerType
 

@@ -1,7 +1,7 @@
 import sys
 from itertools import chain
 
-from slowbeast.domains.concrete import ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteInt
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import *
 from slowbeast.util.debugging import ldbgv

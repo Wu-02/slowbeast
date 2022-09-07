@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_int_float import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
 from slowbeast.ir.types import Type, IntType, BoolType, FloatType

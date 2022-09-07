@@ -1,7 +1,7 @@
 from functools import partial
 
 from slowbeast.core.executor import PathExecutionResult
-from slowbeast.domains.concrete import ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteInt
 from ..domains.symcrete import em_optimize_expressions
 from ..solvers.symcrete import IncrementalSolver, global_expr_mgr
 from slowbeast.symexe.annotations import (
