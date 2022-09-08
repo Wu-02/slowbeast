@@ -25,11 +25,11 @@ class AIStats:
         self.forks = 0
 
 
-def add_pointer_with_constant(E, op1, op2):
+def add_pointer_with_constant(E, op1, op2) -> Pointer:
     return Pointer(op1.object(), Domain.Add(op1.offset(), op2))
 
 
-def eval_condition(state, cond):
+def eval_condition(state, cond: ValueInstruction):
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
     c = state.eval(cond)
     assert isinstance(c, Value)
@@ -53,7 +53,7 @@ class Executor(ConcreteExecutor):
         super(Executor, self).__init__(program, opts, memorymodel)
         self.stats = AIStats()
 
-    def is_error_fn(self, fun):
+    def is_error_fn(self, fun: str):
         if isinstance(fun, str):
             return fun in self.get_options().error_funs
         return fun.name() in self.get_options().error_funs
@@ -61,7 +61,7 @@ class Executor(ConcreteExecutor):
     def error_funs(self):
         return self.get_options()._error_funs
 
-    def create_state(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None) -> AbstractState:
         if m is None:
             m = self.get_memory_model().create_memory()
         return AbstractState(self, pc, m)
@@ -71,7 +71,7 @@ class Executor(ConcreteExecutor):
         s.push_call(None)
         return s
 
-    def fork(self, state, condinst, cond):
+    def fork(self, state, condinst, cond: SignULDomain):
         self.stats.fork_calls += 1
 
         T, F = None, None
@@ -118,7 +118,7 @@ class Executor(ConcreteExecutor):
 
         return T, F
 
-    def assume(self, state, condinst, cond):
+    def assume(self, state, condinst, cond) -> None:
         """Put an assumption _into_ the given state.
         Return the state or None if that situation cannot happen
         (the assumption is inconsistent with the state).
@@ -138,7 +138,7 @@ class Executor(ConcreteExecutor):
             return state
         return None
 
-    def exec_branch_to(self, state, instr, to):
+    def exec_branch_to(self, state, instr: Branch, to: bool):
         """
         Execute a branch instruction and follow the given successor
         (True or False successor).
@@ -170,7 +170,7 @@ class Executor(ConcreteExecutor):
 
         return [s]
 
-    def exec_branch(self, state, instr):
+    def exec_branch(self, state, instr: Branch):
         assert isinstance(instr, Branch)
         self.stats.branchings += 1
 
@@ -241,7 +241,7 @@ class Executor(ConcreteExecutor):
 
         raise RuntimeError("Invalid pointer comparison")
 
-    def exec_cmp(self, state, instr):
+    def exec_cmp(self, state, instr: Cmp):
         assert isinstance(instr, Cmp)
         op1 = state.eval(instr.operand(0))
         op2 = state.eval(instr.operand(1))
@@ -261,7 +261,7 @@ class Executor(ConcreteExecutor):
 
         return [state]
 
-    def exec_call(self, state, instr):
+    def exec_call(self, state, instr: Call):
         assert isinstance(instr, Call)
         fun = instr.called_function()
         if self.is_error_fn(fun):
@@ -298,7 +298,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_binary_op(self, state, instr):
+    def exec_binary_op(self, state, instr: BinaryOperation):
         assert isinstance(instr, BinaryOperation)
         op1 = state.eval(instr.operand(0))
         op2 = state.eval(instr.operand(1))
@@ -350,7 +350,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_unary_op(self, state, instr):
+    def exec_unary_op(self, state, instr: UnaryOperation):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
         if instr.operation() == UnaryOperation.ZEXT:
@@ -377,7 +377,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_assume(self, state, instr):
+    def exec_assume(self, state, instr: Assume):
         assert isinstance(instr, Assume)
         for o in instr.operands():
             v = state.eval(o)
@@ -396,7 +396,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_assert(self, state, instr):
+    def exec_assert(self, state, instr: Assert):
         assert isinstance(instr, Assert)
         o = instr.condition()
         msg = instr.msg()

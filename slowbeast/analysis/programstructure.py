@@ -2,6 +2,7 @@ from slowbeast.analysis.callgraph import CallGraph
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.dfs import DFSEdgeType, DFSVisitor
 from slowbeast.analysis.loops import compute_loops
+from slowbeast.ir.program import Program
 
 
 class ProgramStructure:
@@ -10,7 +11,7 @@ class ProgramStructure:
     of the program.
     """
 
-    def __init__(self, prog, new_dbg_file=None):
+    def __init__(self, prog: Program, new_dbg_file=None) -> None:
         self.new_dbg_file = new_dbg_file
         callgraph = CallGraph(prog)
         if __debug__:
@@ -50,7 +51,7 @@ class ProgramStructure:
         self._get_loops()
         return self.loops.keys()
 
-    def _get_loops(self):
+    def _get_loops(self) -> None:
         loops = self.loops
         if loops is None:
             loops = {}

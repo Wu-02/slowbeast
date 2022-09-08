@@ -2,6 +2,8 @@ from sys import stdout
 
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import Call
+from slowbeast.analysis.callgraph.CallGraph import Node
+from typing import TextIO
 
 
 class CallGraph:
@@ -53,7 +55,7 @@ class CallGraph:
 
         self._build()
 
-    def create_node(self, *args):
+    def create_node(self, *args) -> Node:
         """Override this method in child classes
         to get nodes with more data
         """
@@ -69,14 +71,14 @@ class CallGraph:
     def funs(self):
         return (f.fun() for f in self._nodes.values())
 
-    def _build(self):
+    def _build(self) -> None:
         for F in self._program.funs():
             self._nodes[F] = self.create_node(F)
 
         for _fun, node in self._nodes.items():
             self._build_fun(_fun, node)
 
-    def _build_fun(self, _fun, node):
+    def _build_fun(self, _fun, node) -> None:
         for block in _fun.bblocks():
             for I in block.instructions():
                 if not isinstance(I, Call):
@@ -85,7 +87,7 @@ class CallGraph:
                 # this function (node) contains call I that calls ...
                 node.add_callsite(I, [self._nodes[I.called_function()]])
 
-    def get_reachable(self, node):
+    def get_reachable(self, node: Node):
         if isinstance(node, Function):
             node = self.get_node(node)
         assert isinstance(node, CallGraph.Node)
@@ -101,13 +103,13 @@ class CallGraph:
 
         return reachable
 
-    def prune_unreachable(self, frm):
+    def prune_unreachable(self, frm) -> None:
         reach = self.get_reachable(frm)
         nonreach = [(k, n) for (k, n) in self._nodes.items() if n not in reach]
         for (k, n) in nonreach:
             self._nodes.pop(k)
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO=stdout) -> None:
         for f, node in self._nodes.items():
             stream.write(f"Fun '{f.name()}' calls\n")
             for cs, funs in node.callsites().items():

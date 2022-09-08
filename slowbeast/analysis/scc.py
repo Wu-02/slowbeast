@@ -291,7 +291,7 @@ def strongly_connected_components_iterative(vertices, edges):
 
 
 class StronglyConnectedComponents:
-    def __init__(self, G):
+    def __init__(self, G) -> None:
         """
         G - Directed graph, either CFG or CFA
         """
@@ -324,7 +324,7 @@ class SCCCondensation:
         def is_trivial(self):
             return len(self.nodes) <= 1
 
-    def _add_edges(self):
+    def _add_edges(self) -> None:
         for scc in self.sccs:
             for n in scc.nodes:
                 for s in n.successors():
@@ -332,7 +332,7 @@ class SCCCondensation:
                     scc._successors.add(t)
                     t._predecessors.add(scc)
 
-    def __init__(self, G):
+    def __init__(self, G) -> None:
         """G - Directed graph, either CFG or CFA"""
 
         self._graph = G

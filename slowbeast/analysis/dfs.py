@@ -1,4 +1,7 @@
 from .cfa import CFA
+from slowbeast.analysis.cfa import CFA
+from slowbeast.analysis.cfa.CFA import Location
+from typing import Optional
 
 
 class DFSEdgeType:
@@ -30,7 +33,7 @@ class DFSCounter:
         self.counter = 0
 
 
-def _get_id(x):
+def _get_id(x: Location):
     if isinstance(x, CFA.Location):
         return x.id()
     return (x.bblock().get_id(),)
@@ -41,7 +44,7 @@ class DFSVisitor:
     Visit edges in the DFS order and run a user-specified function on them.
     """
 
-    def __init__(self, vertices=None, stop_vertices=None):
+    def __init__(self, vertices=None, stop_vertices=None) -> None:
         self._data = {}
         self._dfscounter = 0
         # traverse only these vertices
@@ -51,7 +54,7 @@ class DFSVisitor:
     def _getdata(self, node):
         return self._data.setdefault(node, DFSData())
 
-    def foreachedge(self, startnode, fun, backtrackfun=None):
+    def foreachedge(self, startnode: Location, fun, backtrackfun=None) -> None:
         assert self._vertices is None or startnode in self._vertices
         assert self._stop_vertices is None or startnode not in self._stop_vertices
 
@@ -61,7 +64,7 @@ class DFSVisitor:
         else:
             self._foreachedge_cfg(fun, backtrackfun, None, startnode, counter)
 
-    def _foreachedge_cfg(self, fun, backtrackfun, prevnode, node, counter):
+    def _foreachedge_cfg(self, fun, backtrackfun, prevnode, node, counter) -> None:
         getdata = self._getdata
         counter.counter += 1
 
@@ -101,7 +104,7 @@ class DFSVisitor:
 
     # FIXME: we don't need to duplicate the code, just need to unify the API
     # for CFG and CFA
-    def _foreachedge_cfa(self, fun, backtrackfun, backtrackedge, loc, counter):
+    def _foreachedge_cfa(self, fun, backtrackfun, backtrackedge, loc, counter) -> None:
         getdata = self._getdata
         counter.counter += 1
 
@@ -142,7 +145,7 @@ class DFSVisitor:
         if backtrackfun:
             backtrackfun(backtrackedge)
 
-    def dump(self, graph, outfl=None):
+    def dump(self, graph: CFA, outfl: Optional[str]=None) -> None:
         out = None
         if outfl is None:
             from sys import stdout

@@ -1,6 +1,8 @@
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import Branch, Call, Assert, Return
 from slowbeast.ir.program import Program
+from slowbeast.analysis.cfa.CFA import Edge, Location
+from typing import Union
 
 
 class CFA:
@@ -175,7 +177,7 @@ class CFA:
         def ret(self):
             return self._elems[0]
 
-    def __init__(self, fun: Function):
+    def __init__(self, fun: Function) -> None:
         assert isinstance(fun, Function)
         self._fun = fun
         self._locs = []
@@ -185,7 +187,7 @@ class CFA:
 
         self._build(fun)
 
-    def fun(self):
+    def fun(self) -> Function:
         return self._fun
 
     def entry(self):
@@ -200,16 +202,16 @@ class CFA:
     def errors(self):
         return self._errors
 
-    def add_error_loc(self, l):
+    def add_error_loc(self, l) -> None:
         self._errors.add(l)
 
-    def is_init(self, l):
+    def is_init(self, l: Union[Edge, Location]):
         if isinstance(l, CFA.Edge):
             return l.source() == self._entry
         assert isinstance(l, CFA.Location), l
         return l == self._entry
 
-    def is_err(self, l):
+    def is_err(self, l: Location):
         assert isinstance(l, CFA.Location), l
         return l in self._errors
 
@@ -223,18 +225,18 @@ class CFA:
         # FIXME: populate call edges
         return cfas
 
-    def create_loc(self, elem=None):
+    def create_loc(self, elem=None) -> Location:
         loc = CFA.Location(self, elem)
         self._locs.append(loc)
         return loc
 
-    def _add_edge(self, e: Edge):
+    def _add_edge(self, e: Edge) -> None:
         e._target._predecessors.append(e)
         e._source._successors.append(e)
         # do we need this?
         self._edges.append(e)
 
-    def _build(self, fun: Function):
+    def _build(self, fun: Function) -> None:
         assert isinstance(fun, Function)
         locs = {}
         # create locations
@@ -331,7 +333,7 @@ class CFA:
         self._entry = locs.get(fun.bblock(0))[0]
         assert self._entry, "Do not have entry loc"
 
-    def dump(self, stream):
+    def dump(self, stream) -> None:
         print(f"digraph CFA_{self._fun.name()} {{", file=stream)
         print(f'  label="{self._fun.name()}"', file=stream)
         entry = self._entry

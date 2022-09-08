@@ -19,7 +19,7 @@ class Tool(benchexec.tools.template.BaseTool):
     def executable(self):
         return util.find_executable("sb")
 
-    def name(self):
+    def name(self) -> str:
         return "slowbeast"
 
     def cmdline(self, executable, options, tasks, propertyfile, rlimits):

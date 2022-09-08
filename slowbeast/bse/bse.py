@@ -1,5 +1,5 @@
 from queue import Queue as FIFOQueue
-from typing import Optional  # , Union
+from typing import Union, Optional  # , Union
 
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.programstructure import ProgramStructure
@@ -16,9 +16,10 @@ from slowbeast.symexe.symbolicexecution import (
 from slowbeast.util.debugging import print_stdout, print_stderr, dbg
 from .bseexecutor import Executor as BSEExecutor
 from .bsestate import BSEState
+from slowbeast.bse.bsestate import BSEState
 
 
-def report_state(stats, n, msg=None, fn=print_stderr):
+def report_state(stats, n, msg=None, fn=print_stderr) -> None:
     if n.has_error():
         fn(
             f"{msg if msg else ''}:: state {n.get_id()}: {n.pc}, {n.get_error()}",
@@ -38,7 +39,7 @@ def report_state(stats, n, msg=None, fn=print_stderr):
 class BSEPath:
     __slots__ = "_edges"
 
-    def __init__(self, *edges):
+    def __init__(self, *edges) -> None:
         # we keep the edges in reversed order to do efficient prepends
         # (= append in the reversed case)
         if edges:
@@ -61,7 +62,7 @@ class BSEPath:
     def edges(self):
         return self._edges
 
-    def copy(self):
+    def copy(self) -> "BSEPath":
         n = BSEPath()
         n._edges = self._edges.copy()
         return n
@@ -71,7 +72,7 @@ class BSEPath:
         n.prepend(*edges)
         return n
 
-    def prepend(self, *edges):
+    def prepend(self, *edges) -> None:
         self._edges.extend(edges)
 
     def source(self) -> Optional[CFA.Location]:
@@ -86,7 +87,7 @@ class BSEPath:
             return self._edges[0].target()
         return None
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int):
         assert isinstance(item, int), item  # no slices atm
         edges = self._edges
         if item < 0:
@@ -96,10 +97,10 @@ class BSEPath:
     def __iter__(self):
         return reversed(self._edges)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return ";".join(map(str, self))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<=".join(map(str, self._edges))
 
 
@@ -108,7 +109,7 @@ class BSEContext:
 
     __slots__ = "path", "loc_hits", "errorstate", "errordescr"
 
-    def __init__(self, path, errstate, loc_hits=None, errdescr=None):
+    def __init__(self, path, errstate: Union[BSEState, AssumeAnnotation], loc_hits=None, errdescr=None) -> None:
         """
         edge  - edge after which the error should be infeasible
         errstate - error condition
@@ -121,7 +122,7 @@ class BSEContext:
         self.errorstate = errstate
         self.errordescr = errdescr
 
-    def extension(self, path, cond):
+    def extension(self, path, cond) -> "BSEContext":
         """
         Derive a new context from this context - it must correctly preceed
         the current path.
@@ -132,7 +133,7 @@ class BSEContext:
         ), f"{path};{self.path}"
         return BSEContext(path, cond, self.loc_hits.copy(), self.errordescr)
 
-    def extend_path(self, edge):
+    def extend_path(self, edge) -> "BSEContext":
         """
         Derive a new context from this context - it must correctly preceed
         the current path.
@@ -151,7 +152,7 @@ class BSEContext:
     def target_loc(self):
         return self.path[-1].target()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"BSE-ctx[{self.path}:{self.errorstate}]"
 
 

@@ -2,6 +2,8 @@ from copy import copy
 from sys import stdout
 
 from slowbeast.ir.instruction import Branch
+from slowbeast.analysis.cfg.CFG import Node
+from typing import Sized, TextIO
 
 
 class CFG:
@@ -52,7 +54,7 @@ class CFG:
     def fun(self):
         return self._fun
 
-    def create_node(self, *args):
+    def create_node(self, *args) -> Node:
         """Override this method in child classes
         to get nodes with more data
         """
@@ -69,14 +71,14 @@ class CFG:
         assert self._entry, "Entry has not been set"
         return self._entry
 
-    def set_entry(self, n):
+    def set_entry(self, n) -> None:
         if not isinstance(n, CFG.Node):
             n = self.get_node(n)
 
         assert hasattr(n, "successors")
         self._entry = n
 
-    def _build(self):
+    def _build(self) -> None:
         fun = self._fun
 
         for B in fun.bblocks():
@@ -95,14 +97,14 @@ class CFG:
         assert self.get_node(entrybb)
         self.set_entry(entrybb)
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO=stdout) -> None:
         for node in self._nodes.values():
             for succ in node.successors():
                 stream.write(f"{node.bblock().get_id()} -> {succ.bblock().get_id()}\n")
 
 
 class CFGPath:
-    def __init__(self, locs=None):
+    def __init__(self, locs=None) -> None:
         if locs:
             assert isinstance(locs, list)
             assert all(map(lambda x: isinstance(x, CFG.Node), locs))
@@ -110,7 +112,7 @@ class CFGPath:
         else:
             self._locations = []
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._locations)
 
     def __getitem__(self, idx):
@@ -120,14 +122,14 @@ class CFGPath:
     def __iter__(self):
         return self._locations.__iter__()
 
-    def copy(self):
+    def copy(self) -> "CFGPath":
         return copy(self)
 
-    def subpath(self, start, end):
+    def subpath(self, start, end) -> None:
         n = copy(self)
         n._locations = self._locations[start:end]
 
-    def append(self, l):
+    def append(self, l) -> None:
         self._locations.append(l)
 
     def first(self):
@@ -140,7 +142,7 @@ class CFGPath:
             return None
         return self._locations[-1]
 
-    def endswith(self, path):
+    def endswith(self, path) -> bool:
         if len(self) < len(path):
             return False
 
@@ -157,12 +159,12 @@ class CFGPath:
     def locations(self):
         return self._locations
 
-    def length(self):
+    def length(self) -> int:
         return len(self._locations)
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO=stdout) -> None:
         stream.write(str(self))
         stream.write("\n")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return " -> ".join(map(lambda x: str(x.bblock().get_id()), self._locations))

@@ -3,6 +3,7 @@ from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.analysis.scc import strongly_connected_components_iterative
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 from slowbeast.util.debugging import dbg
+from typing import Optional
 
 
 class Loop:
@@ -108,7 +109,7 @@ class Loop:
     def inedges(self):
         return self._inedges
 
-    def has_inedge(self, *args):
+    def has_inedge(self, *args) -> bool:
         if len(args) == 1:
             assert isinstance(args[0], CFA.Edge)
             s, t = args[0].source(), args[0].target()
@@ -125,7 +126,7 @@ class Loop:
         return False
 
 
-def _construct_simple_loop(vertices, parent, loc):
+def _construct_simple_loop(vertices, parent, loc) -> Optional[Loop]:
     """
     Construct a loop that has no nested loops. Fail if a nested loop is found.
     """
@@ -197,7 +198,7 @@ def _construct_simple_loop(vertices, parent, loc):
     )
 
 
-def _compute_loops(vertices, edges, result):
+def _compute_loops(vertices, edges, result) -> None:
     """Compute loops in the graph given by vertices and edges"""
     for C in strongly_connected_components_iterative(vertices, edges):
         if len(C) <= 1:
@@ -234,7 +235,7 @@ class SimpleLoop:
     such that all these _paths are acyclic
     """
 
-    def __init__(self, loc, paths, locs, entries, exits, inedges, backedges):
+    def __init__(self, loc, paths, locs, entries, exits, inedges, backedges) -> None:
         self._header = loc
         # header-header _paths
         self._paths = paths
@@ -295,7 +296,7 @@ class SimpleLoop:
     def inedges(self):
         return self._inedges
 
-    def has_inedge(self, *args):
+    def has_inedge(self, *args) -> bool:
         if len(args) == 1:
             assert isinstance(args[0], CFA.Edge)
             s, t = args[0].source(), args[0].target()
@@ -311,7 +312,7 @@ class SimpleLoop:
                 return True
         return False
 
-    def construct(loc):
+    def construct(loc) -> Optional[SimpleLoop]:
         """
         Construct the SimpleLoop obj for _header.
         Returns None if that cannot be done

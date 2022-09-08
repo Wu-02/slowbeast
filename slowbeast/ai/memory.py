@@ -12,13 +12,14 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
 from slowbeast.ir.types import OffsetType, IntType
 from slowbeast.util.debugging import dbgv
+from typing import TextIO, Union
 
 
 class AIMemoryObject:
     __slots__ = "_id", "_values", "_size", "_name", "_allocation", "_ro"
     ids = 0
 
-    def __init__(self, size, nm="unnamed", objid=None):
+    def __init__(self, size, nm: str="unnamed", objid=None) -> None:
         if objid:
             self._id = objid
         else:
@@ -31,13 +32,13 @@ class AIMemoryObject:
         self._allocation = None  # which allocation allocated this memory
         self._ro = False  # COW support
 
-    def _set_ro(self):
+    def _set_ro(self) -> None:
         self._ro = True
 
-    def _is_ro(self):
+    def _is_ro(self) -> bool:
         return self._ro
 
-    def writable_copy(self):
+    def writable_copy(self) -> "AIMemoryObject":
         new = copy(self)
         new._values = copy(self._values)
         new._ro = False
@@ -49,10 +50,10 @@ class AIMemoryObject:
     def get_size(self):
         return self._size
 
-    def set_allocation(self, a):
+    def set_allocation(self, a) -> None:
         self._allocation = a
 
-    def write(self, x, off=None):
+    def write(self, x: Value, off=None) -> None:
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
@@ -83,7 +84,7 @@ class AIMemoryObject:
 
         return val, None
 
-    def __str__(self):
+    def __str__(self) -> str:
         s = "ai-mo{0} ({1}, alloc'd by {2}, ro:{3}), size: {4}".format(
             self._id,
             self._name if self._name else "no name",
@@ -95,10 +96,10 @@ class AIMemoryObject:
             s += f"\n  {k} -> {v}"
         return s
 
-    def as_value(self):
+    def as_value(self) -> str:
         return f"ai-mo{self._id}"
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO=stdout) -> None:
         stream.write(str(self))
         stream.write("\n")
 
@@ -110,7 +111,7 @@ class AIMemoryObject:
 
 
 class AIMemory(CoreMemory):
-    def create_memory_object(self, size, nm=None, objid=None, is_global=False):
+    def create_memory_object(self, size, nm=None, objid=None, is_global: bool=False) -> AIMemoryObject:
         """
         Create a new memory object -- may be overriden
         by child classes to create a different type of
@@ -126,7 +127,7 @@ class AIMemory(CoreMemory):
             and self._cs == rhs._cs
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return (
             reduce(xor, map(hash, self._objects.items()), 0)
             ^ reduce(lambda a, b: a ^ b, map(hash, self._glob_objects.items()), 0)
@@ -149,7 +150,7 @@ class AIMemoryModel(MemoryModel):
     def create_memory(self):
         return AIMemory()
 
-    def lazy_allocate(self, state, op):
+    def lazy_allocate(self, state, op: Union[Alloc, GlobalVariable]) -> None:
         assert isinstance(op, Alloc) or isinstance(op, GlobalVariable)
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
@@ -180,7 +181,7 @@ class AIMemoryModel(MemoryModel):
             state.set_error(err)
         return [state]
 
-    def uninitialized_read(self, state, frm, ptr, bytes_num):
+    def uninitialized_read(self, state, frm, ptr, bytes_num: int):
         dbgv(f"Reading nondet for uninitialized value: {ptr}", color="WHITE")
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
@@ -193,7 +194,7 @@ class AIMemoryModel(MemoryModel):
 
         return val, err
 
-    def read(self, state, to_op, from_op, bytes_num):
+    def read(self, state, to_op: Load, from_op, bytes_num: int):
         assert isinstance(bytes_num, int), f"Invalid number of bytes: {bytes_num}"
         frm = state.get(from_op)
         if frm is None:
