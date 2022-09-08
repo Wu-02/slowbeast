@@ -74,35 +74,9 @@ def to_fp(x, unsigned=False):
     )[0]
 
 
-# if unsigned:
-#    r = (
-#        unpack("f", pack("I", val))
-#        if x.bitwidth() == 32
-#        else unpack("d", pack("Q", val))
-#    )
-# else:
-#    r = (
-#        unpack("f", pack("i", val))
-#        if x.bitwidth() == 32
-#        else unpack("d", pack("Q", val))
-#    )
-# return r[0]
-
-
 def wrap_to_bw(x, bw):
     m = 1 << bw
     return x % m
-
-
-# if x >= 0:
-#    while x >= m:
-#        x -= m
-# else:
-#    m = m
-#    while x <= -m:
-#        x += m
-# return x
-
 
 class ConcreteBool(ConcreteVal):
     def __init__(self, b):
