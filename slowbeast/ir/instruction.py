@@ -2,7 +2,7 @@ from sys import stdout
 
 from slowbeast.util.debugging import print_highlight
 from .bblock import BBlock  # due to assertions
-from .program import ProgramElement
+from .programelement import ProgramElement
 from .types import Type, IntType, BoolType, PointerType, get_offset_type
 from slowbeast.ir.bblock import BBlock
 from slowbeast.ir.types import PointerType, Type

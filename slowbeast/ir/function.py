@@ -2,7 +2,7 @@ from sys import stdout
 
 from .argument import Argument
 from .instruction import Return
-from .program import ProgramElement
+from .programelement import ProgramElement
 from typing import TextIO
 
 
