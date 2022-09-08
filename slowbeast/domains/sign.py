@@ -29,6 +29,7 @@ class ZOValue(Value):
     NONZERO = 3
     ANY = 4
 
+    @staticmethod
     def val_to_str(x):
         if x == ZOValue.LT0:
             return "-"
@@ -92,6 +93,7 @@ class ZODomain:
     Takes care of handling symbolic computations
     """
 
+    @staticmethod
     def belongto(*args):
         assert len(args) > 0
         for a in args:
@@ -99,6 +101,7 @@ class ZODomain:
                 return False
         return True
 
+    @staticmethod
     def lift(v):
         if v.KIND == 3:
             return v
@@ -107,24 +110,29 @@ class ZODomain:
 
         raise NotImplementedError(f"Invalid value for lifting: {v}")
 
+    @staticmethod
     def concretize(x):
         assert isinstance(x, ZOValue)
         # the internal values in fact correspond to concrete models
         return x.value()
 
+    @staticmethod
     def may_be_true(x):
         v = x.value()
         # all other values represent some non-zero values
         return v != ZOValue.ZERO
 
+    @staticmethod
     def Constant(v, bw):
         return ZOValue(abstract(v), IntType(bw))
 
+    @staticmethod
     def Var(ty):
         return ZOValue(ZOValue.ANY, ty)
 
     ##
     # Logic operators
+    @staticmethod
     def conjunction(*args):
         """
         And() of multiple boolean arguments.
@@ -136,6 +144,7 @@ class ZODomain:
         # this way it works for abstract values and concrete values too
         return ZOValue(all(map(lambda x: x.value() != 0, args)), BoolType())
 
+    @staticmethod
     def disjunction(*args):
         """
         Or() of multiple boolean arguments.
@@ -174,6 +183,7 @@ class ZODomain:
     #    assert a.type() == b.type()
     #    return ConcreteVal(a.value() ^ b.value(), a.type())
 
+    @staticmethod
     def Not(a):
         assert dom_is_sign(a)
         aval = a.value()
@@ -192,18 +202,21 @@ class ZODomain:
                 return ZOValue(ZOValue.LT0, a.type())
             return ZOValue(ZOValue.ANY, a.type())
 
+    @staticmethod
     def ZExt(a, b):
         assert dom_is_sign(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
         return ZOValue(ZOValue.ANY, IntType(b.value()))  # FIXME
 
+    @staticmethod
     def SExt(a, b):
         assert dom_is_sign(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         return ZOValue(ZOValue.ANY, IntType(b.value()))  # FIXME
 
+    @staticmethod
     def Cast(a: ConcreteVal, ty: Type):
         assert dom_is_sign(a, b)
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
@@ -225,16 +238,19 @@ class ZODomain:
     #    #    return ConcreteVal(int(v), ty)
     #    return None  # unsupported conversion
 
+    @staticmethod
     def Shl(a, b):
         assert dom_is_sign(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
 
+    @staticmethod
     def AShr(a, b):
         assert dom_is_sign(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
 
+    @staticmethod
     def LShr(a, b):
         assert dom_is_sign(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
@@ -248,6 +264,7 @@ class ZODomain:
     #        a.type(),
     #    )
 
+    @staticmethod
     def Extract(a, start, end):
         assert dom_is_sign(a)
         assert dom_is_concrete(start), start
@@ -259,6 +276,7 @@ class ZODomain:
     #        (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
     #    )
 
+    @staticmethod
     def Rem(a, b, unsigned=False):
         assert dom_is_sign(a, b)
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
@@ -270,12 +288,14 @@ class ZODomain:
 
     ##
     # Relational operators
+    @staticmethod
     def Le(a, b, unsigned=False):
         assert dom_is_sign(a, b)
         if unsigned:
             return ConcreteBool(getUnsigned(a) <= getUnsigned(b))
         return ConcreteBool(a.value() <= b.value())
 
+    @staticmethod
     def Lt(a, b, unsigned=False):
         # FIXME FIXME FIXME
         assert dom_is_sign(a, b)
@@ -285,6 +305,7 @@ class ZODomain:
         #     return ConcreteBool(getUnsigned(a) < getUnsigned(b))
         # return ConcreteBool(a.value() < b.value())
 
+    @staticmethod
     def Ge(a, b, unsigned=False):
         # FIXME FIXME FIXME
         assert dom_is_sign(a, b)
@@ -294,6 +315,7 @@ class ZODomain:
         #     return ConcreteBool(getUnsigned(a) >= getUnsigned(b))
         # return ConcreteBool(a.value() >= b.value())
 
+    @staticmethod
     def Gt(a, b, unsigned=False):
         # FIXME FIXME FIXME
         assert dom_is_sign(a, b)
@@ -304,6 +326,7 @@ class ZODomain:
         #     return ConcreteBool(getUnsigned(a) > getUnsigned(b))
         # return ConcreteBool(a.value() > b.value())
 
+    @staticmethod
     def Eq(a, b, unsigned=False):
         # FIXME FIXME FIXME
         assert dom_is_sign(a, b)
@@ -313,6 +336,7 @@ class ZODomain:
         #     return ConcreteBool(getUnsigned(a) == getUnsigned(b))
         # return ConcreteBool(a.value() == b.value())
 
+    @staticmethod
     def Ne(a, b, unsigned=False):
         assert dom_is_sign(a, b)
         assert a.type() == b.type(), f"Incompatible types: {a.type()} != {b.type()}"
@@ -344,6 +368,7 @@ class ZODomain:
 
     ##
     # Arithmetic operations
+    @staticmethod
     def Add(a, b):
         assert dom_is_sign(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -359,6 +384,7 @@ class ZODomain:
             ZOValue.ANY, a.type()
         )  # ConcreteVal(a.value() + b.value(), a.type())
 
+    @staticmethod
     def Sub(a, b):
         assert dom_is_sign(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -370,6 +396,7 @@ class ZODomain:
         bw = a.type().bitwidth()
         return ConcreteVal(wrap_to_bw(a.value() - b.value(), bw), a.type())
 
+    @staticmethod
     def Mul(a, b):
         assert dom_is_sign(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -381,6 +408,7 @@ class ZODomain:
         bw = a.type().bitwidth()
         return ConcreteVal(wrap_to_bw(a.value() * b.value(), bw), a.type())
 
+    @staticmethod
     def Div(a, b, unsigned=False):
         assert dom_is_sign(a, b)
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
