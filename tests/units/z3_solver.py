@@ -5,7 +5,7 @@ from slowbeast.domains.symbolic import (
         BVPolynomial
 )
 
-from z3 import *
+from z3 import BitVec, Not, SignExt
 from slowbeast.solvers.arithformula import ArithFormula
 from typing import Optional
 

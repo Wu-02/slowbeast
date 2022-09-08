@@ -9,7 +9,6 @@ from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, ldbgv
-from slowbeast.analysis.cfa.CFA import Location
 from typing import Optional
 
 
@@ -141,7 +140,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         return r
 
-    def _is_init(self, loc: Location) -> bool:
+    def _is_init(self, loc: CFA.Location) -> bool:
         assert isinstance(loc, CFA.Location), loc
         return loc is self._entry_loc
 

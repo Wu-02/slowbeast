@@ -16,7 +16,8 @@ class ConcreteFloatsDomain:
     Takes care of handling concrete float computations.
     """
 
-    def belongto(*args) -> bool:
+    @staticmethod
+    def belongto(*args: Value) -> bool:
         assert len(args) > 0
         for a in args:
             assert isinstance(a, Value), a
@@ -24,43 +25,50 @@ class ConcreteFloatsDomain:
                 return False
         return True
 
-    def Value(c, bw) -> ConcreteFloat:
+    @staticmethod
+    def Value(c, bw: int) -> ConcreteFloat:
         return ConcreteFloat(float(c), bw)
 
     ##
     # Relational operators
-    def Le(a, b, unordered: bool = False) -> ConcreteBool:
+    @staticmethod
+    def Le(a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False) -> ConcreteBool:
         assert ConcreteFloatsDomain.belongto(a, b)
         if unordered:
             raise NotImplementedError("unordered unimplemented")
         return ConcreteBool(a.value() <= b.value())
 
-    def Lt(a, b, unordered: bool = False) -> ConcreteBool:
+    @staticmethod
+    def Lt(a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False) -> ConcreteBool:
         assert ConcreteFloatsDomain.belongto(a, b)
         if unordered:
             raise NotImplementedError("unordered unimplemented")
         return ConcreteBool(a.value() < b.value())
 
-    def Ge(a, b, unordered: bool = False) -> ConcreteBool:
+    @staticmethod
+    def Ge(a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False) -> ConcreteBool:
         assert ConcreteFloatsDomain.belongto(a, b)
         if unordered:
             raise NotImplementedError("unordered unimplemented")
         return ConcreteBool(a.value() >= b.value())
 
-    def Gt(a, b, unordered: bool = False) -> ConcreteBool:
+    @staticmethod
+    def Gt(a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False) -> ConcreteBool:
         assert ConcreteFloatsDomain.belongto(a, b)
         if unordered:
             raise NotImplementedError("unordered unimplemented")
         return ConcreteBool(a.value() > b.value())
 
-    def Eq(a, b, unordered: bool = False) -> ConcreteBool:
+    @staticmethod
+    def Eq(a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False) -> ConcreteBool:
         assert ConcreteFloatsDomain.belongto(a, b)
         if unordered:
             raise NotImplementedError("unordered unimplemented")
         aval, bval = a.value(), b.value()
         return ConcreteBool(aval <= bval and aval >= bval)
 
-    def Ne(a, b, unordered: bool = False) -> ConcreteBool:
+    @staticmethod
+    def Ne(a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False) -> ConcreteBool:
         assert ConcreteFloatsDomain.belongto(a, b)
         if unordered:
             raise NotImplementedError("unordered unimplemented")
@@ -69,25 +77,29 @@ class ConcreteFloatsDomain:
 
     ##
     # Arithmetic operations
-    def Add(a, b) -> ConcreteFloat:
+    @staticmethod
+    def Add(a: ConcreteFloat, b: ConcreteFloat) -> ConcreteFloat:
         assert ConcreteFloatsDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         return ConcreteFloat(a.value() + b.value(), bw)
 
-    def Sub(a, b) -> ConcreteFloat:
+    @staticmethod
+    def Sub(a: ConcreteFloat, b: ConcreteFloat) -> ConcreteFloat:
         assert ConcreteFloatsDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         return ConcreteFloat(a.value() - b.value(), bw)
 
-    def Mul(a, b) -> ConcreteFloat:
+    @staticmethod
+    def Mul(a: ConcreteFloat, b: ConcreteFloat) -> ConcreteFloat:
         assert ConcreteFloatsDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         return ConcreteFloat(a.value() * b.value(), bw)
 
-    def Div(a, b, unordered: bool = False) -> ConcreteFloat:
+    @staticmethod
+    def Div(a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False) -> ConcreteFloat:
         assert ConcreteFloatsDomain.belongto(a, b)
         bw = a.bitwidth()
         return ConcreteFloat(a.value() / b.value(), bw)

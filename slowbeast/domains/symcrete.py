@@ -1,12 +1,13 @@
+from typing import Union
+
 from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain
-from .concrete import ConcreteVal
 from slowbeast.domains.symbolic import Expr, SymbolicDomain
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import BoolType, IntType, Type
-from . import SYMCRETE_DOMAIN_KIND
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.concrete_bool import ConcreteBool
-from typing import Union
+from . import SYMCRETE_DOMAIN_KIND
+
 
 optimize_exprs = True
 

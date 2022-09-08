@@ -1,8 +1,7 @@
-from slowbeast.domains.concrete_int_float import dom_is_concrete
 from .concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, IntType, BoolType
-from . import SIGNUL_DOMAIN_KIND
+from . import SIGNUL_DOMAIN_KIND, dom_is_signul, dom_is_symbolic, dom_is_concrete
 from typing import Optional, Union
 
 
@@ -107,26 +106,26 @@ class SignULDomain:
     Takes care of handling symbolic computations
     """
 
-    def belongto(*args) -> bool:
+    def belongto(*args: SignULValue) -> bool:
         assert len(args) > 0
         for a in args:
-            if a.KIND != 4:
+            if not dom_is_signul(a):
                 return False
         return True
 
-    def lift(v) -> Union[SignULDomain, SignULValue]:
-        if v.KIND == 4:
+    def lift(v) -> Union["SignULDomain", SignULValue]:
+        if dom_is_signul(v):
             return v
 
         val = v.value()
-        if v.KIND == 3:
+        if dom_is_symbolic(v):
             return SignULValue(abstract(val), v.type())
-        if v.KIND == 1:
+        if dom_is_concrete(v):
             return SignULValue(abstract(val), v.type(), val, val)
 
         raise NotImplementedError(f"Invalid value for lifting: {v}")
 
-    def concretize(x):
+    def concretize(x: SignULValue):
         assert isinstance(x, SignULValue)
         # the internal values in fact correspond to concrete models
         return x.value()
@@ -137,14 +136,14 @@ class SignULDomain:
     def Var(ty) -> SignULValue:
         return SignULValue(SignULValue.ANY, ty)
 
-    def may_be_true(x):
+    def may_be_true(x: SignULValue):
         v = x.value()
         # all other values represent some non-zero values
         return v != SignULValue.ZERO
 
     ##
     # Logic operators
-    def conjunction(*args) -> SignULValue:
+    def conjunction(*args: SignULValue) -> SignULValue:
         """
         And() of multiple boolean arguments.
         And() itself works as logical or bitwise and depending
@@ -155,7 +154,7 @@ class SignULDomain:
         # this way it works for abstract values and concrete values too
         return SignULValue(all(map(lambda x: x.value() != 0, args)), BoolType())
 
-    def disjunction(*args) -> SignULValue:
+    def disjunction(*args: SignULValue) -> SignULValue:
         """
         Or() of multiple boolean arguments.
         Or() itself works as logical or bitwise and depending
