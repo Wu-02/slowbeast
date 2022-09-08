@@ -66,15 +66,15 @@ class Type:
         return False
 
     def __eq__(self, x: object):
-
         return (
+            isinstance(x, Type) and
             self.is_bool() == x.is_bool()
             and self.is_pointer() == x.is_pointer()
             and self.is_float() == x.is_float()
             and self.bitwidth() == x.bitwidth()
         )
 
-    def __str__(self) -> str:
+    def __str__(self: "Type") -> str:
         if self.is_bool():
             return "bool"
         if self.is_float():
