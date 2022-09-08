@@ -7,7 +7,8 @@ from slowbeast.solvers.symcrete import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.util.debugging import ldbgv
-from typing import TextIO
+from typing import Union, TextIO
+from slowbeast.ir.instruction import Alloc, GlobalVariable
 
 
 def _subst_val(substitute, val, subs):
@@ -94,7 +95,7 @@ class BSEState(LazySEState):
                 return nd
         return None
 
-    def eval(self, v):
+    def eval(self, v: Union[Alloc, GlobalVariable]):
         value = self.try_eval(v)
         if value is None:
             value = _nondet_value(self.solver().fresh_value, v, v.type().bitwidth())
@@ -301,7 +302,7 @@ class BSEState(LazySEState):
             symbols.update(val[0].symbols())
         return symbols
 
-    def join_prestate(self, prestate, is_init):
+    def join_prestate(self, prestate: "BSEState", is_init):
         self._join_prestate(prestate)
         if is_init:
             # we have feasible state in init, we must check whether it is really feasible

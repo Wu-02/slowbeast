@@ -128,7 +128,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return None
 
-    def check_paths(self):
+    def check_paths(self) -> Optional[int]:
         newpaths = []
         has_err = False
 

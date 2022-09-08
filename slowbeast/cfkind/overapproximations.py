@@ -8,7 +8,7 @@ from slowbeast.symexe.annotations import (
     AssertAnnotation,
     execute_annotation_substitutions,
 )
-from slowbeast.symexe.statesset import union, intersection, complement
+from slowbeast.symexe.statesset import StatesSet, union, intersection, complement
 from slowbeast.util.debugging import dbg, dbgv
 from .inductivesequence import InductiveSequence
 from slowbeast.solvers.symcrete import IncrementalSolver
@@ -590,7 +590,7 @@ class LoopStateOverapproximation:
 
         self.clauses = newclauses
 
-    def overapprox_clause(self, c, R):
+    def overapprox_clause(self, c, R: StatesSet):
         """
         c - the clause
         R - rest of clauses of the formula
@@ -638,7 +638,7 @@ class LoopStateOverapproximation:
 
         return self.expr_mgr.disjunction(*newc)
 
-    def overapprox_literal(self, l, rl, S):
+    def overapprox_literal(self, l, rl, S: StatesSet):
         """
         l - literal
         rl - list of all literals in the clause
@@ -784,13 +784,20 @@ def break_eqs(expr):
     return clauses
 
 
-def is_overapprox_of(A, B):
+def is_overapprox_of(A, B: StatesSet) -> bool:
     """Return true if B is overapproximation of A"""
     return intersection(complement(B), A).is_empty()
 
 
 def overapprox_set(
-    executor, EM, goal, unsafe, indtarget, assumptions, L, drop_only: bool = False
+    executor,
+    EM,
+    goal,
+    unsafe: StatesSet,
+    indtarget,
+    assumptions,
+    L,
+    drop_only: bool = False,
 ):
     """
     goal - the set to be overapproxiamted

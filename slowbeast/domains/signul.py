@@ -6,7 +6,7 @@ from . import SIGNUL_DOMAIN_KIND
 from typing import Optional, Union
 
 
-def abstract(v) -> int:
+def abstract(v: int) -> int:
     if v < 0:
         v = SignULValue.LT0
     else:
@@ -19,7 +19,7 @@ class SignULValue(Value):
     Extends concrete domain by -, 0, +  abstractions
     """
 
-    KIND = SIGNUL_DOMAIN_KIND
+    KIND: int = SIGNUL_DOMAIN_KIND
 
     # values
     LT0 = -2
@@ -63,7 +63,7 @@ class SignULValue(Value):
     def is_concrete(self):
         return self.value() == SignULValue.ZERO
 
-    def value(self):
+    def value(self) -> Union[bool, float, int]:
         return self._value
 
     def lower(self):
@@ -72,7 +72,7 @@ class SignULValue(Value):
     def upper(self):
         return self._upper
 
-    def as_value(self):
+    def as_value(self) -> str:
         return self.__repr__()
 
     def __hash__(self):
@@ -90,7 +90,7 @@ class SignULValue(Value):
         )
 
 
-def get_unsigned(v) -> int:
+def get_unsigned(v: int) -> int:
     if v == SignULValue.LT0:
         return SignULValue.GT0
     if v == SignULValue.LE0:

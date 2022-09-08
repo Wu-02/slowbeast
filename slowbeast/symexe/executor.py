@@ -108,7 +108,7 @@ class Executor(ConcreteExecutor):
         assert not s.constraints(), "the state is not clean"
         return s
 
-    def create_clean_state(self, pc=None, m=None):
+    def create_clean_state(self, pc=None, m=None) -> SEState:
         s = self.create_state(pc, m)
         s.push_call(None)
         return s
@@ -691,7 +691,9 @@ class Executor(ConcreteExecutor):
 
 
 class ThreadedExecutor(Executor):
-    def __init__(self, program, solver, opts, memorymodel=None) -> None:
+    def __init__(
+        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+    ) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
     def create_state(self, pc=None, m=None) -> ThreadedSEState:

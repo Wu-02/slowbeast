@@ -502,14 +502,14 @@ class Cmp(ValueTypedInstruction):
         """Set that this comparison is on floating-point numbers"""
         self._fp = True
 
-    def is_float(self):
+    def is_float(self) -> bool:
         return self._fp
 
     def set_unsigned(self) -> None:
         """Set that this comparison is unsigned"""
         self._unsigned = True
 
-    def is_unsigned(self):
+    def is_unsigned(self) -> bool:
         return self._unsigned
 
     def predicate(self):
@@ -546,7 +546,7 @@ class UnaryOperation(ValueTypedInstruction):
         UnaryOperation.__check(op)
         self._op = op
 
-    def operation(self):
+    def operation(self) -> "UnaryOperation":
         return self._op
 
 
@@ -561,7 +561,7 @@ class Abs(UnaryOperation):
 
 
 class Extend(UnaryOperation):
-    def __init__(self, op, a, bw) -> None:
+    def __init__(self, op: UnaryOperation, a, bw) -> None:
         assert bw.is_concrete(), "Invalid bitwidth to extend"
         super().__init__(op, a, ty=IntType(bw.value()))
         self._bw = bw
@@ -599,7 +599,7 @@ class Cast(UnaryOperation):
     def casttype(self):
         return self.type()
 
-    def signed(self):
+    def signed(self) -> bool:
         return self._signed
 
     def __str__(self) -> str:
@@ -719,7 +719,7 @@ class Add(BinaryOperation):
         super().__init__(BinaryOperation.ADD, a, b)
         self._fp = fp
 
-    def is_fp(self):
+    def is_fp(self) -> bool:
         return self._fp
 
     def __str__(self) -> str:
@@ -736,7 +736,7 @@ class Sub(BinaryOperation):
         super().__init__(BinaryOperation.SUB, a, b)
         self._fp = fp
 
-    def is_fp(self):
+    def is_fp(self) -> bool:
         return self._fp
 
     def __str__(self) -> str:
@@ -753,7 +753,7 @@ class Mul(BinaryOperation):
         super().__init__(BinaryOperation.MUL, a, b)
         self._fp = fp
 
-    def is_fp(self):
+    def is_fp(self) -> bool:
         return self._fp
 
     def __str__(self) -> str:
@@ -771,10 +771,10 @@ class Div(BinaryOperation):
         self._unsigned = unsigned
         self._fp = fp
 
-    def is_fp(self):
+    def is_fp(self) -> bool:
         return self._fp
 
-    def is_unsigned(self):
+    def is_unsigned(self) -> bool:
         return self._unsigned
 
     def __str__(self) -> str:
@@ -792,7 +792,7 @@ class Rem(BinaryOperation):
         super().__init__(BinaryOperation.REM, a, b)
         self._unsigned = unsigned
 
-    def is_unsigned(self):
+    def is_unsigned(self) -> bool:
         return self._unsigned
 
     def __str__(self) -> str:

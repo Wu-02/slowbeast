@@ -3,6 +3,8 @@ from slowbeast.domains.symcrete import SymcreteDomain
 from slowbeast.solvers.solver import SolverIntf
 from slowbeast.solvers.z3solver import models, models_inc, _is_sat
 from z3 import Solver as Z3Solver, is_false, BoolVal
+from slowbeast.domains.concrete import ConcreteVal
+from typing import List, Optional, Union
 
 global_expr_manager = SymcreteDomain()
 
@@ -20,7 +22,7 @@ class SymbolicSolver(SolverIntf):
     def __init__(self) -> None:
         super().__init__(global_expr_mgr())
 
-    def is_sat(self, *e):
+    def is_sat(self, *e) -> Optional[bool]:
         if any(
             map(lambda x: is_false(x) or (x.is_concrete() and x.value() is False), e)
         ):
@@ -29,7 +31,7 @@ class SymbolicSolver(SolverIntf):
             Z3Solver(), None, *(x.unwrap() for x in e if not x.is_concrete())
         )
 
-    def try_is_sat(self, timeout, *e):
+    def try_is_sat(self, timeout, *e) -> Optional[bool]:
         if any(
             map(lambda x: is_false(x) or (x.is_concrete() and x.value() is False), e)
         ):
@@ -38,7 +40,7 @@ class SymbolicSolver(SolverIntf):
             Z3Solver(), timeout, *(x.unwrap() for x in e if not x.is_concrete())
         )
 
-    def concretize(self, assumpt, *e):
+    def concretize(self, assumpt, *e) -> Union[None, List[None], List[ConcreteVal]]:
         assert all(
             map(lambda x: not x.is_concrete(), e)
         ), "ConcreteVal instead of symbolic value"
@@ -65,14 +67,14 @@ class IncrementalSolver(SymbolicSolver):
     def pop(self, num: int = 1) -> None:
         self._solver.pop(num)
 
-    def is_sat(self, *e):
+    def is_sat(self, *e) -> Optional[bool]:
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
             return False
         return _is_sat(
             self._solver, None, *(x.unwrap() for x in e if not x.is_concrete())
         )
 
-    def try_is_sat(self, timeout, *e):
+    def try_is_sat(self, timeout, *e) -> Optional[bool]:
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
             return False
         return _is_sat(
@@ -84,7 +86,7 @@ class IncrementalSolver(SymbolicSolver):
         s._solver = self._solver.translate(self._solver.ctx)
         return s
 
-    def concretize(self, assumpt, *e):
+    def concretize(self, assumpt, *e) -> Union[None, List[None], List[ConcreteVal]]:
         assert all(
             map(lambda x: not x.is_concrete(), e)
         ), "ConcreteVal instead of symbolic value"

@@ -8,7 +8,8 @@ from .annotations import execute_annotations
 from .executionstate import LazySEState
 from .executor import Executor as SExecutor
 from slowbeast.symexe.executionstate import LazySEState
-from typing import Sized
+from typing import Optional, Sized
+from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 
 
 class Executor(SExecutor):
@@ -17,7 +18,9 @@ class Executor(SExecutor):
     CFA paths possibly annotated with formulas.
     """
 
-    def __init__(self, program, solver, opts, memorymodel=None) -> None:
+    def __init__(
+        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+    ) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
     def create_state(self, pc=None, m=None) -> LazySEState:
@@ -245,7 +248,9 @@ class CFGExecutor(SExecutor):
     The paths are supposed to be AnnotatedCFGPaths (paths in CFG)
     """
 
-    def __init__(self, program, solver, opts, memorymodel=None) -> None:
+    def __init__(
+        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+    ) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
     def execute_annotations(self, states, annots):

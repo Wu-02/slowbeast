@@ -42,7 +42,7 @@ def add_pointer_with_constant(E, op1, op2) -> Pointer:
     return Pointer(op1.object(), Domain.Add(op1.offset(), op2))
 
 
-def eval_condition(state, cond: ValueInstruction):
+def eval_condition(state, cond: ValueInstruction) -> Value:
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
     c = state.eval(cond)
     assert isinstance(c, Value)
@@ -81,7 +81,7 @@ class Executor(ConcreteExecutor):
             m = self.get_memory_model().create_memory()
         return AbstractState(self, pc, m)
 
-    def create_clean_state(self, pc=None, m=None):
+    def create_clean_state(self, pc=None, m=None) -> AbstractState:
         s = self.create_state(pc, m)
         s.push_call(None)
         return s

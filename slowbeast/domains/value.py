@@ -13,28 +13,28 @@ class Value:
     def __eq__(self, other: object):
         raise NotImplementedError("This must be overriden")
 
-    def type(self):
+    def type(self) -> Type:
         return self._type
 
-    def bytewidth(self):
+    def bytewidth(self) -> int:
         return self._type.bytewidth()
 
     def bitwidth(self):
         return self._type.bitwidth()
 
-    def is_pointer(self):
+    def is_pointer(self) -> bool:
         return self._type.is_pointer()
 
-    def is_bool(self):
+    def is_bool(self) -> bool:
         return self._type.is_bool()
 
-    def is_int(self):
+    def is_int(self) -> bool:
         return self._type.is_int()
 
-    def is_float(self):
+    def is_float(self) -> bool:
         return self._type.is_float()
 
-    def is_bytes(self):
+    def is_bytes(self) -> bool:
         return self._type.is_bytes()
 
     def is_symbolic(self):

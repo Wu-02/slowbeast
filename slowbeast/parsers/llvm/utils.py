@@ -2,7 +2,7 @@ from struct import unpack, pack
 
 from slowbeast.domains.concrete_int_float import ConstantTrue, ConstantFalse
 from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.domains.pointer import get_null_pointer
+from slowbeast.domains.pointer import Pointer, get_null_pointer
 from slowbeast.ir.types import IntType, FloatType, PointerType
 from slowbeast.util.debugging import warn
 from slowbeast.domains.concrete_bool import ConcreteBool
@@ -29,7 +29,7 @@ def trunc_to_float(x):
     return unpack("f", pack("f", x))[0]
 
 
-def to_float_ty(val) -> ConcreteVal:
+def to_float_ty(val: ConcreteVal) -> ConcreteVal:
     if isinstance(val, ConcreteVal) and not val.is_float():
         return ConcreteVal(float(val.value()), FloatType(val.bitwidth()))
     return val
@@ -58,7 +58,7 @@ def _get_double(s):
         return None
 
 
-def _bitwidth(ty: Sized):
+def _bitwidth(ty: Sized) -> Optional[int]:
     if len(ty) < 2:
         return None
     if ty[0] == "i":
@@ -93,7 +93,7 @@ def parse_array_ty_by_parts(ty) -> None:
     print(parts)
 
 
-def get_array_ty_size(m, ty) -> int:
+def get_array_ty_size(m, ty: str) -> int:
     assert is_array_ty(ty)
     sty = str(ty)
     parts = sty.split()
@@ -131,7 +131,7 @@ def type_size_in_bits(m, ty: str):
     return None
 
 
-def type_size(m, ty) -> Optional[int]:
+def type_size(m, ty: str) -> Optional[int]:
     ts = type_size_in_bits(m, ty)
     if ts is not None:
         if ts == 0:
@@ -140,7 +140,7 @@ def type_size(m, ty) -> Optional[int]:
     return None
 
 
-def get_sb_type(m, ty) -> Union[None, FloatType, IntType, PointerType]:
+def get_sb_type(m, ty: str) -> Union[None, FloatType, IntType, PointerType]:
     if is_pointer_ty(ty):
         return PointerType()
 
@@ -166,7 +166,7 @@ def get_float_constant(sval, isdouble: bool = True):
     return _get_float(sval)
 
 
-def get_pointer_constant(val):
+def get_pointer_constant(val) -> Optional[Pointer]:
     assert is_pointer_ty(val.type)
     parts = str(val).split()
     if parts[-1] == "null":
@@ -207,7 +207,7 @@ def get_constant(val):
     return ConcreteVal(c, FloatType(bw) if isfloating else IntType(bw))
 
 
-def bv_to_bool_else_id(bv) -> ConcreteBool:
+def bv_to_bool_else_id(bv: ConcreteBool) -> ConcreteBool:
     if bv.is_concrete():
         if bv.value() == 0:
             return ConstantFalse

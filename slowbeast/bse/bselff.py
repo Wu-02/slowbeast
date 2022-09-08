@@ -1,10 +1,10 @@
 from slowbeast.bse.bse import report_state
 from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker as BSELFCheckerVanilla
 from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.symexe.annotations import execute_annotation
+from slowbeast.symexe.annotations import Annotation, execute_annotation
 from slowbeast.symexe.executionstate import SEState as ExecutionState
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.symexe.pathexecutor import Executor as PathExecutor
+from slowbeast.symexe.pathexecutor import Executor, Executor as PathExecutor
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
 from slowbeast.util.debugging import (
     print_stdout,
@@ -13,7 +13,7 @@ from slowbeast.util.debugging import (
     dbg,
 )
 from slowbeast.bse.loopinfo import LoopInfo
-from typing import List, Type
+from typing import Sized, List, Type
 
 
 #####################################################################
@@ -170,7 +170,7 @@ class BSELFChecker(BSELFCheckerVanilla):
         A,
         program,
         programstructure,
-        opts,
+        opts: BSELFOptions,
         invariants=None,
         indsets=None,
         max_loop_hits=None,
@@ -186,7 +186,7 @@ class BSELFChecker(BSELFCheckerVanilla):
         # pathexecutor.forbid_calls()
         self._pathexecutor = pathexecutor
 
-    def check_loop_precondition(self, L, A):
+    def check_loop_precondition(self, L, A: Annotation):
         loc = L.header()
         print_stdout(f"Checking if {str(A)} holds on {loc}", color="purple")
 
@@ -218,7 +218,7 @@ class BSELFChecker(BSELFCheckerVanilla):
         dbg(f"Checking if {A} holds on {loc} finished")
         return result, states
 
-    def fold_loop(self, loc, L: LoopInfo, unsafe, loop_hit_no):
+    def fold_loop(self, loc, L: LoopInfo, unsafe: Sized, loop_hit_no: int) -> bool:
         fstates = self.forward_states.get(L.header().elem()[0])
         if fstates is None:
             self.max_seq_len = 2

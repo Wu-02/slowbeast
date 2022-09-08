@@ -13,7 +13,7 @@ from slowbeast.ir.instruction import (
 )
 from .executor import Executor as SExecutor, ThreadedExecutor
 from io import TextIOWrapper
-from typing import Type, Union
+from typing import Sized, Union
 
 
 class SEOptions(ExecutionOptions):
@@ -94,7 +94,7 @@ class SymbolicExecutor(Interpreter):
         ), f"State already in queue: {state} ... {self.states}"
         return state
 
-    def handle_new_states(self, newstates) -> None:
+    def handle_new_states(self, newstates: Sized) -> None:
         hs = self.handle_new_state
         for s in newstates:
             hs(s)
@@ -284,7 +284,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
     def __init__(self, P, ohandler=None, opts: SEOptions = SEOptions()) -> None:
         super().__init__(P, ohandler, opts, ExecutorClass=ThreadedExecutor)
 
-    def _is_global_event(self, state, pc: Union[Call, Load, Store, ThreadJoin]):
+    def _is_global_event(self, state, pc: Union[Call, Load, Store, ThreadJoin]) -> bool:
         if isinstance(pc, Load):
             return may_be_glob_mem(state, pc.operand(0))
         if isinstance(pc, Store):

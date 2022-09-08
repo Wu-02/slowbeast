@@ -1,8 +1,8 @@
 from sys import stdout
-from typing import TextIO, List, Dict, Optional
+from typing import Iterator, TextIO, List, Dict, Optional
 
-from . function import Function
-from . instruction import GlobalVariable
+from .function import Function
+from .instruction import GlobalVariable
 
 
 class Program:
@@ -20,7 +20,7 @@ class Program:
     def funs(self) -> List[Function]:
         return self._functions
 
-    def fun(self, name: str):
+    def fun(self, name: str) -> Optional[Function]:
         for f in self._functions:
             if f.name() == name:
                 return f
@@ -40,7 +40,7 @@ class Program:
     def globals(self) -> List[GlobalVariable]:
         return self._globals
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Function]:
         return self._functions.__iter__()
 
     def dump(self, stream: TextIO = stdout) -> None:

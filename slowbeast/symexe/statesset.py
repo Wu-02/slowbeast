@@ -15,6 +15,7 @@ from slowbeast.symexe.statedescription import (
     eval_state_description,
 )
 from typing import Union
+from slowbeast.domains.symcrete import SymcreteDomain
 
 
 class StatesSet:
@@ -43,13 +44,13 @@ class StatesSet:
     def copy(self) -> "StatesSet":
         return StatesSet(self.get_se_state().copy())
 
-    def expr_manager(self):
+    def expr_manager(self) -> SymcreteDomain:
         return global_expr_mgr()
 
     def get_se_state(self) -> SEState:
         return self._state
 
-    def as_description(self):
+    def as_description(self) -> StateDescription:
         return state_to_description(self.get_se_state())
 
     def as_expr(self):
@@ -80,7 +81,12 @@ class StatesSet:
         self._state.set_constraints(C)
         return self
 
-    def _unite(self, s) -> None:
+    def _unite(
+        self,
+        s: Union[
+            ConcreteVal, Expr, ExprAnnotation, SEState, StateDescription, "StatesSet"
+        ],
+    ) -> None:
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
@@ -109,17 +115,22 @@ class StatesSet:
             self._unite(s)
         return self
 
-    def add(self, *S):
+    def add(self, *S) -> "StatesSet":
         return self.unite(S)
 
-    def intersect(self, s) -> "StatesSet":
+    def intersect(
+        self,
+        s: Union[
+            ConcreteVal, Expr, ExprAnnotation, SEState, StateDescription, "StatesSet"
+        ],
+    ) -> "StatesSet":
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
         state.add_constraint(expr)
         return self
 
-    def translate(self, S: SEState):
+    def translate(self, S: SEState) -> "StatesSet":
         """
         Make the set use internally the same variables as 'S'
         """
@@ -156,7 +167,12 @@ class StatesSet:
         state.set_constraints(C)
         return self
 
-    def minus(self, s) -> "StatesSet":
+    def minus(
+        self,
+        s: Union[
+            ConcreteVal, Expr, ExprAnnotation, SEState, StateDescription, "StatesSet"
+        ],
+    ) -> "StatesSet":
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
@@ -168,7 +184,7 @@ class StatesSet:
         """Check whether the set is empty. Involves a solver call"""
         return not self._state.is_feasible()
 
-    def contains(self, S):
+    def contains(self, S) -> bool:
         X = self.copy()
         X.complement()
         X.intersect(S)

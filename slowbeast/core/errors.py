@@ -42,7 +42,7 @@ class Error:
             raise RuntimeError("Invalid error type")
         return detail
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self._descr:
             return f"{self.__repr__()}: {self._descr}"
         return self.__repr__()

@@ -1,5 +1,6 @@
 from slowbeast.solvers.symcrete import IncrementalSolver
 from slowbeast.symexe.statesset import StatesSet, complement, intersection
+from typing import List, Optional
 
 
 class InductiveSet:
@@ -21,7 +22,7 @@ class InductiveSet:
             self.cI = IncrementalSolver()
             self.sets = []
 
-    def add(self, elem) -> None:
+    def add(self, elem: StatesSet) -> None:
         self.sets.append(elem)
         I = self.I
         cI = self.cI

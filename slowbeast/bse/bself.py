@@ -70,7 +70,7 @@ def _dump_inductive_sets(checker, loc, fn=dbg) -> None:
         fn(" ∅", color="dark_green")
 
 
-def _check_set(executor, S, L, target) -> bool:
+def _check_set(executor, S: StatesSet, L, target) -> bool:
     # FIXME: this is a workaround until we support nondet() calls in lazy
     # execution
     r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
@@ -170,11 +170,11 @@ def _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target):
         yield overapprox_set(executor, s.expr_manager(), S, E, target, assumptions, L)
 
 
-def is_seq_inductive(seq, L: LoopInfo):
+def is_seq_inductive(seq, L: LoopInfo) -> bool:
     return L.set_is_inductive(seq.as_set())
 
 
-def is_set_inductive(S, L: LoopInfo):
+def is_set_inductive(S, L: LoopInfo) -> bool:
     return L.set_is_inductive(S)
 
 
@@ -191,7 +191,7 @@ class BSELFChecker(BaseBSE):
         loc,
         A,
         program,
-        programstructure,
+        programstructure: Optional[ProgramStructure],
         opts: BSELFOptions,
         invariants=None,
         indsets=None,
@@ -364,7 +364,7 @@ class BSELFChecker(BaseBSE):
         assert not queue, "Queue is not empty"
         return Result.SAFE
 
-    def handle_loop(self, loc, errpre, loop_hit_no):
+    def handle_loop(self, loc, errpre, loop_hit_no: int) -> bool:
         assert (
             loc not in self.no_sum_loops
         ), "Handling a loop that should not be handled"
@@ -617,7 +617,7 @@ class BSELFChecker(BaseBSE):
         assert sets
         return sets
 
-    def _initial_sets_from_exits(self, E, L: LoopInfo):
+    def _initial_sets_from_exits(self, E: StatesSet, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.

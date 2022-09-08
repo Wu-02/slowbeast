@@ -26,7 +26,7 @@ class ExecutionStatus:
     def __hash__(self) -> int:
         return hash(self._detail) ^ hash(self._status)
 
-    def status(self):
+    def status(self) -> int:
         return self._status
 
     def detail(self):
@@ -50,19 +50,19 @@ class ExecutionStatus:
         self._detail = reason
         self._status = ExecutionStatus.TERMINATED
 
-    def is_error(self):
+    def is_error(self) -> bool:
         return self._status == ExecutionStatus.ERROR
 
-    def is_killed(self):
+    def is_killed(self) -> bool:
         return self._status == ExecutionStatus.KILLED
 
-    def is_exited(self):
+    def is_exited(self) -> bool:
         return self._status == ExecutionStatus.EXITED
 
-    def is_terminated(self):
+    def is_terminated(self) -> bool:
         return self._status == ExecutionStatus.TERMINATED
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         return self._status == ExecutionStatus.READY
 
     def __repr__(self) -> str:

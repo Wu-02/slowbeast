@@ -17,6 +17,7 @@ from slowbeast.util.debugging import print_stdout, print_stderr, dbg
 from .bseexecutor import Executor as BSEExecutor
 from .bsestate import BSEState
 from slowbeast.bse.bsestate import BSEState
+from slowbeast.bse.bseexecutor import Executor
 
 
 def report_state(stats, n, msg=None, fn=print_stderr) -> None:
@@ -67,7 +68,7 @@ class BSEPath:
         n._edges = self._edges.copy()
         return n
 
-    def copy_prepend(self, *edges):
+    def copy_prepend(self, *edges) -> "BSEPath":
         n = self.copy()
         n.prepend(*edges)
         return n

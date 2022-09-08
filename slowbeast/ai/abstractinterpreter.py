@@ -3,7 +3,7 @@ from .executor import Executor as AIExecutor
 from ..interpreter.interpreter import Interpreter
 from ..util.debugging import print_stderr, dbg
 from io import TextIOWrapper
-from typing import Type
+from typing import Sized, Type
 
 
 class AIOptions(SEOptions):
@@ -48,7 +48,7 @@ class AbstractInterpreter(Interpreter):
         # DFS for now
         return states.pop()
 
-    def handle_new_states(self, newstates) -> None:
+    def handle_new_states(self, newstates: Sized) -> None:
         hs = self.handle_new_state
         for s in newstates:
             hs(s)

@@ -21,13 +21,13 @@ class Pointer(Value):
     def __repr__(self) -> str:
         return f"ptr({self._object.as_value()}, {self._offset})"
 
-    def object(self):
+    def object(self) -> Value:
         return self._object
 
     def offset(self):
         return self._offset
 
-    def as_value(self):
+    def as_value(self) -> str:
         return str(self)
 
     def is_concrete(self):

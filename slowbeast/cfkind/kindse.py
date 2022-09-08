@@ -28,7 +28,8 @@ from .overapproximations import overapprox_set
 from .relations import get_const_cmp_relations, get_var_relations
 from io import TextIOWrapper
 from slowbeast.cfkind.inductivesequence import InductiveSequence
-from typing import Optional, Sized
+from typing import List, Optional, Sized
+from slowbeast.solvers.symcrete import IncrementalSolver
 
 
 class KindSEOptions(KindSEOptions):
@@ -136,7 +137,7 @@ def report_state(stats, n, fn=print_stderr) -> None:
         stats.killed_paths += 1
 
 
-def strip_first_assume_edge(path: AnnotatedCFAPath):
+def strip_first_assume_edge(path: AnnotatedCFAPath) -> AnnotatedCFAPath:
     idx = path.first_assume_edge_idx()
     # we use this func only on loop edges, so it must contain the entry
     # condition
@@ -144,7 +145,7 @@ def strip_first_assume_edge(path: AnnotatedCFAPath):
     return path.subpath(idx + 1)
 
 
-def strip_last_assume_edge(path: AnnotatedCFAPath):
+def strip_last_assume_edge(path: AnnotatedCFAPath) -> AnnotatedCFAPath:
     idx = path.last_assume_edge_idx()
     # we use this func only on loop edges, so it must contain the entry
     # condition
@@ -152,7 +153,7 @@ def strip_last_assume_edge(path: AnnotatedCFAPath):
     return path.subpath(0, idx - 1)
 
 
-def strip_last_exit_edge(path: AnnotatedCFAPath, exits):
+def strip_last_exit_edge(path: AnnotatedCFAPath, exits) -> AnnotatedCFAPath:
     idx = path.last_edge_of_idx(exits)
     # we use this func only on loop edges, so it must contain the entry
     # condition
@@ -203,7 +204,7 @@ class InductiveSet:
             self.cI = IncrementalSolver()
             self.sets = []
 
-    def add(self, elem) -> None:
+    def add(self, elem: StatesSet) -> None:
         self.sets.append(elem)
         I = self.I
         cI = self.cI
@@ -274,7 +275,7 @@ class LoopInfo:
         return True
 
     def set_is_inductive_towards(
-        self, S, target, allow_infeasible_only: bool = False
+        self, S: StatesSet, target, allow_infeasible_only: bool = False
     ) -> bool:
         em = global_expr_mgr()
         solver = IncrementalSolver()
@@ -309,7 +310,7 @@ class LoopInfo:
         return has_feasible or allow_infeasible_only
 
 
-def is_seq_inductive(seq, executor, L: LoopInfo):
+def is_seq_inductive(seq, executor, L: LoopInfo) -> bool:
     return L.set_is_inductive(executor.create_set(seq.toannotation()))
 
 
@@ -337,7 +338,7 @@ class KindSEChecker(BaseKindSE):
         loc,
         A,
         program,
-        programstructure,
+        programstructure: Optional[ProgramStructure],
         opts: KindSEOptions,
         invariants=None,
         indsets=None,
@@ -438,7 +439,7 @@ class KindSEChecker(BaseKindSE):
             k += 1
         return Result.UNKNOWN if paths else Result.SAFE, paths
 
-    def handle_loop(self, loc, path, states):
+    def handle_loop(self, loc, path: AnnotatedCFAPath, states):
         assert (
             loc not in self.no_sum_loops
         ), "Handling a loop that should not be handled"
@@ -557,7 +558,7 @@ class KindSEChecker(BaseKindSE):
     #    return seq
 
     def initial_seq_from_last_iter(
-        self, E: StatesSet, path, L: LoopInfo
+        self, E: StatesSet, path: AnnotatedCFAPath, L: LoopInfo
     ) -> Optional[InductiveSequence]:
         """
         Strengthen the initial sequence through obtaining the
@@ -786,7 +787,7 @@ class KindSEChecker(BaseKindSE):
 
         return None
 
-    def safe_paths_from_iterations(self, E, path, L: LoopInfo):
+    def safe_paths_from_iterations(self, E, path: AnnotatedCFAPath, L: LoopInfo):
         # FIXME: do a proper analysis of whether the error loc is inside or outside the loop
         # instead of trying blindly
         I = self._safe_paths_err_outside(E, path, L)
@@ -843,7 +844,7 @@ class KindSEChecker(BaseKindSE):
 
         return None
 
-    def initial_sets_from_exits(self, E, path, L: LoopInfo):
+    def initial_sets_from_exits(self, E: StatesSet, path, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.

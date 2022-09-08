@@ -46,7 +46,7 @@ class Type:
     def bytewidth(self) -> int:
         return max(int(self._bitwidth / 8), 1)
 
-    def bitwidth(self):
+    def bitwidth(self) -> int:
         return self._bitwidth
 
     def is_pointer(self) -> bool:
@@ -67,8 +67,8 @@ class Type:
 
     def __eq__(self, x: object):
         return (
-            isinstance(x, Type) and
-            self.is_bool() == x.is_bool()
+            isinstance(x, Type)
+            and self.is_bool() == x.is_bool()
             and self.is_pointer() == x.is_pointer()
             and self.is_float() == x.is_float()
             and self.bitwidth() == x.bitwidth()
@@ -103,7 +103,7 @@ class PointerType(Type):
 
 
 class IntType(Type):
-    def __init__(self, bw) -> None:
+    def __init__(self, bw: int) -> None:
         Type.__init__(self, bw)
 
     def is_int(self) -> bool:
@@ -111,7 +111,7 @@ class IntType(Type):
 
 
 class FloatType(Type):
-    def __init__(self, bw) -> None:
+    def __init__(self, bw: int) -> None:
         Type.__init__(self, bw)
 
     def is_float(self) -> bool:

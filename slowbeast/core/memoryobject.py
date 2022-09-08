@@ -53,7 +53,7 @@ class MemoryObject:
     def is_zeroed(self) -> bool:
         return self._zeroed
 
-    def is_global(self):
+    def is_global(self) -> bool:
         return self._is_global
 
     def clear(self) -> None:

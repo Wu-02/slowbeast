@@ -66,7 +66,7 @@ class LazySymbolicMemoryModel(CoreMM):
             state.havoc()
         return None
 
-    def write(self, state, instr, value_op, to_op):
+    def write(self, state, instr, value_op, to_op: Union[Alloc, GlobalVariable]):
         to = state.get(to_op)
         if to is None:
             self.lazy_allocate(state, to_op)

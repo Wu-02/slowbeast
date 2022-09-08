@@ -85,7 +85,9 @@ class Memory:
     def __eq__(self, rhs: object):
         return self._objects == rhs._objects and self._cs == self._cs
 
-    def _allocate(self, size, instr=None, nm=None, objid=None, is_glob: bool = False):
+    def _allocate(
+        self, size, instr=None, nm=None, objid=None, is_glob: bool = False
+    ) -> MemoryObject:
         """Allocate a new memory object and return it"""
         o = self.create_memory_object(size, nm, objid, is_glob)
         assert o._is_ro() is False, "Created object is read-only (COW bug)"
@@ -134,7 +136,7 @@ class Memory:
     def has_global_object(self, moid) -> bool:
         return self._glob_objects.get(moid) is not None
 
-    def has_object(self, moid):
+    def has_object(self, moid) -> bool:
         return self._objects.get(moid) is not None or self.has_global_object(moid)
 
     def get_obj(self, moid: int):

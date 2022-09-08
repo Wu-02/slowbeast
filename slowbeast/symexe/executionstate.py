@@ -14,7 +14,8 @@ from slowbeast.ir.instruction import (
 from ..solvers.symcrete import solve_incrementally
 from slowbeast.util.debugging import warn, ldbgv
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
-from typing import List, TextIO, Union
+from typing import Optional, List, TextIO, Union
+from slowbeast.symexe.constraints import ConstraintsSet
 
 
 class Nondet:
@@ -77,7 +78,7 @@ class SEState(ExecutionState):
     def get_id(self):
         return self._id
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         """Syntactic comparison"""
         assert (
             self._executor is rhs._executor
@@ -142,7 +143,7 @@ class SEState(ExecutionState):
     def model(self):
         return dict(zip(self.nondet_values(), self.concretize(*self.nondet_values())))
 
-    def _copy_to(self, new):
+    def _copy_to(self, new: ExecutionState) -> ExecutionState:
         assert new is not self
         assert new.get_id() != self.get_id()
         super()._copy_to(new)  # cow copy of super class
@@ -675,7 +676,7 @@ class ThreadedSEState(SEState):
         self.pause_thread(idx)
         self._wait_mutex.setdefault(mtx, set()).add(self.thread(tid).get_id())
 
-    def exit_thread(self, retval, tid=None) -> None:
+    def exit_thread(self, retval, tid: Optional[Thread] = None) -> None:
         """Exit thread and wait for join (if not detached)"""
         if tid is None:
             tid = self.thread().get_id()
@@ -698,7 +699,7 @@ class ThreadedSEState(SEState):
             t.pc = t.pc.get_next_inst()
             self._wait_join.pop(tid)
 
-    def join_threads(self, tid, totid=None) -> None:
+    def join_threads(self, tid, totid: Optional[Thread] = None) -> None:
         """
         tid: id of the thread to join
         totid: id of the thread to which to join (None means the current thread)

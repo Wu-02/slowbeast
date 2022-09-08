@@ -1,7 +1,7 @@
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import Branch, Call, Assert, Return
 from slowbeast.ir.program import Program
-from typing import Union
+from typing import Dict, Union
 
 
 class CFA:
@@ -214,7 +214,7 @@ class CFA:
         assert isinstance(l, CFA.Location), l
         return l in self._errors
 
-    def from_program(prog: Program, callgraph=None):
+    def from_program(prog: Program, callgraph=None) -> Dict[Function, "CFA"]:
         """
         Build CFAs from program and populate call edges
         """

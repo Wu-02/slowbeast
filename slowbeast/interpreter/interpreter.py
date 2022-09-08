@@ -1,7 +1,9 @@
 from .interactive import InteractiveHandler
 from ..core.executor import Executor
 from ..util.debugging import print_stderr, dbg
-from typing import Sized
+from typing import Optional, Sized
+from slowbeast.core.executor import Executor
+from slowbeast.interpreter.interactive import InteractiveHandler
 
 
 class ExecutionOptions:
@@ -53,7 +55,7 @@ class Interpreter:
     def get_program(self):
         return self._program
 
-    def get_options(self):
+    def get_options(self) -> ExecutionOptions:
         return self._options
 
     def executor(self):

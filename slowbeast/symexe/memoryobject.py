@@ -5,7 +5,7 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type, IntType, Bytes
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
-from typing import Optional, Sized
+from typing import List, Tuple, Optional, Sized
 from typing_extensions import SupportsIndex
 
 
@@ -73,7 +73,9 @@ def read_bytes(values: Sized, offval, size, bts, zeroed):
     return val, None
 
 
-def mo_to_bytes(values, size: SupportsIndex):
+def mo_to_bytes(
+    values, size: SupportsIndex
+) -> Tuple[Optional[List[None]], Optional[MemError]]:
     dbgv("Promoting MO to bytes", color="gray")
     newvalues = [None] * size
     for o, val in values.items():

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Tuple, Optional
 
 
 class Monomial:
@@ -177,7 +177,7 @@ class Polynomial:
             else:
                 raise NotImplementedError(f"Unhandled polynomial expression: {r}")
 
-    def split(self, mons):
+    def split(self, mons) -> Tuple["Polynomial", "Polynomial"]:
         """
         Put monomials from 'self' that match 'mons' to one polynom
         and the rest to other polynom
@@ -375,7 +375,7 @@ class ArithFormula:
             return "≥u"
         return None
 
-    def type(self):
+    def type(self) -> "ArithFormula":
         return self._ty
 
     def value(self):

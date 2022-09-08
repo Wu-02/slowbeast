@@ -6,7 +6,7 @@ from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from .executor import Executor as SExecutor
 from io import TextIOWrapper
-from typing import Type
+from typing import Sized, Type
 
 
 class FutureExecutor(SExecutor):
@@ -104,7 +104,7 @@ class FutureSymbolicExecutor(Interpreter):
         # DFS for now
         return states.pop()
 
-    def handle_new_states(self, newstates) -> None:
+    def handle_new_states(self, newstates: Sized) -> None:
         hs = self.handle_new_state
         for s in newstates:
             hs(s)

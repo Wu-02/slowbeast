@@ -3,7 +3,7 @@ from slowbeast.analysis.dfs import DFSVisitor, DFSEdgeType
 from slowbeast.analysis.scc import strongly_connected_components_iterative
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 from slowbeast.util.debugging import dbg
-from typing import Optional
+from typing import List, Optional
 
 
 class Loop:
@@ -65,7 +65,7 @@ class Loop:
             queue = newqueue
         return result
 
-    def paths_to_header(self, frm):
+    def paths_to_header(self, frm) -> List[AnnotatedCFAPath]:
         """
         All paths from the given node to header
         """
@@ -84,7 +84,7 @@ class Loop:
             queue = newqueue
         return result
 
-    def get_exit_paths(self):
+    def get_exit_paths(self) -> List[AnnotatedCFAPath]:
         """
         All paths from header to exit edge
         """
@@ -128,7 +128,7 @@ class Loop:
         return False
 
 
-def _construct_simple_loop(vertices, parent, loc) -> Optional[Loop]:
+def _construct_simple_loop(vertices, parent, loc: CFA.Location) -> Optional[Loop]:
     """
     Construct a loop that has no nested loops. Fail if a nested loop is found.
     """

@@ -434,7 +434,7 @@ class BVFormula(ArithFormula):
     by merging the operands into sets (if the operation is commutative).
     """
 
-    def __init__(self, ty, *operands) -> None:
+    def __init__(self, ty: ArithFormula, *operands) -> None:
         super().__init__(ty, *operands)
 
     def create(expr: ArithFormula) -> Optional[ArithFormula]:
@@ -1028,7 +1028,7 @@ class Expr(Value):
     metadata like a type (and hash in the future, etc.)
     """
 
-    KIND = SYMBOLIC_DOMAIN_KIND
+    KIND: int = SYMBOLIC_DOMAIN_KIND
 
     __slots__ = "_expr"
 
@@ -1059,7 +1059,7 @@ class Expr(Value):
     def is_symbolic(self) -> bool:
         return True
 
-    def as_value(self):
+    def as_value(self) -> str:
         return str(self)
 
     def subexpressions(self) -> Generator[Union[ConcreteVal, "Expr"], None, None]:
@@ -1247,7 +1247,7 @@ class NondetInstrResult(Expr):
 
     __slots__ = "_instr"
 
-    def __init__(self, e, t, instr) -> None:
+    def __init__(self, e, t: Type, instr) -> None:
         super().__init__(e, t)
         self._instr = instr
 
@@ -1284,7 +1284,7 @@ class NondetLoad(NondetInstrResult):
         assert isinstance(expr, Expr)
         return NondetLoad(expr.unwrap(), expr.type(), load, alloc)
 
-    def rhs_repr(self):
+    def rhs_repr(self) -> str:
         return Expr.__repr__(self)
 
     def __repr__(self) -> str:
@@ -1299,7 +1299,7 @@ class Future(Expr):
 
     __slots__ = "_instr", "_state"
 
-    def __init__(self, e, t, instr, state) -> None:
+    def __init__(self, e, t: Type, instr, state) -> None:
         super().__init__(e, t)
         # to which instr we assigned the nondet value
         self._instr = instr
@@ -1436,23 +1436,23 @@ class BVSymbolicDomain:
         return Expr(Bool(name), BoolType())
 
     @staticmethod
-    def Int1(name: str):
+    def Int1(name: str) -> Expr:
         return BVSymbolicDomain.BVVar(name, 1)
 
     @staticmethod
-    def Int8(name: str):
+    def Int8(name: str) -> Expr:
         return BVSymbolicDomain.BVVar(name, 8)
 
     @staticmethod
-    def Int16(name: str):
+    def Int16(name: str) -> Expr:
         return BVSymbolicDomain.BVVar(name, 16)
 
     @staticmethod
-    def Int32(name: str):
+    def Int32(name: str) -> Expr:
         return BVSymbolicDomain.BVVar(name, 32)
 
     @staticmethod
-    def Int64(name: str):
+    def Int64(name: str) -> Expr:
         return BVSymbolicDomain.BVVar(name, 64)
 
     ##

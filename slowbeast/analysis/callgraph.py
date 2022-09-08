@@ -102,7 +102,7 @@ class CallGraph:
 
         return reachable
 
-    def prune_unreachable(self, frm) -> None:
+    def prune_unreachable(self, frm: Node) -> None:
         reach = self.get_reachable(frm)
         nonreach = [(k, n) for (k, n) in self._nodes.items() if n not in reach]
         for (k, n) in nonreach:

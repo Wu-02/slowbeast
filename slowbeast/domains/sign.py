@@ -6,7 +6,7 @@ from . import SIGN_DOMAIN_KIND
 from typing import Optional, Union
 
 
-def abstract(v) -> int:
+def abstract(v: int) -> int:
     if v < 0:
         v = ZOValue.LT0
     else:
@@ -19,7 +19,7 @@ class ZOValue(Value):
     Extends concrete domain by -, 0, +  abstractions
     """
 
-    KIND = SIGN_DOMAIN_KIND
+    KIND: int = SIGN_DOMAIN_KIND
 
     # values
     LT0 = -2
@@ -61,10 +61,10 @@ class ZOValue(Value):
     def is_concrete(self):
         return self.value() == ZOValue.ZERO
 
-    def value(self):
+    def value(self) -> Union[bool, float, int]:
         return self._value
 
-    def as_value(self):
+    def as_value(self) -> Optional[str]:
         return ZOValue.val_to_str(self.value())
 
     def __hash__(self):
@@ -77,7 +77,7 @@ class ZOValue(Value):
         return f"<{ZOValue.val_to_str(self.value())}:{self.type()}>"
 
 
-def get_unsigned(v) -> int:
+def get_unsigned(v: int) -> int:
     if v == ZOValue.LT0:
         return ZOValue.GT0
     if v == ZOValue.LE0:
@@ -103,7 +103,7 @@ class ZODomain:
         return True
 
     @staticmethod
-    def lift(v) -> ZOValue:
+    def lift(v: ZOValue) -> ZOValue:
         if v.KIND == 3:
             return v
         if v.KIND == 1:

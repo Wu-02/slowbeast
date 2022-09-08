@@ -107,7 +107,7 @@ class ExprAnnotation(Annotation):
     def do_input_substitutions(self, state):
         return self._sd.do_input_substitutions(state)
 
-    def has_all_substitutions(self, state):
+    def has_all_substitutions(self, state) -> bool:
         return self._sd.has_all_substitutions(state)
 
     def eval_subs(self, state):

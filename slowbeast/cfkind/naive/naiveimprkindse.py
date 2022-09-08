@@ -9,10 +9,13 @@ from slowbeast.cfkind.naive.naivekindse import Result, KindSeOptions
 from slowbeast.symexe.executionstate import SEState
 from slowbeast.symexe.symbolicexecution import SEOptions
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
+from slowbeast.cfkind import KindSEOptions
 
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions()) -> None:
+    def __init__(
+        self, prog, ohandler=None, opts: KindSEOptions = KindSeOptions()
+    ) -> None:
         super(KindSymbolicExecutor, self).__init__(prog, opts)
 
         self.cfgs = {}

@@ -20,7 +20,7 @@ class Parser:
         self._metadata_opts = ["c"]
         self._tus = {}
 
-    def fun(self, fn):
+    def fun(self, fn: str):
         return self.program.fun(fn)
 
     def _add_mapping(self, celem, sbinst) -> None:

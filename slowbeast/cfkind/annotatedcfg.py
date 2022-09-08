@@ -103,16 +103,16 @@ class AnnotatedCFGPath(CFGPath):
         self._precondition = []
         self._postcondition = []
 
-    def add_loc_annot_after(self, annot, loc) -> None:
+    def add_loc_annot_after(self, annot, loc: Union[AnnotatedNode, BBlock]) -> None:
         self.locannotationsafter.setdefault(_get_loc_key(loc), []).append(annot)
 
-    def get_loc_annots_after(self, loc):
+    def get_loc_annots_after(self, loc: Union[AnnotatedNode, BBlock]):
         return self.locannotationsafter.get(_get_loc_key(loc))
 
-    def add_loc_annot_before(self, annot, loc) -> None:
+    def add_loc_annot_before(self, annot, loc: Union[AnnotatedNode, BBlock]) -> None:
         self.locannotations.setdefault(_get_loc_key(loc), []).append(annot)
 
-    def get_loc_annots_before(self, loc):
+    def get_loc_annots_before(self, loc: Union[AnnotatedNode, BBlock]):
         return self.locannotations.get(_get_loc_key(loc))
 
     # FIXME: this can be also assert, do we want to call it post-condition?

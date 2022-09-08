@@ -226,7 +226,7 @@ class Parser:
     def bblock(self, llvmb):
         return self._bblocks[llvmb]
 
-    def fun(self, fn):
+    def fun(self, fn: str):
         return self.program.fun(fn)
 
     def _addMapping(self, llinst, sbinst) -> None:
@@ -283,7 +283,7 @@ class Parser:
         self._addMapping(inst, L)
         return [L]
 
-    def _createRet(self, inst):
+    def _createRet(self, inst) -> Union[List[Return], List[Union[None, Call, Return]]]:
         operands = get_llvm_operands(inst)
         assert len(operands) <= 1, "Invalid number of operands for ret"
 
@@ -419,7 +419,16 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createCmp(self, inst, isfloat: bool = False):
+    def _createCmp(
+        self, inst, isfloat: bool = False
+    ) -> Union[
+        List[Cmp],
+        List[FpOp],
+        List[Union[And, Cmp, FpOp]],
+        List[Union[And, FpOp]],
+        List[Union[Cmp, FpOp]],
+        Tuple[Optional[bool]],
+    ]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
         op1 = self.operand(operands[0])
@@ -493,7 +502,14 @@ class Parser:
             self._addMapping(inst, mp)
         return seq
 
-    def _createThreadFun(self, inst, operands: Sized, fun):
+    def _createThreadFun(
+        self, inst, operands: Sized, fun
+    ) -> Union[
+        List[ThreadExit],
+        List[Union[Call, Store]],
+        List[Union[Call, Store, ThreadJoin]],
+        List[Union[Call, ThreadJoin]],
+    ]:
         if fun == "pthread_join":
             assert len(operands) == 3  # +1 for called fun
             ty = get_sb_type(self.llvmmodule, operands[1].type.element_type)
@@ -596,7 +612,7 @@ class Parser:
         self._addMapping(inst, C)
         return [C]
 
-    def _handleAsm(self, inst):
+    def _handleAsm(self, inst) -> List[Call]:
         ty = inst.type
         print_stderr(
             f"Unsupported ASM, taking as noop with nondet return value:", color="yellow"
@@ -979,7 +995,7 @@ class Parser:
 
         return self.program
 
-    def parse(self, path):
+    def parse(self, path) -> Program:
         return self._parse(path)
 
 

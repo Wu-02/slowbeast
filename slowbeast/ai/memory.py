@@ -122,7 +122,7 @@ class AIMemory(CoreMemory):
         assert not is_global, "Not supported atm"
         return AIMemoryObject(size, nm, objid)
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         return (
             self._objects == rhs._objects
             and self._glob_objects == rhs._glob_objects
@@ -159,7 +159,7 @@ class AIMemoryModel(MemoryModel):
         dbgv(f"Lazily allocated {op}", color="WHITE")
         assert state.get(op), "Did not bind an allocated value"
 
-    def write(self, state, value_op, to_op):
+    def write(self, state, value_op, to_op: Union[Alloc, GlobalVariable]):
         value = state.eval(value_op)
         to = state.get(to_op)
         if to is None:
@@ -196,7 +196,9 @@ class AIMemoryModel(MemoryModel):
 
         return val, err
 
-    def read(self, state, to_op: Load, from_op, bytes_num: int):
+    def read(
+        self, state, to_op: Load, from_op: Union[Alloc, GlobalVariable], bytes_num: int
+    ):
         assert isinstance(bytes_num, int), f"Invalid number of bytes: {bytes_num}"
         frm = state.get(from_op)
         if frm is None:

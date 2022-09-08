@@ -1,9 +1,12 @@
 from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain
 from .concrete import ConcreteVal
-from slowbeast.domains.symbolic import SymbolicDomain
+from slowbeast.domains.symbolic import Expr, SymbolicDomain
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import BoolType, IntType, Type
 from . import SYMCRETE_DOMAIN_KIND
+from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_bool import ConcreteBool
+from typing import Union
 
 optimize_exprs = True
 
@@ -19,7 +22,9 @@ class ExprOptIntf:
 
 
 class SymbolicExprOpt(ExprOptIntf):
-    def optimize(expr: ExprOptIntf, *assumptions):
+    def optimize(
+        expr: ExprOptIntf, *assumptions
+    ) -> Union[ConcreteVal, Expr, ExprOptIntf]:
         if not optimize_exprs:
             return expr
 
@@ -48,14 +53,14 @@ class SymcreteDomain:
     SMT formulas, but we'll be ready for the future :)
     """
 
-    KIND = SYMCRETE_DOMAIN_KIND
+    KIND: int = SYMCRETE_DOMAIN_KIND
 
     __slots__ = "_names"
 
     def __init__(self) -> None:
         self._names = {}
 
-    def ConcreteVal(self, c, bw):
+    def ConcreteVal(self, c: bool, bw) -> ConcreteBool:
         return ConcreteIntFloatDomain.Value(c, bw)
 
     def Var(self, name: str, ty: Type):
@@ -72,7 +77,7 @@ class SymcreteDomain:
         assert s, "No var was created"
         return s
 
-    def Bool(self, name):
+    def Bool(self, name: str):
         return self.Var(name, BoolType())
 
     # def subexpressions(self, expr):
@@ -86,7 +91,7 @@ class SymcreteDomain:
             return expr
         return SymbolicExprOpt.optimize(expr)
 
-    def fresh_value(self, name: str, ty: Type):
+    def fresh_value(self, name: str, ty: Type) -> Expr:
         assert isinstance(name, str)
         names = self._names
         idx = name.rfind("#")
@@ -106,13 +111,13 @@ class SymcreteDomain:
         names[name] = s
         return s
 
-    def substitute(self, expr, *vals):
+    def substitute(self, expr, *vals) -> Union[ConcreteVal, Expr]:
         if ConcreteIntFloatDomain.belongto(expr):
             return expr
         lift = self.lift
         return SymbolicDomain.substitute(expr, *((lift(a), lift(b)) for (a, b) in vals))
 
-    def equals(self, e1, e2):
+    def equals(self, e1: Value, e2: Value):
         """
         Values are syntactically equal
         """
@@ -124,28 +129,28 @@ class SymcreteDomain:
     def drop_value(self, name) -> None:
         self._names.pop(name)
 
-    def Int1(self, name):
+    def Int1(self, name: str):
         return self.Var(name, IntType(1))
 
-    def Int8(self, name):
+    def Int8(self, name: str):
         return self.Var(name, IntType(8))
 
-    def Int16(self, name):
+    def Int16(self, name: str):
         return self.Var(name, IntType(16))
 
-    def Int32(self, name):
+    def Int32(self, name: str):
         return self.Var(name, IntType(32))
 
-    def Int64(self, name):
+    def Int64(self, name: str):
         return self.Var(name, IntType(64))
 
-    def lift(self, v: Value):
+    def lift(self, v: Value) -> Expr:
         return SymbolicDomain.lift(v)
 
-    def get_true(self):
+    def get_true(self) -> Expr:
         return SymbolicDomain.get_true()
 
-    def get_false(self):
+    def get_false(self) -> Expr:
         return SymbolicDomain.get_false()
 
     def conjunction(self, *args):
@@ -182,7 +187,7 @@ class SymcreteDomain:
         lift = self.lift
         return opt(SymbolicDomain.disjunction(*map(lift, args)))
 
-    def Ite(self, c, a, b):
+    def Ite(self, c: Value, a, b):
         if ConcreteIntFloatDomain.belongto(c):
             cval = c.value()
             if cval is True:
@@ -194,41 +199,41 @@ class SymcreteDomain:
         lift = self.lift
         return opt(SymbolicDomain.Ite(lift(c), lift(a), lift(b)))
 
-    def And(self, a, b):
+    def And(self, a: Value, b: Value):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.And(a, b)
         lift = self.lift
         return opt(SymbolicDomain.And(lift(a), lift(b)))
 
-    def Or(self, a, b):
+    def Or(self, a: Value, b: Value):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Or(a, b)
         lift = self.lift
         return opt(SymbolicDomain.Or(lift(a), lift(b)))
 
-    def Xor(self, a, b):
+    def Xor(self, a: Value, b: Value):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Xor(a, b)
         lift = self.lift
         return opt(SymbolicDomain.Xor(lift(a), lift(b)))
 
-    def Not(self, a):
+    def Not(self, a: Value):
         if ConcreteIntFloatDomain.belongto(a):
             return ConcreteIntFloatDomain.Not(a)
         return opt(SymbolicDomain.Not(self.lift(a)))
 
-    def Neg(self, a, isfloat):
+    def Neg(self, a: Value, isfloat):
         """Return the negated number"""
         if ConcreteIntFloatDomain.belongto(a):
             return ConcreteIntFloatDomain.Neg(a, isfloat)
         return opt(SymbolicDomain.Neg(self.lift(a), isfloat))
 
-    def Abs(self, a):
+    def Abs(self, a: Value):
         if ConcreteIntFloatDomain.belongto(a):
             return ConcreteIntFloatDomain.Abs(a)
         return opt(SymbolicDomain.Abs(self.lift(a)))
 
-    def FpOp(self, op, val):
+    def FpOp(self, op, val: Value):
         if ConcreteIntFloatDomain.belongto(val):
             return ConcreteIntFloatDomain.FpOp(op, val)
         r = SymbolicDomain.FpOp(op, self.lift(val))
@@ -246,7 +251,7 @@ class SymcreteDomain:
             return ConcreteIntFloatDomain.SExt(a, b)
         return opt(SymbolicDomain.SExt(a, b))
 
-    def Cast(self, a: Value, ty: Type):
+    def Cast(self, a: Value, ty: Type) -> Union[None, Expr, Value]:
         """reinterpret cast"""
         assert isinstance(ty, Type)
         if a.type() == ty:
@@ -259,7 +264,7 @@ class SymcreteDomain:
             return ConcreteIntFloatDomain.Cast(a, ty)
         return SymbolicDomain.Cast(a, ty)
 
-    def BitCast(self, a: Value, ty: Type):
+    def BitCast(self, a: Value, ty: Type) -> Union[None, Expr, Value]:
         """static cast"""
         assert isinstance(ty, Type)
         if a.type() == ty:
@@ -284,17 +289,17 @@ class SymcreteDomain:
         lift = self.lift
         return opt(SymbolicDomain.Concat(*map(lift, args)))
 
-    def Shl(self, a, b):
+    def Shl(self, a: Value, b: Value):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Shl(a, b)
         return opt(SymbolicDomain.Shl(self.lift(a), self.lift(b)))
 
-    def AShr(self, a, b):
+    def AShr(self, a: Value, b: Value):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.AShr(a, b)
         return opt(SymbolicDomain.AShr(self.lift(a), self.lift(b)))
 
-    def LShr(self, a, b):
+    def LShr(self, a: Value, b: Value):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.LShr(a, b)
         return opt(SymbolicDomain.LShr(self.lift(a), self.lift(b)))
@@ -302,37 +307,37 @@ class SymcreteDomain:
     ##
     # Relational operators
 
-    def Le(self, a, b, unsigned: bool = False, isfloat: bool = False):
+    def Le(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Le(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Le(lift(a), lift(b), unsigned, isfloat))
 
-    def Lt(self, a, b, unsigned: bool = False, isfloat: bool = False):
+    def Lt(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Lt(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Lt(lift(a), lift(b), unsigned, isfloat))
 
-    def Ge(self, a, b, unsigned: bool = False, isfloat: bool = False):
+    def Ge(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Ge(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Ge(lift(a), lift(b), unsigned, isfloat))
 
-    def Gt(self, a, b, unsigned: bool = False, isfloat: bool = False):
+    def Gt(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Gt(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned, isfloat))
 
-    def Eq(self, a, b, unsigned: bool = False, isfloat: bool = False):
+    def Eq(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Eq(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Eq(lift(a), lift(b), unsigned, isfloat))
 
-    def Ne(self, a, b, unsigned: bool = False, isfloat: bool = False):
+    def Ne(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Ne(a, b, unsigned, isfloat)
         lift = self.lift
@@ -351,7 +356,7 @@ class SymcreteDomain:
         lift = self.lift
         return opt(SymbolicDomain.Add(lift(a), lift(b), isfloat))
 
-    def Sub(self, a, b, isfloat: bool = False):
+    def Sub(self, a, b: Value, isfloat: bool = False):
         if ConcreteIntFloatDomain.belongto(b):
             if b.value() == 0:
                 return a
@@ -378,7 +383,7 @@ class SymcreteDomain:
         lift = self.lift
         return opt(SymbolicDomain.Mul(lift(a), lift(b), isfloat))
 
-    def Div(self, a, b, unsigned: bool = False, isfloat: bool = False):
+    def Div(self, a, b: Value, unsigned: bool = False, isfloat: bool = False):
         if ConcreteIntFloatDomain.belongto(a):
             if a.value() == 0:
                 return a
@@ -387,7 +392,7 @@ class SymcreteDomain:
         lift = self.lift
         return opt(SymbolicDomain.Div(lift(a), lift(b), unsigned, isfloat))
 
-    def Rem(self, a, b, unsigned: bool = False):
+    def Rem(self, a: Value, b: Value, unsigned: bool = False):
         if ConcreteIntFloatDomain.belongto(a, b):
             return ConcreteIntFloatDomain.Rem(a, b, unsigned)
         lift = self.lift

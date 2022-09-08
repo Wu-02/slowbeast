@@ -2,7 +2,7 @@ from copy import copy
 from sys import stdout
 
 from slowbeast.cfkind.annotatedcfg import CFGPath
-from typing import TextIO
+from typing import List, TextIO
 
 
 class InductionPath:
@@ -33,7 +33,7 @@ class InductionPath:
     def reaches_assert(self):
         return self.path.reaches_assert()
 
-    def extend(self):
+    def extend(self) -> List[InductionPath]:
         last = self.path.last()
         if last:
             succs = last.successors()

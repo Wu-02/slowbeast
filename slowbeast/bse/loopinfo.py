@@ -1,5 +1,5 @@
 from slowbeast.bse.bse import check_paths
-from slowbeast.symexe.statesset import union
+from slowbeast.symexe.statesset import StatesSet, union
 from typing import Tuple
 
 
@@ -56,7 +56,7 @@ class LoopInfo:
     # return True
 
     def set_is_inductive_towards(
-        self, S, target, allow_infeasible_only: bool = False
+        self, S: StatesSet, target, allow_infeasible_only: bool = False
     ) -> bool:
         r = check_paths(self.checker, self.loop.paths(), pre=S, post=union(S, target))
         if r.errors:
