@@ -3,10 +3,11 @@ from struct import pack, unpack
 
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
-from slowbeast.ir.types import IntType, BoolType, Type, FloatType
+from slowbeast.ir.types import IntType, Type, FloatType
 from slowbeast.util.debugging import FIXME
 from . import dom_is_concrete
 from .concrete import ConcreteVal
+from .concrete_bool import ConcreteBool
 
 
 def trunc_to_float(x, bw):
@@ -77,11 +78,6 @@ def to_fp(x, unsigned=False):
 def wrap_to_bw(x, bw):
     m = 1 << bw
     return x % m
-
-class ConcreteBool(ConcreteVal):
-    def __init__(self, b):
-        assert isinstance(b, bool), b
-        super().__init__(b, BoolType())
 
 
 class ConcreteInt(ConcreteVal):

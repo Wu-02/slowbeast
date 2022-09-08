@@ -3,7 +3,8 @@ from random import getrandbits
 import slowbeast.domains.concrete
 from slowbeast.core.errors import AssertFailError, GenericError
 from slowbeast.core.executor import Executor as ConcreteExecutor
-from slowbeast.domains.concrete_int_float import dom_is_concrete, ConcreteBool
+from slowbeast.domains.concrete_int_float import dom_is_concrete
+from ..domains.concrete_bool import ConcreteBool
 from ..domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.value import Value
