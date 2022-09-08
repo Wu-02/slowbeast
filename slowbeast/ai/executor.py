@@ -3,7 +3,7 @@ from ..domains.concrete_bool import ConcreteBool
 from slowbeast.domains.pointer import Pointer
 
 # from slowbeast.domains.sign import ZODomain
-from slowbeast.domains.signul import SignULDomain as Domain
+from slowbeast.domains.signul import SignULDomain, SignULDomain as Domain
 from slowbeast.domains.value import Value
 from .executionstate import AbstractState
 from .memory import AIMemoryModel
@@ -11,10 +11,23 @@ from ..core.errors import AssertFailError
 from ..core.executor import Executor as ConcreteExecutor
 from ..ir.instruction import *
 from ..util.debugging import dbgv
+from slowbeast.ai.executionstate import AbstractState
+from slowbeast.ai.memory import AIMemoryModel
+from slowbeast.ir.instruction import (
+    Assert,
+    Assume,
+    BinaryOperation,
+    Branch,
+    Call,
+    Cmp,
+    UnaryOperation,
+    ValueInstruction,
+)
+from typing import Optional
 
 
 class AIStats:
-    def __init__(self):
+    def __init__(self) -> None:
         # number of branch instructions
         self.branchings = 0
         # number of branch instructions where we forked
@@ -47,7 +60,9 @@ def eval_condition(state, cond: ValueInstruction):
 
 
 class Executor(ConcreteExecutor):
-    def __init__(self, program, opts, memorymodel=None):
+    def __init__(
+        self, program, opts, memorymodel: Optional[AIMemoryModel] = None
+    ) -> None:
         if memorymodel is None:
             memorymodel = AIMemoryModel(opts)
         super(Executor, self).__init__(program, opts, memorymodel)

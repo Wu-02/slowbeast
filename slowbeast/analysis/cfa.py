@@ -1,7 +1,6 @@
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import Branch, Call, Assert, Return
 from slowbeast.ir.program import Program
-from slowbeast.analysis.cfa.CFA import Edge, Location
 from typing import Union
 
 

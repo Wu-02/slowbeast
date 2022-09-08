@@ -1,15 +1,16 @@
 from ..util.debugging import dbg
+from typing import Sized
 
 
 class InteractiveHandler:
-    def __init__(self, interpreter):
+    def __init__(self, interpreter) -> None:
         self.interpreter = interpreter
         self._last_query = None
         self._stop_next_time = True
         self._break_inst = []
         self._break_pathid = []
 
-    def _shouldSkip(self, s):
+    def _shouldSkip(self, s) -> bool:
         if self._stop_next_time:
             return False
         if s.get_id() in self._break_pathid:
@@ -18,7 +19,7 @@ class InteractiveHandler:
             return False
         return True
 
-    def prompt(self, s):
+    def prompt(self, s) -> None:
         """s = currently executed state
         newstates = states generated
         """
@@ -28,7 +29,7 @@ class InteractiveHandler:
             print("Exiting...")
             exit(0)
 
-    def _prompt(self, s):
+    def _prompt(self, s) -> None:
         if self._shouldSkip(s):
             return
 
@@ -56,7 +57,7 @@ class InteractiveHandler:
             return False
         return False
 
-    def _handle(self, q, s):
+    def _handle(self, q, s) -> bool:
         dbg(f"query: {q}")
         query = q.split()
         if len(query) < 1:
@@ -92,7 +93,7 @@ class InteractiveHandler:
                 return s
         return None
 
-    def handle_break(self, query):
+    def handle_break(self, query) -> None:
         if not query:
             print("Break on instructions: ", self._break_inst)
             print("Break on path ID: ", self._break_pathid)
@@ -105,7 +106,7 @@ class InteractiveHandler:
         # elif query[0] in ['s', 'state']: # NOTE: will not work, states do not
         # have any unique id
 
-    def handle_print(self, query, state):
+    def handle_print(self, query: Sized, state) -> None:
         if not query:
             raise RuntimeError("Invalid arguments to print")
         if query[0] == "states":

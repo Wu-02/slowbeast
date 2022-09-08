@@ -2,6 +2,7 @@ from copy import copy
 from sys import stdout
 
 from slowbeast.cfkind.annotatedcfg import CFGPath
+from typing import TextIO
 
 
 class InductionPath:
@@ -11,21 +12,21 @@ class InductionPath:
     for reachable errors
     """
 
-    def __init__(self, cfg, state, blocks=[]):
+    def __init__(self, cfg, state, blocks=[]) -> None:
         self.cfg = cfg
         self.state = state
         self.path = CFGPath(blocks)
 
-    def copy(self):
+    def copy(self) -> "InductionPath":
         return InductionPath(self.cfg, self.state.copy(), copy(self.path.locations()))
 
     def get_state(self):
         return self.state
 
-    def get_path(self):
+    def get_path(self) -> CFGPath:
         return self.path
 
-    def append_location(self, loc):
+    def append_location(self, loc) -> "InductionPath":
         self.path.append(loc)
         return self
 
@@ -54,10 +55,10 @@ class InductionPath:
 
         return [s for s in succs if s.has_assert()]
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO = stdout) -> None:
         stream.write(f"state: {self.state.get_id()}\n")
         stream.write("path: ")
         self.path.dump(stream)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"({self.state.get_id()}):: {self.path}"

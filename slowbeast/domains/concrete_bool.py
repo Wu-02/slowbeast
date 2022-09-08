@@ -3,6 +3,6 @@ from slowbeast.ir.types import BoolType
 
 
 class ConcreteBool(ConcreteVal):
-    def __init__(self, b):
+    def __init__(self, b: bool) -> None:
         assert isinstance(b, bool), b
         super().__init__(b, BoolType())

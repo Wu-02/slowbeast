@@ -1,6 +1,4 @@
-from .cfa import CFA
 from slowbeast.analysis.cfa import CFA
-from slowbeast.analysis.cfa.CFA import Location
 from typing import Optional
 
 
@@ -10,7 +8,7 @@ class DFSEdgeType:
     BACK = 3
     CROSS = 4
 
-    def tostr(val):
+    def tostr(val) -> Optional[str]:
         if val == DFSEdgeType.TREE:
             return "tree"
         elif val == DFSEdgeType.FORWARD:
@@ -22,18 +20,18 @@ class DFSEdgeType:
 
 
 class DFSData:
-    def __init__(self):
+    def __init__(self) -> None:
         self.visited = False
         self.innum = None
         self.outnum = None
 
 
 class DFSCounter:
-    def __init__(self):
+    def __init__(self) -> None:
         self.counter = 0
 
 
-def _get_id(x: Location):
+def _get_id(x: CFA.Location):
     if isinstance(x, CFA.Location):
         return x.id()
     return (x.bblock().get_id(),)
@@ -54,7 +52,7 @@ class DFSVisitor:
     def _getdata(self, node):
         return self._data.setdefault(node, DFSData())
 
-    def foreachedge(self, startnode: Location, fun, backtrackfun=None) -> None:
+    def foreachedge(self, startnode: CFA.Location, fun, backtrackfun=None) -> None:
         assert self._vertices is None or startnode in self._vertices
         assert self._stop_vertices is None or startnode not in self._stop_vertices
 
@@ -145,7 +143,7 @@ class DFSVisitor:
         if backtrackfun:
             backtrackfun(backtrackedge)
 
-    def dump(self, graph: CFA, outfl: Optional[str]=None) -> None:
+    def dump(self, graph: CFA, outfl: Optional[str] = None) -> None:
         out = None
         if outfl is None:
             from sys import stdout

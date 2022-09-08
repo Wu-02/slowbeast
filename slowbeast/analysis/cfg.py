@@ -44,7 +44,7 @@ class CFG:
             "This bblock Has several successors"
             return len(self._successors) > 1
 
-    def __init__(self, F):
+    def __init__(self, F) -> None:
         self._fun = F
         self._entry = None
         self._nodes = {}
@@ -97,7 +97,7 @@ class CFG:
         assert self.get_node(entrybb)
         self.set_entry(entrybb)
 
-    def dump(self, stream: TextIO=stdout) -> None:
+    def dump(self, stream: TextIO = stdout) -> None:
         for node in self._nodes.values():
             for succ in node.successors():
                 stream.write(f"{node.bblock().get_id()} -> {succ.bblock().get_id()}\n")
@@ -142,7 +142,7 @@ class CFGPath:
             return None
         return self._locations[-1]
 
-    def endswith(self, path) -> bool:
+    def endswith(self, path: Sized) -> bool:
         if len(self) < len(path):
             return False
 
@@ -162,7 +162,7 @@ class CFGPath:
     def length(self) -> int:
         return len(self._locations)
 
-    def dump(self, stream: TextIO=stdout) -> None:
+    def dump(self, stream: TextIO = stdout) -> None:
         stream.write(str(self))
         stream.write("\n")
 

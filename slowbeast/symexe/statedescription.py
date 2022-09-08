@@ -4,7 +4,7 @@ from slowbeast.domains.symbolic import Expr
 from slowbeast.ir.instruction import Instruction, Load
 
 
-def _get_cannonic_var(val, x, EM):
+def _get_cannonic_var(val, x: Load, EM):
     if isinstance(x, Load):
         name = f"{x.operand(0).as_value()}"
     else:
@@ -37,7 +37,7 @@ class StateDescription:
 
     __slots__ = "_expr", "_subs"
 
-    def __init__(self, expr, subs):
+    def __init__(self, expr, subs) -> None:
         assert expr.is_bool(), expr
         assert expr is not None and isinstance(expr, (Expr, ConcreteVal))
         assert subs is not None and isinstance(subs, dict)
@@ -60,14 +60,14 @@ class StateDescription:
     def expr(self):
         return self._expr
 
-    def set_expr(self, expr):
+    def set_expr(self, expr) -> None:
         """Set expression in this states decriptior. Use responsibly!"""
         self._expr = expr
 
     def substitutions(self):
         return self._subs
 
-    def has_all_substitutions(self, state):
+    def has_all_substitutions(self, state) -> bool:
         get = state.get
         for v, x in self._subs.items():
             assert v, (v, x)
@@ -136,13 +136,13 @@ class StateDescription:
             )
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{0}[{1}]".format(
             self._expr,
             ", ".join(f"{x.as_value()}->{val}" for (val, x) in self._subs.items()),
         )
 
-    def dump(self):
+    def dump(self) -> None:
         print("StateDescription:")
         print(f"> expr: {self._expr}")
         print(
@@ -199,7 +199,7 @@ def unify_state_descriptions(EM, sd1, sd2):
     return EM.simplify(expr1), EM.simplify(expr2), subs
 
 
-def state_to_description(state):
+def state_to_description(state) -> StateDescription:
     EM = state.expr_manager()
     return StateDescription(
         state.constraints_obj().as_formula(EM),

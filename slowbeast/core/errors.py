@@ -12,7 +12,7 @@ class Error:
     MEM_ERROR = 2
     GENERIC = 3
 
-    def __init__(self, t, d=None):
+    def __init__(self, t, d=None) -> None:
         self._type = t
         self._descr = d
 
@@ -28,7 +28,7 @@ class Error:
     def is_assertion_fail(self):
         return self._type == Error.ASSERTION_FAIL
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         ty = self._type
         if ty == Error.UNKNOWN:
             detail = "[unknown error]"
@@ -49,12 +49,12 @@ class Error:
 
 
 class AssertFailError(Error):
-    def __init__(self, descr=None):
+    def __init__(self, descr=None) -> None:
         super().__init__(Error.ASSERTION_FAIL, descr)
 
 
 class GenericError(Error):
-    def __init__(self, descr=None):
+    def __init__(self, descr=None) -> None:
         super().__init__(Error.GENERIC, descr)
 
 
@@ -71,7 +71,7 @@ class MemError(Error):
     INVALID_OBJ = 3
     UNSUPPORTED = 4
 
-    def __init__(self, t, descr=None):
+    def __init__(self, t, descr=None) -> None:
         super(MemError, self).__init__(Error.MEM_ERROR, descr)
         self._memerr = t
 
@@ -87,7 +87,7 @@ class MemError(Error):
     def is_unsupported(self):
         return self._memerr == MemError.UNSUPPORTED
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         err = self._memerr
         assert self.is_memory_error()
         if err == MemError.OOB_ACCESS:
@@ -103,5 +103,5 @@ class MemError(Error):
 
         return "[memory error] - {1}".format(super(MemError, self).__repr__(), detail)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.__repr__()} ({self.descr()})"

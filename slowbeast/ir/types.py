@@ -9,27 +9,27 @@
 POINTER_BIT_WIDTH = 64
 
 
-def get_pointer_bitwidth():
+def get_pointer_bitwidth() -> int:
     return POINTER_BIT_WIDTH
 
 
-def get_size_type():
+def get_size_type() -> "IntType":
     return IntType(POINTER_BIT_WIDTH)
 
 
-def get_offset_type():
+def get_offset_type() -> "IntType":
     return IntType(POINTER_BIT_WIDTH)
 
 
-def get_size_type_size():
+def get_size_type_size() -> int:
     return POINTER_BIT_WIDTH
 
 
-def get_offset_type_size():
+def get_offset_type_size() -> int:
     return POINTER_BIT_WIDTH
 
 
-def sb_set_pointer_width(width):
+def sb_set_pointer_width(width: int) -> None:
     global POINTER_BIT_WIDTH
     assert width % 8 == 0
     POINTER_BIT_WIDTH = width
@@ -39,33 +39,33 @@ def sb_set_pointer_width(width):
 class Type:
     __slots__ = "_bitwidth"
 
-    def __init__(self, bw):
+    def __init__(self, bw: int) -> None:
         assert isinstance(bw, int)
         self._bitwidth = bw
 
-    def bytewidth(self):
+    def bytewidth(self) -> int:
         return max(int(self._bitwidth / 8), 1)
 
     def bitwidth(self):
         return self._bitwidth
 
-    def is_pointer(self):
+    def is_pointer(self) -> bool:
         return False
 
-    def is_int(self):
+    def is_int(self) -> bool:
         return False
 
-    def is_float(self):
+    def is_float(self) -> bool:
         return False
 
-    def is_bytes(self):
+    def is_bytes(self) -> bool:
         """Uninterpreted sequence of bytes"""
         return False
 
-    def is_bool(self):
+    def is_bool(self) -> bool:
         return False
 
-    def __eq__(self, x):
+    def __eq__(self, x: object):
 
         return (
             self.is_bool() == x.is_bool()
@@ -74,7 +74,7 @@ class Type:
             and self.bitwidth() == x.bitwidth()
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.is_bool():
             return "bool"
         if self.is_float():
@@ -95,40 +95,40 @@ class Type:
 
 
 class PointerType(Type):
-    def __init__(self):
+    def __init__(self) -> None:
         Type.__init__(self, get_pointer_bitwidth())
 
-    def is_pointer(self):
+    def is_pointer(self) -> bool:
         return True
 
 
 class IntType(Type):
-    def __init__(self, bw):
+    def __init__(self, bw) -> None:
         Type.__init__(self, bw)
 
-    def is_int(self):
+    def is_int(self) -> bool:
         return True
 
 
 class FloatType(Type):
-    def __init__(self, bw):
+    def __init__(self, bw) -> None:
         Type.__init__(self, bw)
 
-    def is_float(self):
+    def is_float(self) -> bool:
         return True
 
 
 class BoolType(Type):
-    def __init__(self):
+    def __init__(self) -> None:
         Type.__init__(self, 1)
 
-    def is_bool(self):
+    def is_bool(self) -> bool:
         return True
 
 
 class Bytes(Type):
-    def __init__(self, bytenum):
+    def __init__(self, bytenum) -> None:
         Type.__init__(self, bytenum * 8)
 
-    def is_bytes(self):
+    def is_bytes(self) -> bool:
         return True

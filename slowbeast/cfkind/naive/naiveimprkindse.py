@@ -12,7 +12,7 @@ from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
-    def __init__(self, prog, ohandler=None, opts=KindSeOptions()):
+    def __init__(self, prog, ohandler=None, opts=KindSeOptions()) -> None:
         super(KindSymbolicExecutor, self).__init__(prog, opts)
 
         self.cfgs = {}
@@ -21,7 +21,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def get_cfg(self, F):
         return self.cfgs.setdefault(F, CFG(F))
 
-    def has_infeasible_suffix(self, path):
+    def has_infeasible_suffix(self, path) -> bool:
         for p in self._infeasibleSuffixes:
             if path.get_path().endswith(p):
                 return True
@@ -88,7 +88,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return newpaths, Result.UNSAFE if found_err else Result.SAFE
 
-    def extend_induction_hypothesis(self):
+    def extend_induction_hypothesis(self) -> None:
         pass  # we do all the work in check_induction_step
 
     def check_induction_step(self):

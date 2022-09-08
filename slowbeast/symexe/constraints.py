@@ -4,20 +4,20 @@ from slowbeast.solvers.symcrete import IncrementalSolver
 class ConstraintsSet:
     __slots__ = "_constraints"
 
-    def __init__(self, C=None):
+    def __init__(self, C=None) -> None:
         self._constraints = []
         if C:
             self.add(*C)
 
-    def copy(self):
+    def copy(self) -> "ConstraintsSet":
         n = ConstraintsSet()
         n._constraints = self._constraints.copy()
         return n
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         return self._constraints == rhs._constraints
 
-    def add(self, *C):
+    def add(self, *C) -> bool:
         """
         Return True if a constraint was added (the method may not add trivial
         constants as True/False)
@@ -53,19 +53,19 @@ class ConstraintsSet:
 class IncrementalConstraintsSet(ConstraintsSet):
     __slots__ = "_solver"
 
-    def __init__(self, C=None, solver=None):
+    def __init__(self, C=None, solver=None) -> None:
         self._solver = solver or IncrementalSolver()
         super().__init__(C)
 
     def solver(self):
         return self._solver
 
-    def copy(self):
+    def copy(self) -> "IncrementalConstraintsSet":
         n = IncrementalConstraintsSet(solver=self._solver.copy())
         n._constraints = self._constraints.copy()
         return n
 
-    def add(self, *C):
+    def add(self, *C) -> bool:
         """
         Return True if a constraint was added (the method may not add trivial
         constants as True/False)

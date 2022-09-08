@@ -1,8 +1,9 @@
 from slowbeast.cfkind import KindSEOptions
-from slowbeast.symexe.executor import Executor as SExecutor
+from slowbeast.symexe.executor import Executor, Executor as SExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
+from typing import Optional
 
 
 class Result:
@@ -12,7 +13,9 @@ class Result:
 
 
 class KindSymbolicExecutor(SymbolicExecutor):
-    def __init__(self, prog, ohandler=None, opts=KindSEOptions()):
+    def __init__(
+        self, prog, ohandler=None, opts: KindSEOptions = KindSEOptions()
+    ) -> None:
         super(KindSymbolicExecutor, self).__init__(P=prog, ohandler=ohandler, opts=opts)
 
         # the executor for induction checks -- we need lazy memory access
@@ -21,10 +24,10 @@ class KindSymbolicExecutor(SymbolicExecutor):
         dbg("Forbidding calls in induction step for now with k-induction")
         self.indexecutor.forbid_calls()
 
-    def ind_executor(self):
+    def ind_executor(self) -> Executor:
         return self.indexecutor
 
-    def extend_base_step(self):
+    def extend_base_step(self) -> Optional[int]:
         states = self.executor().execute_till_branch(self.base)
         self.base = []
         for ns in states:
@@ -58,7 +61,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         return None
 
-    def extend_induction_hypothesis(self):
+    def extend_induction_hypothesis(self) -> int:
         states = self.indexecutor.execute_till_branch(self.ind)
 
         self.ind = []
@@ -84,7 +87,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
 
         return Result.UNSAFE if found_err else Result.SAFE
 
-    def check_induction_step(self):
+    def check_induction_step(self) -> int:
         frontier = [s.copy() for s in self.ind]
         states = self.indexecutor.execute_till_branch(frontier)
 
@@ -118,7 +121,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
             append(s)
         return ind, False
 
-    def run(self):
+    def run(self) -> int:
         self.prepare()
 
         dbg("Performing the k-ind algorithm only for the main function", color="ORANGE")

@@ -15,6 +15,10 @@ from slowbeast.util.debugging import dbgv, ldbgv
 from .executionstate import SEState, IncrementalSEState, ThreadedSEState
 from .memorymodel import SymbolicMemoryModel
 from .statesset import StatesSet
+from slowbeast.symexe.executionstate import SEState, ThreadedSEState
+from slowbeast.symexe.memorymodel import SymbolicMemoryModel
+from slowbeast.symexe.statesset import StatesSet
+from typing import Optional, Union
 
 unsupported_funs = [
     "memmove",
@@ -27,7 +31,7 @@ unsupported_funs = [
 
 
 class SEStats:
-    def __init__(self):
+    def __init__(self) -> None:
         # number of branch instructions
         self.branchings = 0
         # number of branch instructions where we forked
@@ -38,7 +42,7 @@ class SEStats:
         self.forks = 0
 
 
-def add_pointer_with_constant(E, op1, op2):
+def add_pointer_with_constant(E, op1, op2) -> Pointer:
     return Pointer(op1.object(), E.Add(op1.offset(), op2))
 
 
@@ -58,7 +62,7 @@ def condition_to_bool(cond, EM):
     return cval
 
 
-def eval_condition(state, cond):
+def eval_condition(state, cond: ValueInstruction):
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
     c = state.eval(cond)
     assert isinstance(c, Value)
@@ -69,7 +73,9 @@ def eval_condition(state, cond):
 
 
 class Executor(ConcreteExecutor):
-    def __init__(self, program, solver, opts, memorymodel=None):
+    def __init__(
+        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+    ) -> None:
         if memorymodel is None:
             memorymodel = SymbolicMemoryModel(opts)
         super().__init__(program, opts, memorymodel)
@@ -78,7 +84,7 @@ class Executor(ConcreteExecutor):
         # use these values in place of nondet values
         self._input_vector = None
 
-    def is_error_fn(self, fun):
+    def is_error_fn(self, fun: str):
         if isinstance(fun, str):
             return fun in self.get_options().error_funs
         return fun.name() in self.get_options().error_funs
@@ -86,12 +92,12 @@ class Executor(ConcreteExecutor):
     def error_funs(self):
         return self._error_funs
 
-    def set_input_vector(self, ivec):
+    def set_input_vector(self, ivec) -> None:
         self._input_vector = ivec.copy()
         # reverse the vector so that we can pop from it
         self._input_vector.reverse()
 
-    def create_state(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None) -> SEState:
         if m is None:
             m = self.get_memory_model().create_memory()
         if self.get_options().incremental_solving:
@@ -107,7 +113,7 @@ class Executor(ConcreteExecutor):
         s.push_call(None)
         return s
 
-    def create_states_set(self, S=None):
+    def create_states_set(self, S=None) -> StatesSet:
         ss = StatesSet(self.create_clean_state())
         if S:
             # set the set to be S
@@ -162,7 +168,7 @@ class Executor(ConcreteExecutor):
         return T, F
 
     # FIXME: make this a method of State?
-    def assume(self, state, cond):
+    def assume(self, state, cond) -> None:
         """Put an assumption _into_ the given state.
         Return the state or None if that situation cannot happen
         (the assumption is inconsistent with the state).
@@ -182,7 +188,7 @@ class Executor(ConcreteExecutor):
             return state
         return None
 
-    def exec_branch_to(self, state, instr, to):
+    def exec_branch_to(self, state, instr: Branch, to: bool):
         """
         Execute a branch instruction and follow the given successor
         (True or False successor).
@@ -214,7 +220,7 @@ class Executor(ConcreteExecutor):
 
         return [s]
 
-    def exec_branch(self, state, instr):
+    def exec_branch(self, state, instr: Branch):
         assert isinstance(instr, Branch)
         self.stats.branchings += 1
 
@@ -238,7 +244,7 @@ class Executor(ConcreteExecutor):
 
         return states
 
-    def exec_switch(self, state, instr):
+    def exec_switch(self, state, instr: Switch):
         assert isinstance(instr, Switch)
         self.stats.branchings += 1
 
@@ -262,7 +268,7 @@ class Executor(ConcreteExecutor):
         self.stats.branch_forks += len(states) - 1
         return states
 
-    def compare_values(self, E, p, op1, op2, unsgn, flt=False):
+    def compare_values(self, E, p, op1, op2, unsgn, flt: bool = False):
         if p == Cmp.LE:
             return E.Le(op1, op2, unsgn, flt)
         elif p == Cmp.LT:
@@ -326,7 +332,7 @@ class Executor(ConcreteExecutor):
             return expr if pred == Cmp.EQ else em.Not(expr)
         return None
 
-    def exec_cmp(self, state, instr):
+    def exec_cmp(self, state, instr: Cmp):
         assert isinstance(instr, Cmp)
         seval = state.eval
         getop = instr.operand
@@ -401,7 +407,7 @@ class Executor(ConcreteExecutor):
                 return f
         return None
 
-    def exec_call(self, state, instr):
+    def exec_call(self, state, instr: Call):
         assert isinstance(instr, Call)
         fun = instr.called_function()
         if not isinstance(fun, Function):
@@ -470,7 +476,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_binary_op(self, state, instr):
+    def exec_binary_op(self, state, instr: BinaryOperation):
         assert isinstance(instr, BinaryOperation)
         seval = state.eval
         getop = instr.operand
@@ -612,7 +618,7 @@ class Executor(ConcreteExecutor):
 
         return [state]
 
-    def exec_assume(self, state, instr):
+    def exec_assume(self, state, instr: Assume):
         assert isinstance(instr, Assume)
         for o in instr.operands():
             v = state.eval(o)
@@ -631,7 +637,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_assert_expr(self, state, v, msg=""):
+    def exec_assert_expr(self, state, v, msg: str = ""):
         states = []
         assert v.is_bool()
         if v.is_concrete():
@@ -650,7 +656,7 @@ class Executor(ConcreteExecutor):
         assert states, "Generated no states"
         return states
 
-    def exec_assert(self, state, instr):
+    def exec_assert(self, state, instr: Assert):
         assert isinstance(instr, Assert)
         o = instr.condition()
         msg = instr.msg()
@@ -685,10 +691,10 @@ class Executor(ConcreteExecutor):
 
 
 class ThreadedExecutor(Executor):
-    def __init__(self, program, solver, opts, memorymodel=None):
+    def __init__(self, program, solver, opts, memorymodel=None) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
-    def create_state(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None) -> ThreadedSEState:
         if m is None:
             m = self.get_memory_model().create_memory()
         # if self.get_options().incremental_solving:
@@ -783,7 +789,7 @@ class ThreadedExecutor(Executor):
         state.set(instr, ConcreteVal(t.get_id(), get_offset_type()))
         return [state]
 
-    def exec_thread_exit(self, state, instr):
+    def exec_thread_exit(self, state, instr: ThreadExit):
         assert isinstance(instr, ThreadExit)
 
         # obtain the return value (if any)
@@ -797,7 +803,7 @@ class ThreadedExecutor(Executor):
         state.exit_thread(ret)
         return [state]
 
-    def exec_thread_join(self, state, instr):
+    def exec_thread_join(self, state, instr: ThreadJoin):
         assert isinstance(instr, ThreadJoin)
         assert len(instr.operands()) == 1
         tid = state.eval(instr.operand(0))
@@ -807,7 +813,7 @@ class ThreadedExecutor(Executor):
             state.join_threads(tid.value())
         return [state]
 
-    def exec_ret(self, state, instr):
+    def exec_ret(self, state, instr: Return):
         assert isinstance(instr, Return)
 
         # obtain the return value (if any)
@@ -844,7 +850,7 @@ class ThreadedExecutor(Executor):
         state.pc = rs.get_next_inst()
         return [state]
 
-    def execute(self, state, instr):
+    def execute(self, state, instr: Union[Thread, ThreadExit, ThreadJoin]):
         # state._trace.append(
         #    "({2}) {0}: {1}".format(
         #        "--" if not instr.bblock() else instr.fun().name(),

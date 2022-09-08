@@ -2,6 +2,8 @@ from slowbeast.symexe.symbolicexecution import SEOptions
 from .executor import Executor as AIExecutor
 from ..interpreter.interpreter import Interpreter
 from ..util.debugging import print_stderr, dbg
+from io import TextIOWrapper
+from typing import Type
 
 
 class AIOptions(SEOptions):
@@ -9,7 +11,7 @@ class AIOptions(SEOptions):
 
 
 class AIStats:
-    def __init__(self):
+    def __init__(self) -> None:
         # all paths (including ones that hit an error or terminated early)
         self.paths = 0
         # paths that exited (the state is exited)
@@ -24,17 +26,17 @@ class AbstractInterpreter(Interpreter):
         self,
         P,
         ohandler=None,
-        opts=AIOptions(),
+        opts: AIOptions = AIOptions(),
         executor=None,
-        ExecutorClass=AIExecutor,
-    ):
+        ExecutorClass: Type[slowbeast.ai.executor.Executor] = AIExecutor,
+    ) -> None:
         super().__init__(P, opts, executor or ExecutorClass(opts))
         self.stats = AIStats()
         # outputs handler
         self.ohandler = ohandler
         self.explored_states = {}
 
-    def new_output_file(self, name):
+    def new_output_file(self, name) -> TextIOWrapper:
         odir = self.ohandler.outdir if self.ohandler else None
         return open(f"{odir or '.'}/{name}", "w")
 

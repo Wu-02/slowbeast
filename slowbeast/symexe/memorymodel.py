@@ -6,13 +6,14 @@ from slowbeast.ir.types import IntType
 from slowbeast.ir.types import get_size_type
 from slowbeast.symexe.memory import Memory
 from slowbeast.util.debugging import dbgv
+from typing import Union
 
 
 class SymbolicMemoryModel(CoreMM):
-    def __init__(self, opts):
+    def __init__(self, opts) -> None:
         super().__init__(opts)
 
-    def create_memory(self):
+    def create_memory(self) -> Memory:
         """Create a memory object that is going to be a part of a state."""
         return Memory()
 
@@ -21,19 +22,19 @@ class SymbolicMemoryModel(CoreMM):
 # to use core.Memory. symexe.Memory overrides uninitialized reads in the Memory() object
 # in a way that is not suitable for lazy memory
 class LazySymbolicMemoryModel(CoreMM):
-    def __init__(self, opts):
+    def __init__(self, opts) -> None:
         super().__init__(opts)
         # over-approximate unsupported operations
         self._overapprox_unsupported = True
 
-    def lazy_allocate(self, state, op):
+    def lazy_allocate(self, state, op: Union[Alloc, GlobalVariable]) -> None:
         assert isinstance(op, (Alloc, GlobalVariable)), op
         s = self.allocate(state, op)
         assert len(s) == 1 and s[0] is state
         dbgv(f"Lazily allocated {op}", color="white", verbose_lvl=3)
         assert state.get(op), "Did not bind an allocated value"
 
-    def allocate(self, state, instr):
+    def allocate(self, state, instr: Union[Alloc, GlobalVariable]):
         """
         Perform the allocation by the instruction
         "inst" and return the new states (there may be
@@ -52,7 +53,7 @@ class LazySymbolicMemoryModel(CoreMM):
         state.set(instr, ptr)
         return [state]
 
-    def _havoc_ptr_target(self, state, ptr, without=None):
+    def _havoc_ptr_target(self, state, ptr, without=None) -> None:
         """Havoc memory possibly pointed by ptr"""
         # we do not know what we write where, so just clear all the information
         # if possible
@@ -134,7 +135,14 @@ class LazySymbolicMemoryModel(CoreMM):
             None,
         )
 
-    def read(self, state, to_op, from_op, bytes_num, bitsnum=None):
+    def read(
+        self,
+        state,
+        to_op: Load,
+        from_op: Union[Alloc, GlobalVariable],
+        bytes_num: int,
+        bitsnum=None,
+    ):
         """
         We want to read 'bitsnum' of bits and in order to do that
         we read 'bytes_num' of bytes

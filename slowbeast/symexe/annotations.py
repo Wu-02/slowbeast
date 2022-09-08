@@ -4,6 +4,9 @@ from slowbeast.core.executor import split_ready_states
 from slowbeast.symexe.executionstate import ExecutionState
 from slowbeast.util.debugging import dbgv_sec, ldbgv
 from .statedescription import StateDescription, unify_state_descriptions
+from slowbeast.core.executionstate import ExecutionState
+from slowbeast.symexe.statedescription import StateDescription
+from typing import Sized, Union
 
 
 def get_subs(state):
@@ -21,7 +24,7 @@ class Annotation:
 
     __slots__ = "type"
 
-    def __init__(self, ty):
+    def __init__(self, ty) -> None:
         assert ty >= Annotation.ASSUME and ty <= Annotation.INSTRS
         self.type = ty
 
@@ -43,7 +46,7 @@ class InstrsAnnotation(Annotation):
 
     __slots__ = "instrs"
 
-    def __init__(self, instrs):
+    def __init__(self, instrs) -> None:
         super().__init__(Annotation.INSTRS)
         self.instrs = instrs
 
@@ -53,10 +56,10 @@ class InstrsAnnotation(Annotation):
     def __iter__(self):
         return self.instrs.__iter__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"[{', '.join(map(lambda i: i.as_value(), self.instrs))}]"
 
-    def dump(self):
+    def dump(self) -> None:
         print("InstrsAnnotation[")
         for i in self.instrs:
             print(f"  {i}")
@@ -66,7 +69,7 @@ class InstrsAnnotation(Annotation):
 class ExprAnnotation(Annotation):
     __slots__ = "_sd", "cannonical"
 
-    def __init__(self, ty, expr, subs, EM):
+    def __init__(self, ty, expr, subs, EM) -> None:
         super().__init__(ty)
 
         # state description
@@ -76,14 +79,14 @@ class ExprAnnotation(Annotation):
         # annotations)
         self.cannonical = self._sd.cannonical(EM)
 
-    def descr(self):
+    def descr(self) -> StateDescription:
         return self._sd
 
     def expr(self):
         return self._sd.expr()
 
     # NOTE: use carefully...
-    def set_expr(self, expr):
+    def set_expr(self, expr) -> None:
         self._sd.set_expr(expr)
 
     def substitutions(self):
@@ -92,7 +95,7 @@ class ExprAnnotation(Annotation):
     def get_cannonical(self):
         return self.cannonical
 
-    def Not(self, EM):
+    def Not(self, EM) -> "ExprAnnotation":
         n = copy(self)  # to copy the type and methods
         n._sd = StateDescription(EM.Not(self.expr()), self.substitutions())
         n.cannonical = n._sd.cannonical(EM)
@@ -113,21 +116,21 @@ class ExprAnnotation(Annotation):
     def eval_input_subs(self, state):
         return self._sd.eval_input_subs(state)
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         return self.cannonical == rhs.cannonical
 
     def __hash__(self):
         assert self.cannonical
         return self.cannonical.__hash__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         assert self.cannonical
         return f"{self.cannonical}"
         # return "{0}[{1}]".format(self._expr, ",
         # ".join(f"{x.as_value()}/{val.unwrap()}" for (x, val) in
         # self.subs.items()))
 
-    def dump(self):
+    def dump(self) -> None:
         print(
             "ExprAnnotation[{0}]:".format(
                 "assert" if self.type == Annotation.ASSERT else "assume"
@@ -146,7 +149,7 @@ class ExprAnnotation(Annotation):
 
 
 class AssertAnnotation(ExprAnnotation):
-    def __init__(self, expr, arg1, em=None):
+    def __init__(self, expr, arg1: ExecutionState, em=None) -> None:
         if isinstance(arg1, ExecutionState):
             subs = get_subs(arg1)
             em = arg1.expr_manager()
@@ -156,27 +159,27 @@ class AssertAnnotation(ExprAnnotation):
         assert em is not None
         super().__init__(Annotation.ASSERT, expr, subs, em)
 
-    def to_assume(self, EM):
+    def to_assume(self, EM) -> "AssumeAnnotation":
         return AssumeAnnotation(self.expr(), self.substitutions(), EM)
 
-    def assume_not(self, EM):
+    def assume_not(self, EM) -> "AssumeAnnotation":
         return AssumeAnnotation(EM.Not(self.expr()), self.substitutions(), EM)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"@[assert {ExprAnnotation.__repr__(self)}]"
 
 
 class AssumeAnnotation(ExprAnnotation):
-    def __init__(self, expr, subs, EM):
+    def __init__(self, expr, subs, EM) -> None:
         super().__init__(Annotation.ASSUME, expr, subs, EM)
 
-    def to_assume(self, EM):
+    def to_assume(self, EM) -> "AssumeAnnotation":
         return self
 
-    def assume_not(self, EM):
+    def assume_not(self, EM) -> "AssumeAnnotation":
         return AssumeAnnotation(EM.Not(self.expr()), self.substitutions(), EM)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"@[assume {ExprAnnotation.__repr__(self)}]"
 
 
@@ -189,7 +192,7 @@ class DummyInst:
     (add a new method execute_with_pc or something like that)
     """
 
-    def get_next_inst(self):
+    def get_next_inst(self) -> "DummyInst":
         return self
 
 
@@ -256,7 +259,7 @@ def _execute_expr_annotation(executor, states, annot):
     return states, nonready
 
 
-def execute_annotation(executor, states, annot):
+def execute_annotation(executor, states, annot: Annotation):
     """Execute the given annotation on states"""
 
     assert isinstance(annot, Annotation), annot
@@ -292,7 +295,7 @@ def execute_annotations(executor, s, annots):
     return ready, nonready
 
 
-def _join_annotations(EM, Ctor, op, annots):
+def _join_annotations(EM, Ctor, op, annots: Sized):
     assert len(annots) > 0
     if len(annots) == 1:
         return Ctor(annots[0].expr(), annots[0].substitutions(), EM)
@@ -313,7 +316,7 @@ def unify_annotations(EM, a1, a2):
     return unify_state_descriptions(EM, a1.descr(), a2.descr())
 
 
-def or_annotations(EM, toassert, *annots):
+def or_annotations(EM, toassert: bool, *annots):
     assert isinstance(toassert, bool)
     assert all(map(lambda x: isinstance(x, ExprAnnotation), annots))
 
@@ -321,7 +324,7 @@ def or_annotations(EM, toassert, *annots):
     return _join_annotations(EM, Ctor, EM.Or, annots)
 
 
-def and_annotations(EM, toassert, *annots):
+def and_annotations(EM, toassert: bool, *annots):
     assert isinstance(toassert, bool)
     assert all(map(lambda x: isinstance(x, ExprAnnotation), annots))
 
@@ -329,7 +332,9 @@ def and_annotations(EM, toassert, *annots):
     return _join_annotations(EM, Ctor, EM.And, annots)
 
 
-def state_to_annotation(state, toassert=False):
+def state_to_annotation(
+    state, toassert: bool = False
+) -> Union[AssertAnnotation, AssumeAnnotation]:
     EM = state.expr_manager()
     Ctor = AssertAnnotation if toassert else AssumeAnnotation
     return Ctor(
@@ -339,7 +344,7 @@ def state_to_annotation(state, toassert=False):
     )
 
 
-def states_to_annotation(states):
+def states_to_annotation(states) -> None:
     a = None
     for s in states:
         EM = s.expr_manager()

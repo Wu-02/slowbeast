@@ -11,6 +11,7 @@ from slowbeast.symexe.annotations import (
 from slowbeast.symexe.statesset import union, intersection, complement
 from slowbeast.util.debugging import dbg, dbgv
 from .inductivesequence import InductiveSequence
+from slowbeast.solvers.symcrete import IncrementalSolver
 
 
 def remove_implied_literals(clauses):
@@ -154,10 +155,10 @@ def _decompose_literal(l):
 class DecomposedLiteral:
     __slots__ = "left", "right", "pred", "addtoleft"
 
-    def __init__(self, lit):
+    def __init__(self, lit) -> None:
         self.left, self.right, self.pred, self.addtoleft = _decompose_literal(lit)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         assert self.left is None or self.right and self.pred
         return self.left is not None
 
@@ -191,7 +192,7 @@ def get_left_right(l):
     return chld[0], chld[1]
 
 
-def check_literal(EM, lit, ldata):
+def check_literal(EM, lit, ldata) -> bool:
     if lit is None or lit.is_concrete():
         return False
 
@@ -315,7 +316,7 @@ class LoopStateOverapproximation:
 
     # __slots__ = "executor", "clauses", "target", "unsafe", "loop", "expr_mgr"
 
-    def __init__(self, S, executor, target, unsafe, loop, expr_mgr):
+    def __init__(self, S, executor, target, unsafe, loop, expr_mgr) -> None:
         self.executor = executor
         self.target = target
         self.unsafe = unsafe
@@ -332,7 +333,7 @@ class LoopStateOverapproximation:
         safesolver.add(unsafe.as_expr())
         self.safesolver = safesolver
 
-    def drop_disjuncts(self):
+    def drop_disjuncts(self) -> None:
         solver = IncrementalSolver()
         solver.add(*self.clauses)
         assert solver.is_sat(), "The clauses are unsat!"
@@ -444,7 +445,7 @@ class LoopStateOverapproximation:
         dbgv(" ... done droping clauses")
         return newclauses
 
-    def drop_clauses(self, assumptions=None):
+    def drop_clauses(self, assumptions=None) -> None:
         newclauses = self._drop_clauses_fixpoint(assumptions)
         # new add the assumptions (without them the formula is not equivalent
         # to expr now)
@@ -465,7 +466,7 @@ class LoopStateOverapproximation:
         S.reset_expr(expr)
         return S
 
-    def overapproximate(self):
+    def overapproximate(self) -> None:
         conjunction = self.expr_mgr.conjunction
         overapprox_clause = self.overapprox_clause
         clauses, newclauses = self.clauses, []
@@ -729,10 +730,10 @@ class LiteralOverapproximationData:
         clause_without_literal,
         indset_with_placeholder,
         placeholder,
-        safety_solver,
-        solver,
+        safety_solver: IncrementalSolver,
+        solver: IncrementalSolver,
         loop_poststates,
-    ):
+    ) -> None:
         assert isinstance(dliteral, DecomposedLiteral)
         assert isinstance(clause, list)
         assert isinstance(clause_without_literal, list)
@@ -789,7 +790,7 @@ def is_overapprox_of(A, B):
 
 
 def overapprox_set(
-    executor, EM, goal, unsafe, indtarget, assumptions, L, drop_only=False
+    executor, EM, goal, unsafe, indtarget, assumptions, L, drop_only: bool = False
 ):
     """
     goal - the set to be overapproxiamted

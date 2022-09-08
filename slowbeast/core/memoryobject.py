@@ -6,6 +6,7 @@ from slowbeast.domains.concrete_int_float import ConcreteInt
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type
+from typing import Optional, TextIO
 
 
 class MemoryObject:
@@ -22,7 +23,9 @@ class MemoryObject:
         "_zeroed",
     )
 
-    def __init__(self, size, nm="unnamed", objid=None, is_global=False):
+    def __init__(
+        self, size, nm: str = "unnamed", objid=None, is_global: bool = False
+    ) -> None:
         if objid:
             self._id = objid
         else:
@@ -38,38 +41,38 @@ class MemoryObject:
 
         self._ro = False  # COW support
 
-    def _set_ro(self):
+    def _set_ro(self) -> None:
         self._ro = True
 
-    def _is_ro(self):
+    def _is_ro(self) -> bool:
         return self._ro
 
-    def set_zeroed(self):
+    def set_zeroed(self) -> None:
         self._zeroed = True
 
-    def is_zeroed(self):
+    def is_zeroed(self) -> bool:
         return self._zeroed
 
     def is_global(self):
         return self._is_global
 
-    def clear(self):
+    def clear(self) -> None:
         assert not self._ro
         self._values.clear()
 
-    def writable_copy(self):
+    def writable_copy(self) -> "MemoryObject":
         new = copy(self)
         new._values = copy(self._values)
         new._ro = False
         return new
 
-    def clean_copy(self):
+    def clean_copy(self) -> "MemoryObject":
         new = copy(self)
         new._values = {}
         new._ro = False
         return new
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         return self._id == rhs._id
 
     def get_id(self):
@@ -78,7 +81,7 @@ class MemoryObject:
     def size(self):
         return self._size
 
-    def set_allocation(self, a):
+    def set_allocation(self, a) -> None:
         self._allocation = a
 
     def allocation(self):
@@ -88,11 +91,11 @@ class MemoryObject:
         sz = self._size
         return sz is not None and sz.is_concrete()
 
-    def _is_oob(self, bytesnum, offval=0):
+    def _is_oob(self, bytesnum, offval: int = 0):
         sz = self._size
         return sz is None or bytesnum > sz.value() + offval
 
-    def write(self, x, off=None):
+    def write(self, x: Value, off=None) -> Optional[MemError]:
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
@@ -130,7 +133,7 @@ class MemoryObject:
         self._values[offval] = x
         return None
 
-    def read(self, bts, off=None):
+    def read(self, bts: int, off: Optional[ConcreteVal] = None):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)
@@ -183,7 +186,7 @@ class MemoryObject:
         """Get offsets on which something is written"""
         return self._values.keys()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), 0-ed: {4}, size: {5}".format(
             self._id,
             self._name if self._name else "no name",
@@ -196,9 +199,9 @@ class MemoryObject:
             s += f"\n  {k} -> {v}"
         return s
 
-    def as_value(self):
+    def as_value(self) -> str:
         return f"mo{self._id}"
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO = stdout) -> None:
         stream.write(str(self))
         stream.write("\n")

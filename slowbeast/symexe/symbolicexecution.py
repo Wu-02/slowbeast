@@ -1,6 +1,6 @@
 from slowbeast.core.errors import GenericError
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
-from slowbeast.solvers.solver import Solver
+from slowbeast.solvers.symcrete import SymbolicSolver, Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, inc_print_indent, dec_print_indent
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import (
@@ -12,10 +12,12 @@ from slowbeast.ir.instruction import (
     Alloc,
 )
 from .executor import Executor as SExecutor, ThreadedExecutor
+from io import TextIOWrapper
+from typing import Type, Union
 
 
 class SEOptions(ExecutionOptions):
-    def __init__(self, opts=None):
+    def __init__(self, opts=None) -> None:
         super().__init__(opts)
         if opts:
             self.incremental_solving = opts.incremental_solving
@@ -36,7 +38,7 @@ class SEOptions(ExecutionOptions):
 
 
 class SEStats:
-    def __init__(self):
+    def __init__(self) -> None:
         # all paths (including ones that hit an error or terminated early)
         self.paths = 0
         # paths that exited (the state is exited)
@@ -45,7 +47,7 @@ class SEStats:
         self.terminated_paths = 0
         self.errors = 0
 
-    def add(self, rhs):
+    def add(self, rhs) -> None:
         self.paths = rhs.paths
         self.exited_paths = rhs.exited_paths
         self.killed_paths = rhs.killed_paths
@@ -55,8 +57,13 @@ class SEStats:
 
 class SymbolicExecutor(Interpreter):
     def __init__(
-        self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=SExecutor
-    ):
+        self,
+        P,
+        ohandler=None,
+        opts: SEOptions = SEOptions(),
+        executor=None,
+        ExecutorClass=SExecutor,
+    ) -> None:
         self._solver = Solver()
         super().__init__(P, opts, executor or ExecutorClass(P, self._solver, opts))
         self.stats = SEStats()
@@ -64,16 +71,16 @@ class SymbolicExecutor(Interpreter):
         self.ohandler = ohandler
         self._input_vector = None
 
-    def set_input_vector(self, ivec):
+    def set_input_vector(self, ivec) -> None:
         self._executor.set_input_vector(ivec)
 
     # FIXME: make this a method of output handler or some function (get rid of 'self')
     # after all, we want such functionality with every analysis
-    def new_output_file(self, name):
+    def new_output_file(self, name) -> TextIOWrapper:
         odir = self.ohandler.outdir if self.ohandler else None
         return open(f"{odir or '.'}/{name}", "w")
 
-    def solver(self):
+    def solver(self) -> SymbolicSolver:
         return self._solver
 
     def get_next_state(self):
@@ -87,12 +94,12 @@ class SymbolicExecutor(Interpreter):
         ), f"State already in queue: {state} ... {self.states}"
         return state
 
-    def handle_new_states(self, newstates):
+    def handle_new_states(self, newstates) -> None:
         hs = self.handle_new_state
         for s in newstates:
             hs(s)
 
-    def handle_new_state(self, s):
+    def handle_new_state(self, s) -> None:
         testgen = self.ohandler.testgen if self.ohandler else None
         opts = self.get_options()
         stats = self.stats
@@ -113,7 +120,6 @@ class SymbolicExecutor(Interpreter):
             # ), f"State already in queue: {s} ... {self.states}"
             self.states.append(s)
         elif s.has_error():
-<<<<<<< HEAD
             if not opts.replay_errors:
                 dbgloc = s.pc.get_metadata("dbgloc")
                 if dbgloc:
@@ -184,7 +190,7 @@ class SymbolicExecutor(Interpreter):
         return handler.states[0]
 
 
-def may_be_glob_mem(state, mem):
+def may_be_glob_mem(state, mem: Alloc) -> bool:
     if isinstance(mem, Alloc):
         return False
     ptr = state.try_eval(mem)
@@ -195,7 +201,7 @@ def may_be_glob_mem(state, mem):
     return True
 
 
-def _is_global_event_fun(fn):
+def _is_global_event_fun(fn) -> bool:
     # FIXME: what if another thread is writing to arguments of pthread_create?
     # return name.startswith("pthread_")  or
     # name.startswith("__VERIFIER_atomic")
@@ -275,10 +281,10 @@ def _is_global_event_fun(fn):
 
 
 class ThreadedSymbolicExecutor(SymbolicExecutor):
-    def __init__(self, P, ohandler=None, opts=SEOptions()):
+    def __init__(self, P, ohandler=None, opts: SEOptions = SEOptions()) -> None:
         super().__init__(P, ohandler, opts, ExecutorClass=ThreadedExecutor)
 
-    def _is_global_event(self, state, pc):
+    def _is_global_event(self, state, pc: Union[Call, Load, Store, ThreadJoin]):
         if isinstance(pc, Load):
             return may_be_glob_mem(state, pc.operand(0))
         if isinstance(pc, Store):
@@ -338,7 +344,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         assert states
         return states
 
-    def prepare(self):
+    def prepare(self) -> None:
         """
         Prepare the interpreter for execution.
         I.e. initialize static memory and push the call to
@@ -357,7 +363,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
             assert s.num_threads() == 1
             s.sync_pc()
 
-    def run(self):
+    def run(self) -> int:
         self.prepare()
 
         # we're ready to go!
@@ -389,7 +395,7 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
         return 0
 
 
-def events_conflict(events, othevents):
+def events_conflict(events, othevents) -> bool:
     for ev in (
         e
         for e in events
@@ -405,7 +411,7 @@ def events_conflict(events, othevents):
     return False
 
 
-def has_conflicts(state, events, states_with_events):
+def has_conflicts(state, events, states_with_events) -> bool:
     for _, othstate, othevents in states_with_events:
         if state is othstate:
             continue
@@ -415,11 +421,11 @@ def has_conflicts(state, events, states_with_events):
 
 
 class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
-    def __init__(self, P, ohandler=None, opts=SEOptions()):
+    def __init__(self, P, ohandler=None, opts: SEOptions = SEOptions()) -> None:
         super().__init__(P, ohandler, opts)
         print("Running symbolic execution with DPOR")
 
-    def _schedule_atomic(self, state):
+    def _schedule_atomic(self, state) -> bool:
         assert state.num_threads() > 0
         # if the thread is in an atomic sequence, continue it...
         t = state.thread()
@@ -528,7 +534,7 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
             ready = newready
         return ready + nonready
 
-    def run(self):
+    def run(self) -> int:
         self.prepare()
 
         # we're ready to go!

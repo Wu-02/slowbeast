@@ -7,6 +7,8 @@ from ..domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.types import get_size_type
 from .memoryobject import MemoryObject
+from slowbeast.core.memoryobject import MemoryObject
+from typing import TextIO
 
 
 class Memory:
@@ -16,7 +18,7 @@ class Memory:
     which also handles its updates and queries.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._objects = {}
         self._objects_ro = False
         self._glob_objects = {}
@@ -48,12 +50,14 @@ class Memory:
         new._cs = self._cs.copy()
         return new
 
-    def copy(self):
+    def copy(self) -> "Memory":
         new = type(self)()
         self._copy_to(new)
         return new
 
-    def create_memory_object(self, size, nm=None, objid=None, is_glob=False):
+    def create_memory_object(
+        self, size, nm=None, objid=None, is_glob: bool = False
+    ) -> MemoryObject:
         """
         Create a new memory object -- may be overriden
         by child classes to create a different type of
@@ -61,27 +65,27 @@ class Memory:
         """
         return MemoryObject(size, nm, objid, is_glob)
 
-    def _objs_reown(self):
+    def _objs_reown(self) -> None:
         if self._objects_ro:
             assert all([x._is_ro() for x in self._objects.values()])
             self._objects = copy(self._objects)
             self._objects_ro = False
 
-    def _globs_reown(self):
+    def _globs_reown(self) -> None:
         if self._glob_objects_ro:
             assert all([x._is_ro() for x in self._glob_objects.values()])
             self._glob_objects = copy(self._glob_objects)
             self._glob_objects_ro = False
 
-    def _globs_bindings_reown(self):
+    def _globs_bindings_reown(self) -> None:
         if self._glob_bindings_ro:
             self._glob_bindings = copy(self._glob_bindings)
             self._glob_bindings_ro = False
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         return self._objects == rhs._objects and self._cs == self._cs
 
-    def _allocate(self, size, instr=None, nm=None, objid=None, is_glob=False):
+    def _allocate(self, size, instr=None, nm=None, objid=None, is_glob: bool = False):
         """Allocate a new memory object and return it"""
         o = self.create_memory_object(size, nm, objid, is_glob)
         assert o._is_ro() is False, "Created object is read-only (COW bug)"
@@ -91,7 +95,7 @@ class Memory:
 
         return o
 
-    def allocate(self, size, instr=None, nm=None, objid=None):
+    def allocate(self, size, instr=None, nm=None, objid=None) -> Pointer:
         """Allocate a new memory object and return a pointer to it"""
         assert (
             objid is None or self._objects.get(objid) is None
@@ -105,7 +109,7 @@ class Memory:
 
         return Pointer(ConcreteVal(o.get_id(), get_size_type()))
 
-    def allocate_global(self, G, objid=None, zeroed=False):
+    def allocate_global(self, G, objid=None, zeroed: bool = False) -> Pointer:
         """Allocate a new memory object and return a pointer to it"""
         assert (
             objid is None or self._glob_objects.get(objid) is None
@@ -127,13 +131,13 @@ class Memory:
 
         return ptr
 
-    def has_global_object(self, moid):
+    def has_global_object(self, moid) -> bool:
         return self._glob_objects.get(moid) is not None
 
     def has_object(self, moid):
         return self._objects.get(moid) is not None or self.has_global_object(moid)
 
-    def get_obj(self, moid):
+    def get_obj(self, moid: int):
         if isinstance(moid, ConcreteVal):
             moid = moid.value()
         assert isinstance(moid, int), f"Invalid MO ID: {moid}"
@@ -178,17 +182,17 @@ class Memory:
 
         return obj.read(bytes_num, ptr.offset())
 
-    def get_cs(self):
+    def get_cs(self) -> CallStack:
         return self._cs
 
-    def set_cs(self, cs):
+    def set_cs(self, cs: CallStack) -> None:
         assert isinstance(cs, CallStack)
         self._cs = cs
 
-    def frame(self, idx=-1):
+    def frame(self, idx: int = -1):
         return self._cs.frame(idx)
 
-    def set(self, what, v):
+    def set(self, what, v) -> None:
         self._cs.set(what, v)
 
     def get(self, v):
@@ -209,13 +213,13 @@ class Memory:
     def values_list(self):
         return self._cs.values_list()
 
-    def push_call(self, callsite, fun, args_mapping={}):
+    def push_call(self, callsite, fun, args_mapping={}) -> None:
         self._cs.push_call(callsite, fun, args_mapping)
 
     def pop_call(self):
         return self._cs.pop_call()
 
-    def dump(self, stream=sys.stdout):
+    def dump(self, stream: TextIO = sys.stdout) -> None:
         stream.write("-- Global objects:\n")
         for o in self._glob_objects.values():
             o.dump(stream)
@@ -228,7 +232,7 @@ class Memory:
         stream.write("-- Call stack:\n")
         self._cs.dump(stream)
 
-    def havoc_obj(self, objid):
+    def havoc_obj(self, objid) -> None:
         isglob = False
         obj = self._objects.get(objid)
         if obj is None:
@@ -253,7 +257,7 @@ class Memory:
         else:
             obj.clear()
 
-    def havoc(self, objs=None, without=None):
+    def havoc(self, objs=None, without=None) -> None:
         """Havoc the contents of memory"""
         # FIXME: we do not have to havoc constants and some other values
         if objs:

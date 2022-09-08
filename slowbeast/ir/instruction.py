@@ -4,10 +4,13 @@ from slowbeast.util.debugging import print_highlight
 from .bblock import BBlock  # due to assertions
 from .program import ProgramElement
 from .types import Type, IntType, BoolType, PointerType, get_offset_type
+from slowbeast.ir.bblock import BBlock
+from slowbeast.ir.types import PointerType, Type
+from typing import TextIO, Union
 
 
 class GlobalVariable(ProgramElement):
-    def __init__(self, size, name, const=False):
+    def __init__(self, size, name, const: bool = False) -> None:
         super().__init__()
         self._size = size
         self._name = name
@@ -17,10 +20,10 @@ class GlobalVariable(ProgramElement):
         self._init = []
         self._zeroed = False
 
-    def is_global(self):
+    def is_global(self) -> bool:
         return True
 
-    def type(self):
+    def type(self) -> PointerType:
         return PointerType()
 
     def size(self):
@@ -29,44 +32,44 @@ class GlobalVariable(ProgramElement):
     def name(self):
         return self._name
 
-    def has_init(self):
+    def has_init(self) -> bool:
         """
         Is this variable initialized? It is initialized if it has some associated init sequence
         or is zeroed. Note that it does not mean it is initialized entirely.
         """
         return self._init is not None or self._zeroed
 
-    def set_name(self, nm):
+    def set_name(self, nm) -> None:
         self._name = nm
 
-    def set_zeroed(self):
+    def set_zeroed(self) -> None:
         self.add_metadata("init", "zeroed")
         self._zeroed = True
 
-    def is_zeroed(self):
+    def is_zeroed(self) -> bool:
         return self._zeroed
 
     def init(self):
         return self._init
 
-    def set_init(self, I):
+    def set_init(self, I) -> None:
         for i in I:
             self.add_metadata("init", str(i))
         self._init = I
 
-    def as_value(self):
+    def as_value(self) -> str:
         return f"g{self.get_id()}"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.as_value()} = global {self.name()} of size {self.size()}"
 
-    def dump(self, ind=0, stream=stdout, color=True):
+    def dump(self, ind: int = 0, stream: TextIO = stdout, color: bool = True) -> None:
         super().dump(ind, stream, color)
         stream.write(f"{' ' * ind}{self}\n")
 
 
 class Instruction(ProgramElement):
-    def __init__(self, ops=None):
+    def __init__(self, ops=None) -> None:
         super().__init__()
         self._operands = ops or []
         self._bblock = None
@@ -79,10 +82,10 @@ class Instruction(ProgramElement):
     def operands(self):
         return self._operands
 
-    def operands_num(self):
+    def operands_num(self) -> int:
         return len(self._operands)
 
-    def set_bblock(self, bb, idx):
+    def set_bblock(self, bb, idx) -> None:
         assert bb, "None bblock is invalid"
         assert idx >= 0, "Invalid bblock idx"
         self._bblock = bb
@@ -98,7 +101,7 @@ class Instruction(ProgramElement):
     def bblock_idx(self):
         return self._bblock_idx
 
-    def dump(self, ind=0, stream=stdout, color=True):
+    def dump(self, ind: int = 0, stream: TextIO = stdout, color: bool = True) -> None:
         super().dump(ind, stream)
         if color:
             print_highlight(
@@ -145,17 +148,17 @@ class ValueInstruction(Instruction):
     Instruction that generates a value
     """
 
-    def __init__(self, ops=None):
+    def __init__(self, ops=None) -> None:
         super().__init__(ops or [])
         self._name = None
 
-    def is_concrete(self):
+    def is_concrete(self) -> bool:
         return False
 
-    def set_name(self, nm):
+    def set_name(self, nm) -> None:
         self._name = nm
 
-    def as_value(self):
+    def as_value(self) -> str:
         if self._name:
             return f"{self._name}"
         return f"x{self.get_id()}"
@@ -166,7 +169,7 @@ class ValueTypedInstruction(ValueInstruction):
     ValueInstruction with associated type of the generated value
     """
 
-    def __init__(self, ty, ops=None):
+    def __init__(self, ty, ops=None) -> None:
         super().__init__(ops or [])
         self._type = ty
 
@@ -181,7 +184,7 @@ class Store(Instruction):
     # since when we create SMT bitvector objects, we must specify
     # their bitwidth (well, we could do that dynamically, but for most
     # situations this is much easier...)
-    def __init__(self, val, to, bw):
+    def __init__(self, val, to, bw) -> None:
         assert val, val
         assert to, to
         super().__init__([val, to])
@@ -196,10 +199,10 @@ class Store(Instruction):
     def bytewidth(self):
         return self._bw
 
-    def bitwidth(self):
+    def bitwidth(self) -> int:
         return self._bw * 8
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "store {1} to {2}:{0}B".format(
             self._bw,
             self.value_operand().as_value(),
@@ -210,7 +213,7 @@ class Store(Instruction):
 class Load(ValueTypedInstruction):
     """Load value of type 'ty' from 'frm'"""
 
-    def __init__(self, frm, ty):
+    def __init__(self, frm: Union[GlobalVariable, Instruction], ty: Type) -> None:
         assert isinstance(ty, Type), ty
         assert isinstance(frm, (Instruction, GlobalVariable)), frm
         super().__init__(ty, [frm])
@@ -224,14 +227,14 @@ class Load(ValueTypedInstruction):
     def pointer_operand(self):
         return self.operand(0)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = load {1}:{2}".format(
             self.get_id(), self.pointer_operand().as_value(), self.type()
         )
 
 
 class Alloc(ValueInstruction):
-    def __init__(self, size, on_heap: bool = False):
+    def __init__(self, size, on_heap: bool = False) -> None:
         assert isinstance(on_heap, bool), on_heap
         super().__init__()
         self._size = size
@@ -240,10 +243,10 @@ class Alloc(ValueInstruction):
     def size(self):
         return self._size
 
-    def type(self):
+    def type(self) -> PointerType:
         return PointerType()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{0} = alloc {1} bytes{2}".format(
             self.as_value(),
             self.size().as_value(),
@@ -270,7 +273,7 @@ class Alloc(ValueInstruction):
 
 
 class Branch(Instruction):
-    def __init__(self, cond, b1, b2):
+    def __init__(self, cond, b1: BBlock, b2: BBlock) -> None:
         super().__init__([cond, b1, b2])
         assert isinstance(b1, BBlock)
         assert isinstance(b2, BBlock)
@@ -284,7 +287,7 @@ class Branch(Instruction):
     def false_successor(self):
         return self.operand(2)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "branch {0} ? {1} : {2}".format(
             self.condition().as_value(),
             self.true_successor().as_value(),
@@ -293,7 +296,7 @@ class Branch(Instruction):
 
 
 class Switch(Instruction):
-    def __init__(self, val, default, cases: list):
+    def __init__(self, val, default: BBlock, cases: list) -> None:
         super().__init__([val, default] + cases)
         assert isinstance(default, BBlock), default
         assert isinstance(cases, list), cases
@@ -309,7 +312,7 @@ class Switch(Instruction):
     def cases(self):
         return self.operands()[2:]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             "switch on {0}:\n  {1}".format(
                 self.condition().as_value(),
@@ -322,7 +325,7 @@ class Switch(Instruction):
 
 
 class Call(ValueTypedInstruction):
-    def __init__(self, wht, ty, *operands):
+    def __init__(self, wht, ty, *operands) -> None:
         super().__init__(ty, [*operands])
         self._function = wht
 
@@ -336,27 +339,27 @@ class Call(ValueTypedInstruction):
         raise NotImplementedError("No return values in funs yet")
         # return self._function
 
-    def __str__(self):
+    def __str__(self) -> str:
         r = f"x{self.get_id()} = call {self.called_function().as_value()}("
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + f") -> {self._type}"
 
 
 class Return(Instruction):
-    def __init__(self, val=None):
+    def __init__(self, val=None) -> None:
         if val is None:
             super().__init__([])
         else:
             super().__init__([val])
 
-    def __str__(self):
+    def __str__(self) -> str:
         if len(self.operands()) == 0:
             return "ret"
         return f"ret {str(self.operand(0).as_value())}"
 
 
 class Thread(Call):
-    def __init__(self, wht, *operands):
+    def __init__(self, wht, *operands) -> None:
         super().__init__(wht, get_offset_type(), *operands)
 
     def called_function(self):
@@ -369,27 +372,27 @@ class Thread(Call):
         raise NotImplementedError("No return values in funs yet")
         # return self._function
 
-    def __str__(self):
+    def __str__(self) -> str:
         r = f"x{self.get_id()} = thread {self.called_function().as_value()}("
         r += ", ".join(map(lambda x: x.as_value(), self.operands()))
         return r + f") -> {self._type}"
 
 
 class ThreadExit(Return):
-    def __init__(self, val=None):
+    def __init__(self, val=None) -> None:
         super().__init__(val)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if len(self.operands()) == 0:
             return "thread exit"
         return f"thread exit ret {self.operand(0).as_value()}"
 
 
 class ThreadJoin(ValueTypedInstruction):
-    def __init__(self, ty, ops=None):
+    def __init__(self, ty, ops=None) -> None:
         super().__init__(ty, ops)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if len(self.operands()) == 0:
             r = "thread join"
         else:
@@ -399,10 +402,10 @@ class ThreadJoin(ValueTypedInstruction):
 
 
 class Print(Instruction):
-    def __init__(self, *operands):
+    def __init__(self, *operands) -> None:
         super().__init__([*operands])
 
-    def __str__(self):
+    def __str__(self) -> str:
         r = "print "
         for o in self._operands:
             r += o.as_value() + " "
@@ -410,7 +413,7 @@ class Print(Instruction):
 
 
 class Assert(Instruction):
-    def __init__(self, cond, msg=None):
+    def __init__(self, cond, msg=None) -> None:
         super().__init__([cond, msg])
 
     def msg(self):
@@ -423,7 +426,7 @@ class Assert(Instruction):
     def condition(self):
         return self.operand(0)
 
-    def __str__(self):
+    def __str__(self) -> str:
         r = f"assert {self.condition().as_value()}"
         m = self.msg()
         if m:
@@ -432,10 +435,10 @@ class Assert(Instruction):
 
 
 class Assume(Instruction):
-    def __init__(self, *operands):
+    def __init__(self, *operands) -> None:
         super().__init__([*operands])
 
-    def __str__(self):
+    def __str__(self) -> str:
         r = "assume "
         for n, o in enumerate(self._operands):
             if n > 0:
@@ -452,7 +455,7 @@ class Cmp(ValueTypedInstruction):
     EQ = 5
     NE = 6
 
-    def predicate_str(p, u=False):
+    def predicate_str(p, u: bool = False) -> str:
         if p == Cmp.LE:
             s = "<="
         elif p == Cmp.LT:
@@ -473,7 +476,7 @@ class Cmp(ValueTypedInstruction):
 
         return s
 
-    def predicate_neg(p):
+    def predicate_neg(p) -> int:
         if p == Cmp.LE:
             return Cmp.GT
         if p == Cmp.LT:
@@ -489,20 +492,20 @@ class Cmp(ValueTypedInstruction):
 
         raise NotImplementedError("Invalid comparison")
 
-    def __init__(self, p, val1, val2, unsgn=False, fp=False):
+    def __init__(self, p, val1, val2, unsgn: bool = False, fp: bool = False) -> None:
         super().__init__(BoolType(), [val1, val2])
         self._predicate = p
         self._unsigned = unsgn
         self._fp = fp
 
-    def set_float(self):
+    def set_float(self) -> None:
         """Set that this comparison is on floating-point numbers"""
         self._fp = True
 
     def is_float(self):
         return self._fp
 
-    def set_unsigned(self):
+    def set_unsigned(self) -> None:
         """Set that this comparison is unsigned"""
         self._unsigned = True
 
@@ -512,7 +515,7 @@ class Cmp(ValueTypedInstruction):
     def predicate(self):
         return self._predicate
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{0} = {4}cmp {1} {2} {3}".format(
             self.as_value(),
             self.operand(0).as_value(),
@@ -537,7 +540,7 @@ class UnaryOperation(ValueTypedInstruction):
     def __check(op):
         assert UnaryOperation.NEG <= op <= UnaryOperation.LAST_UNARY_OP
 
-    def __init__(self, op, a, ty=None):
+    def __init__(self, op: "UnaryOperation", a, ty=None) -> None:
         """Some unary operations do not inherit the type -- set it in 'ty'"""
         super().__init__(ty or a.type(), [a])
         UnaryOperation.__check(op)
@@ -550,15 +553,15 @@ class UnaryOperation(ValueTypedInstruction):
 class Abs(UnaryOperation):
     """Absolute value"""
 
-    def __init__(self, val):
+    def __init__(self, val) -> None:
         super().__init__(UnaryOperation.ABS, val)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"x{self.get_id()} = abs({self.operand(0).as_value()})"
 
 
 class Extend(UnaryOperation):
-    def __init__(self, op, a, bw):
+    def __init__(self, op, a, bw) -> None:
         assert bw.is_concrete(), "Invalid bitwidth to extend"
         super().__init__(op, a, ty=IntType(bw.value()))
         self._bw = bw
@@ -568,27 +571,27 @@ class Extend(UnaryOperation):
 
 
 class ZExt(Extend):
-    def __init__(self, a, bw):
+    def __init__(self, a, bw) -> None:
         super().__init__(UnaryOperation.ZEXT, a, bw)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = zext {1} to {2}".format(
             self.get_id(), self.operand(0).as_value(), self.bitwidth()
         )
 
 
 class SExt(Extend):
-    def __init__(self, a, bw):
+    def __init__(self, a, bw) -> None:
         super().__init__(UnaryOperation.SEXT, a, bw)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = sext {1} to {2}".format(
             self.get_id(), self.operand(0).as_value(), self.bitwidth()
         )
 
 
 class Cast(UnaryOperation):
-    def __init__(self, a, ty, sgn=True):
+    def __init__(self, a, ty: Type, sgn: bool = True) -> None:
         assert isinstance(ty, Type)
         super().__init__(UnaryOperation.CAST, a, ty=ty)
         self._signed = sgn
@@ -599,7 +602,7 @@ class Cast(UnaryOperation):
     def signed(self):
         return self._signed
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = cast {1} to {2}{3}".format(
             self.get_id(),
             self.operand(0).as_value(),
@@ -611,21 +614,21 @@ class Cast(UnaryOperation):
 class Neg(UnaryOperation):
     """Negate the number (return the same number with opposite sign)"""
 
-    def __init__(self, val, fp):
+    def __init__(self, val, fp) -> None:
         super().__init__(UnaryOperation.NEG, val)
         self._fp = fp
 
     def is_fp(self):
         return self._fp
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = -({1}){2}".format(
             self.get_id(), self.operand(0).as_value(), "f" if self._fp else ""
         )
 
 
 class ExtractBits(UnaryOperation):
-    def __init__(self, val, start, end):
+    def __init__(self, val, start, end) -> None:
         assert start.is_concrete(), "Invalid bitwidth to extend"
         assert end.is_concrete(), "Invalid bitwidth to extend"
         super().__init__(
@@ -643,7 +646,7 @@ class ExtractBits(UnaryOperation):
     def end(self):
         return self._end
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = extractbits {1}-{2} from {3}".format(
             self.get_id(), self.start(), self.end(), self.operand(0).as_value()
         )
@@ -657,7 +660,7 @@ class FpOp(UnaryOperation):
     FPCLASSIFY = 3
     SIGNBIT = 4
 
-    def op_to_str(op):
+    def op_to_str(op) -> str:
         if op == FpOp.IS_INF:
             return "isinf"
         if op == FpOp.IS_NAN:
@@ -668,7 +671,7 @@ class FpOp(UnaryOperation):
             return "signbit"
         return "uknwn"
 
-    def __init__(self, fp_op, val):
+    def __init__(self, fp_op, val) -> None:
         assert FpOp.IS_INF <= fp_op <= FpOp.SIGNBIT
         super().__init__(UnaryOperation.FP_OP, val)
         self._fp_op = fp_op
@@ -676,7 +679,7 @@ class FpOp(UnaryOperation):
     def fp_operation(self):
         return self._fp_op
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = fp {1} {2}".format(
             self.get_id(), FpOp.op_to_str(self._fp_op), self.operand(0).as_value()
         )
@@ -700,7 +703,7 @@ class BinaryOperation(ValueTypedInstruction):
     # more logicals to come ...
     LAST = 12
 
-    def __init__(self, op, a, b):
+    def __init__(self, op, a, b) -> None:
         isptr = a.type().is_pointer() or b.type().is_pointer()
         assert isptr or a.type() == b.type(), f"{a} ({a.type()}), {b} ({b.type()})"
         assert BinaryOperation.ADD <= op <= BinaryOperation.LAST
@@ -712,14 +715,14 @@ class BinaryOperation(ValueTypedInstruction):
 
 
 class Add(BinaryOperation):
-    def __init__(self, a, b, fp=False):
+    def __init__(self, a, b, fp: bool = False) -> None:
         super().__init__(BinaryOperation.ADD, a, b)
         self._fp = fp
 
     def is_fp(self):
         return self._fp
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} +{3} {2}".format(
             self.get_id(),
             self.operand(0).as_value(),
@@ -729,14 +732,14 @@ class Add(BinaryOperation):
 
 
 class Sub(BinaryOperation):
-    def __init__(self, a, b, fp=False):
+    def __init__(self, a, b, fp: bool = False) -> None:
         super().__init__(BinaryOperation.SUB, a, b)
         self._fp = fp
 
     def is_fp(self):
         return self._fp
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} -{3} {2}".format(
             self.get_id(),
             self.operand(0).as_value(),
@@ -746,14 +749,14 @@ class Sub(BinaryOperation):
 
 
 class Mul(BinaryOperation):
-    def __init__(self, a, b, fp=False):
+    def __init__(self, a, b, fp: bool = False) -> None:
         super().__init__(BinaryOperation.MUL, a, b)
         self._fp = fp
 
     def is_fp(self):
         return self._fp
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} *{3} {2}".format(
             self.get_id(),
             self.operand(0).as_value(),
@@ -763,7 +766,7 @@ class Mul(BinaryOperation):
 
 
 class Div(BinaryOperation):
-    def __init__(self, a, b, unsigned=False, fp=False):
+    def __init__(self, a, b, unsigned: bool = False, fp: bool = False) -> None:
         super().__init__(BinaryOperation.DIV, a, b)
         self._unsigned = unsigned
         self._fp = fp
@@ -774,7 +777,7 @@ class Div(BinaryOperation):
     def is_unsigned(self):
         return self._unsigned
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} /{3}{4} {2}".format(
             self.get_id(),
             self.operand(0).as_value(),
@@ -785,14 +788,14 @@ class Div(BinaryOperation):
 
 
 class Rem(BinaryOperation):
-    def __init__(self, a, b, unsigned=False):
+    def __init__(self, a, b, unsigned: bool = False) -> None:
         super().__init__(BinaryOperation.REM, a, b)
         self._unsigned = unsigned
 
     def is_unsigned(self):
         return self._unsigned
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} %{3} {2}".format(
             self.get_id(),
             self.operand(0).as_value(),
@@ -802,60 +805,60 @@ class Rem(BinaryOperation):
 
 
 class Shl(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b) -> None:
         super().__init__(BinaryOperation.SHL, a, b)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} << {2}".format(
             self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
 class LShr(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b) -> None:
         super().__init__(BinaryOperation.LSHR, a, b)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} l>> {2}".format(
             self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
 class AShr(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b) -> None:
         super().__init__(BinaryOperation.ASHR, a, b)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} >> {2}".format(
             self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
 class And(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b) -> None:
         super().__init__(BinaryOperation.AND, a, b)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} & {2}".format(
             self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
 class Or(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b) -> None:
         super().__init__(BinaryOperation.OR, a, b)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = {1} | {2}".format(
             self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
 
 
 class Xor(BinaryOperation):
-    def __init__(self, a, b):
+    def __init__(self, a, b) -> None:
         super().__init__(BinaryOperation.XOR, a, b)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "x{0} = xor {1}, {2}".format(
             self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
         )
@@ -866,7 +869,7 @@ class Xor(BinaryOperation):
 class Ite(ValueTypedInstruction):
     """if-then-else: assign a value based on a condition"""
 
-    def __init__(self, cond, op1, op2):
+    def __init__(self, cond, op1, op2) -> None:
         assert cond.type().bitwidth() == 1
         assert op1.type() == op2.type(), "Invalid types in Ite"
         super().__init__(op1.type(), [op1, op2])
@@ -875,7 +878,7 @@ class Ite(ValueTypedInstruction):
     def condition(self):
         return self._cond
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.as_value()} = if {self._cond.as_value()} then "
             f"{self.operand(0).as_value()} else {self.operand(1).as_value()}"

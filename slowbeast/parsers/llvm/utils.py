@@ -5,9 +5,11 @@ from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import get_null_pointer
 from slowbeast.ir.types import IntType, FloatType, PointerType
 from slowbeast.util.debugging import warn
+from slowbeast.domains.concrete_bool import ConcreteBool
+from typing import Optional, Sized, Union
 
 
-def _getInt(s):
+def _getInt(s) -> Optional[int]:
     try:
         if s.startswith("0x"):
             return int(s, 16)
@@ -27,7 +29,7 @@ def trunc_to_float(x):
     return unpack("f", pack("f", x))[0]
 
 
-def to_float_ty(val):
+def to_float_ty(val) -> ConcreteVal:
     if isinstance(val, ConcreteVal) and not val.is_float():
         return ConcreteVal(float(val.value()), FloatType(val.bitwidth()))
     return val
@@ -56,7 +58,7 @@ def _get_double(s):
         return None
 
 
-def _bitwidth(ty):
+def _bitwidth(ty: Sized):
     if len(ty) < 2:
         return None
     if ty[0] == "i":
@@ -70,7 +72,7 @@ def _bitwidth(ty):
         return None
 
 
-def is_pointer_ty(ty):
+def is_pointer_ty(ty: str) -> bool:
     if isinstance(ty, str):
         return ty[-1] == "*"
 
@@ -78,7 +80,7 @@ def is_pointer_ty(ty):
     return ty.is_pointer
 
 
-def is_array_ty(ty):
+def is_array_ty(ty: str) -> bool:
     if isinstance(ty, str):
         if len(ty) < 2:
             return False
@@ -87,11 +89,11 @@ def is_array_ty(ty):
     return ty.is_array
 
 
-def parse_array_ty_by_parts(ty):
+def parse_array_ty_by_parts(ty) -> None:
     print(parts)
 
 
-def get_array_ty_size(m, ty):
+def get_array_ty_size(m, ty) -> int:
     assert is_array_ty(ty)
     sty = str(ty)
     parts = sty.split()
@@ -101,7 +103,7 @@ def get_array_ty_size(m, ty):
     return int(parts[0][1:]) * type_size_in_bits(m, " ".join(parts[2:])[:-1])
 
 
-def type_size_in_bits(m, ty):
+def type_size_in_bits(m, ty: str):
     if not isinstance(ty, str) and hasattr(m, "get_type_size"):
         return m.get_type_size(ty)
 
@@ -129,7 +131,7 @@ def type_size_in_bits(m, ty):
     return None
 
 
-def type_size(m, ty):
+def type_size(m, ty) -> Optional[int]:
     ts = type_size_in_bits(m, ty)
     if ts is not None:
         if ts == 0:
@@ -138,7 +140,7 @@ def type_size(m, ty):
     return None
 
 
-def get_sb_type(m, ty):
+def get_sb_type(m, ty) -> Union[None, FloatType, IntType, PointerType]:
     if is_pointer_ty(ty):
         return PointerType()
 
@@ -158,7 +160,7 @@ def get_sb_type(m, ty):
     return None
 
 
-def get_float_constant(sval, isdouble=True):
+def get_float_constant(sval, isdouble: bool = True):
     if isdouble:
         return _get_double(sval)
     return _get_float(sval)
@@ -205,7 +207,7 @@ def get_constant(val):
     return ConcreteVal(c, FloatType(bw) if isfloating else IntType(bw))
 
 
-def bv_to_bool_else_id(bv):
+def bv_to_bool_else_id(bv) -> ConcreteBool:
     if bv.is_concrete():
         if bv.value() == 0:
             return ConstantFalse

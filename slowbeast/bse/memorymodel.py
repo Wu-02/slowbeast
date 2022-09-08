@@ -7,6 +7,7 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable
 from slowbeast.ir.types import IntType, BoolType, get_offset_type, get_size_type
 from slowbeast.symexe.memory import Memory as SEMemory
+from typing import TextIO, Union
 
 
 def _nondet_value(fresh, op, bitsnum):
@@ -22,7 +23,7 @@ def _nondet_value(fresh, op, bitsnum):
 # FIXME: do we need to inherit from SEMemory? We need that only for the
 # initial states...
 class BSEMemory(SEMemory):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # output state of memory
         # xxx: rename to writes?
@@ -97,10 +98,10 @@ class BSEMemory(SEMemory):
         # reading from this pointer must equal value in the future
         # self._reads[to_op] = value
 
-    def symbolic_write(self, ptr, value):
+    def symbolic_write(self, ptr, value) -> None:
         self._reads.append((ptr, value))
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO = stdout) -> None:
         stream.write("-- Global objects:\n")
         for o in self._glob_objects.values():
             o.dump(stream)
@@ -126,14 +127,14 @@ class BSEMemory(SEMemory):
 # symexe.Memory overrides uninitialized reads in the Memory() object
 # in a way that is not suitable for lazy memory
 class BSEMemoryModel(CoreMM):
-    def create_memory(self):
+    def create_memory(self) -> BSEMemory:
         """
         Create a memory object that is going to be a part
         of a state.
         """
         return BSEMemory()
 
-    def allocate(self, state, instr):
+    def allocate(self, state, instr: Union[Alloc, GlobalVariable]):
         """
         Perform the allocation by the instruction
         "inst" and return the new states (there may be
@@ -167,7 +168,7 @@ class BSEMemoryModel(CoreMM):
         M.symbolic_write(to, value)
         return [state]
 
-    def read(self, state, to_op, from_op, bytes_num, bitsnum=None):
+    def read(self, state, to_op, from_op, bytes_num: int, bitsnum=None):
         """
         We want to read 'bitsnum' of bits and in order to do that
         we read 'bytes_num' of bytes

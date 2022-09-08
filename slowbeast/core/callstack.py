@@ -2,6 +2,7 @@ from copy import copy
 from functools import reduce
 from operator import xor
 from sys import stdout
+from typing import TextIO
 
 
 class CallStack:
@@ -58,11 +59,11 @@ class CallStack:
             for x, v in self.values.items():
                 stream.write(f"{x.as_value()} -> {v.as_value()}\n")
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cs = []
         self._cs_ro = False
 
-    def copy(self):
+    def copy(self) -> "CallStack":
         new = copy(self)
         new._cs_ro = True
         self._cs_ro = True
@@ -70,19 +71,19 @@ class CallStack:
             f._set_ro()
         return new
 
-    def _cow_reown(self):
+    def _cow_reown(self) -> None:
         if self._cs_ro:
             assert all([x._is_ro() for x in self._cs])
             self._cs = copy(self._cs)
             self._cs_ro = False
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._cs)
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         return self._cs == rhs._cs
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         # FIXME: make more efficient
         if not self._cs:
             return 0
@@ -94,10 +95,10 @@ class CallStack:
     def __iter__(self):
         return self._cs.__iter__()
 
-    def frame(self, idx=-1):
+    def frame(self, idx: int = -1):
         return self._cs[idx]
 
-    def set(self, what, v):
+    def set(self, what, v) -> None:
         """Set a value in the current frame"""
         self._cow_reown()
         if self.frame()._is_ro():
@@ -109,11 +110,11 @@ class CallStack:
         """Set a value from the current frame"""
         return self.frame().get(v)
 
-    def values_list(self, frameidx=-1):
+    def values_list(self, frameidx: int = -1):
         """Set a value from the current frame"""
         return self.frame(frameidx).values_list()
 
-    def push_call(self, callsite, fun, argsMap):
+    def push_call(self, callsite, fun, argsMap) -> None:
         self._cow_reown()
         self._cs.append(CallStack.Frame(fun, callsite, argsMap))
         assert not self.frame()._is_ro()
@@ -125,7 +126,7 @@ class CallStack:
         del self._cs[-1]
         return rs
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO = stdout) -> None:
         for n, f in enumerate(self._cs):
             name = f.function.name() if f.function else None
             stream.write(f" -- {n}: {name} --\n")

@@ -2,6 +2,8 @@ from slowbeast.analysis.cfg import CFG as PureCFG
 from slowbeast.analysis.cfg import CFGPath as PureCFGPath
 from slowbeast.ir.bblock import BBlock
 from slowbeast.ir.instruction import Assert
+from slowbeast.cfkind.annotatedcfg.CFG import AnnotatedNode
+from typing import Union
 
 
 class CFG(PureCFG):
@@ -56,16 +58,16 @@ class CFG(PureCFG):
         def bblock_id(self):
             return self.bblock().get_id()
 
-    def __init__(self, F):
+    def __init__(self, F) -> None:
         super().__init__(F)
 
-    def create_node(self, *args):
+    def create_node(self, *args) -> AnnotatedNode:
         assert len(args) == 1
         return CFG.AnnotatedNode(self, *args)
 
 
 class CFGPath(PureCFGPath):
-    def __init__(self, locs=None):
+    def __init__(self, locs=None) -> None:
         super().__init__(locs or [])
 
     def reaches_assert(self):
@@ -75,7 +77,7 @@ class CFGPath(PureCFGPath):
         return self.locations()[-1].has_assert()
 
 
-def _get_loc_key(loc):
+def _get_loc_key(loc: Union[AnnotatedNode, BBlock]):
     if isinstance(loc, CFG.AnnotatedNode):
         return loc.bblock().get_id()
     if isinstance(loc, BBlock):
@@ -94,30 +96,30 @@ class AnnotatedCFGPath(CFGPath):
 
     __slots__ = "locannotations", "locannotationsafter", "precondition", "postcondition"
 
-    def __init__(self, locs=None):
+    def __init__(self, locs=None) -> None:
         super().__init__(locs or [])
         self.locannotations = {}
         self.locannotationsafter = {}
         self._precondition = []
         self._postcondition = []
 
-    def add_loc_annot_after(self, annot, loc):
+    def add_loc_annot_after(self, annot, loc) -> None:
         self.locannotationsafter.setdefault(_get_loc_key(loc), []).append(annot)
 
     def get_loc_annots_after(self, loc):
         return self.locannotationsafter.get(_get_loc_key(loc))
 
-    def add_loc_annot_before(self, annot, loc):
+    def add_loc_annot_before(self, annot, loc) -> None:
         self.locannotations.setdefault(_get_loc_key(loc), []).append(annot)
 
     def get_loc_annots_before(self, loc):
         return self.locannotations.get(_get_loc_key(loc))
 
     # FIXME: this can be also assert, do we want to call it post-condition?
-    def add_postcondition(self, p):
+    def add_postcondition(self, p) -> None:
         self._postcondition.append(p)
 
-    def add_precondition(self, p):
+    def add_precondition(self, p) -> None:
         self._precondition.append(p)
 
     def get_postcondition(self):
@@ -144,7 +146,7 @@ class AnnotatedCFGPath(CFGPath):
     #    assert idx < self.length()
     #    self.locations()[idx]._annotations_before.append(annot)
 
-    def copy(self):
+    def copy(self) -> "AnnotatedCFGPath":
         n = AnnotatedCFGPath(self.locations())
         n.locannotations = self.locannotations.copy()
         n.locannotationsafter = self.locannotationsafter.copy()
@@ -152,7 +154,7 @@ class AnnotatedCFGPath(CFGPath):
         n._precondition = self._precondition.copy()
         return n
 
-    def copyandprepend(self, loc):
+    def copyandprepend(self, loc) -> "AnnotatedCFGPath":
         # FIXME: this is not efficient...
         n = AnnotatedCFGPath([loc] + self.locations())
         # FIXME: do cow?
@@ -163,7 +165,7 @@ class AnnotatedCFGPath(CFGPath):
 
         return n
 
-    def copyandsetpath(self, locs):
+    def copyandsetpath(self, locs) -> "AnnotatedCFGPath":
         n = AnnotatedCFGPath(locs)
         # FIXME: do cow?
         n.locannotations = self.locannotations.copy()
@@ -173,7 +175,7 @@ class AnnotatedCFGPath(CFGPath):
 
         return n
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         def loc_str(x):
             blk = x.bblock()
             return "{0}{1}{2}".format(

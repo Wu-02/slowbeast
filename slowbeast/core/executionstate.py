@@ -5,6 +5,7 @@ from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.function import Function
 from slowbeast.ir.types import get_offset_type
+from typing import TextIO
 
 
 # from slowbeast.util.debugging import dbgv
@@ -13,7 +14,7 @@ from slowbeast.ir.types import get_offset_type
 class ExecutionState:
     __slots__ = "pc", "memory", "_status"
 
-    def __init__(self, pc=None, m=None):
+    def __init__(self, pc=None, m=None) -> None:
         # program counter
         self.pc = pc
         # memory objects
@@ -21,7 +22,7 @@ class ExecutionState:
         # status of the execution: ready/exited/errored/etc.
         self._status = ExecutionStatus()
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         if self is rhs:
             return True
         assert self.pc is not None and rhs.pc is not None
@@ -31,13 +32,13 @@ class ExecutionState:
             and self.memory == rhs.memory
         )
 
-    def _copy_to(self, rhs):
+    def _copy_to(self, rhs: "ExecutionState") -> None:
         assert isinstance(rhs, ExecutionState)
         rhs.pc = self.pc
         rhs.memory = self.memory.copy()
         rhs._status = self._status.copy()
 
-    def copy(self):
+    def copy(self) -> "ExecutionState":
         # do not use copy.copy() so that we bump the id counter
         # also, use type(self) so that this method works also for
         # child classes (if not overridden)
@@ -48,7 +49,7 @@ class ExecutionState:
     def status_detail(self):
         return self._status.detail()
 
-    def set_error(self, e):
+    def set_error(self, e) -> None:
         self._status.set_error(e)
 
     def has_error(self):
@@ -61,13 +62,13 @@ class ExecutionState:
     def was_killed(self):
         return self._status.is_killed()
 
-    def set_killed(self, e):
+    def set_killed(self, e) -> None:
         self._status.set_killed(e)
 
-    def set_exited(self, ec):
+    def set_exited(self, ec) -> None:
         self._status.set_exited(ec)
 
-    def set_terminated(self, reason):
+    def set_terminated(self, reason) -> None:
         self._status.set_terminated(reason)
 
     def is_terminated(self):
@@ -80,7 +81,7 @@ class ExecutionState:
         assert self.exited()
         return self._status.detail()
 
-    def status(self):
+    def status(self) -> ExecutionStatus:
         return self._status
 
     def is_ready(self):
@@ -106,7 +107,7 @@ class ExecutionState:
             return v
         return self.get(v)
 
-    def set(self, what, v):
+    def set(self, what, v) -> None:
         """Associate a value to a register (in the current stack frame)"""
         # if __debug__:
         #   h = f" ({hex(v.value())})" if v and v.is_concrete() and v.is_int() else ""
@@ -127,7 +128,7 @@ class ExecutionState:
     def values_list(self):
         return self.memory.values_list()
 
-    def push_call(self, callsite, fun=None, args_mapping=None):
+    def push_call(self, callsite, fun=None, args_mapping=None) -> None:
         """
         Push a new frame to the call stack. Callsite and fun can be None
         in the cases where we create dummy states and we just need some
@@ -141,10 +142,10 @@ class ExecutionState:
     def pop_call(self):
         return self.memory.pop_call()
 
-    def frame(self, idx=-1):
+    def frame(self, idx: int = -1):
         return self.memory.frame(idx)
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO = stdout) -> None:
         stream.write("---- State ----\n")
         self._status.dump(stream)
         stream.write(" -- program counter --\n")

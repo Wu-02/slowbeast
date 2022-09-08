@@ -19,7 +19,7 @@ class AIMemoryObject:
     __slots__ = "_id", "_values", "_size", "_name", "_allocation", "_ro"
     ids = 0
 
-    def __init__(self, size, nm: str="unnamed", objid=None) -> None:
+    def __init__(self, size, nm: str = "unnamed", objid=None) -> None:
         if objid:
             self._id = objid
         else:
@@ -99,11 +99,11 @@ class AIMemoryObject:
     def as_value(self) -> str:
         return f"ai-mo{self._id}"
 
-    def dump(self, stream: TextIO=stdout) -> None:
+    def dump(self, stream: TextIO = stdout) -> None:
         stream.write(str(self))
         stream.write("\n")
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         return self._id == rhs._id
 
     def __hash__(self):
@@ -111,7 +111,9 @@ class AIMemoryObject:
 
 
 class AIMemory(CoreMemory):
-    def create_memory_object(self, size, nm=None, objid=None, is_global: bool=False) -> AIMemoryObject:
+    def create_memory_object(
+        self, size, nm=None, objid=None, is_global: bool = False
+    ) -> AIMemoryObject:
         """
         Create a new memory object -- may be overriden
         by child classes to create a different type of

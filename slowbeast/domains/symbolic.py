@@ -1,4 +1,5 @@
-from .concrete import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal
+from typing import Dict, Generator, List, Optional, Tuple, Union
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
 from slowbeast.ir.types import Type, IntType, BoolType, FloatType
@@ -245,7 +246,7 @@ def to_c_expression(expr):
     return str(expr)
 
 
-def _expr_op_to_formula_op(expr):
+def _expr_op_to_formula_op(expr) -> Optional[int]:
     if is_and(expr):
         return ArithFormula.AND
     if is_or(expr):
@@ -283,10 +284,10 @@ class BVMonomial(Monomial):
     by merging the operands into sets (if the operation is commutative).
     """
 
-    def __init__(self, *variabl):
+    def __init__(self, *variabl) -> None:
         super().__init__(*variabl)
 
-    def create(expr):
+    def create(expr: Monomial):
         raise NotImplementedError("Must be overridden")
 
     def expr(self):
@@ -314,19 +315,19 @@ class BVPolynomial(Polynomial):
     by merging the operands into sets (if the operation is commutative).
     """
 
-    def __init__(self, bw, *elems):
+    def __init__(self, bw, *elems) -> None:
         self._bw = bw  # bitwidth
         super().__init__(*elems)
 
     def bitwidth(self):
         return self._bw
 
-    def copy(self):
+    def copy(self) -> "BVPolynomial":
         P = type(self)(self._bw)
         P.monomials = {m.copy(): c for m, c in self.monomials.items()}
         return P
 
-    def clean_copy(self):
+    def clean_copy(self) -> "BVPolynomial":
         return type(self)(self._bw)
 
     def _create_coefficient(self, c, m):
@@ -376,7 +377,7 @@ class BVPolynomial(Polynomial):
         """
         return simplify(c)
 
-    def create(expr):
+    def create(expr: Polynomial):
         bw = 1 if is_bool(expr) else expr.size()
         if is_app_of(expr, Z3_OP_BADD):
             return BVPolynomial(bw, *(BVPolynomial.create(e) for e in expr.children()))
@@ -433,10 +434,10 @@ class BVFormula(ArithFormula):
     by merging the operands into sets (if the operation is commutative).
     """
 
-    def __init__(self, ty, *operands):
+    def __init__(self, ty, *operands) -> None:
         super().__init__(ty, *operands)
 
-    def create(expr):
+    def create(expr: ArithFormula) -> Optional[ArithFormula]:
         chlds = expr.children()
         op = _expr_op_to_formula_op(expr)
         if chlds:
@@ -518,7 +519,7 @@ def subexpressions(expr):
     yield expr
 
 
-def _symbols(expr, ret: set):
+def _symbols(expr, ret: set) -> None:
     if _is_symbol(expr):
         ret.add(expr)
     else:
@@ -549,7 +550,7 @@ def _is_const_mul(expr):
     return is_app_of(expr, Z3_OP_BMUL) and is_lit(chld[0]) and is_lit(chld[1])
 
 
-def _get_replacable(expr, atoms):
+def _get_replacable(expr, atoms) -> None:
     chld = expr.children()
     if _is_const_mul(expr):
         v = atoms.setdefault(expr, 0)
@@ -661,7 +662,7 @@ def _rewrite_sext(expr):
             return expr
 
 
-def _get_common_monomials(P1, P2, same_coef=False):
+def _get_common_monomials(P1, P2, same_coef: bool = False):
     monomials = []
     for p1m, c1 in P1.monomials.items():
         c2 = P2.get_coef(p1m)
@@ -673,17 +674,17 @@ def _get_common_monomials(P1, P2, same_coef=False):
 
 
 class PolynomialSimplifier:
-    def __init__(self, *args):
+    def __init__(self, *args) -> None:
         # these polynomials we'll use to simplify the given formula
         self.polynomials = [*args]
         # index of a polynomial and polynomials that we substitued into other polynomials -- to prevent cycles
         # FIXME: we do not use it right now...
         self.used = {}
 
-    def add_poly(self, *ps):
+    def add_poly(self, *ps) -> None:
         self.polynomials.extend(*ps)
 
-    def _simplify_polynomial_formula(self, formula):
+    def _simplify_polynomial_formula(self, formula) -> bool:
         # print("> SIMPLIFY", formula)
         # print("> WITH")
         # for p in self.polynomials:
@@ -736,7 +737,7 @@ class PolynomialSimplifier:
                     return True
         return False
 
-    def simplify_formula(self, formula):
+    def simplify_formula(self, formula) -> bool:
         changed = False
         # flatten equalities
         if formula.is_eq():
@@ -764,13 +765,13 @@ class PolynomialSimplifier:
         return changed
 
 
-def simplify_polynomial_formula(formula, polynoms):
+def simplify_polynomial_formula(formula, polynoms) -> None:
     simplifier = PolynomialSimplifier(*polynoms)
     while simplifier.simplify_formula(formula):
         pass
 
 
-def rewrite_polynomials(expr_to, exprs_from):
+def rewrite_polynomials(expr_to: BVFormula, exprs_from):
     """
     Replace arithmetical operations with a fresh uninterpreted symbol.
     Return a mapping from new symbols to replaced expressions.
@@ -1001,7 +1002,7 @@ def split_clauses(*exprs):
     return t(g)
 
 
-def solver_to_sb_type(s):
+def solver_to_sb_type(s) -> Union[BoolType, FloatType, IntType]:
     if is_bv(s):
         return IntType(s.sort().size())
     if is_fp(s):
@@ -1031,7 +1032,7 @@ class Expr(Value):
 
     __slots__ = "_expr"
 
-    def __init__(self, e, t):
+    def __init__(self, e, t: Type) -> None:
         assert not isinstance(e, int), e
         assert isinstance(t, Type), t
         Value.__init__(self, t)
@@ -1040,28 +1041,28 @@ class Expr(Value):
     def unwrap(self):
         return self._expr
 
-    def is_nondet_load(self):
+    def is_nondet_load(self) -> bool:
         return False
 
-    def is_nondet_instr_result(self):
+    def is_nondet_instr_result(self) -> bool:
         return False
 
-    def is_future(self):
+    def is_future(self) -> bool:
         return False
 
     def name(self):
         return str(self._expr)
 
-    def is_concrete(self):
+    def is_concrete(self) -> bool:
         return False
 
-    def is_symbolic(self):
+    def is_symbolic(self) -> bool:
         return True
 
     def as_value(self):
         return str(self)
 
-    def subexpressions(self):
+    def subexpressions(self) -> Generator[Union[ConcreteVal, "Expr"], None, None]:
         """Traverse the expression and return its all subexpressions"""
         return (
             ConcreteVal(s.as_long(), solver_to_sb_type(s))
@@ -1070,7 +1071,7 @@ class Expr(Value):
             for s in subexpressions(self.unwrap())
         )
 
-    def children(self):
+    def children(self) -> Generator[Union[ConcreteVal, "Expr"], None, None]:
         """
         Get the children (1st-level subexpressions) of this expression.
         E.g. for And(a, b) this method returns [a, b].
@@ -1082,7 +1083,7 @@ class Expr(Value):
             for s in self.unwrap().children()
         )
 
-    def symbols(self):
+    def symbols(self) -> Generator["Expr", None, None]:
         """
         Get the symbols used in this expression.
         E.g. for And(a, 3*b) this method returns [a, b].
@@ -1092,13 +1093,13 @@ class Expr(Value):
     def is_symbol(self):
         return _is_symbol(self._expr)
 
-    def to_cnf(self):
+    def to_cnf(self) -> "Expr":
         """
         Get the expression in CNF form.
         """
         return Expr(And(*to_cnf(self.unwrap())), self.type())
 
-    def rewrite_and_simplify(self):
+    def rewrite_and_simplify(self) -> "Expr":
         """
         Get the expression in CNF form.
         """
@@ -1106,13 +1107,13 @@ class Expr(Value):
             mk_or(*(And(*c) for c in rewrite_simplify(self._expr))), self.type()
         )
 
-    def split_clauses(self):
+    def split_clauses(self) -> "Expr":
         """
         Get the expression in CNF form.
         """
         return Expr(mk_or(*(And(*c) for c in split_clauses(self._expr))), self.type())
 
-    def reduce_eq_bitwidth(self, bw):
+    def reduce_eq_bitwidth(self, bw) -> Optional["Expr"]:
         """
         Reduce the maximal bitwith of arithmetic operations to 'bw'
         (return new expression). The resulting expression is
@@ -1126,7 +1127,7 @@ class Expr(Value):
         assert ty.bitwidth() <= bw
         return Expr(expr, ty)
 
-    def reduce_arith_bitwidth(self, bw):
+    def reduce_arith_bitwidth(self, bw) -> Optional["Expr"]:
         """
         Reduce the maximal bitwith of arithmetic operations to 'bw'
         (return new expression). The resulting expression is
@@ -1140,7 +1141,7 @@ class Expr(Value):
         assert ty.bitwidth() <= bw
         return Expr(expr, ty)
 
-    def rewrite_polynomials(self, from_exprs):
+    def rewrite_polynomials(self, from_exprs) -> "Expr":
         expr = rewrite_polynomials(
             self.unwrap(), map(lambda x: x.unwrap(), from_exprs) if from_exprs else None
         )
@@ -1148,7 +1149,7 @@ class Expr(Value):
             return self
         return Expr(expr, self.type())
 
-    def infer_equalities(self):
+    def infer_equalities(self) -> List["Expr"]:
         cnf = self.to_cnf().unwrap()  # we need clauses
         # get equalities  from comparison
         eqs = set(e for c1, c2, e in get_eqs_from_ineqs(cnf))
@@ -1156,13 +1157,15 @@ class Expr(Value):
         eqs.update(e for e in cnf.children() if is_eq(e))
         return [Expr(expr, solver_to_sb_type(expr)) for expr in eqs]
 
-    def eqs_from_ineqs(self):
+    def eqs_from_ineqs(self) -> "Expr":
         expr = eqs_from_ineqs(self.to_cnf().unwrap())
         if expr is None:
             return self
         return Expr(expr, self.type())
 
-    def replace_arith_ops(self):
+    def replace_arith_ops(
+        self,
+    ) -> Tuple[Optional["Expr"], Optional[Dict["Expr", "Expr"]]]:
         """
         Reduce the maximal bitwith of arithmetic operations to 'bw'
         (return new expression). The resulting expression is
@@ -1235,7 +1238,7 @@ class Expr(Value):
     def __eq__(self, rhs):
         return self._expr == rhs._expr if isinstance(rhs, Expr) else False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self._expr}:{self.type()}>"
 
 
@@ -1244,47 +1247,47 @@ class NondetInstrResult(Expr):
 
     __slots__ = "_instr"
 
-    def __init__(self, e, t, instr):
+    def __init__(self, e, t, instr) -> None:
         super().__init__(e, t)
         self._instr = instr
 
-    def is_nondet_instr_result(self):
+    def is_nondet_instr_result(self) -> bool:
         return True
 
     def instruction(self):
         return self._instr
 
     @staticmethod
-    def from_expr(expr, instr):
+    def from_expr(expr: Expr, instr) -> "NondetInstrResult":
         assert isinstance(expr, Expr)
         return NondetInstrResult(expr.unwrap(), expr.type(), instr)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self._instr.as_value()}={Expr.__repr__(self)}"
 
 
 class NondetLoad(NondetInstrResult):
     __slots__ = "alloc"
 
-    def __init__(self, e, t, load, alloc):
+    def __init__(self, e, t, load, alloc) -> None:
         super().__init__(e, t, load)
         self.alloc = alloc
 
-    def is_nondet_load(self):
+    def is_nondet_load(self) -> bool:
         return True
 
     def load(self):
         return self._instr
 
     @staticmethod
-    def from_expr(expr, load, alloc):
+    def from_expr(expr: Expr, load, alloc) -> "NondetLoad":
         assert isinstance(expr, Expr)
         return NondetLoad(expr.unwrap(), expr.type(), load, alloc)
 
     def rhs_repr(self):
         return Expr.__repr__(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"L({self.alloc.as_value()})={Expr.__repr__(self)}"
 
 
@@ -1296,25 +1299,25 @@ class Future(Expr):
 
     __slots__ = "_instr", "_state"
 
-    def __init__(self, e, t, instr, state):
+    def __init__(self, e, t, instr, state) -> None:
         super().__init__(e, t)
         # to which instr we assigned the nondet value
         self._instr = instr
         # stored state
         self._state = state
 
-    def is_future(self):
+    def is_future(self) -> bool:
         return True
 
     def state(self):
         return self._state
 
     @staticmethod
-    def from_expr(expr, instr, state):
+    def from_expr(expr: Expr, instr, state) -> "Future":
         assert isinstance(expr, Expr)
         return Future(expr.unwrap(), expr.type(), instr)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"future({self._instr.as_value()})={super().__repr__()}"
 
 
@@ -1341,7 +1344,7 @@ def python_constant(val):
     return None
 
 
-def python_to_sb_type(val, bw):
+def python_to_sb_type(val: float, bw) -> Union[BoolType, FloatType, IntType]:
     if isinstance(val, bool):
         assert bw == 1
         return BoolType()
@@ -1359,7 +1362,7 @@ class BVSymbolicDomain:
     """
 
     @staticmethod
-    def belongto(*args):
+    def belongto(*args) -> bool:
         assert len(args) > 0
         for a in args:
             if a.KIND != 2:
@@ -1367,7 +1370,7 @@ class BVSymbolicDomain:
         return True
 
     @staticmethod
-    def lift(v: Value):
+    def lift(v: Value) -> Expr:
         assert isinstance(v, Value), f"Invalid value for lifting: {v}"
         if isinstance(v, Expr):
             return v
@@ -1383,7 +1386,7 @@ class BVSymbolicDomain:
         raise NotImplementedError(f"Invalid value for lifting: {v}")
 
     @staticmethod
-    def simplify(expr: Expr):
+    def simplify(expr: Expr) -> Expr:
         return Expr(
             simplify(expr.unwrap(), arith_ineq_lhs=True, sort_sums=True), expr.type()
         )
@@ -1393,7 +1396,7 @@ class BVSymbolicDomain:
         return python_constant(expr.unwrap())
 
     @staticmethod
-    def substitute(expr: Expr, *what):
+    def substitute(expr: Expr, *what) -> Union[ConcreteVal, Expr]:
         e = simplify(
             substitute(expr.unwrap(), *((a.unwrap(), b.unwrap()) for (a, b) in what))
         )
@@ -1403,7 +1406,7 @@ class BVSymbolicDomain:
         return Expr(e, expr.type())
 
     @staticmethod
-    def Constant(c, ty: Type):
+    def Constant(c, ty: Type) -> Expr:
         bw = ty.bitwidth()
         if ty.is_float():
             return Expr(FPVal(c, fps=get_fp_sort(bw)), ty)
@@ -1415,7 +1418,7 @@ class BVSymbolicDomain:
     ##
     # variables
     @staticmethod
-    def Var(name: str, ty: Type):
+    def Var(name: str, ty: Type) -> Expr:
         if ty.is_float():
             return Expr(FP(name, get_fp_sort(ty.bitwidth())), ty)
         elif ty.is_bool():
@@ -1425,11 +1428,11 @@ class BVSymbolicDomain:
             return Expr(bv(name, ty.bitwidth()), ty)
 
     @staticmethod
-    def BVVar(name, bw : int):
+    def BVVar(name, bw: int) -> Expr:
         return Expr(bv(name, bw), IntType(bw))
 
     @staticmethod
-    def Bool(name: str):
+    def Bool(name: str) -> Expr:
         return Expr(Bool(name), BoolType())
 
     @staticmethod
@@ -1455,7 +1458,7 @@ class BVSymbolicDomain:
     ##
     # Logic operators
     @staticmethod
-    def conjunction(*args):
+    def conjunction(*args) -> Expr:
         """
         Logical and that allows to put into conjunction more
         than two formulas at once (just simplifies the formulas for
@@ -1466,7 +1469,7 @@ class BVSymbolicDomain:
         return Expr(And(*map(lambda x: _bv_to_bool(x.unwrap()), args)), BoolType())
 
     @staticmethod
-    def disjunction(*args):
+    def disjunction(*args) -> Expr:
         """
         Logical and that allows to put into disjunction more
         than two formulas at once (just simplifies the formulas for
@@ -1477,14 +1480,14 @@ class BVSymbolicDomain:
         return Expr(Or(*map(lambda x: _bv_to_bool(x.unwrap()), args)), BoolType())
 
     @staticmethod
-    def Ite(c, a, b):
+    def Ite(c, a, b) -> Expr:
         assert BVSymbolicDomain.belongto(c)
         assert c.is_bool(), c
         assert a.type() == b.type(), f"{a}, {b}"
         return Expr(If(_bv_to_bool(c.unwrap()), a.unwrap(), b.unwrap()), a.type())
 
     @staticmethod
-    def And(a, b):
+    def And(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool() and b.is_bool():
@@ -1494,7 +1497,7 @@ class BVSymbolicDomain:
             return Expr(to_bv(a) & to_bv(b), IntType(a.bitwidth()))
 
     @staticmethod
-    def Or(a, b):
+    def Or(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool() and b.is_bool():
@@ -1504,7 +1507,7 @@ class BVSymbolicDomain:
             return Expr(to_bv(a) | to_bv(b), IntType(a.bitwidth()))
 
     @staticmethod
-    def Xor(a, b):
+    def Xor(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool() and b.is_bool():
@@ -1514,7 +1517,7 @@ class BVSymbolicDomain:
             return Expr(to_bv(a) ^ to_bv(b), IntType(a.bitwidth()))
 
     @staticmethod
-    def Not(a):
+    def Not(a) -> Expr:
         assert BVSymbolicDomain.belongto(a)
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
@@ -1522,7 +1525,7 @@ class BVSymbolicDomain:
             return Expr(~to_bv(a), IntType(a.bitwidth()))
 
     @staticmethod
-    def ZExt(a, b):
+    def ZExt(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a)
         assert b.is_concrete()
         bw = b.value()
@@ -1532,7 +1535,7 @@ class BVSymbolicDomain:
         return Expr(BVZExt(bw - a.bitwidth(), ae), IntType(bw))
 
     @staticmethod
-    def SExt(a, b):
+    def SExt(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a), a
         assert b.is_concrete(), b
         assert b.is_int(), b
@@ -1543,7 +1546,7 @@ class BVSymbolicDomain:
         return Expr(BVSExt(bw - a.bitwidth(), ae), IntType(bw))
 
     @staticmethod
-    def BitCast(a: Value, ty: Type):
+    def BitCast(a: Value, ty: Type) -> Optional[Expr]:
         """Static cast"""
         assert BVSymbolicDomain.belongto(a)
         tybw = ty.bitwidth()
@@ -1573,7 +1576,7 @@ class BVSymbolicDomain:
         return None  # unsupported conversion
 
     @staticmethod
-    def Cast(a: Value, ty: Type, signed: bool = True):
+    def Cast(a: Value, ty: Type, signed: bool = True) -> Optional[Expr]:
         """Reinterpret cast"""
         assert BVSymbolicDomain.belongto(a)
         tybw = ty.bitwidth()
@@ -1614,7 +1617,7 @@ class BVSymbolicDomain:
         return None  # unsupported conversion
 
     @staticmethod
-    def Extract(a, start, end):
+    def Extract(a, start, end) -> Expr:
         assert BVSymbolicDomain.belongto(a), a
         assert start.is_concrete(), start
         assert end.is_concrete(), end
@@ -1636,34 +1639,34 @@ class BVSymbolicDomain:
         )
 
     @staticmethod
-    def Shl(a, b):
+    def Shl(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert b.is_int(), b
         return Expr(to_bv(a) << b.unwrap(), IntType(a.bitwidth()))
 
     @staticmethod
-    def AShr(a, b):
+    def AShr(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert b.is_int(), b
         return Expr(to_bv(a) >> b.unwrap(), IntType(a.bitwidth()))
 
     @staticmethod
-    def LShr(a, b):
+    def LShr(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert b.is_int(), b
         return Expr(BVLShR(to_bv(a), b.unwrap()), IntType(a.bitwidth()))
 
     @staticmethod
-    def get_true():
+    def get_true() -> Expr:
         return Expr(TRUE(), BoolType())
 
     @staticmethod
-    def get_false():
+    def get_false() -> Expr:
         return Expr(FALSE(), BoolType())
 
     ### Relational operators
     @staticmethod
-    def Le(a: Expr, b: Expr, unsigned=False, floats=False):
+    def Le(a: Expr, b: Expr, unsigned: bool = False, floats: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         # we need this explicit float cast for the cases when a or b are
@@ -1679,7 +1682,7 @@ class BVSymbolicDomain:
         return Expr(to_bv(a) <= to_bv(b), BoolType())
 
     @staticmethod
-    def Lt(a, b, unsigned=False, floats=False):
+    def Lt(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -1693,7 +1696,7 @@ class BVSymbolicDomain:
         return Expr(to_bv(a) < to_bv(b), BoolType())
 
     @staticmethod
-    def Ge(a, b, unsigned=False, floats=False):
+    def Ge(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -1707,7 +1710,7 @@ class BVSymbolicDomain:
         return Expr(to_bv(a) >= to_bv(b), BoolType())
 
     @staticmethod
-    def Gt(a, b, unsigned=False, floats=False):
+    def Gt(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -1721,7 +1724,7 @@ class BVSymbolicDomain:
         return Expr(to_bv(a) > to_bv(b), BoolType())
 
     @staticmethod
-    def Eq(a, b, unsigned=False, floats=False):
+    def Eq(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a} != {b}"
         if floats:
@@ -1735,7 +1738,7 @@ class BVSymbolicDomain:
         return Expr(to_bv(a) == to_bv(b), BoolType())
 
     @staticmethod
-    def Ne(a, b, unsigned=False, floats=False):
+    def Ne(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -1751,7 +1754,7 @@ class BVSymbolicDomain:
     ##
     # Arithmetic operations
     @staticmethod
-    def Add(a, b, isfloat=False):
+    def Add(a, b, isfloat: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a} + {b}"
         bw = a.bitwidth()
@@ -1764,7 +1767,7 @@ class BVSymbolicDomain:
         return Expr(to_bv(a) + to_bv(b), IntType(bw))
 
     @staticmethod
-    def Sub(a, b, isfloat=False):
+    def Sub(a, b, isfloat: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a} - {b}"
         bw = a.bitwidth()
@@ -1775,7 +1778,7 @@ class BVSymbolicDomain:
         return Expr(to_bv(a) - to_bv(b), IntType(bw))
 
     @staticmethod
-    def Mul(a, b, isfloat=False):
+    def Mul(a, b, isfloat: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a} * {b}"
         bw = a.bitwidth()
@@ -1786,7 +1789,7 @@ class BVSymbolicDomain:
         return Expr(to_bv(a) * to_bv(b), IntType(bw))
 
     @staticmethod
-    def Div(a, b, unsigned=False, isfloat=False):
+    def Div(a, b, unsigned: bool = False, isfloat: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.bitwidth() == b.bitwidth(), f"{a} / {b}"
         bw = a.bitwidth()
@@ -1799,7 +1802,7 @@ class BVSymbolicDomain:
         return Expr(to_bv(a) / to_bv(b), IntType(bw))
 
     @staticmethod
-    def Rem(a, b, unsigned=False):
+    def Rem(a, b, unsigned: bool = False) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
             a.type(), b.type()
@@ -1810,7 +1813,7 @@ class BVSymbolicDomain:
         return Expr(SRem(a.unwrap(), b.unwrap()), result_ty)
 
     @staticmethod
-    def Abs(a):
+    def Abs(a) -> Expr:
         assert BVSymbolicDomain.belongto(a)
         if a.is_float():
             return Expr(fpAbs(a.unwrap()), a.type())
@@ -1818,7 +1821,7 @@ class BVSymbolicDomain:
         return Expr(If(expr < 0, -expr, expr), a.type())
 
     @staticmethod
-    def Neg(a, isfloat):
+    def Neg(a, isfloat) -> Expr:
         """Return the negated number"""
         assert BVSymbolicDomain.belongto(a)
         bw = a.bitwidth()
@@ -1828,7 +1831,7 @@ class BVSymbolicDomain:
         return Expr(-expr, a.type())
 
     @staticmethod
-    def FpOp(op, val):
+    def FpOp(op, val) -> Optional[Expr]:
         assert BVSymbolicDomain.belongto(val)
         # FIXME: do not use the enum from instruction
         assert val.is_float()
@@ -1866,7 +1869,7 @@ class BVSymbolicDomain:
 SymbolicDomain = BVSymbolicDomain
 
 
-def map_model(m, e):
+def map_model(m, e) -> Union[None, List[None], List[ConcreteVal]]:
     if m is None:  # unsat
         return None
     ret = []

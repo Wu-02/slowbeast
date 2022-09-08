@@ -1,23 +1,24 @@
 from sys import stdout
 
 from .program import ProgramElement
+from typing import TextIO
 
 
 class BBlock(ProgramElement):
     __slots__ = ["_instructions", "_function"]
 
-    def __init__(self, f=None):
+    def __init__(self, f=None) -> None:
         super().__init__()
         self._instructions = []
         self._function = None
         if f:
             f.add_bblock(self)
 
-    def append(self, i):
+    def append(self, i) -> None:
         i.set_bblock(self, len(self._instructions))
         self._instructions.append(i)
 
-    def insert(self, i, idx):
+    def insert(self, i, idx) -> None:
         assert len(self._instructions) > idx
         # shift indices of the suffix of the bblock
         instrs = self._instructions
@@ -42,7 +43,7 @@ class BBlock(ProgramElement):
         assert len(self._instructions) > 0
         return self._instructions[-1]
 
-    def empty(self):
+    def empty(self) -> bool:
         return len(self._instructions) == 0
 
     def instructions(self):
@@ -57,16 +58,16 @@ class BBlock(ProgramElement):
             return self._instructions[idx + 1]
         return None
 
-    def set_fun(self, f):
+    def set_fun(self, f) -> None:
         self._function = f
 
     def fun(self):
         return self._function
 
-    def as_value(self):
+    def as_value(self) -> str:
         return f"bblock {self.get_id()}"
 
-    def size(self):
+    def size(self) -> int:
         return len(self._instructions)
 
     # def __len__(self):
@@ -75,7 +76,7 @@ class BBlock(ProgramElement):
     def __iter__(self):
         return self._instructions.__iter__()
 
-    def dump(self, ind=0, stream=stdout, color=True):
+    def dump(self, ind: int = 0, stream: TextIO = stdout, color: bool = True) -> None:
         super().dump(ind, stream, color)
         stream.write(f"{' ' * ind}; [bblock {self.get_id()}]\n")
         for i in self._instructions:

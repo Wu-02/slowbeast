@@ -1,6 +1,9 @@
 from slowbeast.domains.value import Value
 from .memory import Memory
 from ..ir.instruction import Alloc, GlobalVariable
+from slowbeast.core.memory import Memory
+from slowbeast.ir.instruction import Alloc, GlobalVariable
+from typing import Union
 
 
 class MemoryModel:
@@ -9,17 +12,17 @@ class MemoryModel:
     (without knowing what is the real memory implementation)
     """
 
-    def __init__(self, opts):
+    def __init__(self, opts) -> None:
         self._opts = opts
 
-    def create_memory(self):
+    def create_memory(self) -> Memory:
         """
         Create a memory object that is going to be a part
         of a state.
         """
         return Memory()
 
-    def allocate(self, state, instr):
+    def allocate(self, state, instr: Union[Alloc, GlobalVariable]):
         """
         Perform the allocation by the instruction
         "inst" and return the new states (there may be

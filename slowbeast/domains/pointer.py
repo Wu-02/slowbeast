@@ -1,13 +1,14 @@
 from slowbeast.domains.concrete_int_float import ConcreteInt
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type_size, PointerType
+from typing import Optional
 
 
 class Pointer(Value):
     __slots__ = "_object", "_offset"
     KIND = 5
 
-    def __init__(self, obj, off=None):
+    def __init__(self, obj: Value, off: Optional[Value] = None) -> None:
         assert isinstance(obj, Value)
         assert off is None or isinstance(off, Value)
         super().__init__(PointerType())
@@ -17,7 +18,7 @@ class Pointer(Value):
         assert self.is_pointer(), "Incorrectly constructed pointer"
         assert not self.is_bool(), "Incorrectly constructed pointer"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"ptr({self._object.as_value()}, {self._offset})"
 
     def object(self):
@@ -42,16 +43,16 @@ class Pointer(Value):
     def __eq__(self, oth):
         return self._object == oth._object and self._offset == oth._offset
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return (hash(self._object) & 0xFFFFFF) ^ (
             (hash(self._offset) << 32) & 0xFFFFFFFF00000000
         )
 
-    def dump(self):
+    def dump(self) -> None:
         print(self)
 
 
-def get_null_pointer():
+def get_null_pointer() -> Pointer:
     return Pointer(
         ConcreteInt(0, get_offset_type_size()), ConcreteInt(0, get_offset_type_size())
     )

@@ -7,6 +7,7 @@ from slowbeast.solvers.symcrete import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.util.debugging import ldbgv
+from typing import TextIO
 
 
 def _subst_val(substitute, val, subs):
@@ -69,17 +70,19 @@ def _same_values(em, val1, val2):
 
 
 class BSEState(LazySEState):
-    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
+    def __init__(
+        self, executor=None, pc=None, m=None, solver=None, constraints=None
+    ) -> None:
         super().__init__(executor, pc, m, solver, constraints)
         # inputs are the subset of nondet values that we search for in pre-states
         # when joining states
         self._inputs = []
 
-    def _copy_to(self, new):
+    def _copy_to(self, new) -> None:
         super()._copy_to(new)
         new._inputs = self._inputs.copy()
 
-    def add_input(self, nd):
+    def add_input(self, nd) -> None:
         self._inputs.append(nd)
 
     def inputs(self):
@@ -183,7 +186,7 @@ class BSEState(LazySEState):
                 constraints.append(expr)
         return constraints
 
-    def apply_postcondition(self, postcondition):
+    def apply_postcondition(self, postcondition: ExprAnnotation):
         if isinstance(postcondition, ExprAnnotation):
             good, _ = execute_annotation(self.executor(), [self], postcondition)
             return good
@@ -236,7 +239,7 @@ class BSEState(LazySEState):
 
         return new_repl
 
-    def replace_input_value(self, val, newval):
+    def replace_input_value(self, val, newval) -> bool:
         """
         Replace an input value with a new values and consume it.
         NOTE: the argument 'val' must be the very same object (not only equal expression),
@@ -253,7 +256,7 @@ class BSEState(LazySEState):
             return True
         return False
 
-    def replace_value(self, val, newval):
+    def replace_value(self, val, newval) -> None:
         # recursively handle the implied equalities
         replace_value = self._replace_value
         new_repl = replace_value(val, newval)
@@ -263,7 +266,7 @@ class BSEState(LazySEState):
                 tmp += replace_value(r[0], r[1])
             new_repl = tmp
 
-    def _replace_value_in_memory(self, new_repl, newval, substitute, val):
+    def _replace_value_in_memory(self, new_repl, newval, substitute, val) -> None:
         # FIXME: remove reads that are for sure overwritten
         # to not to carry them with us all the time
         self.memory._reads = [
@@ -312,7 +315,7 @@ class BSEState(LazySEState):
             return []
         return [self]
 
-    def _join_prestate(self, prestate):
+    def _join_prestate(self, prestate: "BSEState") -> None:
         """
         Update this state with information from prestate. That is, simulate
         that this state is executed after prestate.
@@ -405,7 +408,7 @@ class BSEState(LazySEState):
             self.constraints(), e, self.expr_manager(), 2000, 500
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = f"BSEState [{self.get_id()}]"
         if self.memory._input_reads:
             s += "\n" + "\n".join(
@@ -422,7 +425,7 @@ class BSEState(LazySEState):
         s += f"\nconstraints: {self.constraints()}"
         return s
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO = stdout) -> None:
         super().dump(stream)
         write = stream.write
         write(" -- inputs --\n")

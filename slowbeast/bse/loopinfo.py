@@ -1,9 +1,10 @@
 from slowbeast.bse.bse import check_paths
 from slowbeast.symexe.statesset import union
+from typing import Tuple
 
 
 class LoopInfo:
-    def __init__(self, executor, loop):
+    def __init__(self, executor, loop) -> None:
         self.loop = loop
         self.cfa = loop.cfa
         self.header = loop.header
@@ -23,7 +24,7 @@ class LoopInfo:
     def paths(self):
         return self.loop.paths()
 
-    def set_is_inductive(self, S):
+    def set_is_inductive(self, S) -> bool:
         r = check_paths(self.checker, self.loop.paths(), pre=S, post=S)
         if r.errors:
             return False
@@ -54,7 +55,9 @@ class LoopInfo:
 
     # return True
 
-    def set_is_inductive_towards(self, S, target, allow_infeasible_only=False):
+    def set_is_inductive_towards(
+        self, S, target, allow_infeasible_only: bool = False
+    ) -> bool:
         r = check_paths(self.checker, self.loop.paths(), pre=S, post=union(S, target))
         if r.errors:
             return False
@@ -92,7 +95,7 @@ class LoopInfo:
 
     # return has_feasible or allow_infeasible_only
 
-    def check_set_inductivity(self, S):
+    def check_set_inductivity(self, S) -> Tuple[bool, bool]:
         r = check_paths(self.checker, self.loop.paths(), pre=S, post=S)
         ind_on_some_path = bool(r.ready)
         ind_on_all_paths = not bool(r.errors)

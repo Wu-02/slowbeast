@@ -12,7 +12,7 @@ from slowbeast.ir.types import *
 
 
 class Parser:
-    def __init__(self):
+    def __init__(self) -> None:
         self.program = Program()
         self._bblocks = {}
         self._mapping = {}
@@ -23,13 +23,13 @@ class Parser:
     def fun(self, fn):
         return self.program.fun(fn)
 
-    def _add_mapping(self, celem, sbinst):
+    def _add_mapping(self, celem, sbinst) -> None:
         if "c" in self._metadata_opts:
             sbinst.add_metadata("c", str(celem))
         assert self._mapping.get(ccode) is None, "Duplicated mapping"
         self._mapping[celem] = sbinst
 
-    def parse(self, code):
+    def parse(self, code) -> None:
         print(f"Parse {code}")
         index = clang.cindex.Index.create()
         tus = self._tus

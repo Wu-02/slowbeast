@@ -109,7 +109,13 @@ class BSEContext:
 
     __slots__ = "path", "loc_hits", "errorstate", "errordescr"
 
-    def __init__(self, path, errstate: Union[BSEState, AssumeAnnotation], loc_hits=None, errdescr=None) -> None:
+    def __init__(
+        self,
+        path,
+        errstate: Union[BSEState, AssumeAnnotation],
+        loc_hits=None,
+        errdescr=None,
+    ) -> None:
         """
         edge  - edge after which the error should be infeasible
         errstate - error condition
@@ -161,10 +167,10 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         self,
         prog,
         ohandler=None,
-        opts=KindSEOptions(),
-        programstructure=None,
+        opts: KindSEOptions = KindSEOptions(),
+        programstructure: Optional[ProgramStructure] = None,
         invariants=None,
-    ):
+    ) -> None:
         super().__init__(
             P=prog, ohandler=ohandler, opts=opts, ExecutorClass=BSEExecutor
         )
@@ -195,7 +201,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def ind_executor(self):
         return self._indexecutor
 
-    def problematic_paths_as_result(self):
+    def problematic_paths_as_result(self) -> PathExecutionResult:
         r = PathExecutionResult()
         r.other = self.problematic_states
         return r
@@ -211,7 +217,9 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         """
         return self.return_states
 
-    def _execute_path(self, bsectx, from_init=False, invariants=None):
+    def _execute_path(
+        self, bsectx: BSEContext, from_init: bool = False, invariants=None
+    ):
         """
         Execute the given path. The path is such that
         it ends one step before possible error.
@@ -288,7 +296,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             return None
         return queue.get_nowait()
 
-    def queue_state(self, s):
+    def queue_state(self, s) -> None:
         self.queue.put_nowait(s)
         assert not self.queue.empty(), list(self.queue)
 
@@ -321,7 +329,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             return None
         return handler.states[0]
 
-    def extend_state(self, bsectx, postcondition):
+    def extend_state(self, bsectx, postcondition) -> None:
         assert postcondition, postcondition
         had_one: bool = False
         edge = bsectx.path[0]
@@ -347,7 +355,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             self.extend_to_callers(edge.cfa(), bsectx, postcondition)
         # else: dead code, we have nothing to exted
 
-    def extend_to_callers(self, cfa, bsectx, postcondition):
+    def extend_to_callers(self, cfa, bsectx, postcondition) -> None:
         fun = cfa.fun()
         PS = self.programstructure
         for _, callsite in PS.callgraph.get_node(fun).callers():
@@ -378,7 +386,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
     # report_state(self.stats, postcondition, self.reportfn)
     # self.problematic_states.append(postcondition)
 
-    def extend_to_call(self, edge, bsectx, postcondition):
+    def extend_to_call(self, edge, bsectx, postcondition) -> None:
         PS = self.programstructure
         fun = edge.called_function()
         retval = None
@@ -397,7 +405,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             self.queue_state(bsectx.extension(retedge, state))
 
 
-def check_paths(checker, paths, pre=None, post=None):
+def check_paths(checker, paths, pre=None, post=None) -> PathExecutionResult:
     result = PathExecutionResult()
     for path in paths:
         p = path.copy()

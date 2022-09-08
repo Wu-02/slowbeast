@@ -9,6 +9,7 @@ from slowbeast.ir.types import *
 from slowbeast.util.debugging import print_stderr
 from .specialfunctions import special_functions, create_special_fun
 from .utils import *
+from typing import Iterable, List, Optional, Sized, Tuple, Union
 
 
 def _get_llvm_module(path):
@@ -20,7 +21,16 @@ def _get_llvm_module(path):
             return llvm.parse_bitcode(f.read())
 
 
-def parse_special_fcmp(inst, op1, op2):
+def parse_special_fcmp(
+    inst, op1, op2
+) -> Union[
+    None,
+    List[FpOp],
+    List[Union[And, Cmp, FpOp]],
+    List[Union[And, FpOp]],
+    List[Union[Cmp, FpOp]],
+    tuple[Optional[bool]],
+]:
     seq = []
     parts = str(inst).split()
     if parts[1] != "=":
@@ -52,7 +62,7 @@ def parse_special_fcmp(inst, op1, op2):
     return None
 
 
-def parse_fcmp(inst):
+def parse_fcmp(inst) -> Tuple[Optional[int], bool]:
     parts = str(inst).split()
     if parts[1] != "=":
         return None, False
@@ -88,7 +98,7 @@ def parse_fcmp(inst):
     return None, False
 
 
-def parse_cmp(inst):
+def parse_cmp(inst) -> Tuple[Optional[int], bool]:
     parts = str(inst).split()
     if parts[1] != "=":
         return None, False
@@ -120,7 +130,7 @@ def parse_cmp(inst):
     return None, False
 
 
-def parse_fun_ret_ty(m, ty):
+def parse_fun_ret_ty(m, ty) -> Tuple[bool, Union[None, FloatType, IntType]]:
     parts = str(ty).split()
     if len(parts) < 2:
         return False, None
@@ -136,7 +146,7 @@ def parse_fun_ret_ty(m, ty):
     return False, None
 
 
-def count_symbols(s, sym):
+def count_symbols(s, sym) -> int:
     cnt = 0
     for x in s:
         if x == sym:
@@ -144,7 +154,7 @@ def count_symbols(s, sym):
     return cnt
 
 
-def offset_of_struct_elem(llvmmodule, ty, cval):
+def offset_of_struct_elem(llvmmodule, ty, cval) -> int:
     assert ty.is_struct, ty
     assert cval < ty.struct_num_elements
     off = 0
@@ -170,8 +180,12 @@ thread_funs = ["pthread_create", "pthread_join", "pthread_exit"]
 
 class Parser:
     def __init__(
-        self, error_funs=None, allow_threads=True, forbid_floats=False, unsupp_funs=None
-    ):
+        self,
+        error_funs=None,
+        allow_threads: bool = True,
+        forbid_floats: bool = False,
+        unsupp_funs: Optional[Iterable[str]] = None,
+    ) -> None:
         self.llvmmodule = None
         self.program = Program()
         self.error_funs = error_funs or []
@@ -215,7 +229,7 @@ class Parser:
     def fun(self, fn):
         return self.program.fun(fn)
 
-    def _addMapping(self, llinst, sbinst):
+    def _addMapping(self, llinst, sbinst) -> None:
         if "llvm" in self._metadata_opts:
             sbinst.add_metadata("llvm", str(llinst))
         if "dbgloc" in self._metadata_opts:
@@ -225,7 +239,7 @@ class Parser:
         assert self._mapping.get(llinst) is None, "Duplicated mapping"
         self._mapping[llinst] = sbinst
 
-    def _createAlloca(self, inst):
+    def _createAlloca(self, inst) -> Union[List[Alloc], List[ZExt]]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Array allocations not supported yet"
 
@@ -252,7 +266,7 @@ class Parser:
             self._addMapping(inst, A)
             return [A]
 
-    def _createStore(self, inst):
+    def _createStore(self, inst) -> List[Store]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
@@ -261,7 +275,7 @@ class Parser:
         self._addMapping(inst, S)
         return [S]
 
-    def _createLoad(self, inst):
+    def _createLoad(self, inst) -> List[Load]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
 
@@ -291,7 +305,7 @@ class Parser:
         self._addMapping(inst, R)
         return [R]
 
-    def _createArith(self, inst, opcode):
+    def _createArith(self, inst, opcode) -> List[Union[Add, Div, Mul, Sub]]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
@@ -321,7 +335,7 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createShift(self, inst):
+    def _createShift(self, inst) -> List[Union[AShr, LShr, Shl]]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for shift"
 
@@ -341,7 +355,7 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createLogicOp(self, inst):
+    def _createLogicOp(self, inst) -> List[Union[And, Or, Xor]]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for logic op"
 
@@ -365,7 +379,7 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createSelect(self, inst):
+    def _createSelect(self, inst) -> List[Ite]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 3, "Invalid number of operands for select"
 
@@ -377,7 +391,7 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createRem(self, inst):
+    def _createRem(self, inst) -> List[Rem]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for rem"
 
@@ -395,7 +409,7 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createFNeg(self, inst):
+    def _createFNeg(self, inst) -> List[Neg]:
         if self._forbid_floats:
             raise RuntimeError(f"Floating operations forbidden: {inst}")
 
@@ -405,7 +419,7 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createCmp(self, inst, isfloat=False):
+    def _createCmp(self, inst, isfloat: bool = False):
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
         op1 = self.operand(operands[0])
@@ -433,7 +447,7 @@ class Parser:
         self._addMapping(inst, C)
         return [C]
 
-    def _createBranch(self, inst):
+    def _createBranch(self, inst) -> List[Branch]:
         operands = get_llvm_operands(inst)
         if len(operands) == 3:
             cond = self.operand(operands[0])
@@ -450,7 +464,7 @@ class Parser:
         self._addMapping(inst, B)
         return [B]
 
-    def _handleSwitch(self, inst):
+    def _handleSwitch(self, inst) -> List[Switch]:
         toop = self.operand
         tobb = self.bblock
         operands = get_llvm_operands(inst)
@@ -465,7 +479,7 @@ class Parser:
         self._addMapping(inst, S)
         return [S]
 
-    def create_nondet_call(self, name, ty):
+    def create_nondet_call(self, name, ty) -> Call:
         fun = self._funs.get(name)
         if fun is None:
             fun = Function(name, [], ty)
@@ -479,7 +493,7 @@ class Parser:
             self._addMapping(inst, mp)
         return seq
 
-    def _createThreadFun(self, inst, operands, fun):
+    def _createThreadFun(self, inst, operands: Sized, fun):
         if fun == "pthread_join":
             assert len(operands) == 3  # +1 for called fun
             ty = get_sb_type(self.llvmmodule, operands[1].type.element_type)
@@ -592,12 +606,12 @@ class Parser:
         self._addMapping(inst, C)
         return [C]
 
-    def _createUnreachable(self, inst):
+    def _createUnreachable(self, inst) -> List[Assert]:
         A = Assert(ConstantFalse, "unreachable")
         self._addMapping(inst, A)
         return [A]
 
-    def _createZExt(self, inst):
+    def _createZExt(self, inst) -> List[ZExt]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
@@ -607,7 +621,7 @@ class Parser:
         self._addMapping(inst, zext)
         return [zext]
 
-    def _createSExt(self, inst):
+    def _createSExt(self, inst) -> List[SExt]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no SExt for now
@@ -618,7 +632,7 @@ class Parser:
         self._addMapping(inst, sext)
         return [sext]
 
-    def _createReinterpCast(self, inst, sgn):
+    def _createReinterpCast(self, inst, sgn) -> List[Cast]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for cast"
         insttype = inst.type
@@ -664,7 +678,7 @@ class Parser:
     # self._addMapping(inst, cast)
     # return [cast]
 
-    def _createTrunc(self, inst):
+    def _createTrunc(self, inst) -> List[ExtractBits]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         # just behave that there's no ZExt for now
@@ -771,7 +785,7 @@ class Parser:
             return self.operand(operands[0])
         raise NotImplementedError(f"Unsupported constant expr: {ce}")
 
-    def _handlePhi(self, inst):
+    def _handlePhi(self, inst) -> List[Load]:
         bnum = type_size(self.llvmmodule, inst.type)
         phivar = Alloc(ConcreteVal(bnum, get_size_type()))
         L = Load(phivar, get_sb_type(self.llvmmodule, inst.type))
@@ -844,7 +858,7 @@ class Parser:
         else:
             raise NotImplementedError(f"Unsupported instruction: {inst}")
 
-    def _parse_block(self, F, block):
+    def _parse_block(self, F, block) -> None:
         """
         F     - slowbeast.Function
         block - llvm.block
@@ -870,7 +884,7 @@ class Parser:
 
         assert B.fun() is F
 
-    def _parse_fun(self, f):
+    def _parse_fun(self, f) -> None:
         F = self.fun(f.name)
 
         # add mapping to arguments of the function
@@ -898,7 +912,7 @@ class Parser:
                     S.insert_before(B.last())
             self.phis = []  # we handled these PHI nodes
 
-    def _parse_initializer(self, G, g, ts):
+    def _parse_initializer(self, G, g, ts) -> None:
         c = get_constant(g.initializer)
         if c:
             # FIXME: add composed instruction
@@ -919,7 +933,7 @@ class Parser:
             color="YELLOW",
         )
 
-    def _parse_globals(self, m):
+    def _parse_globals(self, m) -> None:
         for g in m.global_variables:
             assert g.type.is_pointer
             # FIXME: check and set whether it is a constant
@@ -931,7 +945,7 @@ class Parser:
             self.program.add_global(G)
             self._addMapping(g, G)
 
-    def _parse_module(self, m):
+    def _parse_module(self, m) -> None:
         self._parse_globals(m)
 
         # create the function at first,
@@ -956,7 +970,7 @@ class Parser:
 
             self._parse_fun(f)
 
-    def _parse(self, path):
+    def _parse(self, path) -> Program:
         m = _get_llvm_module(path)
         self.llvmmodule = m
         self._parse_module(m)

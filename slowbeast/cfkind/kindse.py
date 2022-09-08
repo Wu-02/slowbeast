@@ -26,6 +26,9 @@ from .inductivesequence import InductiveSequence
 from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
 from .overapproximations import overapprox_set
 from .relations import get_const_cmp_relations, get_var_relations
+from io import TextIOWrapper
+from slowbeast.cfkind.inductivesequence import InductiveSequence
+from typing import Optional, Sized
 
 
 class KindSEOptions(KindSEOptions):
@@ -46,7 +49,7 @@ class KindSEOptions(KindSEOptions):
             super(self).__init__(parentopts)
 
 
-def _dump_inductive_sets(checker, loc):
+def _dump_inductive_sets(checker, loc) -> None:
     dbg(f"With this INVARIANT set at loc {loc}:", color="dark_green")
     IS = checker.invariant_sets.get(loc)
     if IS:
@@ -119,7 +122,7 @@ def overapprox(executor, s, E, target, L):
     yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
 
 
-def report_state(stats, n, fn=print_stderr):
+def report_state(stats, n, fn=print_stderr) -> None:
     if n.has_error():
         if fn:
             fn(
@@ -186,7 +189,7 @@ class InductiveSet:
     Class representing an inductive set that we derive for a loop header.
     """
 
-    def __init__(self, initial_set: StatesSet = None):
+    def __init__(self, initial_set: StatesSet = None) -> None:
         assert initial_set is None or isinstance(initial_set, StatesSet)
         if initial_set:
             self.I = initial_set
@@ -200,7 +203,7 @@ class InductiveSet:
             self.cI = IncrementalSolver()
             self.sets = []
 
-    def add(self, elem):
+    def add(self, elem) -> None:
         self.sets.append(elem)
         I = self.I
         cI = self.cI
@@ -214,7 +217,7 @@ class InductiveSet:
                 self.I = elem
             cI.add(complement(elem).as_expr())
 
-    def includes(self, elem):
+    def includes(self, elem) -> bool:
         if isinstance(elem, InductiveSet):
             elem = elem.I
         # intersection(complement(self.I), elem).is_empty()
@@ -225,7 +228,7 @@ class InductiveSet:
 
 
 class LoopInfo:
-    def __init__(self, executor, loop):
+    def __init__(self, executor, loop) -> None:
         self.loop = loop
         self.cfa = loop.cfa
         self.header = loop.header
@@ -244,7 +247,7 @@ class LoopInfo:
     def paths(self):
         return self.loop.paths()
 
-    def set_is_inductive(self, S):
+    def set_is_inductive(self, S) -> bool:
         em = global_expr_mgr()
         solver = IncrementalSolver()
 
@@ -270,7 +273,9 @@ class LoopInfo:
 
         return True
 
-    def set_is_inductive_towards(self, S, target, allow_infeasible_only=False):
+    def set_is_inductive_towards(
+        self, S, target, allow_infeasible_only: bool = False
+    ) -> bool:
         em = global_expr_mgr()
         solver = IncrementalSolver()
 
@@ -328,8 +333,15 @@ class KindSEChecker(BaseKindSE):
     """
 
     def __init__(
-        self, loc, A, program, programstructure, opts, invariants=None, indsets=None
-    ):
+        self,
+        loc,
+        A,
+        program,
+        programstructure,
+        opts: KindSEOptions,
+        invariants=None,
+        indsets=None,
+    ) -> None:
         super().__init__(
             program,
             ohandler=None,
@@ -375,7 +387,7 @@ class KindSEChecker(BaseKindSE):
             self.loop_info[loc] = L
         return L
 
-    def execute_path(self, path, from_init=False):
+    def execute_path(self, path, from_init: bool = False):
         """
         Override execute_path such that it uses invariants that we have
         """
@@ -544,7 +556,9 @@ class KindSEChecker(BaseKindSE):
     #    # FIXME: we are still precise, use abstraction here...
     #    return seq
 
-    def initial_seq_from_last_iter(self, E: StatesSet, path, L: LoopInfo):
+    def initial_seq_from_last_iter(
+        self, E: StatesSet, path, L: LoopInfo
+    ) -> Optional[InductiveSequence]:
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -660,7 +674,7 @@ class KindSEChecker(BaseKindSE):
         # use non-inductive E
         return target0, seqs, errs0
 
-    def overapprox_init_seq(self, seq0, errs0, L):
+    def overapprox_init_seq(self, seq0, errs0, L: LoopInfo):
         assert is_seq_inductive(seq0, self, L), "seq is not inductive"
 
         create_set = self.create_set
@@ -739,7 +753,7 @@ class KindSEChecker(BaseKindSE):
 
         return None
 
-    def _safe_paths_err_inside(self, E, path, L):
+    def _safe_paths_err_inside(self, E, path: AnnotatedCFAPath, L):
         create_set = self.create_set
         is_error_loc = L.cfa().is_err
         added = False
@@ -772,7 +786,7 @@ class KindSEChecker(BaseKindSE):
 
         return None
 
-    def safe_paths_from_iterations(self, E, path, L):
+    def safe_paths_from_iterations(self, E, path, L: LoopInfo):
         # FIXME: do a proper analysis of whether the error loc is inside or outside the loop
         # instead of trying blindly
         I = self._safe_paths_err_outside(E, path, L)
@@ -788,7 +802,7 @@ class KindSEChecker(BaseKindSE):
             return I
         return None
 
-    def safe_path_with_last_iter(self, E, path, L: LoopInfo):
+    def safe_path_with_last_iter(self, E, path: AnnotatedCFAPath, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -876,7 +890,7 @@ class KindSEChecker(BaseKindSE):
             return [R]
         return None
 
-    def strengthen_initial_seq(self, seq0, E, path, L: LoopInfo):
+    def strengthen_initial_seq(self, seq0: Sized, E, path, L: LoopInfo):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
 
@@ -928,7 +942,7 @@ class KindSEChecker(BaseKindSE):
         dbg("Failed strengthening the initial sequence")
         return []
 
-    def fold_loop(self, path, loc, L: LoopInfo, unsafe):
+    def fold_loop(self, path: AnnotatedCFAPath, loc, L: LoopInfo, unsafe) -> bool:
         dbg(f"========== Folding loop {loc} ===========")
         if __debug__:
             _dump_inductive_sets(self, loc)
@@ -1107,7 +1121,7 @@ class KindSEChecker(BaseKindSE):
     def is_loop_header(self, loc):
         return loc in self.get_loop_headers()
 
-    def queue_paths(self, paths):
+    def queue_paths(self, paths) -> None:
         assert isinstance(paths, list), paths
         readyp = self.readypaths
         for p in paths:
@@ -1123,7 +1137,7 @@ class KindSEChecker(BaseKindSE):
             stoppoints=invpoints,
         )
 
-    def extend_and_queue_paths(self, path, states):
+    def extend_and_queue_paths(self, path, states) -> None:
         self.queue_paths(self.extend_paths(path, states))
 
     def check(self, onlyedges=None):
@@ -1176,7 +1190,9 @@ class KindSE:
     and keep BaseKindSE a class that just takes care for executing paths.
     """
 
-    def __init__(self, prog, ohandler=None, opts=KindSEOptions()):
+    def __init__(
+        self, prog, ohandler=None, opts: KindSEOptions = KindSEOptions()
+    ) -> None:
         assert isinstance(opts, KindSEOptions), opts
         self.program = prog
         self.ohandler = ohandler
@@ -1193,7 +1209,7 @@ class KindSE:
     # FIXME: make this a method of output handler or some function (get rid of 'self')
     # after all, we want such functionality with every analysis
     # FIXME: copied from BaseKindSE
-    def new_output_file(self, name):
+    def new_output_file(self, name) -> TextIOWrapper:
         odir = self.ohandler.outdir if self.ohandler else None
         return open(f"{odir or '.'}/{name}", "w")
 
@@ -1211,7 +1227,7 @@ class KindSE:
                 if iserr(l):
                     yield l, AssertAnnotation(EM.get_false(), {}, EM)
 
-    def run(self):
+    def run(self) -> int:
         has_unknown = False
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")

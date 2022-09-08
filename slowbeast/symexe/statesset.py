@@ -14,6 +14,7 @@ from slowbeast.symexe.statedescription import (
     unify_state_descriptions,
     eval_state_description,
 )
+from typing import Union
 
 
 class StatesSet:
@@ -30,7 +31,7 @@ class StatesSet:
 
     __slots__ = "_state"
 
-    def __init__(self, state: SEState):
+    def __init__(self, state: SEState) -> None:
         """Create new states set from the given states"""
 
         assert state is not None and isinstance(state, SEState)
@@ -39,13 +40,13 @@ class StatesSet:
         # (empty sets)
         self._state = state
 
-    def copy(self):
+    def copy(self) -> "StatesSet":
         return StatesSet(self.get_se_state().copy())
 
     def expr_manager(self):
         return global_expr_mgr()
 
-    def get_se_state(self):
+    def get_se_state(self) -> SEState:
         return self._state
 
     def as_description(self):
@@ -55,23 +56,23 @@ class StatesSet:
         """NOTE: use carefully, only when you know what you do..."""
         return self._state.constraints_obj().as_formula(self.expr_manager())
 
-    def rewrite_and_simplify(self):
+    def rewrite_and_simplify(self) -> "StatesSet":
         self.reset_expr(self.as_expr().rewrite_and_simplify())
         return self
 
-    def as_assume_annotation(self):
+    def as_assume_annotation(self) -> AssumeAnnotation:
         sd = state_to_description(self._state)
         return AssumeAnnotation(
             sd.expr(), sd.substitutions(), self._state.expr_manager()
         )
 
-    def as_assert_annotation(self):
+    def as_assert_annotation(self) -> AssertAnnotation:
         sd = state_to_description(self._state)
         return AssertAnnotation(
             sd.expr(), sd.substitutions(), self._state.expr_manager()
         )
 
-    def reset_expr(self, expr=None):
+    def reset_expr(self, expr=None) -> "StatesSet":
         """NOTE: use carefully, only when you know what you do..."""
         C = ConstraintsSet()
         if expr is not None:
@@ -79,7 +80,7 @@ class StatesSet:
         self._state.set_constraints(C)
         return self
 
-    def _unite(self, s):
+    def _unite(self, s) -> None:
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
@@ -103,7 +104,7 @@ class StatesSet:
     def model(self):
         return self._state.model()
 
-    def unite(self, *S):
+    def unite(self, *S) -> "StatesSet":
         for s in S:
             self._unite(s)
         return self
@@ -111,14 +112,14 @@ class StatesSet:
     def add(self, *S):
         return self.unite(S)
 
-    def intersect(self, s):
+    def intersect(self, s) -> "StatesSet":
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
         state.add_constraint(expr)
         return self
 
-    def translate(self, S):
+    def translate(self, S: SEState):
         """
         Make the set use internally the same variables as 'S'
         """
@@ -133,7 +134,7 @@ class StatesSet:
         state.set_constraints(ConstraintsSet((newexpr,)))
         return self
 
-    def translated(self, S):
+    def translated(self, S: SEState) -> "StatesSet":
         """
         Make the set use internally the same variables as 'S'
         """
@@ -146,7 +147,7 @@ class StatesSet:
         state.set_constraints(ConstraintsSet((newexpr,)))
         return StatesSet(state)
 
-    def complement(self):
+    def complement(self) -> "StatesSet":
         state = self._state
         EM = state.expr_manager()
         expr = EM.Not(state.constraints_obj().as_formula(EM))
@@ -155,7 +156,7 @@ class StatesSet:
         state.set_constraints(C)
         return self
 
-    def minus(self, s):
+    def minus(self, s) -> "StatesSet":
         state = self._state
         sd = to_states_descr(s)
         expr = eval_state_description(state.executor(), state, sd)
@@ -163,7 +164,7 @@ class StatesSet:
         state.add_constraint(EM.Not(expr))
         return self
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         """Check whether the set is empty. Involves a solver call"""
         return not self._state.is_feasible()
 
@@ -173,7 +174,7 @@ class StatesSet:
         X.intersect(S)
         return X.is_empty()
 
-    def contains_any(self, *Ss):
+    def contains_any(self, *Ss) -> bool:
         X = self.copy()
         X.complement()
         for s in Ss:
@@ -181,14 +182,16 @@ class StatesSet:
                 return True
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{{{self.as_description().__repr__()}}}"
 
-    def dump(self):
+    def dump(self) -> None:
         print(f"StateSet{{{self.as_description().__repr__()}}}")
 
 
-def to_states_descr(S) -> StateDescription:
+def to_states_descr(
+    S: Union[ConcreteVal, Expr, ExprAnnotation, SEState, StateDescription, StatesSet]
+) -> StateDescription:
     EM = global_expr_mgr()
 
     if isinstance(S, StatesSet):
@@ -221,7 +224,7 @@ def to_states_descr(S) -> StateDescription:
     raise NotImplementedError(f"Unhandled states representation: {type(S)}")
 
 
-def union(S1, *Ss) -> StatesSet:
+def union(S1: StatesSet, *Ss) -> StatesSet:
     assert isinstance(S1, StatesSet), S1
     X = S1.copy()
     for S in Ss:
@@ -229,7 +232,7 @@ def union(S1, *Ss) -> StatesSet:
     return X
 
 
-def intersection(S1, *Ss) -> StatesSet:
+def intersection(S1: StatesSet, *Ss) -> StatesSet:
     assert isinstance(S1, StatesSet), S1
     X = S1.copy()
     for S in Ss:
@@ -237,7 +240,7 @@ def intersection(S1, *Ss) -> StatesSet:
     return X
 
 
-def complement(S) -> StatesSet:
+def complement(S: StatesSet) -> StatesSet:
     assert isinstance(S, StatesSet), S
     X = S.copy()
     X.complement()

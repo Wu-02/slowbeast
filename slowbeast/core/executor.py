@@ -8,6 +8,8 @@ from slowbeast.util.debugging import ldbgv
 from .errors import GenericError
 from .executionstate import ExecutionState
 from .memorymodel import MemoryModel
+from slowbeast.core.executionstate import ExecutionState
+from typing import Union
 
 
 def split_ready_states(states):
@@ -27,7 +29,7 @@ def split_nonready_states(states):
 class PathExecutionResult:
     __slots__ = ["ready", "errors", "early", "other"]
 
-    def __init__(self, ready=None, errors=None, early=None, other=None):
+    def __init__(self, ready=None, errors=None, early=None, other=None) -> None:
         # states that can be further executed
         self.ready = ready
         # error states that were hit during the execution
@@ -42,7 +44,7 @@ class PathExecutionResult:
         # of the last point on the path
         self.other = other
 
-    def errors_to_early(self):
+    def errors_to_early(self) -> None:
         errs = self.errors
         earl = self.early
         if earl and errs:
@@ -51,7 +53,7 @@ class PathExecutionResult:
             self.early = errs
         self.errors = None
 
-    def other_to_early(self):
+    def other_to_early(self) -> None:
         oth = self.other
         earl = self.early
         if earl and oth:
@@ -60,7 +62,7 @@ class PathExecutionResult:
             self.early = oth
         self.other = None
 
-    def add(self, states):
+    def add(self, states) -> None:
         ready = self.ready or []
         errs = self.errors or []
         oth = self.other or []
@@ -75,7 +77,7 @@ class PathExecutionResult:
         self.errors = errs
         self.other = oth
 
-    def merge(self, r):
+    def merge(self, r) -> None:
         if r.ready:
             ready = self.ready or []
             ready += r.ready
@@ -100,7 +102,7 @@ class PathExecutionResult:
         killed2 = (s for s in early if s.was_killed()) if early else ()
         return chain(killed1, killed2)
 
-    def check(self):
+    def check(self) -> bool:
         assert not self.ready or all(map(lambda x: x.is_ready(), self.ready))
         assert not self.errors or all(map(lambda x: x.has_error(), self.errors))
         assert not self.early or all(map(lambda x: not x.is_ready(), self.early))
@@ -109,7 +111,7 @@ class PathExecutionResult:
         )
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         haveany = False
         msg = "PathExecutionResult: {"
         if self.ready:
@@ -139,7 +141,7 @@ class Executor:
     and generates new states.
     """
 
-    def __init__(self, program, opts, memorymodel=None):
+    def __init__(self, program, opts, memorymodel=None) -> None:
         self.memorymodel = memorymodel or MemoryModel(opts)
 
         self._program = program
@@ -154,7 +156,7 @@ class Executor:
         assert self.memorymodel is not None
         return self.memorymodel
 
-    def create_state(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None) -> ExecutionState:
         """
         Create a state that can be processed by this executor.
         """
@@ -162,22 +164,22 @@ class Executor:
             m = self.memorymodel.create_memory()
         return ExecutionState(pc, m)
 
-    def get_exec_instr_num(self):
+    def get_exec_instr_num(self) -> int:
         return self._executed_instrs
 
-    def get_exec_step_num(self):
+    def get_exec_step_num(self) -> int:
         return self._executed_blks
 
     def get_options(self):
         return self._opts
 
-    def forbid_calls(self):
+    def forbid_calls(self) -> None:
         self._opts.no_calls = True
 
     def calls_forbidden(self):
         return self._opts.no_calls
 
-    def exec_store(self, state, instr):
+    def exec_store(self, state, instr: Store):
         assert isinstance(instr, Store)
 
         states = self.memorymodel.write(
@@ -189,7 +191,7 @@ class Executor:
                 s.pc = s.pc.get_next_inst()
         return states
 
-    def exec_load(self, state, instr):
+    def exec_load(self, state, instr: Load):
         assert isinstance(instr, Load)
 
         states = self.memorymodel.read(
@@ -208,7 +210,7 @@ class Executor:
                 s.pc = s.pc.get_next_inst()
         return states
 
-    def exec_cmp(self, state, instr):
+    def exec_cmp(self, state, instr: Cmp):
         assert isinstance(instr, Cmp)
         op1 = state.eval(instr.operand(0))
         op2 = state.eval(instr.operand(1))
@@ -242,7 +244,7 @@ class Executor:
 
         return [state]
 
-    def exec_print(self, state, instr):
+    def exec_print(self, state, instr: Print):
         assert isinstance(instr, Print)
         for x in instr.operands():
             v = state.eval(x)
@@ -256,7 +258,7 @@ class Executor:
 
         return [state]
 
-    def exec_branch(self, state, instr):
+    def exec_branch(self, state, instr: Branch):
         assert isinstance(instr, Branch)
         c = instr.condition()
         assert isinstance(c, ValueInstruction) or c.is_concrete()
@@ -277,14 +279,14 @@ class Executor:
 
         return [state]
 
-    def exec_switch(self, state, instr):
+    def exec_switch(self, state, instr: Switch):
         assert isinstance(instr, Switch)
         # c = instr.condition()
         # assert isinstance(c, ValueInstruction) or c.is_concrete()
         # cv = state.eval(instr.condition()).value()
         raise RuntimeError("Not implemented")
 
-    def exec_assert(self, state, instr):
+    def exec_assert(self, state, instr: Assert):
         assert isinstance(instr, Assert)
         for o in instr.operands():
             v = state.eval(o)
@@ -298,7 +300,7 @@ class Executor:
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_assume(self, state, instr):
+    def exec_assume(self, state, instr: Assume):
         assert isinstance(instr, Assume)
         state.pc = state.pc.get_next_inst()
         for o in instr.operands():
@@ -315,7 +317,7 @@ class Executor:
     def exec_unary_op(self, state, instr):
         raise NotImplementedError("Concrete executor does not implement unary op yet")
 
-    def exec_binary_op(self, state, instr):
+    def exec_binary_op(self, state, instr: BinaryOperation):
         assert isinstance(instr, BinaryOperation)
         op1c = state.eval(instr.operand(0))
         op2c = state.eval(instr.operand(1))
@@ -378,7 +380,7 @@ class Executor:
     def exec_ite(self, state, instr):
         raise NotImplementedError("Ite not implemented in core")
 
-    def exec_call(self, state, instr):
+    def exec_call(self, state, instr: Call):
         assert isinstance(instr, Call)
 
         if self.calls_forbidden():
@@ -398,7 +400,7 @@ class Executor:
         state.push_call(instr, fun, mapping)
         return [state]
 
-    def exec_ret(self, state, instr):
+    def exec_ret(self, state, instr: Return):
         assert isinstance(instr, Return)
 
         # obtain the return value (if any)
@@ -429,7 +431,29 @@ class Executor:
         state.pc = rs.get_next_inst()
         return [state]
 
-    def execute(self, state, instr):
+    def execute(
+        self,
+        state,
+        instr: Union[
+            Alloc,
+            Assert,
+            Assume,
+            BinaryOperation,
+            Branch,
+            Call,
+            Cmp,
+            Ite,
+            Load,
+            Print,
+            Return,
+            Store,
+            Switch,
+            Thread,
+            ThreadExit,
+            ThreadJoin,
+            UnaryOperation,
+        ],
+    ):
         """
         Execute the next instruction in the state and modify the state accordingly.
         """
@@ -520,7 +544,7 @@ class Executor:
 
         return readystates, nonreadystates
 
-    def execute_till_branch(self, state, stopBefore=False):
+    def execute_till_branch(self, state, stopBefore: bool = False):
         """
         Start executing from 'state' and stop execution after executing a
         branch instruction.  This will typically execute exactly one basic block

@@ -1,5 +1,6 @@
 from copy import deepcopy
 from sys import stdout
+from typing import TextIO
 
 
 class ExecutionStatus:
@@ -12,17 +13,17 @@ class ExecutionStatus:
 
     __slots__ = "_status", "_detail"
 
-    def __init__(self, st=READY):
+    def __init__(self, st: int = READY) -> None:
         self._status = st
         self._detail = None
 
-    def copy(self):
+    def copy(self) -> "ExecutionStatus":
         return deepcopy(self)
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: object):
         return self._status == rhs._status and self._detail == rhs._detail
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self._detail) ^ hash(self._status)
 
     def status(self):
@@ -31,20 +32,20 @@ class ExecutionStatus:
     def detail(self):
         return self._detail
 
-    def set_error(self, e):
+    def set_error(self, e) -> None:
         self._detail = e
         self._status = ExecutionStatus.ERROR
 
-    def set_killed(self, e):
+    def set_killed(self, e) -> None:
         # raise RuntimeError(e) # for debugging
         self._detail = e
         self._status = ExecutionStatus.KILLED
 
-    def set_exited(self, ec):
+    def set_exited(self, ec) -> None:
         self._detail = ec
         self._status = ExecutionStatus.EXITED
 
-    def set_terminated(self, reason):
+    def set_terminated(self, reason) -> None:
         # The state terminated for some other reason than regular exit
         self._detail = reason
         self._status = ExecutionStatus.TERMINATED
@@ -64,7 +65,7 @@ class ExecutionStatus:
     def is_ready(self):
         return self._status == ExecutionStatus.READY
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         val = self._status
         if val == ExecutionStatus.READY:
             return "READY"
@@ -78,5 +79,5 @@ class ExecutionStatus:
             return "KILLED"
         raise RuntimeError("Invalid state status")
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO = stdout) -> None:
         stream.write(f"status: {str(self)}\n")

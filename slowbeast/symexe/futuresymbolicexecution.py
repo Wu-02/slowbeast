@@ -5,10 +5,12 @@ from slowbeast.ir.instruction import Call
 from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from .executor import Executor as SExecutor
+from io import TextIOWrapper
+from typing import Type
 
 
 class FutureExecutor(SExecutor):
-    def exec_call(self, state, instr):
+    def exec_call(self, state, instr: Call):
         assert isinstance(instr, Call)
         fun = instr.called_function()
         if self.is_error_fn(fun):
@@ -47,7 +49,7 @@ class FutureExecutor(SExecutor):
 
 
 class SEOptions(ExecutionOptions):
-    def __init__(self, opts=None):
+    def __init__(self, opts=None) -> None:
         super(SEOptions, self).__init__(opts)
         if opts:
             self.concretize_nondets = opts.concretize_nondets
@@ -62,7 +64,7 @@ class SEOptions(ExecutionOptions):
 
 
 class SEStats:
-    def __init__(self):
+    def __init__(self) -> None:
         # all paths (including ones that hit an error or terminated early)
         self.paths = 0
         # paths that exited (the state is exited)
@@ -77,17 +79,17 @@ class FutureSymbolicExecutor(Interpreter):
         self,
         P,
         ohandler=None,
-        opts=SEOptions(),
+        opts: SEOptions = SEOptions(),
         executor=None,
-        ExecutorClass=FutureExecutor,
-    ):
+        ExecutorClass: Type[FutureExecutor] = FutureExecutor,
+    ) -> None:
         self.solver = Solver()
         super().__init__(P, opts, executor or ExecutorClass(self.solver, opts))
         self.stats = SEStats()
         # outputs handler
         self.ohandler = ohandler
 
-    def new_output_file(self, name):
+    def new_output_file(self, name) -> TextIOWrapper:
         odir = self.ohandler.outdir if self.ohandler else None
         return open(f"{odir or '.'}/{name}", "w")
 
@@ -102,12 +104,12 @@ class FutureSymbolicExecutor(Interpreter):
         # DFS for now
         return states.pop()
 
-    def handle_new_states(self, newstates):
+    def handle_new_states(self, newstates) -> None:
         hs = self.handle_new_state
         for s in newstates:
             hs(s)
 
-    def handle_new_state(self, s):
+    def handle_new_state(self, s) -> None:
         testgen = self.ohandler.testgen if self.ohandler else None
         stats = self.stats
         if s.is_ready():

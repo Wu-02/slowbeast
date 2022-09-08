@@ -3,7 +3,9 @@ from slowbeast.symexe.memoryobject import MemoryObject
 
 
 class Memory(CoreMemory):
-    def create_memory_object(self, size, nm=None, objid=None, is_global=False):
+    def create_memory_object(
+        self, size, nm=None, objid=None, is_global: bool = False
+    ) -> MemoryObject:
         """
         Create a new memory object -- may be overridden
         by child classes to create a different type of

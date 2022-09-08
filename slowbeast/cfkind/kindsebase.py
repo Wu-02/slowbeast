@@ -9,9 +9,11 @@ from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, ldbgv
+from slowbeast.analysis.cfa.CFA import Location
+from typing import Optional
 
 
-def report_state(stats, n, fn=print_stderr):
+def report_state(stats, n, fn=print_stderr) -> None:
     if n.has_error():
         if fn:
             fn(
@@ -25,7 +27,7 @@ def report_state(stats, n, fn=print_stderr):
         stats.killed_paths += 1
 
 
-def check_paths(executor, paths, pre=None, post=None):
+def check_paths(executor, paths, pre=None, post=None) -> PathExecutionResult:
     result = PathExecutionResult()
     for path in paths:
         p = path.copy()
@@ -44,8 +46,12 @@ def check_paths(executor, paths, pre=None, post=None):
 
 class KindSymbolicExecutor(SymbolicInterpreter):
     def __init__(
-        self, prog, ohandler=None, opts=KindSEOptions(), programstructure=None
-    ):
+        self,
+        prog,
+        ohandler=None,
+        opts: KindSEOptions = KindSEOptions(),
+        programstructure: Optional[ProgramStructure] = None,
+    ) -> None:
         super().__init__(
             P=prog, ohandler=ohandler, opts=opts, ExecutorClass=PathExecutor
         )
@@ -76,7 +82,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def ind_executor(self):
         return self._indexecutor
 
-    def problematic_paths_as_result(self):
+    def problematic_paths_as_result(self) -> PathExecutionResult:
         r = PathExecutionResult()
         r.other = self.problematic_paths
         return r
@@ -92,7 +98,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
         """
         return self.return_states
 
-    def execute_path(self, path, from_init=False, invariants=None):
+    def execute_path(self, path, from_init: bool = False, invariants=None):
         """
         Execute the given path. The path is such that
         it ends one step before possible error.
@@ -135,7 +141,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
 
         return r
 
-    def _is_init(self, loc):
+    def _is_init(self, loc: Location) -> bool:
         assert isinstance(loc, CFA.Location), loc
         return loc is self._entry_loc
 
@@ -158,7 +164,9 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     #            paths.append(p)
     # return paths
 
-    def extend_path(self, path, states, steps=-1, atmost=False, stoppoints=[]):
+    def extend_path(
+        self, path, states, steps: int = -1, atmost: bool = False, stoppoints=[]
+    ):
         """
         Take a path and extend it by prepending one or more
         predecessors.
@@ -303,7 +311,7 @@ class KindSymbolicExecutor(SymbolicInterpreter):
     def unfinished_paths(self):
         return self.paths
 
-    def run(self, paths, maxk=None):
+    def run(self, paths, maxk=None) -> int:
         dbg(
             f"Performing the k-ind algorithm for specified paths with maxk={maxk}",
             color="ORANGE",

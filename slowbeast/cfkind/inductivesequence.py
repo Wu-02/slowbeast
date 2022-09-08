@@ -66,32 +66,32 @@ class InductiveSequence:
         def __repr__(self):
             return f"{self.states} with {self.strengthening}"
 
-    def __init__(self, fst=None, fststr=None):
+    def __init__(self, fst=None, fststr=None) -> None:
         self.frames = []
         if fst:
             # the first frame is supposed to be inductive
             self.frames.append(InductiveSequence.Frame(fst, fststr))
 
-    def copy(self):
+    def copy(self) -> "InductiveSequence":
         n = InductiveSequence()
         n.frames = self.frames.copy()
         return n
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.frames)
 
-    def append(self, states, strength):
+    def append(self, states, strength) -> None:
         assert states
         self.frames.append(InductiveSequence.Frame(states, strength))
 
     def pop(self):
         return self.frames.pop()
 
-    def strengthen(self, annot, idx):
+    def strengthen(self, annot, idx) -> None:
         assert idx < len(self.frames)
         self.frames[idx].strengthen(annot)
 
-    def toannotation(self, toassert=True):
+    def toannotation(self, toassert: bool = True):
         EM = global_expr_mgr()
         A = or_annotations(EM, toassert, *map(lambda f: f.toassume(), self.frames))
         assert toassert or A.is_assume()
@@ -104,7 +104,7 @@ class InductiveSequence:
     def __iter__(self):
         return self.frames.__iter__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "\nvv seq vv\n{0}\n^^ seq ^^\n".format(
             "\n-----\n".join(map(str, self.frames))
         )
@@ -117,8 +117,8 @@ class InductiveSequence:
         tmpframes=None,
         pre=None,
         post=None,
-        self_as_pre=False,
-    ):
+        self_as_pre: bool = False,
+    ) -> PathExecutionResult:
         """
         Check whether when we execute paths, we get to one of the frames
         tmpframes are frames that should be appended to the self.frames
@@ -149,7 +149,9 @@ class InductiveSequence:
         self.frames = oldframes
         return result
 
-    def check_last_frame(self, executor, paths, pre=None, post=None):
+    def check_last_frame(
+        self, executor, paths, pre=None, post=None
+    ) -> PathExecutionResult:
         """
         Check whether when we execute paths, we get to one of the frames
         """

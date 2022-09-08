@@ -73,12 +73,12 @@ def split_bblock_around_calls(block):
     return split_around(block, iscall)
 
 
-def split_fun_around_calls(F):
+def split_fun_around_calls(F) -> None:
     F._bblocks = [
         b for block in F.bblocks().copy() for b in split_bblock_around_calls(block)
     ]
 
 
-def split_program_around_calls(P):
+def split_program_around_calls(P) -> None:
     for F in P:
         split_fun_around_calls(F)

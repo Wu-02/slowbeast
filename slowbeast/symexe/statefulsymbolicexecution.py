@@ -1,9 +1,11 @@
 from .executor import Executor as SExecutor
 from .symbolicexecution import SEOptions, SymbolicExecutor
 from ..util.debugging import print_stderr, print_stdout, dbg
+from slowbeast.symexe.symbolicexecution import SEOptions
+from typing import Type
 
 
-def subsumed_memory(s, state):
+def subsumed_memory(s, state) -> bool:
     # every value in the state must be included in the corresponding value of s
     # FIXME: accessing protected attrs
     meml, memr = state.memory, s.memory
@@ -25,8 +27,13 @@ def subsumed_memory(s, state):
 
 class StatefulSymbolicExecutor(SymbolicExecutor):
     def __init__(
-        self, P, ohandler=None, opts=SEOptions(), executor=None, ExecutorClass=SExecutor
-    ):
+        self,
+        P,
+        ohandler=None,
+        opts: SEOptions = SEOptions(),
+        executor=None,
+        ExecutorClass: Type[slowbeast.symexe.executor.Executor] = SExecutor,
+    ) -> None:
         super().__init__(
             P,
             ohandler,
@@ -36,7 +43,7 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
         )
         self.explored_states = {}
 
-    def handle_new_state(self, state):
+    def handle_new_state(self, state) -> None:
         if self.is_subsumed(state):
             return
         if state.is_ready():
@@ -44,7 +51,7 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
         else:
             super().handle_new_state(state)
 
-    def is_subsumed(self, state):
+    def is_subsumed(self, state) -> bool:
         """
         Return true if we have a state that was implied by this state
         """

@@ -7,7 +7,7 @@ class InductiveSet:
     Class representing an inductive set that we derive for a loop header.
     """
 
-    def __init__(self, initial_set: StatesSet = None):
+    def __init__(self, initial_set: StatesSet = None) -> None:
         assert initial_set is None or isinstance(initial_set, StatesSet)
         if initial_set:
             self.I = initial_set
@@ -21,7 +21,7 @@ class InductiveSet:
             self.cI = IncrementalSolver()
             self.sets = []
 
-    def add(self, elem):
+    def add(self, elem) -> None:
         self.sets.append(elem)
         I = self.I
         cI = self.cI
@@ -35,13 +35,13 @@ class InductiveSet:
                 self.I = elem
             cI.add(complement(elem).as_expr())
 
-    def includes(self, elem):
+    def includes(self, elem) -> bool:
         if isinstance(elem, InductiveSet):
             elem = elem.I
         # intersection(complement(self.I), elem).is_empty()
         return self.cI.is_sat(elem.as_expr()) is False
 
-    def includes_any(self, *elems):
+    def includes_any(self, *elems) -> bool:
         is_sat = self.cI.is_sat
         return any(
             map(

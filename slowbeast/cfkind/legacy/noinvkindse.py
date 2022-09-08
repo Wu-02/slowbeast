@@ -8,10 +8,13 @@ from slowbeast.cfkind.naive.naivekindse import (
 )
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
+from typing import List, Optional
 
 
 class KindSymbolicExecutor(BasicKindSymbolicExecutor):
-    def __init__(self, prog, ohandler=None, opts=KindSEOptions()):
+    def __init__(
+        self, prog, ohandler=None, opts: KindSEOptions = KindSEOptions()
+    ) -> None:
         super(KindSymbolicExecutor, self).__init__(prog, opts)
 
         self.cfgs = {}
@@ -20,7 +23,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
     def get_cfg(self, F):
         return self.cfgs.setdefault(F, CFG(F))
 
-    def execute_path(self, path, from_init=False):
+    def execute_path(self, path, from_init: bool = False):
         if from_init:
             if not self.states:
                 self.prepare()
@@ -58,7 +61,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
     #    return newpaths
 
-    def extend_path(self, path, steps=0, atmost=False):
+    def extend_path(self, path, steps: int = 0, atmost: bool = False):
         """
         Take a path and extend it by prepending one or more
         predecessors.
@@ -109,10 +112,10 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return newpaths
 
-    def _is_init(self, loc):
+    def _is_init(self, loc) -> bool:
         return loc.bblock() is self.get_program().entry().bblock(0)
 
-    def report(self, n):
+    def report(self, n) -> Optional[int]:
         if n.has_error():
             print_stderr("Error found.", color="red")
             print_stderr(f"{n.get_id()}: {n.pc}, {n.get_error()}", color="RED")
@@ -170,7 +173,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
 
         return None
 
-    def initialize_paths(self, k=1):
+    def initialize_paths(self, k: int = 1) -> List[CFGPath]:
         paths = []
         cfg = self.get_cfg(self.get_program().entry())
         nodes = cfg.get_nodes()
@@ -183,7 +186,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             k -= 1
         return paths
 
-    def run(self):
+    def run(self) -> int:
         dbg("Performing the k-ind algorithm only for the main function", color="ORANGE")
 
         k = 1

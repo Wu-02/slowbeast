@@ -7,7 +7,7 @@ from z3 import Solver as Z3Solver, is_false, BoolVal
 global_expr_manager = SymcreteDomain()
 
 
-def global_expr_mgr():
+def global_expr_mgr() -> SymcreteDomain:
     global global_expr_manager
     return global_expr_manager
 
@@ -17,7 +17,7 @@ class SymbolicSolver(SolverIntf):
     Wrapper for SMT solver(s) used throughout this project
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(global_expr_mgr())
 
     def is_sat(self, *e):
@@ -49,20 +49,20 @@ class SymbolicSolver(SolverIntf):
 
 
 class IncrementalSolver(SymbolicSolver):
-    def __init__(self):
+    def __init__(self) -> None:
         # FIXME: add local expr manager
         super().__init__()
         self._solver = Z3Solver()
 
-    def add(self, *e):
+    def add(self, *e) -> None:
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
             self._solver.add(BoolVal(False))
         self._solver.add(*(x.unwrap() for x in e if not x.is_concrete()))
 
-    def push(self):
+    def push(self) -> None:
         self._solver.push()
 
-    def pop(self, num: int = 1):
+    def pop(self, num: int = 1) -> None:
         self._solver.pop(num)
 
     def is_sat(self, *e):
@@ -79,7 +79,7 @@ class IncrementalSolver(SymbolicSolver):
             self._solver, timeout, *(x.unwrap() for x in e if not x.is_concrete())
         )
 
-    def copy(self):
+    def copy(self) -> "IncrementalSolver":
         s = IncrementalSolver()
         s._solver = self._solver.translate(self._solver.ctx)
         return s
@@ -97,7 +97,7 @@ class IncrementalSolver(SymbolicSolver):
         """Debugging feature atm. Must follow is_sat() that is True"""
         return self._solver.model()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"IncrementalSolver: {self._solver}"
 
 
@@ -131,7 +131,7 @@ def _rewrite_poly(em, exprs, assumptions=None):
     return expr1
 
 
-def solve_incrementally(assumptions, exprs, em, to1=3000, to2=500):
+def solve_incrementally(assumptions, exprs, em, to1: int = 3000, to2: int = 500):
     # check if we can evaluate some expression syntactically
     for a in assumptions:
         exprs = [em.substitute(e, (a, em.get_true())) for e in exprs]

@@ -3,9 +3,10 @@ from .concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, IntType, BoolType
 from . import SIGNUL_DOMAIN_KIND
+from typing import Optional, Union
 
 
-def abstract(v):
+def abstract(v) -> int:
     if v < 0:
         v = SignULValue.LT0
     else:
@@ -29,7 +30,7 @@ class SignULValue(Value):
     NONZERO = 3
     ANY = 4
 
-    def val_to_str(x):
+    def val_to_str(x) -> Optional[str]:
         if x == SignULValue.LT0:
             return "-"
         if x == SignULValue.LE0:
@@ -47,7 +48,7 @@ class SignULValue(Value):
 
     __slots__ = "_value", "_lower", "_upper"
 
-    def __init__(self, v, t, l=None, u=None):
+    def __init__(self, v: Union[bool, float, int], t: Type, l=None, u=None) -> None:
         assert isinstance(v, (int, bool, float)), f"Invalid constant: {v} {type(v)}"
         assert isinstance(t, Type), f"Invalid type: {t}"
         assert SignULValue.LT0 <= v <= SignULValue.ANY
@@ -80,7 +81,7 @@ class SignULValue(Value):
     def __eq__(self, rhs):
         return self.value() == rhs.value()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<{0}[{1},{2}]:{3}>".format(
             SignULValue.val_to_str(self.value()),
             "-\u221e" if self._lower is None else self._lower,
@@ -89,7 +90,7 @@ class SignULValue(Value):
         )
 
 
-def get_unsigned(v):
+def get_unsigned(v) -> int:
     if v == SignULValue.LT0:
         return SignULValue.GT0
     if v == SignULValue.LE0:
@@ -106,14 +107,14 @@ class SignULDomain:
     Takes care of handling symbolic computations
     """
 
-    def belongto(*args):
+    def belongto(*args) -> bool:
         assert len(args) > 0
         for a in args:
             if a.KIND != 4:
                 return False
         return True
 
-    def lift(v):
+    def lift(v) -> Union[SignULDomain, SignULValue]:
         if v.KIND == 4:
             return v
 
@@ -130,10 +131,10 @@ class SignULDomain:
         # the internal values in fact correspond to concrete models
         return x.value()
 
-    def Constant(v, bw):
+    def Constant(v, bw) -> SignULValue:
         return SignULValue(abstract(v), IntType(bw))
 
-    def Var(ty):
+    def Var(ty) -> SignULValue:
         return SignULValue(SignULValue.ANY, ty)
 
     def may_be_true(x):
@@ -143,7 +144,7 @@ class SignULDomain:
 
     ##
     # Logic operators
-    def conjunction(*args):
+    def conjunction(*args) -> SignULValue:
         """
         And() of multiple boolean arguments.
         And() itself works as logical or bitwise and depending
@@ -154,7 +155,7 @@ class SignULDomain:
         # this way it works for abstract values and concrete values too
         return SignULValue(all(map(lambda x: x.value() != 0, args)), BoolType())
 
-    def disjunction(*args):
+    def disjunction(*args) -> SignULValue:
         """
         Or() of multiple boolean arguments.
         Or() itself works as logical or bitwise and depending
@@ -192,7 +193,7 @@ class SignULDomain:
     #    assert a.type() == b.type()
     #    return ConcreteVal(a.value() ^ b.value(), a.type())
 
-    def Not(a):
+    def Not(a) -> SignULValue:
         assert dom_is_signul(a)
         aval = a.value()
         if a.is_bool():
@@ -210,19 +211,19 @@ class SignULDomain:
                 return SignULValue(SignULValue.LT0, a.type())
             return SignULValue(SignULValue.ANY, a.type())
 
-    def ZExt(a, b):
+    def ZExt(a, b) -> SignULValue:
         assert dom_is_signul(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
         return SignULValue(SignULValue.ANY, IntType(b.value()))  # FIXME
 
-    def SExt(a, b):
+    def SExt(a, b) -> SignULValue:
         assert dom_is_signul(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         return SignULValue(SignULValue.ANY, IntType(b.value()))  # FIXME
 
-    def Cast(a: ConcreteVal, ty: Type):
+    def Cast(a: ConcreteVal, ty: Type) -> SignULValue:
         assert dom_is_signul(a, b)
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
 
@@ -243,17 +244,17 @@ class SignULDomain:
     #    #    return ConcreteVal(int(v), ty)
     #    return None  # unsupported conversion
 
-    def Shl(a, b):
+    def Shl(a, b) -> SignULValue:
         assert dom_is_signul(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
 
-    def AShr(a, b):
+    def AShr(a, b) -> SignULValue:
         assert dom_is_signul(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
 
-    def LShr(a, b):
+    def LShr(a, b) -> SignULValue:
         assert dom_is_signul(a, b)
         assert b.value() < a.bitwidth(), "Invalid shift"
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
@@ -266,7 +267,7 @@ class SignULDomain:
     #        a.type(),
     #    )
 
-    def Extract(a, start, end):
+    def Extract(a, start, end) -> SignULValue:
         assert dom_is_signul(a)
         assert dom_is_concrete(start), start
         assert dom_is_concrete(end), end
@@ -277,7 +278,7 @@ class SignULDomain:
     #        (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
     #    )
 
-    def Rem(a, b, unsigned=False):
+    def Rem(a, b, unsigned: bool = False) -> SignULValue:
         assert dom_is_signul(a, b)
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
 
@@ -288,12 +289,12 @@ class SignULDomain:
 
     ##
     # Relational operators
-    def Le(a, b, unsigned=False):
+    def Le(a, b, unsigned: bool = False) -> SignULValue:
         assert dom_is_signul(a, b)
         l, u = None, None
         return SignULValue(SignULValue.ANY, BoolType(), l, u)
 
-    def Lt(a, b, unsigned=False):
+    def Lt(a, b, unsigned: bool = False) -> SignULValue:
         # FIXME FIXME FIXME
         assert dom_is_signul(a, b)
         assert a.type() == b.type()
@@ -305,7 +306,7 @@ class SignULDomain:
         #     return ConcreteBool(getUnsigned(a) < getUnsigned(b))
         # return ConcreteBool(a.value() < b.value())
 
-    def Ge(a, b, unsigned=False):
+    def Ge(a, b, unsigned: bool = False) -> SignULValue:
         # FIXME FIXME FIXME
         assert dom_is_signul(a, b)
         assert a.type() == b.type()
@@ -314,7 +315,7 @@ class SignULDomain:
         #     return ConcreteBool(getUnsigned(a) >= getUnsigned(b))
         # return ConcreteBool(a.value() >= b.value())
 
-    def Gt(a, b, unsigned=False):
+    def Gt(a, b, unsigned: bool = False) -> SignULValue:
         # FIXME FIXME FIXME
         assert dom_is_signul(a, b)
         assert a.type() == b.type()
@@ -324,7 +325,7 @@ class SignULDomain:
         #     return ConcreteBool(getUnsigned(a) > getUnsigned(b))
         # return ConcreteBool(a.value() > b.value())
 
-    def Eq(a, b, unsigned=False):
+    def Eq(a, b, unsigned: bool = False) -> SignULValue:
         # FIXME FIXME FIXME
         assert dom_is_signul(a, b)
         assert a.type() == b.type()
@@ -333,7 +334,7 @@ class SignULDomain:
         #     return ConcreteBool(getUnsigned(a) == getUnsigned(b))
         # return ConcreteBool(a.value() == b.value())
 
-    def Ne(a, b, unsigned=False):
+    def Ne(a, b, unsigned: bool = False) -> SignULValue:
         assert dom_is_signul(a, b)
         assert a.type() == b.type(), f"Incompatible types: {a.type()} != {b.type()}"
         aval = a.value()
@@ -364,7 +365,7 @@ class SignULDomain:
 
     ##
     # Arithmetic operations
-    def Add(a, b):
+    def Add(a, b) -> SignULValue:
         assert dom_is_signul(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float()
@@ -379,7 +380,7 @@ class SignULDomain:
             SignULValue.ANY, a.type()
         )  # ConcreteVal(a.value() + b.value(), a.type())
 
-    def Sub(a, b):
+    def Sub(a, b) -> SignULValue:
         assert dom_is_signul(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
@@ -390,7 +391,7 @@ class SignULDomain:
         bw = a.type().bitwidth()
         return ConcreteVal(wrap_to_bw(a.value() - b.value(), bw), a.type())
 
-    def Mul(a, b):
+    def Mul(a, b) -> SignULValue:
         assert dom_is_signul(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
@@ -401,7 +402,7 @@ class SignULDomain:
         bw = a.type().bitwidth()
         return ConcreteVal(wrap_to_bw(a.value() * b.value(), bw), a.type())
 
-    def Div(a, b, unsigned=False):
+    def Div(a, b, unsigned: bool = False) -> SignULValue:
         assert dom_is_signul(a, b)
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
 

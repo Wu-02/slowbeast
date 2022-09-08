@@ -12,7 +12,9 @@ class Loop:
     such that all these _paths are acyclic
     """
 
-    def __init__(self, loc, parent, paths, locs, entries, exits, inedges, backedges):
+    def __init__(
+        self, loc, parent, paths, locs, entries, exits, inedges, backedges
+    ) -> None:
         # parent loops
         self._parent = parent
         # header of the loop (the target of backedges)
@@ -312,7 +314,7 @@ class SimpleLoop:
                 return True
         return False
 
-    def construct(loc) -> Optional[SimpleLoop]:
+    def construct(loc) -> Optional["SimpleLoop"]:
         """
         Construct the SimpleLoop obj for _header.
         Returns None if that cannot be done

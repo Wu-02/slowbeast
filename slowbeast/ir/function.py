@@ -3,12 +3,13 @@ from sys import stdout
 from .argument import Argument
 from .instruction import Return
 from .program import ProgramElement
+from typing import TextIO
 
 
 class Function(ProgramElement):
     __slots__ = "_name", "_bblocks", "_arguments", "_retty"
 
-    def __init__(self, name, args, retty=None):
+    def __init__(self, name, args, retty=None) -> None:
         super().__init__()
         self._name = name
         self._bblocks = []
@@ -42,7 +43,7 @@ class Function(ProgramElement):
     def type(self):
         return self._retty
 
-    def add_bblock(self, bb):
+    def add_bblock(self, bb) -> None:
         self._bblocks.append(bb)
         bb.set_fun(self)
 
@@ -59,7 +60,7 @@ class Function(ProgramElement):
     def __iter__(self):
         return self._bblocks.__iter__()
 
-    def dump(self, ind=0, stream=stdout, color=True):
+    def dump(self, ind: int = 0, stream: TextIO = stdout, color: bool = True) -> None:
         super().dump(ind, stream, color)
         stream.write(
             "fun {0}({1})\n".format(

@@ -1,5 +1,6 @@
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.symexe.statesset import union, StatesSet
+from typing import Optional
 
 
 class InductiveSequence:
@@ -7,13 +8,13 @@ class InductiveSequence:
     A sequence of states that are inductive towards each other.
     """
 
-    def __init__(self, fst=None):
+    def __init__(self, fst: Optional[StatesSet] = None) -> None:
         "NOTE: overtakes the ownership of the 'fst' set!"
         assert fst is None or isinstance(fst, StatesSet), fst
         self.frames = [fst] if fst else []
         self.seq_as_set = fst.copy() if fst else None
 
-    def copy(self):
+    def copy(self) -> "InductiveSequence":
         n = InductiveSequence()
         if self.frames:
             assert self.seq_as_set
@@ -21,13 +22,13 @@ class InductiveSequence:
             n.seq_as_set = self.seq_as_set.copy()
         return n
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.frames)
 
     def as_set(self):
         return self.seq_as_set
 
-    def append(self, S):
+    def append(self, S: StatesSet) -> None:
         assert isinstance(S, StatesSet)
         self.frames.append(S)
         self.seq_as_set.add(S)
@@ -44,7 +45,7 @@ class InductiveSequence:
     def __iter__(self):
         return self.frames.__iter__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "\nvv seq vv\n{0}\n^^ seq ^^\n".format(
             "\n-----\n".join(map(str, self.frames))
         )
@@ -57,8 +58,8 @@ class InductiveSequence:
         tmpframes=None,
         pre=None,
         post=None,
-        self_as_pre=False,
-    ):
+        self_as_pre: bool = False,
+    ) -> PathExecutionResult:
         """
         Check whether when we execute paths, we get to one of the frames
         tmpframes are frames that should be appended to the self.frames
@@ -89,7 +90,9 @@ class InductiveSequence:
         self.frames = oldframes
         return result
 
-    def check_last_frame(self, executor, paths, pre=None, post=None):
+    def check_last_frame(
+        self, executor, paths, pre=None, post=None
+    ) -> PathExecutionResult:
         """
         Check whether when we execute paths, we get to one of the frames
         """

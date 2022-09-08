@@ -2,7 +2,6 @@ from sys import stdout
 
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import Call
-from slowbeast.analysis.callgraph.CallGraph import Node
 from typing import TextIO
 
 
@@ -49,7 +48,7 @@ class CallGraph:
 
     __slots__ = "_program", "_nodes"
 
-    def __init__(self, P):
+    def __init__(self, P) -> None:
         self._program = P
         self._nodes = {}
 
@@ -109,7 +108,7 @@ class CallGraph:
         for (k, n) in nonreach:
             self._nodes.pop(k)
 
-    def dump(self, stream: TextIO=stdout) -> None:
+    def dump(self, stream: TextIO = stdout) -> None:
         for f, node in self._nodes.items():
             stream.write(f"Fun '{f.name()}' calls\n")
             for cs, funs in node.callsites().items():

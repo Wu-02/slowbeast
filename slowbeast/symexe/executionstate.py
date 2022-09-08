@@ -14,25 +14,26 @@ from slowbeast.ir.instruction import (
 from ..solvers.symcrete import solve_incrementally
 from slowbeast.util.debugging import warn, ldbgv
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
+from typing import List, TextIO, Union
 
 
 class Nondet:
     __slots__ = "instruction", "value"
 
-    def __init__(self, instr, val):
+    def __init__(self, instr, val) -> None:
         self.instruction = instr
         self.value = val
 
-    def is_nondet_call(self):
+    def is_nondet_call(self) -> bool:
         return False
 
-    def is_nondet_load(self):
+    def is_nondet_load(self) -> bool:
         return False
 
-    def is_nondet_instr(self):
+    def is_nondet_instr(self) -> bool:
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.instruction.as_value()} = {self.value}"
 
 
@@ -54,7 +55,9 @@ class SEState(ExecutionState):
     )
     statesCounter = 0
 
-    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
+    def __init__(
+        self, executor=None, pc=None, m=None, solver=None, constraints=None
+    ) -> None:
         super().__init__(pc, m)
 
         SEState.statesCounter += 1
@@ -169,7 +172,7 @@ class SEState(ExecutionState):
     def path_condition(self):
         return self._constraints.as_formula(self.solver().expr_manager())
 
-    def add_constraint(self, *C):
+    def add_constraint(self, *C) -> None:
         if self._constraints_ro:
             self._constraints = self._constraints.copy()
             self._constraints_ro = False
@@ -177,7 +180,7 @@ class SEState(ExecutionState):
         for c in C:
             self._constraints.add(c)
 
-    def set_constraints(self, *C):
+    def set_constraints(self, *C) -> None:
         if len(C) == 1 and isinstance(C[0], ConstraintsSet):
             self._constraints = C[0]
             self._constraints_ro = False
@@ -186,7 +189,7 @@ class SEState(ExecutionState):
             self._constraints_ro = False
             self.add_constraint(*C)
 
-    def add_warning(self, msg):
+    def add_warning(self, msg) -> None:
         warn(msg)
         if self._warnings_ro:
             self._warnings = copy(self._warnings)
@@ -196,11 +199,11 @@ class SEState(ExecutionState):
     def warnings(self):
         return self._warnings
 
-    def create_nondet(self, instr, val):
+    def create_nondet(self, instr, val) -> None:
         # self.add_nondet(Nondet(instr, NondetInstrResult.from_expr(val, instr)))
         self.add_nondet(Nondet(instr, val))
 
-    def add_nondet(self, n):
+    def add_nondet(self, n: Nondet) -> None:
         assert isinstance(n, Nondet), n
         if self._nondets_ro:
             self._nondets = copy(self._nondets)
@@ -213,7 +216,7 @@ class SEState(ExecutionState):
             )
         self._nondets.append(n)
 
-    def has_nondets(self):
+    def has_nondets(self) -> bool:
         return len(self._nondets) > 0
 
     def nondet(self, x):
@@ -238,7 +241,7 @@ class SEState(ExecutionState):
         #          return n
         #  return None
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO = stdout) -> None:
         super().dump(stream)
         write = stream.write
         write(" -- nondets --\n")
@@ -251,7 +254,7 @@ class SEState(ExecutionState):
 
 
 class IncrementalSEState(SEState):
-    def __init__(self, executor=None, pc=None, m=None):
+    def __init__(self, executor=None, pc=None, m=None) -> None:
         C = IncrementalConstraintsSet()
         super().__init__(executor, pc, m, solver=None, constraints=C)
 
@@ -266,7 +269,7 @@ class LazySEState(SEState):
     def get_nondet_instr_result(self):
         return (l for l in self._nondets if l.is_nondet_instr_result())
 
-    def havoc(self, mobjs=None):
+    def havoc(self, mobjs=None) -> None:
         self.memory.havoc(mobjs)
         if mobjs:
             newnl = []
@@ -281,7 +284,7 @@ class LazySEState(SEState):
         else:
             self._nondets = []
 
-    def eval(self, v):
+    def eval(self, v: Union[Alloc, GlobalVariable]):
         value = self.try_eval(v)
         if value is None:
             vtype = v.type()
@@ -310,7 +313,7 @@ class Thread:
 
     # ids = 0
 
-    def __init__(self, tid, pc, callstack):
+    def __init__(self, tid, pc, callstack) -> None:
         self.pc = pc
         self.cs = callstack  # callstack
         self._id = tid  # Thread.ids
@@ -320,7 +323,7 @@ class Thread:
         self._exit_val = None
         # Thread.ids += 1
 
-    def copy(self):
+    def copy(self) -> "Thread":
         n = copy(self)  # shallow copy
         n.cs = self.cs.copy()
         return n
@@ -328,34 +331,34 @@ class Thread:
     def get_id(self):
         return self._id
 
-    def is_detached(self):
+    def is_detached(self) -> bool:
         return self._detached
 
-    def set_detached(self):
+    def set_detached(self) -> None:
         self._detached = True
 
-    def pause(self):
+    def pause(self) -> None:
         assert not self._paused
         self._paused = True
 
-    def unpause(self):
+    def unpause(self) -> None:
         assert self._paused
         self._paused = False
 
-    def is_paused(self):
+    def is_paused(self) -> bool:
         return self._paused
 
-    def set_atomic(self, b: bool):
+    def set_atomic(self, b: bool) -> None:
         if b:
             self._in_atomic += 1
         else:
             self._in_atomic -= 1
         assert self._in_atomic >= 0
 
-    def in_atomic(self):
+    def in_atomic(self) -> bool:
         return self._in_atomic > 0
 
-    def __str__(self):
+    def __str__(self) -> str:
         s = f"Thread({self.get_id()}@{self.pc}"
         if self.is_paused():
             s += ", paused"
@@ -367,11 +370,11 @@ class Thread:
             s += f", exited with {self._exit_val}"
         return s + ")"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Thread[{self.get_id()}: pc: {self.pc}, cs: {self.cs}]"
 
 
-def _get_event(pc):
+def _get_event(pc: Union[Call, Load, Return, Store, ThreadJoin]) -> int:
     if isinstance(pc, Store):
         return Event.WRITE
     if isinstance(pc, Load):
@@ -389,7 +392,7 @@ def _get_event(pc):
     raise NotImplementedError(f"Unknown event: {pc}")
 
 
-def _get_mem(evty, pc, state):
+def _get_mem(evty, pc: ThreadJoin, state):
     if evty == Event.WRITE:
         return state.eval(pc.operand(1))
     if evty in (Event.READ, Event.LOCK, Event.UNLOCK):
@@ -409,7 +412,7 @@ def _get_val(evty, pc, state):
     return None
 
 
-def _evty_to_str(ty):
+def _evty_to_str(ty) -> str:
     if ty == Event.WRITE:
         return "write"
     if ty == Event.READ:
@@ -435,13 +438,13 @@ class Event:
 
     __slots__ = "ty", "mem", "val"
 
-    def __init__(self, state):
+    def __init__(self, state) -> None:
         pc = state.pc
         self.ty = _get_event(pc)
         self.mem = _get_mem(self.ty, pc, state)
         self.val = _get_val(self.ty, pc, state)
 
-    def is_call_of(self, call):
+    def is_call_of(self, call: str):
         if isinstance(call, str):
             return self.ty == Event.CALL and self.mem == call
         return self.ty == Event.CALL and self.mem in call
@@ -476,7 +479,7 @@ class Event:
         # FIXME: we should probably do better
         return True
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{_evty_to_str(self.ty)} of {self.mem}, val: {self.val}"
 
 
@@ -495,7 +498,9 @@ class ThreadedSEState(SEState):
         "_conflicts",
     )
 
-    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
+    def __init__(
+        self, executor=None, pc=None, m=None, solver=None, constraints=None
+    ) -> None:
         super().__init__(executor, pc, m, solver, constraints)
         self._last_tid = 0
         self._current_thread = 0
@@ -510,7 +515,7 @@ class ThreadedSEState(SEState):
         self._wait_mutex = {}
         self._conflicts = []
 
-    def _thread_idx(self, thr):
+    def _thread_idx(self, thr: Thread) -> int:
         if isinstance(thr, Thread):
             return self._threads.index(thr)
         for idx, t in enumerate(self._threads):
@@ -518,7 +523,7 @@ class ThreadedSEState(SEState):
                 return idx
         return None
 
-    def _copy_to(self, new):
+    def _copy_to(self, new) -> None:
         super()._copy_to(new)
         new._threads = [t.copy() for t in self._threads]
         new._wait_join = self._wait_join.copy()
@@ -536,7 +541,7 @@ class ThreadedSEState(SEState):
     def trace(self):
         return self._event_trace
 
-    def lazy_eval(self, v):
+    def lazy_eval(self, v: Union[Alloc, GlobalVariable]):
         value = self.try_eval(v)
         if value is None:
             vtype = v.type()
@@ -559,11 +564,11 @@ class ThreadedSEState(SEState):
             self.create_nondet(v, value)
         return value
 
-    def sync_pc(self):
+    def sync_pc(self) -> None:
         if self._threads:
             self._threads[self._current_thread].pc = self.pc
 
-    def add_event(self):
+    def add_event(self) -> None:
         self._events.append(Event(self))
 
     def get_last_event(self):
@@ -574,7 +579,7 @@ class ThreadedSEState(SEState):
     def events(self):
         return self._events
 
-    def schedule(self, idx):
+    def schedule(self, idx: int) -> None:
         if self._current_thread == idx:
             return
         assert idx < len(self._threads)
@@ -591,7 +596,7 @@ class ThreadedSEState(SEState):
 
         self._event_trace.append((self.thread_id(), self.pc))
 
-    def add_thread(self, pc):
+    def add_thread(self, pc) -> Thread:
         self._last_tid += 1
         t = Thread(self._last_tid, pc, self.memory.get_cs().copy())
         assert not t.is_paused()
@@ -599,31 +604,31 @@ class ThreadedSEState(SEState):
         # self._trace.append(f"add thread {t.get_id()}")
         return t
 
-    def current_thread(self):
+    def current_thread(self) -> int:
         return self._current_thread
 
-    def thread(self, idx=None):
+    def thread(self, idx=None) -> Thread:
         return self._threads[self._current_thread if idx is None else idx]
 
     def thread_id(self, idx=None):
         return self._threads[self._current_thread if idx is None else idx].get_id()
 
-    def pause_thread(self, idx=None):
+    def pause_thread(self, idx=None) -> None:
         # self._trace.append(f"pause thread {self.thread(idx).get_id()}")
         self._threads[self._current_thread if idx is None else idx].pause()
 
-    def unpause_thread(self, idx=None):
+    def unpause_thread(self, idx=None) -> None:
         # self._trace.append(f"unpause thread {self.thread(idx).get_id()}")
         self._threads[self._current_thread if idx is None else idx].unpause()
 
-    def start_atomic(self, idx=None):
+    def start_atomic(self, idx=None) -> None:
         # self._trace.append(f"thread {self.thread(idx).get_id()} begins atomic sequence")
         assert not self._threads[
             self._current_thread if idx is None else idx
         ].in_atomic()
         self._threads[self._current_thread if idx is None else idx].set_atomic(True)
 
-    def end_atomic(self, idx=None):
+    def end_atomic(self, idx=None) -> None:
         # self._trace.append(f"thread {self.thread(idx).get_id()} ends atomic sequence")
         assert self._threads[self._current_thread if idx is None else idx].in_atomic()
         self._threads[self._current_thread if idx is None else idx].set_atomic(False)
@@ -631,22 +636,22 @@ class ThreadedSEState(SEState):
     def mutex_locked_by(self, mtx):
         return self._mutexes.get(mtx)
 
-    def mutex_init(self, mtx):
+    def mutex_init(self, mtx) -> None:
         self._mutexes[mtx] = None
 
-    def mutex_destroy(self, mtx):
+    def mutex_destroy(self, mtx) -> None:
         self._mutexes.pop(mtx)
 
     def has_mutex(self, mtx):
         return mtx in self._mutexes
 
-    def mutex_lock(self, mtx, idx=None):
+    def mutex_lock(self, mtx, idx=None) -> None:
         # self._trace.append(f"thread {self.thread(idx).get_id()} locks mutex {mtx}")
         tid = self.thread(self._current_thread if idx is None else idx).get_id()
         assert self.mutex_locked_by(mtx) is None, "Locking locked mutex"
         self._mutexes[mtx] = tid
 
-    def mutex_unlock(self, mtx, idx=None):
+    def mutex_unlock(self, mtx, idx=None) -> None:
         # self._trace.append(f"thread {self.thread(idx).get_id()} unlocks mutex {mtx}")
         assert (
             self.mutex_locked_by(mtx)
@@ -661,7 +666,7 @@ class ThreadedSEState(SEState):
                 unpause(tidx(tid))
             self._wait_mutex[mtx] = set()
 
-    def mutex_wait(self, mtx, idx=None):
+    def mutex_wait(self, mtx, idx=None) -> None:
         "Thread idx waits for mutex mtx"
 
         # self._trace.append(f"thread {self.thread(idx).get_id()} waits for mutex {mtx}")
@@ -670,7 +675,7 @@ class ThreadedSEState(SEState):
         self.pause_thread(idx)
         self._wait_mutex.setdefault(mtx, set()).add(self.thread(tid).get_id())
 
-    def exit_thread(self, retval, tid=None):
+    def exit_thread(self, retval, tid=None) -> None:
         """Exit thread and wait for join (if not detached)"""
         if tid is None:
             tid = self.thread().get_id()
@@ -693,7 +698,7 @@ class ThreadedSEState(SEState):
             t.pc = t.pc.get_next_inst()
             self._wait_join.pop(tid)
 
-    def join_threads(self, tid, totid=None):
+    def join_threads(self, tid, totid=None) -> None:
         """
         tid: id of the thread to join
         totid: id of the thread to which to join (None means the current thread)
@@ -724,7 +729,7 @@ class ThreadedSEState(SEState):
             toidx = self._thread_idx(totid)
         self.pause_thread(toidx)
 
-    def remove_thread(self, idx=None):
+    def remove_thread(self, idx=None) -> None:
         # self._trace.append(f"removing thread {self.thread(idx).get_id()}")
         self._threads.pop(self._current_thread if idx is None else idx)
         # schedule thread 0 (if there is any) -- user will reschedule if
@@ -739,13 +744,13 @@ class ThreadedSEState(SEState):
         if self.num_threads() == 0:
             self.set_exited(0)
 
-    def num_threads(self):
+    def num_threads(self) -> int:
         return len(self._threads)
 
-    def threads(self):
+    def threads(self) -> List[Thread]:
         return self._threads
 
-    def add_conflict(self, state):
+    def add_conflict(self, state) -> None:
         self._conflicts.append((state.get_last_event(), state))
 
     def filter_conflicts(self, ev=None):
@@ -761,7 +766,7 @@ class ThreadedSEState(SEState):
         self._conflicts = newc
         return ret
 
-    def dump(self, stream=stdout):
+    def dump(self, stream: TextIO = stdout) -> None:
         super().dump(stream)
         write = stream.write
         write(" -- Threads --\n")

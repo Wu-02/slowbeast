@@ -1,13 +1,14 @@
 from .interactive import InteractiveHandler
 from ..core.executor import Executor
 from ..util.debugging import print_stderr, dbg
+from typing import Sized
 
 
 class ExecutionOptions:
     INSTR_STEP = 1
     BLOCK_STEP = 2
 
-    def __init__(self, opts=None):
+    def __init__(self, opts=None) -> None:
         if opts:
             self.step = opts.step
             self.interactive = opts.interactive
@@ -19,11 +20,11 @@ class ExecutionOptions:
             self.no_calls = False
             self.lazy_mem_access = False
 
-    def set_block_step(self):
+    def set_block_step(self) -> "ExecutionOptions":
         self.step = ExecutionOptions.BLOCK_STEP
         return self
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.__repr__()}\n" + "\n".join(
             f"  {k} = {v}" for k, v in self.__dict__.items()
         )
@@ -32,12 +33,14 @@ class ExecutionOptions:
 # dummy class used as a program counter during initialization
 # of global variables
 class GlobalInit:
-    def get_next_inst(self):
+    def get_next_inst(self) -> "GlobalInit":
         return self
 
 
 class Interpreter:
-    def __init__(self, program, opts=ExecutionOptions(), executor=None):
+    def __init__(
+        self, program, opts: ExecutionOptions = ExecutionOptions(), executor=None
+    ) -> None:
         self._program = program
         self._options = opts
         self._executor = Executor(opts) if executor is None else executor
@@ -95,17 +98,17 @@ class Interpreter:
 
         raise RuntimeError("This line should be unreachable")
 
-    def handle_new_states(self, newstates):
+    def handle_new_states(self, newstates: Sized) -> None:
         assert len(newstates) == 1, "Concrete execution returned more than one state"
         self.handle_new_state(newstates[0])
 
-    def interact_if_needed(self, s):
+    def interact_if_needed(self, s) -> None:
         if self._interactive is None:
             return
 
         self._interactive.prompt(s)
 
-    def run_static(self):
+    def run_static(self) -> None:
         """Run static ctors (e.g. initialize globals)"""
         # fake the program counter for the executor
         ginit = GlobalInit()
@@ -149,7 +152,7 @@ class Interpreter:
         argv = state.memory.allocate(argv_size, nm="argv")
         return {args[0]: argc, args[1]: argv}
 
-    def prepare(self):
+    def prepare(self) -> None:
         """
         Prepare the interpreter for execution.
         I.e. initialize static memory and push the call to
@@ -165,10 +168,10 @@ class Interpreter:
             main_args = self._main_args(s)
             s.push_call(None, self.get_program().entry(), args_mapping=main_args)
 
-    def report(self):
+    def report(self) -> None:
         pass
 
-    def do_step(self):
+    def do_step(self) -> None:
         state = self.get_next_state()
         if state is None:
             return
@@ -185,7 +188,7 @@ class Interpreter:
         #    print("Searched states: {0}".format(self.states_num))
         self.handle_new_states(newstates)
 
-    def run(self):
+    def run(self) -> int:
         self.prepare()
 
         # we're ready to go!

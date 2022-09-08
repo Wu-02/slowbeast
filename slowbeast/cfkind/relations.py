@@ -146,7 +146,7 @@ def get_var_diff_relations(state):
                         )
 
 
-def _get_nd_val(l, lbw, Ss):
+def _get_nd_val(l, lbw: int, Ss):
     nd1 = Ss.nondet(l)
     if not nd1:
         ndval = Ss.solver().fresh_value(f"nd{l.as_value()}", IntType(8 * lbw))
@@ -439,7 +439,7 @@ def _get_var_relations(safe, prevsafe=None):
             yield from get_relations_to_prev_states(s, prevsafe)
 
 
-def get_var_relations(safe, prevsafe=None, only_eq=False):
+def get_var_relations(safe, prevsafe=None, only_eq: bool = False):
     solver = IncrementalSolver()
     toyield = set()
     Not = global_expr_mgr().Not

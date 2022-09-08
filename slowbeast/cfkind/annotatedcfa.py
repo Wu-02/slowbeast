@@ -1,5 +1,6 @@
 from slowbeast.analysis.cfa import CFA
 from slowbeast.util.debugging import print_highlight
+from typing import Optional, Union
 
 
 def _loc_id(loc):
@@ -8,7 +9,7 @@ def _loc_id(loc):
     return loc.id()
 
 
-def _edge_str(edge, ab, aa):
+def _edge_str(edge, ab, aa) -> str:
     return "({0}{1}{2} -> {3}{4}{5})".format(
         "@ " if ab.get(_loc_id(edge.source())) else "",
         edge.source(),
@@ -19,7 +20,7 @@ def _edge_str(edge, ab, aa):
     )
 
 
-def _str_loc(loc, ab, aa):
+def _str_loc(loc, ab, aa) -> str:
     return "{0}{1}{2}".format(
         "@ " if ab.get(_loc_id(loc)) else "",
         loc,
@@ -27,7 +28,7 @@ def _str_loc(loc, ab, aa):
     )
 
 
-def _copy_annots(dst, src):
+def _copy_annots(dst, src) -> None:
     # FIXME: do cow?
     dst._annot_after_loc = src._annot_after_loc.copy()
     dst._annot_before_loc = src._annot_before_loc.copy()
@@ -50,7 +51,7 @@ class AnnotatedCFAPath:
         "_annot_after",
     )
 
-    def __init__(self, edges=None):
+    def __init__(self, edges=None) -> None:
         self._edges = edges or []
         self._annot_after_loc = {}
         self._annot_before_loc = {}
@@ -66,7 +67,7 @@ class AnnotatedCFAPath:
                     return elems[0]
         return None
 
-    def first_assume_edge_idx(self):
+    def first_assume_edge_idx(self) -> Optional[int]:
         edges = self._edges
         if edges:
             for idx, e in enumerate(edges):
@@ -80,7 +81,7 @@ class AnnotatedCFAPath:
             return self._edges[idx]
         return None
 
-    def last_assume_edge_idx(self):
+    def last_assume_edge_idx(self) -> Optional[int]:
         edges = self._edges
         if edges:
             for idx in range(-1, -(len(edges) + 1), -1):
@@ -88,7 +89,7 @@ class AnnotatedCFAPath:
                     return idx
         return None
 
-    def last_edge_of_idx(self, elem):
+    def last_edge_of_idx(self, elem) -> Optional[int]:
         if not hasattr(elem, "__iter__"):
             elem = (elem,)
         edges = self._edges
@@ -97,7 +98,7 @@ class AnnotatedCFAPath:
                 return idx
         return None
 
-    def last_loc_of_idx(self, elem):
+    def last_loc_of_idx(self, elem) -> Optional[int]:
         if not hasattr(elem, "__iter__"):
             elem = (elem,)
         edges = self._edges
@@ -110,7 +111,7 @@ class AnnotatedCFAPath:
     def edges(self):
         return self._edges
 
-    def num_of_occurences(self, elem):
+    def num_of_occurences(self, elem: Union[CFA.Edge, CFA.Location]) -> int:
         n = 0
         if isinstance(elem, CFA.Edge):
             for e in self._edges:
@@ -125,7 +126,7 @@ class AnnotatedCFAPath:
                     n += 1
         return n
 
-    def last_idx_of(self, elem):
+    def last_idx_of(self, elem: CFA.Edge) -> Optional[int]:
         edges = self._edges
         if isinstance(elem, CFA.Edge):
             for idx in range(-1, -(len(edges) + 1), -1):
@@ -145,7 +146,7 @@ class AnnotatedCFAPath:
     def __iter__(self):
         return self._edges.__iter__()
 
-    def __lt__(self, rhs):
+    def __lt__(self, rhs) -> bool:
         return len(self._edges) < len(rhs._edges)
 
     def first_loc(self):
@@ -166,19 +167,19 @@ class AnnotatedCFAPath:
     def annot_after(self):
         return self._annot_after
 
-    def add_annot_after(self, annot):
+    def add_annot_after(self, annot) -> None:
         self._annot_after.append(annot)
 
-    def add_annot_before(self, annot):
+    def add_annot_before(self, annot) -> None:
         self._annot_before.append(annot)
 
-    def add_annot_after_loc(self, annot, loc):
+    def add_annot_after_loc(self, annot, loc) -> None:
         self._annot_after_loc.setdefault(_loc_id(loc), []).append(annot)
 
-    def add_annot_before_loc(self, annot, loc):
+    def add_annot_before_loc(self, annot, loc) -> None:
         self._annot_before_loc.setdefault(_loc_id(loc), []).append(annot)
 
-    def subpath(self, start, end=None):
+    def subpath(self, start, end=None) -> "AnnotatedCFAPath":
         if end is None:
             n = AnnotatedCFAPath(self._edges[start:])
         else:
@@ -186,12 +187,12 @@ class AnnotatedCFAPath:
         _copy_annots(n, self)
         return n
 
-    def copy(self):
+    def copy(self) -> "AnnotatedCFAPath":
         n = AnnotatedCFAPath(self._edges.copy())
         _copy_annots(n, self)
         return n
 
-    def copyandprepend(self, edges):
+    def copyandprepend(self, edges) -> "AnnotatedCFAPath":
         # FIXME: this is not efficient...
         if not isinstance(edges, list):
             edges = [edges]
@@ -199,7 +200,7 @@ class AnnotatedCFAPath:
         _copy_annots(n, self)
         return n
 
-    def copyandappend(self, edges):
+    def copyandappend(self, edges) -> "AnnotatedCFAPath":
         # FIXME: this is not efficient...
         if not isinstance(edges, list):
             edges = [edges]
@@ -207,15 +208,15 @@ class AnnotatedCFAPath:
         _copy_annots(n, self)
         return n
 
-    def copyandsetpath(self, locs):
+    def copyandsetpath(self, locs) -> "AnnotatedCFAPath":
         n = AnnotatedCFAPath(locs)
         _copy_annots(n, self)
         return n
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._edges)
 
-    def dump(self):
+    def dump(self) -> None:
         ab, aa = self._annot_before_loc, self._annot_after_loc
         print_highlight(
             "{0}{1}{2}".format(
@@ -226,7 +227,7 @@ class AnnotatedCFAPath:
             words={"[A]": "green"},
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         ab, aa = self._annot_before_loc, self._annot_after_loc
         if len(self) < 13:
             return "{0}{1} -> {2}{3}".format(

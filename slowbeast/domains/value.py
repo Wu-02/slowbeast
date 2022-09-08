@@ -6,11 +6,11 @@ from slowbeast.ir.types import Type
 class Value:
     __slots__ = "_type"
 
-    def __init__(self, ty):
+    def __init__(self, ty: Type) -> None:
         assert isinstance(ty, Type)
         self._type = ty
 
-    def __eq__(self, other):
+    def __eq__(self, other: object):
         raise NotImplementedError("This must be overriden")
 
     def type(self):
@@ -44,7 +44,7 @@ class Value:
         """
         raise NotImplementedError("Must be overriden")
 
-    def is_concrete(self):
+    def is_concrete(self) -> bool:
         """
         Is this a concrete value? (syntactically)
         """

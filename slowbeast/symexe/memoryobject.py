@@ -5,9 +5,11 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type, IntType, Bytes
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
+from typing import Optional, Sized
+from typing_extensions import SupportsIndex
 
 
-def get_byte(EM, x, bw, i):
+def get_byte(EM, x, bw, i: int):
     off = 8 * i
     b = EM.Extract(
         x,
@@ -18,7 +20,7 @@ def get_byte(EM, x, bw, i):
     return b
 
 
-def write_bytes(offval, values, size, x):
+def write_bytes(offval, values, size, x) -> Optional[MemError]:
     EM = global_expr_mgr()
     bw = x.bytewidth()
     if not x.is_int():
@@ -37,7 +39,7 @@ def write_bytes(offval, values, size, x):
     return None
 
 
-def read_bytes(values, offval, size, bts, zeroed):
+def read_bytes(values: Sized, offval, size, bts, zeroed):
     assert bts > 0, bts
     assert size > 0, size
     assert offval >= 0, offval
@@ -71,7 +73,7 @@ def read_bytes(values, offval, size, bts, zeroed):
     return val, None
 
 
-def mo_to_bytes(values, size):
+def mo_to_bytes(values, size: SupportsIndex):
     dbgv("Promoting MO to bytes", color="gray")
     newvalues = [None] * size
     for o, val in values.items():
@@ -93,7 +95,7 @@ class MemoryObject(CoreMO):
     __slots__ = ()
 
     # FIXME: refactor
-    def read(self, bts, off=None):
+    def read(self, bts: int, off: Optional[ConcreteVal] = None):
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)
@@ -165,7 +167,7 @@ class MemoryObject(CoreMO):
         # FIXME: make me return Bytes objects (a sequence of bytes)
         return val, None
 
-    def write(self, x, off=None):
+    def write(self, x: Value, off: Optional[ConcreteVal] = None):
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error
@@ -227,7 +229,7 @@ class MemoryObject(CoreMO):
             return None
         return MemError(MemError.UNSUPPORTED, "Unsupported memory operation")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), 0-ed: {4}, size: {5}".format(
             self._id,
             self._name if self._name else "no name",

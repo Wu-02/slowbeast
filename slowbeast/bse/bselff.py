@@ -12,6 +12,8 @@ from slowbeast.util.debugging import (
     dec_print_indent,
     dbg,
 )
+from slowbeast.bse.loopinfo import LoopInfo
+from typing import List, Type
 
 
 #####################################################################
@@ -28,16 +30,18 @@ class SEState(ExecutionState):
 
     __slots__ = "_loc_visits"
 
-    def __init__(self, executor=None, pc=None, m=None, solver=None, constraints=None):
+    def __init__(
+        self, executor=None, pc=None, m=None, solver=None, constraints=None
+    ) -> None:
         super().__init__(executor, pc, m, solver, constraints)
         self._loc_visits = {}
 
-    def _copy_to(self, new):
+    def _copy_to(self, new) -> None:
         super()._copy_to(new)
         # FIXME: use COW
         new._loc_visits = self._loc_visits.copy()
 
-    def visited(self, inst):
+    def visited(self, inst) -> None:
         n = self._loc_visits.setdefault(inst, 0)
         self._loc_visits[inst] = n + 1
 
@@ -48,7 +52,7 @@ class SEState(ExecutionState):
 
 
 class Executor(SExecutor):
-    def create_state(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None) -> SEState:
         if m is None:
             m = self.get_memory_model().create_memory()
         s = SEState(self, pc, m, self.solver)
@@ -61,12 +65,12 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
         self,
         P,
         ohandler=None,
-        opts=SEOptions(),
+        opts: SEOptions = SEOptions(),
         executor=None,
-        ExecutorClass=Executor,
+        ExecutorClass: Type[Executor] = Executor,
         programstructure=None,
         fwdstates=None,
-    ):
+    ) -> None:
         super().__init__(P, ohandler, opts, executor, ExecutorClass)
         self.programstructure = programstructure
         self._loop_headers = {
@@ -114,7 +118,7 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
             self.states = [s for s in states if s is not None]
         return state
 
-    def handle_new_state(self, s):
+    def handle_new_state(self, s) -> None:
         pc = s.pc
         self._covered_insts.add(pc)
 
@@ -123,7 +127,7 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
             self._register_loop_states(s)
         super().handle_new_state(s)
 
-    def _register_loop_states(self, state):
+    def _register_loop_states(self, state) -> None:
         n = state.num_visits()
         assert n > 0, "Bug in counting visits"
         states = self.forward_states.setdefault(state.pc, [])
@@ -171,7 +175,7 @@ class BSELFChecker(BSELFCheckerVanilla):
         indsets=None,
         max_loop_hits=None,
         forward_states=None,
-    ):
+    ) -> None:
         super().__init__(
             loc, A, program, programstructure, opts, invariants, indsets, max_loop_hits
         )
@@ -214,7 +218,7 @@ class BSELFChecker(BSELFCheckerVanilla):
         dbg(f"Checking if {A} holds on {loc} finished")
         return result, states
 
-    def fold_loop(self, loc, L, unsafe, loop_hit_no):
+    def fold_loop(self, loc, L: LoopInfo, unsafe, loop_hit_no):
         fstates = self.forward_states.get(L.header().elem()[0])
         if fstates is None:
             self.max_seq_len = 2
@@ -236,13 +240,15 @@ class BSELFF(BSELF):
     The main class for BSELFF (BSELF with forward analysis)
     """
 
-    def __init__(self, prog, ohandler=None, opts=BSELFOptions()):
+    def __init__(
+        self, prog, ohandler=None, opts: BSELFOptions = BSELFOptions()
+    ) -> None:
         print("BSELF^2")
         super().__init__(prog, ohandler, opts)
         self.forward_states = {}
         # self.create_set = self.ind_executor().create_states_set
 
-    def init_se_checkers(self):
+    def init_se_checkers(self) -> List[BSELFFSymbolicExecutor]:
         se = BSELFFSymbolicExecutor(
             self.program,
             self.ohandler,
@@ -253,7 +259,7 @@ class BSELFF(BSELF):
         se.prepare()
         return [se]
 
-    def init_bself_checkers(self):
+    def init_bself_checkers(self) -> List[BSELFChecker]:
         bself_checkers = []
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
@@ -270,7 +276,7 @@ class BSELFF(BSELF):
             bself_checkers.append(checker)
         return bself_checkers
 
-    def run(self):
+    def run(self) -> int:
         se_checkers = self.init_se_checkers()
         bself_checkers = self.init_bself_checkers()
 

@@ -7,6 +7,8 @@ from slowbeast.util.debugging import dbgv, ldbgv
 from .annotations import execute_annotations
 from .executionstate import LazySEState
 from .executor import Executor as SExecutor
+from slowbeast.symexe.executionstate import LazySEState
+from typing import Sized
 
 
 class Executor(SExecutor):
@@ -15,10 +17,10 @@ class Executor(SExecutor):
     CFA paths possibly annotated with formulas.
     """
 
-    def __init__(self, program, solver, opts, memorymodel=None):
+    def __init__(self, program, solver, opts, memorymodel=None) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
-    def create_state(self, pc=None, m=None):
+    def create_state(self, pc=None, m=None) -> LazySEState:
         """
         Overridden method for creating states.
         Since the path may not be initial, we must use states
@@ -126,7 +128,9 @@ class Executor(SExecutor):
 
         return ready, nonready
 
-    def execute_annotated_path(self, state, path, invariants=None):
+    def execute_annotated_path(
+        self, state, path: Sized, invariants=None
+    ) -> PathExecutionResult:
         """
         Execute the given path through CFG with annotations from the given
         state. NOTE: the passed states may be modified.
@@ -241,7 +245,7 @@ class CFGExecutor(SExecutor):
     The paths are supposed to be AnnotatedCFGPaths (paths in CFG)
     """
 
-    def __init__(self, program, solver, opts, memorymodel=None):
+    def __init__(self, program, solver, opts, memorymodel=None) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
     def execute_annotations(self, states, annots):
@@ -287,7 +291,9 @@ class CFGExecutor(SExecutor):
         dbgv(f"^^ ----- Loc {loc.bblock().get_id()} ----- ^^")
         return ready, nonready
 
-    def execute_annotated_path(self, state, path, branch_on_last=False):
+    def execute_annotated_path(
+        self, state, path, branch_on_last: bool = False
+    ) -> PathExecutionResult:
         """
         Execute the given path through CFG with annotations from the given
         state. NOTE: the passed states may be modified.

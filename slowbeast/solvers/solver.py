@@ -3,7 +3,7 @@ class SolverIntf:
 
     __slots__ = "_exprmanager"
 
-    def __init__(self, em):
+    def __init__(self, em) -> None:
         # for now we use a global expr manager
         self._exprmanager = em
 

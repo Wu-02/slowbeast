@@ -29,10 +29,15 @@ from .bse import (
 from .inductivesequence import InductiveSequence
 from .inductiveset import InductiveSet
 from .loopinfo import LoopInfo
+from io import TextIOWrapper
+from slowbeast.bse.bse import BSEContext
+from slowbeast.bse.inductivesequence import InductiveSequence
+from slowbeast.bse.loopinfo import LoopInfo
+from typing import List, Optional, Sized
 
 
 class BSELFOptions(KindSEOptions):
-    def __init__(self, copyopts=None):
+    def __init__(self, copyopts=None) -> None:
         super().__init__(copyopts)
         if copyopts:
             self.fold_loops = copyopts.fold_loops
@@ -50,7 +55,7 @@ class BSELFOptions(KindSEOptions):
             self.add_unwind_invariants = False
 
 
-def _dump_inductive_sets(checker, loc, fn=dbg):
+def _dump_inductive_sets(checker, loc, fn=dbg) -> None:
     fn(f"With this INVARIANT set at loc {loc}:", color="dark_green")
     IS = checker.invariant_sets.get(loc)
     if IS:
@@ -65,7 +70,7 @@ def _dump_inductive_sets(checker, loc, fn=dbg):
         fn(" ∅", color="dark_green")
 
 
-def _check_set(executor, S, L, target):
+def _check_set(executor, S, L, target) -> bool:
     # FIXME: this is a workaround until we support nondet() calls in lazy
     # execution
     r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
@@ -187,11 +192,11 @@ class BSELFChecker(BaseBSE):
         A,
         program,
         programstructure,
-        opts,
+        opts: BSELFOptions,
         invariants=None,
         indsets=None,
         max_loop_hits=None,
-    ):
+    ) -> None:
         super().__init__(
             program,
             ohandler=None,
@@ -258,7 +263,7 @@ class BSELFChecker(BaseBSE):
         dbg(f"Checking if {A} holds on {loc} finished")
         return result, states
 
-    def execute_path(self, path, from_init=False, invariants=None):
+    def execute_path(self, path, from_init: bool = False, invariants=None):
         """
         Execute the given path. The path is such that
         it ends one step before possible error.
@@ -316,7 +321,7 @@ class BSELFChecker(BaseBSE):
             states.extend(pre)
         return states
 
-    def unwind(self, loc, errpre, maxk=None):
+    def unwind(self, loc, errpre, maxk=None) -> int:
         """
         Unroll the loop maxk times - that is, unroll the loop until you hit 'loc'
         in every feasible context maximally maxk times
@@ -495,7 +500,9 @@ class BSELFChecker(BaseBSE):
             for A in toyield:
                 yield A
 
-    def get_initial_seqs(self, E: StatesSet, L: LoopInfo, loop_hit_no: int):
+    def get_initial_seqs(
+        self, E: StatesSet, L: LoopInfo, loop_hit_no: int
+    ) -> Optional[List[InductiveSequence]]:
         S = E.copy()
         S.complement()
 
@@ -540,7 +547,7 @@ class BSELFChecker(BaseBSE):
         # use non-inductive E
         return seqs or None
 
-    def overapprox_init_seq(self, seq0, unsafe, L):
+    def overapprox_init_seq(self, seq0, unsafe, L: LoopInfo):
         assert is_seq_inductive(seq0, L), "seq is not inductive"
         dbg("Overapproximating initial sequence")
         dbg(str(seq0))
@@ -578,7 +585,7 @@ class BSELFChecker(BaseBSE):
             if yield_seq:
                 yield seq
 
-    def _last_k_iteration_paths(self, L, k=0):
+    def _last_k_iteration_paths(self, L, k: int = 0):
         """Obtain the paths that correspond to the last k iterations of the loop"""
         is_error_loc = L.cfa().is_err
         exits = [p for p in L.get_exit_paths() if not is_error_loc(p.last_loc())]
@@ -593,7 +600,7 @@ class BSELFChecker(BaseBSE):
             k -= 1
         return [AnnotatedCFAPath(p) for p in paths]
 
-    def _last_k_iterations_states(self, L, k=0):
+    def _last_k_iterations_states(self, L, k: int = 0):
         assert k >= 0, k
 
         create_set = self.create_set
@@ -669,7 +676,7 @@ class BSELFChecker(BaseBSE):
 
         return self._match_included_indsets(isets, sets, E)
 
-    def initial_sets_from_is(self, E, L):
+    def initial_sets_from_is(self, E, L: LoopInfo):
         # get the inductive sets that we have created for this header.
         # Since we go iteration over iteration, adding this sequence
         # to the previous ones must yield an inductive sequence
@@ -698,7 +705,7 @@ class BSELFChecker(BaseBSE):
             return sets
         return None
 
-    def add_invariant(self, loc, inv):
+    def add_invariant(self, loc, inv) -> None:
         invs = self.invariant_sets.setdefault(loc, [])
         invs.append(inv.to_assume(global_expr_mgr()))
         # FIXME: check that the invariant gives us a new information
@@ -717,11 +724,11 @@ class BSELFChecker(BaseBSE):
                 color="BLUE",
             )
 
-    def add_inductive_set(self, loc, S):
+    def add_inductive_set(self, loc, S) -> None:
         I = InductiveSet(self.create_set(S))
         self.inductive_sets.setdefault(loc, []).append(I)
 
-    def fold_loop(self, loc, L: LoopInfo, unsafe, loop_hit_no):
+    def fold_loop(self, loc, L: LoopInfo, unsafe: Sized, loop_hit_no: int) -> bool:
         print_stdout(
             f"========== Folding loop {loc} ({loop_hit_no} time) ===========",
             color="white",
@@ -838,7 +845,7 @@ class BSELFChecker(BaseBSE):
         assert isinstance(loc, CFA.Location)
         return loc in self.get_loop_headers()
 
-    def init_checker(self, onlyedges=None):
+    def init_checker(self, onlyedges=None) -> None:
         # the initial error path that we check
         loc = self.location
         em = global_expr_mgr()
@@ -858,7 +865,7 @@ class BSELFChecker(BaseBSE):
             ), self.problematic_paths_as_result()
         return self._do_step(bsectx)
 
-    def _do_step(self, bsectx):
+    def _do_step(self, bsectx: BSEContext):
         assert bsectx is not None
         r, pre = self.precondition(bsectx)
         if r is Result.SAFE:
@@ -925,7 +932,9 @@ class BSELF:
     that divides and conquers the tasks.
     """
 
-    def __init__(self, prog, ohandler=None, opts=BSELFOptions()):
+    def __init__(
+        self, prog, ohandler=None, opts: BSELFOptions = BSELFOptions()
+    ) -> None:
         assert isinstance(opts, BSELFOptions), opts
         self.program = prog
         self.ohandler = ohandler
@@ -942,7 +951,7 @@ class BSELF:
     # FIXME: make this a method of output handler or some function (get rid of 'self')
     # after all, we want such functionality with every analysis
     # FIXME: copied from BaseKindSE
-    def new_output_file(self, name):
+    def new_output_file(self, name) -> TextIOWrapper:
         odir = self.ohandler.outdir if self.ohandler else None
         return open(f"{odir or '.'}/{name}", "w")
 
@@ -960,7 +969,7 @@ class BSELF:
                 if iserr(l):
                     yield l, AssertAnnotation(EM.get_false(), {}, EM)
 
-    def run(self):
+    def run(self) -> int:
         has_unknown = False
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")

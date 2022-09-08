@@ -8,15 +8,18 @@ SIGNUL_DOMAIN_KIND = 5
 def dom_is_concrete(v):
     return v.KIND == CONCRETE_DOMAIN_KIND
 
+
 def dom_is_symbolic(v):
     return v.KIND == SYMBOLIC_DOMAIN_KIND
+
 
 def dom_is_symcrete(v):
     return v.KIND == SYMCRETE_DOMAIN_KIND
 
+
 def dom_is_sign(v):
     return v.KIND == SIGN_DOMAIN_KIND
 
+
 def dom_is_signul(v):
     return v.KIND == SIGNUL_DOMAIN_KIND
-
