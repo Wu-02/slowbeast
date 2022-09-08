@@ -1,7 +1,7 @@
 from sys import stdout
 
 from slowbeast.core.executionstatus import ExecutionStatus
-from slowbeast.domains.concrete_int_float import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.function import Function
 from slowbeast.ir.types import get_offset_type

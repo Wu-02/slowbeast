@@ -1,7 +1,9 @@
-from slowbeast.domains.concrete_int_float import ConcreteVal, ConcreteIntFloatDomain
+from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain
+from .concrete import ConcreteVal
 from slowbeast.domains.symbolic import SymbolicDomain
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import BoolType, IntType, Type
+from . import SYMCRETE_DOMAIN_KIND
 
 optimize_exprs = True
 
@@ -37,13 +39,16 @@ def em_optimize_expressions(b=True):
 
 opt = SymbolicExprOpt.optimize
 
-
+# FIXME: This domain still has the methods as ExprManager (which it used to be),
+# other domains have only static methods...
 class SymcreteDomain:
     """
     Takes care of creating (caching and optimizing) expressions.
     The default mode (right now) is just to create Bare
     SMT formulas, but we'll be ready for the future :)
     """
+
+    KIND = SYMCRETE_DOMAIN_KIND
 
     __slots__ = "_names"
 

@@ -1,8 +1,10 @@
 from random import getrandbits
 
+import slowbeast.domains.concrete
 from slowbeast.core.errors import AssertFailError, GenericError
 from slowbeast.core.executor import Executor as ConcreteExecutor
-from slowbeast.domains.concrete_int_float import ConcreteVal, dom_is_concrete, ConcreteBool
+from slowbeast.domains.concrete_int_float import dom_is_concrete, ConcreteBool
+from ..domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.value import Value
 from slowbeast.ir.function import Function
@@ -317,8 +319,8 @@ class Executor(ConcreteExecutor):
         if op2.is_zero():
             obj, off = op1.object(), op1.offset()
             expr = em.And(
-                em.Eq(obj, em.ConcreteVal(0, obj.bitwidth())),
-                em.Eq(off, em.ConcreteVal(0, off.bitwidth())),
+                em.Eq(obj, slowbeast.domains.concrete.ConcreteVal(0, obj.bitwidth())),
+                em.Eq(off, slowbeast.domains.concrete.ConcreteVal(0, off.bitwidth())),
             )
             return expr if pred == Cmp.EQ else em.Not(expr)
         return None
@@ -345,7 +347,7 @@ class Executor(ConcreteExecutor):
                         self.compare_values(
                             E,
                             instr.predicate(),
-                            E.ConcreteVal(0, op1.bitwidth()),
+                            slowbeast.domains.concrete.ConcreteVal(0, op1.bitwidth()),
                             op2,
                             instr.is_unsigned(),
                         ),
@@ -357,7 +359,7 @@ class Executor(ConcreteExecutor):
                             E,
                             instr.predicate(),
                             op1,
-                            E.ConcreteVal(0, op1.bitwidth()),
+                            slowbeast.domains.concrete.ConcreteVal(0, op1.bitwidth()),
                             instr.is_unsigned(),
                         ),
                     )

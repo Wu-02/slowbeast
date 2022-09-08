@@ -1,9 +1,10 @@
-from slowbeast.domains.concrete_int_float import ConcreteVal
+from .concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
 from slowbeast.ir.types import Type, IntType, BoolType, FloatType
 from slowbeast.solvers.arithformula import Monomial, Polynomial, ArithFormula
 from slowbeast.util.debugging import FIXME
+from . import SYMBOLIC_DOMAIN_KIND
 
 from z3 import (
     If,
@@ -1026,8 +1027,7 @@ class Expr(Value):
     metadata like a type (and hash in the future, etc.)
     """
 
-    # FIXME: get rid of the magic constant
-    KIND = 2
+    KIND = SYMBOLIC_DOMAIN_KIND
 
     __slots__ = "_expr"
 

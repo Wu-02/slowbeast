@@ -1,6 +1,7 @@
 from struct import unpack, pack
 
-from slowbeast.domains.concrete_int_float import ConcreteVal, ConstantTrue, ConstantFalse
+from slowbeast.domains.concrete_int_float import ConstantTrue, ConstantFalse
+from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import get_null_pointer
 from slowbeast.ir.types import IntType, FloatType, PointerType
 from slowbeast.util.debugging import warn

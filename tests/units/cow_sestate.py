@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete_int_float import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.types import *
 from slowbeast.ir.program import *
 from slowbeast.ir.bblock import *

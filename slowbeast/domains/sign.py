@@ -1,10 +1,8 @@
-from slowbeast.domains.concrete_int_float import ConcreteVal, dom_is_concrete
+from slowbeast.domains.concrete_int_float import dom_is_concrete
+from .concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, IntType, BoolType
-
-
-def dom_is_sign(*v):
-    return all(map(lambda x: x.KIND == 3, v))
+from . import SIGN_DOMAIN_KIND
 
 
 def abstract(v):
@@ -20,7 +18,7 @@ class ZOValue(Value):
     Extends concrete domain by -, 0, +  abstractions
     """
 
-    KIND = 3
+    KIND = SIGN_DOMAIN_KIND
 
     # values
     LT0 = -2

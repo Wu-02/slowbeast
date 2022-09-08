@@ -6,7 +6,7 @@ from sys import stdout
 from slowbeast.core.errors import MemError
 from slowbeast.core.memory import Memory as CoreMemory
 from slowbeast.core.memorymodel import MemoryModel
-from slowbeast.domains.concrete_int_float import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.symbolic import NondetLoad
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load

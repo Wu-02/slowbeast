@@ -3,7 +3,8 @@ try:
 except ImportError as e:
     raise ImportError(f"Need clang bindings: {e}")
 
-from slowbeast.domains.concrete_int_float import ConcreteVal, ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteInt
+from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
 from slowbeast.ir.program import Program

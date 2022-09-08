@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete_int_float import ConcreteVal
+from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.symbolic import Expr
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.symexe.annotations import (
