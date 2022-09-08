@@ -1,4 +1,4 @@
-all: pylint check
+all: mypy pylint check
 
 # LINTERS AND STATIC CHECKERS
 pylint:
@@ -14,7 +14,10 @@ black:
 autopep:
 	autopep8 --in-place --aggressive --aggressive --recursive slowbeast
 
-type-infer:
+mypy:
+	mypy . --exclude llvmlite --exclude benchexec --exclude slowbeast/parsers
+
+pyre-infer:
 	pyre infer -i
 
 # TESTING
