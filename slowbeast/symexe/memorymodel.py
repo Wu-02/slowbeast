@@ -1,5 +1,5 @@
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
-from slowbeast.domains.symbolic import NondetLoad
+from slowbeast.domains.expr import NondetLoad
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
 from slowbeast.ir.types import IntType

@@ -1,5 +1,7 @@
 from sys import stdout
+from typing import Union, TextIO
 
+import slowbeast.domains.symbolic_helpers
 from slowbeast.bse.memorymodel import _nondet_value
 from slowbeast.domains.concrete_int_float import ConcreteInt
 from slowbeast.domains.pointer import Pointer
@@ -7,7 +9,6 @@ from slowbeast.solvers.symcrete import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.util.debugging import ldbgv
-from typing import Union, TextIO
 from slowbeast.ir.instruction import Alloc, GlobalVariable
 
 

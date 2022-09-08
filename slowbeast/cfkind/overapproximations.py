@@ -1,5 +1,6 @@
 from functools import partial
 
+import slowbeast.domains.symbolic_helpers
 from slowbeast.core.executor import PathExecutionResult
 from slowbeast.domains.concrete_int_float import ConcreteInt
 from ..domains.symcrete import em_optimize_expressions
@@ -450,7 +451,7 @@ class LoopStateOverapproximation:
         # new add the assumptions (without them the formula is not equivalent
         # to expr now)
         if assumptions:
-            newclauses.extend(list(assumptions.as_expr().to_cnf().children()))
+            newclauses.extend(list(assumptions.as_cnf_expr().children()))
         clauses = remove_implied_literals(newclauses)
 
         assert intersection(

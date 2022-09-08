@@ -6,7 +6,7 @@ from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.cfkind.overapproximations import overapprox_set
 from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
 from slowbeast.core.errors import AssertFailError
-from slowbeast.domains.symbolic import to_c_expression
+from ..domains.symbolic_helpers import to_c_expression
 from ..solvers.symcrete import global_expr_mgr
 from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet

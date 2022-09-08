@@ -1,6 +1,6 @@
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import Pointer
-from slowbeast.domains.symbolic import Expr
+from slowbeast.domains.expr import Expr
 from slowbeast.ir.instruction import Instruction, Load
 
 

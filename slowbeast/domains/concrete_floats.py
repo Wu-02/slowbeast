@@ -99,7 +99,9 @@ class ConcreteFloatsDomain:
         return ConcreteFloat(a.value() * b.value(), bw)
 
     @staticmethod
-    def Div(a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False) -> ConcreteFloat:
+    def Div(
+        a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False
+    ) -> ConcreteFloat:
         assert ConcreteFloatsDomain.belongto(a, b)
         bw = a.bitwidth()
         return ConcreteFloat(a.value() / b.value(), bw)

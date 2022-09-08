@@ -1,7 +1,8 @@
 from typing import Union
 
 from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain
-from slowbeast.domains.symbolic import Expr, SymbolicDomain
+from slowbeast.domains.symbolic import SymbolicDomain
+from .expr import Expr
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import BoolType, IntType, Type
 from slowbeast.domains.concrete import ConcreteVal

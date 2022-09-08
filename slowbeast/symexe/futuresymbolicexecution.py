@@ -1,5 +1,5 @@
 from slowbeast.core.errors import AssertFailError
-from slowbeast.domains.symbolic import Future
+from ..domains.expr import Future
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.ir.instruction import Call
 from slowbeast.solvers.solver import Solver

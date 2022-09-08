@@ -1,9 +1,5 @@
-from slowbeast.domains.symbolic import (
-        simplify_polynomial_formula,
-        _desimplify_ext,
-        BVFormula,
-        BVPolynomial
-)
+from slowbeast.domains.poly_bv import BVPolynomial, BVFormula
+from slowbeast.domains.symbolic_rewriting import _desimplify_ext, simplify_polynomial_formula
 
 from z3 import BitVec, Not, SignExt
 from slowbeast.solvers.arithformula import ArithFormula

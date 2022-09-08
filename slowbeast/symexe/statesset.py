@@ -1,5 +1,5 @@
 from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.domains.symbolic import Expr
+from slowbeast.domains.expr import Expr
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.symexe.annotations import (
     ExprAnnotation,
@@ -56,6 +56,9 @@ class StatesSet:
     def as_expr(self):
         """NOTE: use carefully, only when you know what you do..."""
         return self._state.constraints_obj().as_formula(self.expr_manager())
+
+    def as_cnf_expr(self):
+        return self.as_expr().to_cnf()
 
     def rewrite_and_simplify(self) -> "StatesSet":
         self.reset_expr(self.as_expr().rewrite_and_simplify())

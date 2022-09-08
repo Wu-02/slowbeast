@@ -1,4 +1,4 @@
-from slowbeast.domains.symbolic import map_model
+from slowbeast.domains.symbolic_helpers import map_model
 from slowbeast.domains.symcrete import SymcreteDomain
 from slowbeast.solvers.solver import SolverIntf
 from slowbeast.solvers.z3solver import models, models_inc, _is_sat
@@ -128,7 +128,9 @@ def _rewrite_poly(em, exprs, assumptions=None):
         A = []
         for i in range(len(assumptions)):
             a = assumptions[i]
-            A.append(a.rewrite_polynomials(assumptions))
+            A.append(
+                a.rewrite_polynomials(assumptions)
+            )
         return em.conjunction(*A, expr1)
     return expr1
 
@@ -154,7 +156,9 @@ def solve_incrementally(assumptions, exprs, em, to1: int = 3000, to2: int = 500)
     if eqs:
         expr = _rewrite_poly(em, list(exprcnf.children()), eqs)
         if not expr.is_concrete():
-            exprs, r = _remove_implied(eqs, em, expr.to_cnf().children())
+            exprs, r = _remove_implied(
+                eqs, em, expr.to_cnf().children()
+            )
             if r is not None:
                 return r
             expr = em.conjunction(*exprs, *eqs)

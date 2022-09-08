@@ -9,7 +9,7 @@ from subprocess import run
 from sys import exit
 from time import time, process_time
 
-from slowbeast.domains.symbolic import to_c_expression
+from slowbeast.domains.symbolic_helpers import to_c_expression
 from slowbeast.ir.instruction import Call
 from slowbeast.parsers.llvm.parser import Parser as LLVMParser
 from slowbeast.symexe.symbolicexecution import SEOptions
