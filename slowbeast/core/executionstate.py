@@ -8,7 +8,7 @@ from slowbeast.ir.types import get_offset_type
 from typing import TextIO
 
 
-# from slowbeast.util.debugging import dbgv
+from slowbeast.util.debugging import dbgv
 
 
 class ExecutionState:
@@ -109,9 +109,9 @@ class ExecutionState:
 
     def set(self, what, v) -> None:
         """Associate a value to a register (in the current stack frame)"""
-        # if __debug__:
-        #   h = f" ({hex(v.value())})" if v and v.is_concrete() and v.is_int() else ""
-        #   dbgv("[{0}] -> {1}{2}".format(what, v, h), color="GREEN")
+        if __debug__:
+          h = f" ({hex(v.value())})" if v and v.is_concrete() and v.is_int() else ""
+          dbgv("[{0}] -> {1}{2}".format(what, v, h), color="GREEN")
         # XXX: rename to bind?
         self.memory.set(what, v)
 

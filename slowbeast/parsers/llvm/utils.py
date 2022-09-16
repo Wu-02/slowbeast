@@ -6,8 +6,10 @@ from slowbeast.domains.pointer import Pointer, get_null_pointer
 from slowbeast.ir.types import IntType, FloatType, PointerType
 from slowbeast.util.debugging import warn
 from slowbeast.domains.concrete_bool import ConcreteBool
+from slowbeast.domains.concrete_int_float import ConstantTrue, ConstantFalse, ConcreteIntFloatDomain
 from typing import Optional, Sized, Union
 
+concrete_value = ConcreteIntFloatDomain.Value
 
 def _getInt(s) -> Optional[int]:
     try:
@@ -30,8 +32,8 @@ def trunc_to_float(x):
 
 
 def to_float_ty(val: ConcreteVal) -> ConcreteVal:
-    if isinstance(val, ConcreteVal) and not val.is_float():
-        return ConcreteVal(float(val.value()), FloatType(val.bitwidth()))
+    if isinstance(val, ConcreteVal):
+        return concrete_value(float(val.value()), val.bitwidth())
     return val
 
 
@@ -197,14 +199,12 @@ def get_constant(val):
     if c is None:
         if bw == 1:
             if parts[1] == "true":
-                return ConcreteVal(1, IntType(bw))
-                # return ConstantTrue
+                c = True
             elif parts[1] == "false":
-                return ConcreteVal(0, IntType(bw))
-                # return ConstantFalse
+                c = False
         return None
 
-    return ConcreteVal(c, FloatType(bw) if isfloating else IntType(bw))
+    return concrete_value(c, bw)
 
 
 def bv_to_bool_else_id(bv: ConcreteBool) -> ConcreteBool:

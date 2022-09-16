@@ -1,6 +1,6 @@
 import llvmlite.binding as llvm
 
-from slowbeast.domains.concrete_int_float import ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain
 from slowbeast.ir.argument import Argument
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
@@ -11,6 +11,7 @@ from .specialfunctions import special_functions, create_special_fun
 from .utils import *
 from typing import Iterable, List, Optional, Sized, Tuple, Union
 
+concrete_value = ConcreteIntFloatDomain.Value
 
 def _get_llvm_module(path):
     if path.endswith(".ll"):
@@ -252,17 +253,17 @@ class Parser:
             bytewidth = type_size(self.llvmmodule, operands[0].type)
             SizeType = get_size_type()
             if bytewidth != SizeType.bytewidth():
-                N = ZExt(num, ConcreteVal(SizeType.bitwidth(), SizeType))
+                N = ZExt(num, concrete_value(SizeType.bitwidth(), SizeType))
                 retlist.append(N)
             else:
                 N = num
-            M = Mul(ConcreteVal(tySize, SizeType), N)
+            M = Mul(concrete_value(tySize, SizeType), N)
             A = Alloc(M)
             self._addMapping(inst, A)
             retlist += [M, A]
             return retlist
         else:
-            A = Alloc(ConcreteInt(tySize * num.value(), num.bitwidth()))
+            A = Alloc(concrete_value(tySize * num.value(), num.bitwidth()))
             self._addMapping(inst, A)
             return [A]
 
@@ -632,7 +633,7 @@ class Parser:
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = ZExt(
             self.operand(operands[0]),
-            ConcreteInt(type_size_in_bits(self.llvmmodule, inst.type), 32),
+            concrete_value(type_size_in_bits(self.llvmmodule, inst.type), 32),
         )
         self._addMapping(inst, zext)
         return [zext]
@@ -643,7 +644,7 @@ class Parser:
         # just behave that there's no SExt for now
         sext = SExt(
             self.operand(operands[0]),
-            ConcreteInt(type_size_in_bits(self.llvmmodule, inst.type), 32),
+            concrete_value(type_size_in_bits(self.llvmmodule, inst.type), 32),
         )
         self._addMapping(inst, sext)
         return [sext]
@@ -701,8 +702,8 @@ class Parser:
         bits = type_size_in_bits(self.llvmmodule, inst.type)
         ext = ExtractBits(
             self.operand(operands[0]),
-            ConcreteInt(0, 32),
-            ConcreteInt(bits - 1, 32),
+            concrete_value(0, 32),
+            concrete_value(bits - 1, 32),
         )
         self._addMapping(inst, ext)
         return [ext]
@@ -734,7 +735,7 @@ class Parser:
                 assert 0 < mulbw <= 64, "Invalid type size: {mulbw}"
                 SizeType = get_size_type()
                 if mulbw != SizeType.bitwidth():
-                    C = ZExt(var, ConcreteVal(SizeType.bitwidth(), SizeType))
+                    C = ZExt(var, concrete_value(SizeType.bitwidth(), SizeType))
                     varIdx.append(C)
                     var = C
 
@@ -743,10 +744,10 @@ class Parser:
                 ty = ty.element_type
                 elemSize = type_size(self.llvmmodule, ty)
 
-                M = Mul(var, ConcreteVal(elemSize, SizeType))
+                M = Mul(var, concrete_value(elemSize, SizeType))
                 varIdx.append(M)
                 if shift != 0:
-                    varIdx.append(Add(M, ConcreteVal(shift, SizeType)))
+                    varIdx.append(Add(M, concrete_value(shift, SizeType)))
             else:
                 assert c.is_int(), f"Invalid GEP index: {c}"
                 cval = c.value()
@@ -776,7 +777,7 @@ class Parser:
                 self._addMapping(inst, mem)
                 return []
             else:
-                A = Add(mem, ConcreteVal(shift, get_size_type()))
+                A = Add(mem, concrete_value(shift, get_size_type()))
                 self._addMapping(inst, A)
         return [A]
 
@@ -786,7 +787,7 @@ class Parser:
         if shift == 0:
             return mem
         else:
-            return Add(mem, ConcreteVal(shift, get_size_type()))
+            return Add(mem, concrete_value(shift, get_size_type()))
 
     def _parse_ce(self, ce):
         assert ce.is_constantexpr, ce
@@ -803,7 +804,7 @@ class Parser:
 
     def _handlePhi(self, inst) -> List[Load]:
         bnum = type_size(self.llvmmodule, inst.type)
-        phivar = Alloc(ConcreteVal(bnum, get_size_type()))
+        phivar = Alloc(concrete_value(bnum, get_size_type()))
         L = Load(phivar, get_sb_type(self.llvmmodule, inst.type))
         self._addMapping(inst, L)
         self.phis.append((inst, phivar, L))
@@ -955,7 +956,7 @@ class Parser:
             # FIXME: check and set whether it is a constant
             ts = type_size(self.llvmmodule, g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
-            G = GlobalVariable(ConcreteVal(ts, get_size_type()), g.name)
+            G = GlobalVariable(concrete_value(ts, get_size_type_size()), g.name)
             if g.initializer:
                 self._parse_initializer(G, g, ts)
             self.program.add_global(G)

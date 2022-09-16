@@ -11,14 +11,12 @@ class ConcreteVal(Value):
     KIND = CONCRETE_DOMAIN_KIND
 
     def __init__(self, c, ty):
-        assert isinstance(c, (int, bool, float)), f"Invalid constant: {c} {type(c)}"
         assert isinstance(ty, Type), f"Invalid type: {ty}"
         assert not isinstance(ty, PointerType), f"Invalid type: {ty}"
         super().__init__(c, ty)
 
         assert not self.is_pointer(), "Incorrectly constructed pointer"
         assert not self.is_bool() or (c in (True, False)), "Invalid boolean constant"
-        assert self.is_bool() or isinstance(c, (int, float))
 
     def as_value(self):
         return f"{str(self._value)}:{self.type()}"

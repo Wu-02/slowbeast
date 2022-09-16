@@ -1,5 +1,7 @@
-from .value import Value
 from slowbeast.ir.types import Type
+from .value import Value
+from .concrete_bool import ConcreteBool
+
 from typing import Optional
 
 
@@ -16,7 +18,7 @@ class Domain:
     KIND = None
 
     @staticmethod
-    def belongto(*args) -> bool:
+    def belongto(x) -> bool:
         return not_implemented()
 
     @staticmethod
@@ -131,47 +133,40 @@ class Domain:
     def LShr(a, b) -> Value:
         return not_implemented()
 
-    @staticmethod
-    def get_true() -> Value:
-        return not_implemented()
-
-    @staticmethod
-    def get_false() -> Value:
-        return not_implemented()
-
     # FIXME: get rid of floats flag -- add operations prefixed with F
     # FIXME: and do the same for unsigned flag?
 
     ### Relational operators
+    # we provide also default implementations
     @staticmethod
     def Le(a: Value, b: Value, unsigned: bool = False, floats: bool = False) -> Value:
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        return not_implemented()
+        return ConcreteBool(bool(a.unwrap() <= b.unwrap()))
 
     @staticmethod
     def Lt(a, b, unsigned: bool = False, floats: bool = False) -> Value:
-        return not_implemented()
+        return ConcreteBool(bool(a.unwrap() < b.unwrap()))
 
     @staticmethod
     def Ge(a, b, unsigned: bool = False, floats: bool = False) -> Value:
-        return not_implemented()
+        return ConcreteBool(bool(a.unwrap() >= b.unwrap()))
 
     @staticmethod
     def Gt(a, b, unsigned: bool = False, floats: bool = False) -> Value:
-        return not_implemented()
+        return ConcreteBool(bool(a.unwrap() > b.unwrap()))
 
     @staticmethod
     def Eq(a, b, unsigned: bool = False, floats: bool = False) -> Value:
-        return not_implemented()
+        return ConcreteBool(bool(a.unwrap() == b.unwrap()))
 
     @staticmethod
     def Ne(a, b, unsigned: bool = False, floats: bool = False) -> Value:
-        return not_implemented()
+        return ConcreteBool(bool(a.unwrap() != b.unwrap()))
 
     ##
     # Arithmetic operations
     @staticmethod
-    def Add(a, b, isfloat: bool = False) -> Value:
+    def Add(a: Value, b: Value, isfloat: bool = False) -> Value:
         return not_implemented()
 
     @staticmethod

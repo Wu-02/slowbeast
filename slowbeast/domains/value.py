@@ -22,6 +22,9 @@ class Value:
     def unwrap(self):
         return self._value
 
+    def value(self):
+        return self._value
+
     def type(self) -> Type:
         return self._type
 

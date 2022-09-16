@@ -292,17 +292,17 @@ class SymcreteDomain:
         return opt(SymbolicDomain.Concat(*map(lift, args)))
 
     def Shl(self, a: Value, b: Value):
-        if ConcreteIntFloatDomain.belongto(a, b):
+        if ConcreteIntFloatDomain.belongto(a) and ConcreteIntFloatDomain.belongto(b):
             return ConcreteIntFloatDomain.Shl(a, b)
         return opt(SymbolicDomain.Shl(self.lift(a), self.lift(b)))
 
     def AShr(self, a: Value, b: Value):
-        if ConcreteIntFloatDomain.belongto(a, b):
+        if ConcreteIntFloatDomain.belongto(a) and ConcreteIntFloatDomain.belongto(b):
             return ConcreteIntFloatDomain.AShr(a, b)
         return opt(SymbolicDomain.AShr(self.lift(a), self.lift(b)))
 
     def LShr(self, a: Value, b: Value):
-        if ConcreteIntFloatDomain.belongto(a, b):
+        if ConcreteIntFloatDomain.belongto(a) and ConcreteIntFloatDomain.belongto(b):
             return ConcreteIntFloatDomain.LShr(a, b)
         return opt(SymbolicDomain.LShr(self.lift(a), self.lift(b)))
 
@@ -310,37 +310,37 @@ class SymcreteDomain:
     # Relational operators
 
     def Le(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
-        if ConcreteIntFloatDomain.belongto(a, b):
+        if ConcreteIntFloatDomain.belongto(a) and ConcreteIntFloatDomain.belongto(b):
             return ConcreteIntFloatDomain.Le(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Le(lift(a), lift(b), unsigned, isfloat))
 
     def Lt(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
-        if ConcreteIntFloatDomain.belongto(a, b):
+        if ConcreteIntFloatDomain.belongto(a) and ConcreteIntFloatDomain.belongto(b):
             return ConcreteIntFloatDomain.Lt(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Lt(lift(a), lift(b), unsigned, isfloat))
 
     def Ge(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
-        if ConcreteIntFloatDomain.belongto(a, b):
+        if ConcreteIntFloatDomain.belongto(a) and ConcreteIntFloatDomain.belongto(b):
             return ConcreteIntFloatDomain.Ge(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Ge(lift(a), lift(b), unsigned, isfloat))
 
     def Gt(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
-        if ConcreteIntFloatDomain.belongto(a, b):
-            return ConcreteIntFloatDomain.Gt(a, b, unsigned, isfloat)
+        if ConcreteIntFloatDomain.belongto(a) and ConcreteIntFloatDomain.belongto(b):
+                return ConcreteIntFloatDomain.Gt(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned, isfloat))
 
     def Eq(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
-        if ConcreteIntFloatDomain.belongto(a, b):
+        if ConcreteIntFloatDomain.belongto(a) and ConcreteIntFloatDomain.belongto(b):
             return ConcreteIntFloatDomain.Eq(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Eq(lift(a), lift(b), unsigned, isfloat))
 
     def Ne(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
-        if ConcreteIntFloatDomain.belongto(a, b):
+        if ConcreteIntFloatDomain.belongto(a) and ConcreteIntFloatDomain.belongto(b):
             return ConcreteIntFloatDomain.Ne(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Ne(lift(a), lift(b), unsigned, isfloat))
