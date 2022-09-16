@@ -1,3 +1,4 @@
+from .domain import Domain
 from typing import Union, Optional
 
 from z3 import (
@@ -71,7 +72,7 @@ from slowbeast.ir.types import BoolType, Type, IntType, FloatType
 from slowbeast.util.debugging import FIXME
 
 
-class BVSymbolicDomain:
+class BVSymbolicDomain(Domain):
     """
     Takes care of handling symbolic computations
     (creating expressions only).
@@ -268,17 +269,17 @@ class BVSymbolicDomain:
         tybw = ty.bitwidth()
         if ty.is_float() and a.is_bytes():
             # from IEEE bitvector
-            expr = fpToFP(a._expr, get_fp_sort(tybw))
+            expr = fpToFP(a.unwrap(), get_fp_sort(tybw))
             return Expr(expr, ty)
         if ty.is_float():
             if a.is_int():
                 # from IEEE bitvector
-                expr = fpToFP(a._expr, get_fp_sort(tybw))
+                expr = fpToFP(a.unwrap(), get_fp_sort(tybw))
                 return Expr(expr, ty)
             elif a.is_float():
                 return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
         elif a.is_float() and ty.is_int():
-            ae = fpToIEEEBV(a._expr)
+            ae = fpToIEEEBV(a.unwrap())
             return Expr(ae, ty)
         elif a.is_bool() and ty.is_int():
             return Expr(
@@ -300,18 +301,18 @@ class BVSymbolicDomain:
             if a.is_int():
                 abw = a.bitwidth()
                 if signed:  # from signed bitvector
-                    expr = fpSignedToFP(RNE(), a._expr, get_fp_sort(tybw))
+                    expr = fpSignedToFP(RNE(), a.unwrap(), get_fp_sort(tybw))
                 else:
-                    expr = fpUnsignedToFP(RNE(), a._expr, get_fp_sort(tybw))
+                    expr = fpUnsignedToFP(RNE(), a.unwrap(), get_fp_sort(tybw))
                     # from IEEE bitvector
-                    # expr = fpToFP(a._expr, get_fp_sort(tybw))
-                # expr = fpToFP(a._expr, get_fp_sort(tybw))
+                    # expr = fpToFP(a._value, get_fp_sort(tybw))
+                # expr = fpToFP(a._value, get_fp_sort(tybw))
                 return Expr(expr, ty)
             elif a.is_float():
                 return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
             if a.is_bytes():
                 # from IEEE bitvector
-                expr = fpToFP(a._expr, get_fp_sort(a.bitwidth()))
+                expr = fpToFP(a.unwrap(), get_fp_sort(a.bitwidth()))
                 expr = fpFPToFP(RNE(), expr, get_fp_sort(tybw))
                 return Expr(expr, ty)
         elif a.is_float() and ty.is_int():
@@ -319,7 +320,7 @@ class BVSymbolicDomain:
                 ae = float_to_sbv(a, ty)
             else:
                 ae = float_to_ubv(a, ty)
-            # ae = fpToIEEEBV(a._expr)
+            # ae = fpToIEEEBV(a._value)
             return Expr(ae, ty)
         elif a.is_bool() and ty.is_int():
             return Expr(

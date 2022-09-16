@@ -126,7 +126,7 @@ class ExprAnnotation(Annotation):
     def __repr__(self) -> str:
         assert self.cannonical
         return f"{self.cannonical}"
-        # return "{0}[{1}]".format(self._expr, ",
+        # return "{0}[{1}]".format(self._value, ",
         # ".join(f"{x.as_value()}/{val.unwrap()}" for (x, val) in
         # self.subs.items()))
 

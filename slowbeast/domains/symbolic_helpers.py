@@ -182,21 +182,21 @@ def trunc_fp(fexpr, bw):
 def to_double(x):
     bw = x.bitwidth()
     if x.is_float() and bw == 64:
-        return x._expr
+        return x._value
     # we first must convert to float and then extend to double
     if x.is_float() and bw == 32:
-        r = x._expr
+        r = x._value
     else:
         assert not x.is_float()
         # bitcast from IEEE
-        r = simplify(fpToFP(x._expr, get_fp_sort(bw)))
+        r = simplify(fpToFP(x._value, get_fp_sort(bw)))
     r = simplify(fpFPToFP(RNE(), r, Float64()))
     return r
 
 
 def to_bv(x):
     if x.is_float():
-        r = simplify(fpToIEEEBV(x._expr))
+        r = simplify(fpToIEEEBV(x._value))
         assert r.sort().size() == x.bitwidth(), f"{r.sort()}, {x.type()}"
         return r
     if x.is_bool():
@@ -207,7 +207,7 @@ def to_bv(x):
 def float_to_ubv(x, ty=None):
     if x.is_float():
         bw = ty.bitwidth() if ty else x.bitwidth()
-        return simplify(fpToUBV(RNE(), x._expr, BitVecSort(bw)))
+        return simplify(fpToUBV(RNE(), x._value, BitVecSort(bw)))
 
     return x.unwrap()
 
@@ -215,7 +215,7 @@ def float_to_ubv(x, ty=None):
 def float_to_sbv(x, ty=None):
     if x.is_float():
         bw = ty.bitwidth() if ty else x.bitwidth()
-        return simplify(fpToUBV(RNE(), x._expr, BitVecSort(bw)))
+        return simplify(fpToUBV(RNE(), x._value, BitVecSort(bw)))
 
     return x.unwrap()
 

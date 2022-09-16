@@ -1,17 +1,26 @@
 #!/usr/bin/python
 
 from slowbeast.ir.types import Type
+from typing import Any
 
 
 class Value:
-    __slots__ = "_type"
+    __slots__ = "_type", "_value"
 
-    def __init__(self, ty: Type) -> None:
+    def __init__(self, val: Any, ty: Type) -> None:
         assert isinstance(ty, Type)
         self._type = ty
+        self._value = val
 
     def __eq__(self, other: object):
-        raise NotImplementedError("This must be overriden")
+        return (
+            isinstance(other, Value)
+            and type(self) == type(other)
+            and self._value == other._value
+        )
+
+    def unwrap(self):
+        return self._value
 
     def type(self) -> Type:
         return self._type

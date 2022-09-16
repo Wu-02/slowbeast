@@ -52,16 +52,10 @@ class Expr(Value):
 
     KIND: int = SYMBOLIC_DOMAIN_KIND
 
-    __slots__ = "_expr"
-
     def __init__(self, e, t: Type) -> None:
         assert not isinstance(e, int), e
         assert isinstance(t, Type), t
-        Value.__init__(self, t)
-        self._expr = e
-
-    def unwrap(self):
-        return self._expr
+        super().__init__(e, t)
 
     def is_nondet_load(self) -> bool:
         return False
@@ -73,7 +67,7 @@ class Expr(Value):
         return False
 
     def name(self):
-        return str(self._expr)
+        return str(self._value)
 
     def is_concrete(self) -> bool:
         return False
@@ -113,7 +107,7 @@ class Expr(Value):
         return (Expr(s, solver_to_sb_type(s)) for s in symbols(self.unwrap()))
 
     def is_symbol(self):
-        return _is_symbol(self._expr)
+        return _is_symbol(self._value)
 
     def to_cnf(self) -> "Expr":
         """
@@ -126,14 +120,14 @@ class Expr(Value):
         Get the expression in CNF form.
         """
         return Expr(
-            mk_or(*(And(*c) for c in rewrite_simplify(self._expr))), self.type()
+            mk_or(*(And(*c) for c in rewrite_simplify(self._value))), self.type()
         )
 
     def split_clauses(self) -> "Expr":
         """
         Get the expression in CNF form.
         """
-        return Expr(mk_or(*(And(*c) for c in split_clauses(self._expr))), self.type())
+        return Expr(mk_or(*(And(*c) for c in split_clauses(self._value))), self.type())
 
     def reduce_eq_bitwidth(self, bw) -> Optional["Expr"]:
         """
@@ -212,56 +206,56 @@ class Expr(Value):
         return is_not(self.unwrap())
 
     def is_eq(self):
-        return is_app_of(self._expr, Z3_OP_EQ)
+        return is_app_of(self._value, Z3_OP_EQ)
 
     def is_le(self):
-        return is_app_of(self._expr, Z3_OP_SLEQ) or is_app_of(self._expr, Z3_OP_ULEQ)
+        return is_app_of(self._value, Z3_OP_SLEQ) or is_app_of(self._value, Z3_OP_ULEQ)
 
     def is_ge(self):
-        return is_app_of(self._expr, Z3_OP_SGEQ) or is_app_of(self._expr, Z3_OP_UGEQ)
+        return is_app_of(self._value, Z3_OP_SGEQ) or is_app_of(self._value, Z3_OP_UGEQ)
 
     def is_lt(self):
-        return is_app_of(self._expr, Z3_OP_SLT) or is_app_of(self._expr, Z3_OP_ULT)
+        return is_app_of(self._value, Z3_OP_SLT) or is_app_of(self._value, Z3_OP_ULT)
 
     def is_gt(self):
-        return is_app_of(self._expr, Z3_OP_SGT) or is_app_of(self._expr, Z3_OP_UGT)
+        return is_app_of(self._value, Z3_OP_SGT) or is_app_of(self._value, Z3_OP_UGT)
 
     def is_sle(self):
-        return is_app_of(self._expr, Z3_OP_SLEQ)
+        return is_app_of(self._value, Z3_OP_SLEQ)
 
     def is_sge(self):
-        return is_app_of(self._expr, Z3_OP_SGEQ)
+        return is_app_of(self._value, Z3_OP_SGEQ)
 
     def is_slt(self):
-        return is_app_of(self._expr, Z3_OP_SLT)
+        return is_app_of(self._value, Z3_OP_SLT)
 
     def is_sgt(self):
-        return is_app_of(self._expr, Z3_OP_SGT)
+        return is_app_of(self._value, Z3_OP_SGT)
 
     def is_ule(self):
-        return is_app_of(self._expr, Z3_OP_ULEQ)
+        return is_app_of(self._value, Z3_OP_ULEQ)
 
     def is_uge(self):
-        return is_app_of(self._expr, Z3_OP_UGEQ)
+        return is_app_of(self._value, Z3_OP_UGEQ)
 
     def is_ult(self):
-        return is_app_of(self._expr, Z3_OP_ULT)
+        return is_app_of(self._value, Z3_OP_ULT)
 
     def is_ugt(self):
-        return is_app_of(self._expr, Z3_OP_UGT)
+        return is_app_of(self._value, Z3_OP_UGT)
 
     def is_mul(self):
-        # or is_app_of(self._expr, Z3_OP_MUL)
-        return is_app_of(self._expr, Z3_OP_BMUL)
+        # or is_app_of(self._value, Z3_OP_MUL)
+        return is_app_of(self._value, Z3_OP_BMUL)
 
     def __hash__(self):
-        return self._expr.__hash__()
+        return self._value.__hash__()
 
     def __eq__(self, rhs):
-        return self._expr == rhs._expr if isinstance(rhs, Expr) else False
+        return self._value == rhs._value if isinstance(rhs, Expr) else False
 
     def __repr__(self) -> str:
-        return f"<{self._expr}:{self.type()}>"
+        return f"<{self._value}:{self.type()}>"
 
 
 class NondetInstrResult(Expr):

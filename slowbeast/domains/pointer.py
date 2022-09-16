@@ -1,17 +1,20 @@
 from slowbeast.domains.concrete_int_float import ConcreteInt
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type_size, PointerType
+from . import POINTER_KIND
 from typing import Optional
 
 
 class Pointer(Value):
     __slots__ = "_object", "_offset"
-    KIND = 5
+    KIND = POINTER_KIND
 
     def __init__(self, obj: Value, off: Optional[Value] = None) -> None:
         assert isinstance(obj, Value)
         assert off is None or isinstance(off, Value)
-        super().__init__(PointerType())
+        super().__init__(None, PointerType())
+        # value is used for the address the pointer points to -- we use that only
+        # if that is a symbolic address, so it is usually None
         self._object = obj
         self._offset = off or ConcreteInt(0, get_offset_type_size())
 
@@ -19,7 +22,10 @@ class Pointer(Value):
         assert not self.is_bool(), "Incorrectly constructed pointer"
 
     def __repr__(self) -> str:
-        return f"ptr({self._object.as_value()}, {self._offset})"
+        s = f"ptr({self._object.as_value()}, {self._offset})"
+        if self._value:
+            return f"{s}[{self._value}]"
+        return s
 
     def object(self) -> Value:
         return self._object
@@ -36,6 +42,7 @@ class Pointer(Value):
     def is_null(self):
         return self.is_concrete() and self._object.is_zero() and self._offset.is_zero()
 
+    # FIXME: make a function for this...
     def symbols(self):
         yield from self._object.symbols()
         yield from self._offset.symbols()

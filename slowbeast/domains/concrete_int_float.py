@@ -6,8 +6,7 @@ from slowbeast.ir.instruction import FpOp
 from slowbeast.ir.types import IntType, Type, FloatType
 from slowbeast.util.debugging import FIXME
 from . import dom_is_concrete
-from .concrete import ConcreteVal
-from .concrete_bool import ConcreteBool
+from .domain import Domain
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.concrete_bool import ConcreteBool
 from typing import Optional, Union
@@ -92,7 +91,7 @@ class ConcreteInt(ConcreteVal):
 
 # FIXME: this concrete domain contains Ints and Floats... separate them and then create
 # ConcreteFloatIntDomain (it will have easier implementation)
-class ConcreteIntFloatDomain:
+class ConcreteIntFloatDomain(Domain):
     """
     Takes care of handling concrete computations.
     """
@@ -107,7 +106,7 @@ class ConcreteIntFloatDomain:
         return True
 
     @staticmethod
-    def Value(c: bool, bw) -> ConcreteBool:
+    def Value(c: bool, bw) -> ConcreteVal:
         if isinstance(c, bool):
             assert bw == 1
             return ConcreteBool(c)
