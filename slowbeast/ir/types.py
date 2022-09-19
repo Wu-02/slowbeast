@@ -52,7 +52,7 @@ class Type:
     def is_pointer(self) -> bool:
         return False
 
-    def is_int(self) -> bool:
+    def is_bv(self) -> bool:
         return False
 
     def is_float(self) -> bool:
@@ -106,7 +106,7 @@ class BitVecType(Type):
     def __init__(self, bw: int) -> None:
         Type.__init__(self, bw)
 
-    def is_int(self) -> bool:
+    def is_bv(self) -> bool:
         return True
 
 

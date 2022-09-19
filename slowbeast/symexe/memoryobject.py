@@ -23,7 +23,7 @@ def get_byte(EM, x, bw, i: int):
 def write_bytes(offval, values, size, x) -> Optional[MemError]:
     EM = global_expr_mgr()
     bw = x.bytewidth()
-    if not x.is_int():
+    if not x.is_bv():
         # rename to Cast and Cast to ReinterpretCast
         newx = EM.BitCast(x, BitVecType(8 * bw))
         if newx is None:
@@ -118,7 +118,7 @@ class MemoryObject(CoreMO):
                 "Read from symbolic-sized objects not implemented yet",
             )
 
-        assert size.is_int(), size
+        assert size.is_bv(), size
         offval = off.value()
         size = size.value()
 

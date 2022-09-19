@@ -127,7 +127,7 @@ class BVSymbolicDomain(Domain):
         bw = ty.bitwidth()
         if ty.is_float():
             return Expr(FPVal(c, fps=get_fp_sort(bw)), ty)
-        elif ty.is_int():
+        elif ty.is_bv():
             return Expr(bv_const(c, bw), ty)
         else:
             raise NotImplementedError(f"Invalid type: {ty}")
@@ -141,7 +141,7 @@ class BVSymbolicDomain(Domain):
         elif ty.is_bool():
             return Expr(Bool(name), ty)
         else:
-            assert ty.is_int() or ty.is_pointer(), ty
+            assert ty.is_bv() or ty.is_pointer(), ty
             return Expr(bv(name, ty.bitwidth()), ty)
 
     @staticmethod
@@ -255,7 +255,7 @@ class BVSymbolicDomain(Domain):
     def SExt(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a), a
         assert b.is_concrete(), b
-        assert b.is_int(), b
+        assert b.is_bv(), b
         bw = b.value()
         assert a.bitwidth() <= bw, f"Invalid sext argument: {a} to {bw} bits"
 
@@ -272,20 +272,20 @@ class BVSymbolicDomain(Domain):
             expr = fpToFP(a.unwrap(), get_fp_sort(tybw))
             return Expr(expr, ty)
         if ty.is_float():
-            if a.is_int():
+            if a.is_bv():
                 # from IEEE bitvector
                 expr = fpToFP(a.unwrap(), get_fp_sort(tybw))
                 return Expr(expr, ty)
             elif a.is_float():
                 return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
-        elif a.is_float() and ty.is_int():
+        elif a.is_float() and ty.is_bv():
             ae = fpToIEEEBV(a.unwrap())
             return Expr(ae, ty)
-        elif a.is_bool() and ty.is_int():
+        elif a.is_bool() and ty.is_bv():
             return Expr(
                 If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)), BitVecType(tybw)
             )
-        elif a.is_int() and ty.is_bool():
+        elif a.is_bv() and ty.is_bool():
             return Expr(
                 If((a.unwrap() != bv_const(0, a.bitwidth())), TRUE(), FALSE()),
                 BoolType(),
@@ -298,7 +298,7 @@ class BVSymbolicDomain(Domain):
         assert BVSymbolicDomain.belongto(a)
         tybw = ty.bitwidth()
         if ty.is_float():
-            if a.is_int():
+            if a.is_bv():
                 abw = a.bitwidth()
                 if signed:  # from signed bitvector
                     expr = fpSignedToFP(RNE(), a.unwrap(), get_fp_sort(tybw))
@@ -315,18 +315,18 @@ class BVSymbolicDomain(Domain):
                 expr = fpToFP(a.unwrap(), get_fp_sort(a.bitwidth()))
                 expr = fpFPToFP(RNE(), expr, get_fp_sort(tybw))
                 return Expr(expr, ty)
-        elif a.is_float() and ty.is_int():
+        elif a.is_float() and ty.is_bv():
             if signed:
                 ae = float_to_sbv(a, ty)
             else:
                 ae = float_to_ubv(a, ty)
             # ae = fpToIEEEBV(a._value)
             return Expr(ae, ty)
-        elif a.is_bool() and ty.is_int():
+        elif a.is_bool() and ty.is_bv():
             return Expr(
                 If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)), BitVecType(tybw)
             )
-        elif a.is_int() and ty.is_bool():
+        elif a.is_bv() and ty.is_bool():
             return Expr(
                 If((a.unwrap() != bv_const(0, a.bitwidth())), TRUE(), FALSE()),
                 BoolType(),
@@ -358,19 +358,19 @@ class BVSymbolicDomain(Domain):
     @staticmethod
     def Shl(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
-        assert b.is_int(), b
+        assert b.is_bv(), b
         return Expr(to_bv(a) << b.unwrap(), BitVecType(a.bitwidth()))
 
     @staticmethod
     def AShr(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
-        assert b.is_int(), b
+        assert b.is_bv(), b
         return Expr(to_bv(a) >> b.unwrap(), BitVecType(a.bitwidth()))
 
     @staticmethod
     def LShr(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
-        assert b.is_int(), b
+        assert b.is_bv(), b
         return Expr(BVLShR(to_bv(a), b.unwrap()), BitVecType(a.bitwidth()))
 
     @staticmethod

@@ -384,7 +384,7 @@ class SignULDomain:
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
 
-        assert a.is_int() or a.is_float()
+        assert a.is_bv() or a.is_float()
         if a.is_float():
             return ConcreteVal(a.value() - b.value(), a.type())
         bw = a.type().bitwidth()
@@ -395,7 +395,7 @@ class SignULDomain:
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
 
-        assert a.is_int() or a.is_float()
+        assert a.is_bv() or a.is_float()
         if a.is_float():
             return ConcreteVal(a.value() - b.value(), a.type())
         bw = a.type().bitwidth()
@@ -405,7 +405,7 @@ class SignULDomain:
         assert dom_is_signul(a, b)
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
 
-        assert a.is_int() or a.is_float()
+        assert a.is_bv() or a.is_float()
         result_ty = a.type()
         if a.is_float():
             return ConcreteVal(a.value() - b.value(), result_ty)

@@ -749,7 +749,7 @@ class Parser:
                 if shift != 0:
                     varIdx.append(Add(M, concrete_value(shift, SizeType)))
             else:
-                assert c.is_int(), f"Invalid GEP index: {c}"
+                assert c.is_bv(), f"Invalid GEP index: {c}"
                 cval = c.value()
                 if ty.is_pointer or ty.is_array:
                     ty = ty.element_type

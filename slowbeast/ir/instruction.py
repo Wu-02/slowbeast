@@ -300,7 +300,7 @@ class Switch(Instruction):
         super().__init__([val, default] + cases)
         assert isinstance(default, BBlock), default
         assert isinstance(cases, list), cases
-        assert all(map(lambda p: p[0].type().is_int(), cases)), cases
+        assert all(map(lambda p: p[0].type().is_bv(), cases)), cases
         assert all(map(lambda p: isinstance(p[1], BBlock), cases)), cases
 
     def condition(self):

@@ -373,7 +373,7 @@ class ZODomain:
     def Add(a, b) -> ZOValue:
         assert dom_is_sign(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        assert a.is_int() or a.is_float()
+        assert a.is_bv() or a.is_float()
         if a.is_float():
             # FIXME
             return ZOValue(
@@ -391,7 +391,7 @@ class ZODomain:
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
 
-        assert a.is_int() or a.is_float()
+        assert a.is_bv() or a.is_float()
         if a.is_float():
             return ConcreteVal(a.value() - b.value(), a.type())
         bw = a.type().bitwidth()
@@ -403,7 +403,7 @@ class ZODomain:
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
 
-        assert a.is_int() or a.is_float()
+        assert a.is_bv() or a.is_float()
         if a.is_float():
             return ConcreteVal(a.value() - b.value(), a.type())
         bw = a.type().bitwidth()
@@ -414,7 +414,7 @@ class ZODomain:
         assert dom_is_sign(a, b)
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
 
-        assert a.is_int() or a.is_float()
+        assert a.is_bv() or a.is_float()
         result_ty = a.type()
         if a.is_float():
             return ConcreteVal(a.value() - b.value(), result_ty)

@@ -123,7 +123,7 @@ class ConcreteDomain(Domain):
         assert ConcreteDomain.belongto(a), a
         assert ConcreteDomain.belongto(b), b
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        assert a.is_int() is not None, a
+        assert a.is_bv() is not None, a
         # FIXME: support bytes...
         # sb = 1 << (b.value() - 1)
         # aval = to_bv(a, unsigned=False)
@@ -137,21 +137,21 @@ class ConcreteDomain(Domain):
 
         assert ConcreteDomain.belongto(a), a
         bw = ty.bitwidth()
-        if a.is_bool() and ty.is_int():
+        if a.is_bool() and ty.is_bv():
             return ConcreteBitVec(1 if a.value() != 0 else 0, bw)
         if a.is_bytes() and ty.is_float():
             return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
-        if a.is_int():
+        if a.is_bv():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(float(a.value()), bw), bw)
-            elif ty.is_int():
+            elif ty.is_bv():
                 return ConcreteBitVec(a.value(), bw)
             elif ty.is_bool():
                 return ConcreteBool(False if a.value() == 0 else True)
         elif a.is_float():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(a.value(), bw), bw)
-            elif ty.is_int():
+            elif ty.is_bv():
                 return ConcreteBitVec(int(a.value()), bw)
         return None  # unsupported conversion
 
@@ -160,21 +160,21 @@ class ConcreteDomain(Domain):
         """static cast"""
         assert ConcreteDomain.belongto(a), a
         bw = ty.bitwidth()
-        if a.is_bool() and ty.is_int():
+        if a.is_bool() and ty.is_bv():
             return ConcreteBitVec(1 if a.value() else 0, bw)
         if a.is_bytes() and ty.is_float():
             return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
-        if a.is_int():
+        if a.is_bv():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
-            elif ty.is_int():
+            elif ty.is_bv():
                 return ConcreteBitVec(a.value(), bw)
             elif ty.is_bool():
                 return ConcreteBool(False if a.value() == 0 else True)
         elif a.is_float():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(a.value(), bw), bw)
-            elif ty.is_int():
+            elif ty.is_bv():
                 return ConcreteBitVec(to_bv(a), bw)
         return None  # unsupported conversion
 
@@ -182,7 +182,7 @@ class ConcreteDomain(Domain):
     def Shl(a, b) -> ConcreteVal:
         assert ConcreteDomain.belongto(a), a
         assert ConcreteDomain.belongto(b), b
-        assert b.is_int(), b
+        assert b.is_bv(), b
         bw = a.bitwidth()
         assert b.value() < bw, "Invalid shift"
         return ConcreteVal(to_bv(a) << b.value(), BitVecType(bw))
@@ -191,7 +191,7 @@ class ConcreteDomain(Domain):
     def AShr(a, b) -> ConcreteVal:
         assert ConcreteDomain.belongto(a), a
         assert ConcreteDomain.belongto(b), b
-        assert b.is_int(), b
+        assert b.is_bv(), b
         bw = a.bitwidth()
         assert b.value() < bw, "Invalid shift"
         return ConcreteVal(to_bv(a) >> b.value(), BitVecType(bw))
@@ -200,7 +200,7 @@ class ConcreteDomain(Domain):
     def LShr(a, b) -> ConcreteVal:
         assert ConcreteDomain.belongto(a), a
         assert ConcreteDomain.belongto(b), b
-        assert b.is_int(), b
+        assert b.is_bv(), b
         assert b.value() < a.bitwidth(), "Invalid shift"
         val = to_bv(a)
         bw = a.bitwidth()
@@ -400,7 +400,7 @@ class ConcreteDomain(Domain):
         assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert a.is_int() or a.is_float() or a.is_bytes()
+        assert a.is_bv() or a.is_float() or a.is_bytes()
         # FIXME: add self-standing float domain
         bw = a.bitwidth()
         if isfloat:
@@ -414,7 +414,7 @@ class ConcreteDomain(Domain):
         assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert a.is_int() or a.is_float() or a.is_bytes()
+        assert a.is_bv() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
             return ConcreteFloatsDomain.Sub(a, b, isfloat)
@@ -427,7 +427,7 @@ class ConcreteDomain(Domain):
         assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert a.is_int() or a.is_float() or a.is_bytes()
+        assert a.is_bv() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
             return ConcreteFloatsDomain.Mul(a, b, isfloat)
@@ -440,7 +440,7 @@ class ConcreteDomain(Domain):
         assert ConcreteDomain.belongto(b), b
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        assert a.is_int() or a.is_float() or a.is_bytes()
+        assert a.is_bv() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
             ConcreteFloatsDomain.Div(a, b, isfloat)

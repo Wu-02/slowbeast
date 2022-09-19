@@ -40,8 +40,8 @@ class Value:
     def is_bool(self) -> bool:
         return self._type.is_bool()
 
-    def is_int(self) -> bool:
-        return self._type.is_int()
+    def is_bv(self) -> bool:
+        return self._type.is_bv()
 
     def is_float(self) -> bool:
         return self._type.is_float()

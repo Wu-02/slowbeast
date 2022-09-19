@@ -38,7 +38,7 @@ def to_bv(x, unsigned: bool = True):
                 else unpack("q", pack("d", x.value()))
             )[0]
         return d
-    if (x.is_int() or x.is_bytes()) and not unsigned:
+    if (x.is_bv() or x.is_bytes()) and not unsigned:
         # signed/unsigned conversion
         uint = to_unsigned(x.value(), bw)
         return (
