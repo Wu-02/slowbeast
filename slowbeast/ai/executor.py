@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete_int_float import ConcreteDomain
+from slowbeast.domains.concrete import ConcreteDomain
 from ..domains.concrete_bitvec import ConcreteBitVec
 from ..domains.concrete_bool import ConcreteBool
 from slowbeast.domains.pointer import Pointer

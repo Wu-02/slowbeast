@@ -1,12 +1,12 @@
 from struct import unpack, pack
 
-from slowbeast.domains.concrete_int_float import ConstantTrue, ConstantFalse
+from slowbeast.domains.concrete import ConstantTrue, ConstantFalse
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.pointer import Pointer, get_null_pointer
 from slowbeast.ir.types import BitVecType, FloatType, PointerType
 from slowbeast.util.debugging import warn
 from slowbeast.domains.concrete_bool import ConcreteBool
-from slowbeast.domains.concrete_int_float import ConstantTrue, ConstantFalse, ConcreteDomain
+from slowbeast.domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
 from typing import Optional, Sized, Union
 
 concrete_value = ConcreteDomain.Value

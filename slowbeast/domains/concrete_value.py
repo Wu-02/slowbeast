@@ -28,6 +28,7 @@ class ConcreteVal(Value):
     def is_symbolic(self):
         return False
 
+    # FIXME: get rid of this, create a function for that
     def symbols(self):
         return ()
 

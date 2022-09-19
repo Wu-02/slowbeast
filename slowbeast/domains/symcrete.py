@@ -1,6 +1,6 @@
 from typing import Union
 
-from slowbeast.domains.concrete_int_float import ConcreteDomain
+from slowbeast.domains.concrete import ConcreteDomain
 from slowbeast.domains.symbolic import SymbolicDomain
 from .expr import Expr
 from slowbeast.domains.value import Value
