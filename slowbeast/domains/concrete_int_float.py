@@ -98,7 +98,7 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def belongto(x) -> bool:
-        return dom_is_concrete(x)
+        return isinstance(x, ConcreteVal)
 
     @staticmethod
     def Value(c, bw: int) -> ConcreteVal:
@@ -110,10 +110,6 @@ class ConcreteIntFloatDomain(Domain):
         if isinstance(c, float):
             return ConcreteFloat(c, bw)
         raise NotImplementedError("Don't know how to create a ConcretValue for {c}: {type(c)}")
-
-    @staticmethod
-    def float_from_string(s: str, bw: int) -> ConcreteFloat:
-        return ConcreteFloatsDomain.Value(s, bw)
 
     @staticmethod
     def get_true() -> ConcreteBool:
@@ -209,9 +205,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Cast(a: ConcreteVal, ty: Type) -> Optional[ConcreteVal]:
-        """
-        Reinterpret cast
-        """
+        """ Reinterpret cast """
+
         assert ConcreteIntFloatDomain.belongto(a), a
         bw = ty.bitwidth()
         if a.is_bool() and ty.is_int():
@@ -236,22 +231,23 @@ class ConcreteIntFloatDomain(Domain):
     def BitCast(a: ConcreteVal, ty: Type) -> Optional[ConcreteVal]:
         """static cast"""
         assert ConcreteIntFloatDomain.belongto(a), a
+        bw = ty.bitwidth()
         if a.is_bool() and ty.is_int():
-            return ConcreteVal(1 if a.value() else 0, IntType(ty.bitwidth()))
+            return ConcreteInt(1 if a.value() else 0, bw)
         if a.is_bytes() and ty.is_float():
-            return ConcreteVal(trunc_to_float(to_fp(a), ty.bitwidth()), ty)
+            return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
         if a.is_int():
             if ty.is_float():
-                return ConcreteVal(trunc_to_float(to_fp(a), ty.bitwidth()), ty)
+                return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
             elif ty.is_int():
-                return ConcreteVal(a.value(), ty)
+                return ConcreteInt(a.value(), bw)
             elif ty.is_bool():
                 return ConcreteBool(False if a.value() == 0 else True)
         elif a.is_float():
             if ty.is_float():
-                return ConcreteVal(trunc_to_float(a.value(), ty.bitwidth()), ty)
+                return ConcreteFloat(trunc_to_float(a.value(), bw), bw)
             elif ty.is_int():
-                return ConcreteVal(to_bv(a), ty)
+                return ConcreteInt(to_bv(a), bw)
         return None  # unsupported conversion
 
     @staticmethod
@@ -462,7 +458,6 @@ class ConcreteIntFloatDomain(Domain):
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
             return ConcreteFloatsDomain.Ne(a, b, unsigned, floats)
-
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
@@ -481,7 +476,7 @@ class ConcreteIntFloatDomain(Domain):
         # FIXME: add self-standing float domain
         bw = a.bitwidth()
         if isfloat:
-            ConcreteFloatsDomain.Add(a, b)
+            return ConcreteFloatsDomain.Add(a, b)
         aval, bval = to_bv(a), to_bv(b)
         return ConcreteVal(wrap_to_bw(aval + bval, bw), IntType(bw))
 
@@ -494,7 +489,7 @@ class ConcreteIntFloatDomain(Domain):
         assert a.is_int() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
-            ConcreteFloatsDomain.Sub(a, b, isfloat)
+            return ConcreteFloatsDomain.Sub(a, b, isfloat)
         aval, bval = to_bv(a), to_bv(b)
         return ConcreteVal(wrap_to_bw(aval - bval, bw), IntType(bw))
 
@@ -507,7 +502,7 @@ class ConcreteIntFloatDomain(Domain):
         assert a.is_int() or a.is_float() or a.is_bytes()
         bw = a.bitwidth()
         if isfloat:
-            ConcreteFloatsDomain.Mul(a, b, isfloat)
+            return ConcreteFloatsDomain.Mul(a, b, isfloat)
         aval, bval = to_bv(a), to_bv(b)
         return ConcreteVal(wrap_to_bw(aval * bval, bw), IntType(bw))
 
@@ -526,7 +521,6 @@ class ConcreteIntFloatDomain(Domain):
         if unsigned:
             return ConcreteVal(to_unsigned(aval, bw) / to_unsigned(bval, bw), result_ty)
         return ConcreteVal(wrap_to_bw(int(aval / bval), bw), result_ty)
-
 
 ConstantTrue = ConcreteBool(True)
 ConstantFalse = ConcreteBool(False)
