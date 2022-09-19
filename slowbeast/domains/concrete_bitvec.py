@@ -63,7 +63,10 @@ class ConcreteBitVec(ConcreteVal):
 
 
 class ConcreteBitVecsDomain(Domain):
-    """ Takes care of handling concrete float computations. """
+    """
+    Takes care of handling concrete bitvec computation. This implementation is based on using Python's int
+    and computing the operations modulo.
+    """
 
     @staticmethod
     def belongto(x: Value) -> bool:
@@ -79,7 +82,8 @@ class ConcreteBitVecsDomain(Domain):
     ##
     # Arithmetic operations
     @staticmethod
-    def Add(a: Value, b: Value) -> Value:
+    def Add(a: Value, b: Value, isfloat: bool = False) -> Value:
+        assert not isfloat
         assert ConcreteBitVecsDomain.belongto(a), a
         assert ConcreteBitVecsDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -88,7 +92,7 @@ class ConcreteBitVecsDomain(Domain):
         return ConcreteBitVec(a.unwrap() + b.unwrap(), bw)
 
     @staticmethod
-    def Sub(a: Value, b: Value) -> Value:
+    def Sub(a: Value, b: Value, isfloat: bool = False) -> Value:
         assert ConcreteBitVecsDomain.belongto(a), a
         assert ConcreteBitVecsDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -97,7 +101,7 @@ class ConcreteBitVecsDomain(Domain):
         return ConcreteBitVec(a.unwrap() - b.unwrap(), bw)
 
     @staticmethod
-    def Mul(a: ConcreteBitVec, b: ConcreteBitVec) -> ConcreteBitVec:
+    def Mul(a: ConcreteBitVec, b: ConcreteBitVec, isfloat: bool = False) -> ConcreteBitVec:
         assert ConcreteBitVecsDomain.belongto(a), a
         assert ConcreteBitVecsDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -106,7 +110,7 @@ class ConcreteBitVecsDomain(Domain):
         return ConcreteBitVec(a.unwrap() * b.unwrap(), bw)
 
     @staticmethod
-    def Div(a: ConcreteBitVec, b: ConcreteBitVec, unordered: bool = False ) -> ConcreteBitVec:
+    def Div(a: ConcreteBitVec, b: ConcreteBitVec, unordered: bool = False, isfloat: bool = False ) -> ConcreteBitVec:
         assert ConcreteBitVecsDomain.belongto(a), a
         assert ConcreteBitVecsDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -120,4 +124,4 @@ class ConcreteBitVecsDomain(Domain):
         assert floats
         assert isinstance(a, ConcreteBitVec), f"{a} type: {type(a)}"
         assert isinstance(b, ConcreteBitVec), f"{b} type: {type(b)}"
-        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.unwrap() == b.unwrap()))
+        return ConcreteBool(a.unwrap() == b.unwrap())
