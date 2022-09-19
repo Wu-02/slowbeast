@@ -2,7 +2,7 @@ from slowbeast.core.memorymodel import MemoryModel as CoreMM
 from slowbeast.domains.expr import NondetLoad
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
-from slowbeast.ir.types import IntType
+from slowbeast.ir.types import BitVecType
 from slowbeast.ir.types import get_size_type
 from slowbeast.symexe.memory import Memory
 from slowbeast.util.debugging import dbgv
@@ -94,7 +94,7 @@ class LazySymbolicMemoryModel(CoreMM):
         value = state.try_eval(value_op)
         if value is None:
             value = state.solver().Var(
-                f"uninit_{value_op.as_value()}", IntType(8 * instr.bytewidth())
+                f"uninit_{value_op.as_value()}", BitVecType(8 * instr.bytewidth())
             )
         assert isinstance(value, Value)
 
@@ -117,7 +117,7 @@ class LazySymbolicMemoryModel(CoreMM):
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
         # val = self.solver().fresh_value(f"uninit_{frm.as_value()}", 8 * bytes_num)
-        val = state.solver().Var(f"uninit_{frm.as_value()}", IntType(bitsnum))
+        val = state.solver().Var(f"uninit_{frm.as_value()}", BitVecType(bitsnum))
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
@@ -131,7 +131,7 @@ class LazySymbolicMemoryModel(CoreMM):
         # return val, err
         # FIXME: it is not always int type... we should at least use bytes type
         return (
-            state.solver().fresh_value(f"uninit_{frm.as_value()}", IntType(bitsnum)),
+            state.solver().fresh_value(f"uninit_{frm.as_value()}", BitVecType(bitsnum)),
             None,
         )
 
@@ -160,7 +160,7 @@ class LazySymbolicMemoryModel(CoreMM):
             ):
                 val = state.solver().Var(
                     f"unknown_ptr_{from_op.as_value()}",
-                    IntType(bitsnum or 8 * bytes_num()),
+                    BitVecType(bitsnum or 8 * bytes_num()),
                 )
                 state.set(to_op, val)
                 return [state]

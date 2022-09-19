@@ -1,6 +1,6 @@
-from slowbeast.domains.concrete_int_float import ConcreteInt
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.ir.instruction import Load
-from slowbeast.ir.types import IntType
+from slowbeast.ir.types import BitVecType
 from slowbeast.solvers.symcrete import IncrementalSolver, global_expr_mgr
 from slowbeast.symexe.annotations import AssertAnnotation, get_subs
 
@@ -69,12 +69,12 @@ def get_var_diff_relations(state):
 
         bw = max(l1bw, l2bw)
         if l1bw != bw:
-            l1 = EM.SExt(l1, ConcreteInt(bw, bw))
+            l1 = EM.SExt(l1, ConcreteBitVec(bw, bw))
         if l2bw != bw:
-            l2 = EM.SExt(l2, ConcreteInt(bw, bw))
+            l2 = EM.SExt(l2, ConcreteBitVec(bw, bw))
 
         # relation between loads of the type l1 - l2 = constant
-        c = Var(f"c_{l1name}_{l2name}", IntType(bw))
+        c = Var(f"c_{l1name}_{l2name}", BitVecType(bw))
         expr = Eq(Sub(l2, l1), c)
         c_concr = model([expr], c)
         if c_concr is not None:
@@ -96,7 +96,7 @@ def get_var_diff_relations(state):
 
         # relation between loads of the type l1 = c*l2
         expr = Eq(Mul(c, l1), l2)
-        c_concr = model([expr, Ne(c, ConcreteInt(0, bw))], c)
+        c_concr = model([expr, Ne(c, ConcreteBitVec(0, bw))], c)
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
@@ -105,7 +105,7 @@ def get_var_diff_relations(state):
                 yield AssertAnnotation(simplify(substitute(expr, (c, cval))), subs, EM)
         # relation between loads of the type l2 = c*l1
         expr = Eq(Mul(c, l2), l1)
-        c_concr = model([expr, Ne(c, ConcreteInt(0, bw))], c)
+        c_concr = model([expr, Ne(c, ConcreteBitVec(0, bw))], c)
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
@@ -122,18 +122,18 @@ def get_var_diff_relations(state):
             l3name = nd3.instruction.as_value()
             bw = max(l3bw, bw)
             if l1bw != bw:
-                l1 = EM.SExt(l1, ConcreteInt(bw, bw))
+                l1 = EM.SExt(l1, ConcreteBitVec(bw, bw))
             if l2bw != bw:
-                l2 = EM.SExt(l2, ConcreteInt(bw, bw))
+                l2 = EM.SExt(l2, ConcreteBitVec(bw, bw))
             if l3bw != bw:
-                l3 = EM.SExt(l3, ConcreteInt(bw, bw))
+                l3 = EM.SExt(l3, ConcreteBitVec(bw, bw))
 
             if is_sat(Ne(Sub(l2, l1), l3)) is False:
                 yield AssertAnnotation(Eq(Sub(l2, l1), l3), subs, EM)
             else:
-                c = EM.fresh_value(f"c_mul_{l1name}{l2name}{l3name}", IntType(bw))
+                c = EM.fresh_value(f"c_mul_{l1name}{l2name}{l3name}", BitVecType(bw))
                 # expr = Eq(Add(l1, l2), Mul(c, l3))
-                expr = And(Eq(Add(l1, l2), Mul(c, l3)), Ne(c, ConcreteInt(0, bw)))
+                expr = And(Eq(Add(l1, l2), Mul(c, l3)), Ne(c, ConcreteBitVec(0, bw)))
                 c_concr = model([expr], c)
                 if c_concr is not None:
                     # is c unique?
@@ -149,7 +149,7 @@ def get_var_diff_relations(state):
 def _get_nd_val(l, lbw: int, Ss):
     nd1 = Ss.nondet(l)
     if not nd1:
-        ndval = Ss.solver().fresh_value(f"nd{l.as_value()}", IntType(8 * lbw))
+        ndval = Ss.solver().fresh_value(f"nd{l.as_value()}", BitVecType(8 * lbw))
         Ss.create_nondet(l, ndval)
     else:
         ndval = nd1.value
@@ -197,7 +197,7 @@ def _compare_two_loads(state, S, l1, l2):
     def model(assumptions, *e):
         return solver.concretize(assumptions, *e)
 
-    c = EM.Var(f"c_coef_{l1.as_value()}{l2.as_value()}", IntType(8 * l1bw))
+    c = EM.Var(f"c_coef_{l1.as_value()}{l2.as_value()}", BitVecType(8 * l1bw))
     expr = Eq(Sub(l1val, l2val), c)
     c_concr = model([expr], c)
     if c_concr is not None:
@@ -256,7 +256,7 @@ def _get_const_cmp_relations(state):
         if l.is_pointer():
             continue
         lbw = l.type().bitwidth()
-        c = EM.Var(f"c_coef_{nd.instruction.as_value()}", IntType(lbw))
+        c = EM.Var(f"c_coef_{nd.instruction.as_value()}", BitVecType(lbw))
         expr = EM.Eq(l, c)
         c_concr = model([expr], c)
         if c_concr is not None:
@@ -283,9 +283,9 @@ def _get_eq_loads(state, is_sat):
 
         bw = max(l1bw, l2bw)
         if l1bw != bw:
-            l1 = EM.SExt(l1, ConcreteInt(bw, bw))
+            l1 = EM.SExt(l1, ConcreteBitVec(bw, bw))
         if l2bw != bw:
-            l2 = EM.SExt(l2, ConcreteInt(bw, bw))
+            l2 = EM.SExt(l2, ConcreteBitVec(bw, bw))
 
         # relation between loads of the type l1 - l2 = constant
         if is_sat(Ne(l1, l2)) is False:
@@ -394,9 +394,9 @@ def get_relations_to_prev_states(state, prev):
     for l, cval in _get_const_cmp_relations(state):
         bw = l.bitwidth()
         # l2bw = l2.type().bitwidth()
-        oldl = Var(f"old_{l}", IntType(bw))
+        oldl = Var(f"old_{l}", BitVecType(bw))
         oldpc = substitute(prevexpr, (l, oldl))
-        diff = Var(f"c_diff_{l}", IntType(bw))
+        diff = Var(f"c_diff_{l}", BitVecType(bw))
         expr = Eq(Sub(oldl, l), diff)
         diff_concr = model([oldpc, expr], diff)
         if diff_concr is not None:
@@ -417,7 +417,7 @@ def get_relations_to_prev_states(state, prev):
                         Eq(Rem(l, dval), Rem(cval, dval)),
                     )
                 else:
-                    dval = ConcreteInt(-vdval, dval.bitwidth())  # change sign
+                    dval = ConcreteBitVec(-vdval, dval.bitwidth())  # change sign
                     expr = conjunction(
                         Ge(l, Sub(cval, dval)),
                         Le(l, cval),

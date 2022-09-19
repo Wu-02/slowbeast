@@ -4,7 +4,7 @@ from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain
 from slowbeast.domains.symbolic import SymbolicDomain
 from .expr import Expr
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import BoolType, IntType, Type
+from slowbeast.ir.types import BoolType, BitVecType, Type
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.concrete_bool import ConcreteBool
 from . import SYMCRETE_DOMAIN_KIND
@@ -132,19 +132,19 @@ class SymcreteDomain:
         self._names.pop(name)
 
     def Int1(self, name: str):
-        return self.Var(name, IntType(1))
+        return self.Var(name, BitVecType(1))
 
     def Int8(self, name: str):
-        return self.Var(name, IntType(8))
+        return self.Var(name, BitVecType(8))
 
     def Int16(self, name: str):
-        return self.Var(name, IntType(16))
+        return self.Var(name, BitVecType(16))
 
     def Int32(self, name: str):
-        return self.Var(name, IntType(32))
+        return self.Var(name, BitVecType(32))
 
     def Int64(self, name: str):
-        return self.Var(name, IntType(64))
+        return self.Var(name, BitVecType(64))
 
     def lift(self, v: Value) -> Expr:
         return SymbolicDomain.lift(v)

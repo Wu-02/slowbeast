@@ -1,6 +1,6 @@
 from .concrete import ConcreteVal
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import Type, IntType, BoolType
+from slowbeast.ir.types import Type, BitVecType, BoolType
 from . import SIGNUL_DOMAIN_KIND, dom_is_signul, dom_is_symbolic, dom_is_concrete
 from typing import Optional, Union
 
@@ -131,7 +131,7 @@ class SignULDomain:
         return x.value()
 
     def Constant(v, bw) -> SignULValue:
-        return SignULValue(abstract(v), IntType(bw))
+        return SignULValue(abstract(v), BitVecType(bw))
 
     def Var(ty) -> SignULValue:
         return SignULValue(SignULValue.ANY, ty)
@@ -214,13 +214,13 @@ class SignULDomain:
         assert dom_is_signul(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
-        return SignULValue(SignULValue.ANY, IntType(b.value()))  # FIXME
+        return SignULValue(SignULValue.ANY, BitVecType(b.value()))  # FIXME
 
     def SExt(a, b) -> SignULValue:
         assert dom_is_signul(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        return SignULValue(SignULValue.ANY, IntType(b.value()))  # FIXME
+        return SignULValue(SignULValue.ANY, BitVecType(b.value()))  # FIXME
 
     def Cast(a: ConcreteVal, ty: Type) -> SignULValue:
         assert dom_is_signul(a, b)
@@ -273,7 +273,7 @@ class SignULDomain:
         return SignULValue(SignULValue.ANY, a.type())  # FIXME
 
     #    bitsnum = end.value() - start.value() + 1
-    #    return ConcreteInt(
+    #    return ConcreteBitVec(
     #        (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
     #    )
 

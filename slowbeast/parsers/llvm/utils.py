@@ -3,7 +3,7 @@ from struct import unpack, pack
 from slowbeast.domains.concrete_int_float import ConstantTrue, ConstantFalse
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.pointer import Pointer, get_null_pointer
-from slowbeast.ir.types import IntType, FloatType, PointerType
+from slowbeast.ir.types import BitVecType, FloatType, PointerType
 from slowbeast.util.debugging import warn
 from slowbeast.domains.concrete_bool import ConcreteBool
 from slowbeast.domains.concrete_int_float import ConstantTrue, ConstantFalse, ConcreteIntFloatDomain
@@ -142,7 +142,7 @@ def type_size(m, ty: str) -> Optional[int]:
     return None
 
 
-def get_sb_type(m, ty: str) -> Union[None, FloatType, IntType, PointerType]:
+def get_sb_type(m, ty: str) -> Union[None, FloatType, BitVecType, PointerType]:
     if is_pointer_ty(ty):
         return PointerType()
 
@@ -157,7 +157,7 @@ def get_sb_type(m, ty: str) -> Union[None, FloatType, IntType, PointerType]:
     if sty in ("float", "double"):
         return FloatType(ts)
     elif sty.startswith("i"):
-        return IntType(ts)
+        return BitVecType(ts)
     assert False, f"Unsupported type: {ty}"
     return None
 

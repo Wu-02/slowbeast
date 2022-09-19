@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete_int_float import ConcreteInt
+from .concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type_size, PointerType
 from . import POINTER_KIND
@@ -16,7 +16,7 @@ class Pointer(Value):
         # value is used for the address the pointer points to -- we use that only
         # if that is a symbolic address, so it is usually None
         self._object = obj
-        self._offset = off or ConcreteInt(0, get_offset_type_size())
+        self._offset = off or ConcreteBitVec(0, get_offset_type_size())
 
         assert self.is_pointer(), "Incorrectly constructed pointer"
         assert not self.is_bool(), "Incorrectly constructed pointer"
@@ -61,5 +61,5 @@ class Pointer(Value):
 
 def get_null_pointer() -> Pointer:
     return Pointer(
-        ConcreteInt(0, get_offset_type_size()), ConcreteInt(0, get_offset_type_size())
+        ConcreteBitVec(0, get_offset_type_size()), ConcreteBitVec(0, get_offset_type_size())
     )

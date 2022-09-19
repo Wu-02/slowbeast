@@ -5,7 +5,7 @@ from slowbeast.core.memorymodel import MemoryModel as CoreMM
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable
-from slowbeast.ir.types import IntType, BoolType, get_offset_type, get_size_type
+from slowbeast.ir.types import BitVecType, BoolType, get_offset_type, get_size_type
 from slowbeast.symexe.memory import Memory as SEMemory
 from typing import TextIO, Union
 
@@ -17,7 +17,7 @@ def _nondet_value(fresh, op, bitsnum):
         ptrobj = fresh(f"obj_{op.as_value()}", get_offset_type())
         ptroff = fresh(f"off_{op.as_value()}", get_offset_type())
         return Pointer(ptrobj, ptroff)
-    return fresh(f"{op.as_value()}", IntType(bitsnum))
+    return fresh(f"{op.as_value()}", BitVecType(bitsnum))
 
 
 # FIXME: do we need to inherit from SEMemory? We need that only for the

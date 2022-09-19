@@ -1,7 +1,7 @@
 from slowbeast.domains.concrete_int_float import dom_is_concrete
 from .concrete import ConcreteVal
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import Type, IntType, BoolType
+from slowbeast.ir.types import Type, BitVecType, BoolType
 from . import SIGN_DOMAIN_KIND
 from typing import Optional, Union
 
@@ -125,7 +125,7 @@ class ZODomain:
 
     @staticmethod
     def Constant(v, bw) -> ZOValue:
-        return ZOValue(abstract(v), IntType(bw))
+        return ZOValue(abstract(v), BitVecType(bw))
 
     @staticmethod
     def Var(ty) -> ZOValue:
@@ -208,14 +208,14 @@ class ZODomain:
         assert dom_is_sign(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() < b.value(), "Invalid zext argument"
-        return ZOValue(ZOValue.ANY, IntType(b.value()))  # FIXME
+        return ZOValue(ZOValue.ANY, BitVecType(b.value()))  # FIXME
 
     @staticmethod
     def SExt(a, b) -> ZOValue:
         assert dom_is_sign(a)
         assert dom_is_concrete(b)
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        return ZOValue(ZOValue.ANY, IntType(b.value()))  # FIXME
+        return ZOValue(ZOValue.ANY, BitVecType(b.value()))  # FIXME
 
     @staticmethod
     def Cast(a: ConcreteVal, ty: Type) -> ZOValue:
@@ -273,7 +273,7 @@ class ZODomain:
         return ZOValue(ZOValue.ANY, a.type())  # FIXME
 
     #    bitsnum = end.value() - start.value() + 1
-    #    return ConcreteInt(
+    #    return ConcreteBitVec(
     #        (a.value() >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
     #    )
 

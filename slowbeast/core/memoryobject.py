@@ -2,7 +2,7 @@ from copy import copy
 from sys import stdout
 
 from slowbeast.core.errors import MemError
-from slowbeast.domains.concrete_int_float import ConcreteInt
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type
@@ -162,7 +162,7 @@ class MemoryObject:
         val = self._values.get(offval)
         if val is None:
             if self._is_global and self._allocation.is_zeroed():
-                return ConcreteInt(0, bts * 8), None
+                return ConcreteBitVec(0, bts * 8), None
             return None, MemError(
                 MemError.UNINIT_READ,
                 f"Read from uninitialized memory (or unaligned read (not supp.  yet)).\n"

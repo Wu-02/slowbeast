@@ -1,11 +1,11 @@
 from math import isinf, isnan, isfinite
 from struct import pack, unpack
 
-from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
-from slowbeast.ir.types import IntType, Type, FloatType
+from slowbeast.ir.types import BitVecType, Type, FloatType
 from slowbeast.util.debugging import FIXME
 from . import dom_is_concrete
+from .concrete_bitvec import to_unsigned, to_bv, wrap_to_bw, ConcreteBitVec
 from .domain import Domain
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.concrete_bool import ConcreteBool
@@ -21,51 +21,6 @@ def trunc_to_float(x, bw):
         return unpack("f", pack("f", x))[0]
     return x
 
-
-def to_unsigned(x, bw: int):
-    """Get unsigned value for signed in 2's complement"""
-    if isinstance(x, float):
-        return int(abs(x))
-    if x >= 0:
-        return x
-    return x + (1 << bw)
-
-
-def to_signed(x, bw: int):
-    """Get signed value for number in 2's complement"""
-    if x < (1 << (bw - 1)):
-        return x
-    return x - (1 << bw)
-
-
-def to_bv(x, unsigned: bool = True):
-    bw = x.bitwidth()
-    if x.is_float():
-        if bw == 32:
-            d = (
-                unpack("I", pack("f", x.value()))
-                if unsigned
-                else unpack("i", pack("f", x.value()))
-            )[0]
-        else:
-            assert bw == 64, f"{x}, bw: {bw}"
-            d = (
-                unpack("Q", pack("d", x.value()))
-                if unsigned
-                else unpack("q", pack("d", x.value()))
-            )[0]
-        return d
-    if (x.is_int() or x.is_bytes()) and not unsigned:
-        # signed/unsigned conversion
-        uint = to_unsigned(x.value(), bw)
-        return (
-            unpack(">q", uint.to_bytes(8, "big"))
-            if bw == 64
-            else unpack(">i", uint.to_bytes(4, "big"))
-        )[0]
-    return x.value()
-
-
 def to_fp(x, unsigned: bool = False):
     val = x.value()
     if x.is_float():
@@ -75,18 +30,6 @@ def to_fp(x, unsigned: bool = False):
         if x.bitwidth() == 32
         else unpack("d", pack("Q", val))
     )[0]
-
-
-def wrap_to_bw(x, bw: int):
-    m = 1 << bw
-    return x % m
-
-
-class ConcreteInt(ConcreteVal):
-    def __init__(self, n: int, bw: int) -> None:
-        assert isinstance(n, int), n
-        assert isinstance(bw, int), bw
-        super().__init__(n, IntType(bw))
 
 
 # FIXME: this concrete domain contains Ints and Floats... separate them and then create
@@ -106,7 +49,7 @@ class ConcreteIntFloatDomain(Domain):
             assert bw == 1, bw
             return ConcreteBool(c)
         if isinstance(c, int):
-            return ConcreteInt(c, bw)
+            return ConcreteBitVec(c, bw)
         if isinstance(c, float):
             return ConcreteFloat(c, bw)
         raise NotImplementedError("Don't know how to create a ConcretValue for {c}: {type(c)}")
@@ -156,7 +99,7 @@ class ConcreteIntFloatDomain(Domain):
         if a.is_bool():
             return ConcreteBool(a.value() and b.value())
         else:
-            return ConcreteVal(to_bv(a) & to_bv(b), IntType(a.bitwidth()))
+            return ConcreteVal(to_bv(a) & to_bv(b), BitVecType(a.bitwidth()))
 
     @staticmethod
     def Or(a, b) -> ConcreteVal:
@@ -166,13 +109,13 @@ class ConcreteIntFloatDomain(Domain):
         if a.is_bool():
             return ConcreteBool(a.value() or b.value())
         else:
-            return ConcreteVal(to_bv(a) | to_bv(b), IntType(a.bitwidth()))
+            return ConcreteVal(to_bv(a) | to_bv(b), BitVecType(a.bitwidth()))
 
     @staticmethod
     def Xor(a, b) -> ConcreteVal:
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
-        return ConcreteInt(to_bv(a) ^ to_bv(b), a.bitwidth())
+        return ConcreteBitVec(to_bv(a) ^ to_bv(b), a.bitwidth())
 
     @staticmethod
     def Not(a) -> ConcreteVal:
@@ -183,15 +126,15 @@ class ConcreteIntFloatDomain(Domain):
             raise NotImplementedError("Not implemented")
 
     @staticmethod
-    def ZExt(a, b) -> ConcreteInt:
+    def ZExt(a, b) -> ConcreteBitVec:
         assert ConcreteIntFloatDomain.belongto(a), a
         assert ConcreteIntFloatDomain.belongto(b), b
         assert a.bitwidth() < b.value(), "Invalid zext argument"
         aval = to_bv(a, unsigned=True)
-        return ConcreteInt(to_unsigned(aval, a.bitwidth()), b.value())
+        return ConcreteBitVec(to_unsigned(aval, a.bitwidth()), b.value())
 
     @staticmethod
-    def SExt(a, b) -> ConcreteInt:
+    def SExt(a, b) -> ConcreteBitVec:
         assert ConcreteIntFloatDomain.belongto(a), a
         assert ConcreteIntFloatDomain.belongto(b), b
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
@@ -200,8 +143,8 @@ class ConcreteIntFloatDomain(Domain):
         # sb = 1 << (b.value() - 1)
         # aval = to_bv(a, unsigned=False)
         # val = (aval & (sb - 1)) - (aval & sb)
-        # return ConcreteInt(val, b.value())
-        return ConcreteInt(a.value(), b.value())
+        # return ConcreteBitVec(val, b.value())
+        return ConcreteBitVec(a.value(), b.value())
 
     @staticmethod
     def Cast(a: ConcreteVal, ty: Type) -> Optional[ConcreteVal]:
@@ -210,21 +153,21 @@ class ConcreteIntFloatDomain(Domain):
         assert ConcreteIntFloatDomain.belongto(a), a
         bw = ty.bitwidth()
         if a.is_bool() and ty.is_int():
-            return ConcreteInt(1 if a.value() != 0 else 0, bw)
+            return ConcreteBitVec(1 if a.value() != 0 else 0, bw)
         if a.is_bytes() and ty.is_float():
             return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
         if a.is_int():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(float(a.value()), bw), bw)
             elif ty.is_int():
-                return ConcreteInt(a.value(), bw)
+                return ConcreteBitVec(a.value(), bw)
             elif ty.is_bool():
                 return ConcreteBool(False if a.value() == 0 else True)
         elif a.is_float():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(a.value(), bw), bw)
             elif ty.is_int():
-                return ConcreteInt(int(a.value()), bw)
+                return ConcreteBitVec(int(a.value()), bw)
         return None  # unsupported conversion
 
     @staticmethod
@@ -233,21 +176,21 @@ class ConcreteIntFloatDomain(Domain):
         assert ConcreteIntFloatDomain.belongto(a), a
         bw = ty.bitwidth()
         if a.is_bool() and ty.is_int():
-            return ConcreteInt(1 if a.value() else 0, bw)
+            return ConcreteBitVec(1 if a.value() else 0, bw)
         if a.is_bytes() and ty.is_float():
             return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
         if a.is_int():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
             elif ty.is_int():
-                return ConcreteInt(a.value(), bw)
+                return ConcreteBitVec(a.value(), bw)
             elif ty.is_bool():
                 return ConcreteBool(False if a.value() == 0 else True)
         elif a.is_float():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(a.value(), bw), bw)
             elif ty.is_int():
-                return ConcreteInt(to_bv(a), bw)
+                return ConcreteBitVec(to_bv(a), bw)
         return None  # unsupported conversion
 
     @staticmethod
@@ -257,7 +200,7 @@ class ConcreteIntFloatDomain(Domain):
         assert b.is_int(), b
         bw = a.bitwidth()
         assert b.value() < bw, "Invalid shift"
-        return ConcreteVal(to_bv(a) << b.value(), IntType(bw))
+        return ConcreteVal(to_bv(a) << b.value(), BitVecType(bw))
 
     @staticmethod
     def AShr(a, b) -> ConcreteVal:
@@ -266,7 +209,7 @@ class ConcreteIntFloatDomain(Domain):
         assert b.is_int(), b
         bw = a.bitwidth()
         assert b.value() < bw, "Invalid shift"
-        return ConcreteVal(to_bv(a) >> b.value(), IntType(bw))
+        return ConcreteVal(to_bv(a) >> b.value(), BitVecType(bw))
 
     @staticmethod
     def LShr(a, b) -> ConcreteVal:
@@ -278,16 +221,16 @@ class ConcreteIntFloatDomain(Domain):
         bw = a.bitwidth()
         return ConcreteVal(
             to_bv(a) >> b.value() if val >= 0 else (val + (1 << bw)) >> b.value(),
-            IntType(bw),
+            BitVecType(bw),
         )
 
     @staticmethod
-    def Extract(a, start, end) -> ConcreteInt:
+    def Extract(a, start, end) -> ConcreteBitVec:
         assert ConcreteIntFloatDomain.belongto(a)
         assert start.is_concrete()
         assert end.is_concrete()
         bitsnum = end.value() - start.value() + 1
-        return ConcreteInt(
+        return ConcreteBitVec(
             (to_bv(a) >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
         )
 
@@ -304,7 +247,7 @@ class ConcreteIntFloatDomain(Domain):
             a = args[l - i]
             val |= a.value() << bw
             bw += a.bitwidth()
-        return ConcreteInt(val, bw)
+        return ConcreteBitVec(val, bw)
 
     @staticmethod
     def Rem(a, b, unsigned: bool = False) -> ConcreteVal:
@@ -335,7 +278,7 @@ class ConcreteIntFloatDomain(Domain):
         return ConcreteVal(abs(a.value()), a.type())
 
     @staticmethod
-    def FpOp(op, val) -> Union[ConcreteBool, ConcreteInt]:
+    def FpOp(op, val) -> Union[ConcreteBool, ConcreteBitVec]:
         assert ConcreteIntFloatDomain.belongto(val)
         # FIXME: do not use the enum from instruction
         assert val.is_float(), val
@@ -348,17 +291,17 @@ class ConcreteIntFloatDomain(Domain):
             FIXME("Using implementation dependent constants")
             v = val.value()
             if isnan(v):
-                return ConcreteInt(0, 32)
+                return ConcreteBitVec(0, 32)
             if isinf(v):
-                return ConcreteInt(1, 32)
+                return ConcreteBitVec(1, 32)
             if v >= 0 and v <= 0:
-                return ConcreteInt(2, 32)
+                return ConcreteBitVec(2, 32)
             if isfinite(v) and v > 1.1754942106924411e-38:
-                return ConcreteInt(4, 32)
-            return ConcreteInt(3, 32)  # subnormal
+                return ConcreteBitVec(4, 32)
+            return ConcreteBitVec(3, 32)  # subnormal
         if op == FpOp.SIGNBIT:
             # FIXME! gosh this is ugly...
-            return ConcreteInt(1 if str(val.value())[0] == "-" else 0, 32)
+            return ConcreteBitVec(1 if str(val.value())[0] == "-" else 0, 32)
         raise NotImplementedError("Invalid/unsupported FP operation")
 
     ##
@@ -478,7 +421,7 @@ class ConcreteIntFloatDomain(Domain):
         if isfloat:
             return ConcreteFloatsDomain.Add(a, b)
         aval, bval = to_bv(a), to_bv(b)
-        return ConcreteVal(wrap_to_bw(aval + bval, bw), IntType(bw))
+        return ConcreteVal(wrap_to_bw(aval + bval, bw), BitVecType(bw))
 
     @staticmethod
     def Sub(a, b, isfloat: bool = False) -> ConcreteVal:
@@ -491,7 +434,7 @@ class ConcreteIntFloatDomain(Domain):
         if isfloat:
             return ConcreteFloatsDomain.Sub(a, b, isfloat)
         aval, bval = to_bv(a), to_bv(b)
-        return ConcreteVal(wrap_to_bw(aval - bval, bw), IntType(bw))
+        return ConcreteVal(wrap_to_bw(aval - bval, bw), BitVecType(bw))
 
     @staticmethod
     def Mul(a, b, isfloat: bool = False) -> ConcreteVal:
@@ -504,7 +447,7 @@ class ConcreteIntFloatDomain(Domain):
         if isfloat:
             return ConcreteFloatsDomain.Mul(a, b, isfloat)
         aval, bval = to_bv(a), to_bv(b)
-        return ConcreteVal(wrap_to_bw(aval * bval, bw), IntType(bw))
+        return ConcreteVal(wrap_to_bw(aval * bval, bw), BitVecType(bw))
 
     @staticmethod
     def Div(a, b, unsigned: bool = False, isfloat: bool = False) -> ConcreteVal:
@@ -516,7 +459,7 @@ class ConcreteIntFloatDomain(Domain):
         bw = a.bitwidth()
         if isfloat:
             ConcreteFloatsDomain.Div(a, b, isfloat)
-        result_ty = IntType(bw)
+        result_ty = BitVecType(bw)
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
             return ConcreteVal(to_unsigned(aval, bw) / to_unsigned(bval, bw), result_ty)

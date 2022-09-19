@@ -3,7 +3,7 @@ from typing import Union, TextIO
 
 import slowbeast.domains.symbolic_helpers
 from slowbeast.bse.memorymodel import _nondet_value
-from slowbeast.domains.concrete_int_float import ConcreteInt
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.pointer import Pointer
 from slowbeast.solvers.symcrete import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
@@ -134,7 +134,7 @@ class BSEState(LazySEState):
                     continue
                 # we found zeroed global from which we read
                 if mo.is_global() and mo.is_zeroed():
-                    constraints.append(em.Eq(val[0], ConcreteInt(0, val[0].bitwidth())))
+                    constraints.append(em.Eq(val[0], ConcreteBitVec(0, val[0].bitwidth())))
             else:
                 for g, xptr in (
                     (g, xptr) for (g, xptr) in IM.bound_globals() if g.is_zeroed()
@@ -142,7 +142,7 @@ class BSEState(LazySEState):
                     constraints.append(
                         em.Or(
                             em.Ne(obj, xptr.object()),
-                            em.Eq(val[0], ConcreteInt(0, val[0].bitwidth())),
+                            em.Eq(val[0], ConcreteBitVec(0, val[0].bitwidth())),
                         )
                     )
         return constraints
@@ -202,7 +202,7 @@ class BSEState(LazySEState):
         if not val.is_bool() and newval.is_bool():
             bw = val.bitwidth()
             assert bw <= 8, f"{val} -> {newval}"
-            newval = em.Ite(newval, ConcreteInt(1, bw), ConcreteInt(0, bw))
+            newval = em.Ite(newval, ConcreteBitVec(1, bw), ConcreteBitVec(0, bw))
         elif not val.is_float() and newval.is_float():
             assert val.bitwidth() == newval.bitwidth(), f"{val} -> {newval}"
             newval = em.Cast(newval, val.type())
@@ -210,7 +210,7 @@ class BSEState(LazySEState):
             newval = em.Cast(newval, val.type())
         elif val.bitwidth() == 1 and newval.bitwidth() == 8:
             assert not val.is_bool(), f"{val} -> {newval}"
-            z = ConcreteInt(0, 8)
+            z = ConcreteBitVec(0, 8)
             newval = em.Extract(newval, z, z)
 
         assert val.type() == newval.type(), f"{val} -- {newval}"

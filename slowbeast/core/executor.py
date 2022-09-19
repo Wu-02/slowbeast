@@ -1,7 +1,7 @@
 import sys
 from itertools import chain
 
-from slowbeast.domains.concrete_int_float import ConcreteInt
+from ..domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import *
 from slowbeast.util.debugging import ldbgv
@@ -239,7 +239,7 @@ class Executor:
         elif p == Cmp.NE:
             x = op1 != op2
 
-        state.set(instr, ConcreteInt(x, 1))
+        state.set(instr, ConcreteBitVec(x, 1))
         state.pc = state.pc.get_next_inst()
 
         return [state]
@@ -351,25 +351,25 @@ class Executor:
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset + op2c.offset)
             else:
-                r = ConcreteInt(op1 + op2, bw)
+                r = ConcreteBitVec(op1 + op2, bw)
         elif instr.operation() == BinaryOperation.SUB:
             if isinstance(op1c, Pointer):
                 assert isinstance(op2c, Pointer)
                 r = Pointer(op1c.object, op1c.offset - op2c.offset)
             else:
-                r = ConcreteInt(op1 - op2, bw)
+                r = ConcreteBitVec(op1 - op2, bw)
         elif instr.operation() == BinaryOperation.MUL:
             if op1c.is_pointer():
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset * op2c.offset)
             else:
-                r = ConcreteInt(op1 * op2, bw)
+                r = ConcreteBitVec(op1 * op2, bw)
         elif instr.operation() == BinaryOperation.DIV:
             if op1c.is_pointer():
                 assert op2c.is_pointer()
                 r = Pointer(op1c.object, op1c.offset / op2c.offset)
             else:
-                r = ConcreteInt(op1 / op2, bw)
+                r = ConcreteBitVec(op1 / op2, bw)
         else:
             raise NotImplementedError("Binary operation: " + str(instr))
 

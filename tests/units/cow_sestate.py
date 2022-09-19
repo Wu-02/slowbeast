@@ -12,9 +12,9 @@ from slowbeast.core.executionstate import ExecutionState
 FOO = Function("foo", 0)
 B0 = BBlock(FOO)
 
-A = Alloc(ConcreteVal(8, IntType(4)))
+A = Alloc(ConcreteVal(8, BitVecType(4)))
 B0.append(A)
-B0.append(Return(ConcreteVal(3, IntType(2))))
+B0.append(Return(ConcreteVal(3, BitVecType(2))))
 
 C = Call(FOO)
 
@@ -24,7 +24,7 @@ s2: ExecutionState = s1.copy()
 assert s1 == s2, "FAILED: Copying empty states"
 
 s1.push_call(C, FOO)
-s1.set(A, ConcreteVal(5, IntType(32)))
+s1.set(A, ConcreteVal(5, BitVecType(32)))
 assert s1 != s2, "FAILED: states coparator"
 
 s3: ExecutionState = s1.copy()

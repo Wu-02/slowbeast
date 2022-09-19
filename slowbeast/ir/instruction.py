@@ -3,7 +3,7 @@ from sys import stdout
 from slowbeast.util.debugging import print_highlight
 from .bblock import BBlock  # due to assertions
 from .programelement import ProgramElement
-from .types import Type, IntType, BoolType, PointerType, get_offset_type
+from .types import Type, BitVecType, BoolType, PointerType, get_offset_type
 from slowbeast.ir.bblock import BBlock
 from slowbeast.ir.types import PointerType, Type
 from typing import TextIO, Union
@@ -563,7 +563,7 @@ class Abs(UnaryOperation):
 class Extend(UnaryOperation):
     def __init__(self, op: UnaryOperation, a, bw) -> None:
         assert bw.is_concrete(), "Invalid bitwidth to extend"
-        super().__init__(op, a, ty=IntType(bw.value()))
+        super().__init__(op, a, ty=BitVecType(bw.value()))
         self._bw = bw
 
     def bitwidth(self):
@@ -632,7 +632,7 @@ class ExtractBits(UnaryOperation):
         assert start.is_concrete(), "Invalid bitwidth to extend"
         assert end.is_concrete(), "Invalid bitwidth to extend"
         super().__init__(
-            UnaryOperation.EXTRACT, val, ty=IntType(end.value() - start.value() + 1)
+            UnaryOperation.EXTRACT, val, ty=BitVecType(end.value() - start.value() + 1)
         )
         self._start = start
         self._end = end

@@ -2,7 +2,7 @@ from functools import partial
 
 import slowbeast.domains.symbolic_helpers
 from slowbeast.core.executor import PathExecutionResult
-from slowbeast.domains.concrete_int_float import ConcreteInt
+from ..domains.concrete_bitvec import ConcreteBitVec
 from ..domains.symcrete import em_optimize_expressions
 from ..solvers.symcrete import IncrementalSolver, global_expr_mgr
 from slowbeast.symexe.annotations import (
@@ -285,21 +285,21 @@ def extend_literal(ldata, EM):
     dliteral = ldata.decomposed_literal
 
     bw = dliteral.bitwidth()
-    two = ConcreteInt(2, bw)
+    two = ConcreteBitVec(2, bw)
     # adding 2 ** bw would be like adding 0, stop before that
     maxnum = 2**bw - 1
 
     # a fast path where we try shift just by one.  If we cant, we can give up
     # FIXME: try more low values (e.g., to 10)
-    num = ConcreteInt(1, bw)
+    num = ConcreteBitVec(1, bw)
     l = dliteral.extended(num)
     if not check_literal(EM, l, ldata):
         return ldata.literal
 
     # this is the final number that we are going to add to one side of the
     # literal
-    finalnum = ConcreteInt(1, bw)  # we know we can add 1 now
-    num = ConcreteInt(2 ** (bw - 1) - 1, bw)  # this num we'll try to add
+    finalnum = ConcreteBitVec(1, bw)  # we know we can add 1 now
+    num = ConcreteBitVec(2 ** (bw - 1) - 1, bw)  # this num we'll try to add
     while finalnum.value() <= maxnum:
         finalnum = extend_with_num(dliteral, finalnum, num, maxnum, ldata, EM)
 

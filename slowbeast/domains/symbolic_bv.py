@@ -68,7 +68,7 @@ from slowbeast.domains.symbolic_helpers import (
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
-from slowbeast.ir.types import BoolType, Type, IntType, FloatType
+from slowbeast.ir.types import BoolType, Type, BitVecType, FloatType
 from slowbeast.util.debugging import FIXME
 
 
@@ -146,7 +146,7 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def BVVar(name, bw: int) -> Expr:
-        return Expr(bv(name, bw), IntType(bw))
+        return Expr(bv(name, bw), BitVecType(bw))
 
     @staticmethod
     def Bool(name: str) -> Expr:
@@ -211,7 +211,7 @@ class BVSymbolicDomain(Domain):
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(to_bv(a) & to_bv(b), IntType(a.bitwidth()))
+            return Expr(to_bv(a) & to_bv(b), BitVecType(a.bitwidth()))
 
     @staticmethod
     def Or(a, b) -> Expr:
@@ -221,7 +221,7 @@ class BVSymbolicDomain(Domain):
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(to_bv(a) | to_bv(b), IntType(a.bitwidth()))
+            return Expr(to_bv(a) | to_bv(b), BitVecType(a.bitwidth()))
 
     @staticmethod
     def Xor(a, b) -> Expr:
@@ -231,7 +231,7 @@ class BVSymbolicDomain(Domain):
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
         else:
             # bitwise and
-            return Expr(to_bv(a) ^ to_bv(b), IntType(a.bitwidth()))
+            return Expr(to_bv(a) ^ to_bv(b), BitVecType(a.bitwidth()))
 
     @staticmethod
     def Not(a) -> Expr:
@@ -239,7 +239,7 @@ class BVSymbolicDomain(Domain):
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
         else:
-            return Expr(~to_bv(a), IntType(a.bitwidth()))
+            return Expr(~to_bv(a), BitVecType(a.bitwidth()))
 
     @staticmethod
     def ZExt(a, b) -> Expr:
@@ -249,7 +249,7 @@ class BVSymbolicDomain(Domain):
         assert a.bitwidth() <= bw, "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
         ae = to_bv(a) if a.is_float() else bool_to_ubv(a)
-        return Expr(BVZExt(bw - a.bitwidth(), ae), IntType(bw))
+        return Expr(BVZExt(bw - a.bitwidth(), ae), BitVecType(bw))
 
     @staticmethod
     def SExt(a, b) -> Expr:
@@ -260,7 +260,7 @@ class BVSymbolicDomain(Domain):
         assert a.bitwidth() <= bw, f"Invalid sext argument: {a} to {bw} bits"
 
         ae = to_bv(a) if a.is_float() else bool_to_ubv(a)
-        return Expr(BVSExt(bw - a.bitwidth(), ae), IntType(bw))
+        return Expr(BVSExt(bw - a.bitwidth(), ae), BitVecType(bw))
 
     @staticmethod
     def BitCast(a: Value, ty: Type) -> Optional[Expr]:
@@ -283,7 +283,7 @@ class BVSymbolicDomain(Domain):
             return Expr(ae, ty)
         elif a.is_bool() and ty.is_int():
             return Expr(
-                If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)), IntType(tybw)
+                If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)), BitVecType(tybw)
             )
         elif a.is_int() and ty.is_bool():
             return Expr(
@@ -324,7 +324,7 @@ class BVSymbolicDomain(Domain):
             return Expr(ae, ty)
         elif a.is_bool() and ty.is_int():
             return Expr(
-                If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)), IntType(tybw)
+                If(a.unwrap(), bv_const(1, tybw), bv_const(0, tybw)), BitVecType(tybw)
             )
         elif a.is_int() and ty.is_bool():
             return Expr(
@@ -340,7 +340,7 @@ class BVSymbolicDomain(Domain):
         assert end.is_concrete(), end
         return Expr(
             BVExtract(end.value(), start.value(), a.unwrap()),
-            IntType(end.value() - start.value() + 1),
+            BitVecType(end.value() - start.value() + 1),
         )
 
     @staticmethod
@@ -352,26 +352,26 @@ class BVSymbolicDomain(Domain):
             return args[0]
         return Expr(
             BVConcat(*(e.unwrap() for e in args)),
-            IntType(sum(e.bitwidth() for e in args)),
+            BitVecType(sum(e.bitwidth() for e in args)),
         )
 
     @staticmethod
     def Shl(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert b.is_int(), b
-        return Expr(to_bv(a) << b.unwrap(), IntType(a.bitwidth()))
+        return Expr(to_bv(a) << b.unwrap(), BitVecType(a.bitwidth()))
 
     @staticmethod
     def AShr(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert b.is_int(), b
-        return Expr(to_bv(a) >> b.unwrap(), IntType(a.bitwidth()))
+        return Expr(to_bv(a) >> b.unwrap(), BitVecType(a.bitwidth()))
 
     @staticmethod
     def LShr(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert b.is_int(), b
-        return Expr(BVLShR(to_bv(a), b.unwrap()), IntType(a.bitwidth()))
+        return Expr(BVLShR(to_bv(a), b.unwrap()), BitVecType(a.bitwidth()))
 
     @staticmethod
     def get_true() -> Expr:
@@ -481,7 +481,7 @@ class BVSymbolicDomain(Domain):
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(ae + be, bw), FloatType(bw))
-        return Expr(to_bv(a) + to_bv(b), IntType(bw))
+        return Expr(to_bv(a) + to_bv(b), BitVecType(bw))
 
     @staticmethod
     def Sub(a, b, isfloat: bool = False) -> Expr:
@@ -492,7 +492,7 @@ class BVSymbolicDomain(Domain):
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(ae - be, bw), FloatType(bw))
-        return Expr(to_bv(a) - to_bv(b), IntType(bw))
+        return Expr(to_bv(a) - to_bv(b), BitVecType(bw))
 
     @staticmethod
     def Mul(a, b, isfloat: bool = False) -> Expr:
@@ -503,7 +503,7 @@ class BVSymbolicDomain(Domain):
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(ae * be, bw), FloatType(bw))
-        return Expr(to_bv(a) * to_bv(b), IntType(bw))
+        return Expr(to_bv(a) * to_bv(b), BitVecType(bw))
 
     @staticmethod
     def Div(a, b, unsigned: bool = False, isfloat: bool = False) -> Expr:
@@ -515,8 +515,8 @@ class BVSymbolicDomain(Domain):
             be = to_double(b)
             return Expr(trunc_fp(fpDiv(RNE(), ae, be), bw), FloatType(bw))
         if unsigned:
-            return Expr(UDiv(to_bv(a), to_bv(b)), IntType(bw))
-        return Expr(to_bv(a) / to_bv(b), IntType(bw))
+            return Expr(UDiv(to_bv(a), to_bv(b)), BitVecType(bw))
+        return Expr(to_bv(a) / to_bv(b), BitVecType(bw))
 
     @staticmethod
     def Rem(a, b, unsigned: bool = False) -> Expr:
@@ -573,10 +573,10 @@ class BVSymbolicDomain(Domain):
                     ),
                 ),
             )
-            return Expr(expr, IntType(32))
+            return Expr(expr, BitVecType(32))
             if op == FpOp.SIGNBIT:
                 return Expr(
-                    If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))), IntType(32)
+                    If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))), BitVecType(32)
                 )
 
         return None

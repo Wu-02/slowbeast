@@ -50,7 +50,7 @@ from z3 import (
 )
 
 from slowbeast.domains.concrete import ConcreteVal
-from slowbeast.ir.types import BoolType, FloatType, IntType
+from slowbeast.ir.types import BoolType, FloatType, BitVecType
 
 
 def subexpressions(expr):
@@ -112,9 +112,9 @@ def split_clauses(*exprs):
     return t(g)
 
 
-def solver_to_sb_type(s) -> Union[BoolType, FloatType, IntType]:
+def solver_to_sb_type(s) -> Union[BoolType, FloatType, BitVecType]:
     if is_bv(s):
-        return IntType(s.sort().size())
+        return BitVecType(s.sort().size())
     if is_fp(s):
         srt = s.sort()
         return FloatType(srt.ebits() + srt.sbits())
@@ -155,12 +155,12 @@ def python_constant(val):
     return None
 
 
-def python_to_sb_type(val: float, bw) -> Union[BoolType, FloatType, IntType]:
+def python_to_sb_type(val: float, bw) -> Union[BoolType, FloatType, BitVecType]:
     if isinstance(val, bool):
         assert bw == 1
         return BoolType()
     if isinstance(val, int):
-        return IntType(bw)
+        return BitVecType(bw)
     if isinstance(val, float):
         return FloatType(bw)
     return None

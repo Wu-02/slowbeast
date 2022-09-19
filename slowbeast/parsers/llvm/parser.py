@@ -131,7 +131,7 @@ def parse_cmp(inst) -> Tuple[Optional[int], bool]:
     return None, False
 
 
-def parse_fun_ret_ty(m, ty) -> Tuple[bool, Union[None, FloatType, IntType]]:
+def parse_fun_ret_ty(m, ty) -> Tuple[bool, Union[None, FloatType, BitVecType]]:
     parts = str(ty).split()
     if len(parts) < 2:
         return False, None
@@ -143,7 +143,7 @@ def parse_fun_ret_ty(m, ty) -> Tuple[bool, Union[None, FloatType, IntType]]:
             if parts[0] in ("float", "double"):
                 return True, FloatType(sz)
             else:
-                return True, IntType(sz)
+                return True, BitVecType(sz)
     return False, None
 
 
@@ -662,13 +662,13 @@ class Parser:
         elif stype == "double":
             ty = FloatType(64)
         elif stype == "i8":
-            ty = IntType(8)
+            ty = BitVecType(8)
         elif stype == "i16":
-            ty = IntType(16)
+            ty = BitVecType(16)
         elif stype == "i32":
-            ty = IntType(32)
+            ty = BitVecType(32)
         elif stype == "i64":
-            ty = IntType(64)
+            ty = BitVecType(64)
         else:
             raise NotImplementedError(f"Unimplemented cast: {inst}")
         # just behave that there's no ZExt for now
@@ -682,7 +682,7 @@ class Parser:
     # operands = get_llvm_operands(inst)
     # assert len(operands) == 1, "Invalid number of operands for cast"
     # cast = Cast(self.operand(operands[0]),
-    #            IntType(type_size_in_bits(self.llvmmodule, inst.type)))
+    #            BitVecType(type_size_in_bits(self.llvmmodule, inst.type)))
     # self._addMapping(inst, cast)
     # return [cast]
 

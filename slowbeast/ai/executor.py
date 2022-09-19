@@ -1,4 +1,5 @@
-from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain, ConcreteInt
+from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain
+from ..domains.concrete_bitvec import ConcreteBitVec
 from ..domains.concrete_bool import ConcreteBool
 from slowbeast.domains.pointer import Pointer
 
@@ -52,7 +53,7 @@ def eval_condition(state, cond: ValueInstruction) -> Value:
     ty = c.type()
     if not ty.is_bool():
         assert ty.bitwidth() == 1, f"Invalid condition in branching: {c} {(type(c))}"
-        cval = Domain.Ne(c, Domain.lift(ConcreteInt(0, 1)))
+        cval = Domain.Ne(c, Domain.lift(ConcreteBitVec(0, 1)))
     else:
         cval = c  # It already is a boolean expression
 

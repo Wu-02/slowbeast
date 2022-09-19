@@ -2,7 +2,7 @@ from slowbeast.core.errors import MemError
 from slowbeast.core.memoryobject import MemoryObject as CoreMO
 from slowbeast.domains.concrete import ConcreteVal
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import get_offset_type, IntType, Bytes
+from slowbeast.ir.types import get_offset_type, BitVecType, Bytes
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
 from typing import List, Tuple, Optional, Sized
@@ -25,7 +25,7 @@ def write_bytes(offval, values, size, x) -> Optional[MemError]:
     bw = x.bytewidth()
     if not x.is_int():
         # rename to Cast and Cast to ReinterpretCast
-        newx = EM.BitCast(x, IntType(8 * bw))
+        newx = EM.BitCast(x, BitVecType(8 * bw))
         if newx is None:
             return MemError(
                 MemError.UNSUPPORTED, f"Cast of {x} to i{bw} is unsupported"
@@ -49,7 +49,7 @@ def read_bytes(values: Sized, offval, size, bts, zeroed):
         # just make Extract return Bytes and it should work well then
         val = EM.Concat(
             *(
-                values[c - i] if values[c - i] else ConcreteVal(0, IntType(8))
+                values[c - i] if values[c - i] else ConcreteVal(0, BitVecType(8))
                 for i in range(0, bts)
             )
         )
@@ -142,7 +142,7 @@ class MemoryObject(CoreMO):
                 return read_bytes(values, offval, size, bts, self._zeroed)
 
             if self._zeroed:
-                return ConcreteVal(0, IntType(bts * 8)), None
+                return ConcreteVal(0, BitVecType(bts * 8)), None
             return None, MemError(
                 MemError.UNINIT_READ,
                 "uninitialized or unaligned read (the latter is unsupported)\n"

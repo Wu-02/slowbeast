@@ -13,12 +13,12 @@ def get_pointer_bitwidth() -> int:
     return POINTER_BIT_WIDTH
 
 
-def get_size_type() -> "IntType":
-    return IntType(POINTER_BIT_WIDTH)
+def get_size_type() -> "BitVecType":
+    return BitVecType(POINTER_BIT_WIDTH)
 
 
-def get_offset_type() -> "IntType":
-    return IntType(POINTER_BIT_WIDTH)
+def get_offset_type() -> "BitVecType":
+    return BitVecType(POINTER_BIT_WIDTH)
 
 
 def get_size_type_size() -> int:
@@ -102,7 +102,7 @@ class PointerType(Type):
         return True
 
 
-class IntType(Type):
+class BitVecType(Type):
     def __init__(self, bw: int) -> None:
         Type.__init__(self, bw)
 
