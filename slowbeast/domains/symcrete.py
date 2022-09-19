@@ -5,7 +5,7 @@ from slowbeast.domains.symbolic import SymbolicDomain
 from .expr import Expr
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import BoolType, BitVecType, Type
-from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
+from slowbeast.domains.concrete_value import ConcreteVal
 from . import SYMCRETE_DOMAIN_KIND
 
 
@@ -61,7 +61,7 @@ class SymcreteDomain:
     def __init__(self) -> None:
         self._names = {}
 
-    def ConcreteVal(self, c: bool, bw) -> ConcreteBool:
+    def ConcreteVal(self, c, bw: int) -> ConcreteVal:
         return ConcreteDomain.Value(c, bw)
 
     def Var(self, name: str, ty: Type):
