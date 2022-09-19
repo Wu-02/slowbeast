@@ -38,7 +38,50 @@ class ConcreteFloatsDomain(Domain):
         return ConcreteFloat(c, bw)
 
     ## Relational operations
-    # have the default implementation
+    @staticmethod
+    def Lt(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
+        assert ConcreteFloatsDomain.belongto(a), a
+        assert ConcreteFloatsDomain.belongto(b), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        assert floats
+        if unsigned:  # means unordered for floats
+            return ConcreteBool(bool(a.value() < b.value()))
+        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.value() < b.value()))
+
+    @staticmethod
+    def Gt(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
+        assert ConcreteFloatsDomain.belongto(a), a
+        assert ConcreteFloatsDomain.belongto(b), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        assert floats
+        if unsigned:  # means unordered for floats
+            return ConcreteBool(bool(a.value() > b.value()))
+        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.value() > b.value()))
+
+    @staticmethod
+    def Le(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
+        assert ConcreteFloatsDomain.belongto(a), a
+        assert ConcreteFloatsDomain.belongto(b), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        assert floats
+        if unsigned:  # means unordered for floats
+            return ConcreteBool(bool(a.value() <= b.value()))
+        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.value() <= b.value()))
+
+    @staticmethod
+    def Ge(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
+        assert ConcreteFloatsDomain.belongto(a), a
+        assert ConcreteFloatsDomain.belongto(b), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
+        assert floats
+        if unsigned:  # means unordered for floats
+            return ConcreteBool(bool(a.value() >= b.value()))
+        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.value() >= b.value()))
+
 
     ##
     # Arithmetic operations

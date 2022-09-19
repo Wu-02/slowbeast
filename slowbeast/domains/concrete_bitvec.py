@@ -118,9 +118,102 @@ class ConcreteBitVecsDomain(Domain):
         return ConcreteBitVec(a.unwrap() / b.unwrap(), bw)
 
     @staticmethod
-    def Eq(a: Value, b: Value,
-           unordered: bool = False, floats: bool = False) -> ConcreteBool:
-        assert floats
-        assert isinstance(a, ConcreteBitVec), f"{a} type: {type(a)}"
-        assert isinstance(b, ConcreteBitVec), f"{b} type: {type(b)}"
-        return ConcreteBool(a.unwrap() == b.unwrap())
+    def ZExt(a: Value, b: Value) -> Value:
+        assert ConcreteBitVecsDomain.belongto(a), a
+        assert ConcreteBitVecsDomain.belongto(b), b
+        assert a.bitwidth() < b.value(), "Invalid zext argument"
+        assert a.is_bv(), a
+        aval = to_bv(a, unsigned=True)
+        return ConcreteBitVec(to_unsigned(aval, a.bitwidth()), b.value())
+
+    @staticmethod
+    def SExt(a: Value, b: Value) -> Value:
+        assert ConcreteBitVecsDomain.belongto(a), a
+        assert ConcreteBitVecsDomain.belongto(b), b
+        assert a.bitwidth() <= b.value(), "Invalid sext argument"
+        assert a.is_bv(), a
+        return ConcreteBitVec(a.value(), b.value())
+
+    @staticmethod
+    def Shl(a: Value, b: Value) -> Value:
+        assert ConcreteBitVecsDomain.belongto(a), a
+        assert ConcreteBitVecsDomain.belongto(b), b
+        assert b.is_bv(), b
+        bw = a.bitwidth()
+        assert b.value() < bw, "Invalid shift"
+        return ConcreteBitVec(to_bv(a) << b.value(), bw)
+
+    @staticmethod
+    def AShr(a: Value, b: Value) -> Value:
+        assert ConcreteBitVecsDomain.belongto(a), a
+        assert ConcreteBitVecsDomain.belongto(b), b
+        assert b.is_bv(), b
+        bw = a.bitwidth()
+        assert b.value() < bw, "Invalid shift"
+        return ConcreteBitVec(to_bv(a) >> b.value(), bw)
+
+    @staticmethod
+    def LShr(a: Value, b: Value) -> Value:
+        assert ConcreteBitVecsDomain.belongto(a), a
+        assert ConcreteBitVecsDomain.belongto(b), b
+        assert b.is_bv(), b
+        assert b.value() < a.bitwidth(), "Invalid shift"
+        val = to_bv(a)
+        bw = a.bitwidth()
+        return ConcreteBitVec(
+            to_bv(a) >> b.value() if val >= 0 else (val + (1 << bw)) >> b.value(),
+            bw,
+        )
+
+    @staticmethod
+    def Extract(a: Value, start: ConcreteVal, end: ConcreteVal) -> Value:
+        assert ConcreteBitVecsDomain.belongto(a)
+        assert start.is_concrete(), start
+        assert end.is_concrete(), end
+        bitsnum = end.value() - start.value() + 1
+        return ConcreteBitVec(
+            (to_bv(a) >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
+        )
+
+    @staticmethod
+    def Concat(*args) -> Value:
+        l = len(args)
+        assert l > 0, args
+        assert all(map(lambda a: ConcreteBitVecsDomain.belongto(a), args)), args
+
+        if l == 1:
+            return args[0]
+        bw = 0
+        val = 0
+        for i in range(1, l + 1):
+            a = args[l - i]
+            val |= a.value() << bw
+            bw += a.bitwidth()
+        return ConcreteBitVec(val, bw)
+
+    @staticmethod
+    def Rem(a: Value, b: Value, unsigned: bool = False) -> Value:
+        assert ConcreteBitVecsDomain.belongto(a), a
+        assert ConcreteBitVecsDomain.belongto(b), b
+        assert b.value() != 0, "Invalid remainder"
+        bw = a.bitwidth()
+        if unsigned:
+            return ConcreteBitVec(
+                to_unsigned(to_bv(a), bw)
+                % to_unsigned(to_bv(b), b.bitwidth()),
+                bw,
+            )
+        return ConcreteBitVec(a.value() % b.value(), bw)
+
+    @staticmethod
+    def Neg(a: Value, isfloat: bool = False) -> Value:
+        """Return the negated number"""
+        assert ConcreteBitVecsDomain.belongto(a), a
+        ty = a.type()
+        bw = ty.bitwidth()
+        return ConcreteBitVec(wrap_to_bw(-a.value(), bw), bw)
+
+    @staticmethod
+    def Abs(a: Value) -> Value:
+        assert ConcreteBitVecsDomain.belongto(a), a
+        return ConcreteBitVec(abs(a.value()), a.bitwidth())

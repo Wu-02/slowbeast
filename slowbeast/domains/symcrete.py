@@ -201,19 +201,19 @@ class SymcreteDomain:
         return opt(SymbolicDomain.Ite(lift(c), lift(a), lift(b)))
 
     def And(self, a: Value, b: Value):
-        if ConcreteDomain.belongto(a, b):
+        if ConcreteDomain.belongto(a) and ConcreteDomain.belongto(b):
             return ConcreteDomain.And(a, b)
         lift = self.lift
         return opt(SymbolicDomain.And(lift(a), lift(b)))
 
     def Or(self, a: Value, b: Value):
-        if ConcreteDomain.belongto(a, b):
+        if ConcreteDomain.belongto(a) and ConcreteDomain.belongto(b):
             return ConcreteDomain.Or(a, b)
         lift = self.lift
         return opt(SymbolicDomain.Or(lift(a), lift(b)))
 
     def Xor(self, a: Value, b: Value):
-        if ConcreteDomain.belongto(a, b):
+        if ConcreteDomain.belongto(a) and ConcreteDomain.belongto(b):
             return ConcreteDomain.Xor(a, b)
         lift = self.lift
         return opt(SymbolicDomain.Xor(lift(a), lift(b)))
@@ -279,13 +279,14 @@ class SymcreteDomain:
         return SymbolicDomain.BitCast(a, ty)
 
     def Extract(self, a, start, end):
-        assert ConcreteDomain.belongto(start, end), "Invalid sext argument"
+        assert ConcreteDomain.belongto(start), start
+        assert ConcreteDomain.belongto(end), end
         if ConcreteDomain.belongto(a):
             return ConcreteDomain.Extract(a, start, end)
         return opt(SymbolicDomain.Extract(a, start, end))
 
     def Concat(self, *args):
-        if ConcreteDomain.belongto(*args):
+        if all(map(lambda a: ConcreteDomain.belongto(a), args)):
             return ConcreteDomain.Concat(*args)
         lift = self.lift
         return opt(SymbolicDomain.Concat(*map(lift, args)))

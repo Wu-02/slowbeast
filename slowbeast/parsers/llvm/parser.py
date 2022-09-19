@@ -777,7 +777,7 @@ class Parser:
                 self._addMapping(inst, mem)
                 return []
             else:
-                A = Add(mem, concrete_value(shift, get_size_type()))
+                A = Add(mem, concrete_value(shift, get_size_type_size()))
                 self._addMapping(inst, A)
         return [A]
 
