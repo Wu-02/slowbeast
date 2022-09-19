@@ -47,7 +47,7 @@ from z3 import (
     fpIsNegative,
 )
 
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.symbolic_helpers import (
     get_fp_sort,
     python_constant,

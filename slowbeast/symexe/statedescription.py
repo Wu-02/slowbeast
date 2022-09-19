@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.expr import Expr
 from slowbeast.ir.instruction import Instruction, Load

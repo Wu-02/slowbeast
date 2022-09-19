@@ -1,11 +1,11 @@
 from random import getrandbits
 
-import slowbeast.domains.concrete
+import slowbeast.domains.concrete_value
 from slowbeast.core.errors import AssertFailError, GenericError
 from slowbeast.core.executor import Executor as ConcreteExecutor
 from slowbeast.domains.concrete_int_float import dom_is_concrete
 from ..domains.concrete_bool import ConcreteBool
-from ..domains.concrete import ConcreteVal
+from ..domains.concrete_value import ConcreteVal
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.value import Value
 from slowbeast.ir.function import Function

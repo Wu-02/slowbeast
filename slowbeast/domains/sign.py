@@ -1,5 +1,5 @@
 from slowbeast.domains.concrete_int_float import dom_is_concrete
-from .concrete import ConcreteVal
+from .concrete_value import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, BitVecType, BoolType
 from . import SIGN_DOMAIN_KIND

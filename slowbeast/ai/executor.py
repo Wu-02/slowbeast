@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain
+from slowbeast.domains.concrete_int_float import ConcreteDomain
 from ..domains.concrete_bitvec import ConcreteBitVec
 from ..domains.concrete_bool import ConcreteBool
 from slowbeast.domains.pointer import Pointer
@@ -229,7 +229,7 @@ class Executor(ConcreteExecutor):
     def compare_pointers(self, state, instr, p1, p2):
         mo1 = p1.object()
         mo2 = p2.object()
-        if not ConcreteIntFloatDomain.belongto(mo1, mo2):
+        if not ConcreteDomain.belongto(mo1, mo2):
             state.set_killed(f"Comparison of symbolic pointers unimplemented: {instr}")
             return [state]
 

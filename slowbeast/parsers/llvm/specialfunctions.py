@@ -12,9 +12,9 @@ from slowbeast.ir.instruction import (
 from slowbeast.ir.types import FloatType, get_size_type_size
 from .utils import get_llvm_operands, type_size_in_bits, to_float_ty
 from slowbeast.util.debugging import print_stderr
-from ...domains.concrete_int_float import ConstantTrue, ConstantFalse, ConcreteIntFloatDomain
+from ...domains.concrete_int_float import ConstantTrue, ConstantFalse, ConcreteDomain
 
-concrete_value = ConcreteIntFloatDomain.Value
+concrete_value = ConcreteDomain.Value
 
 # FIXME: turn to a dict with separate handlers
 special_functions = [

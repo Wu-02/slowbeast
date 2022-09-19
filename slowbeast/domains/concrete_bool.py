@@ -1,4 +1,4 @@
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.ir.types import BoolType
 
 

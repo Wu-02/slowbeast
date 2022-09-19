@@ -3,7 +3,7 @@ from copy import copy
 
 from slowbeast.core.callstack import CallStack
 from slowbeast.core.errors import MemError
-from ..domains.concrete import ConcreteVal
+from ..domains.concrete_value import ConcreteVal
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.types import get_size_type
 from .memoryobject import MemoryObject

@@ -49,7 +49,7 @@ from z3 import (
     Z3_OP_UGT,
 )
 
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.ir.types import BoolType, FloatType, BitVecType
 
 

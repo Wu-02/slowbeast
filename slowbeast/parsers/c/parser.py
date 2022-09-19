@@ -4,7 +4,7 @@ except ImportError as e:
     raise ImportError(f"Need clang bindings: {e}")
 
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
 from slowbeast.ir.program import Program

@@ -7,7 +7,7 @@ from slowbeast.util.debugging import FIXME
 from . import dom_is_concrete
 from .concrete_bitvec import to_unsigned, to_bv, wrap_to_bw, ConcreteBitVec
 from .domain import Domain
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.concrete_bool import ConcreteBool
 from slowbeast.domains.concrete_floats import ConcreteFloat, ConcreteFloatsDomain
 from typing import Optional, Union
@@ -32,9 +32,7 @@ def to_fp(x, unsigned: bool = False):
     )[0]
 
 
-# FIXME: this concrete domain contains Ints and Floats... separate them and then create
-# ConcreteFloatIntDomain (it will have easier implementation)
-class ConcreteIntFloatDomain(Domain):
+class ConcreteDomain(Domain):
     """
     Takes care of handling concrete computations.
     """
@@ -69,7 +67,7 @@ class ConcreteIntFloatDomain(Domain):
         And() itself works as logical or bitwise and depending
         on the arguments.  This method is only logical and,
         but of multiple arguments"""
-        assert ConcreteIntFloatDomain.belongto(*args)
+        assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.is_bool(), args))
         return ConcreteBool(all(map(lambda x: x.value() is True, args)))
 
@@ -80,7 +78,7 @@ class ConcreteIntFloatDomain(Domain):
         Or() itself works as logical or bitwise and depending
         on the arguments.  This method is only logical or,
         but of multiple arguments"""
-        assert ConcreteIntFloatDomain.belongto(*args)
+        assert ConcreteDomain.belongto(*args)
         assert all(map(lambda a: a.is_bool(), args))
         return ConcreteBool(any(map(lambda x: x.value() is True, args)))
 
@@ -93,7 +91,7 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def And(a: Value, b: Value) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a, b)
+        assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool():
@@ -103,7 +101,7 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Or(a, b) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a, b)
+        assert ConcreteDomain.belongto(a, b)
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool():
@@ -119,7 +117,7 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Not(a) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a)
+        assert ConcreteDomain.belongto(a)
         if a.is_bool():
             return ConcreteBool(not a.value())
         else:
@@ -127,16 +125,16 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def ZExt(a, b) -> ConcreteBitVec:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.bitwidth() < b.value(), "Invalid zext argument"
         aval = to_bv(a, unsigned=True)
         return ConcreteBitVec(to_unsigned(aval, a.bitwidth()), b.value())
 
     @staticmethod
     def SExt(a, b) -> ConcreteBitVec:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.bitwidth() <= b.value(), "Invalid sext argument"
         assert a.is_int() is not None, a
         # FIXME: support bytes...
@@ -150,7 +148,7 @@ class ConcreteIntFloatDomain(Domain):
     def Cast(a: ConcreteVal, ty: Type) -> Optional[ConcreteVal]:
         """ Reinterpret cast """
 
-        assert ConcreteIntFloatDomain.belongto(a), a
+        assert ConcreteDomain.belongto(a), a
         bw = ty.bitwidth()
         if a.is_bool() and ty.is_int():
             return ConcreteBitVec(1 if a.value() != 0 else 0, bw)
@@ -173,7 +171,7 @@ class ConcreteIntFloatDomain(Domain):
     @staticmethod
     def BitCast(a: ConcreteVal, ty: Type) -> Optional[ConcreteVal]:
         """static cast"""
-        assert ConcreteIntFloatDomain.belongto(a), a
+        assert ConcreteDomain.belongto(a), a
         bw = ty.bitwidth()
         if a.is_bool() and ty.is_int():
             return ConcreteBitVec(1 if a.value() else 0, bw)
@@ -195,8 +193,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Shl(a, b) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert b.is_int(), b
         bw = a.bitwidth()
         assert b.value() < bw, "Invalid shift"
@@ -204,8 +202,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def AShr(a, b) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert b.is_int(), b
         bw = a.bitwidth()
         assert b.value() < bw, "Invalid shift"
@@ -213,8 +211,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def LShr(a, b) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert b.is_int(), b
         assert b.value() < a.bitwidth(), "Invalid shift"
         val = to_bv(a)
@@ -226,7 +224,7 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Extract(a, start, end) -> ConcreteBitVec:
-        assert ConcreteIntFloatDomain.belongto(a)
+        assert ConcreteDomain.belongto(a)
         assert start.is_concrete()
         assert end.is_concrete()
         bitsnum = end.value() - start.value() + 1
@@ -238,7 +236,7 @@ class ConcreteIntFloatDomain(Domain):
     def Concat(*args):
         l = len(args)
         assert l > 0, args
-        assert ConcreteIntFloatDomain.belongto(*args), args
+        assert ConcreteDomain.belongto(*args), args
         if l == 1:
             return args[0]
         bw = 0
@@ -251,8 +249,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Rem(a, b, unsigned: bool = False) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert b.value() != 0, "Invalid remainder"
         if unsigned:
             return ConcreteVal(
@@ -265,7 +263,7 @@ class ConcreteIntFloatDomain(Domain):
     @staticmethod
     def Neg(a, isfloat) -> ConcreteVal:
         """Return the negated number"""
-        assert ConcreteIntFloatDomain.belongto(a)
+        assert ConcreteDomain.belongto(a)
         ty = a.type()
         bw = ty.bitwidth()
         if isfloat:
@@ -274,12 +272,12 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Abs(a) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a)
+        assert ConcreteDomain.belongto(a)
         return ConcreteVal(abs(a.value()), a.type())
 
     @staticmethod
     def FpOp(op, val) -> Union[ConcreteBool, ConcreteBitVec]:
-        assert ConcreteIntFloatDomain.belongto(val)
+        assert ConcreteDomain.belongto(val)
         # FIXME: do not use the enum from instruction
         assert val.is_float(), val
 
@@ -308,8 +306,8 @@ class ConcreteIntFloatDomain(Domain):
     # Relational operators
     @staticmethod
     def Le(a, b, unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -326,8 +324,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Lt(a, b, unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -344,8 +342,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Ge(a, b, unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -362,8 +360,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Gt(a, b, unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -380,8 +378,8 @@ class ConcreteIntFloatDomain(Domain):
     @staticmethod
     def Eq(a: Value, b: Value,
            unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -395,8 +393,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Ne(a, b, unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if floats:
@@ -411,8 +409,8 @@ class ConcreteIntFloatDomain(Domain):
     # Arithmetic operations
     @staticmethod
     def Add(a, b, isfloat: bool = False) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float() or a.is_bytes()
@@ -425,8 +423,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Sub(a, b, isfloat: bool = False) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float() or a.is_bytes()
@@ -438,8 +436,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Mul(a, b, isfloat: bool = False) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float() or a.is_bytes()
@@ -451,8 +449,8 @@ class ConcreteIntFloatDomain(Domain):
 
     @staticmethod
     def Div(a, b, unsigned: bool = False, isfloat: bool = False) -> ConcreteVal:
-        assert ConcreteIntFloatDomain.belongto(a), a
-        assert ConcreteIntFloatDomain.belongto(b), b
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.is_int() or a.is_float() or a.is_bytes()

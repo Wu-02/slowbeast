@@ -4,9 +4,7 @@ from slowbeast.ir.types import Type, PointerType
 
 
 class ConcreteVal(Value):
-    """
-    Integer constant or boolean
-    """
+    """ Concrete value, a supertype of concrete bool, bitvec and float """
 
     KIND = CONCRETE_DOMAIN_KIND
 

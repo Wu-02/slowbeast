@@ -1,4 +1,4 @@
-from .concrete import ConcreteVal
+from .concrete_value import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, BitVecType, BoolType
 from . import SIGNUL_DOMAIN_KIND, dom_is_signul, dom_is_symbolic, dom_is_concrete

@@ -1,6 +1,6 @@
 import llvmlite.binding as llvm
 
-from slowbeast.domains.concrete_int_float import ConcreteIntFloatDomain
+from slowbeast.domains.concrete_int_float import ConcreteDomain
 from slowbeast.ir.argument import Argument
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
@@ -11,7 +11,7 @@ from .specialfunctions import special_functions, create_special_fun
 from .utils import *
 from typing import Iterable, List, Optional, Sized, Tuple, Union
 
-concrete_value = ConcreteIntFloatDomain.Value
+concrete_value = ConcreteDomain.Value
 
 def _get_llvm_module(path):
     if path.endswith(".ll"):

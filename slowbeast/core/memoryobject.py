@@ -3,7 +3,7 @@ from sys import stdout
 
 from slowbeast.core.errors import MemError
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type
 from typing import Optional, TextIO

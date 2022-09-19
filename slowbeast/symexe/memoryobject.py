@@ -1,6 +1,6 @@
 from slowbeast.core.errors import MemError
 from slowbeast.core.memoryobject import MemoryObject as CoreMO
-from slowbeast.domains.concrete import ConcreteVal
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type, BitVecType, Bytes
 from slowbeast.solvers.symcrete import global_expr_mgr
