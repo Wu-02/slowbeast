@@ -5,8 +5,7 @@ from slowbeast.domains.symbolic import SymbolicDomain
 from .expr import Expr
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import BoolType, BitVecType, Type
-from slowbeast.domains.concrete_value import ConcreteVal
-from slowbeast.domains.concrete_bool import ConcreteBool
+from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from . import SYMCRETE_DOMAIN_KIND
 
 

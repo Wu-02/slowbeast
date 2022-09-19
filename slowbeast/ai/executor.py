@@ -1,6 +1,6 @@
 from slowbeast.domains.concrete import ConcreteDomain
 from ..domains.concrete_bitvec import ConcreteBitVec
-from ..domains.concrete_bool import ConcreteBool
+from ..domains.concrete_value import ConcreteBool
 from slowbeast.domains.pointer import Pointer
 
 # from slowbeast.domains.sign import ZODomain

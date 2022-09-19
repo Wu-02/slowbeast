@@ -7,8 +7,8 @@ from slowbeast.util.debugging import FIXME
 from . import dom_is_concrete
 from .concrete_bitvec import to_unsigned, to_bv, wrap_to_bw, ConcreteBitVec
 from .domain import Domain
-from slowbeast.domains.concrete_value import ConcreteVal
-from slowbeast.domains.concrete_bool import ConcreteBool
+from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
+from slowbeast.domains.concrete_bool import ConcreteBoolDomain
 from slowbeast.domains.concrete_floats import ConcreteFloat, ConcreteFloatsDomain
 from typing import Optional, Union
 
@@ -62,41 +62,28 @@ class ConcreteDomain(Domain):
 
     @staticmethod
     def conjunction(*args) -> ConcreteBool:
-        """
-        And() of multiple boolean arguments.
-        And() itself works as logical or bitwise and depending
-        on the arguments.  This method is only logical and,
-        but of multiple arguments"""
-        assert ConcreteDomain.belongto(*args)
-        assert all(map(lambda a: a.is_bool(), args))
-        return ConcreteBool(all(map(lambda x: x.value() is True, args)))
+        return ConcreteBoolDomain.conjunction(*args)
 
     @staticmethod
     def disjunction(*args) -> ConcreteBool:
-        """
-        Or() of multiple boolean arguments.
-        Or() itself works as logical or bitwise and depending
-        on the arguments.  This method is only logical or,
-        but of multiple arguments"""
-        assert ConcreteDomain.belongto(*args)
-        assert all(map(lambda a: a.is_bool(), args))
-        return ConcreteBool(any(map(lambda x: x.value() is True, args)))
+        return ConcreteBoolDomain.disjunction(*args)
 
     @staticmethod
     def Ite(c: Value, a: Value, b: Value):
-        assert dom_is_concrete(c)
+        assert ConcreteDomain.belongto(c), c
         assert c.is_bool(), c
         assert a.type() == b.type(), f"{a}, {b}"
         return a if c else b
 
     @staticmethod
     def And(a: Value, b: Value) -> ConcreteVal:
-        assert ConcreteDomain.belongto(a, b)
+        assert ConcreteDomain.belongto(a), a
+        assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool():
-            return ConcreteBool(a.value() and b.value())
-        else:
+            return ConcreteBoolDomain.And(a, b)
+        elif a.is_bv():
             return ConcreteVal(to_bv(a) & to_bv(b), BitVecType(a.bitwidth()))
 
     @staticmethod

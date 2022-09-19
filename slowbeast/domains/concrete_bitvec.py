@@ -1,7 +1,6 @@
 from struct import unpack, pack
 
-from slowbeast.domains.concrete_value import ConcreteVal
-from slowbeast.domains.concrete_bool import ConcreteBool
+from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import BitVecType
 from .domain import Domain
 from .value import Value

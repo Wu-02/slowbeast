@@ -1,6 +1,6 @@
 from slowbeast.domains import CONCRETE_DOMAIN_KIND
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import Type, PointerType
+from slowbeast.ir.types import Type, PointerType, BoolType
 
 
 class ConcreteVal(Value):
@@ -50,3 +50,9 @@ class ConcreteVal(Value):
             if not isinstance(rhs, ConcreteVal)
             else self.value() == rhs.value() and self.type() == rhs.type()
         )
+
+
+class ConcreteBool(ConcreteVal):
+    def __init__(self, b: bool) -> None:
+        assert isinstance(b, bool), f"{b} type: {type(b)}"
+        super().__init__(b, BoolType())

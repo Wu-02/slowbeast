@@ -1,5 +1,4 @@
-from slowbeast.domains.concrete_value import ConcreteVal
-from slowbeast.domains.concrete_bool import ConcreteBool
+from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import FloatType
 from .domain import Domain

@@ -1,6 +1,6 @@
 from slowbeast.ir.types import Type
 from .value import Value
-from .concrete_bool import ConcreteBool
+from .concrete_value import ConcreteBool
 
 from typing import Optional
 
