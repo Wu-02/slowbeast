@@ -5,6 +5,7 @@ from slowbeast.ir.types import BitVecType
 from .domain import Domain
 from .value import Value
 
+
 def to_unsigned(x, bw: int):
     """Get unsigned value for signed in 2's complement"""
     if isinstance(x, float):
@@ -100,7 +101,9 @@ class ConcreteBitVecsDomain(Domain):
         return ConcreteBitVec(a.unwrap() - b.unwrap(), bw)
 
     @staticmethod
-    def Mul(a: ConcreteBitVec, b: ConcreteBitVec, isfloat: bool = False) -> ConcreteBitVec:
+    def Mul(
+        a: ConcreteBitVec, b: ConcreteBitVec, isfloat: bool = False
+    ) -> ConcreteBitVec:
         assert ConcreteBitVecsDomain.belongto(a), a
         assert ConcreteBitVecsDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -109,7 +112,12 @@ class ConcreteBitVecsDomain(Domain):
         return ConcreteBitVec(a.unwrap() * b.unwrap(), bw)
 
     @staticmethod
-    def Div(a: ConcreteBitVec, b: ConcreteBitVec, unordered: bool = False, isfloat: bool = False ) -> ConcreteBitVec:
+    def Div(
+        a: ConcreteBitVec,
+        b: ConcreteBitVec,
+        unordered: bool = False,
+        isfloat: bool = False,
+    ) -> ConcreteBitVec:
         assert ConcreteBitVecsDomain.belongto(a), a
         assert ConcreteBitVecsDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -199,8 +207,7 @@ class ConcreteBitVecsDomain(Domain):
         bw = a.bitwidth()
         if unsigned:
             return ConcreteBitVec(
-                to_unsigned(to_bv(a), bw)
-                % to_unsigned(to_bv(b), b.bitwidth()),
+                to_unsigned(to_bv(a), bw) % to_unsigned(to_bv(b), b.bitwidth()),
                 bw,
             )
         return ConcreteBitVec(a.value() % b.value(), bw)

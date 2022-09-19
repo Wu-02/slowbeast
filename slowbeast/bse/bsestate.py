@@ -134,7 +134,9 @@ class BSEState(LazySEState):
                     continue
                 # we found zeroed global from which we read
                 if mo.is_global() and mo.is_zeroed():
-                    constraints.append(em.Eq(val[0], ConcreteBitVec(0, val[0].bitwidth())))
+                    constraints.append(
+                        em.Eq(val[0], ConcreteBitVec(0, val[0].bitwidth()))
+                    )
             else:
                 for g, xptr in (
                     (g, xptr) for (g, xptr) in IM.bound_globals() if g.is_zeroed()

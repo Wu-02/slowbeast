@@ -329,7 +329,7 @@ class SymcreteDomain:
 
     def Gt(self, a: Value, b: Value, unsigned: bool = False, isfloat: bool = False):
         if ConcreteDomain.belongto(a) and ConcreteDomain.belongto(b):
-                return ConcreteDomain.Gt(a, b, unsigned, isfloat)
+            return ConcreteDomain.Gt(a, b, unsigned, isfloat)
         lift = self.lift
         return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned, isfloat))
 

@@ -13,6 +13,7 @@ from typing import Iterable, List, Optional, Sized, Tuple, Union
 
 concrete_value = ConcreteDomain.Value
 
+
 def _get_llvm_module(path):
     if path.endswith(".ll"):
         with open(path, "rt") as f:

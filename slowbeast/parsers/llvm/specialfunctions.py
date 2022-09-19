@@ -118,7 +118,10 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
         O = FpOp(FpOp.IS_INF, val)
-        P = ZExt(O, concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()))
+        P = ZExt(
+            O,
+            concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()),
+        )
         return P, [O, P]
     elif fun in "nan":
         I = Cast(concrete_value(float("NaN"), 64), FloatType(64))
@@ -127,7 +130,10 @@ def create_special_fun(parser, inst, fun, error_funs):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
         O = FpOp(FpOp.IS_NAN, val)
         # the functions return int
-        P = ZExt(O, concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()))
+        P = ZExt(
+            O,
+            concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()),
+        )
         return P, [O, P]
     elif fun in ("__fpclassify", "__fpclassifyf", "__fpclassifyl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))

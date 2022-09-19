@@ -61,5 +61,6 @@ class Pointer(Value):
 
 def get_null_pointer() -> Pointer:
     return Pointer(
-        ConcreteBitVec(0, get_offset_type_size()), ConcreteBitVec(0, get_offset_type_size())
+        ConcreteBitVec(0, get_offset_type_size()),
+        ConcreteBitVec(0, get_offset_type_size()),
     )

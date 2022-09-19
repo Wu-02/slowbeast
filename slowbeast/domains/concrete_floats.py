@@ -16,7 +16,9 @@ class ConcreteFloat(ConcreteVal):
         elif bw == 64:
             val = float64(n)
         else:
-            raise NotImplementedError(f"ConcreteFloat with bitwidth {bw} not implemented")
+            raise NotImplementedError(
+                f"ConcreteFloat with bitwidth {bw} not implemented"
+            )
         super().__init__(val, FloatType(bw))
 
     def is_nan(self) -> bool:
@@ -27,7 +29,7 @@ class ConcreteFloat(ConcreteVal):
 
 
 class ConcreteFloatsDomain(Domain):
-    """ Takes care of handling concrete float computations. """
+    """Takes care of handling concrete float computations."""
 
     @staticmethod
     def belongto(x: Value) -> bool:
@@ -47,7 +49,9 @@ class ConcreteFloatsDomain(Domain):
         assert floats
         if unsigned:  # means unordered for floats
             return ConcreteBool(bool(a.value() < b.value()))
-        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.value() < b.value()))
+        return ConcreteBool(
+            bool(not a.is_nan() and not b.is_nan() and a.value() < b.value())
+        )
 
     @staticmethod
     def Gt(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
@@ -58,7 +62,9 @@ class ConcreteFloatsDomain(Domain):
         assert floats
         if unsigned:  # means unordered for floats
             return ConcreteBool(bool(a.value() > b.value()))
-        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.value() > b.value()))
+        return ConcreteBool(
+            bool(not a.is_nan() and not b.is_nan() and a.value() > b.value())
+        )
 
     @staticmethod
     def Le(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
@@ -69,7 +75,9 @@ class ConcreteFloatsDomain(Domain):
         assert floats
         if unsigned:  # means unordered for floats
             return ConcreteBool(bool(a.value() <= b.value()))
-        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.value() <= b.value()))
+        return ConcreteBool(
+            bool(not a.is_nan() and not b.is_nan() and a.value() <= b.value())
+        )
 
     @staticmethod
     def Ge(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
@@ -80,8 +88,9 @@ class ConcreteFloatsDomain(Domain):
         assert floats
         if unsigned:  # means unordered for floats
             return ConcreteBool(bool(a.value() >= b.value()))
-        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.value() >= b.value()))
-
+        return ConcreteBool(
+            bool(not a.is_nan() and not b.is_nan() and a.value() >= b.value())
+        )
 
     ##
     # Arithmetic operations
@@ -113,7 +122,9 @@ class ConcreteFloatsDomain(Domain):
         return ConcreteFloat(a.unwrap() * b.unwrap(), bw)
 
     @staticmethod
-    def Div(a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False ) -> ConcreteFloat:
+    def Div(
+        a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False
+    ) -> ConcreteFloat:
         assert ConcreteFloatsDomain.belongto(a), a
         assert ConcreteFloatsDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -122,9 +133,12 @@ class ConcreteFloatsDomain(Domain):
         return ConcreteFloat(a.unwrap() / b.unwrap(), bw)
 
     @staticmethod
-    def Eq(a: Value, b: Value,
-           unordered: bool = False, floats: bool = False) -> ConcreteBool:
+    def Eq(
+        a: Value, b: Value, unordered: bool = False, floats: bool = False
+    ) -> ConcreteBool:
         assert floats
         assert isinstance(a, ConcreteFloat), f"{a} type: {type(a)}"
         assert isinstance(b, ConcreteFloat), f"{b} type: {type(b)}"
-        return ConcreteBool(bool(not a.is_nan() and not b.is_nan() and a.unwrap() == b.unwrap()))
+        return ConcreteBool(
+            bool(not a.is_nan() and not b.is_nan() and a.unwrap() == b.unwrap())
+        )

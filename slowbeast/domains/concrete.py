@@ -4,12 +4,19 @@ from struct import pack, unpack
 from slowbeast.ir.instruction import FpOp
 from slowbeast.ir.types import BitVecType, Type, FloatType
 from slowbeast.util.debugging import FIXME
-from .concrete_bitvec import to_unsigned, to_bv, wrap_to_bw, ConcreteBitVec, ConcreteBitVecsDomain
+from .concrete_bitvec import (
+    to_unsigned,
+    to_bv,
+    wrap_to_bw,
+    ConcreteBitVec,
+    ConcreteBitVecsDomain,
+)
 from .domain import Domain
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.domains.concrete_bool import ConcreteBoolDomain
 from slowbeast.domains.concrete_floats import ConcreteFloat, ConcreteFloatsDomain
 from typing import Optional, Union
+
 
 def trunc_to_float(x, bw):
     # isnt there a more efficient way? Probably just to use numpy.float32
@@ -19,6 +26,7 @@ def trunc_to_float(x, bw):
     if bw == 32:
         return unpack("f", pack("f", x))[0]
     return x
+
 
 def to_fp(x, unsigned: bool = False):
     val = x.value()
@@ -49,7 +57,9 @@ class ConcreteDomain(Domain):
             return ConcreteBitVec(c, bw)
         if isinstance(c, float):
             return ConcreteFloat(c, bw)
-        raise NotImplementedError("Don't know how to create a ConcretValue for {c}: {type(c)}")
+        raise NotImplementedError(
+            "Don't know how to create a ConcretValue for {c}: {type(c)}"
+        )
 
     @staticmethod
     def get_true() -> ConcreteBool:
@@ -127,7 +137,7 @@ class ConcreteDomain(Domain):
 
     @staticmethod
     def Cast(a: Value, ty: Type, signed: bool = False) -> Optional[Value]:
-        """ Reinterpret cast """
+        """Reinterpret cast"""
 
         assert ConcreteDomain.belongto(a), a
         bw = ty.bitwidth()
@@ -183,7 +193,6 @@ class ConcreteDomain(Domain):
     @staticmethod
     def LShr(a: Value, b: Value) -> Value:
         return ConcreteBitVecsDomain.LShr(a, b)
-
 
     @staticmethod
     def Extract(a: Value, start: ConcreteVal, end: ConcreteVal) -> Value:
@@ -298,8 +307,9 @@ class ConcreteDomain(Domain):
         return ConcreteBool(aval > bval)
 
     @staticmethod
-    def Eq(a: Value, b: Value,
-           unsigned: bool = False, floats: bool = False) -> ConcreteBool:
+    def Eq(
+        a: Value, b: Value, unsigned: bool = False, floats: bool = False
+    ) -> ConcreteBool:
         assert ConcreteDomain.belongto(a), a
         assert ConcreteDomain.belongto(b), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -335,7 +345,6 @@ class ConcreteDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         assert a.is_bv() or a.is_float() or a.is_bytes()
-        # FIXME: add self-standing float domain
         bw = a.bitwidth()
         if isfloat:
             return ConcreteFloatsDomain.Add(a, b)
@@ -383,6 +392,7 @@ class ConcreteDomain(Domain):
         if unsigned:
             return ConcreteVal(to_unsigned(aval, bw) / to_unsigned(bval, bw), result_ty)
         return ConcreteVal(wrap_to_bw(int(aval / bval), bw), result_ty)
+
 
 ConstantTrue = ConcreteBool(True)
 ConstantFalse = ConcreteBool(False)

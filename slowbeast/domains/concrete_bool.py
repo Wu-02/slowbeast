@@ -3,7 +3,6 @@ from .domain import Domain
 
 
 class ConcreteBoolDomain(Domain):
-
     @staticmethod
     def belongto(x) -> bool:
         return isinstance(x, ConcreteBool)
@@ -15,14 +14,14 @@ class ConcreteBoolDomain(Domain):
 
     @staticmethod
     def conjunction(*args) -> ConcreteBool:
-        """ And() of multiple boolean arguments. """
+        """And() of multiple boolean arguments."""
         assert all(map(lambda a: ConcreteBoolDomain.belongto(a), args)), args
         assert all(map(lambda a: a.is_bool(), args))
         return ConcreteBool(all(map(lambda x: x.value() is True, args)))
 
     @staticmethod
     def disjunction(*args) -> ConcreteBool:
-        """ Or() of multiple boolean arguments. """
+        """Or() of multiple boolean arguments."""
         assert all(map(lambda a: ConcreteBoolDomain.belongto(a), args)), args
         assert all(map(lambda a: a.is_bool(), args))
         return ConcreteBool(any(map(lambda x: x.value() is True, args)))
@@ -56,13 +55,13 @@ class ConcreteBoolDomain(Domain):
         assert ConcreteBoolDomain.belongto(b), b
         assert a.is_bool(), a
         assert b.is_bool(), b
-        assert a.value() in (True, False),a
-        assert b.value() in (True, False),b
+        assert a.value() in (True, False), a
+        assert b.value() in (True, False), b
         return ConcreteBool(a.value() ^ b.value())
 
     @staticmethod
     def Not(a: Value) -> ConcreteBool:
         assert ConcreteBoolDomain.belongto(a)
         assert a.is_bool(), a
-        assert a.value() in (True, False),a
+        assert a.value() in (True, False), a
         return ConcreteBool(not a.value())

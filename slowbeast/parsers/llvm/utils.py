@@ -10,6 +10,7 @@ from typing import Optional, Sized, Union
 
 concrete_value = ConcreteDomain.Value
 
+
 def _getInt(s) -> Optional[int]:
     try:
         if s.startswith("0x"):
