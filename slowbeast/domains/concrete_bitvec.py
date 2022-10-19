@@ -56,10 +56,12 @@ def wrap_to_bw(x, bw: int):
 
 
 class ConcreteBitVec(ConcreteVal):
-    def __init__(self, n: int, bw: int) -> None:
+    def __init__(self, n: int, bw) -> None:
         assert isinstance(n, int), n
-        assert isinstance(bw, int), bw
-        super().__init__(n, BitVecType(bw))
+        if not isinstance(bw, BitVecType):
+            assert isinstance(bw, int), bw
+            bw = BitVecType(bw)
+        super().__init__(n, bw)
 
 
 class ConcreteBitVecDomain(Domain):
