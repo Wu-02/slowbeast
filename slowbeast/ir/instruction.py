@@ -533,7 +533,7 @@ class UnaryOperation(ValueTypedInstruction):
     CAST = 5  # reinterpret cast
     ABS = 6
     FP_OP = 7  # floating-point operation
-    LAST_UNARY_OP = 7
+    LAST_UNARY_OP = 8
 
     # TODO make SEXT and ZEXT also reinterpret cast?
 
@@ -553,11 +553,15 @@ class UnaryOperation(ValueTypedInstruction):
 class Abs(UnaryOperation):
     """Absolute value"""
 
-    def __init__(self, val) -> None:
+    def __init__(self, val, is_float=False) -> None:
         super().__init__(UnaryOperation.ABS, val)
+        self._is_float = is_float
+
+    def is_float(self):
+        return self._is_float
 
     def __str__(self) -> str:
-        return f"x{self.get_id()} = abs({self.operand(0).as_value()})"
+        return f"x{self.get_id()} = {'f' if self._is_float else ''}abs({self.operand(0).as_value()})"
 
 
 class Extend(UnaryOperation):

@@ -588,7 +588,7 @@ class Executor(ConcreteExecutor):
         elif opcode == UnaryOperation.NEG:
             r = E.Neg(op1, instr.is_fp())
         elif opcode == UnaryOperation.ABS:
-            r = E.Abs(op1)
+            r = E.Abs(op1, instr.is_float())
         elif opcode == UnaryOperation.FP_OP:
             r = E.FpOp(instr.fp_operation(), op1)
             if r is None:

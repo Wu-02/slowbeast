@@ -229,10 +229,10 @@ class SymcreteDomain:
             return ConcreteDomain.Neg(a, isfloat)
         return opt(SymbolicDomain.Neg(self.lift(a), isfloat))
 
-    def Abs(self, a: Value):
+    def Abs(self, a: Value, is_float: bool = False):
         if ConcreteDomain.belongto(a):
-            return ConcreteDomain.Abs(a)
-        return opt(SymbolicDomain.Abs(self.lift(a)))
+            return ConcreteDomain.Abs(a, is_float)
+        return opt(SymbolicDomain.Abs(self.lift(a), is_float))
 
     def FpOp(self, op, val: Value):
         if ConcreteDomain.belongto(val):

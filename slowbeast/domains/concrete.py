@@ -216,9 +216,10 @@ class ConcreteDomain(Domain):
         raise NotImplementedError(f"Operation not implemented: Neg({a})")
 
     @staticmethod
-    def Abs(a: Value) -> Value:
-        # FIXME: what about floats?
-        return ConcreteBitVecDomain.Abs(a)
+    def Abs(a: Value, is_float: bool = False) -> Value:
+        if is_float:
+            return ConcreteFloatsDomain.Abs(a, is_float)
+        return ConcreteBitVecDomain.Abs(a, is_float)
 
     @staticmethod
     def FpOp(op, val) -> Union[ConcreteBool, ConcreteBitVec]:

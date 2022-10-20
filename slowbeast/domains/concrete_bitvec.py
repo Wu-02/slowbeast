@@ -307,6 +307,7 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBitVec(wrap_to_bw(-a.value(), bw), bw)
 
     @staticmethod
-    def Abs(a: Value) -> Value:
+    def Abs(a: Value, is_float: bool = False) -> Value:
+        assert not is_float
         assert ConcreteBitVecDomain.belongto(a), a
         return ConcreteBitVec(abs(a.value()), a.bitwidth())

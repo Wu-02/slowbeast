@@ -142,3 +142,9 @@ class ConcreteFloatsDomain(Domain):
         return ConcreteBool(
             bool(not a.is_nan() and not b.is_nan() and a.unwrap() == b.unwrap())
         )
+
+    @staticmethod
+    def Abs(a: Value, is_float: bool = False) -> Value:
+        assert is_float
+        assert ConcreteFloatsDomain.belongto(a), a
+        return ConcreteFloat(abs(a.value()), a.bitwidth())

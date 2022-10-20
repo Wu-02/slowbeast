@@ -113,7 +113,7 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif fun.startswith("llvm.fabs."):
         operands = get_llvm_operands(inst)
         val = parser.operand(operands[0])
-        A = Abs(val)
+        A = Abs(val, FloatType(type_size_in_bits(module, inst.type)))
         return A, [A]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
