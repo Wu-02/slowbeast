@@ -1,6 +1,6 @@
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.solvers.solver import Solver
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg
+from slowbeast.util.debugging import print_stderr, print_stdout, dbg, inc_print_indent, dec_print_indent
 from slowbeast.ir.instruction import (
     Load,
     Store,
@@ -98,7 +98,9 @@ class SymbolicExecutor(Interpreter):
         stats = self.stats
         if s.has_error() and opts.replay_errors and not opts.threads:
             print_stdout("Found an error, trying to replay it", color="white")
+            inc_print_indent()
             repls = self.replay_state(s)
+            dec_print_indent()
             if not repls or not repls.has_error():
                 print_stderr("Failed replaying error", color="orange")
                 s.set_killed("Failed replaying error")
@@ -111,18 +113,20 @@ class SymbolicExecutor(Interpreter):
             # ), f"State already in queue: {s} ... {self.states}"
             self.states.append(s)
         elif s.has_error():
-            dbgloc = s.pc.get_metadata("dbgloc")
-            if dbgloc:
-                print_stderr(
-                    f"[{s.get_id()}] {dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]}: {s.get_error()}",
-                    color="redul",
-                )
-            else:
-                print_stderr(
-                    "{0}: {1} @ {2}".format(s.get_id(), s.get_error(), s.pc),
-                    color="redul",
-                )
-            print_stderr("Error found.", color="red")
+            if not opts.replay_errors:
+                dbgloc = s.pc.get_metadata("dbgloc")
+                if dbgloc:
+                    print_stderr(
+                        f"[{s.get_id()}] {dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]}: {s.get_error()}",
+                        color="redul",
+                    )
+                else:
+                    print_stderr(
+                        "{0}: {1} @ {2}".format(s.get_id(), s.get_error(), s.pc),
+                        color="redul",
+                    )
+                print_stderr("Error found.", color="red")
+            # else: we already printed this message
             stats.errors += 1
             stats.paths += 1
             if testgen:
