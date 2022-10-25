@@ -606,9 +606,9 @@ class Executor(ConcreteExecutor):
             start, end = instr.range()
             r = expr_mgr.Extract(op1, start, end)
         elif opcode == UnaryOperation.NEG:
-            r = expr_mgr.Neg(op1, instr.is_fp())
+            r = expr_mgr.Neg(op1, op1.is_float())
         elif opcode == UnaryOperation.ABS:
-            r = expr_mgr.Abs(op1, instr.is_float())
+            r = expr_mgr.Abs(op1, op1.is_float())
         elif opcode == UnaryOperation.FP_OP:
             r = expr_mgr.FpOp(instr.fp_operation(), op1)
             if r is None:
