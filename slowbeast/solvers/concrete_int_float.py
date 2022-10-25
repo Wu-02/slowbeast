@@ -1,4 +1,4 @@
-from slowbeast.domains.symcrete import SymcreteDomain
+from slowbeast.domains.exprmgr import ExpressionManager
 from slowbeast.solvers.solver import SolverIntf
 
 
@@ -8,7 +8,7 @@ class ConcreteSolver(SolverIntf):
     wrapped to the interface solver.
     """
 
-    def __init__(self, em: SymcreteDomain = SymcreteDomain()) -> None:
+    def __init__(self, em: ExpressionManager = ExpressionManager()) -> None:
         super().__init__(em)
 
     def is_sat(self, *e) -> bool:

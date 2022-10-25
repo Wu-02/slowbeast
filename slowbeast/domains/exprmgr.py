@@ -47,14 +47,11 @@ opt = SymbolicExprOpt.optimize
 
 # FIXME: This domain still has the methods as ExprManager (which it used to be),
 # other domains have only static methods...
-class SymcreteDomain:
+class ExpressionManager:
     """
-    Takes care of creating (caching and optimizing) expressions.
-    The default mode (right now) is just to create Bare
-    SMT formulas, but we'll be ready for the future :)
+    Takes care of creating expressions, including lifting/lowering arguments
+    and expressions themselves.
     """
-
-    KIND: int = SYMCRETE_DOMAIN_KIND
 
     __slots__ = "_names"
 
@@ -64,22 +61,22 @@ class SymcreteDomain:
     def ConcreteVal(self, c, bw: int) -> ConcreteVal:
         return ConcreteDomain.Value(c, bw)
 
-    def Var(self, name: str, ty: Type):
-        assert isinstance(name, str)
-        names = self._names
-        s = names.get(name)
-        if s:
-            assert (
-                s.type() == ty
-            ), f"Creating the same value with different type: {name} ({s.type()} != {ty})"
-        else:
-            s = SymbolicDomain.Var(name, ty)
-            names[name] = s
-        assert s, "No var was created"
-        return s
+   #def Var(self, name: str, ty: Type):
+   #    assert isinstance(name, str)
+   #    names = self._names
+   #    s = names.get(name)
+   #    if s:
+   #        assert (
+   #            s.type() == ty
+   #        ), f"Creating the same value with different type: {name} ({s.type()} != {ty})"
+   #    else:
+   #        s = SymbolicDomain.Var(name, ty)
+   #        names[name] = s
+   #    assert s, "No var was created"
+   #    return s
 
-    def Bool(self, name: str):
-        return self.Var(name, BoolType())
+   #def Bool(self, name: str):
+   #    return self.Var(name, BoolType())
 
     # def subexpressions(self, expr):
     #    if expr.is_concrete():
@@ -149,6 +146,7 @@ class SymcreteDomain:
         return SymbolicDomain.lift(v)
 
     def get_true(self) -> Expr:
+        """ Get symbol "true" """
         return SymbolicDomain.get_true()
 
     def get_false(self) -> Expr:

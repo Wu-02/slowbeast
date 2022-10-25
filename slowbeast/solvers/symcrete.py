@@ -1,15 +1,15 @@
 from slowbeast.domains.symbolic_helpers import map_model
-from slowbeast.domains.symcrete import SymcreteDomain
+from slowbeast.domains.exprmgr import ExpressionManager
 from slowbeast.solvers.solver import SolverIntf
 from slowbeast.solvers.z3solver import models, models_inc, _is_sat
 from z3 import Solver as Z3Solver, is_false, BoolVal
 from slowbeast.domains.concrete_value import ConcreteVal
 from typing import List, Optional, Union
 
-global_expr_manager = SymcreteDomain()
+global_expr_manager = ExpressionManager()
 
 
-def global_expr_mgr() -> SymcreteDomain:
+def global_expr_mgr() -> ExpressionManager:
     global global_expr_manager
     return global_expr_manager
 

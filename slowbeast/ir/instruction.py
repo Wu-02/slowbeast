@@ -89,6 +89,9 @@ class Instruction(ProgramElement):
     def expected_op_types(self):
         return self._op_types
 
+    def op_type(self, idx: int) -> Type:
+        return self._op_types[idx]
+
     def operands_num(self) -> int:
         return len(self._operands)
 

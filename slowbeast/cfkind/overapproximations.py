@@ -3,7 +3,7 @@ from functools import partial
 import slowbeast.domains.symbolic_helpers
 from slowbeast.core.executor import PathExecutionResult
 from ..domains.concrete_bitvec import ConcreteBitVec
-from ..domains.symcrete import em_optimize_expressions
+from ..domains.exprmgr import em_optimize_expressions
 from ..solvers.symcrete import IncrementalSolver, global_expr_mgr
 from slowbeast.symexe.annotations import (
     AssertAnnotation,

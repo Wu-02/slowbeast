@@ -15,7 +15,7 @@ from slowbeast.symexe.statedescription import (
     eval_state_description,
 )
 from typing import Union
-from slowbeast.domains.symcrete import SymcreteDomain
+from slowbeast.domains.exprmgr import ExpressionManager
 
 
 class StatesSet:
@@ -44,7 +44,7 @@ class StatesSet:
     def copy(self) -> "StatesSet":
         return StatesSet(self.get_se_state().copy())
 
-    def expr_manager(self) -> SymcreteDomain:
+    def expr_manager(self) -> ExpressionManager:
         return global_expr_mgr()
 
     def get_se_state(self) -> SEState:
