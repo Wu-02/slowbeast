@@ -32,21 +32,16 @@ class ConcreteFloatsDomain(Domain):
     """Takes care of handling concrete float computations."""
 
     @staticmethod
-    def belongto(x: Value) -> bool:
-        return isinstance(x, ConcreteFloat)
-
-    @staticmethod
     def Value(c, bw: int) -> ConcreteFloat:
         return ConcreteFloat(c, bw)
 
     ## Relational operations
     @staticmethod
-    def Lt(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
-        assert ConcreteFloatsDomain.belongto(a), a
-        assert ConcreteFloatsDomain.belongto(b), b
+    def Lt(a, b, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteFloat), a
+        assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert floats
         if unsigned:  # means unordered for floats
             return ConcreteBool(bool(a.value() < b.value()))
         return ConcreteBool(
@@ -54,12 +49,11 @@ class ConcreteFloatsDomain(Domain):
         )
 
     @staticmethod
-    def Gt(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
-        assert ConcreteFloatsDomain.belongto(a), a
-        assert ConcreteFloatsDomain.belongto(b), b
+    def Gt(a, b, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteFloat), a
+        assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert floats
         if unsigned:  # means unordered for floats
             return ConcreteBool(bool(a.value() > b.value()))
         return ConcreteBool(
@@ -67,12 +61,11 @@ class ConcreteFloatsDomain(Domain):
         )
 
     @staticmethod
-    def Le(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
-        assert ConcreteFloatsDomain.belongto(a), a
-        assert ConcreteFloatsDomain.belongto(b), b
+    def Le(a, b, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteFloat), a
+        assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert floats
         if unsigned:  # means unordered for floats
             return ConcreteBool(bool(a.value() <= b.value()))
         return ConcreteBool(
@@ -80,12 +73,11 @@ class ConcreteFloatsDomain(Domain):
         )
 
     @staticmethod
-    def Ge(a, b, unsigned: bool = False, floats: bool = True) -> ConcreteBool:
-        assert ConcreteFloatsDomain.belongto(a), a
-        assert ConcreteFloatsDomain.belongto(b), b
+    def Ge(a, b, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteFloat), a
+        assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert floats
         if unsigned:  # means unordered for floats
             return ConcreteBool(bool(a.value() >= b.value()))
         return ConcreteBool(
@@ -96,8 +88,8 @@ class ConcreteFloatsDomain(Domain):
     # Arithmetic operations
     @staticmethod
     def Add(a: Value, b: Value) -> Value:
-        assert ConcreteFloatsDomain.belongto(a), a
-        assert ConcreteFloatsDomain.belongto(b), b
+        assert isinstance(a, ConcreteFloat), a
+        assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
@@ -105,8 +97,8 @@ class ConcreteFloatsDomain(Domain):
 
     @staticmethod
     def Sub(a: Value, b: Value) -> Value:
-        assert ConcreteFloatsDomain.belongto(a), a
-        assert ConcreteFloatsDomain.belongto(b), b
+        assert isinstance(a, ConcreteFloat), a
+        assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
@@ -114,8 +106,8 @@ class ConcreteFloatsDomain(Domain):
 
     @staticmethod
     def Mul(a: ConcreteFloat, b: ConcreteFloat) -> ConcreteFloat:
-        assert ConcreteFloatsDomain.belongto(a), a
-        assert ConcreteFloatsDomain.belongto(b), b
+        assert isinstance(a, ConcreteFloat), a
+        assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
@@ -125,18 +117,15 @@ class ConcreteFloatsDomain(Domain):
     def Div(
         a: ConcreteFloat, b: ConcreteFloat, unordered: bool = False
     ) -> ConcreteFloat:
-        assert ConcreteFloatsDomain.belongto(a), a
-        assert ConcreteFloatsDomain.belongto(b), b
+        assert isinstance(a, ConcreteFloat), a
+        assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
         return ConcreteFloat(a.unwrap() / b.unwrap(), bw)
 
     @staticmethod
-    def Eq(
-        a: Value, b: Value, unordered: bool = False, floats: bool = False
-    ) -> ConcreteBool:
-        assert floats
+    def Eq(a: Value, b: Value, unordered: bool = False) -> ConcreteBool:
         assert isinstance(a, ConcreteFloat), f"{a} type: {type(a)}"
         assert isinstance(b, ConcreteFloat), f"{b} type: {type(b)}"
         return ConcreteBool(
@@ -144,7 +133,6 @@ class ConcreteFloatsDomain(Domain):
         )
 
     @staticmethod
-    def Abs(a: Value, is_float: bool = False) -> Value:
-        assert is_float
-        assert ConcreteFloatsDomain.belongto(a), a
+    def Abs(a: Value) -> Value:
+        assert isinstance(a, ConcreteFloat), a
         return ConcreteFloat(abs(a.value()), a.bitwidth())

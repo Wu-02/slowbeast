@@ -506,17 +506,20 @@ class Cmp(ValueTypedInstruction):
 
         raise NotImplementedError("Invalid comparison")
 
-    def __init__(self, p, val1, val2, types, unsgn: bool = False) -> None:
+    def __init__(self, p, val1, val2, types, unsgn_or_unord: bool = False) -> None:
         super().__init__(BoolType(), [val1, val2], types)
         self._predicate = p
-        self._unsigned = unsgn
+        self._unsigned_or_unordered = unsgn_or_unord
 
     def set_unsigned(self) -> None:
         """Set that this comparison is unsigned"""
-        self._unsigned = True
+        self._unsigned_or_unordered = True
 
     def is_unsigned(self) -> bool:
-        return self._unsigned
+        return self._unsigned_or_unordered
+
+    set_unordered = set_unsigned
+    is_unordered = is_unsigned
 
     def predicate(self):
         return self._predicate

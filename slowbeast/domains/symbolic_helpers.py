@@ -51,6 +51,7 @@ from z3 import (
 
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.ir.types import BoolType, FloatType, BitVecType
+from slowbeast.util.debugging import FIXME
 
 
 def subexpressions(expr):
@@ -152,6 +153,8 @@ def python_constant(val):
         return True
     elif is_false(val):
         return False
+    elif is_fp_value(val):
+        FIXME("Handle FP values")
     return None
 
 

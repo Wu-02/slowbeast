@@ -18,10 +18,6 @@ class Domain:
     KIND = None
 
     @staticmethod
-    def belongto(x) -> bool:
-        return not_implemented()
-
-    @staticmethod
     def lift(v: Value):
         return not_implemented()
 
@@ -34,17 +30,11 @@ class Domain:
         return not_implemented()
 
     @staticmethod
-    def substitute(v: Value, *what):
+    def substitute(v: Value, *what) -> Value:
         return not_implemented()
 
     @staticmethod
-    def Constant(c, ty: Type) -> Value:
-        return not_implemented()
-
-    ##
-    # variables
-    @staticmethod
-    def Var(name: str, ty: Type) -> Value:
+    def Value(c, bw: int) -> Value:
         return not_implemented()
 
     ##
@@ -133,52 +123,54 @@ class Domain:
     def LShr(a, b) -> Value:
         return not_implemented()
 
-    # FIXME: get rid of floats flag -- add operations prefixed with F
-    # FIXME: and do the same for unsigned flag?
-
     ### Relational operators
     # we provide also default implementations
     @staticmethod
-    def Le(a: Value, b: Value, unsigned: bool = False, floats: bool = False) -> Value:
+    def Le(a: Value, b: Value, unsigned: bool = False) -> Value:
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         return ConcreteBool(bool(a.unwrap() <= b.unwrap()))
 
     @staticmethod
-    def Lt(a, b, unsigned: bool = False, floats: bool = False) -> Value:
+    def Lt(a, b, unsigned: bool = False) -> Value:
         return ConcreteBool(bool(a.unwrap() < b.unwrap()))
 
     @staticmethod
-    def Ge(a, b, unsigned: bool = False, floats: bool = False) -> Value:
+    def Ge(a, b, unsigned: bool = False) -> Value:
         return ConcreteBool(bool(a.unwrap() >= b.unwrap()))
 
     @staticmethod
-    def Gt(a, b, unsigned: bool = False, floats: bool = False) -> Value:
+    def Gt(a, b, unsigned: bool = False) -> Value:
         return ConcreteBool(bool(a.unwrap() > b.unwrap()))
 
     @staticmethod
-    def Eq(a, b, unsigned: bool = False, floats: bool = False) -> Value:
+    def Eq(a, b, unsigned: bool = False) -> Value:
         return ConcreteBool(bool(a.unwrap() == b.unwrap()))
 
     @staticmethod
-    def Ne(a, b, unsigned: bool = False, floats: bool = False) -> Value:
+    def Ne(a, b, unsigned: bool = False) -> Value:
         return ConcreteBool(bool(a.unwrap() != b.unwrap()))
 
     ##
     # Arithmetic operations
     @staticmethod
-    def Add(a: Value, b: Value, isfloat: bool = False) -> Value:
+    def Add(a: Value, b: Value) -> Value:
+        assert isinstance(a, cls), a
+        assert isinstance(b, cls), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        bw = a.bitwidth()
+        assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
+        return ConcreteFloat(a.unwrap() + b.unwrap(), bw)
+
+    @staticmethod
+    def Sub(a, b) -> Value:
         return not_implemented()
 
     @staticmethod
-    def Sub(a, b, isfloat: bool = False) -> Value:
+    def Mul(a, b) -> Value:
         return not_implemented()
 
     @staticmethod
-    def Mul(a, b, isfloat: bool = False) -> Value:
-        return not_implemented()
-
-    @staticmethod
-    def Div(a, b, unsigned: bool = False, isfloat: bool = False) -> Value:
+    def Div(a, b, unsigned: bool = False) -> Value:
         return not_implemented()
 
     @staticmethod
@@ -190,7 +182,7 @@ class Domain:
         return not_implemented()
 
     @staticmethod
-    def Neg(a, isfloat) -> Value:
+    def Neg(a) -> Value:
         return not_implemented()
 
     @staticmethod

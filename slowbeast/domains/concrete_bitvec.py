@@ -71,21 +71,16 @@ class ConcreteBitVecDomain(Domain):
     """
 
     @staticmethod
-    def belongto(x: Value) -> bool:
-        return isinstance(x, ConcreteBitVec)
-
-    @staticmethod
     def Value(c, bw: int) -> ConcreteBitVec:
         return ConcreteBitVec(c, bw)
 
     ## Relational operations
     @staticmethod
-    def Le(a, b, unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+    def Le(a, b, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert not floats
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
@@ -93,12 +88,11 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBool(aval <= bval)
 
     @staticmethod
-    def Lt(a, b, unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+    def Lt(a, b, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert not floats
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
@@ -106,12 +100,11 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBool(aval < bval)
 
     @staticmethod
-    def Ge(a, b, unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+    def Ge(a, b, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert not floats
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
@@ -119,12 +112,11 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBool(aval >= bval)
 
     @staticmethod
-    def Gt(a, b, unsigned: bool = False, floats: bool = False) -> ConcreteBool:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+    def Gt(a, b, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        assert not floats
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
             bw = a.bitwidth()
@@ -132,11 +124,9 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBool(aval > bval)
 
     @staticmethod
-    def Eq(
-        a: Value, b: Value, unsigned: bool = False, floats: bool = False
-    ) -> ConcreteBool:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+    def Eq(a: Value, b: Value, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
@@ -146,11 +136,9 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBool(aval == bval)
 
     @staticmethod
-    def Ne(
-        a: Value, b: Value, unsigned: bool = False, floats: bool = False
-    ) -> ConcreteBool:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+    def Ne(a: Value, b: Value, unsigned: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
@@ -164,8 +152,8 @@ class ConcreteBitVecDomain(Domain):
     @staticmethod
     def Add(a: Value, b: Value, isfloat: bool = False) -> Value:
         assert not isfloat
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
@@ -174,8 +162,8 @@ class ConcreteBitVecDomain(Domain):
 
     @staticmethod
     def Sub(a: Value, b: Value, isfloat: bool = False) -> Value:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
@@ -186,8 +174,8 @@ class ConcreteBitVecDomain(Domain):
     def Mul(
         a: ConcreteBitVec, b: ConcreteBitVec, isfloat: bool = False
     ) -> ConcreteBitVec:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
@@ -201,8 +189,8 @@ class ConcreteBitVecDomain(Domain):
         unordered: bool = False,
         isfloat: bool = False,
     ) -> ConcreteBitVec:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
@@ -213,7 +201,7 @@ class ConcreteBitVecDomain(Domain):
 
     @staticmethod
     def Extend(a: Value, b: int, unsigned: bool) -> Value:
-        assert ConcreteBitVecDomain.belongto(a), a
+        assert isinstance(a, ConcreteBitVec), a
         assert isinstance(b, int), b
         assert isinstance(unsigned, bool), b
         assert a.bitwidth() < b, f"Invalid extend argument: {b}"
@@ -223,8 +211,8 @@ class ConcreteBitVecDomain(Domain):
 
     @staticmethod
     def Shl(a: Value, b: Value) -> Value:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert b.is_bv(), b
         bw = a.bitwidth()
         assert b.value() < bw, "Invalid shift"
@@ -232,8 +220,8 @@ class ConcreteBitVecDomain(Domain):
 
     @staticmethod
     def AShr(a: Value, b: Value) -> Value:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert b.is_bv(), b
         bw = a.bitwidth()
         assert b.value() < bw, "Invalid shift"
@@ -241,8 +229,8 @@ class ConcreteBitVecDomain(Domain):
 
     @staticmethod
     def LShr(a: Value, b: Value) -> Value:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert b.is_bv(), b
         assert b.value() < a.bitwidth(), "Invalid shift"
         val = to_bv(a)
@@ -254,7 +242,7 @@ class ConcreteBitVecDomain(Domain):
 
     @staticmethod
     def Extract(a: Value, start: ConcreteVal, end: ConcreteVal) -> Value:
-        assert ConcreteBitVecDomain.belongto(a)
+        assert isinstance(a, ConcreteBitVec)
         assert start.is_concrete(), start
         assert end.is_concrete(), end
         bitsnum = end.value() - start.value() + 1
@@ -266,7 +254,7 @@ class ConcreteBitVecDomain(Domain):
     def Concat(*args) -> Value:
         l = len(args)
         assert l > 0, args
-        assert all(map(lambda a: ConcreteBitVecDomain.belongto(a), args)), args
+        assert all(map(lambda a: isinstance(a, ConcreteBitVec), args)), args
 
         if l == 1:
             return args[0]
@@ -280,8 +268,8 @@ class ConcreteBitVecDomain(Domain):
 
     @staticmethod
     def Rem(a: Value, b: Value, unsigned: bool = False) -> Value:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
+        assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(b, ConcreteBitVec), b
         assert b.value() != 0, "Invalid remainder"
         bw = a.bitwidth()
         if unsigned:
@@ -294,7 +282,7 @@ class ConcreteBitVecDomain(Domain):
     @staticmethod
     def Neg(a: Value, isfloat: bool = False) -> Value:
         """Return the negated number"""
-        assert ConcreteBitVecDomain.belongto(a), a
+        assert isinstance(a, ConcreteBitVec), a
         ty = a.type()
         bw = ty.bitwidth()
         return ConcreteBitVec(wrap_to_bw(-a.value(), bw), bw)
@@ -302,5 +290,5 @@ class ConcreteBitVecDomain(Domain):
     @staticmethod
     def Abs(a: Value, is_float: bool = False) -> Value:
         assert not is_float
-        assert ConcreteBitVecDomain.belongto(a), a
+        assert isinstance(a, ConcreteBitVec), a
         return ConcreteBitVec(abs(a.value()), a.bitwidth())

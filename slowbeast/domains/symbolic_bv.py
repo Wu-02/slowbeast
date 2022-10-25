@@ -79,15 +79,8 @@ class BVSymbolicDomain(Domain):
     """
 
     @staticmethod
-    def belongto(*args) -> bool:
-        assert len(args) > 0
-        for a in args:
-            if a.KIND != 2:
-                return False
-        return True
-
-    @staticmethod
     def lift(v: Value) -> Expr:
+        FIXME("BVSymbolic: split off symbolic floats")
         assert isinstance(v, Value), f"Invalid value for lifting: {v}"
         if isinstance(v, Expr):
             return v
@@ -122,21 +115,22 @@ class BVSymbolicDomain(Domain):
             return ConcreteVal(c, python_to_sb_type(c, expr.type().bitwidth()))
         return Expr(e, expr.type())
 
-    @staticmethod
-    def Constant(c, ty: Type) -> Expr:
-        bw = ty.bitwidth()
-        if ty.is_float():
-            return Expr(FPVal(c, fps=get_fp_sort(bw)), ty)
-        elif ty.is_bv():
-            return Expr(bv_const(c, bw), ty)
-        else:
-            raise NotImplementedError(f"Invalid type: {ty}")
+    # @staticmethod
+    # def Constant(c, ty: Type) -> Expr:
+    #    bw = ty.bitwidth()
+    #    if ty.is_float():
+    #        return Expr(FPVal(c, fps=get_fp_sort(bw)), ty)
+    #    elif ty.is_bv():
+    #        return Expr(bv_const(c, bw), ty)
+    #    else:
+    #        raise NotImplementedError(f"Invalid type: {ty}")
 
     ##
     # variables
     @staticmethod
-    def Var(name: str, ty: Type) -> Expr:
+    def Value(name: str, ty: Type) -> Expr:
         if ty.is_float():
+            FIXME("Do not handle floats in symbolic_bv")
             return Expr(FP(name, get_fp_sort(ty.bitwidth())), ty)
         elif ty.is_bool():
             return Expr(Bool(name), ty)
@@ -144,33 +138,13 @@ class BVSymbolicDomain(Domain):
             assert ty.is_bv() or ty.is_pointer(), ty
             return Expr(bv(name, ty.bitwidth()), ty)
 
-    @staticmethod
-    def BVVar(name, bw: int) -> Expr:
-        return Expr(bv(name, bw), BitVecType(bw))
+    # @staticmethod
+    # def BVVar(name, bw: int) -> Expr:
+    #    return Expr(bv(name, bw), BitVecType(bw))
 
-    @staticmethod
-    def Bool(name: str) -> Expr:
-        return Expr(Bool(name), BoolType())
-
-    @staticmethod
-    def Int1(name: str) -> Expr:
-        return BVSymbolicDomain.BVVar(name, 1)
-
-    @staticmethod
-    def Int8(name: str) -> Expr:
-        return BVSymbolicDomain.BVVar(name, 8)
-
-    @staticmethod
-    def Int16(name: str) -> Expr:
-        return BVSymbolicDomain.BVVar(name, 16)
-
-    @staticmethod
-    def Int32(name: str) -> Expr:
-        return BVSymbolicDomain.BVVar(name, 32)
-
-    @staticmethod
-    def Int64(name: str) -> Expr:
-        return BVSymbolicDomain.BVVar(name, 64)
+    # @staticmethod
+    # def Bool(name: str) -> Expr:
+    #    return Expr(Bool(name), BoolType())
 
     ##
     # Logic operators
@@ -198,14 +172,16 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Ite(c, a, b) -> Expr:
-        assert BVSymbolicDomain.belongto(c)
+        assert isinstance(c, Expr), c
         assert c.is_bool(), c
         assert a.type() == b.type(), f"{a}, {b}"
         return Expr(If(_bv_to_bool(c.unwrap()), a.unwrap(), b.unwrap()), a.type())
 
     @staticmethod
     def And(a, b) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool() and b.is_bool():
             return Expr(And(a.unwrap(), b.unwrap()), BoolType())
@@ -215,7 +191,9 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Or(a, b) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool() and b.is_bool():
             return Expr(Or(a.unwrap(), b.unwrap()), BoolType())
@@ -226,6 +204,9 @@ class BVSymbolicDomain(Domain):
     @staticmethod
     def Xor(a, b) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         if a.is_bool() and b.is_bool():
             return Expr(Xor(a.unwrap(), b.unwrap()), BoolType())
@@ -235,7 +216,7 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Not(a) -> Expr:
-        assert BVSymbolicDomain.belongto(a)
+        assert isinstance(a, Expr), a
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
         else:
@@ -243,7 +224,7 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Extend(a: Value, bw: int, unsigned: bool) -> Expr:
-        assert BVSymbolicDomain.belongto(a)
+        assert isinstance(a, Expr), a
         assert isinstance(bw, int), bw
         assert a.bitwidth() <= bw, "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
@@ -255,7 +236,7 @@ class BVSymbolicDomain(Domain):
     @staticmethod
     def BitCast(a: Value, ty: Type) -> Optional[Expr]:
         """Static cast"""
-        assert BVSymbolicDomain.belongto(a)
+        assert isinstance(a, Expr), a
         tybw = ty.bitwidth()
         if ty.is_float() and a.is_bytes():
             # from IEEE bitvector
@@ -285,7 +266,7 @@ class BVSymbolicDomain(Domain):
     @staticmethod
     def Cast(a: Value, ty: Type, signed: bool = True) -> Optional[Expr]:
         """Reinterpret cast"""
-        assert BVSymbolicDomain.belongto(a)
+        assert isinstance(a, Expr), a
         tybw = ty.bitwidth()
         if ty.is_float():
             if a.is_bv():
@@ -325,7 +306,7 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Extract(a, start, end) -> Expr:
-        assert BVSymbolicDomain.belongto(a), a
+        assert isinstance(a, Expr), a
         assert start.is_concrete(), start
         assert end.is_concrete(), end
         return Expr(
@@ -337,7 +318,6 @@ class BVSymbolicDomain(Domain):
     def Concat(*args):
         l = len(args)
         assert l > 0, args
-        assert BVSymbolicDomain.belongto(*args), args
         if l == 1:
             return args[0]
         return Expr(
@@ -347,19 +327,22 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Shl(a, b) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
         assert b.is_bv(), b
         return Expr(to_bv(a) << b.unwrap(), BitVecType(a.bitwidth()))
 
     @staticmethod
     def AShr(a, b) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
         assert b.is_bv(), b
         return Expr(to_bv(a) >> b.unwrap(), BitVecType(a.bitwidth()))
 
     @staticmethod
     def LShr(a, b) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
         assert b.is_bv(), b
         return Expr(BVLShR(to_bv(a), b.unwrap()), BitVecType(a.bitwidth()))
 
@@ -373,12 +356,14 @@ class BVSymbolicDomain(Domain):
 
     ### Relational operators
     @staticmethod
-    def Le(a: Expr, b: Expr, unsigned: bool = False, floats: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+    def Le(a: Expr, b: Expr, unsigned: bool = False) -> Expr:
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         # we need this explicit float cast for the cases when a or b are
         # nondet loads (in which case they are bitvectors)
-        if floats:
+        if a.is_float():
             a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpLEQ(a, b)
             if not unsigned:
@@ -389,10 +374,12 @@ class BVSymbolicDomain(Domain):
         return Expr(to_bv(a) <= to_bv(b), BoolType())
 
     @staticmethod
-    def Lt(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+    def Lt(a, b, unsigned: bool = False) -> Expr:
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        if floats:
+        if a.is_float():
             a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpLT(a, b)
             if not unsigned:
@@ -404,9 +391,11 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Ge(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        if floats:
+        if a.is_float():
             a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpGEQ(a, b)
             if not unsigned:
@@ -418,9 +407,11 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Gt(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        if floats:
+        if a.is_float():
             a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpGT(a, b)
             if not unsigned:
@@ -432,9 +423,11 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Eq(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a} != {b}"
-        if floats:
+        if a.is_float():
             a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpEQ(a, b)
             if not unsigned:
@@ -446,9 +439,11 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Ne(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        if floats:
+        if a.is_float():
             a, b = cast_to_fp(a), cast_to_fp(b)
             expr = fpNEQ(a, b)
             if not unsigned:
@@ -461,11 +456,15 @@ class BVSymbolicDomain(Domain):
     ##
     # Arithmetic operations
     @staticmethod
-    def Add(a, b, isfloat: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+    def Add(a, b) -> Expr:
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
+        assert (
+            a.type() == b.type()
+        ), f"Operation on invalid types: {a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a} + {b}"
         bw = a.bitwidth()
-        if isfloat:
+        if a.is_float():
             # the operations on CPU work on doubles( well, 80-bits...)
             # and then truncate to float if needed
             ae = to_double(a)
@@ -474,33 +473,36 @@ class BVSymbolicDomain(Domain):
         return Expr(to_bv(a) + to_bv(b), BitVecType(bw))
 
     @staticmethod
-    def Sub(a, b, isfloat: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+    def Sub(a, b) -> Expr:
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
         assert a.bitwidth() == b.bitwidth(), f"{a} - {b}"
         bw = a.bitwidth()
-        if isfloat:
+        if a.is_float():
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(ae - be, bw), FloatType(bw))
         return Expr(to_bv(a) - to_bv(b), BitVecType(bw))
 
     @staticmethod
-    def Mul(a, b, isfloat: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+    def Mul(a, b) -> Expr:
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
         assert a.bitwidth() == b.bitwidth(), f"{a} * {b}"
         bw = a.bitwidth()
-        if isfloat:
+        if a.is_float():
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(ae * be, bw), FloatType(bw))
         return Expr(to_bv(a) * to_bv(b), BitVecType(bw))
 
     @staticmethod
-    def Div(a, b, unsigned: bool = False, isfloat: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+    def Div(a, b, unsigned: bool = False) -> Expr:
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
         assert a.bitwidth() == b.bitwidth(), f"{a} / {b}"
         bw = a.bitwidth()
-        if isfloat:
+        if a.is_float():
             ae = to_double(a)
             be = to_double(b)
             return Expr(trunc_fp(fpDiv(RNE(), ae, be), bw), FloatType(bw))
@@ -510,7 +512,8 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Rem(a, b, unsigned: bool = False) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
+        assert isinstance(a, Expr), a
+        assert isinstance(b, Expr), b
         assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
             a.type(), b.type()
         )
@@ -521,25 +524,25 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Abs(a) -> Expr:
-        assert BVSymbolicDomain.belongto(a)
+        assert isinstance(a, Expr), a
         if a.is_float():
             return Expr(fpAbs(a.unwrap()), a.type())
         expr = a.unwrap()
         return Expr(If(expr < 0, -expr, expr), a.type())
 
     @staticmethod
-    def Neg(a, isfloat) -> Expr:
+    def Neg(a) -> Expr:
         """Return the negated number"""
-        assert BVSymbolicDomain.belongto(a)
+        assert isinstance(a, Expr), a
         bw = a.bitwidth()
-        if isfloat:
+        if a.is_float():
             return Expr(trunc_fp(fpNeg(to_double(a)), bw), FloatType(bw))
         expr = a.unwrap()
         return Expr(-expr, a.type())
 
     @staticmethod
     def FpOp(op, val) -> Optional[Expr]:
-        assert BVSymbolicDomain.belongto(val)
+        assert isinstance(a, Expr), a
         # FIXME: do not use the enum from instruction
         assert val.is_float()
 

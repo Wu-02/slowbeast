@@ -277,19 +277,19 @@ class Executor(ConcreteExecutor):
         self.stats.branch_forks += len(states) - 1
         return states
 
-    def compare_values(self, expr_mgr, p, op1, op2, unsgn, flt: bool = False):
+    def compare_values(self, expr_mgr, p, op1, op2, unsgn):
         if p == Cmp.LE:
-            return expr_mgr.Le(op1, op2, unsgn, flt)
+            return expr_mgr.Le(op1, op2, unsgn)
         elif p == Cmp.LT:
-            return expr_mgr.Lt(op1, op2, unsgn, flt)
+            return expr_mgr.Lt(op1, op2, unsgn)
         elif p == Cmp.GE:
-            return expr_mgr.Ge(op1, op2, unsgn, flt)
+            return expr_mgr.Ge(op1, op2, unsgn)
         elif p == Cmp.GT:
-            return expr_mgr.Gt(op1, op2, unsgn, flt)
+            return expr_mgr.Gt(op1, op2, unsgn)
         elif p == Cmp.EQ:
-            return expr_mgr.Eq(op1, op2, unsgn, flt)
+            return expr_mgr.Eq(op1, op2, unsgn)
         elif p == Cmp.NE:
-            return expr_mgr.Ne(op1, op2, unsgn, flt)
+            return expr_mgr.Ne(op1, op2, unsgn)
         else:
             raise RuntimeError("Invalid comparison")
 
@@ -518,22 +518,22 @@ class Executor(ConcreteExecutor):
         else:
             opcode = instr.operation()
             if opcode == BinaryOperation.ADD:
-                r = expr_mgr.Add(op1, op2, instr.is_fp())
+                r = expr_mgr.Add(op1, op2)
             elif opcode == BinaryOperation.SUB:
-                r = expr_mgr.Sub(op1, op2, instr.is_fp())
+                r = expr_mgr.Sub(op1, op2)
             elif opcode == BinaryOperation.MUL:
-                r = expr_mgr.Mul(op1, op2, instr.is_fp())
+                r = expr_mgr.Mul(op1, op2)
             elif opcode == BinaryOperation.DIV:
-                if instr.is_fp():
+                if op1.is_float():
                     # compilers allow division by FP 0
-                    r = expr_mgr.Div(op1, op2, instr.is_unsigned(), isfloat=True)
+                    r = expr_mgr.Div(op1, op2, instr.is_unordered())
                 else:
                     good, bad = self.fork(
                         state, expr_mgr.Ne(op2, ConcreteVal(0, op2.type()))
                     )
                     if good:
                         state = good
-                        assert not instr.is_fp()
+                        assert not op1.is_float()
                         r = expr_mgr.Div(op1, op2, instr.is_unsigned())
                     if bad:
                         bad.set_killed("Division by 0")
@@ -606,9 +606,9 @@ class Executor(ConcreteExecutor):
             start, end = instr.range()
             r = expr_mgr.Extract(op1, start, end)
         elif opcode == UnaryOperation.NEG:
-            r = expr_mgr.Neg(op1, op1.is_float())
+            r = expr_mgr.Neg(op1)
         elif opcode == UnaryOperation.ABS:
-            r = expr_mgr.Abs(op1, op1.is_float())
+            r = expr_mgr.Abs(op1)
         elif opcode == UnaryOperation.FP_OP:
             r = expr_mgr.FpOp(instr.fp_operation(), op1)
             if r is None:
