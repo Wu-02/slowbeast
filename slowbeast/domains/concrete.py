@@ -2,12 +2,10 @@ from math import isinf, isnan, isfinite
 from struct import pack, unpack
 
 from slowbeast.ir.instruction import FpOp
-from slowbeast.ir.types import BitVecType, Type, FloatType
+from slowbeast.ir.types import Type
 from slowbeast.util.debugging import FIXME
 from .concrete_bitvec import (
-    to_unsigned,
     to_bv,
-    wrap_to_bw,
     ConcreteBitVec,
     ConcreteBitVecDomain,
 )
@@ -16,6 +14,8 @@ from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.domains.concrete_bool import ConcreteBoolDomain
 from slowbeast.domains.concrete_floats import ConcreteFloat, ConcreteFloatsDomain
 from typing import Optional, Union
+
+from numpy.core import float_
 
 
 def trunc_to_float(x, bw):
@@ -55,7 +55,7 @@ class ConcreteDomain(Domain):
             return ConcreteBool(c)
         if isinstance(c, int):
             return ConcreteBitVec(c, bw)
-        if isinstance(c, float):
+        if isinstance(c, (float, float_)):
             return ConcreteFloat(c, bw)
         raise NotImplementedError(
             "Don't know how to create a ConcretValue for {c}: {type(c)}"
@@ -128,12 +128,8 @@ class ConcreteDomain(Domain):
         raise NotImplementedError(f"Operation not implemented: Not({a})")
 
     @staticmethod
-    def ZExt(a, b) -> Value:
-        return ConcreteBitVecDomain.ZExt(a, b)
-
-    @staticmethod
-    def SExt(a, b) -> Value:
-        return ConcreteBitVecDomain.SExt(a, b)
+    def Extend(a, b, unsigned) -> Value:
+        return ConcreteBitVecDomain.Extend(a, b, unsigned)
 
     @staticmethod
     def Cast(a: Value, ty: Type, signed: bool = False) -> Optional[Value]:

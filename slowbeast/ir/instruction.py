@@ -1,12 +1,11 @@
 from sys import stdout
 
 from slowbeast.util.debugging import print_highlight
-from .bblock import BBlock  # due to assertions
 from .programelement import ProgramElement
-from .types import Type, BitVecType, BoolType, PointerType, get_offset_type
+from .types import LabelType, BitVecType, BoolType, get_offset_type
 from slowbeast.ir.bblock import BBlock
 from slowbeast.ir.types import PointerType, Type
-from typing import TextIO, Union
+from typing import TextIO
 
 
 class GlobalVariable(ProgramElement):
@@ -69,9 +68,14 @@ class GlobalVariable(ProgramElement):
 
 
 class Instruction(ProgramElement):
-    def __init__(self, ops=None) -> None:
+    def __init__(self, ops=None, types=None) -> None:
         super().__init__()
         self._operands = ops or []
+        self._op_types = types or []
+        assert len(self._operands) == len(
+            self._op_types
+        ), "Each operand must have associated expected type!"
+
         self._bblock = None
         self._bblock_idx = None
 
@@ -81,6 +85,9 @@ class Instruction(ProgramElement):
 
     def operands(self):
         return self._operands
+
+    def expected_op_types(self):
+        return self._op_types
 
     def operands_num(self) -> int:
         return len(self._operands)
@@ -148,12 +155,12 @@ class ValueInstruction(Instruction):
     Instruction that generates a value
     """
 
-    def __init__(self, ops=None) -> None:
-        super().__init__(ops or [])
+    def __init__(self, ops=None, types=None) -> None:
+        super().__init__(ops, types)
         self._name = None
 
-    def is_concrete(self) -> bool:
-        return False
+    # def is_concrete(self) -> bool:
+    #    return False
 
     def set_name(self, nm) -> None:
         self._name = nm
@@ -169,26 +176,22 @@ class ValueTypedInstruction(ValueInstruction):
     ValueInstruction with associated type of the generated value
     """
 
-    def __init__(self, ty, ops=None) -> None:
-        super().__init__(ops or [])
-        self._type = ty
+    def __init__(self, valty, ops=None, types=None) -> None:
+        super().__init__(ops, types)
+        self._type = valty
 
     def type(self):
         return self._type
 
 
 class Store(Instruction):
-    """Store 'val' which has 'bw' bytes to 'to'"""
+    """Store 'val' to 'to'"""
 
-    # NOTE: having 'bw' is important for lazy allocation of objects
-    # since when we create SMT bitvector objects, we must specify
-    # their bitwidth (well, we could do that dynamically, but for most
-    # situations this is much easier...)
-    def __init__(self, val, to, bw) -> None:
+    def __init__(self, val, to, optypes) -> None:
         assert val, val
         assert to, to
-        super().__init__([val, to])
-        self._bw = bw
+        assert len(optypes) == 2, optypes
+        super().__init__([val, to], optypes)
 
     def pointer_operand(self):
         return self.operand(1)
@@ -196,27 +199,30 @@ class Store(Instruction):
     def value_operand(self):
         return self.operand(0)
 
-    def bytewidth(self):
-        return self._bw
+    def bytewidth(self) -> int:
+        return self.operand(0).bytewidth()
 
     def bitwidth(self) -> int:
-        return self._bw * 8
+        return self.bytewidth() * 8
 
     def __str__(self) -> str:
-        return "store {1} to {2}:{0}B".format(
-            self._bw,
+        optypes = self.expected_op_types()
+        return "store ({2}){0} to ({3}){1}".format(
             self.value_operand().as_value(),
             self.pointer_operand().as_value(),
+            optypes[0],
+            optypes[1],
         )
 
 
 class Load(ValueTypedInstruction):
     """Load value of type 'ty' from 'frm'"""
 
-    def __init__(self, frm: Union[GlobalVariable, Instruction], ty: Type) -> None:
+    def __init__(self, frm, ty: Type, optypes) -> None:
         assert isinstance(ty, Type), ty
         assert isinstance(frm, (Instruction, GlobalVariable)), frm
-        super().__init__(ty, [frm])
+        assert len(optypes) == 1, optypes
+        super().__init__(ty, [frm], optypes)
 
     def bytewidth(self):
         return self._type.bytewidth()
@@ -228,8 +234,11 @@ class Load(ValueTypedInstruction):
         return self.operand(0)
 
     def __str__(self) -> str:
-        return "x{0} = load {1}:{2}".format(
-            self.get_id(), self.pointer_operand().as_value(), self.type()
+        return "x{0}: {2} = load ({3}){1}".format(
+            self.get_id(),
+            self.pointer_operand().as_value(),
+            self.type(),
+            self.expected_op_types()[0],
         )
 
 
@@ -274,7 +283,7 @@ class Alloc(ValueInstruction):
 
 class Branch(Instruction):
     def __init__(self, cond, b1: BBlock, b2: BBlock) -> None:
-        super().__init__([cond, b1, b2])
+        super().__init__([cond, b1, b2], [BoolType(), LabelType(), LabelType()])
         assert isinstance(b1, BBlock)
         assert isinstance(b2, BBlock)
 
@@ -346,16 +355,18 @@ class Call(ValueTypedInstruction):
 
 
 class Return(Instruction):
-    def __init__(self, val=None) -> None:
+    def __init__(self, val=None, rettype=None) -> None:
         if val is None:
+            assert rettype is None
             super().__init__([])
         else:
-            super().__init__([val])
+            assert rettype is not None
+            super().__init__([val], [rettype])
 
     def __str__(self) -> str:
         if len(self.operands()) == 0:
             return "ret"
-        return f"ret {str(self.operand(0).as_value())}"
+        return f"ret ({self.expected_op_types()[0]}){str(self.operand(0).as_value())}"
 
 
 class Thread(Call):
@@ -403,7 +414,7 @@ class ThreadJoin(ValueTypedInstruction):
 
 class Print(Instruction):
     def __init__(self, *operands) -> None:
-        super().__init__([*operands])
+        super().__init__([*operands], [None]*len(operands))
 
     def __str__(self) -> str:
         r = "print "
@@ -414,7 +425,7 @@ class Print(Instruction):
 
 class Assert(Instruction):
     def __init__(self, cond, msg=None) -> None:
-        super().__init__([cond, msg])
+        super().__init__([cond, msg], [BoolType, None])
 
     def msg(self):
         ops = self.operands()
@@ -436,7 +447,7 @@ class Assert(Instruction):
 
 class Assume(Instruction):
     def __init__(self, *operands) -> None:
-        super().__init__([*operands])
+        super().__init__([*operands], [BoolType] * len(operands))
 
     def __str__(self) -> str:
         r = "assume "
@@ -492,18 +503,10 @@ class Cmp(ValueTypedInstruction):
 
         raise NotImplementedError("Invalid comparison")
 
-    def __init__(self, p, val1, val2, unsgn: bool = False, fp: bool = False) -> None:
-        super().__init__(BoolType(), [val1, val2])
+    def __init__(self, p, val1, val2, types, unsgn: bool = False) -> None:
+        super().__init__(BoolType(), [val1, val2], types)
         self._predicate = p
         self._unsigned = unsgn
-        self._fp = fp
-
-    def set_float(self) -> None:
-        """Set that this comparison is on floating-point numbers"""
-        self._fp = True
-
-    def is_float(self) -> bool:
-        return self._fp
 
     def set_unsigned(self) -> None:
         """Set that this comparison is unsigned"""
@@ -516,81 +519,68 @@ class Cmp(ValueTypedInstruction):
         return self._predicate
 
     def __str__(self) -> str:
-        return "{0} = {4}cmp {1} {2} {3}".format(
+        ety = self.expected_op_types()
+        return "{0}: {4} = cmp ({5}){1} {2} ({6}){3}".format(
             self.as_value(),
             self.operand(0).as_value(),
             Cmp.predicate_str(self.predicate(), self.is_unsigned()),
             self.operand(1).as_value(),
-            "f" if self._fp else "",
+            self.type(),
+            ety[0],
+            ety[1],
         )
 
 
 class UnaryOperation(ValueTypedInstruction):
-    NEG = 1
-    ZEXT = 2
-    SEXT = 3
-    EXTRACT = 4
-    CAST = 5  # reinterpret cast
-    ABS = 6
-    FP_OP = 7  # floating-point operation
-    LAST_UNARY_OP = 8
+    ABS = 1
+    EXTEND = 2
+    CAST = 3
+    NEG = 4
+    EXTRACT = 5
+    FP_OP = 6
 
-    # TODO make SEXT and ZEXT also reinterpret cast?
-
-    def __check(op):
-        assert UnaryOperation.NEG <= op <= UnaryOperation.LAST_UNARY_OP
-
-    def __init__(self, op: "UnaryOperation", a, ty=None) -> None:
-        """Some unary operations do not inherit the type -- set it in 'ty'"""
-        super().__init__(ty or a.type(), [a])
-        UnaryOperation.__check(op)
+    def __init__(self, op, a, retty, optypes) -> None:
+        assert retty is not None
+        super().__init__(retty, [a], optypes)
         self._op = op
 
-    def operation(self) -> "UnaryOperation":
+    def operation(self):
         return self._op
 
 
 class Abs(UnaryOperation):
     """Absolute value"""
 
-    def __init__(self, val, is_float=False) -> None:
-        super().__init__(UnaryOperation.ABS, val)
-        self._is_float = is_float
-
-    def is_float(self):
-        return self._is_float
+    def __init__(self, val, retty, optypes) -> None:
+        super().__init__(UnaryOperation.ABS, val, retty, optypes)
 
     def __str__(self) -> str:
-        return f"x{self.get_id()} = {'f' if self._is_float else ''}abs({self.operand(0).as_value()})"
+        return f"x{self.get_id()}:{self.type()} = abs(({(self.expected_op_types()[0])}){self.operand(0).as_value()})"
 
 
 class Extend(UnaryOperation):
-    def __init__(self, op: UnaryOperation, a, bw) -> None:
-        assert bw.is_concrete(), "Invalid bitwidth to extend"
-        super().__init__(op, a, ty=BitVecType(bw.value()))
+    def __init__(self, a, bw, signed, optypes) -> None:
+        assert isinstance(bw, int), f"Invalid bitwidth to extend: {bw}"
+        assert isinstance(signed, bool), f"Invalid signed flag: {bw}"
+        super().__init__(UnaryOperation.EXTEND, a, BitVecType(bw), optypes)
         self._bw = bw
+        self._signed = signed
 
     def bitwidth(self):
         return self._bw
 
-
-class ZExt(Extend):
-    def __init__(self, a, bw) -> None:
-        super().__init__(UnaryOperation.ZEXT, a, bw)
+    def is_signed(self):
+        return self._signed
 
     def __str__(self) -> str:
-        return "x{0} = zext {1} to {2}".format(
-            self.get_id(), self.operand(0).as_value(), self.bitwidth()
-        )
-
-
-class SExt(Extend):
-    def __init__(self, a, bw) -> None:
-        super().__init__(UnaryOperation.SEXT, a, bw)
-
-    def __str__(self) -> str:
-        return "x{0} = sext {1} to {2}".format(
-            self.get_id(), self.operand(0).as_value(), self.bitwidth()
+        optypes = self.expected_op_types()
+        return "x{0}: {3} = extend {5} ({4}){1} to {2} bits".format(
+            self.get_id(),
+            self.operand(0).as_value(),
+            self.bitwidth(),
+            self.type(),
+            optypes[0],
+            "signed" if self.is_signed() else "unsigned",
         )
 
 
@@ -675,9 +665,9 @@ class FpOp(UnaryOperation):
             return "signbit"
         return "uknwn"
 
-    def __init__(self, fp_op, val) -> None:
+    def __init__(self, fp_op, val, valty) -> None:
         assert FpOp.IS_INF <= fp_op <= FpOp.SIGNBIT
-        super().__init__(UnaryOperation.FP_OP, val)
+        super().__init__(UnaryOperation.FP_OP, val, [valty])
         self._fp_op = fp_op
 
     def fp_operation(self):
@@ -695,7 +685,9 @@ class BinaryOperation(ValueTypedInstruction):
     SUB = 2
     MUL = 3
     DIV = 4
+    UDIV = 12
     REM = 11
+    UREM = 13
     # bitwise
     SHL = 5
     LSHR = 6
@@ -705,166 +697,55 @@ class BinaryOperation(ValueTypedInstruction):
     OR = 9
     XOR = 10
     # more logicals to come ...
-    LAST = 12
+    LAST = 14
 
-    def __init__(self, op, a, b) -> None:
+    def __init__(self, op, a, b, optypes) -> None:
         isptr = a.type().is_pointer() or b.type().is_pointer()
         assert isptr or a.type() == b.type(), f"{a} ({a.type()}), {b} ({b.type()})"
         assert BinaryOperation.ADD <= op <= BinaryOperation.LAST
-        super().__init__(PointerType() if isptr else a.type(), [a, b])
+        super().__init__(PointerType() if isptr else a.type(), [a, b], optypes)
         self._op = op
+
+    def op_str(op):
+        # arith
+        if op == BinaryOperation.ADD:
+            return "+"
+        if op == BinaryOperation.SUB:
+            return "-"
+        if op == BinaryOperation.MUL:
+            return "*"
+        if op == BinaryOperation.DIV:
+            return "/"
+        if op == BinaryOperation.UDIV:
+            return "/u"
+        if op == BinaryOperation.REM:
+            return "%"
+        if op == BinaryOperation.SHL:
+            return "<<"
+        if op == BinaryOperation.LSHR:
+            return "l>>"
+        if op == BinaryOperation.ASHR:
+            return ">>"
+        if op == BinaryOperation.AND:
+            return "&"
+        if op == BinaryOperation.OR:
+            return "|"
+        if op == BinaryOperation.XOR:
+            return "^"
 
     def operation(self):
         return self._op
 
-
-class Add(BinaryOperation):
-    def __init__(self, a, b, fp: bool = False) -> None:
-        super().__init__(BinaryOperation.ADD, a, b)
-        self._fp = fp
-
-    def is_fp(self) -> bool:
-        return self._fp
-
     def __str__(self) -> str:
-        return "x{0} = {1} +{3} {2}".format(
+        ety = self.expected_op_types()
+        return "x{0}:{3} = ({4}){1} {6} ({5}){2}".format(
             self.get_id(),
             self.operand(0).as_value(),
             self.operand(1).as_value(),
-            "." if self._fp else "",
-        )
-
-
-class Sub(BinaryOperation):
-    def __init__(self, a, b, fp: bool = False) -> None:
-        super().__init__(BinaryOperation.SUB, a, b)
-        self._fp = fp
-
-    def is_fp(self) -> bool:
-        return self._fp
-
-    def __str__(self) -> str:
-        return "x{0} = {1} -{3} {2}".format(
-            self.get_id(),
-            self.operand(0).as_value(),
-            self.operand(1).as_value(),
-            "." if self._fp else "",
-        )
-
-
-class Mul(BinaryOperation):
-    def __init__(self, a, b, fp: bool = False) -> None:
-        super().__init__(BinaryOperation.MUL, a, b)
-        self._fp = fp
-
-    def is_fp(self) -> bool:
-        return self._fp
-
-    def __str__(self) -> str:
-        return "x{0} = {1} *{3} {2}".format(
-            self.get_id(),
-            self.operand(0).as_value(),
-            self.operand(1).as_value(),
-            "." if self._fp else "",
-        )
-
-
-class Div(BinaryOperation):
-    def __init__(self, a, b, unsigned: bool = False, fp: bool = False) -> None:
-        super().__init__(BinaryOperation.DIV, a, b)
-        self._unsigned = unsigned
-        self._fp = fp
-
-    def is_fp(self) -> bool:
-        return self._fp
-
-    def is_unsigned(self) -> bool:
-        return self._unsigned
-
-    def __str__(self) -> str:
-        return "x{0} = {1} /{3}{4} {2}".format(
-            self.get_id(),
-            self.operand(0).as_value(),
-            self.operand(1).as_value(),
-            "u" if self.is_unsigned() else "",
-            "." if self._fp else "",
-        )
-
-
-class Rem(BinaryOperation):
-    def __init__(self, a, b, unsigned: bool = False) -> None:
-        super().__init__(BinaryOperation.REM, a, b)
-        self._unsigned = unsigned
-
-    def is_unsigned(self) -> bool:
-        return self._unsigned
-
-    def __str__(self) -> str:
-        return "x{0} = {1} %{3} {2}".format(
-            self.get_id(),
-            self.operand(0).as_value(),
-            self.operand(1).as_value(),
-            "u" if self.is_unsigned() else "",
-        )
-
-
-class Shl(BinaryOperation):
-    def __init__(self, a, b) -> None:
-        super().__init__(BinaryOperation.SHL, a, b)
-
-    def __str__(self) -> str:
-        return "x{0} = {1} << {2}".format(
-            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
-        )
-
-
-class LShr(BinaryOperation):
-    def __init__(self, a, b) -> None:
-        super().__init__(BinaryOperation.LSHR, a, b)
-
-    def __str__(self) -> str:
-        return "x{0} = {1} l>> {2}".format(
-            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
-        )
-
-
-class AShr(BinaryOperation):
-    def __init__(self, a, b) -> None:
-        super().__init__(BinaryOperation.ASHR, a, b)
-
-    def __str__(self) -> str:
-        return "x{0} = {1} >> {2}".format(
-            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
-        )
-
-
-class And(BinaryOperation):
-    def __init__(self, a, b) -> None:
-        super().__init__(BinaryOperation.AND, a, b)
-
-    def __str__(self) -> str:
-        return "x{0} = {1} & {2}".format(
-            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
-        )
-
-
-class Or(BinaryOperation):
-    def __init__(self, a, b) -> None:
-        super().__init__(BinaryOperation.OR, a, b)
-
-    def __str__(self) -> str:
-        return "x{0} = {1} | {2}".format(
-            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
-        )
-
-
-class Xor(BinaryOperation):
-    def __init__(self, a, b) -> None:
-        super().__init__(BinaryOperation.XOR, a, b)
-
-    def __str__(self) -> str:
-        return "x{0} = xor {1}, {2}".format(
-            self.get_id(), self.operand(0).as_value(), self.operand(1).as_value()
+            self.type(),
+            ety[0],
+            ety[1],
+            BinaryOperation.op_str(self.operation()),
         )
 
 

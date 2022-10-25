@@ -212,21 +212,14 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBitVec(wrap_to_bw(int(aval / bval), bw), bw)
 
     @staticmethod
-    def ZExt(a: Value, b: Value) -> Value:
+    def Extend(a: Value, b: int, unsigned: bool) -> Value:
         assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
-        assert a.bitwidth() < b.value(), "Invalid zext argument"
+        assert isinstance(b, int), b
+        assert isinstance(unsigned, bool), b
+        assert a.bitwidth() < b, f"Invalid extend argument: {b}"
         assert a.is_bv(), a
         aval = to_bv(a, unsigned=True)
-        return ConcreteBitVec(to_unsigned(aval, a.bitwidth()), b.value())
-
-    @staticmethod
-    def SExt(a: Value, b: Value) -> Value:
-        assert ConcreteBitVecDomain.belongto(a), a
-        assert ConcreteBitVecDomain.belongto(b), b
-        assert a.bitwidth() <= b.value(), "Invalid sext argument"
-        assert a.is_bv(), a
-        return ConcreteBitVec(a.value(), b.value())
+        return ConcreteBitVec(to_unsigned(aval, a.bitwidth()), b)
 
     @staticmethod
     def Shl(a: Value, b: Value) -> Value:

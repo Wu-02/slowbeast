@@ -65,24 +65,28 @@ class Type:
     def is_bool(self) -> bool:
         return False
 
-    def __eq__(self, x: object):
-        return (
-            isinstance(x, Type)
-            and self.is_bool() == x.is_bool()
-            and self.is_pointer() == x.is_pointer()
-            and self.is_float() == x.is_float()
-            and self.bitwidth() == x.bitwidth()
-        )
+    def is_label(self) -> bool:
+        return False
+
+    def __eq__(self, other: object):
+        # FIXME: do this better
+        return isinstance(other, Type) and str(self) == str(other)
 
     def __str__(self: "Type") -> str:
+        s = ""
         if self.is_bool():
-            return "bool"
-        if self.is_float():
-            s = f"f{self._bitwidth}b"
+            s = "bool"
+        elif self.is_float():
+            s = f"f{self.bitwidth()}b"
         elif self.is_bytes():
-            s = f"x{self._bitwidth}"
+            s = f"[i8; {self.bytewidth()}]"
+        elif self.is_bv():
+            s = f"{self.bitwidth()}b"
+        elif self.is_label():
+            s = "addr"
         else:
-            s = f"{self._bitwidth}b"
+            assert self.is_pointer(), f"Invalid type: {type(self)}"
+
         if self.is_pointer():
             s += "*"
         return s
@@ -100,7 +104,6 @@ class PointerType(Type):
 
     def is_pointer(self) -> bool:
         return True
-
 
 class BitVecType(Type):
     def __init__(self, bw: int) -> None:
@@ -131,4 +134,12 @@ class Bytes(Type):
         Type.__init__(self, bytenum * 8)
 
     def is_bytes(self) -> bool:
+        return True
+
+
+class LabelType(PointerType):
+    """
+    Pointer pointing somewhere to the code (usually a basic block pointer)
+    """
+    def is_label(self) -> bool:
         return True

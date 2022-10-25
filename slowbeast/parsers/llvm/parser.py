@@ -1,6 +1,5 @@
 import llvmlite.binding as llvm
 
-from slowbeast.domains.concrete import ConcreteDomain
 from slowbeast.ir.argument import Argument
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
@@ -23,16 +22,7 @@ def _get_llvm_module(path):
             return llvm.parse_bitcode(f.read())
 
 
-def parse_special_fcmp(
-    inst, op1, op2
-) -> Union[
-    None,
-    List[FpOp],
-    List[Union[And, Cmp, FpOp]],
-    List[Union[And, FpOp]],
-    List[Union[Cmp, FpOp]],
-    tuple[Optional[bool]],
-]:
+def parse_special_fcmp(inst, op1, op2, optypes):
     seq = []
     parts = str(inst).split()
     if parts[1] != "=":
@@ -44,22 +34,24 @@ def parse_special_fcmp(
     if parts[3] == "uno":
         if op1 == op2:
             # equivalent to isnan
-            return [FpOp(FpOp.IS_NAN, op1)]
-        seq.append(FpOp(FpOp.IS_NAN, op1))
-        seq.append(FpOp(FpOp.IS_NAN, op2))
-        seq.append(And(*seq))
+            return [FpOp(FpOp.IS_NAN, op1, optypes[0])]
+        seq.append(FpOp(FpOp.IS_NAN, op1, optypes[0]))
+        seq.append(FpOp(FpOp.IS_NAN, op2, optypes[1]))
+        seq.append(BinaryOperation(BinaryOperation.AND, *seq, [BoolType()] * 2))
         return seq
     if parts[3] == "ord":
         if op1 == op2:
             # equivalent to not isnan
-            seq.append(FpOp(FpOp.IS_NAN, op1))
-            seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse))
+            seq.append(FpOp(FpOp.IS_NAN, op1, optypes[0]))
+            seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse, [BoolType] * 2))
         else:
-            seq.append(FpOp(FpOp.IS_NAN, op1))
-            seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse))
-            seq.append(FpOp(FpOp.IS_NAN, op2))
-            seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse))
-            seq.append(And(seq[1], seq[-1]))
+            seq.append(FpOp(FpOp.IS_NAN, op1, optypes[0]))
+            seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse, [BoolType] * 2))
+            seq.append(FpOp(FpOp.IS_NAN, op2, optypes[1]))
+            seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse, [BoolType] * 2))
+            seq.append(
+                BinaryOperation(BinaryOperation.AND, seq[1], seq[-1], [BoolType] * 2)
+            )
         return seq
     return None
 
@@ -241,7 +233,7 @@ class Parser:
         assert self._mapping.get(llinst) is None, "Duplicated mapping"
         self._mapping[llinst] = sbinst
 
-    def _createAlloca(self, inst) -> Union[List[Alloc], List[ZExt]]:
+    def _createAlloca(self, inst) -> Union[List[Alloc]]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Array allocations not supported yet"
 
@@ -254,7 +246,7 @@ class Parser:
             bytewidth = type_size(self.llvmmodule, operands[0].type)
             SizeType = get_size_type()
             if bytewidth != SizeType.bytewidth():
-                N = ZExt(num, concrete_value(SizeType.bitwidth(), SizeType))
+                N = Extend(num, concrete_value(SizeType.bitwidth(), SizeType))
                 retlist.append(N)
             else:
                 N = num
@@ -273,7 +265,11 @@ class Parser:
         assert len(operands) == 2, "Invalid number of operands for store"
 
         bytes_num = type_size(self.llvmmodule, operands[0].type)
-        S = Store(self.operand(operands[0]), self.operand(operands[1]), bytes_num)
+        S = Store(
+            self.operand(operands[0]),
+            self.operand(operands[1]),
+            [get_sb_type(self.llvmmodule, op.type) for op in operands],
+        )
         self._addMapping(inst, S)
         return [S]
 
@@ -281,7 +277,11 @@ class Parser:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
 
-        L = Load(self.operand(operands[0]), get_sb_type(self.llvmmodule, inst.type))
+        L = Load(
+            self.operand(operands[0]),
+            get_sb_type(self.llvmmodule, inst.type),
+            [get_sb_type(self.llvmmodule, operands[0].type)],
+        )
         self._addMapping(inst, L)
         return [L]
 
@@ -298,16 +298,18 @@ class Parser:
                 if str(operands[0]).endswith("undef"):
                     ty = operands[0].type
                     op = self.create_nondet_call(f"undef_{ty}".replace(" ", "_"), ty)
-                R = Return(op)
+                else:
+                    raise RuntimeError(f"Unhandled instruction: {inst}")
+                R = Return(op, get_sb_type(self.llvmmodule, operands[0].type))
                 self._addMapping(inst, R)
                 return [op, R]
             else:
-                R = Return(op)
+                R = Return(op, get_sb_type(self.llvmmodule, operands[0].type))
 
         self._addMapping(inst, R)
         return [R]
 
-    def _createArith(self, inst, opcode) -> List[Union[Add, Div, Mul, Sub]]:
+    def _createArith(self, inst, opcode) -> List[BinaryOperation]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
@@ -321,48 +323,51 @@ class Parser:
         if isfloat and self._forbid_floats:
             raise RuntimeError(f"Floating artihmetic forbidden: {inst}")
 
+        optypes = [get_sb_type(self.llvmmodule, op.type) for op in operands]
         if opcode in ("add", "fadd"):
-            I = Add(op1, op2, isfloat)
+            I = BinaryOperation(BinaryOperation.ADD, op1, op2, optypes)
         elif opcode in ("sub", "fsub"):
-            I = Sub(op1, op2, isfloat)
+            I = BinaryOperation(BinaryOperation.SUB, op1, op2, optypes)
         elif opcode in ("mul", "fmul"):
-            I = Mul(op1, op2, isfloat)
+            I = BinaryOperation(BinaryOperation.MUL, op1, op2, optypes)
         elif opcode in ("sdiv", "fdiv"):
-            I = Div(op1, op2, fp=isfloat)
+            I = BinaryOperation(BinaryOperation.DIV, op1, op2, optypes)
         elif opcode == "udiv":
-            I = Div(op1, op2, unsigned=True, fp=isfloat)
+            I = BinaryOperation(BinaryOperation.UDIV, op1, op2, optypes)
         else:
             raise NotImplementedError(f"Artihmetic operation unsupported: {inst}")
 
         self._addMapping(inst, I)
         return [I]
 
-    def _createShift(self, inst) -> List[Union[AShr, LShr, Shl]]:
+    def _createShift(self, inst) -> List[BinaryOperation]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for shift"
 
         op1 = self.operand(operands[0])
         op2 = self.operand(operands[1])
+        optypes = [get_sb_type(self.llvmmodule, op.type) for op in operands]
         opcode = inst.opcode
 
         if opcode == "shl":
-            I = Shl(op1, op2)
+            I = BinaryOperation(BinaryOperation.SHL, op1, op2, optypes)
         elif opcode == "lshr":
-            I = LShr(op1, op2)
+            I = BinaryOperation(BinaryOperation.LSHR, op1, op2, optypes)
         elif opcode == "ashr":
-            I = AShr(op1, op2)
+            I = BinaryOperation(BinaryOperation.ASHR, op1, op2, optypes)
         else:
             raise NotImplementedError(f"Shift operation unsupported: {inst}")
 
         self._addMapping(inst, I)
         return [I]
 
-    def _createLogicOp(self, inst) -> List[Union[And, Or, Xor]]:
+    def _createLogicOp(self, inst) -> List[BinaryOperation]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for logic op"
 
         op1 = self.operand(operands[0])
         op2 = self.operand(operands[1])
+        optypes = [get_sb_type(self.llvmmodule, op.type) for op in operands]
         opcode = inst.opcode
 
         # make sure both operands are bool if one is bool
@@ -370,11 +375,11 @@ class Parser:
             op1, op2 = bv_to_bool_else_id(op1), bv_to_bool_else_id(op2)
 
         if opcode == "and":
-            I = And(op1, op2)
+            I = BinaryOperation(BinaryOperation.AND, op1, op2, optypes)
         elif opcode == "or":
-            I = Or(op1, op2)
+            I = BinaryOperation(BinaryOperation.OR, op1, op2, optypes)
         elif opcode == "xor":
-            I = Xor(op1, op2)
+            I = BinaryOperation(BinaryOperation.XOR, op1, op2, optypes)
         else:
             raise NotImplementedError(f"Logic operation unsupported: {inst}")
 
@@ -393,18 +398,19 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createRem(self, inst) -> List[Rem]:
+    def _createRem(self, inst) -> List[BinaryOperation]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for rem"
 
         op1 = self.operand(operands[0])
         op2 = self.operand(operands[1])
+        optypes = [get_sb_type(self.llvmmodule, op.type) for op in operands]
         opcode = inst.opcode
 
         if opcode == "srem":
-            I = Rem(op1, op2)
+            I = BinaryOperation(BinaryOperation.REM, op1, op2, optypes)
         elif opcode == "urem":
-            I = Rem(op1, op2, unsigned=True)
+            I = BinaryOperation(BinaryOperation.UREM, op1, op2, optypes)
         else:
             raise NotImplementedError(f"Remainder operation unsupported: {inst}")
 
@@ -421,20 +427,12 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createCmp(
-        self, inst, isfloat: bool = False
-    ) -> Union[
-        List[Cmp],
-        List[FpOp],
-        List[Union[And, Cmp, FpOp]],
-        List[Union[And, FpOp]],
-        List[Union[Cmp, FpOp]],
-        Tuple[Optional[bool]],
-    ]:
+    def _createCmp(self, inst, isfloat: bool = False):
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
         op1 = self.operand(operands[0])
         op2 = self.operand(operands[1])
+        optypes = [get_sb_type(self.llvmmodule, op.type) for op in operands]
         if isfloat:
             if self._forbid_floats:
                 raise RuntimeError(f"Floating operations forbidden: {inst}")
@@ -448,12 +446,12 @@ class Parser:
                     self._addMapping(inst, seq[-1])
                     return seq
                 raise NotImplementedError(f"Unsupported fcmp instruction: {inst}")
-            C = Cmp(P, op1, op2, is_unordered, fp=True)
+            C = Cmp(P, op1, op2, optypes, is_unordered)
         else:
             P, is_unsigned = parse_cmp(inst)
             if not P:
                 raise NotImplementedError(f"Unsupported cmp instruction: {inst}")
-            C = Cmp(P, op1, op2, is_unsigned)
+            C = Cmp(P, op1, op2, optypes, is_unsigned)
 
         self._addMapping(inst, C)
         return [C]
@@ -629,23 +627,26 @@ class Parser:
         self._addMapping(inst, A)
         return [A]
 
-    def _createZExt(self, inst) -> List[ZExt]:
+    def _createZExt(self, inst) -> List[Extend]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
-        zext = ZExt(
+        zext = Extend(
             self.operand(operands[0]),
-            concrete_value(type_size_in_bits(self.llvmmodule, inst.type), 32),
+            type_size_in_bits(self.llvmmodule, inst.type),
+            False,  # signed
+            [get_sb_type(self.llvmmodule, op.type) for op in operands],
         )
         self._addMapping(inst, zext)
         return [zext]
 
-    def _createSExt(self, inst) -> List[SExt]:
+    def _createSExt(self, inst) -> List[Extend]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
-        # just behave that there's no SExt for now
-        sext = SExt(
+        sext = Extend(
             self.operand(operands[0]),
-            concrete_value(type_size_in_bits(self.llvmmodule, inst.type), 32),
+            type_size_in_bits(self.llvmmodule, inst.type),
+            True,  # signed
+            [get_sb_type(self.llvmmodule, op.type) for op in operands],
         )
         self._addMapping(inst, sext)
         return [sext]
@@ -734,9 +735,9 @@ class Parser:
 
                 mulbw = type_size_in_bits(self.llvmmodule, idx.type)
                 assert 0 < mulbw <= 64, "Invalid type size: {mulbw}"
-                SizeType = get_size_type()
-                if mulbw != SizeType.bitwidth():
-                    C = ZExt(var, concrete_value(SizeType.bitwidth(), SizeType))
+                size_type = get_size_type()
+                if mulbw != size_type.bitwidth():
+                    C = Extend(var, size_type.bitwidth(), True)
                     varIdx.append(C)
                     var = C
 
@@ -745,10 +746,22 @@ class Parser:
                 ty = ty.element_type
                 elemSize = type_size(self.llvmmodule, ty)
 
-                M = Mul(var, concrete_value(elemSize, SizeType))
+                M = BinaryOperation(
+                    BinaryOperation.MUL,
+                    var,
+                    concrete_value(elemSize, size_type),
+                    [PointerType, size_type],
+                )
                 varIdx.append(M)
                 if shift != 0:
-                    varIdx.append(Add(M, concrete_value(shift, SizeType)))
+                    varIdx.append(
+                        BinaryOperation(
+                            BinaryOperation.ADD,
+                            M,
+                            concrete_value(shift, size_type),
+                            [PointerType(), size_type],
+                        )
+                    )
             else:
                 assert c.is_bv(), f"Invalid GEP index: {c}"
                 cval = c.value()
@@ -769,7 +782,9 @@ class Parser:
         mem, shift, varIdx = self._parseGep(inst)
 
         if varIdx:
-            A = Add(mem, varIdx[-1])
+            A = BinaryOperation(
+                BinaryOperation.ADD, mem, varIdx[-1], [PointerType(), get_size_type()]
+            )
             self._addMapping(inst, A)
             varIdx.append(A)
             return varIdx
@@ -778,7 +793,12 @@ class Parser:
                 self._addMapping(inst, mem)
                 return []
             else:
-                A = Add(mem, concrete_value(shift, get_size_type_size()))
+                A = BinaryOperation(
+                    BinaryOperation.ADD,
+                    mem,
+                    concrete_value(shift, get_size_type_size()),
+                    [PointerType(), get_size_type()],
+                )
                 self._addMapping(inst, A)
         return [A]
 
@@ -788,7 +808,12 @@ class Parser:
         if shift == 0:
             return mem
         else:
-            return Add(mem, concrete_value(shift, get_size_type()))
+            return BinaryOperation(
+                BinaryOperation.ADD,
+                mem,
+                concrete_value(shift, get_size_type()),
+                [PointerType(), get_size_type()],
+            )
 
     def _parse_ce(self, ce):
         assert ce.is_constantexpr, ce

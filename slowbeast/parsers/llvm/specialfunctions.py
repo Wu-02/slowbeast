@@ -6,11 +6,10 @@ from slowbeast.ir.instruction import (
     Print,
     Abs,
     FpOp,
-    ZExt,
     Cast,
 )
 from slowbeast.ir.types import FloatType, get_size_type_size
-from .utils import get_llvm_operands, type_size_in_bits, to_float_ty
+from .utils import get_llvm_operands, type_size_in_bits, to_float_ty, get_sb_type
 from slowbeast.util.debugging import print_stderr
 from ...domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
 
@@ -70,10 +69,12 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif fun in ("__VERIFIER_assume", "assume_abort_if_not", "verifier.assume"):
         operands = get_llvm_operands(inst)
         cond = parser.operand(operands[0])
+        optypes = [get_sb_type(module, op.type) for op in operands]
         C = Cmp(
             Cmp.NE,
             cond,
             concrete_value(0, type_size_in_bits(module, operands[0].type)),
+            optypes,
         )
         A = Assume(C)
         return A, [C, A]
@@ -84,10 +85,12 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif  fun == "__INSTR_check_assume":
         operands = get_llvm_operands(inst)
         cond = parser.operand(operands[0])
+        optypes = [get_sb_type(module, op.type) for op in operands]
         C = Cmp(
             Cmp.NE,
             cond,
             concrete_value(0, type_size_in_bits(module, operands[0].type)),
+            optypes,
         )
         A = Assert(C)
         return A, [C, A]
@@ -113,14 +116,15 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif fun.startswith("llvm.fabs."):
         operands = get_llvm_operands(inst)
         val = parser.operand(operands[0])
-        A = Abs(val, FloatType(type_size_in_bits(module, inst.type)))
+        A = Abs(val, FloatType(type_size_in_bits(module, inst.type)), [get_sb_type(module, operands[0].type)])
         return A, [A]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
         O = FpOp(FpOp.IS_INF, val)
-        P = ZExt(
+        P = Extend(
             O,
             concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()),
+            True #unsigned
         )
         return P, [O, P]
     elif fun in "nan":
@@ -130,9 +134,10 @@ def create_special_fun(parser, inst, fun, error_funs):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
         O = FpOp(FpOp.IS_NAN, val)
         # the functions return int
-        P = ZExt(
+        P = Extend(
             O,
             concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()),
+            True # unsigned
         )
         return P, [O, P]
     elif fun in ("__fpclassify", "__fpclassifyf", "__fpclassifyl"):

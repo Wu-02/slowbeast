@@ -240,17 +240,12 @@ class SymcreteDomain:
         r = SymbolicDomain.FpOp(op, self.lift(val))
         return opt(r) if r else r  # FpOp may return None
 
-    def ZExt(self, a, b):
-        assert ConcreteDomain.belongto(b), "Invalid zext argument"
+    def Extend(self, a: Value, b: int, unsigned: bool):
+        assert isinstance(b, int), f"Invalid extend argument: {b}"
+        assert isinstance(unsigned, bool), f"Invalid extend argument: {unsigned}"
         if ConcreteDomain.belongto(a):
-            return ConcreteDomain.ZExt(a, b)
-        return opt(SymbolicDomain.ZExt(a, b))
-
-    def SExt(self, a, b):
-        assert ConcreteDomain.belongto(b), "Invalid sext argument"
-        if ConcreteDomain.belongto(a):
-            return ConcreteDomain.SExt(a, b)
-        return opt(SymbolicDomain.SExt(a, b))
+            return ConcreteDomain.Extend(a, b, unsigned)
+        return opt(SymbolicDomain.Extend(a, b, unsigned))
 
     def Cast(self, a: Value, ty: Type) -> Union[None, Expr, Value]:
         """reinterpret cast"""

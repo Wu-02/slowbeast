@@ -242,24 +242,14 @@ class BVSymbolicDomain(Domain):
             return Expr(~to_bv(a), BitVecType(a.bitwidth()))
 
     @staticmethod
-    def ZExt(a, b) -> Expr:
+    def Extend(a: Value, bw: int, unsigned: bool) -> Expr:
         assert BVSymbolicDomain.belongto(a)
-        assert b.is_concrete()
-        bw = b.value()
+        assert isinstance(bw, int), bw
         assert a.bitwidth() <= bw, "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
         ae = to_bv(a) if a.is_float() else bool_to_ubv(a)
-        return Expr(BVZExt(bw - a.bitwidth(), ae), BitVecType(bw))
-
-    @staticmethod
-    def SExt(a, b) -> Expr:
-        assert BVSymbolicDomain.belongto(a), a
-        assert b.is_concrete(), b
-        assert b.is_bv(), b
-        bw = b.value()
-        assert a.bitwidth() <= bw, f"Invalid sext argument: {a} to {bw} bits"
-
-        ae = to_bv(a) if a.is_float() else bool_to_ubv(a)
+        if unsigned:
+            return Expr(BVZExt(bw - a.bitwidth(), ae), BitVecType(bw))
         return Expr(BVSExt(bw - a.bitwidth(), ae), BitVecType(bw))
 
     @staticmethod

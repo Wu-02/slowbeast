@@ -267,19 +267,19 @@ class Executor(ConcreteExecutor):
         self.stats.branch_forks += len(states) - 1
         return states
 
-    def compare_values(self, E, p, op1, op2, unsgn, flt: bool = False):
+    def compare_values(self, expr_mgr, p, op1, op2, unsgn, flt: bool = False):
         if p == Cmp.LE:
-            return E.Le(op1, op2, unsgn, flt)
+            return expr_mgr.Le(op1, op2, unsgn, flt)
         elif p == Cmp.LT:
-            return E.Lt(op1, op2, unsgn, flt)
+            return expr_mgr.Lt(op1, op2, unsgn, flt)
         elif p == Cmp.GE:
-            return E.Ge(op1, op2, unsgn, flt)
+            return expr_mgr.Ge(op1, op2, unsgn, flt)
         elif p == Cmp.GT:
-            return E.Gt(op1, op2, unsgn, flt)
+            return expr_mgr.Gt(op1, op2, unsgn, flt)
         elif p == Cmp.EQ:
-            return E.Eq(op1, op2, unsgn, flt)
+            return expr_mgr.Eq(op1, op2, unsgn, flt)
         elif p == Cmp.NE:
-            return E.Ne(op1, op2, unsgn, flt)
+            return expr_mgr.Ne(op1, op2, unsgn, flt)
         else:
             raise RuntimeError("Invalid comparison")
 
@@ -386,7 +386,6 @@ class Executor(ConcreteExecutor):
             op1,
             op2,
             instr.is_unsigned(),
-            instr.is_float(),
         )
         state.set(instr, x)
         state.pc = state.pc.get_next_inst()
@@ -570,27 +569,24 @@ class Executor(ConcreteExecutor):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
         opcode = instr.operation()
-        E = state.expr_manager()
-        if opcode == UnaryOperation.ZEXT:
-            bw = instr.bitwidth()
-            r = E.ZExt(op1, bw)
-        elif opcode == UnaryOperation.SEXT:
-            bw = instr.bitwidth()
-            r = E.SExt(op1, bw)
+        expr_mgr = state.expr_manager()
+        if opcode == UnaryOperation.EXTEND:
+            assert isinstance(instr, Extend), instr
+            r = expr_mgr.Extend(op1, instr.bitwidth(), not instr.is_signed())
         elif opcode == UnaryOperation.CAST:
-            r = E.Cast(op1, instr.casttype())
+            r = expr_mgr.Cast(op1, instr.casttype())
             if r is None:
                 state.set_killed(f"Unsupported/invalid cast: {instr}")
                 return [state]
         elif opcode == UnaryOperation.EXTRACT:
             start, end = instr.range()
-            r = E.Extract(op1, start, end)
+            r = expr_mgr.Extract(op1, start, end)
         elif opcode == UnaryOperation.NEG:
-            r = E.Neg(op1, instr.is_fp())
+            r = expr_mgr.Neg(op1, instr.is_fp())
         elif opcode == UnaryOperation.ABS:
-            r = E.Abs(op1, instr.is_float())
+            r = expr_mgr.Abs(op1, instr.is_float())
         elif opcode == UnaryOperation.FP_OP:
-            r = E.FpOp(instr.fp_operation(), op1)
+            r = expr_mgr.FpOp(instr.fp_operation(), op1)
             if r is None:
                 state.set_killed(f"Unsupported FP operation: {instr}")
                 return [state]
