@@ -36,11 +36,9 @@ special_functions = [
     "malloc",
     "__assert_fail",
     "__VERIFIER_error",
-    "__VERIFIER_assert",
     "__VERIFIER_assume",
     "verifier.assume",
     "assume_abort_if_not",
-    "__VERIFIER_assert",
     "__VERIFIER_silent_exit",
     "__INSTR_check_nontermination_header",
     "__INSTR_check_nontermination",
@@ -79,7 +77,7 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif fun == "__VERIFIER_silent_exit":
         A = Assume(ConstantFalse)
         return A, [A]
-    elif fun == "__VERIFIER_assert" or fun == "__INSTR_check_assume":
+    elif  fun == "__INSTR_check_assume":
         operands = get_llvm_operands(inst)
         cond = parser.operand(operands[0])
         C = Cmp(
