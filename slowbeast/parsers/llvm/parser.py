@@ -955,11 +955,11 @@ class Parser:
                     S.insert_before(B.last())
             self.phis = []  # we handled these PHI nodes
 
-    def _parse_initializer(self, G, g, ts) -> None:
+    def _parse_initializer(self, G, g, ty, ts) -> None:
         c = get_constant(g.initializer)
         if c:
             # FIXME: add composed instruction
-            G.set_init([Store(c, G, ts)])
+            G.set_init([Store(c, G, [ty, G.type()])])
             return
         # elif is_array_ty(g.initializer.type):
         #    parts=str(g.initializer.type).split()
@@ -981,10 +981,11 @@ class Parser:
             assert g.type.is_pointer
             # FIXME: check and set whether it is a constant
             ts = type_size(self.llvmmodule, g.type.element_type)
+            ty = get_sb_type(self.llvmmodule, g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
             G = GlobalVariable(concrete_value(ts, get_size_type_size()), g.name)
             if g.initializer:
-                self._parse_initializer(G, g, ts)
+                self._parse_initializer(G, g, ty, ts)
             self.program.add_global(G)
             self._addMapping(g, G)
 

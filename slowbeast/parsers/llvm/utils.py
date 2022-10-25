@@ -3,7 +3,7 @@ from struct import unpack, pack
 from slowbeast.domains.concrete import ConstantTrue, ConstantFalse
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.domains.pointer import Pointer, get_null_pointer
-from slowbeast.ir.types import BitVecType, FloatType, PointerType
+from slowbeast.ir.types import BitVecType, FloatType, PointerType, Bytes
 from slowbeast.util.debugging import warn
 from slowbeast.domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
 from typing import Optional, Sized, Union
@@ -91,8 +91,9 @@ def is_array_ty(ty: str) -> bool:
     return ty.is_array
 
 
-def parse_array_ty_by_parts(ty) -> None:
-    print(parts)
+def parse_array_ty(ty) -> None:
+    parts = str(ty)[1:-1].split('x')
+    return int(parts[0]), parts[1].strip()
 
 
 def get_array_ty_size(m, ty: str) -> int:
@@ -146,6 +147,11 @@ def get_sb_type(m, ty: str) -> Union[None, FloatType, BitVecType, PointerType]:
     if is_pointer_ty(ty):
         return PointerType()
 
+    if is_array_ty(ty):
+        n, cty = parse_array_ty(ty)
+        if cty == "i8":
+            return Bytes(n)
+
     sty = str(ty)
     if sty in ("void", "metadata"):
         return None
@@ -158,6 +164,7 @@ def get_sb_type(m, ty: str) -> Union[None, FloatType, BitVecType, PointerType]:
         return FloatType(ts)
     elif sty.startswith("i"):
         return BitVecType(ts)
+
     assert False, f"Unsupported type: {ty}"
     return None
 
