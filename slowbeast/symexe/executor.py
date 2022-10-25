@@ -10,10 +10,8 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
 from slowbeast.ir.types import get_offset_type
-from slowbeast.util.debugging import dbgv, ldbgv
-from .executionstate import SEState, IncrementalSEState, ThreadedSEState
-from .memorymodel import SymbolicMemoryModel
-from .statesset import StatesSet
+from slowbeast.util.debugging import dbgv, ldbgv, warn
+from .executionstate import IncrementalSEState
 from slowbeast.symexe.executionstate import SEState, ThreadedSEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.statesset import StatesSet
@@ -28,6 +26,13 @@ unsupported_funs = [
     "llvm.memcpy.p0i8.p0i8.i64",
 ]
 
+def _types_check(instr: Instruction, *vals):
+    if __debug__:
+        for expected, real in zip(instr.expected_op_types(), vals):
+            if expected == real:
+                warn(f"Expected type '{expected}' is different from real '{real}'")
+                return False
+    return True
 
 class SEStats:
     def __init__(self) -> None:
@@ -224,7 +229,9 @@ class Executor(ConcreteExecutor):
         self.stats.branchings += 1
 
         cond = instr.condition()
+        assert cond.type().is_bool()
         cval = eval_condition(state, cond)
+        assert cval.type().is_bool()
 
         trueBranch, falseBranch = self.fork(state, cval)
         # at least one must be feasable...
@@ -248,6 +255,8 @@ class Executor(ConcreteExecutor):
         self.stats.branchings += 1
 
         cond = state.eval(instr.condition())
+        assert instr.condition().type().is_bv()
+        assert cond.type().is_bv()
         Eq = state.expr_manager().Eq
         fork = self.fork
         states = []
@@ -332,11 +341,13 @@ class Executor(ConcreteExecutor):
         return None
 
     def exec_cmp(self, state, instr: Cmp):
-        assert isinstance(instr, Cmp)
+        assert isinstance(instr, Cmp), instr
+        assert instr.type().is_bool(), instr
         seval = state.eval
         getop = instr.operand
         op1 = seval(getop(0))
         op2 = seval(getop(1))
+        assert _types_check(instr, op1, op2)
 
         op1isptr = op1.is_pointer()
         op2isptr = op2.is_pointer()
@@ -346,14 +357,14 @@ class Executor(ConcreteExecutor):
             else:
                 # we handle only comparison of symbolic constant (pointer) to
                 # null
-                E = state.expr_manager()
+                expr_mgr = state.expr_manager()
                 if op1isptr and op1.is_null():
                     state.set(
                         instr,
                         self.compare_values(
-                            E,
+                            expr_mgr,
                             instr.predicate(),
-                            slowbeast.domains.concrete.ConcreteVal(0, op1.bitwidth()),
+                            expr_mgr.ConcreteVal(0, op1.bitwidth()),
                             op2,
                             instr.is_unsigned(),
                         ),
@@ -362,15 +373,15 @@ class Executor(ConcreteExecutor):
                     state.set(
                         instr,
                         self.compare_values(
-                            E,
+                            expr_mgr,
                             instr.predicate(),
                             op1,
-                            slowbeast.domains.concrete.ConcreteVal(0, op1.bitwidth()),
+                            expr_mgr.ConcreteVal(0, op1.bitwidth()),
                             instr.is_unsigned(),
                         ),
                     )
                 else:
-                    expr = self.compare_ptr_and_nonptr(E, instr.predicate(), op1, op2)
+                    expr = self.compare_ptr_and_nonptr(expr_mgr, instr.predicate(), op1, op2)
                     if expr is None:
                         state.set_killed(
                             f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}"
@@ -480,62 +491,64 @@ class Executor(ConcreteExecutor):
         getop = instr.operand
         op1 = seval(getop(0))
         op2 = seval(getop(1))
+        assert _types_check(instr, op1, op2)
+
         states = []
         # if one of the operands is a pointer,
         # lift the other to pointer too
         r = None
-        E = state.expr_manager()
+        expr_mgr = state.expr_manager()
         op1ptr = op1.is_pointer()
         op2ptr = op2.is_pointer()
         if op1ptr:
             if not op2ptr:
-                r = add_pointer_with_constant(E, op1, op2)
+                r = add_pointer_with_constant(expr_mgr, op1, op2)
             else:
                 state.set_killed(f"Arithmetic on pointers not implemented yet: {instr}")
                 return [state]
         elif op2ptr:
             if not op1ptr:
-                r = add_pointer_with_constant(E, op2, op1)
+                r = add_pointer_with_constant(expr_mgr, op2, op1)
             else:
                 state.set_killed(f"Arithmetic on pointers not implemented yet: {instr}")
                 return [state]
         else:
             opcode = instr.operation()
             if opcode == BinaryOperation.ADD:
-                r = E.Add(op1, op2, instr.is_fp())
+                r = expr_mgr.Add(op1, op2, instr.is_fp())
             elif opcode == BinaryOperation.SUB:
-                r = E.Sub(op1, op2, instr.is_fp())
+                r = expr_mgr.Sub(op1, op2, instr.is_fp())
             elif opcode == BinaryOperation.MUL:
-                r = E.Mul(op1, op2, instr.is_fp())
+                r = expr_mgr.Mul(op1, op2, instr.is_fp())
             elif opcode == BinaryOperation.DIV:
                 if instr.is_fp():
                     # compilers allow division by FP 0
-                    r = E.Div(op1, op2, instr.is_unsigned(), isfloat=True)
+                    r = expr_mgr.Div(op1, op2, instr.is_unsigned(), isfloat=True)
                 else:
-                    good, bad = self.fork(state, E.Ne(op2, ConcreteVal(0, op2.type())))
+                    good, bad = self.fork(state, expr_mgr.Ne(op2, ConcreteVal(0, op2.type())))
                     if good:
                         state = good
                         assert not instr.is_fp()
-                        r = E.Div(op1, op2, instr.is_unsigned())
+                        r = expr_mgr.Div(op1, op2, instr.is_unsigned())
                     if bad:
                         bad.set_killed("Division by 0")
                         states.append(bad)
                         if good is None:
                             return states
             elif opcode == BinaryOperation.SHL:
-                r = E.Shl(op1, op2)
+                r = expr_mgr.Shl(op1, op2)
             elif opcode == BinaryOperation.LSHR:
-                r = E.LShr(op1, op2)
+                r = expr_mgr.LShr(op1, op2)
             elif opcode == BinaryOperation.ASHR:
-                r = E.AShr(op1, op2)
+                r = expr_mgr.AShr(op1, op2)
             elif opcode == BinaryOperation.REM:
-                r = E.Rem(op1, op2, instr.is_unsigned())
+                r = expr_mgr.Rem(op1, op2, instr.is_unsigned())
             elif opcode == BinaryOperation.AND:
-                r = E.And(op1, op2)
+                r = expr_mgr.And(op1, op2)
             elif opcode == BinaryOperation.OR:
-                r = E.Or(op1, op2)
+                r = expr_mgr.Or(op1, op2)
             elif opcode == BinaryOperation.XOR:
-                r = E.Xor(op1, op2)
+                r = expr_mgr.Xor(op1, op2)
             else:
                 state.set_killed(f"Not implemented binary operation: {instr}")
                 return [state]
@@ -549,6 +562,8 @@ class Executor(ConcreteExecutor):
 
     def exec_ite(self, state, instr):
         cond = condition_to_bool(state.eval(instr.condition()), state.expr_manager())
+        assert cond.type().is_bool(), cond
+
         if cond.is_concrete():
             cval = cond.value()
             if cval is True:
@@ -560,6 +575,8 @@ class Executor(ConcreteExecutor):
         else:
             op1 = state.eval(instr.operand(0))
             op2 = state.eval(instr.operand(1))
+            assert _types_check(instr, cond, op1, op2)
+
             expr = state.expr_manager().Ite(cond, op1, op2)
             state.set(instr, expr)
         state.pc = state.pc.get_next_inst()
@@ -568,6 +585,8 @@ class Executor(ConcreteExecutor):
     def exec_unary_op(self, state, instr: UnaryOperation):
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
+        assert _types_check(instr, op1)
+
         opcode = instr.operation()
         expr_mgr = state.expr_manager()
         if opcode == UnaryOperation.EXTEND:
