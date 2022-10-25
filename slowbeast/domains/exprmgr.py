@@ -61,22 +61,22 @@ class ExpressionManager:
     def ConcreteVal(self, c, bw: int) -> ConcreteVal:
         return ConcreteDomain.Value(c, bw)
 
-   #def Var(self, name: str, ty: Type):
-   #    assert isinstance(name, str)
-   #    names = self._names
-   #    s = names.get(name)
-   #    if s:
-   #        assert (
-   #            s.type() == ty
-   #        ), f"Creating the same value with different type: {name} ({s.type()} != {ty})"
-   #    else:
-   #        s = SymbolicDomain.Var(name, ty)
-   #        names[name] = s
-   #    assert s, "No var was created"
-   #    return s
+    # def Var(self, name: str, ty: Type):
+    #    assert isinstance(name, str)
+    #    names = self._names
+    #    s = names.get(name)
+    #    if s:
+    #        assert (
+    #            s.type() == ty
+    #        ), f"Creating the same value with different type: {name} ({s.type()} != {ty})"
+    #    else:
+    #        s = SymbolicDomain.Var(name, ty)
+    #        names[name] = s
+    #    assert s, "No var was created"
+    #    return s
 
-   #def Bool(self, name: str):
-   #    return self.Var(name, BoolType())
+    # def Bool(self, name: str):
+    #    return self.Var(name, BoolType())
 
     # def subexpressions(self, expr):
     #    if expr.is_concrete():
@@ -146,7 +146,7 @@ class ExpressionManager:
         return SymbolicDomain.lift(v)
 
     def get_true(self) -> Expr:
-        """ Get symbol "true" """
+        """Get symbol "true" """
         return SymbolicDomain.get_true()
 
     def get_false(self) -> Expr:

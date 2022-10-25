@@ -105,6 +105,7 @@ class PointerType(Type):
     def is_pointer(self) -> bool:
         return True
 
+
 class BitVecType(Type):
     def __init__(self, bw: int) -> None:
         Type.__init__(self, bw)
@@ -141,5 +142,6 @@ class LabelType(PointerType):
     """
     Pointer pointing somewhere to the code (usually a basic block pointer)
     """
+
     def is_label(self) -> bool:
         return True

@@ -116,7 +116,11 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif fun.startswith("llvm.fabs."):
         operands = get_llvm_operands(inst)
         val = parser.operand(operands[0])
-        A = Abs(val, FloatType(type_size_in_bits(module, inst.type)), [get_sb_type(module, operands[0].type)])
+        A = Abs(
+            val,
+            FloatType(type_size_in_bits(module, inst.type)),
+            [get_sb_type(module, operands[0].type)],
+        )
         return A, [A]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
@@ -124,7 +128,7 @@ def create_special_fun(parser, inst, fun, error_funs):
         P = Extend(
             O,
             concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()),
-            True #unsigned
+            True,  # unsigned
         )
         return P, [O, P]
     elif fun in "nan":
@@ -137,7 +141,7 @@ def create_special_fun(parser, inst, fun, error_funs):
         P = Extend(
             O,
             concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()),
-            True # unsigned
+            True,  # unsigned
         )
         return P, [O, P]
     elif fun in ("__fpclassify", "__fpclassifyf", "__fpclassifyl"):

@@ -417,7 +417,7 @@ class ThreadJoin(ValueTypedInstruction):
 
 class Print(Instruction):
     def __init__(self, *operands) -> None:
-        super().__init__([*operands], [None]*len(operands))
+        super().__init__([*operands], [None] * len(operands))
 
     def __str__(self) -> str:
         r = "print "

@@ -25,6 +25,7 @@ unsupported_funs = [
     "llvm.memcpy.p0i8.p0i8.i64",
 ]
 
+
 def _types_check(instr: Instruction, *vals):
     if __debug__:
         for expected, real in zip(instr.expected_op_types(), vals):
@@ -32,6 +33,7 @@ def _types_check(instr: Instruction, *vals):
                 warn(f"Expected type '{expected}' is different from real '{real}'")
                 return False
     return True
+
 
 class SEStats:
     def __init__(self) -> None:
@@ -380,7 +382,9 @@ class Executor(ConcreteExecutor):
                         ),
                     )
                 else:
-                    expr = self.compare_ptr_and_nonptr(expr_mgr, instr.predicate(), op1, op2)
+                    expr = self.compare_ptr_and_nonptr(
+                        expr_mgr, instr.predicate(), op1, op2
+                    )
                     if expr is None:
                         state.set_killed(
                             f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}"
@@ -524,7 +528,9 @@ class Executor(ConcreteExecutor):
                     # compilers allow division by FP 0
                     r = expr_mgr.Div(op1, op2, instr.is_unsigned(), isfloat=True)
                 else:
-                    good, bad = self.fork(state, expr_mgr.Ne(op2, ConcreteVal(0, op2.type())))
+                    good, bad = self.fork(
+                        state, expr_mgr.Ne(op2, ConcreteVal(0, op2.type()))
+                    )
                     if good:
                         state = good
                         assert not instr.is_fp()
@@ -701,4 +707,3 @@ class Executor(ConcreteExecutor):
             return val
 
         return state.solver().concretize(val, *state.constraints())
-
