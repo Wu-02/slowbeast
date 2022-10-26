@@ -37,19 +37,21 @@ def to_bv(x, unsigned: bool = True):
 
 
 def wrap_to_bw(x, bw: int):
-    return x % (1<< bw)
+    return x % (1 << bw)
 
 
 class ConcreteBytes(ConcreteVal):
     """
     A sequence of concrete bytes. We represent them as Python int, so they are basically the same as ConcreteBitVec right now.
     """
+
     def __init__(self, n: int, byteswidth: Union[int, BytesType]) -> None:
         assert isinstance(n, int), n
         if not isinstance(byteswidth, BytesType):
             assert isinstance(byteswidth, int), byteswidth
             byteswidth = BytesType(byteswidth)
         super().__init__(n, byteswidth)
+
 
 def _check_args(a, b):
     assert isinstance(a, ConcreteBytes), a
@@ -76,9 +78,7 @@ class ConcreteBytesDomain(Domain):
 
     ## Relational operations
     @staticmethod
-    def Le(
-        a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False
-    ) -> ConcreteBool:
+    def Le(a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False) -> ConcreteBool:
         _check_args(a, b)
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
@@ -87,9 +87,7 @@ class ConcreteBytesDomain(Domain):
         return ConcreteBool(aval <= bval)
 
     @staticmethod
-    def Lt(
-        a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False
-    ) -> ConcreteBool:
+    def Lt(a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False) -> ConcreteBool:
         _check_args(a, b)
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
@@ -98,9 +96,7 @@ class ConcreteBytesDomain(Domain):
         return ConcreteBool(aval < bval)
 
     @staticmethod
-    def Ge(
-        a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False
-    ) -> ConcreteBool:
+    def Ge(a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False) -> ConcreteBool:
         _check_args(a, b)
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
@@ -109,9 +105,7 @@ class ConcreteBytesDomain(Domain):
         return ConcreteBool(aval >= bval)
 
     @staticmethod
-    def Gt(
-        a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False
-    ) -> ConcreteBool:
+    def Gt(a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False) -> ConcreteBool:
         _check_args(a, b)
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         if unsigned:
@@ -161,9 +155,7 @@ class ConcreteBytesDomain(Domain):
         return ConcreteBytes(wrap_to_bw(aval - bval, bw), bw)
 
     @staticmethod
-    def Mul(
-        a: ConcreteBytes, b: ConcreteBytes, isfloat: bool = False
-    ) -> ConcreteBytes:
+    def Mul(a: ConcreteBytes, b: ConcreteBytes, isfloat: bool = False) -> ConcreteBytes:
         assert isinstance(a, ConcreteBytes), a
         assert isinstance(b, ConcreteBytes), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -245,7 +237,7 @@ class ConcreteBytesDomain(Domain):
             a = args[l - i]
             val |= a.value() << bw
             bw += a.bitwidth()
-        return ConcreteBytes(val, int(bw/8))
+        return ConcreteBytes(val, int(bw / 8))
 
     @staticmethod
     def Rem(a: Value, b: Value, unsigned: bool = False) -> Value:

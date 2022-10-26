@@ -20,6 +20,7 @@ def get_byte(EM, x, bw, i: int):
     assert b.bitwidth() == 8
     return b
 
+
 def to_byte(x):
     assert x.bitwidth() == 8
     if isinstance(x, ConcreteBytes):
@@ -27,6 +28,7 @@ def to_byte(x):
     if isinstance(x, ConcreteBitVec):
         return ConcreteBytes(x.value(), 1)
     return x
+
 
 def write_bytes(offval, values, size, x: Union[Expr, Value]) -> Optional[MemError]:
     EM = global_expr_mgr()

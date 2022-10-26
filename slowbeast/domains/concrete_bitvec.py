@@ -38,7 +38,7 @@ def to_bv(x, unsigned: bool = True):
 
 
 def wrap_to_bw(x, bw: int):
-    return x % (1<<bw)
+    return x % (1 << bw)
 
 
 class ConcreteBitVec(ConcreteVal):

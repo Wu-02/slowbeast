@@ -90,10 +90,12 @@ def get_bv_bytes_domain_checked(a: Value, b: Value):
         return ConcreteBytesDomain
     raise NotImplementedError(f"Unknown domain for value: {a}")
 
+
 def lower_bytes(x):
     if isinstance(x, ConcreteBytes) and x.bitwidth() <= 64:
         return ConcreteBitVec(x.value(), x.bitwidth())
     return x
+
 
 class ConcreteDomain(Domain):
     """

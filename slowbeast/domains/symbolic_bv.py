@@ -112,7 +112,9 @@ class BVSymbolicDomain(Domain):
         )
         c = python_constant(e)
         if c is not None:
-            return ConcreteDomain.get_value(c, python_to_sb_type(c, expr.type().bitwidth()))
+            return ConcreteDomain.get_value(
+                c, python_to_sb_type(c, expr.type().bitwidth())
+            )
         return Expr(e, expr.type())
 
     # @staticmethod
