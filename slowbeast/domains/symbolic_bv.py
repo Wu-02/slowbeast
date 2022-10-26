@@ -155,8 +155,8 @@ class BVSymbolicDomain(Domain):
         than two formulas at once (just simplifies the formulas for
         reading and simplifications), it is not needed, really.
         """
-        assert BVSymbolicDomain.belongto(*args)
-        assert all(map(lambda x: x.is_bool(), args))
+        assert all((isinstance(a, Expr) for a in args))
+        assert all((a.is_bool() for a in args))
         return Expr(And(*map(lambda x: _bv_to_bool(x.unwrap()), args)), BoolType())
 
     @staticmethod
@@ -166,7 +166,8 @@ class BVSymbolicDomain(Domain):
         than two formulas at once (just simplifies the formulas for
         reading and simplifications), it is not needed, really.
         """
-        assert BVSymbolicDomain.belongto(*args)
+        assert all((isinstance(a, Expr) for a in args))
+        assert all((a.is_bool() for a in args))
         assert all(map(lambda x: x.is_bool(), args))
         return Expr(Or(*map(lambda x: _bv_to_bool(x.unwrap()), args)), BoolType())
 
@@ -203,7 +204,6 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def Xor(a: Expr, b: Expr) -> Expr:
-        assert BVSymbolicDomain.belongto(a, b)
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
