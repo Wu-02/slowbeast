@@ -3,6 +3,7 @@ from typing import Type, Union
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import BitVecType
+from .value import Value
 from .domain import Domain
 
 
@@ -64,7 +65,7 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBitVec
 
     @staticmethod
-    def Value(c: int, bw: Union[int, BitVecType]) -> ConcreteBitVec:
+    def get_value(c: int, bw: Union[int, BitVecType]) -> ConcreteBitVec:
         return ConcreteBitVec(c, bw)
 
     ## Relational operations

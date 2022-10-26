@@ -128,7 +128,7 @@ class BVSymbolicDomain(Domain):
     ##
     # variables
     @staticmethod
-    def Value(name: str, ty: Type) -> Expr:
+    def get_value(name: str, ty: Type) -> Expr:
         if ty.is_float():
             FIXME("Do not handle floats in symbolic_bv")
             return Expr(FP(name, get_fp_sort(ty.bitwidth())), ty)

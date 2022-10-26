@@ -3,6 +3,8 @@ from numpy import float16, float32, float64, isnan, isinf
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import FloatType
 from .domain import Domain
+from .value import Value
+
 
 # def float_to_bv(x):
 #     if bw == 32:
@@ -19,6 +21,7 @@ from .domain import Domain
 #             else unpack("q", pack("d", x.value()))
 #         )[0]
 #     return d
+
 
 class ConcreteFloat(ConcreteVal):
     def __init__(self, n, bw: int) -> None:
@@ -46,7 +49,7 @@ class ConcreteFloatsDomain(Domain):
     """Takes care of handling concrete float computations."""
 
     @staticmethod
-    def Value(c, bw: int) -> ConcreteFloat:
+    def get_value(c, bw: int) -> ConcreteFloat:
         return ConcreteFloat(c, bw)
 
     ## Relational operations

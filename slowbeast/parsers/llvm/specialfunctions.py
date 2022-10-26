@@ -13,7 +13,7 @@ from .utils import get_llvm_operands, type_size_in_bits, to_float_ty, get_sb_typ
 from slowbeast.util.debugging import print_stderr
 from ...domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
 
-concrete_value = ConcreteDomain.Value
+concrete_value = ConcreteDomain.get_value
 
 # FIXME: turn to a dict with separate handlers
 special_functions = [

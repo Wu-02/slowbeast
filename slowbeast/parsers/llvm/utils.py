@@ -11,7 +11,7 @@ from llvmlite.binding.module import ModuleRef
 from llvmlite.binding.value import TypeRef, ValueRef
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
-concrete_value = ConcreteDomain.Value
+concrete_value = ConcreteDomain.get_value
 
 
 def _getInt(s: str) -> Optional[int]:

@@ -15,7 +15,7 @@ from slowbeast.util.debugging import print_stderr
 from .specialfunctions import special_functions, create_special_fun
 from .utils import *
 
-concrete_value = ConcreteDomain.Value
+concrete_value = ConcreteDomain.get_value
 
 
 def _get_llvm_module(path: str) -> ModuleRef:

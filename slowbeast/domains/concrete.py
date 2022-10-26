@@ -16,6 +16,7 @@ from .concrete_bitvec import (
     ConcreteBitVecDomain,
 )
 from .domain import Domain
+from .value import Value
 
 
 def trunc_to_float(x, bw):
@@ -45,7 +46,7 @@ class ConcreteDomain(Domain):
     """
 
     @staticmethod
-    def Value(c: int, bw: int) -> ConcreteVal:
+    def get_value(c: int, bw: int) -> ConcreteVal:
         if isinstance(c, bool):
             assert bw == 1, bw
             return ConcreteBool(c)

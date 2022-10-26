@@ -1,8 +1,8 @@
-from slowbeast.ir.types import Type
-from .value import Value
-from .concrete_value import ConcreteBool
-
 from typing import Optional
+
+from slowbeast.ir.types import Type
+from .concrete_value import ConcreteBool
+from .value import Value
 
 
 def not_implemented():
@@ -40,7 +40,7 @@ class Domain:
         return not_implemented()
 
     @staticmethod
-    def Value(c, bw: int) -> Value:
+    def get_value(c, bw: int) -> Value:
         return not_implemented()
 
     ##

@@ -1,10 +1,11 @@
 from slowbeast.domains.concrete_value import ConcreteBool
 from .domain import Domain
+from .value import Value
 
 
 class ConcreteBoolDomain(Domain):
     @staticmethod
-    def Value(c: bool) -> ConcreteBool:
+    def get_value(c: bool) -> ConcreteBool:
         assert isinstance(c, bool), c
         return ConcreteBool(c)
 

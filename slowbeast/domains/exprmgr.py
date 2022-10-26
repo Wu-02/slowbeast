@@ -31,7 +31,7 @@ class SymbolicExprOpt(ExprOptIntf):
         # if possible
         const = SymbolicDomain.to_python_constant(optexpr)
         if const is not None:
-            ConcreteDomain.Value(const, optexpr.type().bitwidth())
+            ConcreteDomain.get_value(const, optexpr.type().bitwidth())
         return optexpr
 
 
@@ -56,7 +56,7 @@ class ExpressionManager:
         self._names = {}
 
     def ConcreteVal(self, c: int, bw: int) -> ConcreteVal:
-        return ConcreteDomain.Value(c, bw)
+        return ConcreteDomain.get_value(c, bw)
 
     # def Var(self, name: str, ty: Type):
     #    assert isinstance(name, str)
@@ -102,7 +102,7 @@ class ExpressionManager:
             name = f"{origname}#{cnt}"
             s = names.get(name)
 
-        s = SymbolicDomain.Value(name, ty)
+        s = SymbolicDomain.get_value(name, ty)
         names[name] = s
         return s
 
