@@ -305,13 +305,13 @@ class BVSymbolicDomain(Domain):
         return None  # unsupported conversion
 
     @staticmethod
-    def Extract(a: Expr, start, end) -> Expr:
+    def Extract(a: Expr, start: int, end: int) -> Expr:
         assert isinstance(a, Expr), a
-        assert start.is_concrete(), start
-        assert end.is_concrete(), end
+        assert isinstance(start, int)
+        assert isinstance(end, int)
         return Expr(
-            BVExtract(end.value(), start.value(), a.unwrap()),
-            BitVecType(end.value() - start.value() + 1),
+            BVExtract(end, start, a.unwrap()),
+            BitVecType(end - start + 1),
         )
 
     @staticmethod

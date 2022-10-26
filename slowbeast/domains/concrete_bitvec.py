@@ -239,13 +239,13 @@ class ConcreteBitVecDomain(Domain):
         )
 
     @staticmethod
-    def Extract(a: Value, start: ConcreteVal, end: ConcreteVal) -> Value:
+    def Extract(a: Value, start: int, end: int) -> Value:
         assert isinstance(a, ConcreteBitVec)
-        assert start.is_concrete(), start
-        assert end.is_concrete(), end
-        bitsnum = end.value() - start.value() + 1
+        assert isinstance(start, int)
+        assert isinstance(end, int)
+        bitsnum = end - start + 1
         return ConcreteBitVec(
-            (to_bv(a) >> start.value()) & ((1 << (bitsnum)) - 1), bitsnum
+            (to_bv(a) >> start) & ((1 << (bitsnum)) - 1), bitsnum
         )
 
     @staticmethod

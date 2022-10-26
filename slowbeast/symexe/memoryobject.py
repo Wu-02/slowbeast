@@ -15,8 +15,8 @@ def get_byte(EM, x, bw, i: int):
     off = 8 * i
     b = EM.Extract(
         x,
-        ConcreteVal(off, get_offset_type()),
-        ConcreteVal(off + 7, get_offset_type()),
+        off,
+        off + 7
     )
     assert b.bitwidth() == 8
     return b

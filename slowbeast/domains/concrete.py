@@ -194,8 +194,10 @@ class ConcreteDomain(Domain):
         return ConcreteBitVecDomain.LShr(a, b)
 
     @staticmethod
-    def Extract(a: Value, start: ConcreteVal, end: ConcreteVal) -> Value:
+    def Extract(a: Value, start: int, end: int) -> Value:
         assert isinstance(a, ConcreteBitVec), a
+        assert isinstance(start, int), start
+        assert isinstance(end, int), end
         return ConcreteBitVecDomain.Extract(a, start, end)
 
     @staticmethod

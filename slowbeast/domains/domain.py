@@ -110,7 +110,7 @@ class Domain:
         return not_implemented()
 
     @staticmethod
-    def Extract(a, start, end) -> Value:
+    def Extract(a: Value, start: int, end: int) -> Value:
         return not_implemented()
 
     @staticmethod

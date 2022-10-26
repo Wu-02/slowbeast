@@ -261,10 +261,9 @@ class ExpressionManager:
             return ConcreteDomain.BitCast(a, ty)
         return SymbolicDomain.BitCast(a, ty)
 
-    def Extract(self, a: ConcreteVal, start: ConcreteVal, end: ConcreteVal):
-        FIXME("Pass ints as the range to Extract")
-        assert isinstance(start, ConcreteVal), start
-        assert isinstance(end, ConcreteVal), end
+    def Extract(self, a: Value, start: int, end: int):
+        assert isinstance(start, int), start
+        assert isinstance(end, int), end
         if isinstance(a, ConcreteVal):
             return ConcreteDomain.Extract(a, start, end)
         return opt(SymbolicDomain.Extract(a, start, end))

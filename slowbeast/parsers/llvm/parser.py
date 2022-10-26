@@ -739,8 +739,7 @@ class Parser:
         bits = type_size_in_bits(self.llvmmodule, inst.type)
         ext = ExtractBits(
             self.operand(operands[0]),
-            concrete_value(0, 32),
-            concrete_value(bits - 1, 32),
+            0, bits - 1,
             [get_sb_type(self.llvmmodule, op.type) for op in operands],
         )
         self._addMapping(inst, ext)
