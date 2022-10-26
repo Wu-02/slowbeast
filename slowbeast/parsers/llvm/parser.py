@@ -568,9 +568,12 @@ class Parser:
             # function pointer call
             ty = get_sb_type(self.llvmmodule, inst.type)
             args = operands[:-1]
-            C = Call(op, ty,
-                     [self.operand(x) for x in args],
-                     [get_sb_type(self.llvmmodule, op.type) for op in args])
+            C = Call(
+                op,
+                ty,
+                [self.operand(x) for x in args],
+                [get_sb_type(self.llvmmodule, op.type) for op in args],
+            )
             self._addMapping(inst, C)
             return [C]
 
@@ -612,10 +615,12 @@ class Parser:
 
         ty = get_sb_type(self.llvmmodule, inst.type)
         args = operands[:-1]
-        C = Call(F, ty,
-                 [self.operand(x) for x in args],
-                 [get_sb_type(self.llvmmodule, op.type) for op in args]
-                 )
+        C = Call(
+            F,
+            ty,
+            [self.operand(x) for x in args],
+            [get_sb_type(self.llvmmodule, op.type) for op in args],
+        )
         self._addMapping(inst, C)
         return [C]
 

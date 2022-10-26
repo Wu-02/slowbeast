@@ -357,7 +357,10 @@ class Call(ValueTypedInstruction):
             r = f"call {self.called_function().as_value()}("
         else:
             r = f"x{self.get_id()}: {self.type()} = call {self.called_function().as_value()}("
-        r += ", ".join(f"({ty}){x.as_value()}" for x, ty in zip(self.operands(), self.expected_op_types()))
+        r += ", ".join(
+            f"({ty}){x.as_value()}"
+            for x, ty in zip(self.operands(), self.expected_op_types())
+        )
         return r + ")"
 
 

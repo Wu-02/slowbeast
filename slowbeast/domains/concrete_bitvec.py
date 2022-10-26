@@ -313,6 +313,3 @@ class ConcreteBitVecDomain(Domain):
         assert isinstance(a, ConcreteBitVec) and isinstance(b, ConcreteBitVec)
         assert a.type() == b.type(), f"{a}, {b}"
         return ConcreteBitVec(a.value() ^ b.value(), a.bitwidth())
-
-
-
