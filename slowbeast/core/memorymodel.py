@@ -24,7 +24,9 @@ class MemoryModel:
         """
         return Memory()
 
-    def allocate(self, state: SEState, instr: Union[Alloc, GlobalVariable]) -> List[SEState]:
+    def allocate(
+        self, state: SEState, instr: Union[Alloc, GlobalVariable]
+    ) -> List[SEState]:
         """
         Perform the allocation by the instruction
         "inst" and return the new states (there may be
@@ -40,7 +42,13 @@ class MemoryModel:
         state.set(instr, ptr)
         return [state]
 
-    def write(self, state: SEState, instr: Store, value_op: Any, to_op: Union[BinaryOperation, Alloc, Load, GlobalVariable]) -> List[SEState]:
+    def write(
+        self,
+        state: SEState,
+        instr: Store,
+        value_op: Any,
+        to_op: Union[BinaryOperation, Alloc, Load, GlobalVariable],
+    ) -> List[SEState]:
         value = state.eval(value_op)
         to = state.get(to_op)
         if to is None:
@@ -61,7 +69,14 @@ class MemoryModel:
                 state.set_error(err)
         return [state]
 
-    def read(self, state: SEState, to_op: Load, from_op: Union[BinaryOperation, Alloc, Load, GlobalVariable], bytes_num: int, bitsnum: Optional[int]=None) -> List[SEState]:
+    def read(
+        self,
+        state: SEState,
+        to_op: Load,
+        from_op: Union[BinaryOperation, Alloc, Load, GlobalVariable],
+        bytes_num: int,
+        bitsnum: Optional[int] = None,
+    ) -> List[SEState]:
         frm = state.get(from_op)
         if frm is None:
             state.set_killed(f"Use of unknown variable: {from_op}")

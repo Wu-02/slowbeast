@@ -145,7 +145,12 @@ class Executor:
     and generates new states.
     """
 
-    def __init__(self, program: Program, opts: SEOptions, memorymodel: Optional[SymbolicMemoryModel]=None) -> None:
+    def __init__(
+        self,
+        program: Program,
+        opts: SEOptions,
+        memorymodel: Optional[SymbolicMemoryModel] = None,
+    ) -> None:
         self.memorymodel = memorymodel or MemoryModel(opts)
 
         self._program = program
@@ -548,7 +553,9 @@ class Executor:
 
         return readystates, nonreadystates
 
-    def execute_till_branch(self, state: SEState, stopBefore: bool = False) -> List[SEState]:
+    def execute_till_branch(
+        self, state: SEState, stopBefore: bool = False
+    ) -> List[SEState]:
         """
         Start executing from 'state' and stop execution after executing a
         branch instruction.  This will typically execute exactly one basic block

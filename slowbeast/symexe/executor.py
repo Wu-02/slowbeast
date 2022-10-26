@@ -56,7 +56,9 @@ class SEStats:
         self.forks = 0
 
 
-def add_pointer_with_constant(E: ExpressionManager, op1: Pointer, op2: Union[ConcreteBitVec, Expr]) -> Pointer:
+def add_pointer_with_constant(
+    E: ExpressionManager, op1: Pointer, op2: Union[ConcreteBitVec, Expr]
+) -> Pointer:
     return Pointer(op1.object(), E.Add(op1.offset(), op2))
 
 
