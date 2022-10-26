@@ -3,6 +3,7 @@ from typing import Union, Optional  # , Union
 
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.programstructure import ProgramStructure
+from slowbeast.bse.bsestate import BSEState
 from slowbeast.bse.memorymodel import BSEMemoryModel
 from slowbeast.cfkind import KindSEOptions
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
@@ -15,9 +16,6 @@ from slowbeast.symexe.symbolicexecution import (
 )
 from slowbeast.util.debugging import print_stdout, print_stderr, dbg
 from .bseexecutor import Executor as BSEExecutor
-from .bsestate import BSEState
-from slowbeast.bse.bsestate import BSEState
-from slowbeast.bse.bseexecutor import Executor
 
 
 def report_state(stats, n, msg=None, fn=print_stderr) -> None:

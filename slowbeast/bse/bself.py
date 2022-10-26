@@ -1,13 +1,16 @@
+from io import TextIOWrapper
+from typing import List, Optional, Sized
+
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.programstructure import ProgramStructure
-from slowbeast.cfkind import KindSEOptions
+from slowbeast.bse.bse import BSEContext
+from slowbeast.bse.inductivesequence import InductiveSequence
+from slowbeast.bse.loopinfo import LoopInfo
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.cfkind.overapproximations import overapprox_set
 from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
 from slowbeast.core.errors import AssertFailError
-from ..domains.symbolic_helpers import to_c_expression
-from ..solvers.symcrete import global_expr_mgr
 from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.symexe.symbolicexecution import SEStats
@@ -22,37 +25,13 @@ from slowbeast.util.debugging import (
 )
 from .bse import (
     BackwardSymbolicInterpreter as BaseBSE,
-    BSEContext,
     report_state,
     check_paths,
 )
-from .inductivesequence import InductiveSequence
 from .inductiveset import InductiveSet
-from .loopinfo import LoopInfo
-from io import TextIOWrapper
-from slowbeast.bse.bse import BSEContext
-from slowbeast.bse.inductivesequence import InductiveSequence
-from slowbeast.bse.loopinfo import LoopInfo
-from typing import List, Optional, Sized
-
-
-class BSELFOptions(KindSEOptions):
-    def __init__(self, copyopts=None) -> None:
-        super().__init__(copyopts)
-        if copyopts:
-            self.fold_loops = copyopts.fold_loops
-            self.target_is_whole_seq = copyopts.target_is_whole_seq
-            self.union_abstractions = copyopts.union_abstractions
-            self.union_extensions = copyopts.union_extensions
-            self.union_matched = copyopts.union_matched
-            self.add_unwind_invariants = copyopts.add_unwind_invariants
-        else:
-            self.fold_loops = True
-            self.target_is_whole_seq = True
-            self.union_abstractions = False
-            self.union_extensions_threshold = None
-            self.union_matched = True
-            self.add_unwind_invariants = False
+from .options import BSELFOptions
+from ..domains.symbolic_helpers import to_c_expression
+from ..solvers.symcrete import global_expr_mgr
 
 
 def _dump_inductive_sets(checker, loc, fn=dbg) -> None:

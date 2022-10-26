@@ -1,5 +1,6 @@
 from slowbeast.bse.bse import report_state
-from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker as BSELFCheckerVanilla
+from slowbeast.bse.bself import BSELF, BSELFChecker as BSELFCheckerVanilla
+from slowbeast.bse.options import BSELFOptions
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.symexe.annotations import Annotation, execute_annotation
 from slowbeast.symexe.executionstate import SEState, SEState as ExecutionState
@@ -15,7 +16,7 @@ from slowbeast.util.debugging import (
 from slowbeast.bse.loopinfo import LoopInfo
 from typing import Optional, Sized, List, Type
 from slowbeast.analysis.programstructure import ProgramStructure
-from slowbeast.core.executionstate import ExecutionState
+from slowbeast.symexe.executionstate import SEState as ExecutionState
 from slowbeast.symexe.memory import Memory
 
 
