@@ -17,6 +17,12 @@ class Domain:
 
     KIND = None
 
+    def get_value_cls(self):
+        """
+        Get the class of values managed by this domain
+        """
+        return not_implemented()
+
     @staticmethod
     def lift(v: Value):
         return not_implemented()
@@ -86,11 +92,11 @@ class Domain:
         return not_implemented()
 
     @staticmethod
-    def ZExt(a: Value, b: Value) -> Value:
-        return not_implemented()
-
-    @staticmethod
-    def SExt(a, b) -> Value:
+    def Extend(self, a: Value, b: int, unsigned: bool):
+        """
+        Extend the representation of the value to 'bw' bits.
+        Usually applies only to bitvectors (signed/unsigned extension)
+        """
         return not_implemented()
 
     @staticmethod
@@ -154,12 +160,7 @@ class Domain:
     # Arithmetic operations
     @staticmethod
     def Add(a: Value, b: Value) -> Value:
-        assert isinstance(a, cls), a
-        assert isinstance(b, cls), b
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        bw = a.bitwidth()
-        assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
-        return ConcreteFloat(a.unwrap() + b.unwrap(), bw)
+        return not_implemented()
 
     @staticmethod
     def Sub(a, b) -> Value:

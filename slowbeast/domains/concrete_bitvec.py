@@ -70,6 +70,12 @@ class ConcreteBitVecDomain(Domain):
     and computing the operations modulo.
     """
 
+    def get_value_cls(self):
+        """
+        Get the class of values managed by this domain
+        """
+        return ConcreteBitVec
+
     @staticmethod
     def Value(c, bw: int) -> ConcreteBitVec:
         return ConcreteBitVec(c, bw)
@@ -292,3 +298,21 @@ class ConcreteBitVecDomain(Domain):
         assert not is_float
         assert isinstance(a, ConcreteBitVec), a
         return ConcreteBitVec(abs(a.value()), a.bitwidth())
+
+    def And(a: Value, b: Value) -> ConcreteBitVec:
+        assert isinstance(a, ConcreteBitVec) and isinstance(b, ConcreteBitVec)
+        assert a.type() == b.type(), f"{a}, {b}"
+        return ConcreteBitVec(a.value() & b.value(), a.bitwidth())
+
+    def Or(a: Value, b: Value) -> ConcreteBitVec:
+        assert isinstance(a, ConcreteBitVec) and isinstance(b, ConcreteBitVec)
+        assert a.type() == b.type(), f"{a}, {b}"
+        return ConcreteBitVec(a.value() | b.value(), a.bitwidth())
+
+    def Xor(a: Value, b: Value) -> ConcreteBitVec:
+        assert isinstance(a, ConcreteBitVec) and isinstance(b, ConcreteBitVec)
+        assert a.type() == b.type(), f"{a}, {b}"
+        return ConcreteBitVec(a.value() ^ b.value(), a.bitwidth())
+
+
+
