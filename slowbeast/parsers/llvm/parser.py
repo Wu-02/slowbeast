@@ -686,7 +686,12 @@ class Parser:
         else:
             raise NotImplementedError(f"Unimplemented cast: {inst}")
         # just behave that there's no ZExt for now
-        cast = Cast(self.operand(operands[0]), ty, sgn)
+        cast = Cast(
+            self.operand(operands[0]),
+            ty,
+            sgn,
+            [get_sb_type(self.llvmmodule, operands[0].type)],
+        )
         self._addMapping(inst, cast)
         return [cast]
 
