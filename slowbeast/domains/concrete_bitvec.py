@@ -244,9 +244,7 @@ class ConcreteBitVecDomain(Domain):
         assert isinstance(start, int)
         assert isinstance(end, int)
         bitsnum = end - start + 1
-        return ConcreteBitVec(
-            (to_bv(a) >> start) & ((1 << (bitsnum)) - 1), bitsnum
-        )
+        return ConcreteBitVec((to_bv(a) >> start) & ((1 << (bitsnum)) - 1), bitsnum)
 
     @staticmethod
     def Concat(*args) -> Value:

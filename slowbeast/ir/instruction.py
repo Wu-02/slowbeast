@@ -633,7 +633,7 @@ class Neg(UnaryOperation):
 
 
 class ExtractBits(UnaryOperation):
-    def __init__(self, val, start: int, end:int, optypes) -> None:
+    def __init__(self, val, start: int, end: int, optypes) -> None:
         assert isinstance(start, int), f"Invalid bitwidth to extend: {start}"
         assert isinstance(end, int), f"Invalid bitwidth to extend: {end}"
         super().__init__(

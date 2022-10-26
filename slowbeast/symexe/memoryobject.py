@@ -13,11 +13,7 @@ from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
 def get_byte(EM, x, bw, i: int):
     off = 8 * i
-    b = EM.Extract(
-        x,
-        off,
-        off + 7
-    )
+    b = EM.Extract(x, off, off + 7)
     assert b.bitwidth() == 8
     return b
 
