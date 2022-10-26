@@ -7,6 +7,7 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.util.debugging import FIXME
+from slowbeast.domains.expr import Expr
 
 
 optimize_exprs = True
@@ -82,7 +83,7 @@ class ExpressionManager:
     #    else:
     #        yield from SymbolicDomain.subexpressions(expr)
 
-    def simplify(self, expr):
+    def simplify(self, expr) -> Union[ConcreteVal, Expr]:
         if expr.is_concrete():
             return expr
         return SymbolicExprOpt.optimize(expr)
@@ -262,7 +263,7 @@ class ExpressionManager:
             return ConcreteDomain.BitCast(a, ty)
         return SymbolicDomain.BitCast(a, ty)
 
-    def Extract(self, a, start, end):
+    def Extract(self, a: ConcreteVal, start: ConcreteVal, end: ConcreteVal):
         FIXME("Pass ints as the range to Extract")
         assert isinstance(start, ConcreteVal), start
         assert isinstance(end, ConcreteVal), end

@@ -5,7 +5,7 @@ from .programelement import ProgramElement
 from .types import LabelType, BitVecType, BoolType, get_offset_type
 from slowbeast.ir.bblock import BBlock
 from slowbeast.ir.types import PointerType, Type
-from typing import TextIO
+from typing import Sized, Union, TextIO
 
 
 class GlobalVariable(ProgramElement):
@@ -190,7 +190,7 @@ class ValueTypedInstruction(ValueInstruction):
 class Store(Instruction):
     """Store 'val' to 'to'"""
 
-    def __init__(self, val, to, optypes) -> None:
+    def __init__(self, val, to, optypes: Sized) -> None:
         assert val, val
         assert to, to
         assert len(optypes) == 2, optypes
@@ -221,7 +221,9 @@ class Store(Instruction):
 class Load(ValueTypedInstruction):
     """Load value of type 'ty' from 'frm'"""
 
-    def __init__(self, frm, ty: Type, optypes) -> None:
+    def __init__(
+        self, frm: Union[GlobalVariable, Instruction], ty: Type, optypes: Sized
+    ) -> None:
         assert isinstance(ty, Type), ty
         assert isinstance(frm, (Instruction, GlobalVariable)), frm
         assert len(optypes) == 1, optypes
@@ -572,7 +574,7 @@ class Abs(UnaryOperation):
 
 
 class Extend(UnaryOperation):
-    def __init__(self, a, bw, signed, optypes) -> None:
+    def __init__(self, a, bw: int, signed: bool, optypes) -> None:
         assert isinstance(bw, int), f"Invalid bitwidth to extend: {bw}"
         assert isinstance(signed, bool), f"Invalid signed flag: {bw}"
         super().__init__(UnaryOperation.EXTEND, a, BitVecType(bw), optypes)
@@ -723,7 +725,7 @@ class BinaryOperation(ValueTypedInstruction):
         super().__init__(PointerType() if isptr else a.type(), [a, b], optypes)
         self._op = op
 
-    def op_str(op):
+    def op_str(op) -> str:
         # arith
         if op == BinaryOperation.ADD:
             return "+"

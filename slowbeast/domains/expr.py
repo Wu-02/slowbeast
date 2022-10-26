@@ -285,7 +285,7 @@ class NondetInstrResult(Expr):
 class NondetLoad(NondetInstrResult):
     __slots__ = "alloc"
 
-    def __init__(self, e, t, load, alloc) -> None:
+    def __init__(self, e, t: Type, load, alloc) -> None:
         super().__init__(e, t, load)
         self.alloc = alloc
 

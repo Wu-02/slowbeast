@@ -5,8 +5,9 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type, BitVecType, Bytes
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
-from typing import List, Tuple, Optional, Sized
+from typing import Union, List, Tuple, Optional, Sized
 from typing_extensions import SupportsIndex
+from slowbeast.domains.expr import Expr
 
 
 def get_byte(EM, x, bw, i: int):
@@ -20,7 +21,7 @@ def get_byte(EM, x, bw, i: int):
     return b
 
 
-def write_bytes(offval, values, size, x) -> Optional[MemError]:
+def write_bytes(offval, values, size, x: Union[Expr, Value]) -> Optional[MemError]:
     EM = global_expr_mgr()
     bw = x.bytewidth()
     if not x.is_bv():
@@ -169,7 +170,7 @@ class MemoryObject(CoreMO):
         # FIXME: make me return Bytes objects (a sequence of bytes)
         return val, None
 
-    def write(self, x: Value, off: Optional[ConcreteVal] = None):
+    def write(self, x: Value, off: Optional[ConcreteVal] = None) -> Optional[MemError]:
         """
         Write 'x' to 'off' offset in this object.
         Return None if everything is fine, otherwise return the error

@@ -4,6 +4,8 @@ from slowbeast.util.debugging import ldbgv
 from .bsestate import BSEState
 from .memorymodel import BSEMemoryModel
 from slowbeast.bse.bsestate import BSEState
+from slowbeast.symexe.memorymodel import SymbolicMemoryModel
+from typing import Optional
 
 
 class Executor(PathExecutor):
@@ -12,7 +14,9 @@ class Executor(PathExecutor):
     CFA paths possibly annotated with formulas.
     """
 
-    def __init__(self, program, solver, opts, memorymodel=None) -> None:
+    def __init__(
+        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+    ) -> None:
         super().__init__(program, solver, opts, memorymodel or BSEMemoryModel(opts))
 
     def create_state(self, pc=None, m=None) -> BSEState:

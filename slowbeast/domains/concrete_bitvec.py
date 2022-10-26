@@ -4,6 +4,7 @@ from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import BitVecType
 from .domain import Domain
 from .value import Value
+from typing import Type
 
 
 def to_unsigned(x, bw: int):
@@ -56,7 +57,7 @@ def wrap_to_bw(x, bw: int):
 
 
 class ConcreteBitVec(ConcreteVal):
-    def __init__(self, n: int, bw) -> None:
+    def __init__(self, n: int, bw: BitVecType) -> None:
         assert isinstance(n, int), n
         if not isinstance(bw, BitVecType):
             assert isinstance(bw, int), bw
@@ -70,7 +71,7 @@ class ConcreteBitVecDomain(Domain):
     and computing the operations modulo.
     """
 
-    def get_value_cls(self):
+    def get_value_cls(self) -> Type[ConcreteBitVec]:
         """
         Get the class of values managed by this domain
         """
@@ -82,7 +83,9 @@ class ConcreteBitVecDomain(Domain):
 
     ## Relational operations
     @staticmethod
-    def Le(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Le(
+        a: ConcreteBitVec, b: ConcreteBitVec, unsigned: bool = False
+    ) -> ConcreteBool:
         assert isinstance(a, ConcreteBitVec), a
         assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -94,7 +97,9 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBool(aval <= bval)
 
     @staticmethod
-    def Lt(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Lt(
+        a: ConcreteBitVec, b: ConcreteBitVec, unsigned: bool = False
+    ) -> ConcreteBool:
         assert isinstance(a, ConcreteBitVec), a
         assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -106,7 +111,9 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBool(aval < bval)
 
     @staticmethod
-    def Ge(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Ge(
+        a: ConcreteBitVec, b: ConcreteBitVec, unsigned: bool = False
+    ) -> ConcreteBool:
         assert isinstance(a, ConcreteBitVec), a
         assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -118,7 +125,9 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBool(aval >= bval)
 
     @staticmethod
-    def Gt(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Gt(
+        a: ConcreteBitVec, b: ConcreteBitVec, unsigned: bool = False
+    ) -> ConcreteBool:
         assert isinstance(a, ConcreteBitVec), a
         assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"

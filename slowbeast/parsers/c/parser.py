@@ -9,6 +9,7 @@ from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
 from slowbeast.ir.program import Program
 from slowbeast.ir.types import *
+from typing import Optional
 
 
 class Parser:
@@ -20,7 +21,7 @@ class Parser:
         self._metadata_opts = ["c"]
         self._tus = {}
 
-    def fun(self, fn: str):
+    def fun(self, fn: str) -> Optional[Function]:
         return self.program.fun(fn)
 
     def _add_mapping(self, celem, sbinst) -> None:

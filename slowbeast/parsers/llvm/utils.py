@@ -106,7 +106,7 @@ def get_array_ty_size(m, ty: str) -> int:
     return int(parts[0][1:]) * type_size_in_bits(m, " ".join(parts[2:])[:-1])
 
 
-def type_size_in_bits(m, ty: str):
+def type_size_in_bits(m, ty: str) -> Optional[int]:
     if not isinstance(ty, str) and hasattr(m, "get_type_size"):
         return m.get_type_size(ty)
 

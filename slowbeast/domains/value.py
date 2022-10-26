@@ -31,7 +31,7 @@ class Value:
     def bytewidth(self) -> int:
         return self._type.bytewidth()
 
-    def bitwidth(self):
+    def bitwidth(self) -> int:
         return self._type.bitwidth()
 
     def is_pointer(self) -> bool:

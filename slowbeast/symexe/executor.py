@@ -14,7 +14,10 @@ from .executionstate import IncrementalSEState
 from slowbeast.symexe.executionstate import SEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.statesset import StatesSet
-from typing import Optional
+from typing import Union, Optional
+from slowbeast.domains.expr import Expr
+from slowbeast.symexe.annotations import ExprAnnotation
+from slowbeast.symexe.statedescription import StateDescription
 
 unsupported_funs = [
     "memmove",
@@ -26,7 +29,7 @@ unsupported_funs = [
 ]
 
 
-def _types_check(instr: Instruction, *vals):
+def _types_check(instr: Instruction, *vals) -> bool:
     if __debug__:
         for expected, real in zip(instr.expected_op_types(), vals):
             if expected == real:
@@ -118,7 +121,18 @@ class Executor(ConcreteExecutor):
         s.push_call(None)
         return s
 
-    def create_states_set(self, S=None) -> StatesSet:
+    def create_states_set(
+        self,
+        S: Union[
+            None,
+            slowbeast.domains.concrete_value.ConcreteVal,
+            Expr,
+            ExprAnnotation,
+            SEState,
+            StateDescription,
+            StatesSet,
+        ] = None,
+    ) -> StatesSet:
         ss = StatesSet(self.create_clean_state())
         if S:
             # set the set to be S
@@ -566,7 +580,7 @@ class Executor(ConcreteExecutor):
         states.append(state)
         return states
 
-    def exec_ite(self, state, instr):
+    def exec_ite(self, state, instr: Instruction):
         cond = condition_to_bool(state.eval(instr.condition()), state.expr_manager())
         assert cond.type().is_bool(), cond
 

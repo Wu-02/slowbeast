@@ -10,6 +10,7 @@ from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.util.debugging import ldbgv
 from slowbeast.ir.instruction import Alloc, GlobalVariable
+from slowbeast.core.executionstate import ExecutionState
 
 
 def _subst_val(substitute, val, subs):
@@ -80,7 +81,7 @@ class BSEState(LazySEState):
         # when joining states
         self._inputs = []
 
-    def _copy_to(self, new) -> None:
+    def _copy_to(self, new: ExecutionState) -> None:
         super()._copy_to(new)
         new._inputs = self._inputs.copy()
 

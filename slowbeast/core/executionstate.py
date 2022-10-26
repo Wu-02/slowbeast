@@ -52,14 +52,14 @@ class ExecutionState:
     def set_error(self, e) -> None:
         self._status.set_error(e)
 
-    def has_error(self):
+    def has_error(self) -> bool:
         return self._status.is_error()
 
     def get_error(self):
         assert self.has_error() or self.is_terminated() or self.was_killed(), self
         return self._status.detail()
 
-    def was_killed(self):
+    def was_killed(self) -> bool:
         return self._status.is_killed()
 
     def set_killed(self, e) -> None:
@@ -71,10 +71,10 @@ class ExecutionState:
     def set_terminated(self, reason) -> None:
         self._status.set_terminated(reason)
 
-    def is_terminated(self):
+    def is_terminated(self) -> bool:
         return self._status.is_terminated()
 
-    def exited(self):
+    def exited(self) -> bool:
         return self._status.is_exited()
 
     def get_exit_code(self):
@@ -84,7 +84,7 @@ class ExecutionState:
     def status(self) -> ExecutionStatus:
         return self._status
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         return self._status.is_ready()
 
     def eval(self, v):

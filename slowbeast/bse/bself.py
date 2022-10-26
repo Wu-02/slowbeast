@@ -87,7 +87,7 @@ def _check_set(executor, S: StatesSet, L, target) -> bool:
     return True
 
 
-def overapprox_state(executor, s, E, target, L):
+def overapprox_state(executor, s, E: StatesSet, target, L):
     S = s if isinstance(s, StatesSet) else executor.create_set(s)
 
     if not _check_set(executor, S, L, target):
@@ -547,7 +547,7 @@ class BSELFChecker(BaseBSE):
         # use non-inductive E
         return seqs or None
 
-    def overapprox_init_seq(self, seq0, unsafe, L: LoopInfo):
+    def overapprox_init_seq(self, seq0, unsafe: StatesSet, L: LoopInfo):
         assert is_seq_inductive(seq0, L), "seq is not inductive"
         dbg("Overapproximating initial sequence")
         dbg(str(seq0))
@@ -659,7 +659,7 @@ class BSELFChecker(BaseBSE):
                 newsets.append(s)
         return newsets or None
 
-    def initial_sets_from_exits(self, E, L: LoopInfo):
+    def initial_sets_from_exits(self, E: StatesSet, L: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -676,7 +676,7 @@ class BSELFChecker(BaseBSE):
 
         return self._match_included_indsets(isets, sets, E)
 
-    def initial_sets_from_is(self, E, L: LoopInfo):
+    def initial_sets_from_is(self, E: StatesSet, L: LoopInfo):
         # get the inductive sets that we have created for this header.
         # Since we go iteration over iteration, adding this sequence
         # to the previous ones must yield an inductive sequence

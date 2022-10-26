@@ -59,7 +59,7 @@ class SignULValue(Value):
 
         assert not self.is_pointer(), "Incorrectly constructed pointer"
 
-    def is_concrete(self):
+    def is_concrete(self) -> bool:
         return self.value() == SignULValue.ZERO
 
     def value(self) -> Union[bool, float, int]:
@@ -74,10 +74,10 @@ class SignULValue(Value):
     def as_value(self) -> str:
         return self.__repr__()
 
-    def __hash__(self):
+    def __hash__(self) -> Union[bool, float, int]:
         return self.value()
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs) -> bool:
         return self.value() == rhs.value()
 
     def __repr__(self) -> str:
@@ -125,7 +125,7 @@ class SignULDomain:
 
         raise NotImplementedError(f"Invalid value for lifting: {v}")
 
-    def concretize(x: SignULValue):
+    def concretize(x: SignULValue) -> Union[bool, float, int]:
         assert isinstance(x, SignULValue)
         # the internal values in fact correspond to concrete models
         return x.value()
@@ -136,7 +136,7 @@ class SignULDomain:
     def Var(ty) -> SignULValue:
         return SignULValue(SignULValue.ANY, ty)
 
-    def may_be_true(x: SignULValue):
+    def may_be_true(x: SignULValue) -> bool:
         v = x.value()
         # all other values represent some non-zero values
         return v != SignULValue.ZERO

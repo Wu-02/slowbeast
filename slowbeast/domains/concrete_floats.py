@@ -37,7 +37,7 @@ class ConcreteFloatsDomain(Domain):
 
     ## Relational operations
     @staticmethod
-    def Lt(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Lt(a: ConcreteFloat, b: ConcreteFloat, unsigned: bool = False) -> ConcreteBool:
         assert isinstance(a, ConcreteFloat), a
         assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -49,7 +49,7 @@ class ConcreteFloatsDomain(Domain):
         )
 
     @staticmethod
-    def Gt(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Gt(a: ConcreteFloat, b: ConcreteFloat, unsigned: bool = False) -> ConcreteBool:
         assert isinstance(a, ConcreteFloat), a
         assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -61,7 +61,7 @@ class ConcreteFloatsDomain(Domain):
         )
 
     @staticmethod
-    def Le(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Le(a: ConcreteFloat, b: ConcreteFloat, unsigned: bool = False) -> ConcreteBool:
         assert isinstance(a, ConcreteFloat), a
         assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -73,7 +73,7 @@ class ConcreteFloatsDomain(Domain):
         )
 
     @staticmethod
-    def Ge(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Ge(a: ConcreteFloat, b: ConcreteFloat, unsigned: bool = False) -> ConcreteBool:
         assert isinstance(a, ConcreteFloat), a
         assert isinstance(b, ConcreteFloat), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"

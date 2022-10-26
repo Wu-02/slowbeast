@@ -16,6 +16,7 @@ from typing import Optional, Union
 from .domain import Domain
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from numpy.core import float_
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
 
 def trunc_to_float(x, bw):
@@ -93,7 +94,7 @@ class ConcreteDomain(Domain):
         raise NotImplementedError(f"Operation not implemented: And({a}, {b})")
 
     @staticmethod
-    def Or(a, b) -> ConcreteVal:
+    def Or(a: ConcreteVal, b: ConcreteVal) -> ConcreteVal:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -105,7 +106,7 @@ class ConcreteDomain(Domain):
         raise NotImplementedError(f"Operation not implemented: Or({a}, {b})")
 
     @staticmethod
-    def Xor(a, b) -> ConcreteVal:
+    def Xor(a: ConcreteVal, b: ConcreteVal) -> ConcreteVal:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -117,14 +118,14 @@ class ConcreteDomain(Domain):
         raise NotImplementedError(f"Operation not implemented: Xor({a}, {b})")
 
     @staticmethod
-    def Not(a) -> ConcreteVal:
+    def Not(a: ConcreteVal) -> ConcreteVal:
         assert isinstance(a, ConcreteVal), a
         if a.is_bool():
             return ConcreteBoolDomain.Not(a)
         raise NotImplementedError(f"Operation not implemented: Not({a})")
 
     @staticmethod
-    def Extend(a, b, unsigned) -> Value:
+    def Extend(a: ConcreteBitVec, b: int, unsigned: bool) -> Value:
         assert isinstance(a, ConcreteBitVec), a
         assert isinstance(b, int), b
         return ConcreteBitVecDomain.Extend(a, b, unsigned)
@@ -222,7 +223,7 @@ class ConcreteDomain(Domain):
         return ConcreteBitVecDomain.Abs(a)
 
     @staticmethod
-    def FpOp(op, val) -> Union[ConcreteBool, ConcreteBitVec]:
+    def FpOp(op, val: ConcreteFloat) -> Union[ConcreteBool, ConcreteBitVec]:
         assert isinstance(val, ConcreteFloat), val
         assert val.is_float(), val
 
@@ -250,7 +251,7 @@ class ConcreteDomain(Domain):
     ##
     # Relational operators
     @staticmethod
-    def Le(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Le(a: ConcreteVal, b: ConcreteVal, unsigned: bool = False) -> ConcreteBool:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -260,7 +261,7 @@ class ConcreteDomain(Domain):
         return ConcreteBitVecDomain.Le(a, b, unsigned)
 
     @staticmethod
-    def Lt(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Lt(a: ConcreteVal, b: ConcreteVal, unsigned: bool = False) -> ConcreteBool:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -270,7 +271,7 @@ class ConcreteDomain(Domain):
         return ConcreteBitVecDomain.Lt(a, b, unsigned)
 
     @staticmethod
-    def Ge(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Ge(a: ConcreteVal, b: ConcreteVal, unsigned: bool = False) -> ConcreteBool:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -280,7 +281,7 @@ class ConcreteDomain(Domain):
         return ConcreteBitVecDomain.Ge(a, b, unsigned)
 
     @staticmethod
-    def Gt(a, b, unsigned: bool = False) -> ConcreteBool:
+    def Gt(a: ConcreteVal, b: ConcreteVal, unsigned: bool = False) -> ConcreteBool:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -321,7 +322,7 @@ class ConcreteDomain(Domain):
         return ConcreteBitVecDomain.Add(a, b)
 
     @staticmethod
-    def Sub(a, b) -> Value:
+    def Sub(a: ConcreteVal, b: ConcreteVal) -> Value:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -332,7 +333,9 @@ class ConcreteDomain(Domain):
         return ConcreteBitVecDomain.Sub(a, b)
 
     @staticmethod
-    def Mul(a, b) -> Value:
+    def Mul(
+        a: Union[ConcreteBitVec, ConcreteFloat], b: Union[ConcreteBitVec, ConcreteFloat]
+    ) -> Value:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -343,7 +346,7 @@ class ConcreteDomain(Domain):
         return ConcreteBitVecDomain.Mul(a, b)
 
     @staticmethod
-    def Div(a, b, unsigned: bool = False) -> Value:
+    def Div(a: ConcreteBitVec, b: ConcreteBitVec, unsigned: bool = False) -> Value:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"

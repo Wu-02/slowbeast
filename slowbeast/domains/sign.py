@@ -58,7 +58,7 @@ class ZOValue(Value):
 
         assert not self.is_pointer(), "Incorrectly constructed pointer"
 
-    def is_concrete(self):
+    def is_concrete(self) -> bool:
         return self.value() == ZOValue.ZERO
 
     def value(self) -> Union[bool, float, int]:
@@ -67,10 +67,10 @@ class ZOValue(Value):
     def as_value(self) -> Optional[str]:
         return ZOValue.val_to_str(self.value())
 
-    def __hash__(self):
+    def __hash__(self) -> Union[bool, float, int]:
         return self.value()
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs) -> bool:
         return self.value() == rhs.value()
 
     def __repr__(self) -> str:
@@ -112,7 +112,7 @@ class ZODomain:
         raise NotImplementedError(f"Invalid value for lifting: {v}")
 
     @staticmethod
-    def concretize(x: ZOValue):
+    def concretize(x: ZOValue) -> Union[bool, float, int]:
         assert isinstance(x, ZOValue)
         # the internal values in fact correspond to concrete models
         return x.value()
@@ -124,7 +124,7 @@ class ZODomain:
         return v != ZOValue.ZERO
 
     @staticmethod
-    def Constant(v, bw) -> ZOValue:
+    def Constant(v: int, bw) -> ZOValue:
         return ZOValue(abstract(v), BitVecType(bw))
 
     @staticmethod

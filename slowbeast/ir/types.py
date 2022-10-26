@@ -68,7 +68,7 @@ class Type:
     def is_label(self) -> bool:
         return False
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         # FIXME: do this better
         return isinstance(other, Type) and str(self) == str(other)
 

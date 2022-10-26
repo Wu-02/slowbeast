@@ -13,7 +13,9 @@ from slowbeast.util.debugging import (
     dbg,
 )
 from slowbeast.bse.loopinfo import LoopInfo
-from typing import Sized, List, Type
+from typing import Optional, Sized, List, Type
+from slowbeast.analysis.programstructure import ProgramStructure
+from slowbeast.core.executionstate import ExecutionState
 
 
 #####################################################################
@@ -36,7 +38,7 @@ class SEState(ExecutionState):
         super().__init__(executor, pc, m, solver, constraints)
         self._loc_visits = {}
 
-    def _copy_to(self, new) -> None:
+    def _copy_to(self, new: ExecutionState) -> None:
         super()._copy_to(new)
         # FIXME: use COW
         new._loc_visits = self._loc_visits.copy()
@@ -169,7 +171,7 @@ class BSELFChecker(BSELFCheckerVanilla):
         loc,
         A,
         program,
-        programstructure,
+        programstructure: Optional[ProgramStructure],
         opts: BSELFOptions,
         invariants=None,
         indsets=None,

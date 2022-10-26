@@ -524,7 +524,7 @@ class ThreadedSEState(SEState):
                 return idx
         return None
 
-    def _copy_to(self, new) -> None:
+    def _copy_to(self, new: ExecutionState) -> None:
         super()._copy_to(new)
         new._threads = [t.copy() for t in self._threads]
         new._wait_join = self._wait_join.copy()

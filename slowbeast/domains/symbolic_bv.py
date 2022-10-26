@@ -171,14 +171,14 @@ class BVSymbolicDomain(Domain):
         return Expr(Or(*map(lambda x: _bv_to_bool(x.unwrap()), args)), BoolType())
 
     @staticmethod
-    def Ite(c, a, b) -> Expr:
+    def Ite(c: Expr, a, b) -> Expr:
         assert isinstance(c, Expr), c
         assert c.is_bool(), c
         assert a.type() == b.type(), f"{a}, {b}"
         return Expr(If(_bv_to_bool(c.unwrap()), a.unwrap(), b.unwrap()), a.type())
 
     @staticmethod
-    def And(a, b) -> Expr:
+    def And(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -190,7 +190,7 @@ class BVSymbolicDomain(Domain):
             return Expr(to_bv(a) & to_bv(b), BitVecType(a.bitwidth()))
 
     @staticmethod
-    def Or(a, b) -> Expr:
+    def Or(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
@@ -202,7 +202,7 @@ class BVSymbolicDomain(Domain):
             return Expr(to_bv(a) | to_bv(b), BitVecType(a.bitwidth()))
 
     @staticmethod
-    def Xor(a, b) -> Expr:
+    def Xor(a: Expr, b: Expr) -> Expr:
         assert BVSymbolicDomain.belongto(a, b)
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
@@ -215,7 +215,7 @@ class BVSymbolicDomain(Domain):
             return Expr(to_bv(a) ^ to_bv(b), BitVecType(a.bitwidth()))
 
     @staticmethod
-    def Not(a) -> Expr:
+    def Not(a: Expr) -> Expr:
         assert isinstance(a, Expr), a
         if a.is_bool():
             return Expr(Not(a.unwrap()), BoolType())
@@ -305,7 +305,7 @@ class BVSymbolicDomain(Domain):
         return None  # unsupported conversion
 
     @staticmethod
-    def Extract(a, start, end) -> Expr:
+    def Extract(a: Expr, start, end) -> Expr:
         assert isinstance(a, Expr), a
         assert start.is_concrete(), start
         assert end.is_concrete(), end
@@ -326,21 +326,21 @@ class BVSymbolicDomain(Domain):
         )
 
     @staticmethod
-    def Shl(a, b) -> Expr:
+    def Shl(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert b.is_bv(), b
         return Expr(to_bv(a) << b.unwrap(), BitVecType(a.bitwidth()))
 
     @staticmethod
-    def AShr(a, b) -> Expr:
+    def AShr(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert b.is_bv(), b
         return Expr(to_bv(a) >> b.unwrap(), BitVecType(a.bitwidth()))
 
     @staticmethod
-    def LShr(a, b) -> Expr:
+    def LShr(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert b.is_bv(), b
@@ -456,7 +456,7 @@ class BVSymbolicDomain(Domain):
     ##
     # Arithmetic operations
     @staticmethod
-    def Add(a, b) -> Expr:
+    def Add(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert (
@@ -473,7 +473,7 @@ class BVSymbolicDomain(Domain):
         return Expr(to_bv(a) + to_bv(b), BitVecType(bw))
 
     @staticmethod
-    def Sub(a, b) -> Expr:
+    def Sub(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert a.bitwidth() == b.bitwidth(), f"{a} - {b}"
@@ -485,7 +485,7 @@ class BVSymbolicDomain(Domain):
         return Expr(to_bv(a) - to_bv(b), BitVecType(bw))
 
     @staticmethod
-    def Mul(a, b) -> Expr:
+    def Mul(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert a.bitwidth() == b.bitwidth(), f"{a} * {b}"
@@ -497,7 +497,7 @@ class BVSymbolicDomain(Domain):
         return Expr(to_bv(a) * to_bv(b), BitVecType(bw))
 
     @staticmethod
-    def Div(a, b, unsigned: bool = False) -> Expr:
+    def Div(a: Expr, b: Expr, unsigned: bool = False) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert a.bitwidth() == b.bitwidth(), f"{a} / {b}"
@@ -511,7 +511,7 @@ class BVSymbolicDomain(Domain):
         return Expr(to_bv(a) / to_bv(b), BitVecType(bw))
 
     @staticmethod
-    def Rem(a, b, unsigned: bool = False) -> Expr:
+    def Rem(a: Expr, b: Expr, unsigned: bool = False) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert a.type() == b.type(), "Operation on invalid types: {0} != {1}".format(
@@ -523,7 +523,7 @@ class BVSymbolicDomain(Domain):
         return Expr(SRem(a.unwrap(), b.unwrap()), result_ty)
 
     @staticmethod
-    def Abs(a) -> Expr:
+    def Abs(a: Expr) -> Expr:
         assert isinstance(a, Expr), a
         if a.is_float():
             return Expr(fpAbs(a.unwrap()), a.type())
@@ -531,7 +531,7 @@ class BVSymbolicDomain(Domain):
         return Expr(If(expr < 0, -expr, expr), a.type())
 
     @staticmethod
-    def Neg(a) -> Expr:
+    def Neg(a: Expr) -> Expr:
         """Return the negated number"""
         assert isinstance(a, Expr), a
         bw = a.bitwidth()

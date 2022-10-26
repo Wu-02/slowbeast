@@ -65,7 +65,7 @@ def _dump_inductive_sets(checker, loc) -> None:
         dbg(" ∅", color="dark_green")
 
 
-def overapprox(executor, s, E, target, L):
+def overapprox(executor, s, E: StatesSet, target, L):
     create_set = executor.create_set
     S = create_set(s)
 
@@ -891,7 +891,9 @@ class KindSEChecker(BaseKindSE):
             return [R]
         return None
 
-    def strengthen_initial_seq(self, seq0: Sized, E, path, L: LoopInfo):
+    def strengthen_initial_seq(
+        self, seq0: Sized, E, path: AnnotatedCFAPath, L: LoopInfo
+    ):
         assert path[0].source() is L.header()
         assert len(seq0) == 1
 
