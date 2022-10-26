@@ -12,15 +12,15 @@ class ConcreteBoolDomain(Domain):
     @staticmethod
     def conjunction(*args) -> ConcreteBool:
         """And() of multiple boolean arguments."""
-        assert all(map(lambda a: isinstance(a, ConcreteBool), args)), args
-        assert all(map(lambda a: a.is_bool(), args))
+        assert all((isinstance(a, ConcreteBool) for a in args)), args
+        assert all((a.is_bool() for a in args))
         return ConcreteBool(all(map(lambda x: x.value() is True, args)))
 
     @staticmethod
     def disjunction(*args) -> ConcreteBool:
         """Or() of multiple boolean arguments."""
-        assert all(map(lambda a: isinstance(a, ConcreteBool), args)), args
-        assert all(map(lambda a: a.is_bool(), args))
+        assert all((isinstance(a, ConcreteBool) for a in args)), args
+        assert all((a.is_bool() for a in args))
         return ConcreteBool(any(map(lambda x: x.value() is True, args)))
 
     @staticmethod

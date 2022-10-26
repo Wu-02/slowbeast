@@ -68,10 +68,14 @@ class ConcreteDomain(Domain):
 
     @staticmethod
     def conjunction(*args) -> ConcreteBool:
+        assert all((isinstance(a, ConcreteBool) for a in args)), args
+        assert all((a.is_bool() for a in args))
         return ConcreteBoolDomain.conjunction(*args)
 
     @staticmethod
     def disjunction(*args) -> ConcreteBool:
+        assert all((isinstance(a, ConcreteBool) for a in args)), args
+        assert all((a.is_bool() for a in args))
         return ConcreteBoolDomain.disjunction(*args)
 
     @staticmethod
