@@ -567,7 +567,10 @@ class Parser:
                 raise NotImplementedError(f"Unsupported call: {inst}")
             # function pointer call
             ty = get_sb_type(self.llvmmodule, inst.type)
-            C = Call(op, ty, *[self.operand(x) for x in operands[:-1]])
+            args = operands[:-1]
+            C = Call(op, ty,
+                     [self.operand(x) for x in args],
+                     [get_sb_type(self.llvmmodule, op.type) for op in args])
             self._addMapping(inst, C)
             return [C]
 
@@ -608,7 +611,11 @@ class Parser:
             raise NotImplementedError(f"Unknown function: {fun}")
 
         ty = get_sb_type(self.llvmmodule, inst.type)
-        C = Call(F, ty, *[self.operand(x) for x in operands[:-1]])
+        args = operands[:-1]
+        C = Call(F, ty,
+                 [self.operand(x) for x in args],
+                 [get_sb_type(self.llvmmodule, op.type) for op in args]
+                 )
         self._addMapping(inst, C)
         return [C]
 

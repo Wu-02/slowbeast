@@ -337,24 +337,28 @@ class Switch(Instruction):
 
 
 class Call(ValueTypedInstruction):
-    def __init__(self, wht, ty, *operands) -> None:
-        super().__init__(ty, [*operands])
+    def __init__(self, wht, ty, operands, optypes) -> None:
+        super().__init__(ty, operands, optypes)
         self._function = wht
 
     def called_function(self):
         return self._function
 
-    def type(self):
-        return self._function.type()
+    def function_type(self):
+        assert self.type() == self._function.type()
+        return self.type()
 
     def return_value(self):
         raise NotImplementedError("No return values in funs yet")
         # return self._function
 
     def __str__(self) -> str:
-        r = f"x{self.get_id()} = call {self.called_function().as_value()}("
-        r += ", ".join(map(lambda x: x.as_value(), self.operands()))
-        return r + f") -> {self._type}"
+        if self.type() is None:
+            r = f"call {self.called_function().as_value()}("
+        else:
+            r = f"x{self.get_id()}: {self.type()} = call {self.called_function().as_value()}("
+        r += ", ".join(f"({ty}){x.as_value()}" for x, ty in zip(self.operands(), self.expected_op_types()))
+        return r + ")"
 
 
 class Return(Instruction):
