@@ -39,6 +39,7 @@ def to_fp(x):
         else unpack("d", pack("Q", val))
     )[0]
 
+
 def get_any_domain(a: Value):
     if a.is_bv():
         return ConcreteBitVecDomain
@@ -47,6 +48,7 @@ def get_any_domain(a: Value):
     if a.is_float():
         return ConcreteFloatsDomain
     raise NotImplementedError(f"Unknown domain for value: {a}")
+
 
 def get_any_domain_checked(a: Value, b: Value):
     assert isinstance(a, ConcreteVal), a
@@ -62,11 +64,13 @@ def get_any_domain_checked(a: Value, b: Value):
         return ConcreteFloatsDomain
     raise NotImplementedError(f"Unknown domain for value: {a}")
 
+
 def get_bv_bytes_domain(a: Value):
     assert isinstance(a, (ConcreteBitVec,)), a
     if a.is_bv():
         return ConcreteBitVecDomain
     raise NotImplementedError(f"Unknown domain for value: {a}")
+
 
 def get_bv_bytes_domain_checked(a: Value, b: Value):
     assert isinstance(a, (ConcreteBitVec,)), a
@@ -76,8 +80,6 @@ def get_bv_bytes_domain_checked(a: Value, b: Value):
     if a.is_bv():
         return ConcreteBitVecDomain
     raise NotImplementedError(f"Unknown domain for value: {a}")
-
-
 
 
 class ConcreteDomain(Domain):
@@ -294,7 +296,7 @@ class ConcreteDomain(Domain):
         return get_any_domain_checked(a, b).Sub(a, b)
 
     @staticmethod
-    def Mul( a: Value, b: Value ) -> Value:
+    def Mul(a: Value, b: Value) -> Value:
         return get_any_domain_checked(a, b).Mul(a, b)
 
     @staticmethod

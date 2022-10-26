@@ -65,7 +65,7 @@ class Domain:
 
     @staticmethod
     def Ite(c: Value, a: Value, b: Value) -> Value:
-        """ if-then-else expression (+ default implementation) """
+        """if-then-else expression (+ default implementation)"""
         assert c.is_bool(), c
         assert a.type() == b.type(), f"{a}, {b}"
         return a if c else b
