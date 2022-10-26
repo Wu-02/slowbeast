@@ -10,14 +10,14 @@ from slowbeast.symexe.memory import Memory as SEMemory
 from typing import TextIO, Union
 
 
-def _nondet_value(fresh, op, bitsnum):
-    if op.type().is_bool():
-        return fresh(f"bool_{op.as_value()}", BoolType())
-    if op.type().is_pointer():
+def _nondet_value(fresh, op, ty):
+    if ty.is_bool():
+        return fresh(f"bool_{op.as_value()}", ty)
+    if ty.is_pointer():
         ptrobj = fresh(f"obj_{op.as_value()}", get_offset_type())
         ptroff = fresh(f"off_{op.as_value()}", get_offset_type())
         return Pointer(ptrobj, ptroff)
-    return fresh(f"{op.as_value()}", BitVecType(bitsnum))
+    return fresh(f"{op.as_value()}", ty)
 
 
 # FIXME: do we need to inherit from SEMemory? We need that only for the
@@ -58,7 +58,7 @@ class BSEMemory(SEMemory):
                 )
             return val, None
         if not ptr.object().is_concrete() or not ptr.offset().is_concrete():
-            val = _nondet_value(state.solver().fresh_value, valinst, bytes_num * 8)
+            val = _nondet_value(state.solver().fresh_value, valinst, valinst.type())
             state.create_nondet(valinst, val)
             self._input_reads[ptr] = (val, bytes_num)
             return val, None
@@ -144,7 +144,9 @@ class BSEMemoryModel(CoreMM):
         if isinstance(instr, (Alloc, GlobalVariable)):
             size = instr.size()
         else:
-            size = state.solver().symbolic_value(f"ndt_size_{instr.as_value()}", get_size_type())
+            size = state.solver().symbolic_value(
+                f"ndt_size_{instr.as_value()}", get_size_type()
+            )
         size = state.try_eval(size)
         if instr.is_global():
             ptr = state.memory.allocate_global(instr, zeroed=instr.is_zeroed())

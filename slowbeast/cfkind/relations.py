@@ -211,7 +211,9 @@ def _compare_two_loads(state, S, l1, l2):
     def model(assumptions, *e):
         return solver.concretize(assumptions, *e)
 
-    c = EM.symbolic_value(f"c_coef_{l1.as_value()}{l2.as_value()}", BitVecType(8 * l1bw))
+    c = EM.symbolic_value(
+        f"c_coef_{l1.as_value()}{l2.as_value()}", BitVecType(8 * l1bw)
+    )
     expr = Eq(Sub(l1val, l2val), c)
     c_concr = model([expr], c)
     if c_concr is not None:

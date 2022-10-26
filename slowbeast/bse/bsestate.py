@@ -100,7 +100,7 @@ class BSEState(LazySEState):
     def eval(self, v: Union[Alloc, GlobalVariable]):
         value = self.try_eval(v)
         if value is None:
-            value = _nondet_value(self.solver().fresh_value, v, v.type().bitwidth())
+            value = _nondet_value(self.solver().fresh_value, v, v.type())
             ldbgv(
                 "Created new input value {0} = {1}",
                 (v.as_value(), value),

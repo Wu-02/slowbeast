@@ -15,7 +15,7 @@ class Executor(PathExecutor):
     """
 
     def __init__(
-            self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
     ) -> None:
         super().__init__(program, solver, opts, memorymodel or BSEMemoryModel(opts))
 

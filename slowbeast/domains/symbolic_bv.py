@@ -80,7 +80,6 @@ class BVSymbolicDomain(Domain):
 
     @staticmethod
     def lift(v: Value) -> Expr:
-        FIXME("BVSymbolic: split off symbolic floats")
         assert isinstance(v, Value), f"Invalid value for lifting: {v}"
         if isinstance(v, Expr):
             return v
@@ -90,7 +89,7 @@ class BVSymbolicDomain(Domain):
                 return Expr(BoolVal(v.value()), BoolType())
             ty = v.type()
             if v.is_float():
-                return Expr(FPVal(v.value(), get_fp_sort(ty.bitwidth())), ty)
+                return Expr(FPVal(float(v.value()), get_fp_sort(ty.bitwidth())), ty)
             return Expr(bv_const(v.value(), ty.bitwidth()), ty)
 
         raise NotImplementedError(f"Invalid value for lifting: {v}")
