@@ -24,13 +24,6 @@ class ConcreteBoolDomain(Domain):
         return ConcreteBool(any(map(lambda x: x.value() is True, args)))
 
     @staticmethod
-    def Ite(c: Value, a: Value, b: Value) -> Value:
-        assert isinstance(c, ConcreteBool)
-        assert c.is_bool(), c
-        assert a.type() == b.type(), f"{a}, {b}"
-        return a if c else b
-
-    @staticmethod
     def And(a: Value, b: Value) -> ConcreteBool:
         assert isinstance(a, ConcreteBool), a
         assert isinstance(b, ConcreteBool), b

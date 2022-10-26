@@ -75,13 +75,6 @@ class ConcreteDomain(Domain):
         return ConcreteBoolDomain.disjunction(*args)
 
     @staticmethod
-    def Ite(c: Value, a: Value, b: Value):
-        assert isinstance(c, ConcreteBool), c
-        assert c.is_bool(), c
-        assert a.type() == b.type(), f"{a}, {b}"
-        return a if c else b
-
-    @staticmethod
     def And(a: Value, b: Value) -> Value:
         assert isinstance(a, ConcreteVal), a
         assert isinstance(b, ConcreteVal), b
@@ -162,8 +155,11 @@ class ConcreteDomain(Domain):
         bw = ty.bitwidth()
         if a.is_bool() and ty.is_bv():
             return ConcreteBitVec(1 if a.value() else 0, bw)
-        if a.is_bytes() and ty.is_float():
-            return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
+        if a.is_bytes():
+            if ty.is_float():
+                return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
+            if ty.is_bv() and bw <= 64:
+                return ConcreteBitVec(a.value(), bw)
         if a.is_bv():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
