@@ -70,7 +70,7 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
             if subsumed_memory(s, state):
                 return True
 
-        # if s.is_sat(EM.Not(state.constraints_obj().asFormula(EM))) is False:
+        # if s.is_sat(expr_mgr.Not(state.constraints_obj().asFormula(expr_mgr))) is False:
         #    dbg(f"Subsumed {state.constraints()} by {s.constraints()} at {pc}", color="white")
         #    return True
         # self.explored_states[pc].add(state)

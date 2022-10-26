@@ -1,18 +1,16 @@
 from functools import partial
 
-import slowbeast.domains.symbolic_helpers
 from slowbeast.core.executor import PathExecutionResult
-from ..domains.concrete_bitvec import ConcreteBitVec
-from ..domains.exprmgr import em_optimize_expressions
-from ..solvers.symcrete import IncrementalSolver, global_expr_mgr
+from slowbeast.solvers.symcrete import IncrementalSolver
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
     execute_annotation_substitutions,
 )
 from slowbeast.symexe.statesset import StatesSet, union, intersection, complement
 from slowbeast.util.debugging import dbg, dbgv
-from .inductivesequence import InductiveSequence
-from slowbeast.solvers.symcrete import IncrementalSolver
+from ..domains.concrete_bitvec import ConcreteBitVec
+from ..domains.exprmgr import em_optimize_expressions
+from ..solvers.symcrete import global_expr_mgr
 
 
 def remove_implied_literals(clauses):
@@ -173,12 +171,12 @@ class DecomposedLiteral:
         return None
 
     def extended(self, num):
-        EM = global_expr_mgr()
+        expr_mgr = global_expr_mgr()
         left, right = self.left, self.right
         if self.addtoleft:
-            left = EM.Add(left, num)
+            left = expr_mgr.Add(left, num)
         else:
-            right = EM.Add(right, num)
+            right = expr_mgr.Add(right, num)
 
         # try pushing further
         return self.pred(left, right)
@@ -650,15 +648,15 @@ class LoopStateOverapproximation:
         assert not l.is_and() and not l.is_or(), f"Input is not a literal: {l}"
         assert intersection(S, l, self.unsafe).is_empty(), "Unsafe states in input"
 
-        EM = self.expr_mgr
+        expr_mgr = self.expr_mgr
         executor = self.executor
 
         # create a fresh literal that we use as a placeholder instead of our
         # literal during extending
-        placeholder = EM.Bool("litext")
+        placeholder = expr_mgr.symbolic_bool("litext")
         # X is the original formula with 'placeholder' instead of 'l'
         clause_without_lit = list(x for x in rl if x != l)
-        X = intersection(S, EM.disjunction(placeholder, *clause_without_lit))
+        X = intersection(S, expr_mgr.disjunction(placeholder, *clause_without_lit))
         assert not X.is_empty(), f"S: {S}, l: {l}, rl: {rl}"
         post = poststates(executor, self.loop.paths(), X.get_se_state())
         if not post:
@@ -703,7 +701,7 @@ class LoopStateOverapproximation:
         em_optimize_expressions(False)
         # the optimizer could make And or Or from the literal, we do not want
         # that...
-        l = extend_literal(ldata, EM)
+        l = extend_literal(ldata, expr_mgr)
         em_optimize_expressions(True)
 
         safety_solver.pop()

@@ -211,8 +211,8 @@ class InductiveSequence:
 #     newrhs = []
 #     newsingletons = []
 #     solver = Solver()
-#     EM = global_expr_mgr()
-#     Not = EM.Not
+#     expr_mgr = global_expr_mgr()
+#     Not = expr_mgr.Not
 #     for c in rest:
 #         newliterals = []
 #         for l in c.children():

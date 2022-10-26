@@ -349,3 +349,4 @@ class ConcreteDomain(Domain):
 
 ConstantTrue = ConcreteBool(True)
 ConstantFalse = ConcreteBool(False)
+concrete_value = ConcreteDomain.get_value

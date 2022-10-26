@@ -5,7 +5,7 @@ from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.symbolic import SymbolicDomain
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import Type
+from slowbeast.ir.types import Type, BoolType
 from slowbeast.util.debugging import FIXME
 
 optimize_exprs = True
@@ -55,25 +55,8 @@ class ExpressionManager:
     def __init__(self) -> None:
         self._names = {}
 
-    def ConcreteVal(self, c: int, bw: int) -> ConcreteVal:
+    def concrete_value(self, c: int, bw: int) -> ConcreteVal:
         return ConcreteDomain.get_value(c, bw)
-
-    # def Var(self, name: str, ty: Type):
-    #    assert isinstance(name, str)
-    #    names = self._names
-    #    s = names.get(name)
-    #    if s:
-    #        assert (
-    #            s.type() == ty
-    #        ), f"Creating the same value with different type: {name} ({s.type()} != {ty})"
-    #    else:
-    #        s = SymbolicDomain.Var(name, ty)
-    #        names[name] = s
-    #    assert s, "No var was created"
-    #    return s
-
-    # def Bool(self, name: str):
-    #    return self.Var(name, BoolType())
 
     # def subexpressions(self, expr):
     #    if expr.is_concrete():
@@ -105,6 +88,23 @@ class ExpressionManager:
         s = SymbolicDomain.get_value(name, ty)
         names[name] = s
         return s
+
+    def symbolic_value(self, name: str, ty):
+        assert isinstance(name, str)
+        names = self._names
+        s = names.get(name)
+        if s:
+            assert (
+                s.type() == ty
+            ), f"Creating the same value with different type: {name} ({s.type()} != {ty})"
+        else:
+            s = SymbolicDomain.get_value(name, ty)
+            names[name] = s
+        assert s, "No var was created"
+        return s
+
+    def symbolic_bool(self, name: str):
+        return self.symbolic_value(name, BoolType())
 
     def substitute(self, expr, *vals) -> Union[ConcreteVal, Expr]:
         if isinstance(expr, ConcreteVal):

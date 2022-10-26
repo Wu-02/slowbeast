@@ -392,11 +392,11 @@ class CFGExecutor(SExecutor):
         return result
 
 
-# def substitute_constraints(constr, EM, prex, x):
+# def substitute_constraints(constr, expr_mgr, prex, x):
 #     newC = []
 #     # FIXME: we need to do that at once!
 #     for c in constr:
-#         expr = EM.substitute(c, (x, prex))
+#         expr = expr_mgr.substitute(c, (x, prex))
 #         if expr.is_concrete():
 #             if expr.value() is False:
 #                 return None  # infeasible constraints
@@ -411,7 +411,7 @@ class CFGExecutor(SExecutor):
 #    # join the states
 #    finalstates = []
 #    for r in fromstates:
-#        EM = r.expr_manager()
+#        expr_mgr = r.expr_manager()
 #        for s in tostates:
 #            tmpr = r.copy()
 #            newconstr = s.constraints()
@@ -425,9 +425,9 @@ class CFGExecutor(SExecutor):
 #                    assert len(res) == 1 and res[0] is tmpr
 #                    prex = tmpr.get(x.load)
 #                assert prex, "Do not have the value for x in pre-state"
-#                if EM.equals(prex, x):
+#                if expr_mgr.equals(prex, x):
 #                    continue  # no substitution needed
-#                newconstr = substitute_constraints(newconstr, EM, prex, x)
+#                newconstr = substitute_constraints(newconstr, expr_mgr, prex, x)
 #                if newconstr is None:
 #                    tmpr = None
 #                    break

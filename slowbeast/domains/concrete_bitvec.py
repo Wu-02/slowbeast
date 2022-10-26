@@ -152,8 +152,8 @@ class ConcreteBitVecDomain(Domain):
     @staticmethod
     def Add(a: Value, b: Value, isfloat: bool = False) -> Value:
         assert not isfloat
-        assert isinstance(a, ConcreteBitVec), a
-        assert isinstance(b, ConcreteBitVec), b
+        assert isinstance(a, ConcreteBitVec), f"{a} {type(a)}"
+        assert isinstance(b, ConcreteBitVec), f"{b} {type(b)}"
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"

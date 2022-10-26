@@ -22,6 +22,7 @@ from z3 import (
 
 from slowbeast.domains import SYMBOLIC_DOMAIN_KIND
 from slowbeast.domains.concrete_value import ConcreteVal
+from slowbeast.domains.concrete import concrete_value
 from slowbeast.domains.symbolic_helpers import (
     subexpressions,
     symbols,
@@ -82,7 +83,7 @@ class Expr(Value):
     def subexpressions(self) -> Generator[Union[ConcreteVal, "Expr"], None, None]:
         """Traverse the expression and return its all subexpressions"""
         return (
-            ConcreteVal(s.as_long(), solver_to_sb_type(s))
+            concrete_value(s.as_long(), solver_to_sb_type(s))
             if is_bv_value(s)
             else Expr(s, solver_to_sb_type(s))
             for s in subexpressions(self.unwrap())
@@ -94,7 +95,7 @@ class Expr(Value):
         E.g. for And(a, b) this method returns [a, b].
         """
         return (
-            ConcreteVal(s.as_long(), solver_to_sb_type(s))
+            concrete_value(s.as_long(), solver_to_sb_type(s))
             if is_bv_value(s)
             else Expr(s, solver_to_sb_type(s))
             for s in self.unwrap().children()

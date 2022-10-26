@@ -145,7 +145,7 @@ class MemoryObject:
         """
         assert isinstance(bts, int), "Read non-constant number of bytes"
         if off is None:
-            off = ConcreteVal(0, get_offset_type())
+            off = ConcreteBitVec(0, get_offset_type())
 
         if not off.is_concrete():
             raise NotImplementedError("Read from non-constant offset not supported")

@@ -41,11 +41,15 @@ def iter_loads(state):
 
 def get_var_diff_relations(state):
     subs = get_subs(state)
-    EM = state.expr_manager()
-    Eq, Ne = EM.Eq, EM.Ne
-    Add, Sub, Mul = EM.Add, EM.Sub, EM.Mul
-    Var, simplify, substitute = EM.Var, EM.simplify, EM.substitute
-    And = EM.And
+    expr_mgr = state.expr_manager()
+    Eq, Ne = expr_mgr.Eq, expr_mgr.Ne
+    Add, Sub, Mul = expr_mgr.Add, expr_mgr.Sub, expr_mgr.Mul
+    Var, simplify, substitute = (
+        expr_mgr.symbolic_value,
+        expr_mgr.simplify,
+        expr_mgr.substitute,
+    )
+    And = expr_mgr.And
 
     solver = IncrementalSolver()
     solver.add(*state.constraints())
@@ -69,9 +73,9 @@ def get_var_diff_relations(state):
 
         bw = max(l1bw, l2bw)
         if l1bw != bw:
-            l1 = EM.SExt(l1, ConcreteBitVec(bw, bw))
+            l1 = expr_mgr.SExt(l1, ConcreteBitVec(bw, bw))
         if l2bw != bw:
-            l2 = EM.SExt(l2, ConcreteBitVec(bw, bw))
+            l2 = expr_mgr.SExt(l2, ConcreteBitVec(bw, bw))
 
         # relation between loads of the type l1 - l2 = constant
         c = Var(f"c_{l1name}_{l2name}", BitVecType(bw))
@@ -82,7 +86,9 @@ def get_var_diff_relations(state):
             cval = c_concr[0]
             nonunique = is_sat(expr, Ne(c, cval))
             if nonunique is False:
-                yield AssertAnnotation(simplify(substitute(expr, (c, cval))), subs, EM)
+                yield AssertAnnotation(
+                    simplify(substitute(expr, (c, cval))), subs, expr_mgr
+                )
 
         # relation between loads of the type l1 + l2 = constant
         expr = Eq(Add(l2, l1), c)
@@ -92,7 +98,9 @@ def get_var_diff_relations(state):
             cval = c_concr[0]
             nonunique = is_sat(expr, Ne(c, cval))
             if nonunique is False:
-                yield AssertAnnotation(simplify(substitute(expr, (c, cval))), subs, EM)
+                yield AssertAnnotation(
+                    simplify(substitute(expr, (c, cval))), subs, expr_mgr
+                )
 
         # relation between loads of the type l1 = c*l2
         expr = Eq(Mul(c, l1), l2)
@@ -102,7 +110,9 @@ def get_var_diff_relations(state):
             cval = c_concr[0]
             nonunique = try_is_sat(500, expr, Ne(c, cval))
             if nonunique is False:
-                yield AssertAnnotation(simplify(substitute(expr, (c, cval))), subs, EM)
+                yield AssertAnnotation(
+                    simplify(substitute(expr, (c, cval))), subs, expr_mgr
+                )
         # relation between loads of the type l2 = c*l1
         expr = Eq(Mul(c, l2), l1)
         c_concr = model([expr, Ne(c, ConcreteBitVec(0, bw))], c)
@@ -111,7 +121,9 @@ def get_var_diff_relations(state):
             cval = c_concr[0]
             nonunique = try_is_sat(500, expr, Ne(c, cval))
             if nonunique is False:
-                yield AssertAnnotation(simplify(substitute(expr, (c, cval))), subs, EM)
+                yield AssertAnnotation(
+                    simplify(substitute(expr, (c, cval))), subs, expr_mgr
+                )
 
         # check equalities to other loads: l1 - l2 = k*l3
         for nd3 in state.nondet_loads():
@@ -122,27 +134,29 @@ def get_var_diff_relations(state):
             l3name = nd3.instruction.as_value()
             bw = max(l3bw, bw)
             if l1bw != bw:
-                l1 = EM.SExt(l1, ConcreteBitVec(bw, bw))
+                l1 = expr_mgr.SExt(l1, ConcreteBitVec(bw, bw))
             if l2bw != bw:
-                l2 = EM.SExt(l2, ConcreteBitVec(bw, bw))
+                l2 = expr_mgr.SExt(l2, ConcreteBitVec(bw, bw))
             if l3bw != bw:
-                l3 = EM.SExt(l3, ConcreteBitVec(bw, bw))
+                l3 = expr_mgr.SExt(l3, ConcreteBitVec(bw, bw))
 
             if is_sat(Ne(Sub(l2, l1), l3)) is False:
-                yield AssertAnnotation(Eq(Sub(l2, l1), l3), subs, EM)
+                yield AssertAnnotation(Eq(Sub(l2, l1), l3), subs, expr_mgr)
             else:
-                c = EM.fresh_value(f"c_mul_{l1name}{l2name}{l3name}", BitVecType(bw))
+                c = expr_mgr.fresh_value(
+                    f"c_mul_{l1name}{l2name}{l3name}", BitVecType(bw)
+                )
                 # expr = Eq(Add(l1, l2), Mul(c, l3))
                 expr = And(Eq(Add(l1, l2), Mul(c, l3)), Ne(c, ConcreteBitVec(0, bw)))
                 c_concr = model([expr], c)
                 if c_concr is not None:
                     # is c unique?
                     cval = c_concr[0]
-                    if is_sat(EM.substitute(expr, (c, cval))) is False:
+                    if is_sat(expr_mgr.substitute(expr, (c, cval))) is False:
                         yield AssertAnnotation(
                             simplify(Eq(Add(l1, l2), Mul(cval, l3))),
                             subs,
-                            EM,
+                            expr_mgr,
                         )
 
 
@@ -215,18 +229,18 @@ def _compare_two_loads(state, S, l1, l2):
 
 # if lt is False:  # l1 >= l2
 #    if gt is False:  # l1 <= l2
-#        yield AssertAnnotation(simpl(Eq(l1, l2)), subs, EM)
+#        yield AssertAnnotation(simpl(Eq(l1, l2)), subs, expr_mgr)
 #    elif gt is True:  # l1 >= l2
 #        if state.is_sat(Eq(l1, l2)) is False:
-#            yield AssertAnnotation(simpl(Gt(l1, l2)), subs, EM)
+#            yield AssertAnnotation(simpl(Gt(l1, l2)), subs, expr_mgr)
 #        else:
-#            yield AssertAnnotation(simpl(EM.Ge(l1, l2)), subs, EM)
+#            yield AssertAnnotation(simpl(expr_mgr.Ge(l1, l2)), subs, expr_mgr)
 # elif lt is True:
 #    if gt is False:  # l1 <= l2
 #        if state.is_sat(Eq(l1, l2)) is False:
-#            yield AssertAnnotation(simpl(Lt(l1, l2)), subs, EM)
+#            yield AssertAnnotation(simpl(Lt(l1, l2)), subs, expr_mgr)
 #        else:
-#            yield AssertAnnotation(simpl(EM.Le(l1, l2)), subs, EM)
+#            yield AssertAnnotation(simpl(expr_mgr.Le(l1, l2)), subs, expr_mgr)
 
 
 def get_var_cmp_relations(state, S):
@@ -240,7 +254,7 @@ def get_var_cmp_relations(state, S):
 
 
 def _get_const_cmp_relations(state):
-    EM = state.expr_manager()
+    expr_mgr = state.expr_manager()
 
     solver = IncrementalSolver()
     solver.add(*state.constraints())
@@ -256,13 +270,13 @@ def _get_const_cmp_relations(state):
         if l.is_pointer():
             continue
         lbw = l.type().bitwidth()
-        c = EM.Var(f"c_coef_{nd.instruction.as_value()}", BitVecType(lbw))
-        expr = EM.Eq(l, c)
+        c = expr_mgr.fresh_value(f"c_coef_{nd.instruction.as_value()}", BitVecType(lbw))
+        expr = expr_mgr.Eq(l, c)
         c_concr = model([expr], c)
         if c_concr is not None:
             # is c unique?
             cval = c_concr[0]
-            nonunique = is_sat(expr, EM.Ne(c, cval))
+            nonunique = is_sat(expr, expr_mgr.Ne(c, cval))
             if nonunique is False:
                 yield (l, cval)
 
@@ -374,11 +388,11 @@ def get_var_subs_relations(state):
 
 def get_relations_to_prev_states(state, prev):
     subs = get_subs(state)
-    EM = state.expr_manager()
-    Eq, Le, Ge = EM.Eq, EM.Le, EM.Ge
-    Add, Sub, Rem = EM.Add, EM.Sub, EM.Rem
-    Var, substitute = EM.Var, EM.substitute
-    conjunction = EM.conjunction
+    expr_mgr = state.expr_manager()
+    Eq, Le, Ge = expr_mgr.Eq, expr_mgr.Le, expr_mgr.Ge
+    Add, Sub, Rem = expr_mgr.Add, expr_mgr.Sub, expr_mgr.Rem
+    Var, substitute = expr_mgr.symbolic_value, expr_mgr.substitute
+    conjunction = expr_mgr.conjunction
 
     solver = IncrementalSolver()
     solver.add(*state.constraints())
@@ -408,7 +422,7 @@ def get_relations_to_prev_states(state, prev):
                 vdval -= 1 << bw
             if -1 <= vdval <= 1:
                 continue  # we do not need to replace these
-            nonunique = is_sat(expr, oldpc, EM.Ne(diff, dval))
+            nonunique = is_sat(expr, oldpc, expr_mgr.Ne(diff, dval))
             if nonunique is False:
                 if vdval > 0:  # old value (in later iteration) is higher
                     expr = conjunction(
@@ -423,7 +437,7 @@ def get_relations_to_prev_states(state, prev):
                         Le(l, cval),
                         Eq(Rem(l, dval), Rem(cval, dval)),
                     )
-                yield AssertAnnotation(expr, subs, EM)
+                yield AssertAnnotation(expr, subs, expr_mgr)
 
 
 def _get_var_relations(safe, prevsafe=None):

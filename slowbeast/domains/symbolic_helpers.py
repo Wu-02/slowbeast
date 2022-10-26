@@ -50,6 +50,7 @@ from z3 import (
 )
 
 from slowbeast.domains.concrete_value import ConcreteVal
+from slowbeast.domains.concrete import concrete_value
 from slowbeast.ir.types import BoolType, FloatType, BitVecType
 from slowbeast.util.debugging import FIXME
 
@@ -352,7 +353,7 @@ def map_model(m, e) -> Union[None, List[None], List[ConcreteVal]]:
                         f = float(eval(str(val)))
                 else:
                     raise RuntimeError(f"Invalid model type: {v}")
-                ret.append(ConcreteVal(f, v.type()))
+                ret.append(concrete_value(f, v.type()))
             else:
-                ret.append(ConcreteVal(m[n].as_long(), v.type()))
+                ret.append(concrete_value(m[n].as_long(), v.type()))
     return ret

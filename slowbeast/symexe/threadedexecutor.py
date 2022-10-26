@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 from slowbeast.core.errors import GenericError
-from slowbeast.domains.concrete_value import ConcreteVal
+from slowbeast.domains.concrete import concrete_value
 from slowbeast.ir.instruction import ThreadExit, ThreadJoin, Return, Thread
 from slowbeast.ir.types import get_offset_type
 from slowbeast.symexe.executionstate import ThreadedSEState
@@ -108,7 +108,7 @@ class ThreadedExecutor(Executor):
 
         # we executed the thread inst, so move
         state.pc = state.pc.get_next_inst()
-        state.set(instr, ConcreteVal(t.get_id(), get_offset_type()))
+        state.set(instr, concrete_value(t.get_id(), get_offset_type()))
         return [state]
 
     def exec_thread_exit(self, state, instr: ThreadExit):

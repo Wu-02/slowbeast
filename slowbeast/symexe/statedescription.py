@@ -9,7 +9,7 @@ def _get_cannonic_var(val, x: Load, EM):
         name = f"{x.operand(0).as_value()}"
     else:
         name = x.as_value()
-    return EM.Var(name, val.type())
+    return EM.fresh_value(name, val.type())
 
 
 def _createCannonical(expr, subs, EM):
@@ -155,7 +155,7 @@ class StateDescription:
         )
 
 
-def unify_state_descriptions(EM, sd1, sd2):
+def unify_state_descriptions(expr_mgr, sd1, sd2):
     """
     Take two annotations, unify their variables and substitutions.
     Return the new expressions and the substitutions
@@ -176,7 +176,7 @@ def unify_state_descriptions(EM, sd1, sd2):
 
     if len(subs1) == 0:
         assert len(subs2) == 0
-        return EM.simplify(expr1), EM.simplify(expr2), {}
+        return expr_mgr.simplify(expr1), expr_mgr.simplify(expr2), {}
 
     subs = {}
     col = False
@@ -184,8 +184,8 @@ def unify_state_descriptions(EM, sd1, sd2):
         instr2 = subs2.get(val)
         if instr2 and instr2 != instr:
             # collision
-            freshval = EM.fresh_value(val.name(), val.type())
-            expr2 = EM.substitute(expr2, (val, freshval))
+            freshval = expr_mgr.fresh_value(val.name(), val.type())
+            expr2 = expr_mgr.substitute(expr2, (val, freshval))
             subs[freshval] = instr2
 
         # always add this one
@@ -196,7 +196,7 @@ def unify_state_descriptions(EM, sd1, sd2):
         if not subs.get(val):
             subs[val] = instr
 
-    return EM.simplify(expr1), EM.simplify(expr2), subs
+    return expr_mgr.simplify(expr1), expr_mgr.simplify(expr2), subs
 
 
 def state_to_description(state) -> StateDescription:

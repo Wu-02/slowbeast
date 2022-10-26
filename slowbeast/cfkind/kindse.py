@@ -546,13 +546,13 @@ class KindSEChecker(BaseKindSE):
     #        return seq
 
     #    # replace last two frames with one merged frame
-    #    EM = global_expr_mgr()
+    #    expr_mgr = global_expr_mgr()
     #    seq.pop()
 
-    #    seq[-1].states = AssertAnnotation(EM.conjunction(*C), A1.substitutions(), EM)
-    #    S1 = AssertAnnotation(EM.conjunction(*N1), A1.substitutions(), EM)
-    #    S2 = AssertAnnotation(EM.conjunction(*N2), A2.substitutions(), EM)
-    #    seq[-1].strengthening = or_annotations(EM, True, S1, S2)
+    #    seq[-1].states = AssertAnnotation(expr_mgr.conjunction(*C), A1.substitutions(), expr_mgr)
+    #    S1 = AssertAnnotation(expr_mgr.conjunction(*N1), A1.substitutions(), expr_mgr)
+    #    S2 = AssertAnnotation(expr_mgr.conjunction(*N2), A2.substitutions(), expr_mgr)
+    #    seq[-1].strengthening = or_annotations(expr_mgr, True, S1, S2)
 
     #    # FIXME: we are still precise, use abstraction here...
     #    return seq
