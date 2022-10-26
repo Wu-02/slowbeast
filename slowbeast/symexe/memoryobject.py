@@ -2,7 +2,7 @@ from slowbeast.core.errors import MemError
 from slowbeast.core.memoryobject import MemoryObject as CoreMO
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import get_offset_type, BitVecType, Bytes
+from slowbeast.ir.types import get_offset_type, BitVecType, BytesType
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
 from typing import Union, List, Tuple, Optional, Sized
@@ -44,7 +44,7 @@ def read_bytes(values: Sized, offval, size, bts, zeroed):
     EM = global_expr_mgr()
     if zeroed:
         c = offval + bts - 1
-        # just make Extract return Bytes and it should work well then
+        # just make Extract return BytesType and it should work well then
         val = EM.Concat(
             *(
                 values[c - i] if values[c - i] else ConcreteVal(0, BitVecType(8))
@@ -52,7 +52,7 @@ def read_bytes(values: Sized, offval, size, bts, zeroed):
             )
         )
         # FIXME hack
-        val._type = Bytes(val.bytewidth())
+        val._type = BytesType(val.bytewidth())
     else:
         if offval + bts > len(values):
             return None, MemError(
@@ -64,10 +64,10 @@ def read_bytes(values: Sized, offval, size, bts, zeroed):
         if not all(values[i] for i in range(offval, offval + bts)):
             return None, MemError(MemError.UNINIT_READ, "Read of uninitialized byte")
         c = offval + bts - 1
-        # just make Extract return Bytes and it should work well then
+        # just make Extract return BytesType and it should work well then
         val = EM.Concat(*(values[c - i] for i in range(0, bts)))
         # FIXME hack
-        val._type = Bytes(val.bytewidth())
+        val._type = BytesType(val.bytewidth())
     return val, None
 
 
@@ -166,7 +166,7 @@ class MemoryObject(CoreMO):
                 f"{val.bytewidth()} bytes",
             )
 
-        # FIXME: make me return Bytes objects (a sequence of bytes)
+        # FIXME: make me return BytesType objects (a sequence of bytes)
         return val, None
 
     def write(self, x: Value, off: Optional[ConcreteVal] = None) -> Optional[MemError]:

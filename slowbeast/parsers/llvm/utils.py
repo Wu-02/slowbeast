@@ -3,7 +3,7 @@ from struct import unpack, pack
 from slowbeast.domains.concrete import ConstantTrue, ConstantFalse
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.domains.pointer import Pointer, get_null_pointer
-from slowbeast.ir.types import BitVecType, FloatType, PointerType, Bytes
+from slowbeast.ir.types import BitVecType, FloatType, PointerType, BytesType
 from slowbeast.util.debugging import warn
 from slowbeast.domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
 from typing import List, Optional, Sized, Union
@@ -155,7 +155,7 @@ def get_sb_type(
     if is_array_ty(ty):
         n, cty = parse_array_ty(ty)
         if cty == "i8":
-            return Bytes(n)
+            return BytesType(n)
 
     sty = str(ty)
     if sty in ("void", "metadata"):

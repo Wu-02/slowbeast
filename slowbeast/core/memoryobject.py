@@ -184,7 +184,7 @@ class MemoryObject:
                 f"{val.bytewidth()} bytes",
             )
 
-        # FIXME: make me return Bytes objects (a sequence of bytes)
+        # FIXME: make me return BytesType objects (a sequence of bytes)
         return val, None
 
     def offsets(self):

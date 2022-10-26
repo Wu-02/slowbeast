@@ -130,7 +130,7 @@ class BoolType(Type):
         return True
 
 
-class Bytes(Type):
+class BytesType(Type):
     def __init__(self, bytenum: int) -> None:
         Type.__init__(self, bytenum * 8)
 

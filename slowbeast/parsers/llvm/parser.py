@@ -993,7 +993,7 @@ class Parser:
             self.phis = []  # we handled these PHI nodes
 
     def _parse_initializer(
-        self, G: GlobalVariable, g: ValueRef, ty: Bytes, ts: int
+        self, G: GlobalVariable, g: ValueRef, ty: BytesType, ts: int
     ) -> None:
         c = get_constant(g.initializer)
         if c:
