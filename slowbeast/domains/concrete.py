@@ -256,8 +256,8 @@ class ConcreteDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if a.is_float():
-            return ConcreteFloatsDomain.Le(a, b, unsigned, True)
-        return ConcreteBitVecDomain.Le(a, b, unsigned, False)
+            return ConcreteFloatsDomain.Le(a, b, unsigned)
+        return ConcreteBitVecDomain.Le(a, b, unsigned)
 
     @staticmethod
     def Lt(a, b, unsigned: bool = False) -> ConcreteBool:
