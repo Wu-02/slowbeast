@@ -1,5 +1,6 @@
 from z3 import sat, unsat, unknown, Solver as Z3Solver, BoolVal, BitVecVal
 from typing import Optional
+from z3.z3 import Solver
 
 
 def models(assumpt, *args):
@@ -51,7 +52,7 @@ def models_inc(solver, assumpt, *args):
     return vals
 
 
-def _is_sat(solver, timeout, *args) -> Optional[bool]:
+def _is_sat(solver: Solver, timeout: int, *args) -> Optional[bool]:
     if solver is None:
         solver = Z3Solver()
 

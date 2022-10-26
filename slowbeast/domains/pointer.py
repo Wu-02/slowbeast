@@ -3,6 +3,7 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type_size, PointerType
 from . import POINTER_KIND
 from typing import Optional
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
 
 class Pointer(Value):
@@ -30,13 +31,13 @@ class Pointer(Value):
     def object(self) -> Value:
         return self._object
 
-    def offset(self):
+    def offset(self) -> ConcreteBitVec:
         return self._offset
 
     def as_value(self) -> str:
         return str(self)
 
-    def is_concrete(self):
+    def is_concrete(self) -> bool:
         return self._object.is_concrete() and self._offset.is_concrete()
 
     def is_null(self):

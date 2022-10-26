@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 from slowbeast.ir.types import Type
-from typing import Any
+from typing import Union, Any
+from z3.z3 import BitVecRef, BoolRef, FPRef
 
 
 class Value:
@@ -19,7 +20,7 @@ class Value:
             and self._value == other._value
         )
 
-    def unwrap(self):
+    def unwrap(self) -> Union[BitVecRef, FPRef, BoolRef]:
         return self._value
 
     def value(self):

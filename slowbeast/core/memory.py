@@ -8,7 +8,8 @@ from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.types import get_size_type
 from .memoryobject import MemoryObject
 from slowbeast.core.memoryobject import MemoryObject
-from typing import TextIO
+from typing import Union, TextIO
+from slowbeast.ir.instruction import Alloc, GlobalVariable
 
 
 class Memory:
@@ -86,7 +87,12 @@ class Memory:
         return self._objects == rhs._objects and self._cs == self._cs
 
     def _allocate(
-        self, size, instr=None, nm=None, objid=None, is_glob: bool = False
+        self,
+        size,
+        instr: Union[None, Alloc, GlobalVariable] = None,
+        nm=None,
+        objid=None,
+        is_glob: bool = False,
     ) -> MemoryObject:
         """Allocate a new memory object and return it"""
         o = self.create_memory_object(size, nm, objid, is_glob)

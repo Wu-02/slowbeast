@@ -131,7 +131,7 @@ class BoolType(Type):
 
 
 class Bytes(Type):
-    def __init__(self, bytenum) -> None:
+    def __init__(self, bytenum: int) -> None:
         Type.__init__(self, bytenum * 8)
 
     def is_bytes(self) -> bool:

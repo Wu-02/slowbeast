@@ -3,6 +3,7 @@ from .symbolicexecution import SEOptions, SymbolicExecutor
 from ..util.debugging import print_stderr, print_stdout, dbg
 from slowbeast.symexe.symbolicexecution import SEOptions
 from typing import Type
+from slowbeast.symexe.executionstate import SEState
 
 
 def subsumed_memory(s, state) -> bool:
@@ -43,7 +44,7 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
         )
         self.explored_states = {}
 
-    def handle_new_state(self, state) -> None:
+    def handle_new_state(self, state: SEState) -> None:
         if self.is_subsumed(state):
             return
         if state.is_ready():

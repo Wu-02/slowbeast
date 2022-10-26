@@ -268,16 +268,16 @@ class Alloc(ValueInstruction):
         )
 
     # the allocations return pointers, we need to compare them
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         return self.get_id() < other.get_id()
 
-    def __le__(self, other):
+    def __le__(self, other) -> bool:
         return self.get_id() <= other.get_id()
 
-    def __gt__(self, other):
+    def __gt__(self, other) -> bool:
         return self.get_id() > other.get_id()
 
-    def __ge__(self, other):
+    def __ge__(self, other) -> bool:
         return self.get_id() >= other.get_id()
 
     # must override the hash since we defined the operators
@@ -581,10 +581,10 @@ class Extend(UnaryOperation):
         self._bw = bw
         self._signed = signed
 
-    def bitwidth(self):
+    def bitwidth(self) -> int:
         return self._bw
 
-    def is_signed(self):
+    def is_signed(self) -> bool:
         return self._signed
 
     def __str__(self) -> str:

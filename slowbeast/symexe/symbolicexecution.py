@@ -16,11 +16,14 @@ from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from .executor import Executor as SExecutor
 from .threadedexecutor import ThreadedExecutor
 from io import TextIOWrapper
-from typing import Type, Sized, Union
+from typing import Optional, Type, Sized, Union
+from slowbeast.symexe.executionstate import SEState
+from slowbeast.ir.program import Program
+from slowbeast.symexe.executor import Executor
 
 
 class SEOptions(ExecutionOptions):
-    def __init__(self, opts=None) -> None:
+    def __init__(self, opts: None = None) -> None:
         super().__init__(opts)
         if opts:
             self.incremental_solving = opts.incremental_solving
@@ -61,10 +64,10 @@ class SEStats:
 class SymbolicExecutor(Interpreter):
     def __init__(
         self,
-        P,
+        P: Program,
         ohandler=None,
         opts: SEOptions = SEOptions(),
-        executor=None,
+        executor: Optional[Executor] = None,
         ExecutorClass=SExecutor,
     ) -> None:
         self._solver = Solver()
@@ -86,7 +89,7 @@ class SymbolicExecutor(Interpreter):
     def solver(self) -> SymbolicSolver:
         return self._solver
 
-    def get_next_state(self):
+    def get_next_state(self) -> SEState:
         states = self.states
         if not states:
             return None
@@ -102,7 +105,7 @@ class SymbolicExecutor(Interpreter):
         for s in newstates:
             hs(s)
 
-    def handle_new_state(self, s) -> None:
+    def handle_new_state(self, s: SEState) -> None:
         testgen = self.ohandler.testgen if self.ohandler else None
         opts = self.get_options()
         stats = self.stats

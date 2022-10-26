@@ -1,5 +1,5 @@
 from sys import stdout
-from typing import TextIO
+from typing import Tuple, Union, TextIO
 
 from slowbeast.util.debugging import print_stream
 
@@ -34,7 +34,9 @@ class ProgramElement:
                 return v
         return None
 
-    def add_metadata(self, key: str, value) -> None:
+    def add_metadata(
+        self, key: str, value: Union[str, Tuple[str, int, int], Tuple[str, str]]
+    ) -> None:
         assert isinstance(key, str)
         self._metadata.append((key, value))
 
@@ -42,7 +44,7 @@ class ProgramElement:
         """Is visible everywhere in the program?"""
         return False
 
-    def get_id(self):
+    def get_id(self) -> int:
         return self._id
 
     def __eq__(self, rhs: object):
@@ -51,7 +53,7 @@ class ProgramElement:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self._id
 
     def dump(self, ind: int = 0, stream: TextIO = stdout, color: bool = True) -> None:

@@ -8,6 +8,7 @@ from slowbeast.util.debugging import dbgv
 from typing import Union, List, Tuple, Optional, Sized
 from typing_extensions import SupportsIndex
 from slowbeast.domains.expr import Expr
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
 
 def get_byte(EM, x, bw, i: int):
@@ -98,7 +99,9 @@ class MemoryObject(CoreMO):
     __slots__ = ()
 
     # FIXME: refactor
-    def read(self, bts: int, off: Optional[ConcreteVal] = None):
+    def read(
+        self, bts: int, off: Optional[ConcreteVal] = None
+    ) -> Union[Tuple[Expr, None], Tuple[ConcreteBitVec, None]]:
         """
         Read 'bts' bytes from offset 'off'. Return (value, None)
         on success otherwise return (None, error)

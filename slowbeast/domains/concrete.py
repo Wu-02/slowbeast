@@ -46,7 +46,7 @@ class ConcreteDomain(Domain):
     """
 
     @staticmethod
-    def Value(c, bw: int) -> ConcreteVal:
+    def Value(c: int, bw: int) -> ConcreteVal:
         if isinstance(c, bool):
             assert bw == 1, bw
             return ConcreteBool(c)

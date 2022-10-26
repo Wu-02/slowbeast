@@ -2,7 +2,7 @@ from slowbeast.bse.bse import report_state
 from slowbeast.bse.bself import BSELF, BSELFOptions, BSELFChecker as BSELFCheckerVanilla
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.symexe.annotations import Annotation, execute_annotation
-from slowbeast.symexe.executionstate import SEState as ExecutionState
+from slowbeast.symexe.executionstate import SEState, SEState as ExecutionState
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.symexe.pathexecutor import Executor, Executor as PathExecutor
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
@@ -16,6 +16,7 @@ from slowbeast.bse.loopinfo import LoopInfo
 from typing import Optional, Sized, List, Type
 from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.core.executionstate import ExecutionState
+from slowbeast.symexe.memory import Memory
 
 
 #####################################################################
@@ -33,7 +34,12 @@ class SEState(ExecutionState):
     __slots__ = "_loc_visits"
 
     def __init__(
-        self, executor=None, pc=None, m=None, solver=None, constraints=None
+        self,
+        executor=None,
+        pc: Optional[Memory] = None,
+        m: Optional[Memory] = None,
+        solver=None,
+        constraints=None,
     ) -> None:
         super().__init__(executor, pc, m, solver, constraints)
         self._loc_visits = {}
@@ -120,7 +126,7 @@ class BSELFFSymbolicExecutor(SymbolicExecutor):
             self.states = [s for s in states if s is not None]
         return state
 
-    def handle_new_state(self, s) -> None:
+    def handle_new_state(self, s: SEState) -> None:
         pc = s.pc
         self._covered_insts.add(pc)
 

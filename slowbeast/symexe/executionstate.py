@@ -16,6 +16,7 @@ from slowbeast.util.debugging import warn, ldbgv
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
 from typing import Optional, List, TextIO, Union
 from slowbeast.symexe.constraints import ConstraintsSet
+from slowbeast.symexe.memory import Memory
 
 
 class Nondet:
@@ -57,7 +58,12 @@ class SEState(ExecutionState):
     statesCounter = 0
 
     def __init__(
-        self, executor=None, pc=None, m=None, solver=None, constraints=None
+        self,
+        executor=None,
+        pc=None,
+        m: Optional[Memory] = None,
+        solver=None,
+        constraints=None,
     ) -> None:
         super().__init__(pc, m)
 

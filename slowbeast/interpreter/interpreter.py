@@ -1,16 +1,19 @@
 from .interactive import InteractiveHandler
 from ..core.executor import Executor
 from ..util.debugging import print_stderr, dbg
-from typing import Optional, Sized
+from typing import List, Optional, Sized
 from slowbeast.core.executor import Executor
 from slowbeast.interpreter.interactive import InteractiveHandler
+import slowbeast.symexe.executor
+from slowbeast.ir.program import Program
+from slowbeast.symexe.executionstate import SEState
 
 
 class ExecutionOptions:
     INSTR_STEP = 1
     BLOCK_STEP = 2
 
-    def __init__(self, opts=None) -> None:
+    def __init__(self, opts: None = None) -> None:
         if opts:
             self.step = opts.step
             self.interactive = opts.interactive
@@ -41,7 +44,10 @@ class GlobalInit:
 
 class Interpreter:
     def __init__(
-        self, program, opts: ExecutionOptions = ExecutionOptions(), executor=None
+        self,
+        program: Program,
+        opts: ExecutionOptions = ExecutionOptions(),
+        executor: Optional[slowbeast.symexe.executor.Executor] = None,
     ) -> None:
         self._program = program
         self._options = opts
@@ -52,19 +58,19 @@ class Interpreter:
         self.error_states = []
         # self.states_num = 0
 
-    def get_program(self):
+    def get_program(self) -> Program:
         return self._program
 
     def get_options(self) -> ExecutionOptions:
         return self._options
 
-    def executor(self):
+    def executor(self) -> slowbeast.symexe.executor.Executor:
         return self._executor
 
     def get_states(self):
         return self.states
 
-    def initial_states(self):
+    def initial_states(self) -> List[SEState]:
         """
         Get state(s) from which to start execution.
         May be overriden by child classes
@@ -104,7 +110,7 @@ class Interpreter:
         assert len(newstates) == 1, "Concrete execution returned more than one state"
         self.handle_new_state(newstates[0])
 
-    def interact_if_needed(self, s) -> None:
+    def interact_if_needed(self, s: SEState) -> None:
         if self._interactive is None:
             return
 
@@ -138,7 +144,7 @@ class Interpreter:
                         "Generated errorneous state during initialization of globals"
                     )
 
-    def _main_args(self, state):
+    def _main_args(self, state: SEState) -> None:
         """
         Initialize argc and argv (if needed) for the main function
         """

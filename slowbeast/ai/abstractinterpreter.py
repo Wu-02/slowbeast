@@ -3,7 +3,9 @@ from .executor import Executor as AIExecutor
 from ..interpreter.interpreter import Interpreter
 from ..util.debugging import print_stderr, dbg
 from io import TextIOWrapper
-from typing import Sized, Type
+from typing import Optional, Sized, Type
+from slowbeast.ir.program import Program
+from slowbeast.symexe.executor import Executor
 
 
 class AIOptions(SEOptions):
@@ -24,10 +26,10 @@ class AIStats:
 class AbstractInterpreter(Interpreter):
     def __init__(
         self,
-        P,
+        P: Program,
         ohandler=None,
         opts: AIOptions = AIOptions(),
-        executor=None,
+        executor: Optional[Executor] = None,
         ExecutorClass: Type[slowbeast.ai.executor.Executor] = AIExecutor,
     ) -> None:
         super().__init__(P, opts, executor or ExecutorClass(opts))

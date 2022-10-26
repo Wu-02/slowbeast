@@ -6,7 +6,9 @@ from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from .executor import Executor as SExecutor
 from io import TextIOWrapper
-from typing import Sized, Type
+from typing import Optional, Sized, Type
+from slowbeast.ir.program import Program
+from slowbeast.symexe.executor import Executor
 
 
 class FutureExecutor(SExecutor):
@@ -77,10 +79,10 @@ class SEStats:
 class FutureSymbolicExecutor(Interpreter):
     def __init__(
         self,
-        P,
+        P: Program,
         ohandler=None,
         opts: SEOptions = SEOptions(),
-        executor=None,
+        executor: Optional[Executor] = None,
         ExecutorClass: Type[FutureExecutor] = FutureExecutor,
     ) -> None:
         self.solver = Solver()

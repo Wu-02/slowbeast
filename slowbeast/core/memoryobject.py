@@ -6,7 +6,8 @@ from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import get_offset_type
-from typing import Optional, TextIO
+from typing import Union, Optional, TextIO
+from slowbeast.ir.instruction import Alloc, GlobalVariable
 
 
 class MemoryObject:
@@ -24,7 +25,11 @@ class MemoryObject:
     )
 
     def __init__(
-        self, size, nm: str = "unnamed", objid=None, is_global: bool = False
+        self,
+        size: ConcreteBitVec,
+        nm: str = "unnamed",
+        objid: None = None,
+        is_global: bool = False,
     ) -> None:
         if objid:
             self._id = objid
@@ -75,19 +80,19 @@ class MemoryObject:
     def __eq__(self, rhs: object):
         return self._id == rhs._id
 
-    def get_id(self):
+    def get_id(self) -> int:
         return self._id
 
-    def size(self):
+    def size(self) -> ConcreteBitVec:
         return self._size
 
-    def set_allocation(self, a) -> None:
+    def set_allocation(self, a: Union[Alloc, GlobalVariable]) -> None:
         self._allocation = a
 
     def allocation(self):
         return self._allocation
 
-    def _has_concrete_size(self):
+    def _has_concrete_size(self) -> bool:
         sz = self._size
         return sz is not None and sz.is_concrete()
 

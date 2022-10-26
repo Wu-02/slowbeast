@@ -6,12 +6,15 @@ from slowbeast.domains.pointer import Pointer, get_null_pointer
 from slowbeast.ir.types import BitVecType, FloatType, PointerType, Bytes
 from slowbeast.util.debugging import warn
 from slowbeast.domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
-from typing import Optional, Sized, Union
+from typing import List, Optional, Sized, Union
+from llvmlite.binding.module import ModuleRef
+from llvmlite.binding.value import TypeRef, ValueRef
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
 concrete_value = ConcreteDomain.Value
 
 
-def _getInt(s) -> Optional[int]:
+def _getInt(s: str) -> Optional[int]:
     try:
         if s.startswith("0x"):
             return int(s, 16)
@@ -91,7 +94,7 @@ def is_array_ty(ty: str) -> bool:
     return ty.is_array
 
 
-def parse_array_ty(ty) -> None:
+def parse_array_ty(ty: TypeRef) -> None:
     parts = str(ty)[1:-1].split("x")
     return int(parts[0]), parts[1].strip()
 
@@ -106,7 +109,7 @@ def get_array_ty_size(m, ty: str) -> int:
     return int(parts[0][1:]) * type_size_in_bits(m, " ".join(parts[2:])[:-1])
 
 
-def type_size_in_bits(m, ty: str) -> Optional[int]:
+def type_size_in_bits(m: ModuleRef, ty: str) -> Optional[int]:
     if not isinstance(ty, str) and hasattr(m, "get_type_size"):
         return m.get_type_size(ty)
 
@@ -134,7 +137,7 @@ def type_size_in_bits(m, ty: str) -> Optional[int]:
     return None
 
 
-def type_size(m, ty: str) -> Optional[int]:
+def type_size(m: ModuleRef, ty: str) -> Optional[int]:
     ts = type_size_in_bits(m, ty)
     if ts is not None:
         if ts == 0:
@@ -143,7 +146,9 @@ def type_size(m, ty: str) -> Optional[int]:
     return None
 
 
-def get_sb_type(m, ty: str) -> Union[None, FloatType, BitVecType, PointerType]:
+def get_sb_type(
+    m: ModuleRef, ty: str
+) -> Union[None, FloatType, BitVecType, PointerType]:
     if is_pointer_ty(ty):
         return PointerType()
 
@@ -183,7 +188,7 @@ def get_pointer_constant(val) -> Optional[Pointer]:
     return None
 
 
-def get_constant(val):
+def get_constant(val: ValueRef) -> Optional[ConcreteBitVec]:
     # My, this is so ugly... but llvmlite does
     # not provide any other way...
     if is_pointer_ty(val.type):
@@ -224,5 +229,5 @@ def bv_to_bool_else_id(bv: ConcreteBool) -> ConcreteBool:
     return bv
 
 
-def get_llvm_operands(inst):
+def get_llvm_operands(inst: ValueRef) -> List[ValueRef]:
     return [x for x in inst.operands]

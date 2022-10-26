@@ -1,4 +1,6 @@
 import sys
+from io import TextIOWrapper
+from typing import Any, Callable, Dict, Optional
 
 COLORS = {
     "dark_blue": "\033[0;34m",
@@ -40,7 +42,13 @@ def dec_print_indent():
         _global_prefix = None
 
 
-def print_stream(msg, stream, prefix=None, print_ws="\n", color=None):
+def print_stream(
+    msg: str,
+    stream: TextIOWrapper,
+    prefix: Optional[str] = None,
+    print_ws: Optional[str] = "\n",
+    color: Optional[str] = None,
+) -> None:
     """
     Print message to stderr/stdout
 
@@ -76,15 +84,27 @@ def print_stream(msg, stream, prefix=None, print_ws="\n", color=None):
     stream.flush()
 
 
-def print_stderr(msg, prefix=None, print_ws="\n", color=None):
+def print_stderr(
+    msg: str,
+    prefix: Optional[str] = None,
+    print_ws: str = "\n",
+    color: Optional[str] = None,
+) -> None:
     print_stream(msg, sys.stderr, prefix, print_ws, color)
 
 
-def print_stdout(msg, prefix=None, print_ws="\n", color=None):
+def print_stdout(
+    msg: str, prefix: None = None, print_ws: str = "\n", color: Optional[str] = None
+) -> None:
     print_stream(msg, sys.stdout, prefix, print_ws, color)
 
 
-def print_highlight(s, words, prefix=None, stream=sys.stdout):
+def print_highlight(
+    s: str,
+    words: Dict[str, str],
+    prefix: Optional[str] = None,
+    stream: TextIOWrapper = sys.stdout,
+) -> None:
     """Words: dictionary words -> colors"""
     if prefix:
         print_stream(prefix, print_ws=None, stream=stream)
@@ -101,7 +121,7 @@ _is_debugging = 0
 _debugging_prefix = ""
 
 
-def set_debugging(verbose_lvl=1):
+def set_debugging(verbose_lvl: int = 1) -> None:
     global _is_debugging
     _is_debugging = verbose_lvl
 
@@ -132,21 +152,36 @@ def dec_debugging_lvl():
         _debugging_prefix = _debugging_prefix[2:]
 
 
-def dbg(msg, print_ws="\n", color="GRAY", fn=print_stderr):
+def dbg(
+    msg: str, print_ws: str = "\n", color: str = "GRAY", fn: Callable = print_stderr
+) -> None:
     if _is_debugging < 1:
         return
 
     fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
 
-def dbgv(msg, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr):
+def dbgv(
+    msg: str,
+    verbose_lvl: int = 2,
+    print_ws: str = "\n",
+    color: str = "GRAY",
+    fn: Callable = print_stderr,
+) -> None:
     if _is_debugging < verbose_lvl:
         return
 
     fn(msg, f"[sb] {_debugging_prefix}", print_ws, color)
 
 
-def ldbgv(fmt, args, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr):
+def ldbgv(
+    fmt: str,
+    args: Any,
+    verbose_lvl: int = 2,
+    print_ws: str = "\n",
+    color: str = "GRAY",
+    fn: Callable = print_stderr,
+) -> None:
     """
     Lazy dbgv -- does not build the debugging message unless debugging is set
     to True. Especially strings that contain solver expressions take a long
@@ -192,5 +227,5 @@ def warn(msg, print_ws="\n", color="BROWN"):
     print_stderr(msg, "[sb] WARNING: ", print_ws, color)
 
 
-def FIXME(msg, print_ws="\n", color="DARK_GRAY_THIN"):
+def FIXME(msg: str, print_ws: str = "\n", color: str = "DARK_GRAY_THIN") -> None:
     print_stderr(msg, "[sb] !FIXME! ", print_ws, color)

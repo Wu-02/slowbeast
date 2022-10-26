@@ -31,7 +31,7 @@ class SymbolicSolver(SolverIntf):
             Z3Solver(), None, *(x.unwrap() for x in e if not x.is_concrete())
         )
 
-    def try_is_sat(self, timeout, *e) -> Optional[bool]:
+    def try_is_sat(self, timeout: int, *e) -> Optional[bool]:
         if any(
             map(lambda x: is_false(x) or (x.is_concrete() and x.value() is False), e)
         ):
@@ -74,7 +74,7 @@ class IncrementalSolver(SymbolicSolver):
             self._solver, None, *(x.unwrap() for x in e if not x.is_concrete())
         )
 
-    def try_is_sat(self, timeout, *e) -> Optional[bool]:
+    def try_is_sat(self, timeout: int, *e) -> Optional[bool]:
         if any(map(lambda x: x.is_concrete() and x.value() is False, e)):
             return False
         return _is_sat(

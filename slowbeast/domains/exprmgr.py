@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from slowbeast.domains.concrete import ConcreteDomain
 from slowbeast.domains.symbolic import SymbolicDomain
@@ -57,7 +57,7 @@ class ExpressionManager:
     def __init__(self) -> None:
         self._names = {}
 
-    def ConcreteVal(self, c, bw: int) -> ConcreteVal:
+    def ConcreteVal(self, c: int, bw: int) -> ConcreteVal:
         return ConcreteDomain.Value(c, bw)
 
     # def Var(self, name: str, ty: Type):
@@ -208,7 +208,7 @@ class ExpressionManager:
         lift = self.lift
         return opt(SymbolicDomain.Xor(lift(a), lift(b)))
 
-    def Not(self, a: Value):
+    def Not(self, a: Value) -> Expr:
         if isinstance(a, ConcreteVal):
             return ConcreteDomain.Not(a)
         return opt(SymbolicDomain.Not(self.lift(a)))
@@ -230,7 +230,7 @@ class ExpressionManager:
         r = SymbolicDomain.FpOp(op, self.lift(val))
         return opt(r) if r else r  # FpOp may return None
 
-    def Extend(self, a: Value, b: int, unsigned: bool):
+    def Extend(self, a: Value, b: int, unsigned: bool) -> Expr:
         assert isinstance(b, int), f"Invalid extend argument: {b}"
         assert isinstance(unsigned, bool), f"Invalid extend argument: {unsigned}"
         if isinstance(a, ConcreteVal):
@@ -319,7 +319,7 @@ class ExpressionManager:
         lift = self.lift
         return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned))
 
-    def Eq(self, a: Value, b: Value, unsigned: bool = False):
+    def Eq(self, a: Value, b: Value, unsigned: bool = False) -> Expr:
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         if isinstance(a, ConcreteVal) and isinstance(b, ConcreteVal):
             return ConcreteDomain.Eq(a, b, unsigned)

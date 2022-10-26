@@ -42,6 +42,7 @@ from slowbeast.domains.symbolic_rewriting import (
 )
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type
+from z3.z3 import BitVecRef, BoolRef, FPRef
 
 
 class Expr(Value):
@@ -52,7 +53,7 @@ class Expr(Value):
 
     KIND: int = SYMBOLIC_DOMAIN_KIND
 
-    def __init__(self, e, t: Type) -> None:
+    def __init__(self, e: Union[BoolRef, FPRef, BitVecRef], t: Type) -> None:
         assert not isinstance(e, int), e
         assert isinstance(t, Type), t
         super().__init__(e, t)
@@ -196,7 +197,7 @@ class Expr(Value):
             for k, v in subs.items()
         }
 
-    def is_and(self):
+    def is_and(self) -> bool:
         return is_and(self.unwrap())
 
     def is_or(self):

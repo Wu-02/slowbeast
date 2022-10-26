@@ -8,12 +8,16 @@ from slowbeast.ir.types import *
 from slowbeast.util.debugging import print_stderr
 from .specialfunctions import special_functions, create_special_fun
 from .utils import *
-from typing import Iterable, List, Optional, Sized, Tuple, Union
+from typing import Any, Iterable, List, Optional, Sized, Tuple, Union
+from llvmlite.binding.module import ModuleRef
+from llvmlite.binding.value import TypeRef, ValueRef
+from slowbeast.ir.bblock import BBlock
+from slowbeast.ir.programelement import ProgramElement
 
 concrete_value = ConcreteDomain.Value
 
 
-def _get_llvm_module(path):
+def _get_llvm_module(path: str) -> ModuleRef:
     if path.endswith(".ll"):
         with open(path, "rt") as f:
             return llvm.parse_assembly(f.read())
@@ -65,7 +69,7 @@ def parse_special_fcmp(
     return None
 
 
-def parse_fcmp(inst) -> Tuple[Optional[int], bool]:
+def parse_fcmp(inst: ValueRef) -> Tuple[Optional[int], bool]:
     parts = str(inst).split()
     if parts[1] != "=":
         return None, False
@@ -133,7 +137,9 @@ def parse_cmp(inst) -> Tuple[Optional[int], bool]:
     return None, False
 
 
-def parse_fun_ret_ty(m, ty) -> Tuple[bool, Union[None, FloatType, BitVecType]]:
+def parse_fun_ret_ty(
+    m: ModuleRef, ty: TypeRef
+) -> Tuple[bool, Union[None, FloatType, BitVecType]]:
     parts = str(ty).split()
     if len(parts) < 2:
         return False, None
@@ -184,7 +190,7 @@ thread_funs = ["pthread_create", "pthread_join", "pthread_exit"]
 class Parser:
     def __init__(
         self,
-        error_funs=None,
+        error_funs: None = None,
         allow_threads: bool = True,
         forbid_floats: bool = False,
         unsupp_funs: Optional[Iterable[str]] = None,
@@ -208,7 +214,7 @@ class Parser:
             unsupported_funs += unsupp_funs
         self._forbid_floats = forbid_floats
 
-    def try_get_operand(self, op):
+    def try_get_operand(self, op: ValueRef) -> Any:
         ret = self._mapping.get(op)
         if not ret:
             ret = get_constant(op)
@@ -221,18 +227,18 @@ class Parser:
 
         return ret
 
-    def operand(self, op):
+    def operand(self, op: ValueRef) -> Any:
         ret = self.try_get_operand(op)
         assert ret, f"Do not have an operand: {op}"
         return ret
 
-    def bblock(self, llvmb):
+    def bblock(self, llvmb: ValueRef) -> BBlock:
         return self._bblocks[llvmb]
 
     def fun(self, fn: str) -> Optional[Function]:
         return self.program.fun(fn)
 
-    def _addMapping(self, llinst, sbinst) -> None:
+    def _addMapping(self, llinst: ValueRef, sbinst: ProgramElement) -> None:
         if "llvm" in self._metadata_opts:
             sbinst.add_metadata("llvm", str(llinst))
         if "dbgloc" in self._metadata_opts:
@@ -242,7 +248,7 @@ class Parser:
         assert self._mapping.get(llinst) is None, "Duplicated mapping"
         self._mapping[llinst] = sbinst
 
-    def _createAlloca(self, inst) -> Union[List[Alloc]]:
+    def _createAlloca(self, inst: ValueRef) -> Union[List[Alloc]]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Array allocations not supported yet"
 
@@ -269,7 +275,7 @@ class Parser:
             self._addMapping(inst, A)
             return [A]
 
-    def _createStore(self, inst) -> List[Store]:
+    def _createStore(self, inst: ValueRef) -> List[Store]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
@@ -282,7 +288,7 @@ class Parser:
         self._addMapping(inst, S)
         return [S]
 
-    def _createLoad(self, inst) -> List[Load]:
+    def _createLoad(self, inst: ValueRef) -> List[Load]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
 
@@ -294,7 +300,9 @@ class Parser:
         self._addMapping(inst, L)
         return [L]
 
-    def _createRet(self, inst) -> Union[List[Return], List[Union[None, Call, Return]]]:
+    def _createRet(
+        self, inst: ValueRef
+    ) -> Union[List[Return], List[Union[None, Call, Return]]]:
         operands = get_llvm_operands(inst)
         assert len(operands) <= 1, "Invalid number of operands for ret"
 
@@ -436,7 +444,7 @@ class Parser:
         self._addMapping(inst, I)
         return [I]
 
-    def _createCmp(self, inst, isfloat: bool = False):
+    def _createCmp(self, inst: ValueRef, isfloat: bool = False) -> List[Cmp]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for cmp"
         op1 = self.operand(operands[0])
@@ -465,7 +473,7 @@ class Parser:
         self._addMapping(inst, C)
         return [C]
 
-    def _createBranch(self, inst) -> List[Branch]:
+    def _createBranch(self, inst: ValueRef) -> List[Branch]:
         operands = get_llvm_operands(inst)
         if len(operands) == 3:
             cond = self.operand(operands[0])
@@ -505,7 +513,7 @@ class Parser:
 
         return Call(fun, ty)
 
-    def _createSpecialCall(self, inst, fun):
+    def _createSpecialCall(self, inst: ValueRef, fun: str) -> List[Assert]:
         mp, seq = create_special_fun(self, inst, fun, self.error_funs)
         if mp:
             self._addMapping(inst, mp)
@@ -551,7 +559,7 @@ class Parser:
 
         raise NotImplementedError(f"Unsupported thread function: {fun}")
 
-    def _createCall(self, inst):
+    def _createCall(self, inst: ValueRef) -> List[Union[Any, Call, Assert]]:
         operands = get_llvm_operands(inst)
         assert len(operands) > 0
 
@@ -643,12 +651,12 @@ class Parser:
         self._addMapping(inst, C)
         return [C]
 
-    def _createUnreachable(self, inst) -> List[Assert]:
+    def _createUnreachable(self, inst: ValueRef) -> List[Assert]:
         A = Assert(ConstantFalse, "unreachable")
         self._addMapping(inst, A)
         return [A]
 
-    def _createZExt(self, inst) -> List[Extend]:
+    def _createZExt(self, inst: ValueRef) -> List[Extend]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
         zext = Extend(
@@ -672,7 +680,7 @@ class Parser:
         self._addMapping(inst, sext)
         return [sext]
 
-    def _createReinterpCast(self, inst, sgn) -> List[Cast]:
+    def _createReinterpCast(self, inst: ValueRef, sgn: bool) -> List[Cast]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for cast"
         insttype = inst.type
@@ -864,7 +872,7 @@ class Parser:
         self.phis.append((inst, phivar, L))
         return [L]
 
-    def _parse_instruction(self, inst):
+    def _parse_instruction(self, inst: ValueRef) -> List[Any]:
         opcode = inst.opcode
         if opcode == "alloca":
             return self._createAlloca(inst)
@@ -929,7 +937,7 @@ class Parser:
         else:
             raise NotImplementedError(f"Unsupported instruction: {inst}")
 
-    def _parse_block(self, F, block) -> None:
+    def _parse_block(self, F: Function, block: ValueRef) -> None:
         """
         F     - slowbeast.Function
         block - llvm.block
@@ -955,7 +963,7 @@ class Parser:
 
         assert B.fun() is F
 
-    def _parse_fun(self, f) -> None:
+    def _parse_fun(self, f: ValueRef) -> None:
         F = self.fun(f.name)
 
         # add mapping to arguments of the function
@@ -983,7 +991,9 @@ class Parser:
                     S.insert_before(B.last())
             self.phis = []  # we handled these PHI nodes
 
-    def _parse_initializer(self, G, g, ty, ts) -> None:
+    def _parse_initializer(
+        self, G: GlobalVariable, g: ValueRef, ty: Bytes, ts: int
+    ) -> None:
         c = get_constant(g.initializer)
         if c:
             # FIXME: add composed instruction
@@ -1004,7 +1014,7 @@ class Parser:
             color="YELLOW",
         )
 
-    def _parse_globals(self, m) -> None:
+    def _parse_globals(self, m: ModuleRef) -> None:
         for g in m.global_variables:
             assert g.type.is_pointer
             # FIXME: check and set whether it is a constant
@@ -1017,7 +1027,7 @@ class Parser:
             self.program.add_global(G)
             self._addMapping(g, G)
 
-    def _parse_module(self, m) -> None:
+    def _parse_module(self, m: ModuleRef) -> None:
         self._parse_globals(m)
 
         # create the function at first,
@@ -1042,7 +1052,7 @@ class Parser:
 
             self._parse_fun(f)
 
-    def _parse(self, path) -> Program:
+    def _parse(self, path: str) -> Program:
         m = _get_llvm_module(path)
         self.llvmmodule = m
         self._parse_module(m)
@@ -1051,7 +1061,7 @@ class Parser:
 
         return self.program
 
-    def parse(self, path) -> Program:
+    def parse(self, path: str) -> Program:
         return self._parse(path)
 
 

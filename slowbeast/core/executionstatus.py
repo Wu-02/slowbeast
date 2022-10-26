@@ -1,6 +1,7 @@
 from copy import deepcopy
 from sys import stdout
 from typing import TextIO
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
 
 class ExecutionStatus:
@@ -41,7 +42,7 @@ class ExecutionStatus:
         self._detail = e
         self._status = ExecutionStatus.KILLED
 
-    def set_exited(self, ec) -> None:
+    def set_exited(self, ec: ConcreteBitVec) -> None:
         self._detail = ec
         self._status = ExecutionStatus.EXITED
 

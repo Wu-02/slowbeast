@@ -1,6 +1,7 @@
 from slowbeast.domains import CONCRETE_DOMAIN_KIND
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import Type, PointerType, BoolType
+from slowbeast.ir.types import BitVecType, Type, PointerType, BoolType
+from typing import Union
 
 
 class ConcreteVal(Value):
@@ -8,7 +9,7 @@ class ConcreteVal(Value):
 
     KIND = CONCRETE_DOMAIN_KIND
 
-    def __init__(self, c, ty):
+    def __init__(self, c: Union[bool, int], ty: Union[BoolType, BitVecType]) -> None:
         assert isinstance(ty, Type), f"Invalid type: {ty}"
         assert not isinstance(ty, PointerType), f"Invalid type: {ty}"
         super().__init__(c, ty)
@@ -16,13 +17,13 @@ class ConcreteVal(Value):
         assert not self.is_pointer(), "Incorrectly constructed pointer"
         assert not self.is_bool() or (c in (True, False)), "Invalid boolean constant"
 
-    def as_value(self):
+    def as_value(self) -> str:
         return f"{str(self._value)}:{self.type()}"
 
-    def value(self):
+    def value(self) -> Union[bool, int]:
         return self._value
 
-    def is_concrete(self):
+    def is_concrete(self) -> bool:
         return True
 
     def is_symbolic(self):
@@ -38,7 +39,7 @@ class ConcreteVal(Value):
     def is_one(self):
         return self._value == 1
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self._value}:{self.type()}"
 
     def __hash__(self):
