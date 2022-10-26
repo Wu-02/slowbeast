@@ -1,29 +1,28 @@
 from random import getrandbits
+from typing import List, Tuple, Optional
 
 import slowbeast.domains.concrete_value
 from slowbeast.core.errors import AssertFailError
 from slowbeast.core.executor import Executor as ConcreteExecutor
 from slowbeast.domains import dom_is_concrete
-from ..domains.concrete_value import ConcreteVal, ConcreteBool
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.domains.expr import Expr
+from slowbeast.domains.exprmgr import ExpressionManager
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.value import Value
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
-from slowbeast.util.debugging import dbgv, ldbgv, warn
-from .executionstate import IncrementalSEState
-from slowbeast.symexe.executionstate import SEState
-from slowbeast.symexe.memorymodel import SymbolicMemoryModel
-from slowbeast.symexe.statesset import StatesSet
-from typing import List, Tuple, Union, Optional
-from slowbeast.domains.expr import Expr
-from slowbeast.symexe.annotations import ExprAnnotation
-from slowbeast.symexe.statedescription import StateDescription
-from slowbeast.domains.exprmgr import ExpressionManager
 from slowbeast.ir.program import Program
 from slowbeast.solvers.symcrete import SymbolicSolver
-from .options import SEOptions
-from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.symexe.annotations import ExprAnnotation
+from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.options import SEOptions
+from slowbeast.symexe.statedescription import StateDescription
+from slowbeast.symexe.statesset import StatesSet
+from slowbeast.util.debugging import dbgv, ldbgv, warn
+from .executionstate import IncrementalSEState
+from ..domains.concrete_value import ConcreteVal, ConcreteBool
 
 unsupported_funs = [
     "memmove",
@@ -63,9 +62,9 @@ def add_pointer_with_constant(
 
 
 def condition_to_bool(
-    cond: Union[Expr, slowbeast.domains.concrete_value.ConcreteBool],
+    cond: Union[Expr, ConcreteBool],
     EM: ExpressionManager,
-) -> Union[Expr, slowbeast.domains.concrete_value.ConcreteBool]:
+) -> Union[Expr, ConcreteBool]:
     if cond.type().is_bool():
         return cond
 
@@ -81,9 +80,7 @@ def condition_to_bool(
     return cval
 
 
-def eval_condition(
-    state: SEState, cond: ValueInstruction
-) -> Union[Expr, slowbeast.domains.concrete_value.ConcreteBool]:
+def eval_condition(state: SEState, cond: ValueInstruction) -> Union[Expr, ConcreteBool]:
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
     c = state.eval(cond)
     assert isinstance(c, Value)
@@ -142,7 +139,7 @@ class Executor(ConcreteExecutor):
         self,
         S: Union[
             None,
-            slowbeast.domains.concrete_value.ConcreteVal,
+            ConcreteVal,
             Expr,
             ExprAnnotation,
             SEState,
@@ -159,7 +156,7 @@ class Executor(ConcreteExecutor):
     def fork(
         self,
         state: SEState,
-        cond: Union[Expr, slowbeast.domains.concrete_value.ConcreteBool],
+        cond: Union[Expr, ConcreteBool],
     ) -> Union[Tuple[SEState, SEState], Tuple[SEState, None]]:
         self.stats.fork_calls += 1
 

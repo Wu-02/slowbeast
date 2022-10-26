@@ -1,9 +1,9 @@
-from .executor import Executor as SExecutor
-from .symbolicexecution import SEOptions, SymbolicExecutor
-from ..util.debugging import print_stderr, print_stdout, dbg
-from slowbeast.symexe.symbolicexecution import SEOptions
 from typing import Type
+
 from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.symbolicexecution import SEOptions
+from .executor import Executor as SExecutor
+from .symbolicexecution import SymbolicExecutor
 
 
 def subsumed_memory(s, state) -> bool:

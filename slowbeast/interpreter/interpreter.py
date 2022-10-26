@@ -1,11 +1,12 @@
-from .options import ExecutionOptions
-from ..util.debugging import print_stderr, dbg
 from typing import List, Optional, Sized
+
+import slowbeast.symexe.executor
 from slowbeast.core.executor import Executor
 from slowbeast.interpreter.interactive import InteractiveHandler
-import slowbeast.symexe.executor
 from slowbeast.ir.program import Program
 from slowbeast.symexe.executionstate import SEState
+from .options import ExecutionOptions
+from ..util.debugging import print_stderr, dbg
 
 
 # dummy class used as a program counter during initialization

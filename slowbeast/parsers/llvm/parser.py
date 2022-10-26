@@ -1,18 +1,19 @@
+from typing import Any, Iterable, List, Optional, Sized, Tuple, Union
+
 import llvmlite.binding as llvm
+from llvmlite.binding.module import ModuleRef
+from llvmlite.binding.value import TypeRef, ValueRef
 
 from slowbeast.ir.argument import Argument
+from slowbeast.ir.bblock import BBlock
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
 from slowbeast.ir.program import Program
+from slowbeast.ir.programelement import ProgramElement
 from slowbeast.ir.types import *
 from slowbeast.util.debugging import print_stderr
 from .specialfunctions import special_functions, create_special_fun
 from .utils import *
-from typing import Any, Iterable, List, Optional, Sized, Tuple, Union
-from llvmlite.binding.module import ModuleRef
-from llvmlite.binding.value import TypeRef, ValueRef
-from slowbeast.ir.bblock import BBlock
-from slowbeast.ir.programelement import ProgramElement
 
 concrete_value = ConcreteDomain.Value
 

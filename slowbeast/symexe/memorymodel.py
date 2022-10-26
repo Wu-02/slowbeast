@@ -1,3 +1,5 @@
+from typing import Union
+
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
 from slowbeast.domains.expr import NondetLoad
 from slowbeast.domains.value import Value
@@ -5,9 +7,8 @@ from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
 from slowbeast.ir.types import BitVecType
 from slowbeast.ir.types import get_size_type
 from slowbeast.symexe.memory import Memory
-from slowbeast.util.debugging import dbgv
-from typing import Union
 from slowbeast.symexe.options import SEOptions
+from slowbeast.util.debugging import dbgv
 
 
 class SymbolicMemoryModel(CoreMM):

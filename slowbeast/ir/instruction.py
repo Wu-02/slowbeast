@@ -1,11 +1,11 @@
 from sys import stdout
+from typing import Sized, Union, TextIO
 
+from slowbeast.ir.bblock import BBlock
+from slowbeast.ir.types import PointerType, Type
 from slowbeast.util.debugging import print_highlight
 from .programelement import ProgramElement
 from .types import LabelType, BitVecType, BoolType, get_offset_type
-from slowbeast.ir.bblock import BBlock
-from slowbeast.ir.types import PointerType, Type
-from typing import Sized, Union, TextIO
 
 
 class GlobalVariable(ProgramElement):

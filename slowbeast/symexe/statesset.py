@@ -1,5 +1,8 @@
+from typing import Union
+
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.expr import Expr
+from slowbeast.domains.exprmgr import ExpressionManager
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.symexe.annotations import (
     ExprAnnotation,
@@ -14,8 +17,6 @@ from slowbeast.symexe.statedescription import (
     unify_state_descriptions,
     eval_state_description,
 )
-from typing import Union
-from slowbeast.domains.exprmgr import ExpressionManager
 
 
 class StatesSet:

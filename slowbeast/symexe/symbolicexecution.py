@@ -1,3 +1,6 @@
+from io import TextIOWrapper
+from typing import Optional, Sized, Union
+
 from slowbeast.core.errors import GenericError
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.solvers.symcrete import SymbolicSolver, Solver
@@ -11,17 +14,15 @@ from slowbeast.ir.instruction import (
     ThreadJoin,
     Alloc,
 )
+from slowbeast.ir.program import Program
 from slowbeast.solvers.symcrete import SymbolicSolver, Solver
+from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.executor import Executor
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from .executor import Executor as SExecutor
 from .options import SEOptions
 from .stats import SEStats
 from .threadedexecutor import ThreadedExecutor
-from io import TextIOWrapper
-from typing import Optional, Sized, Union
-from slowbeast.symexe.executionstate import SEState
-from slowbeast.ir.program import Program
-from slowbeast.symexe.executor import Executor
 
 
 class SymbolicExecutor(Interpreter):

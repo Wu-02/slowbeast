@@ -1,5 +1,6 @@
-from z3 import sat, unsat, unknown, Solver as Z3Solver, BoolVal, BitVecVal
 from typing import Optional
+
+from z3 import sat, unsat, unknown, Solver as Z3Solver, BoolVal, BitVecVal
 from z3.z3 import Solver
 
 

@@ -1,22 +1,21 @@
 from math import isinf, isnan, isfinite
 from struct import pack, unpack
+from typing import Optional, Union
 
+from numpy.core import float_
+
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.domains.concrete_bool import ConcreteBoolDomain
+from slowbeast.domains.concrete_floats import ConcreteFloat, ConcreteFloatsDomain
+from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.instruction import FpOp
 from slowbeast.ir.types import Type
 from slowbeast.util.debugging import FIXME
 from .concrete_bitvec import (
     to_bv,
-    ConcreteBitVec,
     ConcreteBitVecDomain,
 )
-from slowbeast.domains.concrete_bool import ConcreteBoolDomain
-from slowbeast.domains.concrete_floats import ConcreteFloat, ConcreteFloatsDomain
-from typing import Optional, Union
-
 from .domain import Domain
-from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
-from numpy.core import float_
-from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
 
 def trunc_to_float(x, bw):

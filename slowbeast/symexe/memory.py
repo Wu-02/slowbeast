@@ -1,7 +1,8 @@
-from slowbeast.core.memory import Memory as CoreMemory
-from slowbeast.symexe.memoryobject import MemoryObject
-from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from typing import Optional
+
+from slowbeast.core.memory import Memory as CoreMemory
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.symexe.memoryobject import MemoryObject
 
 
 class Memory(CoreMemory):

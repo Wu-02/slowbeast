@@ -1,14 +1,12 @@
-from typing import Optional, Union
+from typing import Union
 
 from slowbeast.domains.concrete import ConcreteDomain
+from slowbeast.domains.concrete_value import ConcreteVal
+from slowbeast.domains.expr import Expr
 from slowbeast.domains.symbolic import SymbolicDomain
-from .expr import Expr
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type
-from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.util.debugging import FIXME
-from slowbeast.domains.expr import Expr
-
 
 optimize_exprs = True
 

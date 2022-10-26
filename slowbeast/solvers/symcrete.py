@@ -1,10 +1,12 @@
-from slowbeast.domains.symbolic_helpers import map_model
+from typing import List, Optional, Union
+
+from z3 import Solver as Z3Solver, is_false, BoolVal
+
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.exprmgr import ExpressionManager
+from slowbeast.domains.symbolic_helpers import map_model
 from slowbeast.solvers.solver import SolverIntf
 from slowbeast.solvers.z3solver import models, models_inc, _is_sat
-from z3 import Solver as Z3Solver, is_false, BoolVal
-from slowbeast.domains.concrete_value import ConcreteVal
-from typing import List, Optional, Union
 
 global_expr_manager = ExpressionManager()
 
