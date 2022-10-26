@@ -14,10 +14,14 @@ from .executionstate import IncrementalSEState
 from slowbeast.symexe.executionstate import SEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.statesset import StatesSet
-from typing import Union, Optional
+from typing import List, Tuple, Union, Optional
 from slowbeast.domains.expr import Expr
 from slowbeast.symexe.annotations import ExprAnnotation
 from slowbeast.symexe.statedescription import StateDescription
+from slowbeast.domains.exprmgr import ExpressionManager
+from slowbeast.ir.program import Program
+from slowbeast.solvers.symcrete import SymbolicSolver
+from .options import SEOptions
 
 unsupported_funs = [
     "memmove",
@@ -54,7 +58,10 @@ def add_pointer_with_constant(E, op1, op2) -> Pointer:
     return Pointer(op1.object(), E.Add(op1.offset(), op2))
 
 
-def condition_to_bool(cond, EM):
+def condition_to_bool(
+    cond: Union[Expr, slowbeast.domains.concrete_value.ConcreteBool],
+    EM: ExpressionManager,
+) -> Union[Expr, slowbeast.domains.concrete_value.ConcreteBool]:
     if cond.type().is_bool():
         return cond
 
@@ -70,7 +77,9 @@ def condition_to_bool(cond, EM):
     return cval
 
 
-def eval_condition(state, cond: ValueInstruction):
+def eval_condition(
+    state: SEState, cond: ValueInstruction
+) -> Union[Expr, slowbeast.domains.concrete_value.ConcreteBool]:
     assert isinstance(cond, ValueInstruction) or cond.is_concrete()
     c = state.eval(cond)
     assert isinstance(c, Value)
@@ -82,7 +91,11 @@ def eval_condition(state, cond: ValueInstruction):
 
 class Executor(ConcreteExecutor):
     def __init__(
-        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+        self,
+        program: Program,
+        solver: SymbolicSolver,
+        opts: SEOptions,
+        memorymodel: Optional[SymbolicMemoryModel] = None,
     ) -> None:
         if memorymodel is None:
             memorymodel = SymbolicMemoryModel(opts)
@@ -92,7 +105,7 @@ class Executor(ConcreteExecutor):
         # use these values in place of nondet values
         self._input_vector = None
 
-    def is_error_fn(self, fun: str):
+    def is_error_fn(self, fun: str) -> bool:
         if isinstance(fun, str):
             return fun in self.get_options().error_funs
         return fun.name() in self.get_options().error_funs
@@ -105,7 +118,7 @@ class Executor(ConcreteExecutor):
         # reverse the vector so that we can pop from it
         self._input_vector.reverse()
 
-    def create_state(self, pc=None, m=None) -> SEState:
+    def create_state(self, pc: None = None, m: None = None) -> SEState:
         if m is None:
             m = self.get_memory_model().create_memory()
         if self.get_options().incremental_solving:
@@ -139,7 +152,11 @@ class Executor(ConcreteExecutor):
             ss.intersect(S)
         return ss
 
-    def fork(self, state, cond):
+    def fork(
+        self,
+        state: SEState,
+        cond: Union[Expr, slowbeast.domains.concrete_value.ConcreteBool],
+    ) -> Union[Tuple[SEState, SEState], Tuple[SEState, None]]:
         self.stats.fork_calls += 1
 
         T, F = None, None
@@ -239,7 +256,7 @@ class Executor(ConcreteExecutor):
 
         return [s]
 
-    def exec_branch(self, state, instr: Branch):
+    def exec_branch(self, state: SEState, instr: Branch) -> List[SEState]:
         assert isinstance(instr, Branch)
         self.stats.branchings += 1
 
@@ -290,7 +307,9 @@ class Executor(ConcreteExecutor):
         self.stats.branch_forks += len(states) - 1
         return states
 
-    def compare_values(self, expr_mgr, p, op1, op2, unsgn):
+    def compare_values(
+        self, expr_mgr: ExpressionManager, p: int, op1: Expr, op2: Expr, unsgn: bool
+    ) -> Expr:
         if p == Cmp.LE:
             return expr_mgr.Le(op1, op2, unsgn)
         elif p == Cmp.LT:
@@ -354,7 +373,7 @@ class Executor(ConcreteExecutor):
             return expr if pred == Cmp.EQ else em.Not(expr)
         return None
 
-    def exec_cmp(self, state, instr: Cmp):
+    def exec_cmp(self, state: SEState, instr: Cmp) -> List[SEState]:
         assert isinstance(instr, Cmp), instr
         assert instr.type().is_bool(), instr
         seval = state.eval
@@ -432,7 +451,7 @@ class Executor(ConcreteExecutor):
                 return f
         return None
 
-    def exec_call(self, state, instr: Call):
+    def exec_call(self, state: SEState, instr: Call) -> List[SEState]:
         assert isinstance(instr, Call)
         fun = instr.called_function()
         if not isinstance(fun, Function):
@@ -478,7 +497,9 @@ class Executor(ConcreteExecutor):
         state.push_call(instr, fun, mapping)
         return [state]
 
-    def exec_undef_fun(self, state, instr, fun):
+    def exec_undef_fun(
+        self, state: SEState, instr: Call, fun: Function
+    ) -> List[SEState]:
         retTy = fun.return_type()
         if retTy:
             if self.get_options().concretize_nondets:
@@ -602,7 +623,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_unary_op(self, state, instr: UnaryOperation):
+    def exec_unary_op(self, state: SEState, instr: UnaryOperation) -> List[SEState]:
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
         assert _types_check(instr, op1)

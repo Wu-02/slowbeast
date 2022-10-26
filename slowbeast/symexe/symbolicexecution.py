@@ -14,33 +14,13 @@ from slowbeast.ir.instruction import (
 from slowbeast.solvers.symcrete import SymbolicSolver, Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from .executor import Executor as SExecutor
+from .options import SEOptions
 from .threadedexecutor import ThreadedExecutor
 from io import TextIOWrapper
-from typing import Optional, Type, Sized, Union
+from typing import Optional, Sized, Union
 from slowbeast.symexe.executionstate import SEState
 from slowbeast.ir.program import Program
 from slowbeast.symexe.executor import Executor
-
-
-class SEOptions(ExecutionOptions):
-    def __init__(self, opts: None = None) -> None:
-        super().__init__(opts)
-        if opts:
-            self.incremental_solving = opts.incremental_solving
-            self.replay_errors = opts.replay_errors
-            self.concretize_nondets = opts.concretize_nondets
-            self.uninit_is_nondet = opts.uninit_is_nondet
-            self.exit_on_error = opts.exit_on_error
-            self.error_funs = opts.error_funs
-            self.threads = opts.threads
-        else:
-            self.threads = False
-            self.incremental_solving = False
-            self.replay_errors = False
-            self.concretize_nondets = False
-            self.uninit_is_nondet = False
-            self.exit_on_error = False
-            self.error_funs = []
 
 
 class SEStats:
