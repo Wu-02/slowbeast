@@ -22,6 +22,8 @@ from slowbeast.domains.exprmgr import ExpressionManager
 from slowbeast.ir.program import Program
 from slowbeast.solvers.symcrete import SymbolicSolver
 from .options import SEOptions
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.symexe.options import SEOptions
 
 unsupported_funs = [
     "memmove",
@@ -54,7 +56,7 @@ class SEStats:
         self.forks = 0
 
 
-def add_pointer_with_constant(E, op1, op2) -> Pointer:
+def add_pointer_with_constant(E: ExpressionManager, op1: Pointer, op2: Union[ConcreteBitVec, Expr]) -> Pointer:
     return Pointer(op1.object(), E.Add(op1.offset(), op2))
 
 
@@ -204,7 +206,7 @@ class Executor(ConcreteExecutor):
         return T, F
 
     # FIXME: make this a method of State?
-    def assume(self, state, cond) -> None:
+    def assume(self, state: SEState, cond: Expr) -> None:
         """Put an assumption _into_ the given state.
         Return the state or None if that situation cannot happen
         (the assumption is inconsistent with the state).
@@ -438,7 +440,7 @@ class Executor(ConcreteExecutor):
 
         return [state]
 
-    def _resolve_function_pointer(self, state, funptr):
+    def _resolve_function_pointer(self, state: SEState, funptr: Load) -> Function:
         ptr = state.try_eval(funptr)
         if ptr is None:
             return None
@@ -488,7 +490,7 @@ class Executor(ConcreteExecutor):
 
         return self.call_fun(state, instr, fun)
 
-    def call_fun(self, state, instr, fun):
+    def call_fun(self, state: SEState, instr: Call, fun: Function) -> List[SEState]:
         # map values to arguments
         assert len(instr.operands()) == len(fun.arguments())
         mapping = {
@@ -522,7 +524,7 @@ class Executor(ConcreteExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
-    def exec_binary_op(self, state, instr: BinaryOperation):
+    def exec_binary_op(self, state: SEState, instr: BinaryOperation) -> List[SEState]:
         assert isinstance(instr, BinaryOperation)
         seval = state.eval
         getop = instr.operand
@@ -673,7 +675,7 @@ class Executor(ConcreteExecutor):
 
         return [state]
 
-    def exec_assume(self, state, instr: Assume):
+    def exec_assume(self, state: SEState, instr: Assume) -> List[SEState]:
         assert isinstance(instr, Assume)
         for o in instr.operands():
             v = state.eval(o)
@@ -711,7 +713,7 @@ class Executor(ConcreteExecutor):
         assert states, "Generated no states"
         return states
 
-    def exec_assert(self, state, instr: Assert):
+    def exec_assert(self, state: SEState, instr: Assert) -> List[SEState]:
         assert isinstance(instr, Assert)
         o = instr.condition()
         msg = instr.msg()

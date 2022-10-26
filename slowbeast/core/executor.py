@@ -9,7 +9,11 @@ from .errors import GenericError
 from .executionstate import ExecutionState
 from .memorymodel import MemoryModel
 from slowbeast.core.executionstate import ExecutionState
-from typing import Union
+from typing import List, Optional, Union
+from slowbeast.ir.program import Program
+from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.memorymodel import SymbolicMemoryModel
+from slowbeast.symexe.options import SEOptions
 
 
 def split_ready_states(states):
@@ -141,7 +145,7 @@ class Executor:
     and generates new states.
     """
 
-    def __init__(self, program, opts, memorymodel=None) -> None:
+    def __init__(self, program: Program, opts: SEOptions, memorymodel: Optional[SymbolicMemoryModel]=None) -> None:
         self.memorymodel = memorymodel or MemoryModel(opts)
 
         self._program = program
@@ -152,7 +156,7 @@ class Executor:
     # def set_memory_model(self, mm):
     #    self.memorymodel = mm
 
-    def get_memory_model(self):
+    def get_memory_model(self) -> SymbolicMemoryModel:
         assert self.memorymodel is not None
         return self.memorymodel
 
@@ -170,16 +174,16 @@ class Executor:
     def get_exec_step_num(self) -> int:
         return self._executed_blks
 
-    def get_options(self):
+    def get_options(self) -> SEOptions:
         return self._opts
 
     def forbid_calls(self) -> None:
         self._opts.no_calls = True
 
-    def calls_forbidden(self):
+    def calls_forbidden(self) -> bool:
         return self._opts.no_calls
 
-    def exec_store(self, state, instr: Store):
+    def exec_store(self, state: SEState, instr: Store) -> List[SEState]:
         assert isinstance(instr, Store)
 
         states = self.memorymodel.write(
@@ -191,7 +195,7 @@ class Executor:
                 s.pc = s.pc.get_next_inst()
         return states
 
-    def exec_load(self, state, instr: Load):
+    def exec_load(self, state: SEState, instr: Load) -> List[SEState]:
         assert isinstance(instr, Load)
 
         states = self.memorymodel.read(
@@ -203,7 +207,7 @@ class Executor:
                 s.pc = s.pc.get_next_inst()
         return states
 
-    def exec_alloc(self, state, instr):
+    def exec_alloc(self, state: SEState, instr: Alloc) -> List[SEState]:
         states = self.memorymodel.allocate(state, instr)
         for s in states:
             if s.is_ready():
@@ -244,7 +248,7 @@ class Executor:
 
         return [state]
 
-    def exec_print(self, state, instr: Print):
+    def exec_print(self, state: SEState, instr: Print) -> List[SEState]:
         assert isinstance(instr, Print)
         for x in instr.operands():
             v = state.eval(x)
@@ -400,7 +404,7 @@ class Executor:
         state.push_call(instr, fun, mapping)
         return [state]
 
-    def exec_ret(self, state, instr: Return):
+    def exec_ret(self, state: SEState, instr: Return) -> List[SEState]:
         assert isinstance(instr, Return)
 
         # obtain the return value (if any)
@@ -433,7 +437,7 @@ class Executor:
 
     def execute(
         self,
-        state,
+        state: SEState,
         instr: Union[
             Alloc,
             Assert,
@@ -453,7 +457,7 @@ class Executor:
             ThreadJoin,
             UnaryOperation,
         ],
-    ):
+    ) -> List[SEState]:
         """
         Execute the next instruction in the state and modify the state accordingly.
         """
@@ -544,7 +548,7 @@ class Executor:
 
         return readystates, nonreadystates
 
-    def execute_till_branch(self, state, stopBefore: bool = False):
+    def execute_till_branch(self, state: SEState, stopBefore: bool = False) -> List[SEState]:
         """
         Start executing from 'state' and stop execution after executing a
         branch instruction.  This will typically execute exactly one basic block

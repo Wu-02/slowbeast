@@ -7,10 +7,11 @@ from slowbeast.ir.types import get_size_type
 from slowbeast.symexe.memory import Memory
 from slowbeast.util.debugging import dbgv
 from typing import Union
+from slowbeast.symexe.options import SEOptions
 
 
 class SymbolicMemoryModel(CoreMM):
-    def __init__(self, opts) -> None:
+    def __init__(self, opts: SEOptions) -> None:
         super().__init__(opts)
 
     def create_memory(self) -> Memory:
