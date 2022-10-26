@@ -228,7 +228,7 @@ class ExpressionManager:
         r = SymbolicDomain.FpOp(op, self.lift(val))
         return opt(r) if r else r  # FpOp may return None
 
-    def Extend(self, a: Value, b: int, unsigned: bool) -> Expr:
+    def Extend(self, a: Value, b: int, unsigned: bool) -> Union[ConcreteVal, Expr]:
         assert isinstance(b, int), f"Invalid extend argument: {b}"
         assert isinstance(unsigned, bool), f"Invalid extend argument: {unsigned}"
         if isinstance(a, ConcreteVal):

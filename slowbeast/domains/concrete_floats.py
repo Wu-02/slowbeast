@@ -1,10 +1,24 @@
+from numpy import float16, float32, float64, isnan, isinf
+
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
-from slowbeast.domains.value import Value
 from slowbeast.ir.types import FloatType
 from .domain import Domain
 
-from numpy import float16, float32, float64, isnan, isinf
-
+# def float_to_bv(x):
+#     if bw == 32:
+#         d = (
+#             unpack("I", pack("f", x.value()))
+#             if unsigned
+#             else unpack("i", pack("f", x.value()))
+#         )[0]
+#     else:
+#         assert bw == 64, f"{x}, bw: {bw}"
+#         d = (
+#             unpack("Q", pack("d", x.value()))
+#             if unsigned
+#             else unpack("q", pack("d", x.value()))
+#         )[0]
+#     return d
 
 class ConcreteFloat(ConcreteVal):
     def __init__(self, n, bw: int) -> None:

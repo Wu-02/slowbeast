@@ -1,13 +1,12 @@
-from struct import unpack, pack
+from struct import unpack
+from typing import Type, Union
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import BitVecType
 from .domain import Domain
-from .value import Value
-from typing import Type
 
 
-def to_unsigned(x, bw: int):
+def to_unsigned(x: int, bw: int) -> int:
     """Get unsigned value for signed in 2's complement"""
     if isinstance(x, float):
         return int(abs(x))
@@ -16,7 +15,7 @@ def to_unsigned(x, bw: int):
     return x + (1 << bw)
 
 
-def to_signed(x, bw: int):
+def to_signed(x: int, bw: int) -> int:
     """Get signed value for number in 2's complement"""
     if x < (1 << (bw - 1)):
         return x
@@ -25,22 +24,9 @@ def to_signed(x, bw: int):
 
 def to_bv(x, unsigned: bool = True):
     bw = x.bitwidth()
-    if x.is_float():
-        if bw == 32:
-            d = (
-                unpack("I", pack("f", x.value()))
-                if unsigned
-                else unpack("i", pack("f", x.value()))
-            )[0]
-        else:
-            assert bw == 64, f"{x}, bw: {bw}"
-            d = (
-                unpack("Q", pack("d", x.value()))
-                if unsigned
-                else unpack("q", pack("d", x.value()))
-            )[0]
-        return d
-    if (x.is_bv() or x.is_bytes()) and not unsigned:
+    assert not x.is_float(), x
+    assert not x.is_bytes(), "Not implemented"
+    if unsigned:
         # signed/unsigned conversion
         uint = to_unsigned(x.value(), bw)
         return (
@@ -57,7 +43,7 @@ def wrap_to_bw(x, bw: int):
 
 
 class ConcreteBitVec(ConcreteVal):
-    def __init__(self, n: int, bw: BitVecType) -> None:
+    def __init__(self, n: int, bw: Union[int, BitVecType]) -> None:
         assert isinstance(n, int), n
         if not isinstance(bw, BitVecType):
             assert isinstance(bw, int), bw
@@ -78,7 +64,7 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBitVec
 
     @staticmethod
-    def Value(c, bw: int) -> ConcreteBitVec:
+    def Value(c: int, bw: Union[int, BitVecType]) -> ConcreteBitVec:
         return ConcreteBitVec(c, bw)
 
     ## Relational operations
@@ -215,14 +201,14 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBitVec(wrap_to_bw(int(aval / bval), bw), bw)
 
     @staticmethod
-    def Extend(a: Value, b: int, unsigned: bool) -> Value:
+    def Extend(a: Value, bw: int, unsigned: bool) -> Value:
         assert isinstance(a, ConcreteBitVec), a
-        assert isinstance(b, int), b
-        assert isinstance(unsigned, bool), b
-        assert a.bitwidth() < b, f"Invalid extend argument: {b}"
+        assert isinstance(bw, int), bw
+        assert isinstance(unsigned, bool), unsigned
+        assert a.bitwidth() < bw, f"Invalid extend argument: {bw}"
         assert a.is_bv(), a
-        aval = to_bv(a, unsigned=True)
-        return ConcreteBitVec(to_unsigned(aval, a.bitwidth()), b)
+        aval = to_bv(a, unsigned)
+        return ConcreteBitVec(aval, bw)
 
     @staticmethod
     def Shl(a: Value, b: Value) -> Value:

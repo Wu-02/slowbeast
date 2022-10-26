@@ -124,9 +124,10 @@ class ConcreteDomain(Domain):
         raise NotImplementedError(f"Operation not implemented: Not({a})")
 
     @staticmethod
-    def Extend(a: ConcreteBitVec, b: int, unsigned: bool) -> Value:
-        assert isinstance(a, ConcreteBitVec), a
+    def Extend(a: ConcreteVal, b: int, unsigned: bool) -> Value:
+        assert isinstance(a, ConcreteVal), a
         assert isinstance(b, int), b
+        assert not a.is_float(), "No extend for floats implemented"
         return ConcreteBitVecDomain.Extend(a, b, unsigned)
 
     @staticmethod
