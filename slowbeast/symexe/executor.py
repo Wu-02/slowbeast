@@ -546,7 +546,9 @@ class Executor(ConcreteExecutor):
             elif opcode == BinaryOperation.ASHR:
                 r = expr_mgr.AShr(op1, op2)
             elif opcode == BinaryOperation.REM:
-                r = expr_mgr.Rem(op1, op2, instr.is_unsigned())
+                r = expr_mgr.Rem(op1, op2, False)
+            elif opcode == BinaryOperation.UREM:
+                r = expr_mgr.Rem(op1, op2, True)
             elif opcode == BinaryOperation.AND:
                 r = expr_mgr.And(op1, op2)
             elif opcode == BinaryOperation.OR:

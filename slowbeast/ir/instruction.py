@@ -727,9 +727,11 @@ class BinaryOperation(ValueTypedInstruction):
         if op == BinaryOperation.DIV:
             return "/"
         if op == BinaryOperation.UDIV:
-            return "/u"
+            return "u/"
         if op == BinaryOperation.REM:
             return "%"
+        if op == BinaryOperation.UREM:
+            return "u%"
         if op == BinaryOperation.SHL:
             return "<<"
         if op == BinaryOperation.LSHR:
@@ -742,6 +744,7 @@ class BinaryOperation(ValueTypedInstruction):
             return "|"
         if op == BinaryOperation.XOR:
             return "^"
+        raise RuntimeError(f"Unknown binary op: {op}")
 
     def operation(self):
         return self._op
