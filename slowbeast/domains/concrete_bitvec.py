@@ -9,8 +9,7 @@ from .domain import Domain
 
 def to_unsigned(x: int, bw: int) -> int:
     """Get unsigned value for signed in 2's complement"""
-    if isinstance(x, float):
-        return int(abs(x))
+    assert not isinstance(x, float), x
     if x >= 0:
         return x
     return x + (1 << bw)
@@ -188,17 +187,14 @@ class ConcreteBitVecDomain(Domain):
     def Div(
         a: ConcreteBitVec,
         b: ConcreteBitVec,
-        unordered: bool = False,
-        isfloat: bool = False,
+        unsigned: bool = False,
     ) -> ConcreteBitVec:
         assert isinstance(a, ConcreteBitVec), a
         assert isinstance(b, ConcreteBitVec), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
-        aval, bval = to_bv(a, unordered), to_bv(b, unordered)
-        if unordered:
-            return ConcreteBitVec(to_unsigned(aval, bw) / to_unsigned(bval, bw), bw)
+        aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
         return ConcreteBitVec(wrap_to_bw(int(aval / bval), bw), bw)
 
     @staticmethod
@@ -282,7 +278,7 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBitVec(a.value() % b.value(), bw)
 
     @staticmethod
-    def Neg(a: Value, isfloat: bool = False) -> Value:
+    def Neg(a: Value) -> Value:
         """Return the negated number"""
         assert isinstance(a, ConcreteBitVec), a
         ty = a.type()
@@ -290,21 +286,23 @@ class ConcreteBitVecDomain(Domain):
         return ConcreteBitVec(wrap_to_bw(-a.value(), bw), bw)
 
     @staticmethod
-    def Abs(a: Value, is_float: bool = False) -> Value:
-        assert not is_float
+    def Abs(a: Value) -> Value:
         assert isinstance(a, ConcreteBitVec), a
         return ConcreteBitVec(abs(a.value()), a.bitwidth())
 
+    @staticmethod
     def And(a: Value, b: Value) -> ConcreteBitVec:
         assert isinstance(a, ConcreteBitVec) and isinstance(b, ConcreteBitVec)
         assert a.type() == b.type(), f"{a}, {b}"
         return ConcreteBitVec(a.value() & b.value(), a.bitwidth())
 
+    @staticmethod
     def Or(a: Value, b: Value) -> ConcreteBitVec:
         assert isinstance(a, ConcreteBitVec) and isinstance(b, ConcreteBitVec)
         assert a.type() == b.type(), f"{a}, {b}"
         return ConcreteBitVec(a.value() | b.value(), a.bitwidth())
 
+    @staticmethod
     def Xor(a: Value, b: Value) -> ConcreteBitVec:
         assert isinstance(a, ConcreteBitVec) and isinstance(b, ConcreteBitVec)
         assert a.type() == b.type(), f"{a}, {b}"

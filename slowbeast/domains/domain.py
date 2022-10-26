@@ -92,7 +92,7 @@ class Domain:
         return not_implemented()
 
     @staticmethod
-    def Extend(self, a: Value, b: int, unsigned: bool):
+    def Extend(a: Value, b: int, unsigned: bool):
         """
         Extend the representation of the value to 'bw' bits.
         Usually applies only to bitvectors (signed/unsigned extension)
