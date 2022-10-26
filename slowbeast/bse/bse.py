@@ -15,7 +15,7 @@ from slowbeast.symexe.symbolicexecution import (
     SEOptions,
 )
 from slowbeast.util.debugging import print_stdout, print_stderr, dbg
-from .bseexecutor import Executor as BSEExecutor
+from .executor import Executor as BSEExecutor
 
 
 def report_state(stats, n, msg=None, fn=print_stderr) -> None:
