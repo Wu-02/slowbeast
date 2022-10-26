@@ -316,18 +316,18 @@ class ExpressionManager:
         lift = self.lift
         return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned))
 
-    def Eq(self, a: Value, b: Value, unsigned: bool = False) -> Expr:
+    def Eq(self, a: Value, b: Value) -> Expr:
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if isinstance(a, ConcreteVal) and isinstance(b, ConcreteVal):
-            return ConcreteDomain.Eq(a, b, unsigned)
+            return ConcreteDomain.Eq(a, b)
         lift = self.lift
-        return opt(SymbolicDomain.Eq(lift(a), lift(b), unsigned))
+        return opt(SymbolicDomain.Eq(lift(a), lift(b)))
 
-    def Ne(self, a: Value, b: Value, unsigned: bool = False):
+    def Ne(self, a: Value, b: Value):
         if isinstance(a, ConcreteVal) and isinstance(b, ConcreteVal):
-            return ConcreteDomain.Ne(a, b, unsigned)
+            return ConcreteDomain.Ne(a, b)
         lift = self.lift
-        return opt(SymbolicDomain.Ne(lift(a), lift(b), unsigned))
+        return opt(SymbolicDomain.Ne(lift(a), lift(b)))
 
     ##
     # Artihmetic operations

@@ -324,9 +324,9 @@ class Executor(ConcreteExecutor):
         elif p == Cmp.GT:
             return expr_mgr.Gt(op1, op2, unsgn)
         elif p == Cmp.EQ:
-            return expr_mgr.Eq(op1, op2, unsgn)
+            return expr_mgr.Eq(op1, op2)
         elif p == Cmp.NE:
-            return expr_mgr.Ne(op1, op2, unsgn)
+            return expr_mgr.Ne(op1, op2)
         else:
             raise RuntimeError("Invalid comparison")
 

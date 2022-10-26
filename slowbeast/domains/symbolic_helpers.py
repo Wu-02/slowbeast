@@ -51,7 +51,7 @@ from z3 import (
 
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.concrete import concrete_value
-from slowbeast.ir.types import BoolType, FloatType, BitVecType
+from slowbeast.ir.types import BoolType, FloatType, BitVecType, Type
 from slowbeast.util.debugging import FIXME
 
 
@@ -159,7 +159,7 @@ def python_constant(val):
     return None
 
 
-def python_to_sb_type(val: float, bw) -> Union[BoolType, FloatType, BitVecType]:
+def python_to_sb_type(val: float, bw) -> Type:
     if isinstance(val, bool):
         assert bw == 1
         return BoolType()
