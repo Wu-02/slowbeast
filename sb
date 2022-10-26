@@ -1,13 +1,17 @@
 #!/usr/bin/python3
 
 import argparse
-from os import mkdir
-from os.path import basename
+from os import mkdir, readlink
+from os.path import basename, islink, dirname, abspath
 from os.path import join as pathjoin
 from shutil import rmtree
 from subprocess import run
-from sys import exit
+from sys import exit as sys_exit, path as syspath
 from time import time, process_time
+
+# make sure we see our 'slowbeast' package
+sb_path = dirname(readlink(__file__) if islink(__file__) else __file__)
+syspath.append(abspath(sb_path))
 
 from slowbeast.domains.symbolic_helpers import to_c_expression
 from slowbeast.ir.instruction import Call
@@ -18,7 +22,7 @@ from slowbeast.util.debugging import set_debugging, dbg, print_stdout, print_std
 
 def err(msg):
     print_stderr(msg, color="RED")
-    exit(1)
+    sys_exit(1)
 
 def create_arg_parser():
     parser = argparse.ArgumentParser()
@@ -536,7 +540,7 @@ def main():
 
     if args.parse_only:
         P.dump()
-        exit(0)
+        sys_exit(0)
 
     if args.dump:
         P.dump()
@@ -544,7 +548,7 @@ def main():
     entry = P.fun(args.entry)
     if not entry:
         print("Entry function not found: {0}".format(args.entry))
-        exit(1)
+        sys_exit(1)
 
     testgen=None
     if not args.no_output:
@@ -675,7 +679,7 @@ def main():
         ct = process_time()-cputime
         print_stdout(f"wall-time: {wt}, cpu-time: {ct}", color="gray")
 
-    exit(0)
+    sys_exit(0)
 
 if __name__ == "__main__":
     main()
