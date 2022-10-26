@@ -213,8 +213,7 @@ class BSEState(LazySEState):
             newval = em.Cast(newval, val.type())
         elif val.bitwidth() == 1 and newval.bitwidth() == 8:
             assert not val.is_bool(), f"{val} -> {newval}"
-            z = ConcreteBitVec(0, 8)
-            newval = em.Extract(newval, z, z)
+            newval = em.Extract(newval, 0, 0)
 
         assert val.type() == newval.type(), f"{val} -- {newval}"
         # FIXME: use incremental solver
