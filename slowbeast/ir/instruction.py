@@ -607,7 +607,7 @@ class Cast(UnaryOperation):
             self.operand(0).as_value(),
             "signed " if self._signed else "",
             self.casttype(),
-            self.op_type(0)
+            self.op_type(0),
         )
 
 
@@ -619,8 +619,7 @@ class Neg(UnaryOperation):
 
     def __str__(self) -> str:
         return "x{0}:{2} = -(({3}){1})".format(
-            self.get_id(), self.operand(0).as_value(),
-            self.type(), self.op_type(0)
+            self.get_id(), self.operand(0).as_value(), self.type(), self.op_type(0)
         )
 
 
@@ -629,7 +628,10 @@ class ExtractBits(UnaryOperation):
         assert start.is_concrete(), "Invalid bitwidth to extend"
         assert end.is_concrete(), "Invalid bitwidth to extend"
         super().__init__(
-            UnaryOperation.EXTRACT, val, BitVecType(end.value() - start.value() + 1), optypes
+            UnaryOperation.EXTRACT,
+            val,
+            BitVecType(end.value() - start.value() + 1),
+            optypes,
         )
         self._start = start
         self._end = end
@@ -645,8 +647,12 @@ class ExtractBits(UnaryOperation):
 
     def __str__(self) -> str:
         return "x{0}:{4} = extractbits {1}-{2} from ({5}){3}".format(
-            self.get_id(), self.start(), self.end(), self.operand(0).as_value(),
-            self.type(), self.op_type(0)
+            self.get_id(),
+            self.start(),
+            self.end(),
+            self.operand(0).as_value(),
+            self.type(),
+            self.op_type(0),
         )
 
 

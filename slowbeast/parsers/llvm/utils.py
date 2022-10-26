@@ -92,7 +92,7 @@ def is_array_ty(ty: str) -> bool:
 
 
 def parse_array_ty(ty) -> None:
-    parts = str(ty)[1:-1].split('x')
+    parts = str(ty)[1:-1].split("x")
     return int(parts[0]), parts[1].strip()
 
 
