@@ -1,3 +1,4 @@
+// UNSUPPORTED: bself
 // REQUIRES: unbounded
 // RUN: rm -rf %t-out
 // RUN: timeout 60 %sb -out-dir=%t-out %opts %s &>%t.log
