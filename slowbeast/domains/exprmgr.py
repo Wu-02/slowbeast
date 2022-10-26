@@ -155,7 +155,7 @@ class ExpressionManager:
             return ConcreteDomain.get_true()
         if len(args) == 1:
             return args[0]
-        if ConcreteDomain.belongto(*args):
+        if all((isinstance(a, ConcreteVal) for a in args)):
             return ConcreteDomain.conjunction(*args)
         lift = self.lift
         return opt(SymbolicDomain.conjunction(*map(lift, args)))
@@ -172,13 +172,13 @@ class ExpressionManager:
             return ConcreteDomain.get_false()
         if len(args) == 1:
             return args[0]
-        if ConcreteDomain.belongto(*args):
+        if all((isinstance(a, ConcreteVal) for a in args)):
             return ConcreteDomain.disjunction(*args)
         lift = self.lift
         return opt(SymbolicDomain.disjunction(*map(lift, args)))
 
     def Ite(self, c: Value, a: Value, b: Value):
-        if ConcreteDomain.belongto(c):
+        if isinstance(c, ConcreteVal):
             cval = c.value()
             if cval is True:
                 return a
@@ -263,8 +263,9 @@ class ExpressionManager:
         return SymbolicDomain.BitCast(a, ty)
 
     def Extract(self, a, start, end):
-        assert ConcreteDomain.belongto(start), start
-        assert ConcreteDomain.belongto(end), end
+        FIXME("Pass ints as the range to Extract")
+        assert isinstance(start, ConcreteVal), start
+        assert isinstance(end, ConcreteVal), end
         if isinstance(a, ConcreteVal):
             return ConcreteDomain.Extract(a, start, end)
         return opt(SymbolicDomain.Extract(a, start, end))
@@ -380,7 +381,7 @@ class ExpressionManager:
         return opt(SymbolicDomain.Div(lift(a), lift(b), unsigned))
 
     def Rem(self, a: Value, b: Value, unsigned: bool = False):
-        if ConcreteDomain.belongto(a, b):
+        if isinstance(a, ConcreteVal) and isinstance(b, ConcreteVal):
             return ConcreteDomain.Rem(a, b, unsigned)
         lift = self.lift
         return opt(SymbolicDomain.Rem(lift(a), lift(b), unsigned))

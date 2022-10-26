@@ -557,7 +557,7 @@ class UnaryOperation(ValueTypedInstruction):
 class Abs(UnaryOperation):
     """Absolute value"""
 
-    def __init__(self, val, retty, optypes) -> None:
+    def __init__(self, val, retty: Type, optypes: list) -> None:
         super().__init__(UnaryOperation.ABS, val, retty, optypes)
 
     def __str__(self) -> str:
@@ -579,21 +579,20 @@ class Extend(UnaryOperation):
         return self._signed
 
     def __str__(self) -> str:
-        optypes = self.expected_op_types()
         return "x{0}: {3} = extend {5} ({4}){1} to {2} bits".format(
             self.get_id(),
             self.operand(0).as_value(),
             self.bitwidth(),
             self.type(),
-            optypes[0],
+            self.op_type(0),
             "signed" if self.is_signed() else "unsigned",
         )
 
 
 class Cast(UnaryOperation):
-    def __init__(self, a, ty: Type, sgn: bool = True) -> None:
+    def __init__(self, a, ty: Type, sgn, optypes) -> None:
         assert isinstance(ty, Type)
-        super().__init__(UnaryOperation.CAST, a, ty=ty)
+        super().__init__(UnaryOperation.CAST, a, ty, optypes)
         self._signed = sgn
 
     def casttype(self):
@@ -603,36 +602,34 @@ class Cast(UnaryOperation):
         return self._signed
 
     def __str__(self) -> str:
-        return "x{0} = cast {1} to {2}{3}".format(
+        return "x{0}:{3} = cast ({4}){1} to {2}{3}".format(
             self.get_id(),
             self.operand(0).as_value(),
             "signed " if self._signed else "",
             self.casttype(),
+            self.op_type(0)
         )
 
 
 class Neg(UnaryOperation):
     """Negate the number (return the same number with opposite sign)"""
 
-    def __init__(self, val, fp) -> None:
-        super().__init__(UnaryOperation.NEG, val)
-        self._fp = fp
-
-    def is_fp(self):
-        return self._fp
+    def __init__(self, val, retty, optypes) -> None:
+        super().__init__(UnaryOperation.NEG, val, retty, optypes)
 
     def __str__(self) -> str:
-        return "x{0} = -({1}){2}".format(
-            self.get_id(), self.operand(0).as_value(), "f" if self._fp else ""
+        return "x{0}:{2} = -(({3}){1})".format(
+            self.get_id(), self.operand(0).as_value(),
+            self.type(), self.op_type(0)
         )
 
 
 class ExtractBits(UnaryOperation):
-    def __init__(self, val, start, end) -> None:
+    def __init__(self, val, start, end, optypes) -> None:
         assert start.is_concrete(), "Invalid bitwidth to extend"
         assert end.is_concrete(), "Invalid bitwidth to extend"
         super().__init__(
-            UnaryOperation.EXTRACT, val, ty=BitVecType(end.value() - start.value() + 1)
+            UnaryOperation.EXTRACT, val, BitVecType(end.value() - start.value() + 1), optypes
         )
         self._start = start
         self._end = end
@@ -647,8 +644,9 @@ class ExtractBits(UnaryOperation):
         return self._end
 
     def __str__(self) -> str:
-        return "x{0} = extractbits {1}-{2} from {3}".format(
-            self.get_id(), self.start(), self.end(), self.operand(0).as_value()
+        return "x{0}:{4} = extractbits {1}-{2} from ({5}){3}".format(
+            self.get_id(), self.start(), self.end(), self.operand(0).as_value(),
+            self.type(), self.op_type(0)
         )
 
 

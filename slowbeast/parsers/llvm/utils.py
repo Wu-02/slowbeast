@@ -209,7 +209,8 @@ def get_constant(val):
                 c = True
             elif parts[1] == "false":
                 c = False
-        return None
+        else:
+            return None
 
     return concrete_value(c, bw)
 

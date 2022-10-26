@@ -706,6 +706,7 @@ class Parser:
             self.operand(operands[0]),
             concrete_value(0, 32),
             concrete_value(bits - 1, 32),
+            [get_sb_type(self.llvmmodule, op.type) for op in operands],
         )
         self._addMapping(inst, ext)
         return [ext]
@@ -831,7 +832,8 @@ class Parser:
     def _handlePhi(self, inst) -> List[Load]:
         bnum = type_size(self.llvmmodule, inst.type)
         phivar = Alloc(concrete_value(bnum, get_size_type()))
-        L = Load(phivar, get_sb_type(self.llvmmodule, inst.type))
+        ty = get_sb_type(self.llvmmodule, inst.type)
+        L = Load(phivar, ty, [ty])
         self._addMapping(inst, L)
         self.phis.append((inst, phivar, L))
         return [L]
@@ -951,7 +953,7 @@ class Parser:
                 for i in range(0, inst.phi_incoming_count):
                     v, b = inst.phi_incoming(i)
                     B = self._bblocks[b]
-                    S = Store(self.operand(v), var, load.bytewidth())
+                    S = Store(self.operand(v), var, [load.type(), PointerType()])
                     S.insert_before(B.last())
             self.phis = []  # we handled these PHI nodes
 

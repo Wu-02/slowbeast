@@ -230,7 +230,6 @@ class Executor(ConcreteExecutor):
         self.stats.branchings += 1
 
         cond = instr.condition()
-        assert cond.type().is_bool()
         cval = eval_condition(state, cond)
         assert cval.type().is_bool()
 
