@@ -25,6 +25,11 @@ from .value import Value
 
 class ConcreteFloat(ConcreteVal):
     def __init__(self, n, bw: int) -> None:
+        if isinstance(bw, FloatType):
+            ty = bw
+            bw = bw.bitwidth()
+        else:
+            ty = FloatType(bw)
         assert isinstance(bw, int), bw
         if bw == 16:
             val = float16(n)
@@ -36,7 +41,7 @@ class ConcreteFloat(ConcreteVal):
             raise NotImplementedError(
                 f"ConcreteFloat with bitwidth {bw} not implemented"
             )
-        super().__init__(val, FloatType(bw))
+        super().__init__(val, ty)
 
     def is_nan(self) -> bool:
         return isnan(self._value)

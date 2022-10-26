@@ -98,7 +98,7 @@ class ExecutionState:
         if isinstance(v, Pointer) and v.is_null():
             return v
         if isinstance(v, Function):
-            return ConcreteVal(v.get_id(), get_offset_type())
+            return ConcreteBitVec(v.get_id(), get_offset_type())
         value = self.get(v)
         if value is None:
             raise RuntimeError(f"Use of uninitialized/unknown variable {v}")

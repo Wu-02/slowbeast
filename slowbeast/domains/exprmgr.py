@@ -269,7 +269,7 @@ class ExpressionManager:
         return opt(SymbolicDomain.Extract(a, start, end))
 
     def Concat(self, *args):
-        if all(map(lambda a: isinstance(a, ConcreteVal), args)):
+        if all((isinstance(a, ConcreteVal) for a in args)):
             return ConcreteDomain.Concat(*args)
         lift = self.lift
         return opt(SymbolicDomain.Concat(*map(lift, args)))
@@ -317,7 +317,7 @@ class ExpressionManager:
         return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned))
 
     def Eq(self, a: Value, b: Value, unsigned: bool = False) -> Expr:
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
+        assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if isinstance(a, ConcreteVal) and isinstance(b, ConcreteVal):
             return ConcreteDomain.Eq(a, b, unsigned)
         lift = self.lift

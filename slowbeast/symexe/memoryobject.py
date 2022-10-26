@@ -1,14 +1,17 @@
+from typing import Union, List, Tuple, Optional
+
+from typing_extensions import SupportsIndex
+
 from slowbeast.core.errors import MemError
 from slowbeast.core.memoryobject import MemoryObject as CoreMO
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.domains.concrete_bytes import ConcreteBytes
 from slowbeast.domains.concrete_value import ConcreteVal
+from slowbeast.domains.expr import Expr
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import get_offset_type, BitVecType, BytesType
+from slowbeast.ir.types import get_offset_type, BitVecType
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
-from typing import Union, List, Tuple, Optional, Sized
-from typing_extensions import SupportsIndex
-from slowbeast.domains.expr import Expr
-from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
 
 def get_byte(EM, x, bw, i: int):
@@ -17,6 +20,13 @@ def get_byte(EM, x, bw, i: int):
     assert b.bitwidth() == 8
     return b
 
+def to_byte(x):
+    assert x.bitwidth() == 8
+    if isinstance(x, ConcreteBytes):
+        return x
+    if isinstance(x, ConcreteBitVec):
+        return ConcreteBytes(x.value(), 1)
+    return x
 
 def write_bytes(offval, values, size, x: Union[Expr, Value]) -> Optional[MemError]:
     EM = global_expr_mgr()
@@ -37,22 +47,20 @@ def write_bytes(offval, values, size, x: Union[Expr, Value]) -> Optional[MemErro
     return None
 
 
-def read_bytes(values: Sized, offval, size, bts, zeroed):
+def read_bytes(values, offval, size, bts, zeroed):
     assert bts > 0, bts
     assert size > 0, size
     assert offval >= 0, offval
-    EM = global_expr_mgr()
+    expr_mgr = global_expr_mgr()
     if zeroed:
         c = offval + bts - 1
         # just make Extract return BytesType and it should work well then
-        val = EM.Concat(
+        val = expr_mgr.Concat(
             *(
-                values[c - i] if values[c - i] else ConcreteVal(0, BitVecType(8))
+                values[c - i] if values[c - i] else ConcreteBytes(0, 1)
                 for i in range(0, bts)
             )
         )
-        # FIXME hack
-        val._type = BytesType(val.bytewidth())
     else:
         if offval + bts > len(values):
             return None, MemError(
@@ -65,9 +73,7 @@ def read_bytes(values: Sized, offval, size, bts, zeroed):
             return None, MemError(MemError.UNINIT_READ, "Read of uninitialized byte")
         c = offval + bts - 1
         # just make Extract return BytesType and it should work well then
-        val = EM.Concat(*(values[c - i] for i in range(0, bts)))
-        # FIXME hack
-        val._type = BytesType(val.bytewidth())
+        val = expr_mgr.Concat(*(to_byte(values[c - i]) for i in range(0, bts)))
     return val, None
 
 
@@ -104,7 +110,7 @@ class MemoryObject(CoreMO):
         """
         assert isinstance(bts, int), "Read non-constant number of bytes"
         if off is None:
-            off = ConcreteVal(0, get_offset_type())
+            off = ConcreteBitVec(0, get_offset_type())
 
         if not off.is_concrete():
             return None, MemError(
@@ -142,7 +148,7 @@ class MemoryObject(CoreMO):
                 return read_bytes(values, offval, size, bts, self._zeroed)
 
             if self._zeroed:
-                return ConcreteVal(0, BitVecType(bts * 8)), None
+                return ConcreteBitVec(0, bts * 8), None
             return None, MemError(
                 MemError.UNINIT_READ,
                 "uninitialized or unaligned read (the latter is unsupported)\n"
@@ -178,7 +184,7 @@ class MemoryObject(CoreMO):
         assert self._ro is False, "Writing read-only object (COW bug)"
 
         if off is None:
-            off = ConcreteVal(0, get_offset_type())
+            off = ConcreteBitVec(0, get_offset_type())
 
         if not off.is_concrete():
             return MemError(

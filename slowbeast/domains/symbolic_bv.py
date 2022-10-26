@@ -47,7 +47,7 @@ from z3 import (
     fpIsNegative,
 )
 
-from slowbeast.domains.concrete_value import ConcreteVal
+from slowbeast.domains.concrete import ConcreteDomain
 from slowbeast.domains.symbolic_helpers import (
     get_fp_sort,
     python_constant,
@@ -106,13 +106,13 @@ class BVSymbolicDomain(Domain):
         return python_constant(expr.unwrap())
 
     @staticmethod
-    def substitute(expr: Expr, *what) -> Union[ConcreteVal, Expr]:
+    def substitute(expr: Expr, *what) -> Union[ConcreteDomain.get_value, Expr]:
         e = simplify(
             substitute(expr.unwrap(), *((a.unwrap(), b.unwrap()) for (a, b) in what))
         )
         c = python_constant(e)
         if c is not None:
-            return ConcreteVal(c, python_to_sb_type(c, expr.type().bitwidth()))
+            return ConcreteDomain.get_value(c, python_to_sb_type(c, expr.type().bitwidth()))
         return Expr(e, expr.type())
 
     # @staticmethod

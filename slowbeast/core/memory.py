@@ -3,7 +3,7 @@ from copy import copy
 
 from slowbeast.core.callstack import CallStack
 from slowbeast.core.errors import MemError
-from ..domains.concrete_value import ConcreteVal
+from ..domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.types import get_size_type
 from .memoryobject import MemoryObject
@@ -115,7 +115,7 @@ class Memory:
         assert self._objects.get(o.get_id()) is None
         self._objects[o.get_id()] = o
 
-        return Pointer(ConcreteVal(o.get_id(), get_size_type()))
+        return Pointer(ConcreteBitVec(o.get_id(), get_size_type()))
 
     def allocate_global(self, G, objid=None, zeroed: bool = False) -> Pointer:
         """Allocate a new memory object and return a pointer to it"""
@@ -134,7 +134,7 @@ class Memory:
         self._globs_bindings_reown()
         assert self._glob_bindings_ro is False
         assert self._glob_bindings.get(G) is None
-        ptr = Pointer(ConcreteVal(o.get_id(), get_size_type()))
+        ptr = Pointer(ConcreteBitVec(o.get_id(), get_size_type()))
         self._glob_bindings[G] = ptr
 
         return ptr
@@ -146,7 +146,7 @@ class Memory:
         return self._objects.get(moid) is not None or self.has_global_object(moid)
 
     def get_obj(self, moid: int):
-        if isinstance(moid, ConcreteVal):
+        if moid.is_concrete():
             moid = moid.value()
         assert isinstance(moid, int), f"Invalid MO ID: {moid}"
         obj = self._objects.get(moid)

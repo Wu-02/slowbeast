@@ -786,7 +786,7 @@ class Parser:
                     BinaryOperation.MUL,
                     var,
                     concrete_value(elemSize, size_type),
-                    [PointerType, size_type],
+                    [PointerType(), size_type],
                 )
                 varIdx.append(M)
                 if shift != 0:

@@ -154,8 +154,7 @@ def get_sb_type(
 
     if is_array_ty(ty):
         n, cty = parse_array_ty(ty)
-        if cty == "i8":
-            return BytesType(n)
+        return BytesType(type_size(m, ty))
 
     sty = str(ty)
     if sty in ("void", "metadata"):

@@ -23,6 +23,10 @@ from slowbeast.symexe.statesset import StatesSet
 from slowbeast.util.debugging import dbgv, ldbgv, warn
 from .executionstate import IncrementalSEState
 from ..domains.concrete_value import ConcreteVal, ConcreteBool
+from slowbeast.domains.concrete import ConcreteDomain
+
+concrete_value = ConcreteDomain.get_value
+
 
 unsupported_funs = [
     "memmove",
@@ -69,12 +73,12 @@ def condition_to_bool(
         return cond
 
     if cond.is_concrete():
-        cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
+        cval = EM.Ne(cond, concrete_value(0, cond.type()))
     else:
         assert cond.is_symbolic()
         assert not cond.type().is_bool()
         assert cond.type().bitwidth() == 1, f"Invalid condition in branching: {cond}"
-        cval = EM.Ne(cond, ConcreteVal(0, cond.type()))
+        cval = EM.Ne(cond, concrete_value(0, cond.type()))
 
     assert cval.is_bool()
     return cval
@@ -368,8 +372,8 @@ class Executor(ConcreteExecutor):
         if op2.is_zero():
             obj, off = op1.object(), op1.offset()
             expr = em.And(
-                em.Eq(obj, slowbeast.domains.concrete.ConcreteVal(0, obj.bitwidth())),
-                em.Eq(off, slowbeast.domains.concrete.ConcreteVal(0, off.bitwidth())),
+                em.Eq(obj, concrete_value(0, obj.bitwidth())),
+                em.Eq(off, concrete_value(0, off.bitwidth())),
             )
             return expr if pred == Cmp.EQ else em.Not(expr)
         return None
@@ -398,7 +402,7 @@ class Executor(ConcreteExecutor):
                         self.compare_values(
                             expr_mgr,
                             instr.predicate(),
-                            expr_mgr.ConcreteVal(0, op1.bitwidth()),
+                            expr_mgr.concrete_value(0, op1.bitwidth()),
                             op2,
                             instr.is_unsigned(),
                         ),
@@ -410,7 +414,7 @@ class Executor(ConcreteExecutor):
                             expr_mgr,
                             instr.predicate(),
                             op1,
-                            expr_mgr.ConcreteVal(0, op1.bitwidth()),
+                            expr_mgr.concrete_value(0, op1.bitwidth()),
                             instr.is_unsigned(),
                         ),
                     )
@@ -504,7 +508,7 @@ class Executor(ConcreteExecutor):
         retTy = fun.return_type()
         if retTy:
             if self.get_options().concretize_nondets:
-                val = ConcreteVal(getrandbits(32), retTy)
+                val = concrete_value(getrandbits(32), retTy)
             elif self._input_vector:
                 val = self._input_vector.pop()
                 ldbgv(f"Using value from input vector: {0}", (val,))
@@ -564,7 +568,7 @@ class Executor(ConcreteExecutor):
                     r = expr_mgr.Div(op1, op2, instr.is_unordered())
                 else:
                     good, bad = self.fork(
-                        state, expr_mgr.Ne(op2, ConcreteVal(0, op2.type()))
+                        state, expr_mgr.Ne(op2, concrete_value(0, op2.type()))
                     )
                     if good:
                         state = good
