@@ -46,7 +46,7 @@ class LazySymbolicMemoryModel(CoreMM):
         if isinstance(instr, (Alloc, GlobalVariable)):
             size = instr.size()
         elif self._overapprox_unsupported:
-            size = state.solver().Var(f"ndt_size_{instr.as_value()}", get_size_type())
+            size = state.solver().symbolic_value(f"ndt_size_{instr.as_value()}", get_size_type())
         size = state.try_eval(size)
         if instr.is_global():
             ptr = state.memory.allocate_global(instr, instr.is_zeroed())
@@ -95,7 +95,7 @@ class LazySymbolicMemoryModel(CoreMM):
 
         value = state.try_eval(value_op)
         if value is None:
-            value = state.solver().Var(
+            value = state.solver().symbolic_value(
                 f"uninit_{value_op.as_value()}", BitVecType(8 * instr.bytewidth())
             )
         assert isinstance(value, Value)
@@ -119,7 +119,7 @@ class LazySymbolicMemoryModel(CoreMM):
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
         # val = self.solver().fresh_value(f"uninit_{frm.as_value()}", 8 * bytes_num)
-        val = state.solver().Var(f"uninit_{frm.as_value()}", BitVecType(bitsnum))
+        val = state.solver().symbolic_value(f"uninit_{frm.as_value()}", BitVecType(bitsnum))
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
@@ -133,7 +133,7 @@ class LazySymbolicMemoryModel(CoreMM):
         # return val, err
         # FIXME: it is not always int type... we should at least use bytes type
         return (
-            state.solver().fresh_value(f"uninit_{frm.as_value()}", BitVecType(bitsnum)),
+            state.solver().fresh_symbolic_value(f"uninit_{frm.as_value()}", BitVecType(bitsnum)),
             None,
         )
 
@@ -160,7 +160,7 @@ class LazySymbolicMemoryModel(CoreMM):
                 not isinstance(from_op, (Alloc, GlobalVariable))
                 and self._overapprox_unsupported
             ):
-                val = state.solver().Var(
+                val = state.solver().symbolic_value(
                     f"unknown_ptr_{from_op.as_value()}",
                     BitVecType(bitsnum or 8 * bytes_num()),
                 )

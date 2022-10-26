@@ -31,7 +31,7 @@ def split_nonready_states(states):
 
 
 class PathExecutionResult:
-    __slots__ = ["ready", "errors", "early", "other"]
+    __slots__ = "ready", "errors", "early", "other"
 
     def __init__(self, ready=None, errors=None, early=None, other=None) -> None:
         # states that can be further executed

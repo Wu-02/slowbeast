@@ -304,7 +304,7 @@ class LazySEState(SEState):
                 name = f"unknown_ptr_{v.as_value()}"
             else:
                 name = f"unknown_{v.as_value()}"
-            value = self.solver().Var(name, v.type())
+            value = self.solver().symbolic_value(name, v.type())
             ldbgv(
                 "Created new nondet value {0} = {1}",
                 (v.as_value(), value),
@@ -561,7 +561,7 @@ class ThreadedSEState(SEState):
                 name = f"unknown_ptr_{v.as_value()}"
             else:
                 name = f"unknown_{v.as_value()}"
-            value = self.solver().Var(name, v.type())
+            value = self.solver().symbolic_value(name, v.type())
             ldbgv(
                 "Created new nondet value {0} = {1}",
                 (v.as_value(), value),

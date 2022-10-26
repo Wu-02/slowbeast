@@ -308,7 +308,7 @@ class Executor(ConcreteExecutor):
 
         ret_ty = fun.return_type()
         if ret_ty:
-            val = Domain.Var(ret_ty)
+            val = Domain.symbolic_value(ret_ty)
             # state.addNondet(val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()

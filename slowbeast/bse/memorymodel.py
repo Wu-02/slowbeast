@@ -144,7 +144,7 @@ class BSEMemoryModel(CoreMM):
         if isinstance(instr, (Alloc, GlobalVariable)):
             size = instr.size()
         else:
-            size = state.solver().Var(f"ndt_size_{instr.as_value()}", get_size_type())
+            size = state.solver().symbolic_value(f"ndt_size_{instr.as_value()}", get_size_type())
         size = state.try_eval(size)
         if instr.is_global():
             ptr = state.memory.allocate_global(instr, zeroed=instr.is_zeroed())

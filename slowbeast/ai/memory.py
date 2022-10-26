@@ -188,7 +188,7 @@ class AIMemoryModel(MemoryModel):
         # NOTE: this name identifier is reserved for value representing
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
-        val = self.solver().Var(f"load_of_{frm.as_value()}", BitVecType(8 * bytes_num))
+        val = self.solver().symbolic_value(f"load_of_{frm.as_value()}", BitVecType(8 * bytes_num))
         # write the fresh value into memory, so that
         # later reads see the same value.
         # If an error occurs, just propagate it up
