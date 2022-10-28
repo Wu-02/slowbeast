@@ -9,9 +9,11 @@ from subprocess import run
 from sys import exit as sys_exit, path as syspath
 from time import time, process_time
 
-# make sure we see our 'slowbeast' package
+# make sure we see our 'slowbeast' package and 'llvmlite' package (if
+# it has been cloned into srcdir)
 sb_path = dirname(readlink(__file__) if islink(__file__) else __file__)
 syspath.append(abspath(sb_path))
+syspath.append(abspath(f"{sb_path}/llvmlite"))
 
 from slowbeast.domains.symbolic_helpers import to_c_expression
 from slowbeast.ir.instruction import Call
