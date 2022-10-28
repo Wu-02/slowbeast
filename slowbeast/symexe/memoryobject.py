@@ -1,7 +1,5 @@
 from typing import Union, List, Tuple, Optional
 
-from typing_extensions import SupportsIndex
-
 from slowbeast.core.errors import MemError
 from slowbeast.core.memoryobject import MemoryObject as CoreMO
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
@@ -79,9 +77,7 @@ def read_bytes(values, offval, size, bts, zeroed):
     return val, None
 
 
-def mo_to_bytes(
-    values, size: SupportsIndex
-) -> Tuple[Optional[List[None]], Optional[MemError]]:
+def mo_to_bytes(values, size) -> Tuple[Optional[List[None]], Optional[MemError]]:
     dbgv("Promoting MO to bytes", color="gray")
     newvalues = [None] * size
     for o, val in values.items():

@@ -4,7 +4,13 @@ from typing import Optional, Sized, Union
 from slowbeast.core.errors import GenericError
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.solvers.symcrete import SymbolicSolver, Solver
-from slowbeast.util.debugging import print_stderr, print_stdout, dbg, inc_print_indent, dec_print_indent
+from slowbeast.util.debugging import (
+    print_stderr,
+    print_stdout,
+    dbg,
+    inc_print_indent,
+    dec_print_indent,
+)
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import (
     Load,

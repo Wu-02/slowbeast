@@ -82,7 +82,7 @@ def create_special_fun(parser, inst, fun, error_funs):
         print_stderr("Assuming that ldv_stop is assume(false)...", color="orange")
         A = Assume(ConstantFalse)
         return A, [A]
-    elif  fun == "__INSTR_check_assume":
+    elif fun == "__INSTR_check_assume":
         operands = get_llvm_operands(inst)
         cond = parser.operand(operands[0])
         optypes = [get_sb_type(module, op.type) for op in operands]

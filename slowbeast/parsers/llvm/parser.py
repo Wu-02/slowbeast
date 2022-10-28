@@ -27,16 +27,7 @@ def _get_llvm_module(path: str) -> ModuleRef:
             return llvm.parse_bitcode(f.read())
 
 
-def parse_special_fcmp(
-    inst, op1, op2, optypes
-) -> Union[
-    None,
-    List[FpOp],
-    List[Union[BinaryOperation, Cmp, FpOp]],
-    List[Union[BinaryOperation, FpOp]],
-    List[Union[Cmp, FpOp]],
-    tuple[Optional[bool]],
-]:
+def parse_special_fcmp(inst, op1, op2, optypes):
     seq = []
     parts = str(inst).split()
     if parts[1] != "=":
