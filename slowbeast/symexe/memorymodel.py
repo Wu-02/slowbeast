@@ -168,7 +168,7 @@ class LazySymbolicMemoryModel(CoreMM):
             ):
                 val = state.solver().symbolic_value(
                     f"unknown_ptr_{from_op.as_value()}",
-                    BitVecType(bitsnum or 8 * bytes_num()),
+                    to_op.type(),
                 )
                 state.set(to_op, val)
                 return [state]
@@ -214,5 +214,7 @@ class LazySymbolicMemoryModel(CoreMM):
         if err:
             state.set_error(err)
         else:
+            if val.type() != to_op.type():
+                val = state.expr_mgr().Cast(val, to_op.type())
             state.set(to_op, val)
         return [state]

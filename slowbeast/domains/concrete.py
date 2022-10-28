@@ -182,8 +182,11 @@ class ConcreteDomain(Domain):
         bw = ty.bitwidth()
         if a.is_bool() and ty.is_bv():
             return ConcreteBitVec(1 if a.value() != 0 else 0, bw)
-        if a.is_bytes() and ty.is_float():
-            return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
+        if a.is_bytes():
+            if ty.is_bv():
+                return ConcreteBitVec(a.value(), ty)
+            if ty.is_float():
+                return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
         if a.is_bv():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(float(a.value()), bw), bw)

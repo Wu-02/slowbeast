@@ -88,11 +88,19 @@ class MemoryModel:
         except NotImplementedError as e:
             state.set_killed(str(e))
             return [state]
+
         if err:
             if err.is_memory_error() and err.is_unsupported():
                 state.set_killed(str(err))
             else:
                 state.set_error(err)
         else:
-            state.set(to_op, val)
+            # loads may load the bits as a particular type,
+            # but the value in memory might have a different type.
+            # cast the value to the right type
+            casted_val = state.expr_manager().Cast(val, to_op.type())
+            if casted_val is None:
+                state.set_killed(f"Couldn't cast value {a} to {to_op.type()}")
+                return [state]
+            state.set(to_op, casted_val)
         return [state]
