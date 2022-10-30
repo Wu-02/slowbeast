@@ -562,10 +562,11 @@ class Executor(ConcreteExecutor):
                 r = expr_mgr.Sub(op1, op2)
             elif opcode == BinaryOperation.MUL:
                 r = expr_mgr.Mul(op1, op2)
-            elif opcode == BinaryOperation.DIV:
+            elif opcode in (BinaryOperation.DIV, BinaryOperation.UDIV):
+                unsigned_or_unordered = (opcode == BinaryOperation.UDIV)
                 if op1.is_float():
                     # compilers allow division by FP 0
-                    r = expr_mgr.Div(op1, op2, instr.is_unordered())
+                    r = expr_mgr.Div(op1, op2, unsigned_or_unordered)
                 else:
                     good, bad = self.fork(
                         state, expr_mgr.Ne(op2, concrete_value(0, op2.type()))
@@ -573,7 +574,7 @@ class Executor(ConcreteExecutor):
                     if good:
                         state = good
                         assert not op1.is_float()
-                        r = expr_mgr.Div(op1, op2, instr.is_unsigned())
+                        r = expr_mgr.Div(op1, op2, unsigned_or_unordered)
                     if bad:
                         bad.set_killed("Division by 0")
                         states.append(bad)
