@@ -1,7 +1,7 @@
 from slowbeast.analysis.callgraph import CallGraph
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.dfs import DFSEdgeType, DFSVisitor
-from slowbeast.analysis.loops import compute_loops
+from slowbeast.analysis.loops import compute_toplevel_loops
 from slowbeast.ir.program import Program
 
 
@@ -56,7 +56,7 @@ class ProgramStructure:
         if loops is None:
             loops = {}
             for cfa in self.cfas.values():
-                loops.update(compute_loops(cfa))
+                loops.update(compute_toplevel_loops(cfa))
             self.loops = loops
 
 
@@ -68,7 +68,7 @@ def find_loop_headers(cfas, new_output_file=None):
             headers.add(edge.target())
 
     for cfa in cfas.values():
-        for loc, L in compute_loops(cfa).items():
+        for loc, L in compute_toplevel_loops(cfa).items():
             print(loc)
             print(L)
 

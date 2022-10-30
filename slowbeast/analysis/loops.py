@@ -200,7 +200,7 @@ def _construct_simple_loop(vertices, parent, loc: CFA.Location) -> Optional[Loop
     )
 
 
-def _compute_loops(vertices, edges, result) -> None:
+def _compute_toplevel_loops(vertices, edges, result) -> None:
     """Compute loops in the graph given by vertices and edges"""
     for C in strongly_connected_components_iterative(vertices, edges):
         if len(C) <= 1:
@@ -223,10 +223,10 @@ def _compute_loops(vertices, edges, result) -> None:
         result[entry] = loop
 
 
-def compute_loops(cfa):
+def compute_toplevel_loops(cfa):
     result = {}
     locations = cfa.locations()
     edges = {l: [succ.target() for succ in l.successors()] for l in locations}
-    _compute_loops(locations, edges, result)
+    _compute_toplevel_loops(locations, edges, result)
     return result
 
