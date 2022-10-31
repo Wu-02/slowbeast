@@ -10,7 +10,7 @@ from .memorymodel import BSEMemoryModel
 
 class Executor(PathExecutor):
     """
-    Symbolic Executor instance adjusted to executing
+    Symbolic ForwardExecutor instance adjusted to executing
     CFA paths possibly annotated with formulas.
     """
 

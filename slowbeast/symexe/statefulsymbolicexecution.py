@@ -33,7 +33,7 @@ class StatefulSymbolicExecutor(SymbolicExecutor):
         ohandler=None,
         opts: SEOptions = SEOptions(),
         executor=None,
-        ExecutorClass: Type[slowbeast.symexe.executor.Executor] = SExecutor,
+        ExecutorClass: Type[slowbeast.symexe.executor.ForwardExecutor] = SExecutor,
     ) -> None:
         super().__init__(
             P,

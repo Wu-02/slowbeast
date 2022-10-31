@@ -65,4 +65,3 @@ class ConcreteBoolDomain(Domain):
         assert a.bitwidth() < bw, f"Invalid extend argument: {bw}"
         assert a.is_bool(), a
         return ConcreteBitVec(1 if a.value() else 0, bw)
-

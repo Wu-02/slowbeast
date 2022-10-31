@@ -30,7 +30,7 @@ class AbstractInterpreter(Interpreter):
         ohandler=None,
         opts: AIOptions = AIOptions(),
         executor: Optional[Executor] = None,
-        ExecutorClass: Type[slowbeast.ai.executor.Executor] = AIExecutor,
+        ExecutorClass: Type[slowbeast.ai.executor.ForwardExecutor] = AIExecutor,
     ) -> None:
         super().__init__(P, opts, executor or ExecutorClass(opts))
         self.stats = AIStats()

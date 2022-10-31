@@ -14,7 +14,7 @@ from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 
 class Executor(SExecutor):
     """
-    Symbolic Executor instance adjusted to executing
+    Symbolic ForwardExecutor instance adjusted to executing
     CFA paths possibly annotated with formulas.
     """
 
@@ -243,7 +243,7 @@ class Executor(SExecutor):
 
 class CFGExecutor(SExecutor):
     """
-    Symbolic Executor instance adjusted to executing
+    Symbolic ForwardExecutor instance adjusted to executing
     paths possibly annotated with formulas.
     The paths are supposed to be AnnotatedCFGPaths (paths in CFG)
     """

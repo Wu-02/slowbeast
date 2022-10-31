@@ -229,4 +229,3 @@ def compute_toplevel_loops(cfa):
     edges = {l: [succ.target() for succ in l.successors()] for l in locations}
     _compute_toplevel_loops(locations, edges, result)
     return result
-

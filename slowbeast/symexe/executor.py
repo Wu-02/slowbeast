@@ -563,7 +563,7 @@ class Executor(ConcreteExecutor):
             elif opcode == BinaryOperation.MUL:
                 r = expr_mgr.Mul(op1, op2)
             elif opcode in (BinaryOperation.DIV, BinaryOperation.UDIV):
-                unsigned_or_unordered = (opcode == BinaryOperation.UDIV)
+                unsigned_or_unordered = opcode == BinaryOperation.UDIV
                 if op1.is_float():
                     # compilers allow division by FP 0
                     r = expr_mgr.Div(op1, op2, unsigned_or_unordered)

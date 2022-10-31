@@ -17,7 +17,6 @@ syspath.append(abspath(f"{sb_path}/llvmlite"))
 
 from slowbeast.domains.symbolic_helpers import to_c_expression
 from slowbeast.ir.instruction import Call
-from slowbeast.parsers.llvm.parser import Parser as LLVMParser
 from slowbeast.symexe.symbolicexecution import SEOptions
 from slowbeast.util.debugging import set_debugging, dbg, print_stdout, print_stderr
 
@@ -89,6 +88,8 @@ def create_arg_parser():
     parser.add_argument('-bselff', action='store_true',
                         help='Do backward symbolic execution with loops folding '
                              'and forward symbolic execution at the same time')
+    parser.add_argument('-ais', action='store_true', default=True,
+                        help='Use acyclic inductive sets when checking termination')
     parser.add_argument('-se', action='store_true', default=False,
                         help='Perform symbolic execution (default).')
     parser.add_argument('-stateful-se', action='store_true', default=False,
@@ -123,6 +124,10 @@ def create_arg_parser():
                              'be "err", "killed", "abort", "exited" corresponding '
                              'to different state statuses',
                         default=None)
+    parser.add_argument('-check', action='append',
+                        help='Property to check (can be used multiple times). Possible options\n'\
+                             '  - \'unreach\'ability of error calls (default C assertions)\n'
+                             '  - \'termination\' of the program.')
 
     return parser
 
@@ -134,6 +139,11 @@ def parse_arguments():
 
     if not args.se_step in valid_step:
         err("Invalid -step argument, must be one of: {0}, got '{1}'".format(valid_step, args.step))
+
+    if args.check is not None:
+        prps = set(args.check)
+        if 'termination' in prps and len(prps) > 1:
+            err("It is not possible to combine termination with other properties atm.")
 
     return args
 
@@ -647,7 +657,9 @@ def main():
         if args.se_step == 'block':
             opts.set_block_step()
 
-        if args.stateful_se:
+        if args.check and 'termination' in args.check:
+            from slowbeast.termination.ais import SeAIS as SymbolicExecutor
+        elif args.stateful_se:
             assert not args.future_se, "Not compatible at this moment"
             from slowbeast.symexe.statefulsymbolicexecution import StatefulSymbolicExecutor as SymbolicExecutor
         elif args.future_se:
