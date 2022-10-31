@@ -172,7 +172,7 @@ class ConcreteDomain(Domain):
         assert isinstance(b, int), b
         assert not a.is_float(), "No extend for floats implemented"
         a = lower_bytes(a)
-        return get_bv_bytes_domain(a).Extend(a, b, unsigned)
+        return get_any_domain(a).Extend(a, b, unsigned)
 
     @staticmethod
     def Cast(a: Value, ty: Type, signed: bool = False) -> Optional[Value]:

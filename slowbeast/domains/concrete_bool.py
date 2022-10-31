@@ -1,4 +1,5 @@
 from slowbeast.domains.concrete_value import ConcreteBool
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from .domain import Domain
 from .value import Value
 
@@ -55,3 +56,13 @@ class ConcreteBoolDomain(Domain):
         assert a.is_bool(), a
         assert a.value() in (True, False), a
         return ConcreteBool(not a.value())
+
+    @staticmethod
+    def Extend(a: Value, bw: int, unsigned: bool) -> Value:
+        assert isinstance(a, ConcreteBool), a
+        assert isinstance(bw, int), bw
+        assert isinstance(unsigned, bool), unsigned
+        assert a.bitwidth() < bw, f"Invalid extend argument: {bw}"
+        assert a.is_bool(), a
+        return ConcreteBitVec(1 if a.value() else 0, bw)
+
