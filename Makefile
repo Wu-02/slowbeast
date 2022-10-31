@@ -60,7 +60,7 @@ check-v:
 	lit -j4 --path=$(shell pwd) -a -D OPTS="-cfkind" tests/
 
 pyinstaller:
-	pyinstaller -p ./llvmlite sb
+	pyinstaller -p ./llvmlite --collect-binaries z3 sb
 
 
 .PHONY: all pylint black autopep check check-bself check-all check-v
