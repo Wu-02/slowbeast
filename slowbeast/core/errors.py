@@ -10,7 +10,8 @@ class Error:
     UNKNOWN = 0
     ASSERTION_FAIL = 1
     MEM_ERROR = 2
-    GENERIC = 3
+    NONTERMINATION=3
+    GENERIC = 33
 
     def __init__(self, t, d=None) -> None:
         self._type = t
@@ -28,6 +29,9 @@ class Error:
     def is_assertion_fail(self):
         return self._type == Error.ASSERTION_FAIL
 
+    def is_non_termination(self):
+        return self._type == Error.NONTERMINATION
+
     def __repr__(self) -> str:
         ty = self._type
         if ty == Error.UNKNOWN:
@@ -36,6 +40,8 @@ class Error:
             detail = "[assertion error]"
         elif ty == Error.MEM_ERROR:
             detail = "[memory error]"
+        elif ty == Error.NONTERMINATION:
+            detail = "[non-termination]"
         elif ty == Error.GENERIC:
             detail = "[generic error]"
         else:
@@ -51,6 +57,11 @@ class Error:
 class AssertFailError(Error):
     def __init__(self, descr=None) -> None:
         super().__init__(Error.ASSERTION_FAIL, descr)
+
+
+class NonTerminationError(Error):
+    def __init__(self, descr=None) -> None:
+        super().__init__(Error.NONTERMINATION, descr)
 
 
 class GenericError(Error):
