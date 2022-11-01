@@ -1,19 +1,25 @@
 #!/usr/bin/python3
 
-import argparse
+from sys import path as syspath
 from os import mkdir, readlink
-from os.path import basename, islink, dirname, abspath
+from os.path import islink, dirname, abspath
 from os.path import join as pathjoin
-from shutil import rmtree
-from subprocess import run
-from sys import exit as sys_exit, path as syspath
-from time import time, process_time
 
 # make sure we see our 'slowbeast' package and 'llvmlite' package (if
-# it has been cloned into srcdir)
+# it has been cloned into srcdir). The later is prioritized.
 sb_path = dirname(readlink(__file__) if islink(__file__) else __file__)
-syspath.append(abspath(sb_path))
-syspath.append(abspath(f"{sb_path}/llvmlite"))
+if sb_path not in syspath:
+    syspath.append(abspath(sb_path))
+syspath.insert(0, abspath(pathjoin(sb_path, "llvmlite")))
+
+
+import argparse
+from os import mkdir
+from os.path import basename, abspath
+from shutil import rmtree
+from subprocess import run
+from sys import exit as sys_exit
+from time import time, process_time
 
 from slowbeast.domains.symbolic_helpers import to_c_expression
 from slowbeast.ir.instruction import Call
