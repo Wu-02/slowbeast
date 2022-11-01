@@ -21,25 +21,24 @@ pyre-infer:
 	pyre infer -i
 
 # TESTING
-TIMEOUT=60
 check:
-	lit -j4 --path=$(shell pwd) --timeout=$(TIMEOUT) -D OPTS="-se-step=block" tests/
-	lit -j4 --path=$(shell pwd) --timeout=$(TIMEOUT) -D OPTS="-se -bse" tests/
-	lit -j4 --path=$(shell pwd) --timeout=$(TIMEOUT) -D OPTS="-se -bself" tests/
-	lit -j4 --path=$(shell pwd) --timeout=$(TIMEOUT) -D OPTS="-se -bselff" tests/
+	lit -j4 --path=$(shell pwd) -D OPTS="-se-step=block" tests/
+	lit -j4 --path=$(shell pwd) -D OPTS="-se -bse" tests/
+	lit -j4 --path=$(shell pwd) -D OPTS="-se -bself" tests/
+	lit -j4 --path=$(shell pwd) -D OPTS="-se -bselff" tests/
 
 check-bse:
-	lit -j4 --path=$(shell pwd) --timeout=$(TIMEOUT) -v -D OPTS="-bse" tests/
+	lit -j4 --path=$(shell pwd) -v -D OPTS="-bse" tests/
 
 check-bself:
-	lit -j4 --path=$(shell pwd) --timeout=$(TIMEOUT) -a -D OPTS="-bself" tests/
+	lit -j4 --path=$(shell pwd) -a -D OPTS="-bself" tests/
 
 check-bselff:
-	lit -j4 --path=$(shell pwd) --timeout=$(TIMEOUT) -D OPTS="-bselff" tests/
+	lit -j4 --path=$(shell pwd) -D OPTS="-bselff" tests/
 
 check-clam:
-	lit -j4 --path=$(shell pwd) --timeout=$(TIMEOUT) -v -D OPTS="-bse -external-invariants=clam" tests/
-	lit -j4 --path=$(shell pwd) --timeout=$(TIMEOUT) -a -D OPTS="-bself -external-invariants=clam" tests/
+	lit -j4 --path=$(shell pwd) -v -D OPTS="-bse -external-invariants=clam" tests/
+	lit -j4 --path=$(shell pwd) -a -D OPTS="-bself -external-invariants=clam" tests/
 
 
 check-cfkind:
