@@ -3,7 +3,7 @@
 
 // UNSUPPORTED: se
 // RUN: rm -rf %t-out
-// RUN: timeout 30 %sb -out-dir=%t-out %opts %s &>%t.log
+// RUN: %sb -out-dir=%t-out %opts %s &>%t.log
 // RUN: cat %t.log | %FILECHECK %s
 
 int main() {
