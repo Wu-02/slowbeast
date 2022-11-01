@@ -5,7 +5,7 @@
 // UNSUPPORTED: kind
 // RUN: rm -rf %t-out
 // RUN: timeout 60 %sb -out-dir=%t-out %opts %s &>%t.log
-// RUN: cat %t.log | FileCheck %s
+// RUN: cat %t.log | %FILECHECK %s
 
 
 unsigned __VERIFIER_nondet_uint(void);

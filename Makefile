@@ -55,7 +55,7 @@ check-all:
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -cfkind" tests/
 
 check-v:
-	lit -j4 --path=$(shell pwd) -a -D tests/
+	lit -j4 --path=$(shell pwd) -a tests/
 	lit -j4 --path=$(shell pwd) -a -D OPTS="-bself" tests/
 	lit -j4 --path=$(shell pwd) -a -D OPTS="-cfkind" tests/
 
