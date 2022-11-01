@@ -4,6 +4,7 @@ __pycache__
 tags
 
 tests/Output
-slowbeast-out
+sb-out
+llvmlite
 
 *.bc
