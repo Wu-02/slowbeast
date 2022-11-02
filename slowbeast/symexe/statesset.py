@@ -25,10 +25,15 @@ class StatesSet:
     This class is a wrapper that makes it convenient to treat
     SE state as a set of concrete states (i.e., it allows to
     use set operations, etc.
+
     NOTE that the state given to ctor is stored as a reference,
     i.e. the operations modify the state and it is intentional.
     To avoid this, pass a fresh copy of the state into the ctor
     (state.copy()).
+
+    NOTE 2: the operations do not consider the contents of memory.
+    If that is needed, it must be encoded into path-condition and/or
+    added as an explicit load annotations.
     """
 
     __slots__ = "_state"
