@@ -18,7 +18,7 @@ from slowbeast.symexe.annotations import ExprAnnotation
 from slowbeast.symexe.executionstate import SEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.options import SEOptions
-from slowbeast.symexe.statedescription import StateDescription
+from slowbeast.symexe.sestatedescription import SEStateDescription
 from slowbeast.symexe.statesset import StatesSet
 from slowbeast.util.debugging import dbgv, ldbgv, warn
 from .executionstate import IncrementalSEState
@@ -147,7 +147,7 @@ class Executor(ConcreteExecutor):
             Expr,
             ExprAnnotation,
             SEState,
-            StateDescription,
+            SEStateDescription,
             StatesSet,
         ] = None,
     ) -> StatesSet:

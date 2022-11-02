@@ -70,14 +70,18 @@ class ForwardState(ExecutionState):
 
 class ForwardExecutor(SExecutor):
     def __init__(
-            self,
+        self,
+        program,
+        solver,
+        opts: SEOptions,
+        memorymodel=None,
+    ) -> None:
+        super().__init__(
             program,
             solver,
-            opts: SEOptions,
-            memorymodel = None,
-    ) -> None:
-        super().__init__(program, solver, opts,
-                         memorymodel=memorymodel or AisSymbolicMemoryModel(opts))
+            opts,
+            memorymodel=memorymodel or AisSymbolicMemoryModel(opts),
+        )
 
     def create_state(self, pc=None, m=None) -> ForwardState:
         if m is None:
@@ -100,7 +104,9 @@ class SeAIS(SymbolicExecutor):
         self._loop_headers = {
             loc.elem()[0]: loc for loc in self.programstructure.get_loop_headers()
         }
-        self._loop_exits = {loc.target().elem()[0] for loc in self.programstructure.get_loop_exits() }
+        self._loop_exits = {
+            loc.target().elem()[0] for loc in self.programstructure.get_loop_exits()
+        }
         self.get_cfa = programstructure.cfas.get
         self._loop_entry_states = {}
 
@@ -111,30 +117,30 @@ class SeAIS(SymbolicExecutor):
         return inst in self._loop_exits
 
     def _states_may_be_same(self, state, prev):
-            assert state.pc == prev.pc
-            meml, memr = prev.memory, state.memory
+        assert state.pc == prev.pc
+        meml, memr = prev.memory, state.memory
 
-            # we're comparing states in different contexts...
-            assert len(meml._cs) == len(memr._cs)
+        # we're comparing states in different contexts...
+        assert len(meml._cs) == len(memr._cs)
 
-            check = []
-            expr_mgr = state.expr_manager()
-            for reg, mo_l in meml._objects.items():
-                mo_r = memr._objects.get(reg)
-                if mo_r is None:
+        check = []
+        expr_mgr = state.expr_manager()
+        for reg, mo_l in meml._objects.items():
+            mo_r = memr._objects.get(reg)
+            if mo_r is None:
+                return False
+            # compare the two memory objects value by value
+            for mid, lval in mo_l._values.items():
+                rval = mo_r._values.get(mid)
+                if rval is None:
+                    # TODO: if we take uninitialized memory as non-deterministic,
+                    # we should assume that in this case the values may be the same
                     return False
-                # compare the two memory objects value by value
-                for mid, lval in mo_l._values.items():
-                    rval = mo_r._values.get(mid)
-                    if rval is None:
-                        # TODO: if we take uninitialized memory as non-deterministic,
-                        # we should assume that in this case the values may be the same
-                        return False
-                    expr = expr_mgr.Eq(lval, rval)
-                    if expr.is_concrete() and not expr.value():
-                        return False
-                    check.append(expr)
-            return state.is_sat(expr_mgr.conjunction(*check))
+                expr = expr_mgr.Eq(lval, rval)
+                if expr.is_concrete() and not expr.value():
+                    return False
+                check.append(expr)
+        return state.is_sat(expr_mgr.conjunction(*check))
 
     def _already_visited(self, state):
         S = self._loop_entry_states.get(state.pc)
@@ -199,11 +205,10 @@ class SeAIS(SymbolicExecutor):
             if self._is_loop_header(pc):
                 state.visited(pc)
                 self._add_loop_state(state)
-           #    state.start_tracing_memory()
-           #elif self._exited_loop(pc):
-           #    state.stop_tracing_memory()
+        #    state.start_tracing_memory()
+        # elif self._exited_loop(pc):
+        #    state.stop_tracing_memory()
         super().handle_new_state(state)
-
 
     def _add_loop_state(self, state) -> None:
         n = state.num_visits()
@@ -213,20 +218,20 @@ class SeAIS(SymbolicExecutor):
         # we must have visited it also k times for all k < n
         assert len(states) != 0 or n == 1, self._loop_entry_states
         assert len(states) >= n - 1, self._loop_entry_states
-        states.setdefault(n-1, []).append(state.copy())
+        states.setdefault(n - 1, []).append(state.copy())
 
     def get_next_state(self):
         states = self.states
         if not states:
             return None
-       ## take the state from the middle of the list
-       #l = len(states)
-       #if l > 2:
-       #    states[int(l/2)], states[-1] =  states[-1], states[int(l/2)]
+        ## take the state from the middle of the list
+        # l = len(states)
+        # if l > 2:
+        #    states[int(l/2)], states[-1] =  states[-1], states[int(l/2)]
 
         # move random state in the queue at the end of queue so that we pop it
-        pick = randint(0, len(states)-1)
-        states[pick], states[-1] =  states[-1], states[pick]
+        pick = randint(0, len(states) - 1)
+        states[pick], states[-1] = states[-1], states[pick]
         state = states.pop()
         assert state.get_id() not in (
             st.get_id() for st in self.states

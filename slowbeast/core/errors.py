@@ -10,7 +10,7 @@ class Error:
     UNKNOWN = 0
     ASSERTION_FAIL = 1
     MEM_ERROR = 2
-    NONTERMINATION=3
+    NONTERMINATION = 3
     GENERIC = 33
 
     def __init__(self, t, d=None) -> None:

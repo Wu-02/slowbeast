@@ -24,11 +24,11 @@ def _createCannonical(expr, subs, EM):
     )
 
 
-class StateDescription:
+class SEStateDescription:
     """
     A description of a symbolic execution state
     as a formula + substitutions from results
-    of instructions. That is, an StateDescription
+    of instructions. That is, an SEStateDescription
     object describes the symbolic execution state
     in which holds the expression after substituing
     the results of instructions according to
@@ -143,7 +143,7 @@ class StateDescription:
         )
 
     def dump(self) -> None:
-        print("StateDescription:")
+        print("SEStateDescription:")
         print(f"> expr: {self._expr}")
         print(
             "> substitutions: {0}".format(
@@ -199,9 +199,9 @@ def unify_state_descriptions(expr_mgr, sd1, sd2):
     return expr_mgr.simplify(expr1), expr_mgr.simplify(expr2), subs
 
 
-def state_to_description(state) -> StateDescription:
+def state_to_description(state) -> SEStateDescription:
     EM = state.expr_manager()
-    return StateDescription(
+    return SEStateDescription(
         state.constraints_obj().as_formula(EM),
         {
             l.value: l.instruction
@@ -211,7 +211,7 @@ def state_to_description(state) -> StateDescription:
     )
 
 
-def states_to_description(states) -> StateDescription:
+def states_to_description(states) -> SEStateDescription:
     a = None
     for s in states:
         # FIXME: this can break things in the future
@@ -224,7 +224,7 @@ def states_to_description(states) -> StateDescription:
                 a,
                 state_to_description(s),
             )
-            a = StateDescription(EM.Or(e1, e2), subs)
+            a = SEStateDescription(EM.Or(e1, e2), subs)
     return a
 
 

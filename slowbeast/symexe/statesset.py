@@ -11,8 +11,8 @@ from slowbeast.symexe.annotations import (
 )
 from slowbeast.symexe.constraints import ConstraintsSet
 from slowbeast.symexe.executionstate import SEState
-from slowbeast.symexe.statedescription import (
-    StateDescription,
+from slowbeast.symexe.sestatedescription import (
+    SEStateDescription,
     state_to_description,
     unify_state_descriptions,
     eval_state_description,
@@ -56,7 +56,7 @@ class StatesSet:
     def get_se_state(self) -> SEState:
         return self._state
 
-    def as_description(self) -> StateDescription:
+    def as_description(self) -> SEStateDescription:
         return state_to_description(self.get_se_state())
 
     def as_expr(self):
@@ -93,7 +93,7 @@ class StatesSet:
     def _unite(
         self,
         s: Union[
-            ConcreteVal, Expr, ExprAnnotation, SEState, StateDescription, "StatesSet"
+            ConcreteVal, Expr, ExprAnnotation, SEState, SEStateDescription, "StatesSet"
         ],
     ) -> None:
         state = self._state
@@ -130,7 +130,7 @@ class StatesSet:
     def intersect(
         self,
         s: Union[
-            ConcreteVal, Expr, ExprAnnotation, SEState, StateDescription, "StatesSet"
+            ConcreteVal, Expr, ExprAnnotation, SEState, SEStateDescription, "StatesSet"
         ],
     ) -> "StatesSet":
         state = self._state
@@ -179,7 +179,7 @@ class StatesSet:
     def minus(
         self,
         s: Union[
-            ConcreteVal, Expr, ExprAnnotation, SEState, StateDescription, "StatesSet"
+            ConcreteVal, Expr, ExprAnnotation, SEState, SEStateDescription, "StatesSet"
         ],
     ) -> "StatesSet":
         state = self._state
@@ -215,15 +215,15 @@ class StatesSet:
 
 
 def to_states_descr(
-    S: Union[ConcreteVal, Expr, ExprAnnotation, SEState, StateDescription, StatesSet]
-) -> StateDescription:
+    S: Union[ConcreteVal, Expr, ExprAnnotation, SEState, SEStateDescription, StatesSet]
+) -> SEStateDescription:
     EM = global_expr_mgr()
 
     if isinstance(S, StatesSet):
         return S.as_description()
     if isinstance(S, SEState):
         return state_to_description(S)
-    elif isinstance(S, StateDescription):
+    elif isinstance(S, SEStateDescription):
         return S
     elif isinstance(S, ExprAnnotation):
         return S.descr()
@@ -233,9 +233,9 @@ def to_states_descr(
         # and therefore can break things... For this reason, it would
         # be reasonable to have explicit method conserning adding Expr
         # so that the user is aware of this problem...
-        return StateDescription(S, {})
+        return SEStateDescription(S, {})
     elif isinstance(S, ConcreteVal) and S.is_bool():
-        return StateDescription(S, {})
+        return SEStateDescription(S, {})
     elif hasattr(S, "__iter__"):
         R = None
         for s in S:
@@ -243,7 +243,7 @@ def to_states_descr(
                 R = to_states_descr(s)
             else:
                 expr1, expr2, subs = unify_state_descriptions(EM, R, to_states_descr(s))
-                R = StateDescription(EM.Or(expr1, expr2), subs)
+                R = SEStateDescription(EM.Or(expr1, expr2), subs)
         return R
 
     raise NotImplementedError(f"Unhandled states representation: {type(S)}")

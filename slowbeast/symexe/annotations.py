@@ -3,9 +3,9 @@ from copy import copy
 from slowbeast.core.executor import split_ready_states
 from slowbeast.symexe.executionstate import ExecutionState
 from slowbeast.util.debugging import dbgv_sec, ldbgv
-from .statedescription import StateDescription, unify_state_descriptions
+from .sestatedescription import SEStateDescription, unify_state_descriptions
 from slowbeast.core.executionstate import ExecutionState
-from slowbeast.symexe.statedescription import StateDescription
+from slowbeast.symexe.sestatedescription import SEStateDescription
 from typing import Sized, Union
 
 
@@ -73,13 +73,13 @@ class ExprAnnotation(Annotation):
         super().__init__(ty)
 
         # state description
-        self._sd = StateDescription(expr, subs)
+        self._sd = SEStateDescription(expr, subs)
 
         # cannonical form of the annotation (so that we can compare
         # annotations)
         self.cannonical = self._sd.cannonical(EM)
 
-    def descr(self) -> StateDescription:
+    def descr(self) -> SEStateDescription:
         return self._sd
 
     def expr(self):
@@ -97,7 +97,7 @@ class ExprAnnotation(Annotation):
 
     def Not(self, EM) -> "ExprAnnotation":
         n = copy(self)  # to copy the type and methods
-        n._sd = StateDescription(EM.Not(self.expr()), self.substitutions())
+        n._sd = SEStateDescription(EM.Not(self.expr()), self.substitutions())
         n.cannonical = n._sd.cannonical(EM)
         return n
 
