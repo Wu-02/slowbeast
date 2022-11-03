@@ -12,7 +12,7 @@ class Memory(CoreMemory):
         nm: Optional[str] = None,
         objid: None = None,
         is_global: bool = False,
-        is_read_only: bool = False
+        is_read_only: bool = False,
     ) -> MemoryObject:
         """
         Create a new memory object -- may be overridden

@@ -44,7 +44,6 @@ class CFA:
                 return None
             return self._successors[0].target()
 
-
         def elem(self):
             return self._elem
 

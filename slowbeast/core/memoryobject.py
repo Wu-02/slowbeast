@@ -22,7 +22,7 @@ class MemoryObject:
         "_ro",
         "_is_global",
         "_zeroed",
-        "_read_only"
+        "_read_only",
     )
 
     def __init__(
@@ -31,7 +31,7 @@ class MemoryObject:
         nm: str = "unnamed",
         objid: None = None,
         is_global: bool = False,
-        is_read_only: bool = False
+        is_read_only: bool = False,
     ) -> None:
         if objid:
             self._id = objid
@@ -203,10 +203,12 @@ class MemoryObject:
     def _repr_header(self) -> str:
         nm = self._name if self._name else "<unnamed>"
         alloc = self._allocation.as_value() if self._allocation else "<unknown>"
-        s = f"mo{self._id} ('{nm}', alloc'd by {alloc}), " \
-            f"{'read-only, ' if self._read_only else ''}"\
-            f"{'zeroed, ' if self._zeroed else ''}"\
+        s = (
+            f"mo{self._id} ('{nm}', alloc'd by {alloc}), "
+            f"{'read-only, ' if self._read_only else ''}"
+            f"{'zeroed, ' if self._zeroed else ''}"
             f"size: {self._size}"
+        )
         return s
 
     def __repr__(self) -> str:

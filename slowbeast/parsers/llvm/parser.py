@@ -1010,7 +1010,11 @@ class Parser:
             ts = type_size(self.llvmmodule, g.type.element_type)
             ty = get_sb_type(self.llvmmodule, g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
-            G = GlobalVariable(concrete_value(ts, get_size_type_size()), g.name, const=g.is_global_constant())
+            G = GlobalVariable(
+                concrete_value(ts, get_size_type_size()),
+                g.name,
+                const=g.is_global_constant(),
+            )
             if g.initializer:
                 self._parse_initializer(G, g, ty, ts)
             self.program.add_global(G)

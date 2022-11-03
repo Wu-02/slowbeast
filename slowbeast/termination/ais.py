@@ -1,10 +1,12 @@
-from typing import Optional, Sized
 from random import randint
+from typing import Optional, Sized
 
 from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.bse.bself import BSELFChecker as BSELFCheckerVanilla
 from slowbeast.bse.loopinfo import LoopInfo
 from slowbeast.cfkind.naive.naivekindse import Result
+from slowbeast.core.errors import NonTerminationError
+from slowbeast.solvers.symcrete import IncrementalSolver
 from slowbeast.symexe.annotations import Annotation, execute_annotation
 from slowbeast.symexe.executionstate import SEState as ExecutionState
 from slowbeast.symexe.memory import Memory
@@ -12,7 +14,6 @@ from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
 from slowbeast.termination.memorymodel import AisSymbolicMemoryModel
-from slowbeast.core.errors import NonTerminationError
 from slowbeast.util.debugging import (
     print_stdout,
     print_stderr,
@@ -26,23 +27,58 @@ from slowbeast.util.debugging import (
 # Forward execution
 #####################################################################
 
-def get_nondet_substitutions(state):
-    expr_mgr = state.expr_manager()
-    sid = state.get_id()
-    return [(orig.value, expr_mgr.symbolic_value(f"{orig.value.unwrap()}__{sid}", orig.value.type())) for orig in state.nondets()]
+# def get_nondet_substitutions(state):
+#     expr_mgr = state.expr_manager()
+#     sid = state.get_id()
+#     return [(orig.value, expr_mgr.symbolic_value(f"{orig.value.unwrap()}__{sid}", orig.value.type())) for orig in state.nondets()]
 
-class MemoryDescr:
+
+class MemoryProjection:
     def __init__(self, state):
-        subs = get_nondet_substitutions(state)
-        expr_mgr = state.expr_manager()
         self.memory = {
-            (mo_id, offset) : expr_mgr.substitute(val, *subs) for mo_id, mo in state.memory._objects.items() for offset, val in mo._values.items()
+            (mo_id, offset): val
+            for mo_id, mo in state.memory._objects.items()
+            for offset, val in mo._values.items()
         }
-        #FIXME: add writable global objects
-        self.constraints = expr_mgr.substitute(state.constraints_obj().as_formula(expr_mgr), *subs)
+        self.globals = {
+            (mo_id, offset): val
+            for mo_id, mo in state.memory._glob_objects.items()
+            for offset, val in mo._values.items()
+            if not mo.is_read_only()
+        }
+
+    def get(self, mo_id, offset):
+        return self.memory.get((mo_id, offset))
 
     def __repr__(self):
-        return f"MemoryDescr {self.memory} [{self.constraints}]"
+        return f"MemoryProjection {self.memory} {self.globals}"
+
+
+class COWList:
+    __slots__ = "data", "_ro"
+
+    def __init__(self):
+        self.data = []
+        self._ro = False
+
+    def __getitem__(self, item):
+        return self.data.__getitem__(item)
+
+    def __iter__(self):
+        return self.data.__iter__()
+
+    def append(self, item):
+        if self._ro:
+            self.data = self.data.copy()
+            self._ro = False
+        self.data.append(item)
+
+    def copy(self):
+        new = COWList()
+        new.data = self.data
+        new._ro = self._ro = True
+        return new
+
 
 class ForwardState(ExecutionState):
     """
@@ -51,7 +87,7 @@ class ForwardState(ExecutionState):
     computes the number of hits to a particular loop headers.
     """
 
-    __slots__ = "_loc_visits"
+    __slots__ = "_loc_visits", "_loop_entry_states", "_loop_entry_states_ro"
 
     def __init__(
         self,
@@ -62,27 +98,38 @@ class ForwardState(ExecutionState):
         constraints=None,
     ) -> None:
         super().__init__(executor, pc, m, solver, constraints)
-        self._loc_visits = {}
+        # mapping from loop entry instruction to memory projections
+        self._loop_entry_states = {}
+        self._loop_entry_states_ro = False
 
     def _copy_to(self, new: ExecutionState) -> None:
         super()._copy_to(new)
-        # FIXME: use COW
-        new._loc_visits = self._loc_visits.copy()
+        new._loop_entry_states = self._loop_entry_states
+        new._loop_entry_states_ro = self._loop_entry_states_ro = True
 
-    def visited(self, inst) -> None:
-        n = self._loc_visits.setdefault(inst, 0)
-        self._loc_visits[inst] = n + 1
+    def entry_loop(self) -> None:
+        if self._loop_entry_states_ro:
+            self._loop_entry_states = {
+                pc: states.copy() for pc, states in self._loop_entry_states.items()
+            }
+            self._loop_entry_states_ro = False
 
-    def num_visits(self, inst=None):
-        if inst is None:
-            inst = self.pc
-        return self._loc_visits.get(inst)
+        states = self._loop_entry_states
+        pc = self.pc
+        states.setdefault(pc, COWList()).append(MemoryProjection(self))
 
-    def start_tracing_memory(self):
-        self.memory.start_tracing()
+    def get_loop_entry_states(self, pc):
+        r = self._loop_entry_states.get(pc)
+        if r:
+            return r
+        return None
 
-    def stop_tracing_memory(self):
-        self.memory.stop_tracing()
+
+# def start_tracing_memory(self):
+#    self.memory.start_tracing()
+
+# def stop_tracing_memory(self):
+#    self.memory.stop_tracing()
 
 
 class ForwardExecutor(SExecutor):
@@ -108,6 +155,47 @@ class ForwardExecutor(SExecutor):
         return s
 
 
+def find_loop_body_entries(programstructure):
+    """
+    Find the first instruction from each loop body
+    """
+
+    headers = programstructure.get_loop_headers()
+    ret = dict()
+    # go from the header until we find the assume edges
+    for h in headers:
+        node = h
+        while not node.is_branching():
+            node = node.get_single_successor_loc()
+            if node == h:
+                raise NotImplementedError("Unconditional loops not handled")
+        if len(node.successors()) != 2 or any(
+            (not e.is_assume() for e in node.successors())
+        ):
+            raise NotImplementedError("Unhandled structure of the loop")
+
+        entry_edge = (
+            node.successors()[0]
+            if node.successors()[0].assume_true()
+            else node.successors()[1]
+        )
+        assert entry_edge.assume_true(), entry_edge
+        if len(entry_edge.elems()) != 1:
+            raise NotImplementedError("Unhandled structure of the loop")
+
+        following_edge = entry_edge.target().get_single_successor()
+        if following_edge is None:
+            raise NotImplementedError("Unhandled structure of the loop")
+        if len(following_edge.elems()) < 1:
+            raise NotImplementedError("Unhandled structure of the loop")
+
+        entry_inst = following_edge.elems()[0]
+        assert entry_inst not in ret, f"{entry_inst} in {ret}"
+        ret[entry_inst] = h
+
+    return ret
+
+
 class SeAIS(SymbolicExecutor):
     def __init__(
         self,
@@ -118,67 +206,50 @@ class SeAIS(SymbolicExecutor):
         super().__init__(program, ohandler, opts, None, ForwardExecutor)
         programstructure = ProgramStructure(program, self.new_output_file)
         self.programstructure = programstructure
-        print(self.programstructure.get_loop_headers())
-        self._loop_headers = {
-            loc.elem()[0]: loc for loc in self.programstructure.get_loop_headers()
-        }
-        print(self._loop_headers)
-       #self._loop_exits = {
-       #    loc.target().elem()[0] for loc in self.programstructure.get_loop_exits()
-       #}
+        self._loop_body_entries = find_loop_body_entries(programstructure)
+
         self.get_cfa = programstructure.cfas.get
-        self._loop_entry_states = {}
 
-    def _is_loop_header(self, inst):
-        return inst in self._loop_headers
+    def _is_loop_entry(self, inst):
+        return inst in self._loop_body_entries
 
-   #def _exited_loop(self, inst):
-   #    return inst in self._loop_exits
+    def _states_may_be_same(self, solver, expr_mgr, state, prev_mem_descr):
+        state_memory = state.memory
+        # print('PREV', prev_mem_descr)
+        # print('NOW ', MemoryProjection(state))
 
-    def _states_may_be_same(self, state, prev):
-        assert state.pc == prev.pc
-        meml, memr = prev.memory, state.memory
-
-        # we're comparing states in different contexts...
-        assert len(meml._cs) == len(memr._cs)
-
-        check = []
-        expr_mgr = state.expr_manager()
-        for reg, mo_l in meml._objects.items():
-            mo_r = memr._objects.get(reg)
-            if mo_r is None:
-                return False
+        for mo_id, mo in state_memory._objects.items():
             # compare the two memory objects value by value
-            for mid, lval in mo_l._values.items():
-                rval = mo_r._values.get(mid)
-                if rval is None:
+            for offset, val in mo._values.items():
+                oldval = prev_mem_descr.get(mo_id, offset)
+                if oldval is None:
                     # TODO: if we take uninitialized memory as non-deterministic,
                     # we should assume that in this case the values may be the same
                     return False
-                # compare the two memory objects value by value
-                for mid, lval in mo_l._values.items():
-                    rval = mo_r._values.get(mid)
-                    if rval is None:
-                        # TODO: if we take uninitialized memory as non-deterministic,
-                        # we should assume that in this case the values may be the same
+                expr = expr_mgr.Eq(val, oldval)
+                if expr.is_concrete():
+                    if not expr.value():
                         return False
-                    expr = expr_mgr.Eq(lval, rval)
-                    if expr.is_concrete() and not expr.value():
-                        return False
-                    check.append(expr)
-                    print("EQ", expr)
-            return state.is_sat(expr_mgr.conjunction(*check))
+                else:
+                    solver.add(expr)
+        return solver.is_sat()
 
     def _already_visited(self, state):
-        S = self._loop_entry_states.get(state.pc)
-        if S is None:
+        S = state.get_loop_entry_states(state.pc)
+        if not S:
             return False
+
+        expr_mgr = state.expr_manager()
+        solver = IncrementalSolver()
+        solver.add(state.constraints_obj().as_formula(expr_mgr))
         states_may_be_same = self._states_may_be_same
-        for prev_states in S.values():
-            for prev in prev_states:
-                if states_may_be_same(state, prev):
-                    print("*************************")
-                    return True
+
+        for prev_md in S:
+            solver.push()
+            same = states_may_be_same(solver, expr_mgr, state, prev_md)
+            solver.pop()
+            if same:
+                return True
         return False
 
     def _handle_state_space_cycle(self, s: ForwardState) -> None:
@@ -224,31 +295,18 @@ class SeAIS(SymbolicExecutor):
     def handle_new_state(self, state: ForwardState) -> None:
         pc = state.pc
 
-        if self._already_visited(state):
-            state.set_error(NonTerminationError("an infinite execution found"))
-            self._handle_state_space_cycle(state)
-            return
+        if self._is_loop_entry(pc):
+            assert state.is_ready()
+            if self._already_visited(state):
+                state.set_error(NonTerminationError("an infinite execution found"))
+                self._handle_state_space_cycle(state)
+                return
 
-        if state.is_ready():
-            if self._is_loop_header(pc):
-                state.visited(pc)
-                self._add_loop_state(state)
+            state.entry_loop()
         #    state.start_tracing_memory()
         # elif self._exited_loop(pc):
         #    state.stop_tracing_memory()
         super().handle_new_state(state)
-
-    def _add_loop_state(self, state) -> None:
-        md = MemoryDescr(state)
-        print(md)
-        n = state.num_visits()
-        assert n > 0, "Bug in counting visits"
-        states = self._loop_entry_states.setdefault(state.pc, {})
-        # if we have a state that visited state.pc n times,
-        # we must have visited it also k times for all k < n
-        assert len(states) != 0 or n == 1, self._loop_entry_states
-        assert len(states) >= n - 1, self._loop_entry_states
-        states.setdefault(n - 1, []).append(state.copy())
 
     def get_next_state(self):
         states = self.states
@@ -269,7 +327,7 @@ class SeAIS(SymbolicExecutor):
         return state
 
     # S = self.executor().create_states_set(state)
-    # loc = self._loop_headers[state.pc]
+    # loc = self._loop_body_entries[state.pc]
     # A, rels, states =\
     #   self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
     # cur_rels = set()

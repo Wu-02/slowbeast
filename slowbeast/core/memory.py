@@ -57,7 +57,7 @@ class Memory:
         return new
 
     def create_memory_object(
-        self, size, nm=None, objid=None, is_glob: bool = False, is_const = False
+        self, size, nm=None, objid=None, is_glob: bool = False, is_const=False
     ) -> MemoryObject:
         """
         Create a new memory object -- may be overriden
