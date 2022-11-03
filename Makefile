@@ -26,6 +26,7 @@ check:
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -bse" tests/
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -bself" tests/
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -bselff" tests/
+	lit -j4 --path=$(shell pwd) -D OPTS="-check termination" --filter='termination/.*\.c' tests/
 
 check-bse:
 	lit -j4 --path=$(shell pwd) -v -D OPTS="-bse" tests/
@@ -35,6 +36,9 @@ check-bself:
 
 check-bselff:
 	lit -j4 --path=$(shell pwd) -D OPTS="-bselff" tests/
+
+check-ais:
+	lit -j4 --path=$(shell pwd) -D OPTS="-check termination -ais" --filter='termination/.*\.c' tests/
 
 check-clam:
 	lit -j4 --path=$(shell pwd) -v -D OPTS="-bse -external-invariants=clam" tests/
