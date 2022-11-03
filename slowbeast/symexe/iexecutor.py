@@ -1,10 +1,10 @@
 from random import getrandbits
 from typing import List, Tuple, Optional
 
-import slowbeast.domains.concrete_value
 from slowbeast.core.errors import AssertFailError
-from slowbeast.core.executor import Executor as ConcreteExecutor
+from slowbeast.core.iexecutor import IExecutor as ConcreteIExecutor
 from slowbeast.domains import dom_is_concrete
+from slowbeast.domains.concrete import ConcreteDomain
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.exprmgr import ExpressionManager
@@ -23,10 +23,8 @@ from slowbeast.symexe.statesset import StatesSet
 from slowbeast.util.debugging import dbgv, ldbgv, warn
 from .executionstate import IncrementalSEState
 from ..domains.concrete_value import ConcreteVal, ConcreteBool
-from slowbeast.domains.concrete import ConcreteDomain
 
 concrete_value = ConcreteDomain.get_value
-
 
 unsupported_funs = [
     "memmove",
@@ -60,14 +58,14 @@ class SEStats:
 
 
 def add_pointer_with_constant(
-    E: ExpressionManager, op1: Pointer, op2: Union[ConcreteBitVec, Expr]
+        E: ExpressionManager, op1: Pointer, op2: Union[ConcreteBitVec, Expr]
 ) -> Pointer:
     return Pointer(op1.object(), E.Add(op1.offset(), op2))
 
 
 def condition_to_bool(
-    cond: Union[Expr, ConcreteBool],
-    EM: ExpressionManager,
+        cond: Union[Expr, ConcreteBool],
+        EM: ExpressionManager,
 ) -> Union[Expr, ConcreteBool]:
     if cond.type().is_bool():
         return cond
@@ -94,13 +92,13 @@ def eval_condition(state: SEState, cond: ValueInstruction) -> Union[Expr, Concre
     return condition_to_bool(c, state.expr_manager())
 
 
-class Executor(ConcreteExecutor):
+class IExecutor(ConcreteIExecutor):
     def __init__(
-        self,
-        program: Program,
-        solver: SymbolicSolver,
-        opts: SEOptions,
-        memorymodel: Optional[SymbolicMemoryModel] = None,
+            self,
+            program: Program,
+            solver: SymbolicSolver,
+            opts: SEOptions,
+            memorymodel: Optional[SymbolicMemoryModel] = None,
     ) -> None:
         if memorymodel is None:
             memorymodel = SymbolicMemoryModel(opts)
@@ -140,16 +138,16 @@ class Executor(ConcreteExecutor):
         return s
 
     def create_states_set(
-        self,
-        S: Union[
-            None,
-            ConcreteVal,
-            Expr,
-            ExprAnnotation,
-            SEState,
-            SEStateDescription,
-            StatesSet,
-        ] = None,
+            self,
+            S: Union[
+                None,
+                ConcreteVal,
+                Expr,
+                ExprAnnotation,
+                SEState,
+                SEStateDescription,
+                StatesSet,
+            ] = None,
     ) -> StatesSet:
         ss = StatesSet(self.create_clean_state())
         if S:
@@ -158,9 +156,9 @@ class Executor(ConcreteExecutor):
         return ss
 
     def fork(
-        self,
-        state: SEState,
-        cond: Union[Expr, ConcreteBool],
+            self,
+            state: SEState,
+            cond: Union[Expr, ConcreteBool],
     ) -> Union[Tuple[SEState, SEState], Tuple[SEState, None]]:
         self.stats.fork_calls += 1
 
@@ -313,7 +311,7 @@ class Executor(ConcreteExecutor):
         return states
 
     def compare_values(
-        self, expr_mgr: ExpressionManager, p: int, op1: Expr, op2: Expr, unsgn: bool
+            self, expr_mgr: ExpressionManager, p: int, op1: Expr, op2: Expr, unsgn: bool
     ) -> Expr:
         if p == Cmp.LE:
             return expr_mgr.Le(op1, op2, unsgn)
@@ -503,7 +501,7 @@ class Executor(ConcreteExecutor):
         return [state]
 
     def exec_undef_fun(
-        self, state: SEState, instr: Call, fun: Function
+            self, state: SEState, instr: Call, fun: Function
     ) -> List[SEState]:
         retTy = fun.return_type()
         if retTy:

@@ -1,7 +1,7 @@
 from typing import List, Optional, Sized
 
-import slowbeast.symexe.executor
-from slowbeast.core.executor import Executor
+import slowbeast.symexe.iexecutor
+from slowbeast.core.iexecutor import IExecutor
 from slowbeast.interpreter.interactive import InteractiveHandler
 from slowbeast.ir.program import Program
 from slowbeast.symexe.executionstate import SEState
@@ -21,11 +21,11 @@ class Interpreter:
         self,
         program: Program,
         opts: ExecutionOptions = ExecutionOptions(),
-        executor: Optional[slowbeast.symexe.executor.Executor] = None,
+        executor: Optional[IExecutor] = None,
     ) -> None:
         self._program = program
         self._options = opts
-        self._executor = Executor(opts) if executor is None else executor
+        self._executor = IExecutor(opts) if executor is None else executor
         self._interactive = InteractiveHandler(self) if opts.interactive else None
 
         self.states = []
@@ -38,7 +38,7 @@ class Interpreter:
     def get_options(self) -> ExecutionOptions:
         return self._options
 
-    def executor(self) -> slowbeast.symexe.executor.Executor:
+    def executor(self) -> IExecutor:
         return self._executor
 
     def get_states(self):

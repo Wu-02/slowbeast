@@ -5,12 +5,12 @@ from slowbeast.domains.concrete import concrete_value
 from slowbeast.ir.instruction import ThreadExit, ThreadJoin, Return, Thread
 from slowbeast.ir.types import get_offset_type
 from slowbeast.symexe.executionstate import ThreadedSEState
-from slowbeast.symexe.executor import Executor
+from slowbeast.symexe.iexecutor import IExecutor
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.util.debugging import ldbgv, dbgv
 
 
-class ThreadedExecutor(Executor):
+class ThreadedExecutor(IExecutor):
     def __init__(
         self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
     ) -> None:

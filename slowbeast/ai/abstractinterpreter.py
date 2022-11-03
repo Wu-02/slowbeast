@@ -1,11 +1,11 @@
 from slowbeast.symexe.symbolicexecution import SEOptions
-from .executor import Executor as AIExecutor
+from .executor import IExecutor as AIExecutor
 from ..interpreter.interpreter import Interpreter
 from ..util.debugging import print_stderr, dbg
 from io import TextIOWrapper
 from typing import Optional, Sized, Type
 from slowbeast.ir.program import Program
-from slowbeast.symexe.executor import Executor
+from slowbeast.symexe.iexecutor import IExecutor
 
 
 class AIOptions(SEOptions):
@@ -29,7 +29,7 @@ class AbstractInterpreter(Interpreter):
         P: Program,
         ohandler=None,
         opts: AIOptions = AIOptions(),
-        executor: Optional[Executor] = None,
+        executor: Optional[IExecutor] = None,
         ExecutorClass: Type[slowbeast.ai.executor.ForwardExecutor] = AIExecutor,
     ) -> None:
         super().__init__(P, opts, executor or ExecutorClass(opts))

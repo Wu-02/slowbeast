@@ -1,6 +1,6 @@
 from functools import partial
 
-from slowbeast.core.executor import PathExecutionResult
+from slowbeast.core.iexecutor import PathExecutionResult
 from slowbeast.solvers.symcrete import IncrementalSolver
 from slowbeast.symexe.annotations import (
     AssertAnnotation,

@@ -23,9 +23,9 @@ from slowbeast.ir.instruction import (
 from slowbeast.ir.program import Program
 from slowbeast.solvers.symcrete import SymbolicSolver, Solver
 from slowbeast.symexe.executionstate import SEState
-from slowbeast.symexe.executor import Executor
+from slowbeast.symexe.iexecutor import IExecutor
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
-from .executor import Executor as SExecutor
+from .iexecutor import IExecutor as SExecutor
 from .options import SEOptions
 from .stats import SEStats
 from .threadedexecutor import ThreadedExecutor
@@ -37,7 +37,7 @@ class SymbolicExecutor(Interpreter):
         P: Program,
         ohandler=None,
         opts: SEOptions = SEOptions(),
-        executor: Optional[Executor] = None,
+        executor: Optional[IExecutor] = None,
         ExecutorClass=SExecutor,
     ) -> None:
         self._solver = Solver()

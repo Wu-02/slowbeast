@@ -9,7 +9,7 @@ from slowbeast.domains.value import Value
 from .executionstate import AbstractState
 from .memory import AIMemoryModel
 from ..core.errors import AssertFailError
-from ..core.executor import Executor as ConcreteExecutor
+from ..core.iexecutor import IExecutor as ConcreteExecutor
 from ..ir.instruction import *
 from ..util.debugging import dbgv
 from slowbeast.ai.executionstate import AbstractState
@@ -60,13 +60,13 @@ def eval_condition(state, cond: ValueInstruction) -> Value:
     return cval
 
 
-class Executor(ConcreteExecutor):
+class IExecutor(ConcreteExecutor):
     def __init__(
         self, program, opts, memorymodel: Optional[AIMemoryModel] = None
     ) -> None:
         if memorymodel is None:
             memorymodel = AIMemoryModel(opts)
-        super(Executor, self).__init__(program, opts, memorymodel)
+        super(IExecutor, self).__init__(program, opts, memorymodel)
         self.stats = AIStats()
 
     def is_error_fn(self, fun: str):

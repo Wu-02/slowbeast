@@ -138,11 +138,14 @@ class PathExecutionResult:
         return msg
 
 
-class Executor:
+class IExecutor:
     """
     Class that takes care of executing single instructions.
     That is, the executor takes a state, executes one instruction
     and generates new states.
+
+    It is called IExecutor to highlight that it executes only instructions,
+    not whole programs.
     """
 
     def __init__(

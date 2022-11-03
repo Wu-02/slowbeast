@@ -2,7 +2,7 @@ from typing import Type
 
 from slowbeast.symexe.executionstate import SEState
 from slowbeast.symexe.symbolicexecution import SEOptions
-from .executor import Executor as SExecutor
+from .iexecutor import IExecutor as SExecutor
 from .symbolicexecution import SymbolicExecutor
 
 

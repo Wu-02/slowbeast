@@ -1,5 +1,5 @@
 from slowbeast.cfkind import KindSEOptions
-from slowbeast.symexe.executor import Executor, Executor as SExecutor
+from slowbeast.symexe.iexecutor import IExecutor, IExecutor as SExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
@@ -24,7 +24,7 @@ class KindSymbolicExecutor(SymbolicExecutor):
         dbg("Forbidding calls in induction step for now with k-induction")
         self.indexecutor.forbid_calls()
 
-    def ind_executor(self) -> Executor:
+    def ind_executor(self) -> IExecutor:
         return self.indexecutor
 
     def extend_base_step(self) -> Optional[int]:

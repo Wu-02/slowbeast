@@ -1,4 +1,4 @@
-from slowbeast.core.executor import (
+from slowbeast.core.iexecutor import (
     PathExecutionResult,
     split_ready_states,
     split_nonready_states,
@@ -6,7 +6,7 @@ from slowbeast.core.executor import (
 from slowbeast.util.debugging import dbgv, ldbgv
 from .annotations import execute_annotations
 from .executionstate import LazySEState
-from .executor import Executor as SExecutor
+from .iexecutor import IExecutor as SExecutor
 from slowbeast.symexe.executionstate import LazySEState
 from typing import Optional, Sized
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel

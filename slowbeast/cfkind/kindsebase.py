@@ -2,7 +2,7 @@ from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.cfkind import KindSEOptions
 from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.core.executor import PathExecutionResult
+from slowbeast.core.iexecutor import PathExecutionResult
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.symexe.pathexecutor import Executor as PathExecutor
 from slowbeast.symexe.symbolicexecution import (

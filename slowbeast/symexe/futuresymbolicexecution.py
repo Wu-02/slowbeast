@@ -4,11 +4,11 @@ from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.ir.instruction import Call
 from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
-from .executor import Executor as SExecutor
+from .iexecutor import IExecutor as SExecutor
 from io import TextIOWrapper
 from typing import Optional, Sized, Type
 from slowbeast.ir.program import Program
-from slowbeast.symexe.executor import Executor
+from slowbeast.symexe.iexecutor import IExecutor
 
 
 class FutureExecutor(SExecutor):
@@ -82,7 +82,7 @@ class FutureSymbolicExecutor(Interpreter):
         P: Program,
         ohandler=None,
         opts: SEOptions = SEOptions(),
-        executor: Optional[Executor] = None,
+        executor: Optional[IExecutor] = None,
         ExecutorClass: Type[FutureExecutor] = FutureExecutor,
     ) -> None:
         self.solver = Solver()
