@@ -176,7 +176,6 @@ class SeAIS(SymbolicInterpreter):
         pc = state.pc
 
         if self._is_loop_entry(pc):
-            print("Entry", pc)
             assert state.is_ready()
             new_mp = self._get_and_check_projection(state)
             if new_mp is None:

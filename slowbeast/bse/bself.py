@@ -105,33 +105,11 @@ def _overapprox_with_assumptions(E, L, S, executor, s, target):
     Infer a set of relations that hold in S and over-approximate the set
     w.r.t. these relations.
     """
-    create_set = executor.create_set
     # precise prestates of this state
     R0 = set(get_var_relations([S.get_se_state()], prevsafe=target))
     if not R0:
         return
-    yielded = False
-    prestates = None  # executor._extend_one_step(L, S)
-    if prestates:
-        Rc = set(get_const_cmp_relations(S.get_se_state()))
-        for p in prestates:
-            # check whether the relation from R0 holds in 'p'
-            # R1 = set(get_var_relations([p], prevsafe=S))
-            P = create_set(p)
-            rels = [r0 for r0 in R0 if not intersection(P, r0).is_empty()]
-            yielded |= bool(rels)
-            yield from _yield_overapprox_with_assumption(
-                E, L, S, executor, rels, s, target
-            )
-            # try constant relations too - if they hold in more steps, they may
-            # be invariant
-            rels = [rc for rc in Rc if not intersection(P, rc).is_empty()]
-            yield from _yield_overapprox_with_assumption(
-                E, L, S, executor, rels, s, target
-            )
-
-    if not yielded:
-        yield from _yield_overapprox_with_assumption(E, L, S, executor, R0, s, target)
+    yield from _yield_overapprox_with_assumption(E, L, S, executor, R0, s, target)
 
 
 def _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target):
