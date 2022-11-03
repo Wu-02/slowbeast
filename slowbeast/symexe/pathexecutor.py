@@ -10,7 +10,7 @@ from .iexecutor import IExecutor as SExecutor
 
 class PathExecutor(SExecutor):
     """
-    Symbolic PathExecutor instance adjusted to executing
+    Symbolic BSEPathExecutor instance adjusted to executing
     CFA paths possibly annotated with formulas.
     """
 

@@ -8,7 +8,7 @@ from slowbeast.util.debugging import ldbgv
 from .memorymodel import BSEMemoryModel
 
 
-class PathExecutor(BasicPathExecutor):
+class BSEPathExecutor(BasicPathExecutor):
     """
     Symbolic ForwardExecutor instance adjusted to executing
     CFA paths possibly annotated with formulas.
