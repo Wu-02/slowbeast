@@ -19,9 +19,12 @@ class IExecutor:
     Class that takes care of executing single instructions.
     That is, the executor takes a state, executes one instruction
     and generates new states.
+    This class also contains helper methods to execute sequences of instructions
+    without any branching, but any other functionality is implemented in subclasses.
 
     It is called IExecutor to highlight that it executes only instructions,
-    not whole programs.
+    not whole programs (the word 'executor' is sometimes used as what we call
+    'interpreter', e.g., in the phrase 'symbolic executor').
     """
 
     def __init__(
