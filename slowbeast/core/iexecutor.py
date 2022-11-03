@@ -9,7 +9,7 @@ from slowbeast.symexe.executionstate import SEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.options import SEOptions
 from slowbeast.util.debugging import ldbgv
-from .errors import GenericError
+from .errors import GenericError, AssertFailError
 from .memorymodel import MemoryModel
 from ..domains.concrete_bitvec import ConcreteBitVec
 
