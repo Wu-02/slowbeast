@@ -8,7 +8,7 @@ from slowbeast.bse.memorymodel import BSEMemoryModel
 from slowbeast.cfkind import KindSEOptions
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.core.iexecutor import PathExecutionResult
+from ..core.executionresult import PathExecutionResult
 from slowbeast.symexe.annotations import AssumeAnnotation
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,

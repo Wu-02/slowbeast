@@ -1,6 +1,6 @@
 from copy import copy
 
-from slowbeast.core.iexecutor import split_ready_states
+from ..core.executionresult import split_ready_states
 from slowbeast.symexe.executionstate import ExecutionState
 from slowbeast.util.debugging import dbgv_sec, ldbgv
 from .sestatedescription import SEStateDescription, unify_state_descriptions

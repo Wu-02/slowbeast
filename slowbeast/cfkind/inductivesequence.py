@@ -1,4 +1,4 @@
-from slowbeast.core.iexecutor import PathExecutionResult
+from slowbeast.core.executionresult import PathExecutionResult
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.symexe.annotations import (
     AssumeAnnotation,

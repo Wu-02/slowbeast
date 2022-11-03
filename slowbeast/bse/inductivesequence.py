@@ -1,4 +1,4 @@
-from slowbeast.core.iexecutor import PathExecutionResult
+from slowbeast.core.executionresult import PathExecutionResult
 from slowbeast.symexe.statesset import union, StatesSet
 from typing import Optional
 

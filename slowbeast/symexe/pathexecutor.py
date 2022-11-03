@@ -1,9 +1,6 @@
 from typing import Optional, Sized
 
-from slowbeast.core.iexecutor import (
-    PathExecutionResult,
-    split_nonready_states,
-)
+from ..core.executionresult import split_nonready_states, PathExecutionResult
 from slowbeast.symexe.executionstate import LazySEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.util.debugging import dbgv, ldbgv
