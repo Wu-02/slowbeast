@@ -178,6 +178,9 @@ class SeAIS(SymbolicInterpreter):
         #    state.start_tracing_memory()
         # elif self._exited_loop(pc):
         #    state.stop_tracing_memory()
+        if state.has_error():
+            dbg("Discarding an error state (it is not non-termination)")
+            return
         super().handle_new_state(state)
 
     def get_next_state(self):
