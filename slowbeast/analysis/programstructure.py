@@ -63,25 +63,3 @@ class ProgramStructure:
             for cfa in self.cfas.values():
                 loops.update(compute_toplevel_loops(cfa))
             self.loops = loops
-
-
-def find_loop_headers(cfas, new_output_file=None):
-    headers = set()
-
-    def processedge(edge, dfstype):
-        if dfstype == DFSEdgeType.BACK:
-            headers.add(edge.target())
-
-    for cfa in cfas.values():
-        for loc, L in compute_toplevel_loops(cfa).items():
-            print(loc)
-            print(L)
-
-        if __debug__:
-            if new_output_file:
-                with new_output_file(f"{cfa.fun().name()}-dfs.dot") as f:
-                    DFSVisitor().dump(cfa, f)
-
-        DFSVisitor().foreachedge(cfa.entry(), processedge)
-
-    return headers

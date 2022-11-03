@@ -26,6 +26,23 @@ from slowbeast.util.debugging import (
 # Forward execution
 #####################################################################
 
+def get_nondet_substitutions(state):
+    expr_mgr = state.expr_manager()
+    sid = state.get_id()
+    return [(orig.value, expr_mgr.symbolic_value(f"{orig.value.unwrap()}__{sid}", orig.value.type())) for orig in state.nondets()]
+
+class MemoryDescr:
+    def __init__(self, state):
+        subs = get_nondet_substitutions(state)
+        expr_mgr = state.expr_manager()
+        self.memory = {
+            (mo_id, offset) : expr_mgr.substitute(val, *subs) for mo_id, mo in state.memory._objects.items() for offset, val in mo._values.items()
+        }
+        #FIXME: add writable global objects
+        self.constraints = expr_mgr.substitute(state.constraints_obj().as_formula(expr_mgr), *subs)
+
+    def __repr__(self):
+        return f"MemoryDescr {self.memory} [{self.constraints}]"
 
 class ForwardState(ExecutionState):
     """
@@ -101,20 +118,22 @@ class SeAIS(SymbolicExecutor):
         super().__init__(program, ohandler, opts, None, ForwardExecutor)
         programstructure = ProgramStructure(program, self.new_output_file)
         self.programstructure = programstructure
+        print(self.programstructure.get_loop_headers())
         self._loop_headers = {
             loc.elem()[0]: loc for loc in self.programstructure.get_loop_headers()
         }
-        self._loop_exits = {
-            loc.target().elem()[0] for loc in self.programstructure.get_loop_exits()
-        }
+        print(self._loop_headers)
+       #self._loop_exits = {
+       #    loc.target().elem()[0] for loc in self.programstructure.get_loop_exits()
+       #}
         self.get_cfa = programstructure.cfas.get
         self._loop_entry_states = {}
 
     def _is_loop_header(self, inst):
         return inst in self._loop_headers
 
-    def _exited_loop(self, inst):
-        return inst in self._loop_exits
+   #def _exited_loop(self, inst):
+   #    return inst in self._loop_exits
 
     def _states_may_be_same(self, state, prev):
         assert state.pc == prev.pc
@@ -136,11 +155,19 @@ class SeAIS(SymbolicExecutor):
                     # TODO: if we take uninitialized memory as non-deterministic,
                     # we should assume that in this case the values may be the same
                     return False
-                expr = expr_mgr.Eq(lval, rval)
-                if expr.is_concrete() and not expr.value():
-                    return False
-                check.append(expr)
-        return state.is_sat(expr_mgr.conjunction(*check))
+                # compare the two memory objects value by value
+                for mid, lval in mo_l._values.items():
+                    rval = mo_r._values.get(mid)
+                    if rval is None:
+                        # TODO: if we take uninitialized memory as non-deterministic,
+                        # we should assume that in this case the values may be the same
+                        return False
+                    expr = expr_mgr.Eq(lval, rval)
+                    if expr.is_concrete() and not expr.value():
+                        return False
+                    check.append(expr)
+                    print("EQ", expr)
+            return state.is_sat(expr_mgr.conjunction(*check))
 
     def _already_visited(self, state):
         S = self._loop_entry_states.get(state.pc)
@@ -150,6 +177,7 @@ class SeAIS(SymbolicExecutor):
         for prev_states in S.values():
             for prev in prev_states:
                 if states_may_be_same(state, prev):
+                    print("*************************")
                     return True
         return False
 
@@ -211,6 +239,8 @@ class SeAIS(SymbolicExecutor):
         super().handle_new_state(state)
 
     def _add_loop_state(self, state) -> None:
+        md = MemoryDescr(state)
+        print(md)
         n = state.num_visits()
         assert n > 0, "Bug in counting visits"
         states = self._loop_entry_states.setdefault(state.pc, {})
