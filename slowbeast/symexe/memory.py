@@ -12,10 +12,11 @@ class Memory(CoreMemory):
         nm: Optional[str] = None,
         objid: None = None,
         is_global: bool = False,
+        is_read_only: bool = False
     ) -> MemoryObject:
         """
         Create a new memory object -- may be overridden
         by child classes to create a different type of
         memory objects.
         """
-        return MemoryObject(size, nm, objid, is_global)
+        return MemoryObject(size, nm, objid, is_global, is_read_only)

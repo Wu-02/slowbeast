@@ -1,13 +1,13 @@
 from copy import copy
 from sys import stdout
+from typing import Union, Optional, TextIO
 
 from slowbeast.core.errors import MemError
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import get_offset_type
-from typing import Union, Optional, TextIO
 from slowbeast.ir.instruction import Alloc, GlobalVariable
+from slowbeast.ir.types import get_offset_type
 
 
 class MemoryObject:
@@ -22,6 +22,7 @@ class MemoryObject:
         "_ro",
         "_is_global",
         "_zeroed",
+        "_read_only"
     )
 
     def __init__(
@@ -30,6 +31,7 @@ class MemoryObject:
         nm: str = "unnamed",
         objid: None = None,
         is_global: bool = False,
+        is_read_only: bool = False
     ) -> None:
         if objid:
             self._id = objid
@@ -43,6 +45,7 @@ class MemoryObject:
         self._allocation = None  # which allocation allocated this memory
         self._is_global = is_global
         self._zeroed = False
+        self._read_only = is_read_only
 
         self._ro = False  # COW support
 
@@ -57,6 +60,12 @@ class MemoryObject:
 
     def is_zeroed(self) -> bool:
         return self._zeroed
+
+    def set_read_only(self) -> None:
+        self._read_only = True
+
+    def is_read_only(self) -> bool:
+        return self._read_only
 
     def is_global(self) -> bool:
         return self._is_global
@@ -191,15 +200,17 @@ class MemoryObject:
         """Get offsets on which something is written"""
         return self._values.keys()
 
+    def _repr_header(self) -> str:
+        nm = self._name if self._name else "<unnamed>"
+        alloc = self._allocation.as_value() if self._allocation else "<unknown>"
+        s = f"mo{self._id} ('{nm}', alloc'd by {alloc}), " \
+            f"{'read-only, ' if self._read_only else ''}"\
+            f"{'zeroed, ' if self._zeroed else ''}"\
+            f"size: {self._size}"
+        return s
+
     def __repr__(self) -> str:
-        s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), 0-ed: {4}, size: {5}".format(
-            self._id,
-            self._name if self._name else "no name",
-            self._allocation.as_value() if self._allocation else "unknown",
-            self._ro,
-            self._zeroed,
-            self._size,
-        )
+        s = self._repr_header()
         for k, v in self._values.items():
             s += f"\n  {k} -> {v}"
         return s

@@ -236,14 +236,7 @@ class MemoryObject(CoreMO):
         return MemError(MemError.UNSUPPORTED, "Unsupported memory operation")
 
     def __repr__(self) -> str:
-        s = "mo{0} ({1}, alloc'd by {2}, ro:{3}), 0-ed: {4}, size: {5}".format(
-            self._id,
-            self._name if self._name else "no name",
-            self._allocation.as_value() if self._allocation else "unknown",
-            self._ro,
-            self._zeroed,
-            self._size,
-        )
+        s = self._repr_header()
         vals = self._values
         for k, v in enumerate(vals) if isinstance(vals, list) else vals.items():
             s += f"\n  {k} -> {v}"

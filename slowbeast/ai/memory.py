@@ -112,7 +112,7 @@ class AIMemoryObject:
 
 class AIMemory(CoreMemory):
     def create_memory_object(
-        self, size, nm=None, objid=None, is_global: bool = False
+        self, size, nm=None, objid=None, is_global: bool = False, is_const
     ) -> AIMemoryObject:
         """
         Create a new memory object -- may be overriden
@@ -120,7 +120,7 @@ class AIMemory(CoreMemory):
         memory objects.
         """
         assert not is_global, "Not supported atm"
-        return AIMemoryObject(size, nm, objid)
+        return AIMemoryObject(size, nm, objid, is_const)
 
     def __eq__(self, rhs: object):
         return (

@@ -48,6 +48,9 @@ class GlobalVariable(ProgramElement):
     def is_zeroed(self) -> bool:
         return self._zeroed
 
+    def is_constant(self):
+        return self._isconst
+
     def init(self):
         return self._init
 
@@ -60,7 +63,7 @@ class GlobalVariable(ProgramElement):
         return f"g{self.get_id()}"
 
     def __str__(self) -> str:
-        return f"{self.as_value()} = global {self.name()} of size {self.size()}"
+        return f"{self.as_value()} = global {'constant ' if self._isconst else ''} {self.name()} of size {self.size()}"
 
     def dump(self, ind: int = 0, stream: TextIO = stdout, color: bool = True) -> None:
         super().dump(ind, stream, color)

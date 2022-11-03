@@ -1,11 +1,8 @@
-from typing import Any, Iterable, List, Optional, Sized, Tuple, Union
+from typing import Any, Iterable, Tuple
 
 import llvmlite.binding as llvm
-from llvmlite.binding.module import ModuleRef
-from llvmlite.binding.value import TypeRef, ValueRef
 
 from slowbeast.ir.argument import Argument
-from slowbeast.ir.bblock import BBlock
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import *
 from slowbeast.ir.program import Program
@@ -1013,7 +1010,7 @@ class Parser:
             ts = type_size(self.llvmmodule, g.type.element_type)
             ty = get_sb_type(self.llvmmodule, g.type.element_type)
             assert ts is not None, "Unsupported type size: {g.type.element_type}"
-            G = GlobalVariable(concrete_value(ts, get_size_type_size()), g.name)
+            G = GlobalVariable(concrete_value(ts, get_size_type_size()), g.name, const=g.is_global_constant())
             if g.initializer:
                 self._parse_initializer(G, g, ty, ts)
             self.program.add_global(G)

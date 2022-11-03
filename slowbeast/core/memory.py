@@ -57,14 +57,14 @@ class Memory:
         return new
 
     def create_memory_object(
-        self, size, nm=None, objid=None, is_glob: bool = False
+        self, size, nm=None, objid=None, is_glob: bool = False, is_const = False
     ) -> MemoryObject:
         """
         Create a new memory object -- may be overriden
         by child classes to create a different type of
         memory objects.
         """
-        return MemoryObject(size, nm, objid, is_glob)
+        return MemoryObject(size, nm, objid, is_glob, is_const)
 
     def _objs_reown(self) -> None:
         if self._objects_ro:
@@ -126,6 +126,8 @@ class Memory:
         o = self._allocate(G.size(), G, G.name(), objid, is_glob=True)
         if zeroed:
             o.set_zeroed()
+        if G.is_constant():
+            o.set_read_only()
 
         self._globs_reown()
         assert self._glob_objects.get(o.get_id()) is None
