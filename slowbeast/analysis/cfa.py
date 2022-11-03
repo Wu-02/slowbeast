@@ -131,6 +131,9 @@ class CFA:
                 return self._elems[idx]
             return None
 
+        def orig_elem(self):
+            return self._orig_elem
+
         def is_noop(self):
             return len(self._elems) == 0
 

@@ -50,13 +50,22 @@ def find_loop_body_entries(programstructure):
         if len(entry_edge.elems()) != 1:
             raise NotImplementedError("Unhandled structure of the loop")
 
+        # find the first instruction in the body of the loop. It is either on regular edge
+        # or on an assume edge that has no ops, but corresponds to an instruction.
         following_edge = entry_edge.target().get_single_successor()
         if following_edge is None:
             raise NotImplementedError("Unhandled structure of the loop")
-        if len(following_edge.elems()) < 1:
-            raise NotImplementedError("Unhandled structure of the loop")
+        while (len(following_edge.elems()) == 0) and (not following_edge.is_assume()):
+            following_edge = following_edge.target().get_single_successor()
+            if following_edge is None:
+                raise NotImplementedError("Unhandled structure of the loop")
+            if following_edge.source() == h:
+                raise NotImplementedError("Unhandled structure of the loop")
 
-        entry_inst = following_edge.elems()[0]
+        if following_edge.is_assume():
+            entry_inst = following_edge.orig_elem()
+        else:
+            entry_inst = following_edge.elems()[0]
         assert entry_inst not in ret, f"{entry_inst} in {ret}"
         ret[entry_inst] = h
 
@@ -167,6 +176,7 @@ class SeAIS(SymbolicInterpreter):
         pc = state.pc
 
         if self._is_loop_entry(pc):
+            print("Entry", pc)
             assert state.is_ready()
             new_mp = self._get_and_check_projection(state)
             if new_mp is None:
