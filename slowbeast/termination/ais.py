@@ -40,18 +40,22 @@ class MemoryProjection:
             for mo_id, mo in state.memory._objects.items()
             for offset, val in mo._values.items()
         }
-        self.globals = {
+        self.memory.update({
             (mo_id, offset): val
             for mo_id, mo in state.memory._glob_objects.items()
             for offset, val in mo._values.items()
             if not mo.is_read_only()
-        }
+            }
+        )
 
     def get(self, mo_id, offset):
         return self.memory.get((mo_id, offset))
 
+    def items(self):
+        return self.memory.items()
+
     def __repr__(self):
-        return f"MemoryProjection {self.memory} {self.globals}"
+        return f"MemoryProjection {self.memory}"
 
 
 class COWList:
@@ -107,7 +111,7 @@ class ForwardState(ExecutionState):
         new._loop_entry_states = self._loop_entry_states
         new._loop_entry_states_ro = self._loop_entry_states_ro = True
 
-    def entry_loop(self) -> None:
+    def entry_loop(self, proj) -> None:
         if self._loop_entry_states_ro:
             self._loop_entry_states = {
                 pc: states.copy() for pc, states in self._loop_entry_states.items()
@@ -116,7 +120,7 @@ class ForwardState(ExecutionState):
 
         states = self._loop_entry_states
         pc = self.pc
-        states.setdefault(pc, COWList()).append(MemoryProjection(self))
+        states.setdefault(pc, COWList()).append(proj)
 
     def get_loop_entry_states(self, pc):
         r = self._loop_entry_states.get(pc)
@@ -209,48 +213,52 @@ class SeAIS(SymbolicExecutor):
         self._loop_body_entries = find_loop_body_entries(programstructure)
 
         self.get_cfa = programstructure.cfas.get
+        self.projections_solver = IncrementalSolver()
 
     def _is_loop_entry(self, inst):
         return inst in self._loop_body_entries
 
-    def _states_may_be_same(self, solver, expr_mgr, state, prev_mem_descr):
-        state_memory = state.memory
-        # print('PREV', prev_mem_descr)
-        # print('NOW ', MemoryProjection(state))
+    def _projections_may_be_same(self, solver, expr_mgr, cur_proj, prev_proj):
+       #print('PREV', prev_proj)
+       #print('NOW ', cur_proj)
 
-        for mo_id, mo in state_memory._objects.items():
+        for (mo_id, offset), val in cur_proj.items():
             # compare the two memory objects value by value
-            for offset, val in mo._values.items():
-                oldval = prev_mem_descr.get(mo_id, offset)
-                if oldval is None:
-                    # TODO: if we take uninitialized memory as non-deterministic,
-                    # we should assume that in this case the values may be the same
+            prevval = prev_proj.get(mo_id, offset)
+            if prevval is None:
+                # TODO: if we take uninitialized memory as non-deterministic,
+                # we should assume that in this case the values may be the same
+                return False
+            expr = expr_mgr.Eq(val, prevval)
+            if expr.is_concrete():
+                if not expr.value():
                     return False
-                expr = expr_mgr.Eq(val, oldval)
-                if expr.is_concrete():
-                    if not expr.value():
-                        return False
-                else:
-                    solver.add(expr)
+            else:
+                solver.add(expr)
         return solver.is_sat()
 
-    def _already_visited(self, state):
+    def _get_and_check_projection(self, state):
+        mem_proj = MemoryProjection(state)
         S = state.get_loop_entry_states(state.pc)
         if not S:
-            return False
+            return mem_proj
 
         expr_mgr = state.expr_manager()
-        solver = IncrementalSolver()
+        solver = self.projections_solver
+        solver.push()
+
         solver.add(state.constraints_obj().as_formula(expr_mgr))
-        states_may_be_same = self._states_may_be_same
+        projections_may_be_same = self._projections_may_be_same
 
         for prev_md in S:
             solver.push()
-            same = states_may_be_same(solver, expr_mgr, state, prev_md)
+            same = projections_may_be_same(solver, expr_mgr, mem_proj, prev_md)
             solver.pop()
             if same:
-                return True
-        return False
+                solver.pop()
+                return None
+        solver.pop()
+        return mem_proj
 
     def _handle_state_space_cycle(self, s: ForwardState) -> None:
         testgen = self.ohandler.testgen if self.ohandler else None
@@ -297,12 +305,13 @@ class SeAIS(SymbolicExecutor):
 
         if self._is_loop_entry(pc):
             assert state.is_ready()
-            if self._already_visited(state):
+            new_mp = self._get_and_check_projection(state)
+            if new_mp is None:
                 state.set_error(NonTerminationError("an infinite execution found"))
                 self._handle_state_space_cycle(state)
                 return
 
-            state.entry_loop()
+            state.entry_loop(new_mp)
         #    state.start_tracing_memory()
         # elif self._exited_loop(pc):
         #    state.stop_tracing_memory()
