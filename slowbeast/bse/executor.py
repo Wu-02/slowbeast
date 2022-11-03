@@ -3,12 +3,12 @@ from typing import Optional
 from slowbeast.bse.bsestate import BSEState
 from slowbeast.symexe.executionstate import LazySEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
-from slowbeast.symexe.pathexecutor import Executor as PathExecutor
+from slowbeast.symexe.pathexecutor import PathExecutor as PathExecutor
 from slowbeast.util.debugging import ldbgv
 from .memorymodel import BSEMemoryModel
 
 
-class Executor(PathExecutor):
+class PathExecutor(PathExecutor):
     """
     Symbolic ForwardExecutor instance adjusted to executing
     CFA paths possibly annotated with formulas.

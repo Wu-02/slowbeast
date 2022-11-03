@@ -11,7 +11,7 @@ from slowbeast.symexe.annotations import Annotation, execute_annotation
 from slowbeast.symexe.executionstate import SEState as ExecutionState
 from slowbeast.symexe.memory import Memory
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.symexe.pathexecutor import Executor as PathExecutor
+from slowbeast.symexe.pathexecutor import PathExecutor as PathExecutor
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
 from slowbeast.termination.memorymodel import AisSymbolicMemoryModel
 from slowbeast.util.debugging import (

@@ -4,7 +4,7 @@ from slowbeast.cfkind import KindSEOptions
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.core.iexecutor import PathExecutionResult
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.symexe.pathexecutor import Executor as PathExecutor
+from slowbeast.symexe.pathexecutor import PathExecutor as PathExecutor
 from slowbeast.symexe.symbolicexecution import (
     SymbolicExecutor as SymbolicInterpreter,
 )

@@ -5,7 +5,7 @@ from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.symexe.annotations import Annotation, execute_annotation
 from slowbeast.symexe.executionstate import SEState, SEState as ExecutionState
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.symexe.pathexecutor import Executor, Executor as PathExecutor
+from slowbeast.symexe.pathexecutor import PathExecutor, PathExecutor as PathExecutor
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
 from slowbeast.util.debugging import (
     print_stdout,

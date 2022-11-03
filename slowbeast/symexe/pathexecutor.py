@@ -1,25 +1,24 @@
+from typing import Optional, Sized
+
 from slowbeast.core.iexecutor import (
     PathExecutionResult,
-    split_ready_states,
     split_nonready_states,
 )
+from slowbeast.symexe.executionstate import LazySEState
+from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.util.debugging import dbgv, ldbgv
 from .annotations import execute_annotations
-from .executionstate import LazySEState
 from .iexecutor import IExecutor as SExecutor
-from slowbeast.symexe.executionstate import LazySEState
-from typing import Optional, Sized
-from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 
 
-class Executor(SExecutor):
+class PathExecutor(SExecutor):
     """
-    Symbolic ForwardExecutor instance adjusted to executing
+    Symbolic PathExecutor instance adjusted to executing
     CFA paths possibly annotated with formulas.
     """
 
     def __init__(
-        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+            self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
     ) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
@@ -132,7 +131,7 @@ class Executor(SExecutor):
         return ready, nonready
 
     def execute_annotated_path(
-        self, state, path: Sized, invariants=None
+            self, state, path: Sized, invariants=None
     ) -> PathExecutionResult:
         """
         Execute the given path through CFG with annotations from the given
