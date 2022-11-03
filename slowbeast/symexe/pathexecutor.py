@@ -1,11 +1,11 @@
 from typing import Optional, Sized
 
-from ..core.executionresult import split_nonready_states, PathExecutionResult
+from slowbeast.core.memorymodel import MemoryModel
 from slowbeast.symexe.executionstate import LazySEState
-from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.util.debugging import dbgv, ldbgv
 from .annotations import execute_annotations
 from .iexecutor import IExecutor as SExecutor
+from ..core.executionresult import split_nonready_states, PathExecutionResult
 
 
 class PathExecutor(SExecutor):
@@ -15,7 +15,7 @@ class PathExecutor(SExecutor):
     """
 
     def __init__(
-        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+        self, program, solver, opts, memorymodel: Optional[MemoryModel] = None
     ) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
