@@ -34,6 +34,17 @@ class CFA:
         def is_branching(self):
             return len(self._successors) > 1
 
+        def get_single_successor(self):
+            if len(self._successors) != 1:
+                return None
+            return self._successors[0]
+
+        def get_single_successor_loc(self):
+            if len(self._successors) != 1:
+                return None
+            return self._successors[0].target()
+
+
         def elem(self):
             return self._elem
 
