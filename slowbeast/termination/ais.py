@@ -11,9 +11,11 @@ from slowbeast.symexe.annotations import Annotation, execute_annotation
 from slowbeast.symexe.executionstate import SEState as ExecutionState
 from slowbeast.symexe.memory import Memory
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.symexe.pathexecutor import PathExecutor as PathExecutor
+from slowbeast.symexe.pathexecutor import PathExecutor
 from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
 from slowbeast.termination.memorymodel import AisSymbolicMemoryModel
+from slowbeast.termination.memoryprojection import MemoryProjection
+from slowbeast.util.cowlist import COWList
 from slowbeast.util.debugging import (
     print_stdout,
     print_stderr,
@@ -26,63 +28,6 @@ from slowbeast.util.debugging import (
 #####################################################################
 # Forward execution
 #####################################################################
-
-# def get_nondet_substitutions(state):
-#     expr_mgr = state.expr_manager()
-#     sid = state.get_id()
-#     return [(orig.value, expr_mgr.symbolic_value(f"{orig.value.unwrap()}__{sid}", orig.value.type())) for orig in state.nondets()]
-
-
-class MemoryProjection:
-    def __init__(self, state):
-        self.memory = {
-            (mo_id, offset): val
-            for mo_id, mo in state.memory._objects.items()
-            for offset, val in mo._values.items()
-        }
-        self.memory.update(
-            {
-                (mo_id, offset): val
-                for mo_id, mo in state.memory._glob_objects.items()
-                for offset, val in mo._values.items()
-                if not mo.is_read_only()
-            }
-        )
-
-    def get(self, mo_id, offset):
-        return self.memory.get((mo_id, offset))
-
-    def items(self):
-        return self.memory.items()
-
-    def __repr__(self):
-        return f"MemoryProjection {self.memory}"
-
-
-class COWList:
-    __slots__ = "data", "_ro"
-
-    def __init__(self):
-        self.data = []
-        self._ro = False
-
-    def __getitem__(self, item):
-        return self.data.__getitem__(item)
-
-    def __iter__(self):
-        return self.data.__iter__()
-
-    def append(self, item):
-        if self._ro:
-            self.data = self.data.copy()
-            self._ro = False
-        self.data.append(item)
-
-    def copy(self):
-        new = COWList()
-        new.data = self.data
-        new._ro = self._ro = True
-        return new
 
 
 class ForwardState(ExecutionState):
@@ -166,7 +111,7 @@ def find_loop_body_entries(programstructure):
     """
 
     headers = programstructure.get_loop_headers()
-    ret = dict()
+    ret = {}
     # go from the header until we find the assume edges
     for h in headers:
         node = h

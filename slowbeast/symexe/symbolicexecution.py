@@ -71,32 +71,32 @@ class SymbolicExecutor(Interpreter):
         for s in newstates:
             hs(s)
 
-    def handle_new_state(self, s: SEState) -> None:
+    def handle_new_state(self, state: SEState) -> None:
         testgen = self.ohandler.testgen if self.ohandler else None
         opts = self.get_options()
         stats = self.stats
-        if s.has_error() and opts.replay_errors and not opts.threads:
+        if state.has_error() and opts.replay_errors and not opts.threads:
             print_stdout("Found an error, trying to replay it", color="white")
             inc_print_indent()
-            repls = self.replay_state(s)
+            repls = self.replay_state(state)
             dec_print_indent()
             if not repls or not repls.has_error():
                 print_stderr("Failed replaying error", color="orange")
-                s.set_killed("Failed replaying error")
+                state.set_killed("Failed replaying error")
             else:
                 dbg("The replay succeeded.")
 
-        if s.is_ready():
+        if state.is_ready():
             # assert s.get_id() not in (
             #    st.get_id() for st in self.states
             # ), f"State already in queue: {s} ... {self.states}"
-            self.states.append(s)
-        elif s.has_error():
+            self.states.append(state)
+        elif state.has_error():
             if not opts.replay_errors:
-                dbgloc = s.pc.get_metadata("dbgloc")
+                dbgloc = state.pc.get_metadata("dbgloc")
                 if dbgloc:
                     print_stderr(
-                        f"[{s.get_id()}] {dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]}: {s.get_error()}",
+                        f"[{state.get_id()}] {dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]}: {state.get_error()}",
                         color="redul",
                     )
                 else:
@@ -110,30 +110,30 @@ class SymbolicExecutor(Interpreter):
             stats.errors += 1
             stats.paths += 1
             if testgen:
-                testgen.process_state(s)
+                testgen.process_state(state)
             if opts.exit_on_error:
                 dbg("Found an error, terminating the search.")
                 self.states = []
                 return
-        elif s.is_terminated():
-            print_stderr(s.get_error(), color="BROWN")
+        elif state.is_terminated():
+            print_stderr(state.get_error(), color="BROWN")
             stats.paths += 1
             stats.terminated_paths += 1
             if testgen:
-                testgen.process_state(s)
-        elif s.was_killed():
+                testgen.process_state(state)
+        elif state.was_killed():
             stats.paths += 1
             stats.killed_paths += 1
-            print_stderr(s.status_detail(), prefix="KILLED STATE: ", color="WINE")
+            print_stderr(state.status_detail(), prefix="KILLED STATE: ", color="WINE")
             if testgen:
-                testgen.process_state(s)
+                testgen.process_state(state)
         else:
-            assert s.exited()
+            assert state.exited()
             # dbg(f"state exited with exitcode {s.get_exit_code()}")
             stats.paths += 1
             stats.exited_paths += 1
             if testgen:
-                testgen.process_state(s)
+                testgen.process_state(state)
 
     def replay_state(self, state):
         ivec = state.input_vector()
