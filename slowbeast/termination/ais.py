@@ -40,11 +40,12 @@ class MemoryProjection:
             for mo_id, mo in state.memory._objects.items()
             for offset, val in mo._values.items()
         }
-        self.memory.update({
-            (mo_id, offset): val
-            for mo_id, mo in state.memory._glob_objects.items()
-            for offset, val in mo._values.items()
-            if not mo.is_read_only()
+        self.memory.update(
+            {
+                (mo_id, offset): val
+                for mo_id, mo in state.memory._glob_objects.items()
+                for offset, val in mo._values.items()
+                if not mo.is_read_only()
             }
         )
 
@@ -219,8 +220,8 @@ class SeAIS(SymbolicExecutor):
         return inst in self._loop_body_entries
 
     def _projections_may_be_same(self, solver, expr_mgr, cur_proj, prev_proj):
-       #print('PREV', prev_proj)
-       #print('NOW ', cur_proj)
+        # print('PREV', prev_proj)
+        # print('NOW ', cur_proj)
 
         for (mo_id, offset), val in cur_proj.items():
             # compare the two memory objects value by value

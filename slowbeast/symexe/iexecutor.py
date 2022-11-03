@@ -58,14 +58,14 @@ class SEStats:
 
 
 def add_pointer_with_constant(
-        E: ExpressionManager, op1: Pointer, op2: Union[ConcreteBitVec, Expr]
+    E: ExpressionManager, op1: Pointer, op2: Union[ConcreteBitVec, Expr]
 ) -> Pointer:
     return Pointer(op1.object(), E.Add(op1.offset(), op2))
 
 
 def condition_to_bool(
-        cond: Union[Expr, ConcreteBool],
-        EM: ExpressionManager,
+    cond: Union[Expr, ConcreteBool],
+    EM: ExpressionManager,
 ) -> Union[Expr, ConcreteBool]:
     if cond.type().is_bool():
         return cond
@@ -94,11 +94,11 @@ def eval_condition(state: SEState, cond: ValueInstruction) -> Union[Expr, Concre
 
 class IExecutor(ConcreteIExecutor):
     def __init__(
-            self,
-            program: Program,
-            solver: SymbolicSolver,
-            opts: SEOptions,
-            memorymodel: Optional[SymbolicMemoryModel] = None,
+        self,
+        program: Program,
+        solver: SymbolicSolver,
+        opts: SEOptions,
+        memorymodel: Optional[SymbolicMemoryModel] = None,
     ) -> None:
         if memorymodel is None:
             memorymodel = SymbolicMemoryModel(opts)
@@ -138,16 +138,16 @@ class IExecutor(ConcreteIExecutor):
         return s
 
     def create_states_set(
-            self,
-            S: Union[
-                None,
-                ConcreteVal,
-                Expr,
-                ExprAnnotation,
-                SEState,
-                SEStateDescription,
-                StatesSet,
-            ] = None,
+        self,
+        S: Union[
+            None,
+            ConcreteVal,
+            Expr,
+            ExprAnnotation,
+            SEState,
+            SEStateDescription,
+            StatesSet,
+        ] = None,
     ) -> StatesSet:
         ss = StatesSet(self.create_clean_state())
         if S:
@@ -156,9 +156,9 @@ class IExecutor(ConcreteIExecutor):
         return ss
 
     def fork(
-            self,
-            state: SEState,
-            cond: Union[Expr, ConcreteBool],
+        self,
+        state: SEState,
+        cond: Union[Expr, ConcreteBool],
     ) -> Union[Tuple[SEState, SEState], Tuple[SEState, None]]:
         self.stats.fork_calls += 1
 
@@ -311,7 +311,7 @@ class IExecutor(ConcreteIExecutor):
         return states
 
     def compare_values(
-            self, expr_mgr: ExpressionManager, p: int, op1: Expr, op2: Expr, unsgn: bool
+        self, expr_mgr: ExpressionManager, p: int, op1: Expr, op2: Expr, unsgn: bool
     ) -> Expr:
         if p == Cmp.LE:
             return expr_mgr.Le(op1, op2, unsgn)
@@ -501,7 +501,7 @@ class IExecutor(ConcreteIExecutor):
         return [state]
 
     def exec_undef_fun(
-            self, state: SEState, instr: Call, fun: Function
+        self, state: SEState, instr: Call, fun: Function
     ) -> List[SEState]:
         retTy = fun.return_type()
         if retTy:
