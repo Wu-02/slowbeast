@@ -5,8 +5,8 @@ from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.core.executionresult import PathExecutionResult
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.symexe.pathexecutor import PathExecutor as PathExecutor
-from slowbeast.symexe.symbolicexecution import (
-    SymbolicExecutor as SymbolicInterpreter,
+from slowbeast.symexe.interpreter import (
+    SymbolicInterpreter as SymbolicInterpreter,
 )
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg, ldbgv
 from typing import Optional
@@ -43,7 +43,7 @@ def check_paths(executor, paths, pre=None, post=None) -> PathExecutionResult:
     return result
 
 
-class KindSymbolicExecutor(SymbolicInterpreter):
+class KindSymbolicInterpreter(SymbolicInterpreter):
     def __init__(
         self,
         prog,

@@ -10,7 +10,7 @@ from slowbeast.solvers.symcrete import IncrementalSolver
 from slowbeast.symexe.annotations import Annotation, execute_annotation
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.symexe.pathexecutor import PathExecutor
-from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions
+from slowbeast.symexe.interpreter import SymbolicInterpreter, SEOptions
 from slowbeast.termination.forwardiexecutor import ForwardState, ForwardIExecutor
 from slowbeast.termination.memoryprojection import MemoryProjection
 from slowbeast.util.debugging import (
@@ -63,7 +63,7 @@ def find_loop_body_entries(programstructure):
     return ret
 
 
-class SeAIS(SymbolicExecutor):
+class SeAIS(SymbolicInterpreter):
     def __init__(
         self,
         program,

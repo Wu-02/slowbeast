@@ -1,9 +1,9 @@
 from typing import Type
 
 from slowbeast.symexe.executionstate import SEState
-from slowbeast.symexe.symbolicexecution import SEOptions
+from slowbeast.symexe.interpreter import SEOptions
 from .iexecutor import IExecutor as SExecutor
-from .symbolicexecution import SymbolicExecutor
+from .interpreter import SymbolicInterpreter
 
 
 def subsumed_memory(s, state) -> bool:
@@ -26,7 +26,7 @@ def subsumed_memory(s, state) -> bool:
     return True
 
 
-class StatefulSymbolicExecutor(SymbolicExecutor):
+class StatefulSymbolicInterpreter(SymbolicInterpreter):
     def __init__(
         self,
         P,

@@ -1,4 +1,4 @@
-from slowbeast.symexe.symbolicexecution import SEOptions
+from slowbeast.symexe.interpreter import SEOptions
 from .executor import IExecutor as AIExecutor
 from ..interpreter.interpreter import Interpreter
 from ..util.debugging import print_stderr, dbg

@@ -1,5 +1,5 @@
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
-from slowbeast.symexe.symbolicexecution import SEOptions
+from slowbeast.symexe.interpreter import SEOptions
 from slowbeast.termination.memory import Memory
 
 

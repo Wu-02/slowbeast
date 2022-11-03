@@ -10,8 +10,8 @@ from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 from slowbeast.cfkind.naive.naivekindse import Result
 from ..core.executionresult import PathExecutionResult
 from slowbeast.symexe.annotations import AssumeAnnotation
-from slowbeast.symexe.symbolicexecution import (
-    SymbolicExecutor as SymbolicInterpreter,
+from slowbeast.symexe.interpreter import (
+    SymbolicInterpreter as SymbolicInterpreter,
     SEOptions,
 )
 from slowbeast.util.debugging import print_stdout, print_stderr, dbg

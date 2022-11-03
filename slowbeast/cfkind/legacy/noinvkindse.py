@@ -4,7 +4,7 @@ from slowbeast.cfkind import KindSEOptions
 from slowbeast.cfkind.annotatedcfg import CFG, CFGPath
 from slowbeast.cfkind.naive.inductionpath import InductionPath
 from slowbeast.cfkind.naive.naivekindse import (
-    KindSymbolicExecutor as BasicKindSymbolicExecutor,
+    KindSymbolicInterpreter as BasicKindSymbolicExecutor,
 )
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg

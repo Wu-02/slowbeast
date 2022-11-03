@@ -23,7 +23,7 @@ from time import time, process_time
 
 from slowbeast.domains.symbolic_helpers import to_c_expression
 from slowbeast.ir.instruction import Call
-from slowbeast.symexe.symbolicexecution import SEOptions
+from slowbeast.symexe.interpreter import SEOptions
 from slowbeast.util.debugging import set_debugging, dbg, print_stdout, print_stderr
 
 
@@ -622,14 +622,14 @@ def main():
                 opts.simple_sis = True
             from slowbeast.cfkind.kindse import KindSE as KindSymbolicExecutor
         elif args.kind_naive:
-            from slowbeast.cfkind.naive.naivekindse import KindSymbolicExecutor
+            from slowbeast.cfkind.naive.naivekindse import KindSymbolicInterpreter
         elif args.kind_naive_impr:
             from slowbeast.cfkind.naive.naiveimprkindse import KindSymbolicExecutor
         else: # the default: if args.kind_noinv
             from slowbeast.cfkind.legacy.noinvkindse import KindSymbolicExecutor
             # NOTE: now, -kind is the same as -bse. We must implement -bse
             # with precondition computation of every single step
-        interpreter = KindSymbolicExecutor(P, ohandler, opts)
+        interpreter = KindSymbolicInterpreter(P, ohandler, opts)
     elif args.bse:
         from slowbeast.bse.bself import BSELFOptions
         opts = BSELFOptions()
@@ -664,21 +664,21 @@ def main():
             opts.set_block_step()
 
         if args.check and 'termination' in args.check:
-            from slowbeast.termination.ais import SeAIS as SymbolicExecutor
+            from slowbeast.termination.ais import SeAIS as SymbolicInterpreter
         elif args.stateful_se:
             assert not args.future_se, "Not compatible at this moment"
-            from slowbeast.symexe.statefulsymbolicexecution import StatefulSymbolicExecutor as SymbolicExecutor
+            from slowbeast.symexe.statefulsymbolicexecution import StatefulSymbolicInterpreter as SymbolicInterpreter
         elif args.future_se:
             assert not args.stateful_se, "Not compatible at this moment"
-            from slowbeast.symexe.futuresymbolicexecution import FutureSymbolicExecutor as SymbolicExecutor
+            from slowbeast.symexe.futuresymbolicexecution import FutureSymbolicInterpreter as SymbolicInterpreter
         elif args.threads:
             if args.se_threads_dpor:
-                from slowbeast.symexe.symbolicexecution import ThreadedDPORSymbolicExecutor as SymbolicExecutor
+                from slowbeast.symexe.interpreter import ThreadedDPORSymbolicInterpreter as SymbolicInterpreter
             else:
-                from slowbeast.symexe.symbolicexecution import ThreadedSymbolicExecutor as SymbolicExecutor
+                from slowbeast.symexe.interpreter import ThreadedSymbolicInterpreter as SymbolicInterpreter
         else:
-            from slowbeast.symexe.symbolicexecution import SymbolicExecutor
-        interpreter = SymbolicExecutor(P, ohandler, opts)
+            from slowbeast.symexe.interpreter import SymbolicInterpreter
+        interpreter = SymbolicInterpreter(P, ohandler, opts)
 
     opts.concretize_nondets = args.concretize_nondet
     opts.uninit_is_nondet = args.uninitialized_nondet

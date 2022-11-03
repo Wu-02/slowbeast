@@ -27,7 +27,14 @@ from .stats import SEStats
 from .threadedexecutor import ThreadedExecutor
 
 
-class SymbolicExecutor(Interpreter):
+class SymbolicInterpreter(Interpreter):
+    """
+    Symbolic execution of programs. According to most of the literature, the name should be 'SymbolicExecutor',
+    but we call it SymbolicInterpreter to follow the distinction between executor and interpreter in this project
+    (the first one is for executing instructions or sequences of instructions and the latter for executing
+    (interpreting) whole programs).
+    """
+
     def __init__(
         self,
         P: Program,
@@ -154,7 +161,7 @@ class SymbolicExecutor(Interpreter):
         opts = SEOptions(self.get_options())
         opts.replay_errors = False
         handler = GatherStates()
-        SE = SymbolicExecutor(self.get_program(), handler, opts)
+        SE = SymbolicInterpreter(self.get_program(), handler, opts)
         SE.set_input_vector(ivec)
         SE.run()
         if len(handler.states) != 1:
@@ -252,7 +259,7 @@ def _is_global_event_fun(fn) -> bool:
 #
 
 
-class ThreadedSymbolicExecutor(SymbolicExecutor):
+class ThreadedSymbolicInterpreter(SymbolicInterpreter):
     def __init__(self, P, ohandler=None, opts: SEOptions = SEOptions()) -> None:
         super().__init__(P, ohandler, opts, ExecutorClass=ThreadedExecutor)
 
@@ -392,7 +399,7 @@ def has_conflicts(state, events, states_with_events) -> bool:
     return False
 
 
-class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
+class ThreadedDPORSymbolicExecutor(ThreadedSymbolicInterpreter):
     def __init__(self, P, ohandler=None, opts: SEOptions = SEOptions()) -> None:
         super().__init__(P, ohandler, opts)
         print("Running symbolic execution with DPOR")

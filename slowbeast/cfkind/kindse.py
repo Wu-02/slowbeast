@@ -12,7 +12,7 @@ from slowbeast.symexe.annotations import (
     execute_annotation_substitutions,
 )
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
-from slowbeast.symexe.symbolicexecution import SEStats
+from slowbeast.symexe.interpreter import SEStats
 from slowbeast.util.debugging import (
     print_stderr,
     print_stdout,
@@ -23,7 +23,7 @@ from slowbeast.util.debugging import (
     ldbgv,
 )
 from .inductivesequence import InductiveSequence
-from .kindsebase import check_paths, KindSymbolicExecutor as BaseKindSE
+from .kindsebase import check_paths, KindSymbolicInterpreter as BaseKindSE
 from .overapproximations import overapprox_set
 from .relations import get_const_cmp_relations, get_var_relations
 from io import TextIOWrapper

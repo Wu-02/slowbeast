@@ -6,7 +6,7 @@ from slowbeast.symexe.annotations import Annotation, execute_annotation
 from slowbeast.symexe.executionstate import SEState, SEState as ExecutionState
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
 from slowbeast.symexe.pathexecutor import PathExecutor, PathExecutor as PathExecutor
-from slowbeast.symexe.symbolicexecution import SymbolicExecutor, SEOptions, SExecutor
+from slowbeast.symexe.interpreter import SymbolicInterpreter, SEOptions, SExecutor
 from slowbeast.util.debugging import (
     print_stdout,
     inc_print_indent,
@@ -69,7 +69,7 @@ class Executor(SExecutor):
         return s
 
 
-class BSELFFSymbolicExecutor(SymbolicExecutor):
+class BSELFFSymbolicInterpreter(SymbolicInterpreter):
     def __init__(
         self,
         P,
@@ -257,8 +257,8 @@ class BSELFF(BSELF):
         self.forward_states = {}
         # self.create_set = self.ind_executor().create_states_set
 
-    def init_se_checkers(self) -> List[BSELFFSymbolicExecutor]:
-        se = BSELFFSymbolicExecutor(
+    def init_se_checkers(self) -> List[BSELFFSymbolicInterpreter]:
+        se = BSELFFSymbolicInterpreter(
             self.program,
             self.ohandler,
             self.options,

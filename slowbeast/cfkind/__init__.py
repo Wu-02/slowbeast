@@ -1,4 +1,4 @@
-from slowbeast.symexe.symbolicexecution import SEOptions
+from slowbeast.symexe.interpreter import SEOptions
 
 
 class KindSEOptions(SEOptions):

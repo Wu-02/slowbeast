@@ -13,7 +13,7 @@ from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relation
 from slowbeast.core.errors import AssertFailError
 from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
-from slowbeast.symexe.symbolicexecution import SEStats
+from slowbeast.symexe.interpreter import SEStats
 from slowbeast.util.debugging import (
     print_stdout,
     dbg,

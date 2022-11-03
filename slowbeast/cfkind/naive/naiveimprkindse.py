@@ -3,11 +3,11 @@ from copy import copy
 from slowbeast.cfkind.annotatedcfg import CFG
 from slowbeast.cfkind.naive.inductionpath import InductionPath
 from slowbeast.cfkind.naive.naivekindse import (
-    KindSymbolicExecutor as BasicKindSymbolicExecutor,
+    KindSymbolicInterpreter as BasicKindSymbolicExecutor,
 )
 from slowbeast.cfkind.naive.naivekindse import Result, KindSeOptions
 from slowbeast.symexe.executionstate import SEState
-from slowbeast.symexe.symbolicexecution import SEOptions
+from slowbeast.symexe.interpreter import SEOptions
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from slowbeast.cfkind import KindSEOptions
 

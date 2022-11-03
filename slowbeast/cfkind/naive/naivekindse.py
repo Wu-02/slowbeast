@@ -1,7 +1,7 @@
 from slowbeast.cfkind import KindSEOptions
 from slowbeast.symexe.iexecutor import IExecutor, IExecutor as SExecutor
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.symexe.symbolicexecution import SymbolicExecutor
+from slowbeast.symexe.interpreter import SymbolicInterpreter
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from typing import Optional
 
@@ -12,11 +12,13 @@ class Result:
     UNSAFE = 2
 
 
-class KindSymbolicExecutor(SymbolicExecutor):
+class KindSymbolicInterpreter(SymbolicInterpreter):
     def __init__(
         self, prog, ohandler=None, opts: KindSEOptions = KindSEOptions()
     ) -> None:
-        super(KindSymbolicExecutor, self).__init__(P=prog, ohandler=ohandler, opts=opts)
+        super(KindSymbolicInterpreter, self).__init__(
+            P=prog, ohandler=ohandler, opts=opts
+        )
 
         # the executor for induction checks -- we need lazy memory access
         memorymodel = LazySymbolicMemoryModel(opts)
