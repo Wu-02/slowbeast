@@ -18,7 +18,7 @@ class PathExecutor(SExecutor):
     """
 
     def __init__(
-            self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
+        self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
     ) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
@@ -131,7 +131,7 @@ class PathExecutor(SExecutor):
         return ready, nonready
 
     def execute_annotated_path(
-            self, state, path: Sized, invariants=None
+        self, state, path: Sized, invariants=None
     ) -> PathExecutionResult:
         """
         Execute the given path through CFG with annotations from the given

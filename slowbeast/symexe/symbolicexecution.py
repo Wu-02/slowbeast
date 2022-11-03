@@ -2,15 +2,7 @@ from io import TextIOWrapper
 from typing import Optional, Sized, Union
 
 from slowbeast.core.errors import GenericError
-from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
-from slowbeast.solvers.symcrete import SymbolicSolver, Solver
-from slowbeast.util.debugging import (
-    print_stderr,
-    print_stdout,
-    dbg,
-    inc_print_indent,
-    dec_print_indent,
-)
+from slowbeast.interpreter.interpreter import Interpreter
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import (
     Load,
@@ -24,6 +16,10 @@ from slowbeast.ir.program import Program
 from slowbeast.solvers.symcrete import SymbolicSolver, Solver
 from slowbeast.symexe.executionstate import SEState
 from slowbeast.symexe.iexecutor import IExecutor
+from slowbeast.util.debugging import (
+    inc_print_indent,
+    dec_print_indent,
+)
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from .iexecutor import IExecutor as SExecutor
 from .options import SEOptions
@@ -33,12 +29,12 @@ from .threadedexecutor import ThreadedExecutor
 
 class SymbolicExecutor(Interpreter):
     def __init__(
-        self,
-        P: Program,
-        ohandler=None,
-        opts: SEOptions = SEOptions(),
-        executor: Optional[IExecutor] = None,
-        ExecutorClass=SExecutor,
+            self,
+            P: Program,
+            ohandler=None,
+            opts: SEOptions = SEOptions(),
+            executor: Optional[IExecutor] = None,
+            ExecutorClass=SExecutor,
     ) -> None:
         self._solver = Solver()
         super().__init__(P, opts, executor or ExecutorClass(P, self._solver, opts))
@@ -185,8 +181,8 @@ def _is_global_event_fun(fn) -> bool:
     if name.startswith("__VERIFIER_atomic"):
         return True
     if fn.is_undefined() and name in (
-        "pthread_mutex_lock",
-        "pthread_mutex_unlock",
+            "pthread_mutex_lock",
+            "pthread_mutex_unlock",
     ):
         return True
     return False
@@ -373,14 +369,14 @@ class ThreadedSymbolicExecutor(SymbolicExecutor):
 
 def events_conflict(events, othevents) -> bool:
     for ev in (
-        e
-        for e in events
-        if not e.is_call_of(("__VERIFIER_atomic_begin", "__VERIFIER_atomic_end"))
+            e
+            for e in events
+            if not e.is_call_of(("__VERIFIER_atomic_begin", "__VERIFIER_atomic_end"))
     ):
         for oev in (
-            e
-            for e in othevents
-            if not e.is_call_of(("__VERIFIER_atomic_begin", "__VERIFIER_atomic_end"))
+                e
+                for e in othevents
+                if not e.is_call_of(("__VERIFIER_atomic_begin", "__VERIFIER_atomic_end"))
         ):
             if ev.conflicts(oev):
                 return True
@@ -549,7 +545,7 @@ class ThreadedDPORSymbolicExecutor(ThreadedSymbolicExecutor):
                                 continue
                             events = ns.events()
                             assert events[len(oldevs) - 1] is ev
-                            states_with_events.append((tid, ns, events[len(oldevs) :]))
+                            states_with_events.append((tid, ns, events[len(oldevs):]))
 
                     independent = set()
                     for tid, ns, events in states_with_events:

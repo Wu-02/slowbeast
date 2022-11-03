@@ -1,19 +1,18 @@
 import sys
 from itertools import chain
+from typing import List, Optional, Union
 
-from ..domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.core.executionstate import ExecutionState
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import *
-from slowbeast.util.debugging import ldbgv
-from .errors import GenericError
-from .executionstate import ExecutionState
-from .memorymodel import MemoryModel
-from slowbeast.core.executionstate import ExecutionState
-from typing import List, Optional, Union
 from slowbeast.ir.program import Program
 from slowbeast.symexe.executionstate import SEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.options import SEOptions
+from slowbeast.util.debugging import ldbgv
+from .errors import GenericError
+from .memorymodel import MemoryModel
+from ..domains.concrete_bitvec import ConcreteBitVec
 
 
 def split_ready_states(states):
