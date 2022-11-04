@@ -1,310 +1,109 @@
-from random import randint
-from typing import Optional, Sized
+from typing import Optional
 
 from slowbeast.analysis.programstructure import ProgramStructure
-from slowbeast.bse.bselfchecker import BSELFChecker as BSELFCheckerVanilla
-from slowbeast.bse.loopinfo import LoopInfo
+from slowbeast.bse.bself import BSELFChecker
+from slowbeast.termination.ais_overapproximations import overapprox_state
 from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.core.errors import NonTerminationError
-from slowbeast.solvers.symcrete import IncrementalSolver
-from slowbeast.symexe.annotations import Annotation, execute_annotation
-from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.symexe.pathexecutor import PathExecutor
-from slowbeast.symexe.interpreter import SymbolicInterpreter, SEOptions
-from slowbeast.termination.forwardiexecutor import ForwardState, ForwardIExecutor
-from slowbeast.termination.memoryprojection import MemoryProjection
-from slowbeast.util.debugging import (
-    print_stdout,
-    print_stderr,
-    inc_print_indent,
-    dec_print_indent,
-    dbg,
-)
+from slowbeast.symexe.statesset import intersection
+from slowbeast.termination.inductivesetstree import InductiveSetsTree
+from slowbeast.util.debugging import print_stdout, dbg
 
 
-def find_loop_body_entries(programstructure):
+class AisInference(BSELFChecker):
     """
-    Find the first instruction from each loop body. Note that these instructions do not
-    precisely correspond to loop headers in the backward analysis.
+    Infer acyclic inductive sets for one loop
     """
 
-    headers = programstructure.get_loop_headers()
-    ret = {}
-    # go from the header until we find the assume edges
-    for h in headers:
-        node = h
-        while not node.is_branching():
-            node = node.get_single_successor_loc()
-            if node == h:
-                raise NotImplementedError("Unconditional loops not handled")
-        if len(node.successors()) != 2 or any(
-            (not e.is_assume() for e in node.successors())
-        ):
-            raise NotImplementedError("Unhandled structure of the loop")
-
-        entry_edge = (
-            node.successors()[0]
-            if node.successors()[0].assume_true()
-            else node.successors()[1]
-        )
-        assert entry_edge.assume_true(), entry_edge
-        if len(entry_edge.elems()) != 1:
-            raise NotImplementedError("Unhandled structure of the loop")
-
-        # find the first instruction in the body of the loop. It is either on regular edge
-        # or on an assume edge that has no ops, but corresponds to an instruction.
-        following_edge = entry_edge.target().get_single_successor()
-        if following_edge is None:
-            raise NotImplementedError("Unhandled structure of the loop")
-        while (len(following_edge.elems()) == 0) and (not following_edge.is_assume()):
-            following_edge = following_edge.target().get_single_successor()
-            if following_edge is None:
-                raise NotImplementedError("Unhandled structure of the loop")
-            if following_edge.source() == h:
-                raise NotImplementedError("Unhandled structure of the loop")
-
-        if following_edge.is_assume():
-            entry_inst = following_edge.orig_elem()
-        else:
-            entry_inst = following_edge.elems()[0]
-        assert entry_inst not in ret, f"{entry_inst} in {ret}"
-        ret[entry_inst] = h
-
-    return ret
-
-
-class SeAISForward(SymbolicInterpreter):
-    """
-    The forward part of symbolic execution with acyclic inductive sets inference.
-    """
-
-    def __init__(
-        self,
-        program,
-        ohandler=None,
-        opts: SEOptions = SEOptions(),
-    ) -> None:
-        super().__init__(program, ohandler, opts, None, ForwardIExecutor)
-        programstructure = ProgramStructure(program, self.new_output_file)
-        self.programstructure = programstructure
-        self._loop_body_entries = find_loop_body_entries(programstructure)
-
-        self.get_cfa = programstructure.cfas.get
-        self.projections_solver = IncrementalSolver()
-
-    def _is_loop_entry(self, inst):
-        return inst in self._loop_body_entries
-
-    def _projections_may_be_same(self, solver, expr_mgr, cur_proj, prev_proj):
-        # print('PREV', prev_proj)
-        # print('NOW ', cur_proj)
-
-        for (mo_id, offset), val in cur_proj.items():
-            # compare the two memory objects value by value
-            prevval = prev_proj.get(mo_id, offset)
-            if prevval is None:
-                # TODO: if we take uninitialized memory as non-deterministic,
-                # we should assume that in this case the values may be the same
-                return False
-            expr = expr_mgr.Eq(val, prevval)
-            if expr.is_concrete():
-                if not expr.value():
-                    return False
-            else:
-                solver.add(expr)
-        return solver.is_sat()
-
-    def _get_and_check_projection(self, state):
-        mem_proj = MemoryProjection(state)
-        S = state.get_loop_entry_states(state.pc)
-        if not S:
-            return mem_proj
-
-        expr_mgr = state.expr_manager()
-        solver = self.projections_solver
-        solver.push()
-
-        solver.add(state.constraints_obj().as_formula(expr_mgr))
-        projections_may_be_same = self._projections_may_be_same
-
-        for prev_md in S:
-            solver.push()
-            same = projections_may_be_same(solver, expr_mgr, mem_proj, prev_md)
-            solver.pop()
-            if same:
-                solver.pop()
-                return None
-        solver.pop()
-        return mem_proj
-
-    def _handle_state_space_cycle(self, s: ForwardState) -> None:
-        testgen = self.ohandler.testgen if self.ohandler else None
-        opts = self.get_options()
-        stats = self.stats
-        if s.has_error() and opts.replay_errors:
-            assert not opts.threads, opts
-            print_stdout("Found an error, trying to replay it", color="white")
-            inc_print_indent()
-            repls = self.replay_state(s)
-            dec_print_indent()
-            if not repls or not repls.has_error():
-                print_stderr("Failed replaying error", color="orange")
-                s.set_killed("Failed replaying error")
-            else:
-                dbg("The replay succeeded.")
-        if s.has_error():
-            if not opts.replay_errors:
-                dbgloc = s.pc.get_metadata("dbgloc")
-                if dbgloc:
-                    print_stderr(
-                        f"[{s.get_id()}] {dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]}: {s.get_error()}",
-                        color="redul",
-                    )
-                else:
-                    print_stderr(
-                        f"{s.get_id()}: {s.get_error()} @ {s.pc}",
-                        color="redul",
-                    )
-                print_stderr("Error found.", color="red")
-            # else: we already printed this message
-
-            stats.errors += 1
-            stats.paths += 1
-            if testgen:
-                testgen.process_state(s)
-            if opts.exit_on_error:
-                dbg("Found an error, terminating the search.")
-                self.states = []
-                return
-
-    def handle_new_state(self, state: ForwardState) -> None:
-        pc = state.pc
-
-        if self._is_loop_entry(pc):
-            if self.handle_loop_entry(state):
-                return
-
-        if state.has_error():
-            dbg("Discarding an error state (it is not non-termination)")
-            return
-        super().handle_new_state(state)
-
-    def handle_loop_entry(self, state):
-        assert state.is_ready()
-        new_mp = self._get_and_check_projection(state)
-        if new_mp is None:
-            state.set_error(NonTerminationError("an infinite execution found"))
-            self._handle_state_space_cycle(state)
-            return True
-
-        state.entry_loop(new_mp)
-        return False
-
-    def get_next_state(self):
-        states = self.states
-        if not states:
-            return None
-        ## take the state from the middle of the list
-        # l = len(states)
-        # if l > 2:
-        #    states[int(l/2)], states[-1] =  states[-1], states[int(l/2)]
-
-        # move random state in the queue at the end of queue so that we pop it
-        pick = randint(0, len(states) - 1)
-        states[pick], states[-1] = states[-1], states[pick]
-        state = states.pop()
-        assert state.get_id() not in (
-            st.get_id() for st in self.states
-        ), f"State already in queue: {state} ... {self.states}"
-        return state
-
-
-class SeAIS(SeAISForward):
-    """
-    Symbolic execution with acyclic inductive sets inference.
-    """
-
-    def __init__(
-        self,
-        program,
-        ohandler=None,
-        opts: SEOptions = SEOptions(),
-    ) -> None:
-        super().__init__(program, ohandler, opts)
-
-
-#####################################################################
-# Backward execution
-#####################################################################
-
-
-class BSELFChecker(BSELFCheckerVanilla):
     def __init__(
         self,
         loc,
-        A,
         program,
         programstructure: Optional[ProgramStructure],
         opts,
         invariants=None,
         indsets=None,
         max_loop_hits=None,
-        forward_states=None,
     ) -> None:
         super().__init__(
-            loc, A, program, programstructure, opts, invariants, indsets, max_loop_hits
-        )
-        self.forward_states = forward_states
-        memorymodel = LazySymbolicMemoryModel(opts)
-        pathexecutor = PathExecutor(program, self.solver(), opts, memorymodel)
-        # forbid defined calls...
-        # pathexecutor.forbid_calls()
-        self._pathexecutor = pathexecutor
-
-    def check_loop_precondition(self, L, A: Annotation):
-        loc = L.header()
-        print_stdout(f"Checking if {str(A)} holds on {loc}", color="purple")
-
-        # "fast" path -- check with the forward states that we have
-        fstates = self.forward_states.get(L.header().elem()[0])
-        if fstates:
-            # use only the states from entering the loop -- those are most
-            # likely to work
-            states = [s.copy() for s in fstates[0]]
-            _, n = execute_annotation(self._pathexecutor, states, A)
-            if n and any(map(lambda s: s.has_error(), n)):
-                return Result.UNKNOWN, None
-        inc_print_indent()
-        # run recursively BSELFChecker with already computed inductive sets
-        checker = BSELFChecker(
             loc,
-            A,
-            self.program,
-            self.programstructure,
-            self.options,
-            indsets=self.inductive_sets,
-            invariants=self.invariant_sets,
-            max_loop_hits=1,
-            forward_states=self.forward_states,
+            None,
+            program,
+            programstructure,
+            opts,
+            invariants,
+            indsets,
+            max_loop_hits,
         )
-        result, states = checker.check(L.entries())
 
-        dec_print_indent()
-        dbg(f"Checking if {A} holds on {loc} finished")
-        return result, states
+        self.loop = self.get_loop(loc)
+        # tell the super() class what is the assertion that we are looking for
+        S = self.get_loop_termination_condition(loc)
+        self.aistree = InductiveSetsTree(S)
 
-    def fold_loop(self, loc, L: LoopInfo, unsafe: Sized, loop_hit_no: int) -> bool:
-        fstates = self.forward_states.get(L.header().elem()[0])
-        if fstates is None:
-            self.max_seq_len = 2
-        else:
-            self.max_seq_len = 2  # * len(L.paths())
-        return super().fold_loop(loc, L, unsafe, loop_hit_no)
+        # TODO: do we need this?
+        self.assertion = S.as_assert_annotation()
+        print_stdout(
+            f"Init AIS for loop {loc} with termination condition {self.assertion}",
+            color="cyan",
+        )
+
+    def get_loop_termination_condition(self, loc):
+        S = self.create_set()
+        for path in self.loop.get_exit_paths():
+            result = self.execute_path(path)
+            S.add(result.ready)
+        assert not S.is_empty(), "Got no loop termination condition"
+        return S
+
+    def unwind(self, loc, errpre, maxk=None) -> int:
+        raise RuntimeWarning("Do not want to do unwinding (not now)")
+        return Result.UNKNOWN
 
     def do_step(self):
-        bsectx = self.get_next_state()
-        if bsectx is None:
-            return (
-                Result.UNKNOWN if self.problematic_states else Result.SAFE
-            ), self.problematic_paths_as_result()
-        return self._do_step(bsectx)
+        print_stdout(
+            f"[loop {self.location}] current AIS: {self.aistree.all_states}",
+            color="blue",
+        )
+
+        overapprox_step = self.overapprox_step
+        aistree = self.aistree
+        for frontier_node in aistree.frontiers.copy():
+            print("EXTENDING: ", frontier_node.iset.as_assert_annotation())
+            prestates = self._extend_one_step(self.loop, frontier_node.iset)
+            for state in prestates:
+                print("GOT ", self.create_set(state).as_assert_annotation())
+                overapprox_step(aistree, frontier_node, state)
+
+    def overapprox_step(self, aistree, frontier_node, state):
+        loop = self.loop
+        n = 0
+        state_as_set = self.create_set(state)
+        # this is a reference, so every iteration in the loop below
+        # will use an updated current_ais by previous iterations
+        current_ais = aistree.all_states
+        X = state_as_set.copy()
+        X.intersect(current_ais)
+        if not X.is_empty():
+            # NOT HANDLED YET
+            print_stdout("Prestate overlaps with AIS", color="red")
+            return None
+
+        for overapprox in overapprox_state(
+            executor=self,
+            state_as_set=state_as_set,
+            errset=current_ais,
+            target=current_ais,
+            loopinfo=loop,
+        ):
+            n += 1
+            print(f"OVERAPPROXIMATED {n}", overapprox)
+            if overapprox is None:
+                dbg("Overapproximation failed...")
+                continue
+
+            if __debug__:
+                assert (
+                    overapprox is None
+                    or intersection(overapprox, current_ais).is_empty()
+                ), f"Overapproximation overlaps with current states: {overapprox}"
+            aistree.add_set(overapprox, frontier_node)
