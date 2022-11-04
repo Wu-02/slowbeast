@@ -1,5 +1,6 @@
 from slowbeast.bse.bse import report_state
-from slowbeast.bse.bself import BSELF, BSELFChecker as BSELFCheckerVanilla
+from slowbeast.bse.bself import BSELF
+from slowbeast.bse.bselfchecker import BSELFChecker as BSELFCheckerVanilla
 from slowbeast.bse.options import BSELFOptions
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.symexe.annotations import Annotation, execute_annotation

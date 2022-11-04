@@ -2,7 +2,7 @@ from random import randint
 from typing import Optional, Sized
 
 from slowbeast.analysis.programstructure import ProgramStructure
-from slowbeast.bse.bself import BSELFChecker as BSELFCheckerVanilla
+from slowbeast.bse.bselfchecker import BSELFChecker as BSELFCheckerVanilla
 from slowbeast.bse.loopinfo import LoopInfo
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.core.errors import NonTerminationError
