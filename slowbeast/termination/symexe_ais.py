@@ -255,7 +255,7 @@ class SeAIS(SeAISForward):
         if self._is_loop_header(state.pc):
             ais = self._get_ais(state.pc)
             if self._state_is_subsumed(ais, state):
-                dbgv("State is subsumed, dropping it")
+                dbg("State is subsumed, dropping it")
                 return
 
             ais.do_step()
