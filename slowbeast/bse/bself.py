@@ -3,7 +3,7 @@ from typing import List, Optional, Sized
 
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.programstructure import ProgramStructure
-from slowbeast.bse.bse import BSEContext
+from .bsectx import BSEContext
 from slowbeast.bse.inductivesequence import InductiveSequence
 from slowbeast.bse.loopinfo import LoopInfo
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath

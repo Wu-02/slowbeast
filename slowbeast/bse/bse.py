@@ -1,15 +1,14 @@
 from queue import Queue as FIFOQueue
-from typing import Union, Optional  # , Union
+from typing import Optional  # , Union
 
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.bse.bsestate import BSEState
 from slowbeast.bse.memorymodel import BSEMemoryModel
 from slowbeast.cfkind import KindSEOptions
-from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
 from slowbeast.cfkind.naive.naivekindse import Result
+from .bsectx import BSEContext
 from ..core.executionresult import PathExecutionResult
-from slowbeast.symexe.annotations import AssumeAnnotation
 from slowbeast.symexe.interpreter import (
     SymbolicInterpreter as SymbolicInterpreter,
     SEOptions,
@@ -33,132 +32,6 @@ def report_state(stats, n, msg=None, fn=print_stderr) -> None:
         if fn:
             fn(n.status_detail(), prefix="TERMINATED STATE: ", color="orange")
         stats.terminated_paths += 1
-
-
-class BSEPath:
-    __slots__ = "_edges"
-
-    def __init__(self, *edges) -> None:
-        # we keep the edges in reversed order to do efficient prepends
-        # (= append in the reversed case)
-        if edges:
-            if len(edges) == 1:
-                if isinstance(edges[0], CFA.Edge):
-                    self._edges = list(edges)
-                elif isinstance(edges[0], BSEPath):
-                    self._edges = edges[0]._edges.copy()
-                elif isinstance(edges[0], AnnotatedCFAPath):
-                    self._edges = list(reversed(edges[0]))
-                else:
-                    raise RuntimeError(f"Invalid ctor value: {edges}")
-            else:
-                assert all(map(lambda e: isinstance(e, CFA.Edge), edges)), edges
-                self._edges = list(reversed(edges))
-        assert all(
-            map(lambda x: x[1] == self[x[0]], enumerate(self))
-        ), "Invalid iterators and getteres"
-
-    def edges(self):
-        return self._edges
-
-    def copy(self) -> "BSEPath":
-        n = BSEPath()
-        n._edges = self._edges.copy()
-        return n
-
-    def copy_prepend(self, *edges) -> "BSEPath":
-        n = self.copy()
-        n.prepend(*edges)
-        return n
-
-    def prepend(self, *edges) -> None:
-        self._edges.extend(edges)
-
-    def source(self) -> Optional[CFA.Location]:
-        if self._edges:
-            assert self._edges[-1] == self[0]
-            return self._edges[-1].source()
-        return None
-
-    def target(self) -> Optional[CFA.Location]:
-        if self._edges:
-            assert self._edges[0] == self[-1]
-            return self._edges[0].target()
-        return None
-
-    def __getitem__(self, item: int):
-        assert isinstance(item, int), item  # no slices atm
-        edges = self._edges
-        if item < 0:
-            return edges[item + 1]
-        return edges[len(edges) - item - 1]
-
-    def __iter__(self):
-        return reversed(self._edges)
-
-    def __str__(self) -> str:
-        return ";".join(map(str, self))
-
-    def __repr__(self) -> str:
-        return "<=".join(map(str, self._edges))
-
-
-class BSEContext:
-    """Class that keeps the state of BSE search"""
-
-    __slots__ = "path", "loc_hits", "errorstate", "errordescr"
-
-    def __init__(
-        self,
-        path,
-        errstate: Union[BSEState, AssumeAnnotation],
-        loc_hits=None,
-        errdescr=None,
-    ) -> None:
-        """
-        edge  - edge after which the error should be infeasible
-        errstate - error condition
-        loc_hits - number of hitting locations (usually just loop headers)
-        """
-        assert isinstance(errstate, (AssumeAnnotation, BSEState)), errstate
-        self.path = BSEPath(path) if not isinstance(path, BSEPath) else path
-        assert isinstance(self.path, BSEPath), self.path
-        self.loc_hits = loc_hits or {}
-        self.errorstate = errstate
-        self.errordescr = errdescr
-
-    def extension(self, path, cond) -> "BSEContext":
-        """
-        Derive a new context from this context - it must correctly preceed
-        the current path.
-        """
-        assert (
-            path.source().cfa() != self.path.source().cfa()
-            or path.target() == self.path[0].source()
-        ), f"{path};{self.path}"
-        return BSEContext(path, cond, self.loc_hits.copy(), self.errordescr)
-
-    def extend_path(self, edge) -> "BSEContext":
-        """
-        Derive a new context from this context - it must correctly preceed
-        the current path.
-        """
-        assert (
-            edge.source().cfa() != self.path.source().cfa()
-            or edge.target() == self.path[0].source()
-        ), f"{edge};{self.path}"
-        return BSEContext(
-            self.path.copy_prepend(edge),
-            self.errorstate,
-            self.loc_hits.copy(),
-            self.errordescr,
-        )
-
-    def target_loc(self):
-        return self.path[-1].target()
-
-    def __repr__(self) -> str:
-        return f"BSE-ctx[{self.path}:{self.errorstate}]"
 
 
 class BackwardSymbolicInterpreter(SymbolicInterpreter):
