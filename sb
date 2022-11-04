@@ -375,7 +375,9 @@ def main():
             opts.set_block_step()
 
         if args.check and 'termination' in args.check:
-            from slowbeast.termination.ais import SeAIS as SymbolicInterpreter
+            from slowbeast.bse.bself import BSELFOptions
+            opts = BSELFOptions(opts)
+            from slowbeast.termination.symexe_ais import SeAIS as SymbolicInterpreter
         elif args.stateful_se:
             assert not args.future_se, "Not compatible at this moment"
             from slowbeast.symexe.statefulsymbolicexecution import StatefulSymbolicInterpreter as SymbolicInterpreter

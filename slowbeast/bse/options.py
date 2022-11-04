@@ -4,6 +4,10 @@ from slowbeast.cfkind import KindSEOptions
 class BSELFOptions(KindSEOptions):
     def __init__(self, copyopts=None) -> None:
         super().__init__(copyopts)
+        if not isinstance(copyopts, BSELFOptions):
+            # those are other options to copy, copied in the super classes, not here
+            copyopts = None
+
         if copyopts:
             self.fold_loops = copyopts.fold_loops
             self.target_is_whole_seq = copyopts.target_is_whole_seq
