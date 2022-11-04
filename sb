@@ -1,9 +1,13 @@
 #!/usr/bin/python3
-from io import TextIOWrapper
 from os import readlink
 from os.path import islink, dirname, abspath
 from os.path import join as pathjoin
 from sys import path as syspath
+
+from slowbeast.sb.compile import compile_and_link
+from slowbeast.sb.outputshandler import OutputsHandler
+from slowbeast.sb.testgen import TestCaseGenerator, ThreadedTestCaseGenerator
+from slowbeast.sb.utils import add_clam_invariants, opt, err
 
 # make sure we see our 'slowbeast' package and 'llvmlite' package (if
 # it has been cloned into srcdir). The latter is prioritized.
@@ -14,22 +18,14 @@ syspath.insert(0, abspath(pathjoin(sb_path, "llvmlite")))
 
 
 import argparse
-from os import mkdir, getcwd
-from os.path import basename
+from os import mkdir
 from shutil import rmtree
-from subprocess import run
 from sys import exit as sys_exit
 from time import time, process_time
 
-from slowbeast.domains.symbolic_helpers import to_c_expression
-from slowbeast.ir.instruction import Call
 from slowbeast.symexe.interpreter import SEOptions
-from slowbeast.util.debugging import set_debugging, dbg, print_stdout, print_stderr
+from slowbeast.util.debugging import set_debugging, dbg, print_stdout
 
-
-def err(msg):
-    print_stderr(msg, color="RED")
-    sys_exit(1)
 
 def create_arg_parser():
     parser = argparse.ArgumentParser()
@@ -209,296 +205,6 @@ def print_stats(engine):
             engine.stats.errors),
         color='CYAN')
 
-def _inv_to_c(inv):
-    return f"({to_c_expression(inv.get_cannonical().unwrap())})"
-
-def inv_to_c(inv):
-    return str(" && ".join(map(_inv_to_c, inv)))
-
-class TestCaseGenerator:
-    def __init__(self, outdir='sb-out', alltests=False, svwit=False, only_tests=None):
-        self._outputdir = outdir
-        self._alltests = alltests
-        self._svcomp_witness = svwit
-        self._only_tests = only_tests
-
-    def _openfile(self, path):
-        return open(pathjoin(self._outputdir, path), 'w')
-
-    def process_error_state(self, fl, state):
-        fl.write(state.get_error().descr())
-        fl.write('\n')
-        fl.write('\n')
-        fl.write("Nondeterministic values:\n")
-        inpvec = state.input_vector()
-        for var, val in zip(state.nondets(), inpvec):
-            # dump as unsigned and signed
-            fl.write(f"  {var} -> {val.value()}u")
-            fl.write(" ({0})\n".format(val.value()
-                                       if val.value() < (1 << (val.bitwidth() - 1))
-                                       else (val.value() - (1 << val.bitwidth()))))
-        fl.write('\n')
-        state.dump(stream=fl)
-
-    # FIXME: move out of testgen (it is not generating tests...)
-    def generate_proof(self, executor):
-        invariants = executor.invariants
-        with self._openfile(f"invariants.txt") as fl:
-            write = fl.write
-            for loc, inv in invariants.items():
-                dbgloc = None
-                bblock = loc.elem()
-                for inst in bblock:
-                    dbgloc = inst.get_metadata("dbgloc")
-                    if dbgloc:
-                        break
-                if dbgloc:
-                    write(f"{dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]} {inv_to_c(inv)}\n")
-                else:
-                    write(f"{loc}: {inv_to_c(inv)}\n")
-        if self._svcomp_witness:
-            with self._openfile(f"correctness-witness.graphml") as fl:
-                self.generate_svcomp_correctness_witness(fl, invariants)
-
-
-    def _svcomp_header(self, fl):
-        write = fl.write
-        write("<?xml version='1.0' encoding='UTF-8'?>\n")
-        write('<graphml xmlns="http://graphml.graphdrawing.org/xmlns" '
-                 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n')
-        write('<graph edgedefault="directed">\n\n')
-        write('<node id="0">\n')
-        write('  <data key="entry">true</data>\n')
-        write('</node>\n\n')
-
-    def _svcomp_footer(self, fl):
-        write = fl.write
-        write('</graph>\n')
-        write('</graphml>\n')
-
-    def generate_svcomp_violation_witness(self, fl, state):
-        inpvec = state.input_vector()
-        write = fl.write
-        self._svcomp_header(fl)
-
-        lid = 0
-        for var, val in zip(state.nondets(), inpvec):
-            instruction = var.instruction
-            if not isinstance(instruction, Call):
-                print("Unhandled nondet value: ", var)
-            var = instruction.called_function().name()
-
-            lid += 1
-            # dump as unsigned and signed
-            write(f'<node id="{lid}"/>\n')
-            write(f'<edge source="{lid-1}" target="{lid}">\n')
-            write(f'  <data key="assumption">\\result=={val.value()}</data>\n')
-            write(f'  <data key="assumption.resultfunction">{var}</data>\n')
-            bblock = instruction.bblock()
-            for inst in bblock:
-                dbgloc = inst.get_metadata("dbgloc")
-                if dbgloc:
-                    write(f'  <data key="startline">{dbgloc[1]}</data>\n')
-                    break
-            write('</edge>\n')
-        write(f'<node id="{lid+1}">\n')
-        write('  <data key="violation">true</data>\n')
-        write('</node>\n\n')
-        write(f'<edge source="{lid}" target="{lid+1}"/>\n')
-        self._svcomp_footer(fl)
-
-    def generate_svcomp_correctness_witness(self, fl, invariants):
-        write = fl.write
-        self._svcomp_header(fl)
-        lid = 0
-        for loc, inv in invariants.items():
-            lid += 1
-            # dump as unsigned and signed
-            write(f'<node id="{lid}">\n')
-            cinv = inv_to_c(inv).replace("&&", "&amp;&amp;")
-            write(f'  <data key="invariant">{cinv}</data>\n')
-            write(f'</node>\n')
-            #write(f'<edge source="{lid-1}" target="{lid}">\n')
-            write(f'<edge source="{0}" target="{lid}">\n')
-            bblock = loc.elem()
-            for inst in bblock:
-                dbgloc = inst.get_metadata("dbgloc")
-                if dbgloc:
-                    write(f'  <data key="startline">{dbgloc[1]}</data>\n')
-                    break
-            write('</edge>\n')
-
-        self._svcomp_footer(fl)
-
-    def process_state(self, state):
-        assert not state.is_ready(), state
-
-        if not self._alltests and state.exited():
-            return
-
-        testty = None
-        if state.has_error():
-            testty = "err"
-        elif state.was_killed():
-            testty = "killed"
-        elif state.is_terminated():
-            testty = "abort"
-        else:
-            testty = "exited"
-
-        if self._only_tests and testty not in self._only_tests:
-            return
-
-        filename=f"{state.get_id()}.{testty}.test"
-
-        with self._openfile(filename) as fl:
-            fl.write(str(state.status()))
-            fl.write('\n')
-            if state.has_error():
-                self.process_error_state(fl, state)
-            else:
-                fl.write('\n')
-                state.dump(stream=fl)
-
-        if state.has_error() and self._svcomp_witness:
-            with self._openfile(f"witness-{state.get_id()}.graphml") as fl:
-                self.generate_svcomp_violation_witness(fl, state)
-
-class ThreadedTestCaseGenerator(TestCaseGenerator):
-
-    def generate_svcomp_violation_witness(self, fl, state):
-        inpvec = state.input_vector()
-        write = fl.write
-        self._svcomp_header(fl)
-
-        lid = 0
-        for tid, pc in state.trace():
-            print(tid, pc)
-
-            lid += 1
-            # dump as unsigned and signed
-            write(f'<node id="{lid}"/>\n')
-            write(f'<edge source="{lid-1}" target="{lid}">\n')
-            write(f'  <data key="threadId">{tid}</data>\n')
-            bblock = pc.bblock()
-            for inst in bblock:
-                dbgloc = inst.get_metadata("dbgloc")
-                if dbgloc:
-                    write(f'  <data key="startline">{dbgloc[1]}</data>\n')
-                    break
-            write('</edge>\n')
-        write(f'<node id="{lid+1}">\n')
-        write('  <data key="violation">true</data>\n')
-        write('</node>\n\n')
-        write(f'<edge source="{lid}" target="{lid+1}"/>\n')
-        self._svcomp_footer(fl)
-
-
-
-class OutputsHandler:
-    def __init__(self, testgen, outdir):
-        # test generator
-        self.testgen = testgen
-        # where can the algorithm dump debugging data
-        self.cwd = getcwd()
-        self.outdir = outdir
-        # stream for logging
-        #self.logstream = logstream
-
-    def new_output_file(self, name: str) -> TextIOWrapper:
-        outdir = self.outdir or self.cwd
-        return open(f"{outdir}/{name}", "w", encoding="utf-8")
-
-
-def sort_input_files(files):
-    c_files = []
-    llvm_files = []
-
-    for f in files:
-        if f.endswith('.c') or f.endswith('.i'):
-            c_files.append(f)
-        elif f.endswith('.bc') or f.endswith('.ll'):
-            llvm_files.append(f)
-        else:
-            err("Unknown file: {0}".format(f))
-
-    return c_files, llvm_files
-
-def _run(cmd):
-    dbg("RUN: {0}".format(" ".join(cmd)))
-
-    cp = run(cmd)
-    if cp.returncode != 0:
-        err("Failed running: {0}".format(" ".join(cmd)))
-
-def compile_c(path, outp=None, addargs=None):
-    dbg("Compiling {0}".format(path))
-
-    if outp is None:
-        outp = pathjoin('/tmp/', basename(path) + '.bc')
-
-    cmd = ['clang', '-D__inline=', '-fgnu89-inline', '-emit-llvm', '-c', '-g']
-    if addargs:
-        cmd += addargs
-    cmd += ['-o', outp, path]
-    _run(cmd)
-    dbg("Compiled to {0}".format(outp))
-
-    return outp
-
-def add_clam_invariants(path, outp=None):
-    dbg("Running clam on {0}".format(path))
-
-    if outp is None:
-        outp = pathjoin('/tmp/', basename(path) + '.bc')
-
-    cmd = ['clam.py', '--crab-opt=add-invariants',
-           '--crab-opt-invariants-loc=loop-header',
-           '--crab-print-invariants=false', '-o', outp, path]
-    _run(cmd)
-    dbg("Instrumented to {0}".format(outp))
-
-    return outp
-
-def link_llvm(paths, outp=None, outd='/tmp/'):
-    dbg("Linking {0}".format(paths))
-
-    if outp is None:
-        outp = pathjoin(outd, 'code.bc')
-
-    cmd = ['llvm-link', '-o', outp] + paths
-    _run(cmd)
-
-    dbg("Linked files to {0}".format(outp))
-
-    return outp
-
-def opt(path, opts=[], outp=None, outd='/tmp/'):
-    dbg("Optimizing {0}".format(path))
-
-    if outp is None:
-        outp = pathjoin(outd, 'optcode.bc')
-
-    cmd = ['opt', '-o', outp, path] + opts
-    _run(cmd)
-
-    dbg("Optimized files to {0}".format(outp))
-
-    return outp
-
-def compile_and_link(files, outd, addargs=None):
-    c_files, llvm_files = sort_input_files(files)
-    if c_files:
-        for f in c_files:
-            llvm_files.append(compile_c(f, addargs=addargs))
-
-    assert len(llvm_files) > 0, "No input files"
-    if len(llvm_files) > 1:
-        bitcode = link_llvm(llvm_files, outd=outd)
-    else:
-        bitcode = llvm_files[0]
-
-    return bitcode
 
 def setup_debugging(args):
     if args.dbgvv:

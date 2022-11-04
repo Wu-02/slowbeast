@@ -1,6 +1,6 @@
-import sys
-from io import TextIOWrapper
-from typing import Any, Callable, Dict, Optional
+from os import getcwd
+from sys import stderr, stdout
+from typing import Any, Callable, Dict, Optional, TextIO
 
 COLORS = {
     "dark_blue": "\033[0;34m",
@@ -44,7 +44,7 @@ def dec_print_indent():
 
 def print_stream(
     msg: str,
-    stream: TextIOWrapper,
+    stream: TextIO,
     prefix: Optional[str] = None,
     print_ws: Optional[str] = "\n",
     color: Optional[str] = None,
@@ -90,20 +90,20 @@ def print_stderr(
     print_ws: str = "\n",
     color: Optional[str] = None,
 ) -> None:
-    print_stream(msg, sys.stderr, prefix, print_ws, color)
+    print_stream(msg, stderr, prefix, print_ws, color)
 
 
 def print_stdout(
     msg: str, prefix: None = None, print_ws: str = "\n", color: Optional[str] = None
 ) -> None:
-    print_stream(msg, sys.stdout, prefix, print_ws, color)
+    print_stream(msg, stdout, prefix, print_ws, color)
 
 
 def print_highlight(
     s: str,
     words: Dict[str, str],
     prefix: Optional[str] = None,
-    stream: TextIOWrapper = sys.stdout,
+    stream: TextIO = stdout,
 ) -> None:
     """Words: dictionary words -> colors"""
     if prefix:
@@ -201,7 +201,7 @@ def ldbg(fmt, args, verbose_lvl=2, print_ws="\n", color="GRAY", fn=print_stderr)
     time to build.
     """
     if __debug__:
-        if _is_debugging < 1:
+        if _is_debugging < verbose_lvl:
             return
         fn(fmt.format(*args), f"[sb] {_debugging_prefix}", print_ws, color)
 
@@ -229,3 +229,8 @@ def warn(msg, print_ws="\n", color="BROWN"):
 
 def FIXME(msg: str, print_ws: str = "\n", color: str = "DARK_GRAY_THIN") -> None:
     print_stderr(msg, "[sb] !FIXME! ", print_ws, color)
+
+
+def new_output_file(name: str, outputdir=None) -> TextIO:
+    outdir = outputdir or getcwd()
+    return open(f"{outdir}/{name}", "w", encoding="utf-8")

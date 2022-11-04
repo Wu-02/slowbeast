@@ -1,5 +1,3 @@
-from io import TextIOWrapper
-
 from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.symexe.annotations import AssertAnnotation
@@ -29,7 +27,12 @@ class BSELF:
         self.ohandler = ohandler
         self.options = opts
 
-        self.new_output_file = self.ohandler.new_output_file
+        if ohandler:
+            self.new_output_file = self.ohandler.new_output_file
+        else:
+            from slowbeast.util.debugging import new_output_file
+
+            self.new_output_file = new_output_file
 
         programstructure = ProgramStructure(prog, self.new_output_file)
         self.get_cfa = programstructure.cfas.get

@@ -1,4 +1,3 @@
-from io import TextIOWrapper
 from typing import Optional, Sized, Union
 
 from slowbeast.core.errors import GenericError
@@ -50,7 +49,12 @@ class SymbolicInterpreter(Interpreter):
         self.ohandler = ohandler
         self._input_vector = None
 
-        self.new_output_file = self.ohandler.new_output_file
+        if ohandler:
+            self.new_output_file = self.ohandler.new_output_file
+        else:
+            from slowbeast.util.debugging import new_output_file
+
+            self.new_output_file = new_output_file
 
     def set_input_vector(self, ivec) -> None:
         self._executor.set_input_vector(ivec)
