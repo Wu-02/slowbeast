@@ -7,7 +7,7 @@ from slowbeast.domains.concrete_bytes import ConcreteBytes
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import get_offset_type, BitVecType
+from slowbeast.ir.types import get_offset_type, type_mgr
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
 
@@ -33,7 +33,7 @@ def write_bytes(offval, values, size, x: Union[Expr, Value]) -> Optional[MemErro
     bw = x.bytewidth()
     if not x.is_bv():
         # rename to Cast and Cast to ReinterpretCast
-        newx = EM.BitCast(x, BitVecType(8 * bw))
+        newx = EM.BitCast(x, type_mgr().bv_ty(8 * bw))
         if newx is None:
             return MemError(
                 MemError.UNSUPPORTED, f"Cast of {x} to i{bw} is unsupported"

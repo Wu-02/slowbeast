@@ -1,6 +1,6 @@
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.ir.instruction import Load
-from slowbeast.ir.types import BitVecType
+from slowbeast.ir.types import type_mgr
 from slowbeast.solvers.symcrete import IncrementalSolver, global_expr_mgr
 from slowbeast.symexe.annotations import AssertAnnotation, get_subs
 
@@ -12,16 +12,6 @@ def iter_nondet_load_pairs(state):
             yield loads[i], loads[j]
 
 
-# def iter_concrete_pointers(state):
-#     vals = list(state.memory.get_cs().values_list())
-#     for i in range(0, len(vals)):
-#         p1 = state.try_eval(vals[i])
-#         if not(p1 and p1.is_concrete() and p1.is_pointer()):
-#             continue
-#         for j in range(i + 1, len(vals)):
-#             p2 = state.try_eval(vals[j])
-#             if p2 and p2.is_concrete() and p2.is_pointer():
-#                 yield vals[i], vals[j]
 def get_loads(state):
     vals = state.memory.get_cs().values_list()
     for v in vals:
@@ -78,7 +68,7 @@ def get_var_diff_relations(state):
             l2 = expr_mgr.SExt(l2, ConcreteBitVec(bw, bw))
 
         # relation between loads of the type l1 - l2 = constant
-        c = Var(f"c_{l1name}_{l2name}", BitVecType(bw))
+        c = Var(f"c_{l1name}_{l2name}", type_mgr().bv_ty(bw))
         expr = Eq(Sub(l2, l1), c)
         c_concr = model([expr], c)
         if c_concr is not None:
@@ -144,7 +134,7 @@ def get_var_diff_relations(state):
                 yield AssertAnnotation(Eq(Sub(l2, l1), l3), subs, expr_mgr)
             else:
                 c = expr_mgr.fresh_value(
-                    f"c_mul_{l1name}{l2name}{l3name}", BitVecType(bw)
+                    f"c_mul_{l1name}{l2name}{l3name}", type_mgr().bv_ty(bw)
                 )
                 # expr = Eq(Add(l1, l2), Mul(c, l3))
                 expr = And(Eq(Add(l1, l2), Mul(c, l3)), Ne(c, ConcreteBitVec(0, bw)))
@@ -163,7 +153,7 @@ def get_var_diff_relations(state):
 def _get_nd_val(l, lbw: int, Ss):
     nd1 = Ss.nondet(l)
     if not nd1:
-        ndval = Ss.solver().fresh_value(f"nd{l.as_value()}", BitVecType(8 * lbw))
+        ndval = Ss.solver().fresh_value(f"nd{l.as_value()}", type_mgr().bv_ty(8 * lbw))
         Ss.create_nondet(l, ndval)
     else:
         ndval = nd1.value
@@ -212,7 +202,7 @@ def _compare_two_loads(state, S, l1, l2):
         return solver.concretize(assumptions, *e)
 
     c = EM.symbolic_value(
-        f"c_coef_{l1.as_value()}{l2.as_value()}", BitVecType(8 * l1bw)
+        f"c_coef_{l1.as_value()}{l2.as_value()}", type_mgr().bv_ty(8 * l1bw)
     )
     expr = Eq(Sub(l1val, l2val), c)
     c_concr = model([expr], c)
@@ -272,7 +262,9 @@ def _get_const_cmp_relations(state):
         if l.is_pointer():
             continue
         lbw = l.type().bitwidth()
-        c = expr_mgr.fresh_value(f"c_coef_{nd.instruction.as_value()}", BitVecType(lbw))
+        c = expr_mgr.fresh_value(
+            f"c_coef_{nd.instruction.as_value()}", type_mgr().bv_ty(lbw)
+        )
         expr = expr_mgr.Eq(l, c)
         c_concr = model([expr], c)
         if c_concr is not None:
@@ -410,9 +402,9 @@ def get_relations_to_prev_states(state, prev):
     for l, cval in _get_const_cmp_relations(state):
         bw = l.bitwidth()
         # l2bw = l2.type().bitwidth()
-        oldl = Var(f"old_{l}", BitVecType(bw))
+        oldl = Var(f"old_{l}", type_mgr().bv_ty(bw))
         oldpc = substitute(prevexpr, (l, oldl))
-        diff = Var(f"c_diff_{l}", BitVecType(bw))
+        diff = Var(f"c_diff_{l}", type_mgr().bv_ty(bw))
         expr = Eq(Sub(oldl, l), diff)
         diff_concr = model([oldpc, expr], diff)
         if diff_concr is not None:

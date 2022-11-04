@@ -4,16 +4,6 @@ from z3 import (
     And,
     Or,
     If,
-    RNE,
-    Concat as BVConcat,
-    LShR as BVLShR,
-    ULE as BVULE,
-    ULT as BVULT,
-    UGE as BVUGE,
-    UGT as BVUGT,
-    UDiv,
-    URem,
-    SRem,
     BoolVal,
     FPVal,
     Bool,
@@ -25,12 +15,12 @@ from slowbeast.domains.symbolic_helpers import (
     FALSE,
     bv,
 )
-from slowbeast.ir.types import BoolType, Type, BitVecType
+from slowbeast.ir.types import type_mgr, Type
 from .expr import Expr
 from .symbolic_bool import SymbolicDomainBools
 from .symbolic_bv import BVSymbolicDomain
 from .symbolic_floats import SymbolicDomainFloats
-from .symbolic_helpers import get_fp_sort, bv_const, to_bv
+from .symbolic_helpers import get_fp_sort, bv_const
 from .symbolic_z3 import Z3SymbolicDomain
 from .value import Value
 
@@ -103,7 +93,7 @@ class SymbolicDomain(Z3SymbolicDomain):
 
         if v.is_concrete():
             if v.is_bool():
-                return Expr(BoolVal(v.value()), BoolType())
+                return Expr(BoolVal(v.value()), type_mgr().bool_ty())
             ty = v.type()
             if v.is_float():
                 return Expr(FPVal(float(v.value()), get_fp_sort(ty.bitwidth())), ty)
@@ -134,7 +124,7 @@ class SymbolicDomain(Z3SymbolicDomain):
         """
         assert all((isinstance(a, Expr) for a in args))
         assert all((a.is_bool() for a in args))
-        return Expr(And(*(x.unwrap() for x in args)), BoolType())
+        return Expr(And(*(x.unwrap() for x in args)), type_mgr().bool_ty())
 
     @staticmethod
     def disjunction(*args) -> Expr:
@@ -145,7 +135,7 @@ class SymbolicDomain(Z3SymbolicDomain):
         """
         assert all((isinstance(a, Expr) for a in args))
         assert all((a.is_bool() for a in args))
-        return Expr(Or(*(x.unwrap() for x in args)), BoolType())
+        return Expr(Or(*(x.unwrap() for x in args)), type_mgr().bool_ty())
 
     @staticmethod
     def Ite(c: Expr, a, b) -> Expr:
@@ -218,11 +208,11 @@ class SymbolicDomain(Z3SymbolicDomain):
 
     @staticmethod
     def get_true() -> Expr:
-        return Expr(TRUE(), BoolType())
+        return Expr(TRUE(), type_mgr().bool_ty())
 
     @staticmethod
     def get_false() -> Expr:
-        return Expr(FALSE(), BoolType())
+        return Expr(FALSE(), type_mgr().bool_ty())
 
     ### Relational operators
     @staticmethod

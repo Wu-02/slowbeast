@@ -1,9 +1,9 @@
-from .concrete_bitvec import ConcreteBitVec
-from slowbeast.domains.value import Value
-from slowbeast.ir.types import get_offset_type_size, PointerType
-from . import POINTER_KIND
 from typing import Optional
+
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.domains.value import Value
+from slowbeast.ir.types import get_offset_type_size, type_mgr
+from . import POINTER_KIND
 
 
 class Pointer(Value):
@@ -13,7 +13,7 @@ class Pointer(Value):
     def __init__(self, obj: Value, off: Optional[Value] = None) -> None:
         assert isinstance(obj, Value)
         assert off is None or isinstance(off, Value)
-        super().__init__(None, PointerType())
+        super().__init__(None, type_mgr().pointer_ty())
         # value is used for the address the pointer points to -- we use that only
         # if that is a symbolic address, so it is usually None
         self._object = obj

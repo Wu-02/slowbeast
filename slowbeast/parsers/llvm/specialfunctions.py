@@ -8,9 +8,9 @@ from slowbeast.ir.instruction import (
     FpOp,
     Cast,
 )
-from slowbeast.ir.types import FloatType, get_size_type_size
-from .utils import get_llvm_operands, type_size_in_bits, to_float_ty, get_sb_type
+from slowbeast.ir.types import get_size_type_size, type_mgr
 from slowbeast.util.debugging import print_stderr
+from .utils import get_llvm_operands, type_size_in_bits, to_float_ty, get_sb_type
 from ...domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
 
 concrete_value = ConcreteDomain.get_value
@@ -118,7 +118,7 @@ def create_special_fun(parser, inst, fun, error_funs):
         val = parser.operand(operands[0])
         A = Abs(
             val,
-            FloatType(type_size_in_bits(module, inst.type)),
+            type_mgr().float_ty(type_size_in_bits(module, inst.type)),
             [get_sb_type(module, operands[0].type)],
         )
         return A, [A]
@@ -132,7 +132,7 @@ def create_special_fun(parser, inst, fun, error_funs):
         )
         return P, [O, P]
     elif fun in "nan":
-        I = Cast(concrete_value(float("NaN"), 64), FloatType(64))
+        I = Cast(concrete_value(float("NaN"), 64), type_mgr().float_ty(64))
         return I, [I]
     elif fun in ("__isnan", "__isnanf", "__isnanfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))

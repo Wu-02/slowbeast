@@ -19,10 +19,11 @@ from z3 import (
     Z3_OP_UGT,
     Z3_OP_BMUL,
 )
+from z3.z3 import BitVecRef, BoolRef, FPRef
 
 from slowbeast.domains import SYMBOLIC_DOMAIN_KIND
-from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.concrete import concrete_value
+from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.symbolic_helpers import (
     subexpressions,
     symbols,
@@ -43,7 +44,6 @@ from slowbeast.domains.symbolic_rewriting import (
 )
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type
-from z3.z3 import BitVecRef, BoolRef, FPRef
 
 
 class Expr(Value):

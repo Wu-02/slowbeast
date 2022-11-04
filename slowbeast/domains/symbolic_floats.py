@@ -36,7 +36,7 @@ from slowbeast.domains.symbolic_helpers import (
 )
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
-from slowbeast.ir.types import BoolType, Type, BitVecType, FloatType
+from slowbeast.ir.types import Type, type_mgr
 from slowbeast.util.debugging import FIXME
 from .symbolic_z3 import Z3SymbolicDomain
 
@@ -102,7 +102,7 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         expr = fpLEQ(a, b)
         if not unsigned:
             expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, BoolType())
+        return Expr(expr, type_mgr().bool_ty())
 
     @staticmethod
     def Lt(a, b, unsigned: bool = False) -> Expr:
@@ -111,7 +111,7 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         expr = fpLT(a, b)
         if not unsigned:
             expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, BoolType())
+        return Expr(expr, type_mgr().bool_ty())
 
     @staticmethod
     def Ge(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
@@ -120,7 +120,7 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         expr = fpGEQ(a, b)
         if not unsigned:
             expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, BoolType())
+        return Expr(expr, type_mgr().bool_ty())
 
     @staticmethod
     def Gt(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
@@ -129,7 +129,7 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         expr = fpGT(a, b)
         if not unsigned:
             expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, BoolType())
+        return Expr(expr, type_mgr().bool_ty())
 
     @staticmethod
     def Eq(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
@@ -138,7 +138,7 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         expr = fpEQ(a, b)
         if not unsigned:
             expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, BoolType())
+        return Expr(expr, type_mgr().bool_ty())
 
     @staticmethod
     def Ne(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
@@ -147,7 +147,7 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         expr = fpNEQ(a, b)
         if not unsigned:
             expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, BoolType())
+        return Expr(expr, type_mgr().bool_ty())
 
     ##
     # Arithmetic operations
@@ -159,28 +159,31 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         # and then truncate to float if needed
         ae = to_double(a)
         be = to_double(b)
-        return Expr(trunc_fp(ae + be, bw), FloatType(bw))
+        return Expr(trunc_fp(ae + be, bw), type_mgr().float_ty(bw))
 
     @staticmethod
     def Sub(a: Expr, b: Expr) -> Expr:
         check_args(a, b)
+        bw = a.bitwidth()
         ae = to_double(a)
         be = to_double(b)
-        return Expr(trunc_fp(ae - be, bw), FloatType(bw))
+        return Expr(trunc_fp(ae - be, bw), type_mgr().float_ty(bw))
 
     @staticmethod
     def Mul(a: Expr, b: Expr) -> Expr:
         check_args(a, b)
+        bw = a.bitwidth()
         ae = to_double(a)
         be = to_double(b)
-        return Expr(trunc_fp(ae * be, bw), FloatType(bw))
+        return Expr(trunc_fp(ae * be, bw), type_mgr().float_ty(bw))
 
     @staticmethod
     def Div(a: Expr, b: Expr, unsigned: bool = False) -> Expr:
         check_args(a, b)
+        bw = a.bitwidth()
         ae = to_double(a)
         be = to_double(b)
-        return Expr(trunc_fp(fpDiv(RNE(), ae, be), bw), FloatType(bw))
+        return Expr(trunc_fp(fpDiv(RNE(), ae, be), bw), type_mgr().float_ty(bw))
 
     @staticmethod
     def Abs(a: Expr) -> Expr:
@@ -192,7 +195,7 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         """Return the negated number"""
         assert isinstance(a, Expr), a
         bw = a.bitwidth()
-        return Expr(trunc_fp(fpNeg(to_double(a)), bw), FloatType(bw))
+        return Expr(trunc_fp(fpNeg(to_double(a)), bw), type_mgr().float_ty(bw))
 
     @staticmethod
     def FpOp(op, val) -> Optional[Expr]:
@@ -201,9 +204,9 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         assert val.is_float()
 
         if op == FpOp.IS_INF:
-            return Expr(fpIsInf(val.unwrap()), BoolType())
+            return Expr(fpIsInf(val.unwrap()), type_mgr().bool_ty())
         if op == FpOp.IS_NAN:
-            return Expr(fpIsNaN(val.unwrap()), BoolType())
+            return Expr(fpIsNaN(val.unwrap()), type_mgr().bool_ty())
         if op == FpOp.FPCLASSIFY:
             FIXME("Using implementation dependent constants")
             v = val.unwrap()
@@ -220,10 +223,11 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
                     ),
                 ),
             )
-            return Expr(expr, BitVecType(32))
+            return Expr(expr, type_mgr().bv_ty(32))
             if op == FpOp.SIGNBIT:
                 return Expr(
-                    If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))), BitVecType(32)
+                    If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))),
+                    type_mgr().bv_ty(32),
                 )
 
         return None

@@ -13,14 +13,6 @@ def get_pointer_bitwidth() -> int:
     return POINTER_BIT_WIDTH
 
 
-def get_size_type() -> "BitVecType":
-    return BitVecType(POINTER_BIT_WIDTH)
-
-
-def get_offset_type() -> "BitVecType":
-    return BitVecType(POINTER_BIT_WIDTH)
-
-
 def get_size_type_size() -> int:
     return POINTER_BIT_WIDTH
 
@@ -145,3 +137,55 @@ class LabelType(PointerType):
 
     def is_label(self) -> bool:
         return True
+
+
+class TypeManager:
+    """
+    Cache types to avoid many useless allocations. We could, in fact, then also
+    just compare the types using "is" operator.
+    """
+
+    __slots__ = "_bool_ty", "_pointer_ty", "_label_ty", "_types"
+
+    def __init__(self):
+        self._types = {
+            (BitVecType, 32): BitVecType(32),
+            (BitVecType, 64): BitVecType(64),
+        }
+        self._bool_ty = BoolType()
+        self._pointer_ty = PointerType()
+        self._label_ty = LabelType()
+
+    def bv_ty(self, bw: int):
+        return self._types.setdefault((BitVecType, bw), BitVecType(bw))
+
+    def bool_ty(self):
+        return self._bool_ty
+
+    def pointer_ty(self):
+        return self._pointer_ty
+
+    def label_ty(self):
+        return self._label_ty
+
+    def float_ty(self, bw):
+        return self._types.setdefault((FloatType, bw), FloatType(bw))
+
+    def bytes_ty(self, bw):
+        return self._types.setdefault((BytesType, bw), BytesType(bw))
+
+
+_type_manager = TypeManager()
+
+
+def type_mgr():
+    global _type_manager
+    return _type_manager
+
+
+def get_size_type() -> "BitVecType":
+    return type_mgr().bv_ty(POINTER_BIT_WIDTH)
+
+
+def get_offset_type() -> "BitVecType":
+    return type_mgr().bv_ty(POINTER_BIT_WIDTH)

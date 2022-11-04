@@ -4,8 +4,8 @@ from slowbeast.core.memorymodel import MemoryModel as CoreMM
 from slowbeast.domains.expr import NondetLoad
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
-from slowbeast.ir.types import BitVecType
 from slowbeast.ir.types import get_size_type
+from slowbeast.ir.types import type_mgr
 from slowbeast.symexe.memory import Memory
 from slowbeast.symexe.options import SEOptions
 from slowbeast.util.debugging import dbgv
@@ -98,7 +98,7 @@ class LazySymbolicMemoryModel(CoreMM):
         value = state.try_eval(value_op)
         if value is None:
             value = state.solver().symbolic_value(
-                f"uninit_{value_op.as_value()}", BitVecType(8 * instr.bytewidth())
+                f"uninit_{value_op.as_value()}", type_mgr().bv_ty(8 * instr.bytewidth())
             )
         assert isinstance(value, Value)
 
@@ -122,7 +122,7 @@ class LazySymbolicMemoryModel(CoreMM):
         # we can recycle its name
         # val = self.solver().fresh_value(f"uninit_{frm.as_value()}", 8 * bytes_num)
         val = state.solver().symbolic_value(
-            f"uninit_{frm.as_value()}", BitVecType(bitsnum)
+            f"uninit_{frm.as_value()}", type_mgr().bv_ty(bitsnum)
         )
         # write the fresh value into memory, so that
         # later reads see the same value.
@@ -138,7 +138,7 @@ class LazySymbolicMemoryModel(CoreMM):
         # FIXME: it is not always int type... we should at least use bytes type
         return (
             state.solver().fresh_symbolic_value(
-                f"uninit_{frm.as_value()}", BitVecType(bitsnum)
+                f"uninit_{frm.as_value()}", type_mgr().bv_ty(bitsnum)
             ),
             None,
         )

@@ -138,9 +138,9 @@ def parse_fun_ret_ty(
         sz = type_size_in_bits(m, parts[0])
         if sz:
             if parts[0] in ("float", "double"):
-                return True, FloatType(sz)
+                return True, type_mgr().float_ty(sz)
             else:
-                return True, BitVecType(sz)
+                return True, type_mgr().bv_ty(sz)
     return False, None
 
 
@@ -528,7 +528,7 @@ class Parser:
             ret = self.operand(operands[1])
             if ret.is_concrete() and ret.is_null():
                 return [succ, t]
-            s = Store(t, ret, PointerType())
+            s = Store(t, ret, type_mgr().pointer_ty())
             return [succ, t, s]
         if fun == "pthread_create":
             assert len(operands) == 5  # +1 for called fun
@@ -678,17 +678,17 @@ class Parser:
         # FIXME: parsing string...
         stype = str(insttype)
         if stype == "float":
-            ty = FloatType(32)
+            ty = type_mgr().float_ty(32)
         elif stype == "double":
-            ty = FloatType(64)
+            ty = type_mgr().float_ty(64)
         elif stype == "i8":
-            ty = BitVecType(8)
+            ty = type_mgr().bv_ty(8)
         elif stype == "i16":
-            ty = BitVecType(16)
+            ty = type_mgr().bv_ty(16)
         elif stype == "i32":
-            ty = BitVecType(32)
+            ty = type_mgr().bv_ty(32)
         elif stype == "i64":
-            ty = BitVecType(64)
+            ty = type_mgr().bv_ty(64)
         else:
             raise NotImplementedError(f"Unimplemented cast: {inst}")
         # just behave that there's no ZExt for now
@@ -704,21 +704,8 @@ class Parser:
     def _createPtrToInt(self, inst):
         return self._createCast(inst)
 
-    # operands = get_llvm_operands(inst)
-    # assert len(operands) == 1, "Invalid number of operands for cast"
-    # cast = Cast(self.operand(operands[0]),
-    #            BitVecType(type_size_in_bits(self.llvmmodule, inst.type)))
-    # self._addMapping(inst, cast)
-    # return [cast]
-
     def _createIntToPtr(self, inst):
         return self._createCast(inst)
-
-    # operands = get_llvm_operands(inst)
-    # assert len(operands) == 1, "Invalid number of operands for cast"
-    # cast = Cast(self.operand(operands[0]), PointerType())
-    # self._addMapping(inst, cast)
-    # return [cast]
 
     def _createTrunc(self, inst) -> List[ExtractBits]:
         operands = get_llvm_operands(inst)
@@ -774,7 +761,7 @@ class Parser:
                     BinaryOperation.MUL,
                     var,
                     concrete_value(elemSize, size_type),
-                    [PointerType(), size_type],
+                    [type_mgr().pointer_ty(), size_type],
                 )
                 varIdx.append(M)
                 if shift != 0:
@@ -783,7 +770,7 @@ class Parser:
                             BinaryOperation.ADD,
                             M,
                             concrete_value(shift, size_type),
-                            [PointerType(), size_type],
+                            [type_mgr().pointer_ty(), size_type],
                         )
                     )
             else:
@@ -807,7 +794,10 @@ class Parser:
 
         if varIdx:
             A = BinaryOperation(
-                BinaryOperation.ADD, mem, varIdx[-1], [PointerType(), get_size_type()]
+                BinaryOperation.ADD,
+                mem,
+                varIdx[-1],
+                [type_mgr().pointer_ty(), get_size_type()],
             )
             self._addMapping(inst, A)
             varIdx.append(A)
@@ -821,7 +811,7 @@ class Parser:
                     BinaryOperation.ADD,
                     mem,
                     concrete_value(shift, get_size_type_size()),
-                    [PointerType(), get_size_type()],
+                    [type_mgr().pointer_ty(), get_size_type()],
                 )
                 self._addMapping(inst, A)
         return [A]
@@ -836,7 +826,7 @@ class Parser:
                 BinaryOperation.ADD,
                 mem,
                 concrete_value(shift, get_size_type()),
-                [PointerType(), get_size_type()],
+                [type_mgr().pointer_ty(), get_size_type()],
             )
 
     def _parse_ce(self, ce):
@@ -976,7 +966,9 @@ class Parser:
                 for i in range(0, inst.phi_incoming_count):
                     v, b = inst.phi_incoming(i)
                     B = self._bblocks[b]
-                    S = Store(self.operand(v), var, [load.type(), PointerType()])
+                    S = Store(
+                        self.operand(v), var, [load.type(), type_mgr().pointer_ty()]
+                    )
                     S.insert_before(B.last())
             self.phis = []  # we handled these PHI nodes
 

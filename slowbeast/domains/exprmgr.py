@@ -5,7 +5,7 @@ from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.symbolic import SymbolicDomain
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import Type, BoolType
+from slowbeast.ir.types import Type, type_mgr
 from slowbeast.util.debugging import FIXME
 
 optimize_exprs = True
@@ -104,7 +104,7 @@ class ExpressionManager:
         return s
 
     def symbolic_bool(self, name: str):
-        return self.symbolic_value(name, BoolType())
+        return self.symbolic_value(name, type_mgr().bool_ty())
 
     def substitute(self, expr, *vals) -> Union[ConcreteVal, Expr]:
         if isinstance(expr, ConcreteVal):
@@ -114,21 +114,6 @@ class ExpressionManager:
 
     def drop_value(self, name) -> None:
         self._names.pop(name)
-
-    # def Int1(self, name: str):
-    #    return self.Var(name, BitVecType(1))
-
-    # def Int8(self, name: str):
-    #    return self.Var(name, BitVecType(8))
-
-    # def Int16(self, name: str):
-    #    return self.Var(name, BitVecType(16))
-
-    # def Int32(self, name: str):
-    #    return self.Var(name, BitVecType(32))
-
-    # def Int64(self, name: str):
-    #    return self.Var(name, BitVecType(64))
 
     def lift(self, v: Value) -> Expr:
         return SymbolicDomain.lift(v)

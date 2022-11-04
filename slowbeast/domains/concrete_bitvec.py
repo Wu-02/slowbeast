@@ -2,7 +2,7 @@ from struct import unpack
 from typing import Type, Union
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
-from slowbeast.ir.types import BitVecType
+from slowbeast.ir.types import type_mgr, BitVecType
 from .value import Value
 from .domain import Domain
 
@@ -46,7 +46,7 @@ class ConcreteBitVec(ConcreteVal):
         assert isinstance(n, int), n
         if not isinstance(bw, BitVecType):
             assert isinstance(bw, int), bw
-            bw = BitVecType(bw)
+            bw = type_mgr().bv_ty(bw)
         super().__init__(n, bw)
 
 

@@ -1,15 +1,15 @@
 from struct import unpack, pack
-
-from slowbeast.domains.concrete import ConstantTrue, ConstantFalse
-from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
-from slowbeast.domains.pointer import Pointer, get_null_pointer
-from slowbeast.ir.types import BitVecType, FloatType, PointerType, BytesType
-from slowbeast.util.debugging import warn
-from slowbeast.domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
 from typing import List, Optional, Sized, Union
+
 from llvmlite.binding.module import ModuleRef
 from llvmlite.binding.value import TypeRef, ValueRef
+
+from slowbeast.domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
+from slowbeast.domains.pointer import Pointer, get_null_pointer
+from slowbeast.ir.types import BitVecType, FloatType, PointerType, type_mgr
+from slowbeast.util.debugging import warn
 
 concrete_value = ConcreteDomain.get_value
 
@@ -150,11 +150,11 @@ def get_sb_type(
     m: ModuleRef, ty: str
 ) -> Union[None, FloatType, BitVecType, PointerType]:
     if is_pointer_ty(ty):
-        return PointerType()
+        return type_mgr().pointer_ty()
 
     if is_array_ty(ty):
-        n, cty = parse_array_ty(ty)
-        return BytesType(type_size(m, ty))
+        # n, cty = parse_array_ty(ty)
+        return type_mgr().bytes_ty(type_size(m, ty))
 
     sty = str(ty)
     if sty in ("void", "metadata"):
@@ -165,9 +165,9 @@ def get_sb_type(
         return None
 
     if sty in ("float", "double"):
-        return FloatType(ts)
+        return type_mgr().float_ty(ts)
     elif sty.startswith("i"):
-        return BitVecType(ts)
+        return type_mgr().bv_ty(ts)
 
     assert False, f"Unsupported type: {ty}"
     return None

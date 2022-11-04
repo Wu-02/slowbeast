@@ -2,7 +2,7 @@ from struct import unpack
 from typing import Type, Union
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
-from slowbeast.ir.types import BytesType
+from slowbeast.ir.types import type_mgr, BytesType
 from .domain import Domain
 from .value import Value
 
@@ -49,7 +49,7 @@ class ConcreteBytes(ConcreteVal):
         assert isinstance(n, int), n
         if not isinstance(byteswidth, BytesType):
             assert isinstance(byteswidth, int), byteswidth
-            byteswidth = BytesType(byteswidth)
+            byteswidth = type_mgr().bytes_ty(byteswidth)
         super().__init__(n, byteswidth)
 
 

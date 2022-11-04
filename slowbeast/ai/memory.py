@@ -2,17 +2,16 @@ from copy import copy
 from functools import reduce
 from operator import xor
 from sys import stdout
+from typing import TextIO, Union
 
 from slowbeast.core.errors import MemError
 from slowbeast.core.memory import Memory as CoreMemory
 from slowbeast.core.memorymodel import MemoryModel
-from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.expr import NondetLoad
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable, Load
-from slowbeast.ir.types import OffsetType, BitVecType
+from slowbeast.ir.types import type_mgr
 from slowbeast.util.debugging import dbgv
-from typing import TextIO, Union
 
 
 class AIMemoryObject:
@@ -189,7 +188,7 @@ class AIMemoryModel(MemoryModel):
         # uninitialized read from this allocation, so it is unique and
         # we can recycle its name
         val = self.solver().symbolic_value(
-            f"load_of_{frm.as_value()}", BitVecType(8 * bytes_num)
+            f"load_of_{frm.as_value()}", type_mgr().bv_ty(8 * bytes_num)
         )
         # write the fresh value into memory, so that
         # later reads see the same value.

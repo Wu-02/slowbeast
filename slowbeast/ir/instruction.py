@@ -2,10 +2,9 @@ from sys import stdout
 from typing import Sized, Union, TextIO
 
 from slowbeast.ir.bblock import BBlock
-from slowbeast.ir.types import PointerType, Type
+from slowbeast.ir.types import PointerType, Type, get_offset_type, type_mgr
 from slowbeast.util.debugging import print_highlight
 from .programelement import ProgramElement
-from .types import LabelType, BitVecType, BoolType, get_offset_type
 
 
 class GlobalVariable(ProgramElement):
@@ -23,7 +22,7 @@ class GlobalVariable(ProgramElement):
         return True
 
     def type(self) -> PointerType:
-        return PointerType()
+        return type_mgr().pointer_ty()
 
     def size(self):
         return self._size
@@ -261,7 +260,7 @@ class Alloc(ValueInstruction):
         return self._size
 
     def type(self) -> PointerType:
-        return PointerType()
+        return type_mgr().pointer_ty()
 
     def __str__(self) -> str:
         return "{0} = alloc {1} bytes{2}".format(
@@ -291,7 +290,10 @@ class Alloc(ValueInstruction):
 
 class Branch(Instruction):
     def __init__(self, cond, b1: BBlock, b2: BBlock) -> None:
-        super().__init__([cond, b1, b2], [BoolType(), LabelType(), LabelType()])
+        super().__init__(
+            [cond, b1, b2],
+            [type_mgr().bool_ty(), type_mgr().label_ty(), type_mgr().label_ty()],
+        )
         assert isinstance(b1, BBlock)
         assert isinstance(b2, BBlock)
 
@@ -440,7 +442,7 @@ class Print(Instruction):
 
 class Assert(Instruction):
     def __init__(self, cond, msg=None) -> None:
-        super().__init__([cond, msg], [BoolType, None])
+        super().__init__([cond, msg], [type_mgr().bool_ty(), None])
 
     def msg(self):
         ops = self.operands()
@@ -462,7 +464,7 @@ class Assert(Instruction):
 
 class Assume(Instruction):
     def __init__(self, *operands) -> None:
-        super().__init__([*operands], [BoolType] * len(operands))
+        super().__init__([*operands], [type_mgr().bool_ty()] * len(operands))
 
     def __str__(self) -> str:
         r = "assume "
@@ -519,7 +521,7 @@ class Cmp(ValueTypedInstruction):
         raise NotImplementedError("Invalid comparison")
 
     def __init__(self, p, val1, val2, types, unsgn_or_unord: bool = False) -> None:
-        super().__init__(BoolType(), [val1, val2], types)
+        super().__init__(type_mgr().bool_ty(), [val1, val2], types)
         self._predicate = p
         self._unsigned_or_unordered = unsgn_or_unord
 
@@ -580,7 +582,7 @@ class Extend(UnaryOperation):
     def __init__(self, a, bw: int, signed: bool, optypes) -> None:
         assert isinstance(bw, int), f"Invalid bitwidth to extend: {bw}"
         assert isinstance(signed, bool), f"Invalid signed flag: {bw}"
-        super().__init__(UnaryOperation.EXTEND, a, BitVecType(bw), optypes)
+        super().__init__(UnaryOperation.EXTEND, a, type_mgr().bv_ty(bw), optypes)
         self._bw = bw
         self._signed = signed
 
@@ -642,7 +644,7 @@ class ExtractBits(UnaryOperation):
         super().__init__(
             UnaryOperation.EXTRACT,
             val,
-            BitVecType(end - start + 1),
+            type_mgr().bv_ty(end - start + 1),
             optypes,
         )
         self._start = start
@@ -725,7 +727,9 @@ class BinaryOperation(ValueTypedInstruction):
         isptr = a.type().is_pointer() or b.type().is_pointer()
         assert isptr or a.type() == b.type(), f"{a} ({a.type()}), {b} ({b.type()})"
         assert BinaryOperation.ADD <= op <= BinaryOperation.LAST
-        super().__init__(PointerType() if isptr else a.type(), [a, b], optypes)
+        super().__init__(
+            type_mgr().pointer_ty() if isptr else a.type(), [a, b], optypes
+        )
         self._op = op
 
     def op_str(op) -> str:

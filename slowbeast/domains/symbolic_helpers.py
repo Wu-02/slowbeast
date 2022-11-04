@@ -49,9 +49,9 @@ from z3 import (
     Z3_OP_UGT,
 )
 
-from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.concrete import concrete_value
-from slowbeast.ir.types import BoolType, FloatType, BitVecType, Type
+from slowbeast.domains.concrete_value import ConcreteVal
+from slowbeast.ir.types import BoolType, FloatType, BitVecType, Type, type_mgr
 from slowbeast.util.debugging import FIXME
 
 
@@ -116,12 +116,12 @@ def split_clauses(*exprs):
 
 def solver_to_sb_type(s) -> Union[BoolType, FloatType, BitVecType]:
     if is_bv(s):
-        return BitVecType(s.sort().size())
+        return type_mgr().bv_ty(s.sort().size())
     if is_fp(s):
         srt = s.sort()
-        return FloatType(srt.ebits() + srt.sbits())
+        return type_mgr().float_ty(srt.ebits() + srt.sbits())
     assert is_bool(s), f"Unhandled expression: {s}"
-    return BoolType()
+    return type_mgr().bool_ty()
 
 
 def get_fp_sort(bw):
@@ -162,11 +162,11 @@ def python_constant(val):
 def python_to_sb_type(val: float, bw) -> Type:
     if isinstance(val, bool):
         assert bw == 1
-        return BoolType()
+        return type_mgr().bool_ty()
     if isinstance(val, int):
-        return BitVecType(bw)
+        return type_mgr().bv_ty(bw)
     if isinstance(val, float):
-        return FloatType(bw)
+        return type_mgr().float_ty(bw)
     return None
 
 

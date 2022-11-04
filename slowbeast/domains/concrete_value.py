@@ -1,7 +1,8 @@
+from typing import Union
+
 from slowbeast.domains import CONCRETE_DOMAIN_KIND
 from slowbeast.domains.value import Value
-from slowbeast.ir.types import BitVecType, Type, PointerType, BoolType
-from typing import Union
+from slowbeast.ir.types import type_mgr, Type, PointerType
 
 
 class ConcreteVal(Value):
@@ -56,4 +57,4 @@ class ConcreteVal(Value):
 class ConcreteBool(ConcreteVal):
     def __init__(self, b: bool) -> None:
         assert isinstance(b, bool), f"{b} type: {type(b)}"
-        super().__init__(b, BoolType())
+        super().__init__(b, type_mgr().bool_ty())

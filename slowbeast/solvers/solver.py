@@ -1,7 +1,8 @@
+from typing import Union
+
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.exprmgr import ExpressionManager
 from slowbeast.ir.types import BitVecType, FloatType
-from typing import Union
 
 
 class SolverIntf:

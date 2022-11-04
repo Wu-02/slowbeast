@@ -1,7 +1,7 @@
 from numpy import float16, float32, float64, isnan, isinf
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
-from slowbeast.ir.types import FloatType
+from slowbeast.ir.types import type_mgr, FloatType
 from .domain import Domain
 from .value import Value
 
@@ -29,7 +29,7 @@ class ConcreteFloat(ConcreteVal):
             ty = bw
             bw = bw.bitwidth()
         else:
-            ty = FloatType(bw)
+            ty = type_mgr().float_ty(bw)
         assert isinstance(bw, int), bw
         if bw == 16:
             val = float16(n)

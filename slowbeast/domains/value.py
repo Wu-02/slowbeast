@@ -1,8 +1,10 @@
 #!/usr/bin/python
 
-from slowbeast.ir.types import Type
 from typing import Union, Any
+
 from z3.z3 import BitVecRef, BoolRef, FPRef
+
+from slowbeast.ir.types import Type
 
 
 class Value:
