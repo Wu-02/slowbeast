@@ -1,12 +1,12 @@
 #!/usr/bin/python3
-
-from sys import path as syspath
-from os import mkdir, readlink
+from io import TextIOWrapper
+from os import readlink
 from os.path import islink, dirname, abspath
 from os.path import join as pathjoin
+from sys import path as syspath
 
 # make sure we see our 'slowbeast' package and 'llvmlite' package (if
-# it has been cloned into srcdir). The later is prioritized.
+# it has been cloned into srcdir). The latter is prioritized.
 sb_path = dirname(readlink(__file__) if islink(__file__) else __file__)
 if sb_path not in syspath:
     syspath.append(abspath(sb_path))
@@ -14,8 +14,8 @@ syspath.insert(0, abspath(pathjoin(sb_path, "llvmlite")))
 
 
 import argparse
-from os import mkdir
-from os.path import basename, abspath
+from os import mkdir, getcwd
+from os.path import basename
 from shutil import rmtree
 from subprocess import run
 from sys import exit as sys_exit
@@ -400,9 +400,15 @@ class OutputsHandler:
         # test generator
         self.testgen = testgen
         # where can the algorithm dump debugging data
+        self.cwd = getcwd()
         self.outdir = outdir
         # stream for logging
         #self.logstream = logstream
+
+    def new_output_file(self, name: str) -> TextIOWrapper:
+        outdir = self.outdir or self.cwd
+        return open(f"{outdir}/{name}", "w", encoding="utf-8")
+
 
 def sort_input_files(files):
     c_files = []
@@ -620,13 +626,12 @@ def main():
                 opts.target_is_whole_seq = False
             if args.cfkind_sis:
                 opts.simple_sis = True
-            from slowbeast.cfkind.kindse import KindSE as KindSymbolicExecutor
         elif args.kind_naive:
             from slowbeast.cfkind.naive.naivekindse import KindSymbolicInterpreter
         elif args.kind_naive_impr:
-            from slowbeast.cfkind.naive.naiveimprkindse import KindSymbolicExecutor
+            pass
         else: # the default: if args.kind_noinv
-            from slowbeast.cfkind.legacy.noinvkindse import KindSymbolicExecutor
+            pass
             # NOTE: now, -kind is the same as -bse. We must implement -bse
             # with precondition computation of every single step
         interpreter = KindSymbolicInterpreter(P, ohandler, opts)

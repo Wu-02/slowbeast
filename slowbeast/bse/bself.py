@@ -29,6 +29,8 @@ class BSELF:
         self.ohandler = ohandler
         self.options = opts
 
+        self.new_output_file = self.ohandler.new_output_file
+
         programstructure = ProgramStructure(prog, self.new_output_file)
         self.get_cfa = programstructure.cfas.get
         self.programstructure = programstructure
@@ -36,13 +38,6 @@ class BSELF:
         self.stats = SEStats()
 
         self.invariants = {}
-
-    # FIXME: make this a method of output handler or some function (get rid of 'self')
-    # after all, we want such functionality with every analysis
-    # FIXME: copied from BaseKindSE
-    def new_output_file(self, name: str) -> TextIOWrapper:
-        odir = self.ohandler.outdir if self.ohandler else None
-        return open(f"{odir or '.'}/{name}", "w", encoding="utf-8")
 
     def _get_possible_errors(self):
         EM = global_expr_mgr()

@@ -50,14 +50,10 @@ class SymbolicInterpreter(Interpreter):
         self.ohandler = ohandler
         self._input_vector = None
 
+        self.new_output_file = self.ohandler.new_output_file
+
     def set_input_vector(self, ivec) -> None:
         self._executor.set_input_vector(ivec)
-
-    # FIXME: make this a method of output handler or some function (get rid of 'self')
-    # after all, we want such functionality with every analysis
-    def new_output_file(self, name) -> TextIOWrapper:
-        odir = self.ohandler.outdir if self.ohandler else None
-        return open(f"{odir or '.'}/{name}", "w")
 
     def solver(self) -> SymbolicSolver:
         return self._solver
