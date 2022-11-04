@@ -1,18 +1,16 @@
 from sys import stdout
+from typing import Optional, Union, TextIO
 
 from slowbeast.core.executionstatus import ExecutionStatus
-from slowbeast.domains.concrete_value import ConcreteBool, ConcreteVal
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.domains.concrete_value import ConcreteVal
+from slowbeast.domains.expr import Expr
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.function import Function
-from slowbeast.ir.types import get_offset_type
-from typing import Any, Optional, Union, TextIO
-
-
-from slowbeast.util.debugging import dbgv
-from slowbeast.domains.concrete_bitvec import ConcreteBitVec
-from slowbeast.domains.expr import Expr
 from slowbeast.ir.instruction import ValueInstruction
+from slowbeast.ir.types import get_offset_type
 from slowbeast.symexe.memory import Memory
+from slowbeast.util.debugging import dbgv
 
 
 class ExecutionState:
@@ -23,12 +21,16 @@ class ExecutionState:
         self.pc = pc
         # memory objects
         self.memory = m
-        # status of the execution: ready/exited/errored/etc.
+        # status of the execution: ready/exited/error/etc.
         self._status = ExecutionStatus()
 
     def __eq__(self, rhs: object) -> bool:
         if self is rhs:
             return True
+        # For now assert that we compare to other state instead
+        # of returning False. Comparing to something else
+        # means probably a bug.
+        assert isinstance(rhs, ExecutionState)
         assert self.pc is not None and rhs.pc is not None
         return (
             self.pc == rhs.pc
@@ -91,7 +93,7 @@ class ExecutionState:
     def is_ready(self) -> bool:
         return self._status.is_ready()
 
-    def eval(self, v: Any) -> Union[ConcreteBool, ConcreteBitVec, Expr]:
+    def eval(self, v):
         # FIXME: make an attribute is_constant...
         if isinstance(v, ConcreteVal):
             return v
@@ -104,7 +106,7 @@ class ExecutionState:
             raise RuntimeError(f"Use of uninitialized/unknown variable {v}")
         return value
 
-    def try_eval(self, v: ConcreteBitVec) -> ConcreteBitVec:
+    def try_eval(self, v):
         if isinstance(v, ConcreteVal):
             return v
         if isinstance(v, Pointer) and v.is_null():
@@ -117,7 +119,7 @@ class ExecutionState:
         """Associate a value to a register (in the current stack frame)"""
         if __debug__:
             h = f" ({hex(v.value())})" if v and v.is_concrete() and v.is_bv() else ""
-            dbgv("[{0}] -> {1}{2}".format(what, v, h), color="GREEN")
+            dbgv(f"[{what}] -> {v}{h}", color="green")
         # XXX: rename to bind?
         self.memory.set(what, v)
 
