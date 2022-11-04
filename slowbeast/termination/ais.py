@@ -24,7 +24,8 @@ from slowbeast.util.debugging import (
 
 def find_loop_body_entries(programstructure):
     """
-    Find the first instruction from each loop body
+    Find the first instruction from each loop body. Note that these instructions do not
+    precisely correspond to loop headers in the backward analysis.
     """
 
     headers = programstructure.get_loop_headers()
@@ -72,7 +73,11 @@ def find_loop_body_entries(programstructure):
     return ret
 
 
-class SeAIS(SymbolicInterpreter):
+class SeAISForward(SymbolicInterpreter):
+    """
+    The forward part of symbolic execution with acyclic inductive sets inference.
+    """
+
     def __init__(
         self,
         program,
@@ -176,21 +181,24 @@ class SeAIS(SymbolicInterpreter):
         pc = state.pc
 
         if self._is_loop_entry(pc):
-            assert state.is_ready()
-            new_mp = self._get_and_check_projection(state)
-            if new_mp is None:
-                state.set_error(NonTerminationError("an infinite execution found"))
-                self._handle_state_space_cycle(state)
+            if self.handle_loop_entry(state):
                 return
 
-            state.entry_loop(new_mp)
-        #    state.start_tracing_memory()
-        # elif self._exited_loop(pc):
-        #    state.stop_tracing_memory()
         if state.has_error():
             dbg("Discarding an error state (it is not non-termination)")
             return
         super().handle_new_state(state)
+
+    def handle_loop_entry(self, state):
+        assert state.is_ready()
+        new_mp = self._get_and_check_projection(state)
+        if new_mp is None:
+            state.set_error(NonTerminationError("an infinite execution found"))
+            self._handle_state_space_cycle(state)
+            return True
+
+        state.entry_loop(new_mp)
+        return False
 
     def get_next_state(self):
         states = self.states
@@ -210,21 +218,19 @@ class SeAIS(SymbolicInterpreter):
         ), f"State already in queue: {state} ... {self.states}"
         return state
 
-    # S = self.executor().create_states_set(state)
-    # loc = self._loop_body_entries[state.pc]
-    # A, rels, states =\
-    #   self.forward_states.setdefault(loc, (self.executor().create_states_set(), set(), []))
-    # cur_rels = set()
-    # for rel in (r for r in get_var_cmp_relations(state, A) if r not in rels):
-    #    if rel.get_cannonical().is_concrete(): # True
-    #        continue
-    #    rels.add(rel)
-    #    cur_rels.add(rel)
-    #    print('rel', rel)
-    #    A.add(S)
-    # states.append((state, rels))
-    # print(states)
-    # print(A)
+
+class SeAIS(SeAISForward):
+    """
+    Symbolic execution with acyclic inductive sets inference.
+    """
+
+    def __init__(
+        self,
+        program,
+        ohandler=None,
+        opts: SEOptions = SEOptions(),
+    ) -> None:
+        super().__init__(program, ohandler, opts)
 
 
 #####################################################################
