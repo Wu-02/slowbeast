@@ -1,16 +1,15 @@
 from sys import stdout
 from typing import Union, TextIO
 
-import slowbeast.domains.symbolic_helpers
 from slowbeast.bse.memorymodel import _nondet_value
+from slowbeast.core.executionstate import ExecutionState
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.pointer import Pointer
+from slowbeast.ir.instruction import Alloc, GlobalVariable
 from slowbeast.solvers.symcrete import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
 from slowbeast.symexe.executionstate import LazySEState, Nondet
 from slowbeast.util.debugging import ldbgv
-from slowbeast.ir.instruction import Alloc, GlobalVariable
-from slowbeast.core.executionstate import ExecutionState
 
 
 def _subst_val(substitute, val, subs):
@@ -73,15 +72,17 @@ def _same_values(em, val1, val2):
 
 
 class BSEState(LazySEState):
+    __slots__ = "_inputs"
+
     def __init__(
         self, executor=None, pc=None, m=None, solver=None, constraints=None
     ) -> None:
         super().__init__(executor, pc, m, solver, constraints)
         # inputs are the subset of nondet values that we search for in pre-states
         # when joining states
-        self._inputs = []
+        self._inputs: list = []
 
-    def _copy_to(self, new: ExecutionState) -> None:
+    def _copy_to(self, new: "BSEState") -> None:
         super()._copy_to(new)
         new._inputs = self._inputs.copy()
 
