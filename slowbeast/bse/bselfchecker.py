@@ -46,10 +46,17 @@ def _dump_inductive_sets(checker, loc, fn=dbg) -> None:
         fn(" ∅", color="dark_green")
 
 
-def _check_set(executor, S: StatesSet, L, target) -> bool:
-    # FIXME: this is a workaround until we support nondet() calls in lazy
-    # execution
-    r = check_paths(executor, L.paths(), pre=S, post=union(S, target))
+def is_seq_inductive(seq, loopinfo: LoopInfo) -> bool:
+    return loopinfo.set_is_inductive(seq.as_set())
+
+
+def is_set_inductive(S, loopinfo: LoopInfo) -> bool:
+    return loopinfo.set_is_inductive(S)
+
+
+def _check_set_is_inductive_towards(executor, S: StatesSet, loopinfo, target) -> bool:
+    # FIXME: this is a workaround until we support nondet() calls in lazy execution
+    r = check_paths(executor, loopinfo.paths(), pre=S, post=union(S, target))
     if r.errors:
         dbg(
             "FIXME: pre-image is not inductive cause we do not support "
@@ -63,14 +70,14 @@ def _check_set(executor, S: StatesSet, L, target) -> bool:
     return True
 
 
-def overapprox_state(executor, s, E: StatesSet, target, L):
-    S = s if isinstance(s, StatesSet) else executor.create_set(s)
+def overapprox_state(executor, state, errset: StatesSet, target, loopinfo):
+    state_as_set = state if isinstance(state, StatesSet) else executor.create_set(state)
 
-    if not _check_set(executor, S, L, target):
+    if not _check_set_is_inductive_towards(executor, state_as_set, loopinfo, target):
         return
 
     # add relations
-    for rel in get_const_cmp_relations(S.get_se_state()):
+    for rel in get_const_cmp_relations(state_as_set.get_se_state()):
         ldbg("  Adding relation {0}", (rel,))
         # on_some, on_all = L.check_set_inductivity(create_set(rel))
         # if on_all:
@@ -82,54 +89,64 @@ def overapprox_state(executor, s, E: StatesSet, target, L):
         #        executor.add_invariant(L.header(), rel)
         #        continue
 
-        S.intersect(rel)
+        state_as_set.intersect(rel)
         assert (
-            not S.is_empty()
-        ), f"Added realtion {rel} rendered the set infeasible\n{S}"
+            not state_as_set.is_empty()
+        ), f"Added realtion {rel} rendered the set infeasible\n{state_as_set}"
         assert intersection(
-            S, E
+            state_as_set, errset
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
 
-    yield from _overapprox_with_assumptions(E, L, S, executor, s, target)
+    yield from _overapprox_with_assumptions(
+        errset, loopinfo, state_as_set, executor, state, target
+    )
 
     # try without any relation
     # assert not S.is_empty(), "Infeasible states given to overapproximate"
-    yield overapprox_set(executor, s.expr_manager(), S, E, target, None, L)
+    yield overapprox_set(
+        executor, state.expr_manager(), state_as_set, errset, target, None, loopinfo
+    )
 
 
-def _overapprox_with_assumptions(E, L, S, executor, s, target):
+def _overapprox_with_assumptions(
+    errset, loopinfo, state_as_set, executor, state, target
+):
     """
     Infer a set of relations that hold in S and over-approximate the set
     w.r.t. these relations.
     """
     # precise prestates of this state
-    R0 = set(get_var_relations([S.get_se_state()], prevsafe=target))
-    if not R0:
+    relations = set(get_var_relations([state_as_set.get_se_state()], prevsafe=target))
+    if not relations:
         return
-    yield from _yield_overapprox_with_assumption(E, L, S, executor, R0, s, target)
+    yield from _yield_overapprox_with_assumption(
+        errset, loopinfo, state_as_set, executor, relations, state, target
+    )
 
 
-def _yield_overapprox_with_assumption(E, L, S, executor, rels, s, target):
+def _yield_overapprox_with_assumption(
+    errset, loopinfo, state_as_set, executor, rels, state, target
+):
     create_set = executor.create_set
     for rel in rels:
         ldbg("  Using assumption {0}", (rel,))
         assumptions = create_set(rel)
         assert not intersection(
-            assumptions, S
+            assumptions, state_as_set
         ).is_empty(), f"Added realtion {rel} rendered the set infeasible\n{S}"
         assert intersection(
-            assumptions, S, E
+            assumptions, state_as_set, errset
         ).is_empty(), "Added realtion rendered the set unsafe: {rel}"
-        assert not S.is_empty(), "Infeasible states given to overapproximate"
-        yield overapprox_set(executor, s.expr_manager(), S, E, target, assumptions, L)
-
-
-def is_seq_inductive(seq, L: LoopInfo) -> bool:
-    return L.set_is_inductive(seq.as_set())
-
-
-def is_set_inductive(S, L: LoopInfo) -> bool:
-    return L.set_is_inductive(S)
+        assert not state_as_set.is_empty(), "Infeasible states given to overapproximate"
+        yield overapprox_set(
+            executor,
+            state.expr_manager(),
+            state_as_set,
+            errset,
+            target,
+            assumptions,
+            loopinfo,
+        )
 
 
 class BSELFChecker(BaseBSE):
@@ -377,8 +394,8 @@ class BSELFChecker(BaseBSE):
             for A in extended:
                 yield A
 
-    def _extend_one_step(self, L, target):
-        r = check_paths(self, L.paths(), post=target)
+    def _extend_one_step(self, loop, target):
+        r = check_paths(self, loop.paths(), post=target)
         if not r.ready:  # cannot step into this frame...
             dbg("Infeasible frame...")
             # FIXME: remove this sequence from INV sets

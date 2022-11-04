@@ -56,6 +56,8 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
             programstructure = ProgramStructure(prog, self.new_output_file)
         self.programstructure = programstructure
 
+        # These invariants will be used during the execution. Note that we take the reference,
+        # so they may be changed externally during the execution.
         self.invariant_sets = {} if invariants is None else invariants
 
         self._entry_loc = programstructure.entry_loc
