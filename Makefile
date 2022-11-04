@@ -25,7 +25,6 @@ check:
 	lit -j4 --path=$(shell pwd) -D OPTS="-se-step=block" tests/
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -bse" tests/
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -bself" tests/
-	lit -j4 --path=$(shell pwd) -D OPTS="-se -bselff" tests/
 	lit -j4 --path=$(shell pwd) -D OPTS="-check termination" --filter='termination/.*\.c' tests/
 
 check-bse:
