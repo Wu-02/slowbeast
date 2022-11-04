@@ -227,6 +227,17 @@ def warn(msg, print_ws="\n", color="BROWN"):
     print_stderr(msg, "[sb] WARNING: ", print_ws, color)
 
 
+_warned_once = set()
+
+
+def warn_once(key, msg, print_ws="\n", color="BROWN"):
+    global _warned_once
+    if key in _warned_once:
+        return
+    _warned_once.add(key)
+    print_stderr(msg, "[sb] WARNING once: ", print_ws, color)
+
+
 def FIXME(msg: str, print_ws: str = "\n", color: str = "DARK_GRAY_THIN") -> None:
     print_stderr(msg, "[sb] !FIXME! ", print_ws, color)
 

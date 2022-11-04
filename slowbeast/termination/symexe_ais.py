@@ -13,6 +13,9 @@ from slowbeast.util.debugging import (
     inc_print_indent,
     dec_print_indent,
     dbg,
+    dbgv,
+    warn_once,
+    FIXME,
 )
 
 
@@ -251,6 +254,28 @@ class SeAIS(SeAISForward):
     def handle_new_state(self, state: ForwardState) -> None:
         if self._is_loop_header(state.pc):
             ais = self._get_ais(state.pc)
-            print("AIS do step", state.pc)
+            if self._state_is_subsumed(ais, state):
+                dbgv("State is subsumed, dropping it")
+                return
+
             ais.do_step()
         super().handle_new_state(state)
+
+    def _state_is_subsumed(self, ais, state):
+        if len(self._loop_headers) > 1:
+            # FIXME: we need to prove that reachable loops terminate or get theri AISs
+            # FIXME: and check the subsumption w.r.t those (their WP at the loop actually)
+            warn_once(
+                self._state_is_subsumed,
+                f"Cannot subsume state because of multiple loops",
+            )
+            return False
+        FIXME(
+            "We must check that all values from all_states exist in state, because the memory is not lazy."
+        )
+        # FIXME cnt: or we must create an annotation from the state that captures also memory -- we will need that
+        # anyway at some point
+        if ais.aistree.all_states.contains(state):
+            return True
+        print("======================")
+        return False
