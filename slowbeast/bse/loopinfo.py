@@ -1,6 +1,7 @@
+from typing import Tuple
+
 from slowbeast.bse.bse import check_paths
 from slowbeast.symexe.statesset import StatesSet, union
-from typing import Tuple
 
 
 class LoopInfo:

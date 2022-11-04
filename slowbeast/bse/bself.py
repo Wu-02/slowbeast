@@ -3,7 +3,6 @@ from typing import List, Optional, Sized
 
 from slowbeast.analysis.cfa import CFA
 from slowbeast.analysis.programstructure import ProgramStructure
-from .bsectx import BSEContext
 from slowbeast.bse.inductivesequence import InductiveSequence
 from slowbeast.bse.loopinfo import LoopInfo
 from slowbeast.cfkind.annotatedcfa import AnnotatedCFAPath
@@ -12,8 +11,8 @@ from slowbeast.cfkind.overapproximations import overapprox_set
 from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
 from slowbeast.core.errors import AssertFailError
 from slowbeast.symexe.annotations import AssertAnnotation
-from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.symexe.interpreter import SEStats
+from slowbeast.symexe.statesset import intersection, union, complement, StatesSet
 from slowbeast.util.debugging import (
     print_stdout,
     dbg,
@@ -28,6 +27,7 @@ from .bse import (
     report_state,
     check_paths,
 )
+from .bsectx import BSEContext
 from .inductiveset import InductiveSet
 from .options import BSELFOptions
 from ..domains.symbolic_helpers import to_c_expression

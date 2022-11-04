@@ -1,6 +1,5 @@
 from slowbeast.solvers.symcrete import IncrementalSolver
 from slowbeast.symexe.statesset import StatesSet, complement, intersection
-from typing import List, Optional
 
 
 class InductiveSet:

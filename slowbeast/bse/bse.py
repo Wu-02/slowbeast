@@ -7,14 +7,14 @@ from slowbeast.bse.bsestate import BSEState
 from slowbeast.bse.memorymodel import BSEMemoryModel
 from slowbeast.cfkind import KindSEOptions
 from slowbeast.cfkind.naive.naivekindse import Result
-from .bsectx import BSEContext
-from ..core.executionresult import PathExecutionResult
 from slowbeast.symexe.interpreter import (
     SymbolicInterpreter as SymbolicInterpreter,
     SEOptions,
 )
 from slowbeast.util.debugging import print_stdout, print_stderr, dbg
+from .bsectx import BSEContext
 from .executor import BSEPathExecutor as BSEExecutor
+from ..core.executionresult import PathExecutionResult
 
 
 def report_state(stats, n, msg=None, fn=print_stderr) -> None:
