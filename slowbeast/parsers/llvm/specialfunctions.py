@@ -50,21 +50,31 @@ special_functions = [
 ]
 
 
-def create_special_fun(parser, inst, fun, error_funs):
+def create_special_fun(parser, inst, fun, error_funs, to_check):
     """
     Return a pair R, S where R is the representant
     used for mapping of instructions and S is the sequence
     of instructions created
     """
     module = parser.llvmmodule
+    no_overflow = to_check and "no-signed-overflow" in to_check
+    ignore_asserts = len(error_funs) > 0 or no_overflow
     if fun in error_funs:
         A = Assert(ConstantFalse, "error function called!")
         return A, [A]
     elif fun == "__assert_fail":
-        A = Assert(ConstantFalse, "assertion failed!")
+        if ignore_asserts:
+            # ignore assertions if error functions are given
+            A = Assume(ConstantFalse)
+        else:
+            A = Assert(ConstantFalse, "assertion failed!")
         return A, [A]
     elif fun == "__VERIFIER_error":
-        A = Assert(ConstantFalse, "__VERIFIER_error called!")
+        if ignore_asserts:
+            # ignore assertions if error functions are given
+            A = Assume(ConstantFalse)
+        else:
+            A = Assert(ConstantFalse, "__VERIFIER_error called!")
         return A, [A]
     elif fun in ("__VERIFIER_assume", "assume_abort_if_not", "verifier.assume"):
         operands = get_llvm_operands(inst)
@@ -81,6 +91,9 @@ def create_special_fun(parser, inst, fun, error_funs):
     elif fun in ("__VERIFIER_silent_exit", "ldv_stop"):
         print_stderr("Assuming that ldv_stop is assume(false)...", color="orange")
         A = Assume(ConstantFalse)
+        return A, [A]
+    elif no_overflow and fun.startswith("__ubsan_handle"):
+        A = Assert(ConstantFalse, "signed integer overflow")
         return A, [A]
     elif fun == "__INSTR_check_assume":
         operands = get_llvm_operands(inst)

@@ -183,6 +183,7 @@ class Parser:
         allow_threads: bool = True,
         forbid_floats: bool = False,
         unsupp_funs: Optional[Iterable[str]] = None,
+        to_check: Optional[Iterable[str]] = None,
     ) -> None:
         self.llvmmodule = None
         self.program = Program()
@@ -194,6 +195,7 @@ class Parser:
         self._metadata_opts = ["llvm", "dbgloc", "dbgvar"]
         self._name_vars = True
         self._allow_threads = allow_threads
+        self._to_check = to_check
         # records about PHIs that we created. We must place
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
@@ -503,7 +505,7 @@ class Parser:
         return Call(fun, ty)
 
     def _createSpecialCall(self, inst: ValueRef, fun: str) -> List[Assert]:
-        mp, seq = create_special_fun(self, inst, fun, self.error_funs)
+        mp, seq = create_special_fun(self, inst, fun, self.error_funs, self._to_check)
         if mp:
             self._addMapping(inst, mp)
         return seq

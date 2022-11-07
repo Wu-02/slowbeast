@@ -250,8 +250,10 @@ def main():
         error_funs = args.error_fn or None
         unsupp_undefs = args.unsupported_undefs or None
         parser = LLVMParser(error_funs.split(',') if error_funs else None,
-                            args.threads, args.forbid_floats,
-                            unsupp_undefs.split(",") if unsupp_undefs else None)
+                            args.threads,
+                            args.forbid_floats,
+                            unsupp_undefs.split(",") if unsupp_undefs else None,
+                            args.check)
         code = compile_and_link(args.prog, args.out_dir,
                                 ['-Xclang', '-disable-O0-optnone',
                                  '-fno-vectorize', '-fno-slp-vectorize']
