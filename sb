@@ -100,9 +100,9 @@ def create_arg_parser():
                         help='Perform symbolic execution with on-demand subprograms search (experimental).')
     parser.add_argument('-se-step', default='instr',
                         help='Set what is an execution step, one of: block, instr (block = execute the whole blocks instead of single instructions in one step.')
-    parser.add_argument('-se-exit-on-error', action='store_true',
+    parser.add_argument('-exit-on-error', '-se-exit-on-error', action='store_true',
                         help='Terminate symbolic execution after hitting the first error.')
-    parser.add_argument('-se-replay-errors', action='store_true',
+    parser.add_argument('-replay-errors', '-se-replay-errors', action='store_true',
                         help='Confirm errors by replaying them without symbolic values')
     parser.add_argument('-se-incremental-solving', action='store_true',
                         help='Use incremental SMT solving')
@@ -346,7 +346,7 @@ def main():
     elif args.bse:
         from slowbeast.bse.bself import BSELFOptions
         opts = BSELFOptions()
-        opts.replay_errors = args.se_replay_errors
+        opts.replay_errors = args.replay_errors
         if args.bse and not args.bself:
             opts.fold_loops = False
         if args.bse_add_unwind_inv:
@@ -368,8 +368,8 @@ def main():
         opts = SEOptions()
 
         opts.threads = args.threads
-        opts.replay_errors = args.se_replay_errors
-        opts.exit_on_error = args.se_exit_on_error
+        opts.replay_errors = args.replay_errors
+        opts.exit_on_error = args.exit_on_error
         opts.interactive = args.interactive
         opts.incremental_solving = args.se_incremental_solving
 
