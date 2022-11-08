@@ -191,123 +191,6 @@ def get_left_right(l):
     return chld[0], chld[1]
 
 
-def check_literal(EM, lit, ldata) -> bool:
-    if lit is None or lit.is_concrete():
-        return False
-
-    # safety check
-    if (
-        not ldata.safety_solver.try_is_sat(500, EM.disjunction(lit, *ldata.clause))
-        is False
-    ):
-        return False
-
-    have_feasible = False
-    substitute = EM.substitute
-
-    I = ldata.indset_with_placeholder
-    placeholder = ldata.placeholder
-    solver = ldata.solver
-    A = AssertAnnotation(
-        substitute(I.expr(), (placeholder, lit)), I.substitutions(), EM
-    )
-    for s in ldata.loop_poststates:
-        # feasability check
-        solver.push()
-        pathcond = substitute(s.path_condition(), (placeholder, lit))
-        solver.add(pathcond)
-        feasible = solver.try_is_sat(500)
-        if feasible is not True:
-            solver.pop()
-            if feasible is None:  # solver t-outed/failed
-                return False
-            continue
-        # feasible means ok, but we want at least one feasible path
-        # FIXME: do we?
-        have_feasible = True
-
-        # inductivity check
-        hasnocti = A.do_substitutions(s)
-        # we have got pathcond in solver already
-        if solver.try_is_sat(500, EM.Not(hasnocti)) is not False:  # there exist CTI
-            solver.pop()
-            return False
-        solver.pop()
-    return have_feasible
-
-
-def extend_with_num(dliteral, constadd, num, maxnum, ldata, EM):
-    """
-    Add 'num' as many times as possible to the literal that is created from dliteral and constadd
-
-    constadd - this number is always added to the literal (that is the current
-               value of extending
-    num - number to keep adding
-    maxnum - maximal number to try (the sum of added 'num' cannot exceed this)
-
-    \return the maximal added number which is multiple of 'num' + constadd,
-            i.e., the new value that is safe to add to the literal
-    """
-    numval = num.value()
-    retval = constadd
-    Add = EM.Add
-
-    # keep the retval also in python int, so that we can check it agains
-    # maxnum (expressions are counted modulo, so we cannot check that
-    # on expressions)
-    acc = retval.value() + numval
-    if acc > maxnum:
-        return retval
-
-    newretval = Add(retval, num)
-    newl = dliteral.extended(newretval)
-
-    # push as far as we can with this num
-    while check_literal(EM, newl, ldata):
-        # the tried value is ok, so set it as the new final value
-        retval = newretval
-        assert retval.value() <= maxnum
-
-        newretval = Add(newretval, num)
-        acc += numval
-
-        # do not try to shift the number beyond maxnum
-        if acc > maxnum:
-            break
-        newl = dliteral.extended(newretval)
-
-    return retval
-
-
-def extend_literal(ldata, EM):
-    dliteral = ldata.decomposed_literal
-
-    bw = dliteral.bitwidth()
-    two = ConcreteBitVec(2, bw)
-    # adding 2 ** bw would be like adding 0, stop before that
-    maxnum = 2**bw - 1
-
-    # a fast path where we try shift just by one.  If we cant, we can give up
-    # FIXME: try more low values (e.g., to 10)
-    num = ConcreteBitVec(1, bw)
-    l = dliteral.extended(num)
-    if not check_literal(EM, l, ldata):
-        return ldata.literal
-
-    # this is the final number that we are going to add to one side of the
-    # literal
-    finalnum = ConcreteBitVec(1, bw)  # we know we can add 1 now
-    num = ConcreteBitVec(2 ** (bw - 1) - 1, bw)  # this num we'll try to add
-    while finalnum.value() <= maxnum:
-        finalnum = extend_with_num(dliteral, finalnum, num, maxnum, ldata, EM)
-
-        if num.value() <= 1:
-            # we have added also as many 1 as we could, finish
-            return dliteral.extended(finalnum)
-        num = EM.Div(num, two)
-    raise RuntimeError("Unreachable")
-
-
 class LoopStateOverapproximation:
     """
     Structure taking care for over-approximations of states
@@ -654,11 +537,134 @@ class LoopStateOverapproximation:
         em_optimize_expressions(False)
         # the optimizer could make And or Or from the literal, we do not want
         # that...
-        l = extend_literal(ldata, expr_mgr)
+        l = self.extend_literal(ldata)
         em_optimize_expressions(True)
 
         safety_solver.pop()
         return l
+
+    def extend_literal(self, ldata):
+        dliteral = ldata.decomposed_literal
+
+        bw = dliteral.bitwidth()
+        two = ConcreteBitVec(2, bw)
+        # adding 2 ** bw would be like adding 0, stop before that
+        maxnum = 2**bw - 1
+
+        # a fast path where we try shift just by one.  If we cant, we can give up
+        # FIXME: try more low values (e.g., to 10)
+        num = ConcreteBitVec(1, bw)
+        l = dliteral.extended(num)
+        if not self.check_literal(l, ldata):
+            return ldata.literal
+
+        # this is the final number that we are going to add to one side of the
+        # literal
+        finalnum = ConcreteBitVec(1, bw)  # we know we can add 1 now
+        num = ConcreteBitVec(2 ** (bw - 1) - 1, bw)  # this num we'll try to add
+        extend_with_num = self.extend_with_num
+        expr_mgr = self.expr_mgr
+        Div = expr_mgr.Div
+        while finalnum.value() <= maxnum:
+            finalnum = extend_with_num(dliteral, finalnum, num, maxnum, ldata)
+
+            if num.value() <= 1:
+                # we have added also as many 1 as we could, finish
+                return dliteral.extended(finalnum)
+            num = Div(num, two)
+        raise RuntimeError("Unreachable")
+
+    def check_literal(self, lit, ldata) -> bool:
+        if lit is None or lit.is_concrete():
+            return False
+
+        expr_mgr = self.expr_mgr
+        # safety check
+        if (
+            not ldata.safety_solver.try_is_sat(
+                500, expr_mgr.disjunction(lit, *ldata.clause)
+            )
+            is False
+        ):
+            return False
+
+        have_feasible = False
+        substitute = expr_mgr.substitute
+
+        I = ldata.indset_with_placeholder
+        placeholder = ldata.placeholder
+        solver = ldata.solver
+        A = AssertAnnotation(
+            substitute(I.expr(), (placeholder, lit)), I.substitutions(), expr_mgr
+        )
+        for s in ldata.loop_poststates:
+            # feasability check
+            solver.push()
+            pathcond = substitute(s.path_condition(), (placeholder, lit))
+            solver.add(pathcond)
+            feasible = solver.try_is_sat(500)
+            if feasible is not True:
+                solver.pop()
+                if feasible is None:  # solver t-outed/failed
+                    return False
+                continue
+            # feasible means ok, but we want at least one feasible path
+            # FIXME: do we?
+            have_feasible = True
+
+            # inductivity check
+            hasnocti = A.do_substitutions(s)
+            # we have got pathcond in solver already
+            if (
+                solver.try_is_sat(500, expr_mgr.Not(hasnocti)) is not False
+            ):  # there exist CTI
+                solver.pop()
+                return False
+            solver.pop()
+        return have_feasible
+
+    def extend_with_num(self, dliteral, constadd, num, maxnum, ldata):
+        """
+        Add 'num' as many times as possible to the literal that is created from dliteral and constadd
+
+        constadd - this number is always added to the literal (that is the current
+                   value of extending
+        num - number to keep adding
+        maxnum - maximal number to try (the sum of added 'num' cannot exceed this)
+
+        \return the maximal added number which is multiple of 'num' + constadd,
+                i.e., the new value that is safe to add to the literal
+        """
+        numval = num.value()
+        retval = constadd
+        Add = self.expr_mgr.Add
+
+        # keep the retval also in python int, so that we can check it agains
+        # maxnum (expressions are counted modulo, so we cannot check that
+        # on expressions)
+        acc = retval.value() + numval
+        if acc > maxnum:
+            return retval
+
+        newretval = Add(retval, num)
+        newl = dliteral.extended(newretval)
+
+        # push as far as we can with this num
+        check_literal = self.check_literal
+        while check_literal(newl, ldata):
+            # the tried value is ok, so set it as the new final value
+            retval = newretval
+            assert retval.value() <= maxnum
+
+            newretval = Add(newretval, num)
+            acc += numval
+
+            # do not try to shift the number beyond maxnum
+            if acc > maxnum:
+                break
+            newl = dliteral.extended(newretval)
+
+        return retval
 
 
 class LiteralOverapproximationData:
