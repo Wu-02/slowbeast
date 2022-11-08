@@ -408,8 +408,8 @@ class LoopStateOverapproximation:
 
     def drop_clauses(self, assumptions=None) -> None:
         newclauses = self._drop_clauses_fixpoint(assumptions)
-        # new add the assumptions (without them the formula is not equivalent
-        # to expr now)
+        # now add the assumptions if we used them (without them the formula is
+        # not equivalent to expr after dropping the clauses)
         if assumptions:
             newclauses.extend(list(assumptions.as_cnf_expr().children()))
         clauses = remove_implied_literals(newclauses)
