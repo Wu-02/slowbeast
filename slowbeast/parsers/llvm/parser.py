@@ -259,7 +259,13 @@ class Parser:
                 retlist.append(N)
             else:
                 N = num
-            M = Mul(concrete_value(tySize, SizeType), N)
+
+            I = BinaryOperation(BinaryOperation.MUL, op1, op2, optypes)
+            M = BinaryOperation(
+                BinaryOperation.MUL,
+                concrete_value(tySize, SizeType),
+                [SizeType, N.type()],
+            )
             A = Alloc(M)
             self._addMapping(inst, A)
             retlist += [M, A]
