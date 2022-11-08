@@ -1,13 +1,13 @@
 from sys import stdout
+from typing import TextIO, Union
 
 from slowbeast.core.errors import MemError
 from slowbeast.core.memorymodel import MemoryModel as CoreMM
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import Alloc, GlobalVariable
-from slowbeast.ir.types import BitVecType, BoolType, get_offset_type, get_size_type
+from slowbeast.ir.types import get_offset_type, get_size_type
 from slowbeast.symexe.memory import Memory as SEMemory
-from typing import TextIO, Union
 
 
 def _nondet_value(fresh, op, ty):
@@ -36,14 +36,23 @@ class BSEMemory(SEMemory):
         new._input_reads = self._input_reads.copy()
         return new
 
-    def _try_read(self, ptr):
+    def get_read(self, ptr):
         for p, v in reversed(self._reads):
             if p == ptr:
                 return v
+        return None
+
+    def get_input_read(self, ptr):
         v = self._input_reads.get(ptr)
         if v is not None:
             return v[0]
         return None
+
+    def _try_read(self, ptr):
+        v = self.get_read(ptr)
+        if v is not None:
+            return v
+        return self.get_input_read(ptr)
 
     def read_symbolic_ptr(self, state, to_op, from_op, bitsnum=None):
         raise NotImplementedError("Not implemented yet")
