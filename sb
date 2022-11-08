@@ -390,7 +390,7 @@ def main():
             if args.se_threads_dpor:
                 from slowbeast.symexe.interpreter import ThreadedDPORSymbolicInterpreter as SymbolicInterpreter
             else:
-                from slowbeast.symexe.interpreter import ThreadedSymbolicInterpreter as SymbolicInterpreter
+                from slowbeast.symexe.threadedinterpreter import ThreadedSymbolicInterpreter as SymbolicInterpreter
         else:
             from slowbeast.symexe.interpreter import SymbolicInterpreter
         interpreter = SymbolicInterpreter(P, ohandler, opts)

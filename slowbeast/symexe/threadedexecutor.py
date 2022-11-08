@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 
 from slowbeast.core.errors import GenericError
 from slowbeast.domains.concrete import concrete_value
@@ -29,7 +29,7 @@ class ThreadedExecutor(IExecutor):
             state.start_atomic()
             state.pc = state.pc.get_next_inst()
             return [state]
-        elif fnname == "__VERIFIER_atomic_end":
+        if fnname == "__VERIFIER_atomic_end":
             state.end_atomic()
             state.pc = state.pc.get_next_inst()
             return [state]
@@ -183,8 +183,6 @@ class ThreadedExecutor(IExecutor):
 
         if isinstance(instr, Thread):
             return self.exec_thread(state, instr)
-        # elif isinstance(instr, ThreadExit):
-        #    return self.exec_thread_exit(state, instr)
-        elif isinstance(instr, ThreadJoin):
+        if isinstance(instr, ThreadJoin):
             return self.exec_thread_join(state, instr)
         return super().execute(state, instr)
