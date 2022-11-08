@@ -117,7 +117,10 @@ class TestCaseGenerator:
             lid += 1
             # dump as unsigned and signed
             write(f'<node id="{lid}">\n')
-            cinv = inv_to_c(inv).replace("&&", "&amp;&amp;")
+            cinv = inv_to_c(inv)
+            cinv = cinv.replace("&&", "&amp;&amp;")
+            cinv = cinv.replace("<", "&lt;")
+            cinv = cinv.replace(">", "&gt;")
             write(f'  <data key="invariant">{cinv}</data>\n')
             write(f"</node>\n")
             # write(f'<edge source="{lid-1}" target="{lid}">\n')

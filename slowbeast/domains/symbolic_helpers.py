@@ -326,7 +326,12 @@ def to_c_expression(expr):
     if is_app_of(expr, Z3_OP_SGT) or is_app_of(expr, Z3_OP_UGT):
         return f"({to_c_expression(chlds[0])}) > ({to_c_expression(chlds[1])})"
 
-    return str(expr)
+    # we number expressions with #, remove that
+    sexpr = str(expr)
+    hashidx = sexpr.rfind("#")
+    if hashidx > 0:
+        return sexpr[:hashidx]
+    return sexpr
 
 
 def map_model(m, e) -> Union[None, List[None], List[ConcreteVal]]:
