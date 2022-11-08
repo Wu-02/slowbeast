@@ -68,6 +68,10 @@ def _yield_overapprox_with_assumption(
         )
 
 
+class AisLoopStateOverapproximation(LoopStateOverapproximation):
+    pass
+
+
 def overapprox_set(
     executor,
     goal: StatesSet,

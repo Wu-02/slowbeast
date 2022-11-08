@@ -352,35 +352,46 @@ class LoopStateOverapproximation:
                 expressions.add(c)
 
         newclauses = list(expressions)
-        # newS = S.copy()
-        safesolver = self.safesolver
         S = self.goal
         loop = self.loop
-        for c in expressions:
-            assert not c.is_concrete(), c
-            # create a temporary formula without the given clause
-            tmp = newclauses.copy()
-            tmp.remove(c)
-
-            # check whether we can get rid of the clause
-            if assumptions:
-                tmpexpr = conjunction(*tmp, assumptions.as_expr())
-            else:
-                tmpexpr = conjunction(*tmp)
-            if tmpexpr.is_concrete():
-                continue  # either False or True are bad for us
-
-            # == safety check
-            if safesolver.is_sat(tmpexpr) is not False:
-                continue  # unsafe overapprox
-
-            X = S.copy()
-            X.reset_expr(tmpexpr)
-            if loop.set_is_inductive_towards(X, target):
-                newclauses = tmp
-                dbg(f"  dropped {c}...")
-
+        drop_clause = self.drop_clause
+        for clause in expressions:
+            newclauses = drop_clause(
+                em, clause, newclauses, assumptions, S, target, loop
+            )
         return newclauses
+
+    def drop_clause(self, em, clause, clauses, assumptions, S, target, loop):
+        """
+        Try dropping the clause. If successful, return a list of new clauses.
+        DO NOT modify 'clauses' parameter!.
+        """
+        assert not clause.is_concrete(), clause
+        # create a temporary formula without the given clause
+        tmpclauses = clauses.copy()
+        tmpclauses.remove(clause)
+
+        # check whether we can get rid of the clause
+        if assumptions:
+            tmpexpr = em.conjunction(*tmpclauses, assumptions.as_expr())
+        else:
+            tmpexpr = em.conjunction(*tmpclauses)
+        if tmpexpr.is_concrete():
+            return (
+                clauses  # either False or True are bad for us, return original clauses
+            )
+
+        # == safety check
+        if self.safesolver.is_sat(tmpexpr) is not False:
+            return clauses  # unsafe overapprox, do not drop
+
+        # == inductiveness check
+        X = S.copy()
+        X.reset_expr(tmpexpr)
+        if loop.set_is_inductive_towards(X, target):
+            dbg(f"  dropped {clause}...")
+            return tmpclauses
+        return clauses
 
     def _drop_clauses_fixpoint(self, assumptions):
         """Drop clauses until fixpoint"""
