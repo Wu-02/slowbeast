@@ -2,9 +2,9 @@ from typing import Optional
 
 from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.bse.bself import BSELFChecker
-from slowbeast.termination.ais_overapproximations import overapprox_state
 from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.symexe.statesset import intersection
+from slowbeast.termination.ais_overapproximations import overapprox_state
 from slowbeast.termination.inductivesetstree import InductiveSetsTree
 from slowbeast.util.debugging import print_stdout, dbg
 

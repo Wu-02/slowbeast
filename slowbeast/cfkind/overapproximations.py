@@ -336,32 +336,23 @@ class LoopStateOverapproximation:
         """
         assumptions are clauses that we do not try to drop
         """
-        target = self.target
-
-        # we start with all clauses
-        em = self.expr_mgr
-        conjunction = em.conjunction
         expressions = set()
         for c in clauses:
             if c.is_concrete():
                 if c.value() is False:
                     dbg("  ... got FALSE in clauses, returning FALSE")
-                    return [em.get_false()]
+                    return [self.expr_mgr.get_false()]
                 dbg("  ... dropping True clause")
             else:
                 expressions.add(c)
 
         newclauses = list(expressions)
-        S = self.goal
-        loop = self.loop
         drop_clause = self.drop_clause
         for clause in expressions:
-            newclauses = drop_clause(
-                em, clause, newclauses, assumptions, S, target, loop
-            )
+            newclauses = drop_clause(clause, newclauses, assumptions)
         return newclauses
 
-    def drop_clause(self, em, clause, clauses, assumptions, S, target, loop):
+    def drop_clause(self, clause, clauses, assumptions):
         """
         Try dropping the clause. If successful, return a list of new clauses.
         DO NOT modify 'clauses' parameter!.
@@ -373,9 +364,9 @@ class LoopStateOverapproximation:
 
         # check whether we can get rid of the clause
         if assumptions:
-            tmpexpr = em.conjunction(*tmpclauses, assumptions.as_expr())
+            tmpexpr = self.expr_mgr.conjunction(*tmpclauses, assumptions.as_expr())
         else:
-            tmpexpr = em.conjunction(*tmpclauses)
+            tmpexpr = self.expr_mgr.conjunction(*tmpclauses)
         if tmpexpr.is_concrete():
             return (
                 clauses  # either False or True are bad for us, return original clauses
@@ -386,9 +377,9 @@ class LoopStateOverapproximation:
             return clauses  # unsafe overapprox, do not drop
 
         # == inductiveness check
-        X = S.copy()
+        X = self.goal.copy()
         X.reset_expr(tmpexpr)
-        if loop.set_is_inductive_towards(X, target):
+        if self.loop.set_is_inductive_towards(X, self.target):
             dbg(f"  dropped {clause}...")
             return tmpclauses
         return clauses

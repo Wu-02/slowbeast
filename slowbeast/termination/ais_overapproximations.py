@@ -69,7 +69,22 @@ def _yield_overapprox_with_assumption(
 
 
 class AisLoopStateOverapproximation(LoopStateOverapproximation):
-    pass
+    def drop_clause(self, clause, clauses, assumptions):
+        newclauses = super().drop_clause(clause, clauses, assumptions)
+        if len(newclauses) == len(clauses):
+            assert newclauses is clauses
+            # we did nothing
+            return newclauses
+
+        # Check that we can find a acyclicity prooving function.
+        # If not, dropping the clause is not right.
+        if self.states_are_acyclic(newclauses, assumptions):
+            return newclauses
+        return clauses
+
+    def states_are_acyclic(self, clauses, assumptions):
+        print("States are not acyclic: ", clauses, assumptions)
+        return False
 
 
 def overapprox_set(
@@ -112,7 +127,7 @@ def overapprox_set(
         return S
 
     expr_mgr = S.expr_manager()
-    overapprox = LoopStateOverapproximation(S, executor, target, unsafe, L, expr_mgr)
+    overapprox = AisLoopStateOverapproximation(S, executor, target, unsafe, L, expr_mgr)
     overapprox.drop_clauses(assumptions)
 
     # NOTE: this works good alone sometimes
