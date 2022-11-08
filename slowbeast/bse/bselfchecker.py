@@ -588,7 +588,7 @@ class BSELFChecker(BaseBSE):
         assert sets
         return sets
 
-    def _initial_sets_from_exits(self, E: StatesSet, L: LoopInfo):
+    def _initial_sets_from_exits(self, errs: StatesSet, loopinfo: LoopInfo):
         """
         Strengthen the initial sequence through obtaining the
         last safe iteration of the loop.
@@ -596,8 +596,8 @@ class BSELFChecker(BaseBSE):
         # execute the safe path that avoids error and then jumps out of the loop
         # and also only paths that jump out of the loop, so that the set is
         # inductive
-        cE = complement(E)
-        tmpsets = self._last_k_iterations_states(L, k=0)
+        cE = complement(errs)
+        tmpsets = self._last_k_iterations_states(loopinfo, k=0)
         sets = []
         for tmp in tmpsets:
             tmp.intersect(cE)
