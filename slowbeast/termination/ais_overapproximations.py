@@ -109,7 +109,6 @@ def overapprox_set(
 
     expr_mgr = S.expr_manager()
     overapprox = LoopStateOverapproximation(S, executor, target, unsafe, L, expr_mgr)
-    # overapprox.drop_disjuncts()
     overapprox.drop_clauses(assumptions)
 
     # NOTE: this works good alone sometimes

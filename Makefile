@@ -32,7 +32,7 @@ check-bse:
 	lit -j4 --path=$(shell pwd) -v -D OPTS="-bse" tests/
 
 check-bself:
-	lit -j4 --path=$(shell pwd) -a -D OPTS="-bself" tests/
+	lit -j4 --path=$(shell pwd) -D OPTS="-se -bself" tests/
 
 check-bselff:
 	lit -j4 --path=$(shell pwd) -D OPTS="-bselff" tests/

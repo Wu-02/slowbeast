@@ -1,6 +1,5 @@
 from functools import partial
 
-from ..core.executionresult import PathExecutionResult
 from slowbeast.solvers.symcrete import IncrementalSolver
 from slowbeast.symexe.annotations import (
     AssertAnnotation,
@@ -8,6 +7,7 @@ from slowbeast.symexe.annotations import (
 )
 from slowbeast.symexe.statesset import StatesSet, union, intersection, complement
 from slowbeast.util.debugging import dbg, dbgv
+from ..core.executionresult import PathExecutionResult
 from ..domains.concrete_bitvec import ConcreteBitVec
 from ..domains.exprmgr import em_optimize_expressions
 from ..solvers.symcrete import global_expr_mgr
@@ -331,55 +331,6 @@ class LoopStateOverapproximation:
         safesolver = IncrementalSolver()
         safesolver.add(unsafe.as_expr())
         self.safesolver = safesolver
-
-    def drop_disjuncts(self) -> None:
-        solver = IncrementalSolver()
-        solver.add(*self.clauses)
-        assert solver.is_sat(), "The clauses are unsat!"
-        em = self.expr_mgr
-        disjunction, conjunction, Not = em.disjunction, em.conjunction, em.Not
-        false, true = em.get_false(), em.get_true()
-        substitute = em.substitute
-
-        subs = []
-        newclauses = []
-        for c in self.clauses:
-            c = substitute(c, *subs)
-            newd = []
-            if c.is_concrete():
-                val = c.value()
-                if val is True:
-                    continue
-                elif val is False:
-                    raise RuntimeError(
-                        "BUG in dropping disjuncts! Made the expression unsat"
-                    )
-                raise RuntimeError(f"Invalid boolean value: {val}")
-            if not c.is_or():
-                newclauses.append(c)
-                continue
-
-            for d in c.children():
-                nd = Not(d)
-                if solver.try_is_sat(100, nd) is False:
-                    if nd.is_not():
-                        subs.append((d, true))
-                        newd.append(true)
-                        continue
-                    subs.append((nd, false))
-                if solver.try_is_sat(100, d) is False:
-                    if d.is_not():
-                        subs.append((next(d.children()), true))
-                    subs.append((d, false))
-                else:
-                    newd.append(d)
-            if newd:
-                newclauses.append(disjunction(*newd))
-            else:
-                raise RuntimeError(
-                    "BUG in dropping disjuncts! Made the expression unsat"
-                )
-        self.clauses = [em.substitute(c, *subs) for c in newclauses]
 
     def _drop_clauses(self, clauses, assumptions):
         """
@@ -830,7 +781,6 @@ def overapprox_set(
         return S
 
     overapprox = LoopStateOverapproximation(S, executor, target, unsafe, L, EM)
-    # overapprox.drop_disjuncts()
     overapprox.drop_clauses(assumptions)
 
     # NOTE: this works good alone sometimes
