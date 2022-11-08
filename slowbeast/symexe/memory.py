@@ -11,6 +11,7 @@ class Memory(CoreMemory):
         size: ConcreteBitVec,
         nm: Optional[str] = None,
         objid: None = None,
+        is_heap: bool = False,
         is_global: bool = False,
         is_read_only: bool = False,
     ) -> MemoryObject:
@@ -19,4 +20,4 @@ class Memory(CoreMemory):
         by child classes to create a different type of
         memory objects.
         """
-        return MemoryObject(size, nm, objid, is_global, is_read_only)
+        return MemoryObject(size, nm, objid, is_heap, is_global, is_read_only)

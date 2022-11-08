@@ -1,6 +1,6 @@
 // REQUIRES: se
 // RUN: rm -rf %t-out
-// RUN: %sb -out-dir=%t-out -threads -se-exit-on-error %opts %s &>%t.log
+// RUN: %sb -out-dir=%t-out -threads -exit-on-error %opts %s &>%t.log
 // RUN: cat %t.log | %FILECHECK %s
 
 #include <pthread.h>

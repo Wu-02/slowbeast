@@ -111,7 +111,7 @@ class AIMemoryObject:
 
 class AIMemory(CoreMemory):
     def create_memory_object(
-        self, size, nm=None, objid=None, is_global: bool = False, is_const
+        self, size, nm=None, objid=None, is_heap, is_global: bool = False, is_const
     ) -> AIMemoryObject:
         """
         Create a new memory object -- may be overriden

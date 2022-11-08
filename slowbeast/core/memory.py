@@ -1,15 +1,14 @@
 import sys
 from copy import copy
+from typing import Union, TextIO
 
 from slowbeast.core.callstack import CallStack
 from slowbeast.core.errors import MemError
-from ..domains.concrete_bitvec import ConcreteBitVec
-from slowbeast.domains.pointer import Pointer
-from slowbeast.ir.types import get_size_type
-from .memoryobject import MemoryObject
 from slowbeast.core.memoryobject import MemoryObject
-from typing import Union, TextIO
+from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import Alloc, GlobalVariable
+from slowbeast.ir.types import get_size_type
+from ..domains.concrete_bitvec import ConcreteBitVec
 
 
 class Memory:
@@ -26,6 +25,7 @@ class Memory:
         self._glob_objects_ro = False
         self._glob_bindings = {}
         self._glob_bindings_ro = False
+        # TODO: keep heap allocations separately too?
         # callstack containing top-level values for the current
         # function (values of computation of instructions).
         # In the future, move there also the objects bound
@@ -57,14 +57,20 @@ class Memory:
         return new
 
     def create_memory_object(
-        self, size, nm=None, objid=None, is_glob: bool = False, is_const=False
+        self,
+        size,
+        nm=None,
+        objid=None,
+        is_heap: bool = False,
+        is_glob: bool = False,
+        is_const=False,
     ) -> MemoryObject:
         """
         Create a new memory object -- may be overriden
         by child classes to create a different type of
         memory objects.
         """
-        return MemoryObject(size, nm, objid, is_glob, is_const)
+        return MemoryObject(size, nm, objid, is_heap, is_glob, is_const)
 
     def _objs_reown(self) -> None:
         if self._objects_ro:
@@ -84,7 +90,11 @@ class Memory:
             self._glob_bindings_ro = False
 
     def __eq__(self, rhs: object):
-        return self._objects == rhs._objects and self._cs == self._cs
+        return (
+            isinstance(rhs, Memory)
+            and self._objects == rhs._objects
+            and self._cs == self._cs
+        )
 
     def _allocate(
         self,
@@ -92,10 +102,11 @@ class Memory:
         instr: Union[None, Alloc, GlobalVariable] = None,
         nm=None,
         objid=None,
+        is_heap: bool = False,
         is_glob: bool = False,
     ) -> MemoryObject:
         """Allocate a new memory object and return it"""
-        o = self.create_memory_object(size, nm, objid, is_glob)
+        o = self.create_memory_object(size, nm, objid, is_heap, is_glob)
         assert o._is_ro() is False, "Created object is read-only (COW bug)"
 
         if instr:
@@ -105,11 +116,13 @@ class Memory:
 
     def allocate(self, size, instr=None, nm=None, objid=None) -> Pointer:
         """Allocate a new memory object and return a pointer to it"""
+        assert not instr or isinstance(instr, Alloc), instr
         assert (
             objid is None or self._objects.get(objid) is None
         ), f"Already has an object with id {objid}"
 
-        o = self._allocate(size, instr, nm, objid)
+        is_heap = instr is not None and instr.is_heap_allocation()
+        o = self._allocate(size, instr, nm, objid, is_heap=is_heap)
 
         self._objs_reown()
         assert self._objects.get(o.get_id()) is None
@@ -147,7 +160,7 @@ class Memory:
     def has_object(self, moid) -> bool:
         return self._objects.get(moid) is not None or self.has_global_object(moid)
 
-    def get_obj(self, moid: int):
+    def get_obj(self, moid):
         if moid.is_concrete():
             moid = moid.value()
         assert isinstance(moid, int), f"Invalid MO ID: {moid}"

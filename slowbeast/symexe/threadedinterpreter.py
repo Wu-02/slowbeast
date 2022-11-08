@@ -76,8 +76,13 @@ def may_be_glob_mem(state, mem: Alloc) -> bool:
     ptr = state.try_eval(mem)
     if ptr and ptr.object().is_concrete():
         mo = state.memory.get_obj(ptr.object())
-        if mo and isinstance(mo.allocation(), Alloc):
+        if mo is None:
+            return True
+        if mo.is_read_only():
+            # read only objects cannot be modified and so we do not care about them
             return False
+        return mo.is_global() or mo.is_heap()
+
     return True
 
 

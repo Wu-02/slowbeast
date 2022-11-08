@@ -259,6 +259,9 @@ class Alloc(ValueInstruction):
     def size(self):
         return self._size
 
+    def is_heap_allocation(self):
+        return self._is_heap
+
     def type(self) -> PointerType:
         return type_mgr().pointer_ty()
 

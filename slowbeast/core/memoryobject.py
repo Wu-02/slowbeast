@@ -20,6 +20,7 @@ class MemoryObject:
         "_name",
         "_allocation",
         "_ro",
+        "_is_heap",
         "_is_global",
         "_zeroed",
         "_read_only",
@@ -30,6 +31,7 @@ class MemoryObject:
         size: ConcreteBitVec,
         nm: str = "unnamed",
         objid: None = None,
+        is_heap: bool = False,
         is_global: bool = False,
         is_read_only: bool = False,
     ) -> None:
@@ -44,6 +46,7 @@ class MemoryObject:
         self._name = nm  # for debugging
         self._allocation = None  # which allocation allocated this memory
         self._is_global = is_global
+        self._is_heap = is_heap
         self._zeroed = False
         self._read_only = is_read_only
 
@@ -70,6 +73,9 @@ class MemoryObject:
     def is_global(self) -> bool:
         return self._is_global
 
+    def is_heap(self) -> bool:
+        return self._is_heap
+
     def clear(self) -> None:
         assert not self._ro
         self._values.clear()
@@ -87,7 +93,7 @@ class MemoryObject:
         return new
 
     def __eq__(self, rhs: object):
-        return self._id == rhs._id
+        return isinstance(rhs, MemoryObject) and self._id == rhs._id
 
     def get_id(self) -> int:
         return self._id
@@ -205,6 +211,8 @@ class MemoryObject:
         alloc = self._allocation.as_value() if self._allocation else "<unknown>"
         s = (
             f"mo{self._id} ('{nm}', alloc'd by {alloc}), "
+            f"{'global, ' if self._is_global else ''}"
+            f"{'heap, ' if self._is_heap else ''}"
             f"{'read-only, ' if self._read_only else ''}"
             f"{'zeroed, ' if self._zeroed else ''}"
             f"size: {self._size}"
