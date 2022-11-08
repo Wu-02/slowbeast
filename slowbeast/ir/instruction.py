@@ -387,8 +387,8 @@ class Return(Instruction):
 
 
 class Thread(Call):
-    def __init__(self, wht, *operands) -> None:
-        super().__init__(wht, get_offset_type(), *operands)
+    def __init__(self, wht, operands, optypes) -> None:
+        super().__init__(wht, get_offset_type(), operands, optypes)
 
     def called_function(self):
         return self._function
@@ -406,19 +406,9 @@ class Thread(Call):
         return r + f") -> {self._type}"
 
 
-class ThreadExit(Return):
-    def __init__(self, val=None) -> None:
-        super().__init__(val)
-
-    def __str__(self) -> str:
-        if len(self.operands()) == 0:
-            return "thread exit"
-        return f"thread exit ret {self.operand(0).as_value()}"
-
-
 class ThreadJoin(ValueTypedInstruction):
-    def __init__(self, ty, ops=None) -> None:
-        super().__init__(ty, ops)
+    def __init__(self, ty, ops, optypes) -> None:
+        super().__init__(ty, ops, optypes)
 
     def __str__(self) -> str:
         if len(self.operands()) == 0:

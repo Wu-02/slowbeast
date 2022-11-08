@@ -340,7 +340,6 @@ class IExecutor:
             Store,
             Switch,
             Thread,
-            ThreadExit,
             ThreadJoin,
             UnaryOperation,
         ],
@@ -385,7 +384,7 @@ class IExecutor:
             states = self.exec_binary_op(state, instr)
         elif isinstance(instr, Ite):
             states = self.exec_ite(state, instr)
-        elif isinstance(instr, (Thread, ThreadExit, ThreadJoin)):
+        elif isinstance(instr, (Thread, ThreadJoin)):
             # XXX: must be before Call and Return
             state.set_killed(f"Threads are not implemented by this executor: {instr}")
             return [state]

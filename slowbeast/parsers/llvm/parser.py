@@ -382,8 +382,8 @@ class Parser:
         opcode = inst.opcode
 
         # make sure both operands are bool if one is bool
-       #if op1.type().is_bool() or op2.type().is_bool():
-       #    op1, op2 = bv_to_bool_else_id(op1), bv_to_bool_else_id(op2)
+        # if op1.type().is_bool() or op2.type().is_bool():
+        #    op1, op2 = bv_to_bool_else_id(op1), bv_to_bool_else_id(op2)
 
         if opcode == "and":
             I = BinaryOperation(BinaryOperation.AND, op1, op2, optypes)
@@ -505,7 +505,7 @@ class Parser:
             fun = Function(name, [], ty)
             self.program.add_fun(fun)
 
-        return Call(fun, ty)
+        return Call(fun, ty, [], [])
 
     def _createSpecialCall(self, inst: ValueRef, fun: str) -> List[Assert]:
         mp, seq = create_special_fun(self, inst, fun, self.error_funs, self._to_check)
@@ -513,22 +513,19 @@ class Parser:
             self._addMapping(inst, mp)
         return seq
 
-    def _createThreadFun(
-        self, inst, operands: Sized, fun
-    ) -> Union[
-        List[ThreadExit],
-        List[Union[Call, Store]],
-        List[Union[Call, Store, ThreadJoin]],
-        List[Union[Call, ThreadJoin]],
-    ]:
+    def _createThreadFun(self, inst, operands: Sized, fun):
         if fun == "pthread_join":
             assert len(operands) == 3  # +1 for called fun
             ty = get_sb_type(self.llvmmodule, operands[1].type.element_type)
             # FIXME: we do not condition joining the thread on 'ret'...
             succ = self.create_nondet_call(
-                "join_succ", get_sb_type(self.llvmmodule, inst.type)
+                "__join_succeeded", get_sb_type(self.llvmmodule, inst.type)
             )
-            t = ThreadJoin(ty, [self.operand(operands[0])])
+            t = ThreadJoin(
+                ty,
+                [self.operand(operands[0])],
+                [get_sb_type(self.llvmmodule, operands[0].type)],
+            )
             self._addMapping(inst, succ)
             ret = self.operand(operands[1])
             if ret.is_concrete() and ret.is_null():
@@ -539,15 +536,26 @@ class Parser:
             assert len(operands) == 5  # +1 for called fun
             # FIXME: we do not condition creating the thread on 'ret'...
             ret = self.create_nondet_call(
-                "thread_succ", get_sb_type(self.llvmmodule, inst.type)
+                "__thread_create_succeeded", get_sb_type(self.llvmmodule, inst.type)
             )
-            t = Thread(self.operand(operands[2]), self.operand(operands[3]))
-            s = Store(t, self.operand(operands[0]), get_offset_type_size())
+            t = Thread(
+                self.operand(operands[2]),
+                [self.operand(operands[3])],
+                [get_sb_type(self.llvmmodule, operands[3].type)],
+            )
+            s = Store(
+                t,
+                self.operand(operands[0]),
+                [t.type(), get_sb_type(self.llvmmodule, operands[0].type)],
+            )
             self._addMapping(inst, ret)
             return [ret, t, s]
         if fun == "pthread_exit":
             assert len(operands) == 2  # +1 for called fun
-            t = ThreadExit(self.operand(operands[0]))
+            t = Return(
+                self.operand(operands[0]),
+                get_sb_type(self.llvmmodule, operands[0].type),
+            )
             self._addMapping(inst, t)
             return [t]
 

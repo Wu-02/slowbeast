@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from slowbeast.core.errors import GenericError
 from slowbeast.domains.concrete import concrete_value
-from slowbeast.ir.instruction import ThreadExit, ThreadJoin, Return, Thread
+from slowbeast.ir.instruction import ThreadJoin, Return, Thread
 from slowbeast.ir.types import get_offset_type
 from slowbeast.symexe.executionstate import ThreadedSEState
 from slowbeast.symexe.iexecutor import IExecutor
@@ -111,19 +111,19 @@ class ThreadedExecutor(IExecutor):
         state.set(instr, concrete_value(t.get_id(), get_offset_type()))
         return [state]
 
-    def exec_thread_exit(self, state, instr: ThreadExit):
-        assert isinstance(instr, ThreadExit)
+    # def exec_thread_exit(self, state, instr: ThreadExit):
+    #    assert isinstance(instr, ThreadExit)
 
-        # obtain the return value (if any)
-        ret = None
-        if len(instr.operands()) != 0:  # returns something
-            ret = state.eval(instr.operand(0))
-            assert (
-                ret is not None
-            ), f"No return value even though there should be: {instr}"
+    #    # obtain the return value (if any)
+    #    ret = None
+    #    if len(instr.operands()) != 0:  # returns something
+    #        ret = state.eval(instr.operand(0))
+    #        assert (
+    #            ret is not None
+    #        ), f"No return value even though there should be: {instr}"
 
-        state.exit_thread(ret)
-        return [state]
+    #    state.exit_thread(ret)
+    #    return [state]
 
     def exec_thread_join(self, state, instr: ThreadJoin):
         assert isinstance(instr, ThreadJoin)
@@ -172,7 +172,7 @@ class ThreadedExecutor(IExecutor):
         state.pc = rs.get_next_inst()
         return [state]
 
-    def execute(self, state, instr: Union[Thread, ThreadExit, ThreadJoin]):
+    def execute(self, state, instr):
         # state._trace.append(
         #    "({2}) {0}: {1}".format(
         #        "--" if not instr.bblock() else instr.fun().name(),
@@ -183,8 +183,8 @@ class ThreadedExecutor(IExecutor):
 
         if isinstance(instr, Thread):
             return self.exec_thread(state, instr)
-        elif isinstance(instr, ThreadExit):
-            return self.exec_thread_exit(state, instr)
+        # elif isinstance(instr, ThreadExit):
+        #    return self.exec_thread_exit(state, instr)
         elif isinstance(instr, ThreadJoin):
             return self.exec_thread_join(state, instr)
         return super().execute(state, instr)
