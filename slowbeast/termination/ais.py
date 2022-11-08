@@ -6,7 +6,7 @@ from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.symexe.statesset import intersection
 from slowbeast.termination.ais_overapproximations import overapprox_state
 from slowbeast.termination.inductivesetstree import InductiveSetsTree
-from slowbeast.util.debugging import print_stdout, dbg
+from slowbeast.util.debugging import print_stdout, print_stderr, dbg
 
 
 class AisInference(BSELFChecker):
@@ -70,6 +70,10 @@ class AisInference(BSELFChecker):
         for frontier_node in aistree.frontiers.copy():
             print("EXTENDING: ", frontier_node.iset.as_assert_annotation())
             prestates = self._extend_one_step(self.loop, frontier_node.iset)
+            if prestates is None:
+                print_stderr(f"Got no prestates of {frontier_node.iset}")
+                aistree.frontiers.remove(frontier_node)
+                continue
             for state in prestates:
                 print("GOT ", self.create_set(state).as_assert_annotation())
                 overapprox_step(aistree, frontier_node, state)

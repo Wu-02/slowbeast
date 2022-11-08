@@ -78,15 +78,20 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
 
         # Check that we can find a acyclicity prooving function.
         # If not, dropping the clause is not right.
-        if self.states_are_acyclic(newclauses, assumptions):
+        if self.clauses_are_acyclic(newclauses, assumptions):
             return newclauses
         return clauses
 
     def check_literal(self, lit, ldata) -> bool:
-        print("Checking literal ", lit)
-        return super().check_literal(lit, ldata)
+        if super().check_literal(lit, ldata):
+            return self.overapprox_is_acyclic(ldata)
+        return False
 
-    def states_are_acyclic(self, clauses, assumptions):
+    def overapprox_is_acyclic(self, ldata):
+        print("Overapproximation is not acyclic", ldata)
+        return False
+
+    def clauses_are_acyclic(self, clauses, assumptions):
         print("States are not acyclic: ", clauses, assumptions)
         return False
 
