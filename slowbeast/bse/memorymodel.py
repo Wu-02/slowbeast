@@ -48,6 +48,9 @@ class BSEMemory(SEMemory):
             return v[0]
         return None
 
+    def input_reads(self):
+        return self._input_reads
+
     def _try_read(self, ptr):
         v = self.get_read(ptr)
         if v is not None:

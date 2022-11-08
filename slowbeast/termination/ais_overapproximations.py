@@ -1,8 +1,9 @@
 from slowbeast.bse.bselfchecker import _check_set_is_inductive_towards
 from slowbeast.cfkind.overapproximations import LoopStateOverapproximation
 from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
+from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.symexe.statesset import intersection, StatesSet
-from slowbeast.util.debugging import dbg, ldbg
+from slowbeast.util.debugging import dbg, ldbg, dbgv, FIXME
 
 
 def overapprox_state(executor, state_as_set, errset: StatesSet, target, loopinfo):
@@ -68,6 +69,33 @@ def _yield_overapprox_with_assumption(
         )
 
 
+def get_monotonic_variables(state, solver):
+    MV = set()
+    memory = state.memory
+    expr_mgr = state.expr_manager()
+    Not, Eq, Le = expr_mgr.Not, expr_mgr.Eq, expr_mgr.Le
+    for iptr, ival in memory.input_reads().items():
+        val = memory.get_read(iptr)
+        if val is None:
+            continue
+
+        ival = ival[0]
+        if ival.is_pointer():
+            assert val.is_pointer()
+            # if segment may have been changed, we're screwed and can do notning
+            if solver.is_sat(Not(Eq(val.segment(), ival.seqment()))) is True:
+                continue
+            ival, val = ival.offset(), val.offset()
+
+        if (
+            solver.is_sat(Le(val, ival)) is False
+            or solver.is_sat(Le(ival, val)) is False
+        ):
+            MV.add(iptr)
+
+    return MV
+
+
 class AisLoopStateOverapproximation(LoopStateOverapproximation):
     def drop_clause(self, clause, clauses, assumptions):
         newclauses = super().drop_clause(clause, clauses, assumptions)
@@ -83,16 +111,70 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
         return clauses
 
     def check_literal(self, lit, ldata) -> bool:
-        if super().check_literal(lit, ldata):
-            return self.overapprox_is_acyclic(ldata)
-        return False
+        """
+        Check that replacit literal in ldata with `lit` gives us a valid AIS
+        """
+        if lit is None or lit.is_concrete():
+            return False
 
-    def overapprox_is_acyclic(self, ldata):
-        print("Overapproximation is not acyclic", ldata)
-        return False
+        expr_mgr = self.expr_mgr
+        # safety check
+        if (
+            not ldata.safety_solver.try_is_sat(
+                500, expr_mgr.disjunction(lit, *ldata.clause)
+            )
+            is False
+        ):
+            return False
+
+        have_feasible = False
+        substitute = expr_mgr.substitute
+
+        I = ldata.indset_with_placeholder
+        placeholder = ldata.placeholder
+        solver = ldata.solver
+        A = AssertAnnotation(
+            substitute(I.expr(), (placeholder, lit)), I.substitutions(), expr_mgr
+        )
+        # check that on all paths we monotonically change at least one variable
+        # (same on all paths)
+        monotonic_variables = None
+        for s in ldata.loop_poststates:
+            # feasability check
+            solver.push()
+            pathcond = substitute(s.path_condition(), (placeholder, lit))
+            solver.add(pathcond)
+            feasible = solver.try_is_sat(500)
+            if feasible is not True:
+                solver.pop()
+                if feasible is None:  # solver t-outed/failed
+                    dbg("Solver failure/timeout")
+                    return False
+                continue
+            # feasible means ok, but we want at least one feasible path
+            if monotonic_variables is None:
+                monotonic_variables = get_monotonic_variables(s, solver)
+            else:
+                tmp = get_monotonic_variables(s, solver)
+                monotonic_variables.intersection_update(tmp)
+            if not monotonic_variables:
+                dbg("No monotonically changing variable found")
+                return False
+            have_feasible = True
+
+            # inductivity check
+            hasnocti = A.do_substitutions(s)
+            # we have got pathcond in solver already
+            if (
+                solver.try_is_sat(500, expr_mgr.Not(hasnocti)) is not False
+            ):  # there exist CTI
+                solver.pop()
+                return False
+            solver.pop()
+        return have_feasible  # and change_is_monotonic
 
     def clauses_are_acyclic(self, clauses, assumptions):
-        print("States are not acyclic: ", clauses, assumptions)
+        FIXME("Checking acyclicity in dropping clauses not implemented")
         return False
 
 
