@@ -313,6 +313,10 @@ def parse_arguments():
     if not args.se_step in valid_step:
         err(f"Invalid -step argument, must be one of: {valid_step}, got '{args.step}'")
 
+    unsupported_properties = ["valid-deref", "valid-free", "no-memleak", "valid-memcleanup"]
+    if any((unsupp_prp in args.check for unsupp_prp in unsupported_properties)):
+        err("A given property is not supported")
+
     if args.check is not None:
         prps = set(args.check)
         if "termination" in prps and len(prps) > 1:
