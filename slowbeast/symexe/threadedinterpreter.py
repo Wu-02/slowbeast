@@ -73,11 +73,9 @@ from slowbeast.util.debugging import print_stderr
 
 
 def may_be_glob_mem(state, mem: Alloc) -> bool:
-    if isinstance(mem, Alloc):
-        return False
     ptr = state.try_eval(mem)
     if ptr and ptr.object().is_concrete():
-        mo = state.memory.get_obj(ptr.object().value())
+        mo = state.memory.get_obj(ptr.object())
         if mo and isinstance(mo.allocation(), Alloc):
             return False
     return True
@@ -238,7 +236,7 @@ def has_conflicts(state, events, states_with_events) -> bool:
     return False
 
 
-class ThreadedDPORSymbolicExecutor(ThreadedSymbolicInterpreter):
+class ThreadedDPORSymbolicInterpreter(ThreadedSymbolicInterpreter):
     def __init__(self, P, ohandler=None, opts: SEOptions = SEOptions()) -> None:
         super().__init__(P, ohandler, opts)
         print("Running symbolic execution with DPOR")

@@ -25,6 +25,7 @@ check:
 	lit -j4 --path=$(shell pwd) -D OPTS="-se-step=block" tests/
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -bse" tests/
 	lit -j4 --path=$(shell pwd) -D OPTS="-se -bself" tests/
+	lit -j4 --path=$(shell pwd) -D OPTS="-se -threads" --filter='threads/.*\.c' tests/
 	lit -j4 --path=$(shell pwd) -D OPTS="-check termination" --filter='termination/.*\.c' tests/
 
 check-bse:
@@ -35,6 +36,10 @@ check-bself:
 
 check-bselff:
 	lit -j4 --path=$(shell pwd) -D OPTS="-bselff" tests/
+
+check-threads:
+	lit -j4 --path=$(shell pwd) -D OPTS="-se -threads" --filter='threads/.*\.c' tests/
+	lit -j4 --path=$(shell pwd) -D OPTS="-se -threads -threads-dpor" --filter='threads/.*\.c' tests/
 
 check-ais:
 	lit -j4 --path=$(shell pwd) -D OPTS="-check termination -ais" --filter='termination/.*\.c' tests/
