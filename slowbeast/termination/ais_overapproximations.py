@@ -209,9 +209,14 @@ def overapprox_set(
     if assumptions:
         dbg(f"  and assumptions: {assumptions}", color="dark_blue")
 
-    assert intersection(
-        goal, unsafe
-    ).is_empty(), f"The goal and unsafe states (the target) overlap"
+    # assert intersection(
+    #    goal, unsafe
+    # ).is_empty(), f"The goal and unsafe states (the target) overlap"
+    if not intersection(goal, unsafe).is_empty():
+        dbg(
+            f"The goal and unsafe states (the target) overlap. Probably nondet() in loop"
+        )
+        return None
 
     expr = S.as_expr()
     if expr.is_concrete():

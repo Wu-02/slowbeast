@@ -61,21 +61,20 @@ class AisInference(BSELFChecker):
 
     def do_step(self):
         print_stdout(
-            f"[loop {self.location}] current AIS: {self.aistree.all_states}",
+            f"[loop {self.location}] current AIS: {self.aistree.all_states.as_assume_annotation()}",
             color="blue",
         )
 
         overapprox_step = self.overapprox_step
         aistree = self.aistree
         for frontier_node in aistree.frontiers.copy():
-            print("EXTENDING: ", frontier_node.iset.as_assert_annotation())
             prestates = self._extend_one_step(self.loop, frontier_node.iset)
             if prestates is None:
                 print_stderr(f"Got no prestates of {frontier_node.iset}")
                 aistree.frontiers.remove(frontier_node)
                 continue
             for state in prestates:
-                print("GOT ", self.create_set(state).as_assert_annotation())
+                dbg(f"Pre-image {self.create_set(state).as_assume_annotation()}")
                 overapprox_step(aistree, frontier_node, state)
 
     def overapprox_step(self, aistree, frontier_node, state):
@@ -100,7 +99,6 @@ class AisInference(BSELFChecker):
             loopinfo=loop,
         ):
             n += 1
-            print(f"OVERAPPROXIMATED {n}", overapprox)
             if overapprox is None:
                 dbg("Overapproximation failed...")
                 continue
@@ -111,3 +109,7 @@ class AisInference(BSELFChecker):
                     or intersection(overapprox, current_ais).is_empty()
                 ), f"Overapproximation overlaps with current states: {overapprox}"
             aistree.add_set(overapprox, frontier_node)
+            print_stdout(
+                f"[loop {self.location}] new AIS: {self.aistree.all_states.as_assume_annotation()}",
+                color="blue",
+            )
