@@ -146,9 +146,7 @@ def type_size(m: ModuleRef, ty: str) -> Optional[int]:
     return None
 
 
-def get_sb_type(
-    m: ModuleRef, ty: str
-) -> Union[None, FloatType, BitVecType, PointerType]:
+def get_sb_type(m: ModuleRef, ty: str):
     if is_pointer_ty(ty):
         return type_mgr().pointer_ty()
 
@@ -168,6 +166,9 @@ def get_sb_type(
         return type_mgr().float_ty(ts)
     elif sty.startswith("i"):
         return type_mgr().bv_ty(ts)
+
+    if ty.is_struct:
+        return type_mgr().bytes_ty(type_size_in_bits(m, ty))
 
     assert False, f"Unsupported type: {ty}"
     return None

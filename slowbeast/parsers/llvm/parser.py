@@ -134,6 +134,9 @@ def parse_fun_ret_ty(
         return False, None
     if parts[0] == "void":
         return True, None
+    elif ty.is_struct:
+        sz = type_size_in_bits(m, parts[0])
+        return True, type_mgr.bytes_ty(sz)
     else:
         sz = type_size_in_bits(m, parts[0])
         if sz:
@@ -379,8 +382,8 @@ class Parser:
         opcode = inst.opcode
 
         # make sure both operands are bool if one is bool
-        if op1.type().is_bool() or op2.type().is_bool():
-            op1, op2 = bv_to_bool_else_id(op1), bv_to_bool_else_id(op2)
+       #if op1.type().is_bool() or op2.type().is_bool():
+       #    op1, op2 = bv_to_bool_else_id(op1), bv_to_bool_else_id(op2)
 
         if opcode == "and":
             I = BinaryOperation(BinaryOperation.AND, op1, op2, optypes)
