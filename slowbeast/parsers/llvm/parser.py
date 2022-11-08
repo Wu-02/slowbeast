@@ -260,10 +260,9 @@ class Parser:
             else:
                 N = num
 
-            I = BinaryOperation(BinaryOperation.MUL, op1, op2, optypes)
             M = BinaryOperation(
                 BinaryOperation.MUL,
-                concrete_value(tySize, SizeType),
+                concrete_value(tySize, SizeType), N,
                 [SizeType, N.type()],
             )
             A = Alloc(M)
