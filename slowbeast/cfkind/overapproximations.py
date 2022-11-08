@@ -710,38 +710,6 @@ class LiteralOverapproximationData:
         self.loop_poststates = loop_poststates
 
 
-def break_eqs(expr):
-    EM = global_expr_mgr()
-    clauses = []
-
-    def break_eq(c):
-        l, r = c.children()
-        ret = []
-        # if not const_only or (dom_is_concrete(l) or dom_is_concrete(r)):
-        for x in EM.Le(l, r), EM.Le(r, l):
-            if not x.is_concrete():
-                ret.append(x)
-        return ret
-        # return [c]
-
-    # break equalities that have a constant on one side,
-    # so that we can generalize them
-    for c in expr.children():
-        if c.is_not():
-            d = next(c.children())
-            if d.is_eq():
-                cls = break_eq(d)
-                clauses.append(EM.disjunction(*(EM.Not(x) for x in cls)) if cls else c)
-            else:
-                clauses.append(c)
-        elif c.is_eq():
-            clauses.extend(break_eq(c))
-        else:
-            clauses.append(c)
-
-    return clauses
-
-
 def is_overapprox_of(A, B: StatesSet) -> bool:
     """Return true if B is overapproximation of A"""
     return intersection(complement(B), A).is_empty()

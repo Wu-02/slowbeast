@@ -82,6 +82,10 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
             return newclauses
         return clauses
 
+    def check_literal(self, lit, ldata) -> bool:
+        print("Checking literal ", lit)
+        return super().check_literal(lit, ldata)
+
     def states_are_acyclic(self, clauses, assumptions):
         print("States are not acyclic: ", clauses, assumptions)
         return False
