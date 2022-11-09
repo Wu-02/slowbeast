@@ -22,21 +22,8 @@ from .value import Value
 from ..ir.instruction import FpOp
 
 
-# def float_to_bv(x):
-#     if bw == 32:
-#         d = (
-#             unpack("I", pack("f", x.value()))
-#             if unsigned
-#             else unpack("i", pack("f", x.value()))
-#         )[0]
-#     else:
-#         assert bw == 64, f"{x}, bw: {bw}"
-#         d = (
-#             unpack("Q", pack("d", x.value()))
-#             if unsigned
-#             else unpack("q", pack("d", x.value()))
-#         )[0]
-#     return d
+def concrete_float_val_to_bytes(x):
+    return [b for b in x.tobytes()]
 
 
 class ConcreteFloat(ConcreteVal):

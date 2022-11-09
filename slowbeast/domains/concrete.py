@@ -5,14 +5,17 @@ from numpy.core import float_
 
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.concrete_bool import ConcreteBoolDomain
-from slowbeast.domains.concrete_bytes import ConcreteBytesDomain, ConcreteBytes
-from slowbeast.domains.concrete_floats import ConcreteFloat, ConcreteFloatsDomain
+from slowbeast.domains.concrete_floats import (
+    ConcreteFloat,
+    ConcreteFloatsDomain,
+    concrete_float_val_to_bytes,
+)
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import Type
 from .concrete_bitvec import (
-    to_bv,
     ConcreteBitVecDomain,
 )
+from .concrete_bytes import ConcreteBytes, ConcreteBytesDomain
 from .domain import Domain
 from .value import Value
 
@@ -90,7 +93,7 @@ def get_bv_bytes_domain_checked(a: Value, b: Value):
 
 def lower_bytes(x):
     if isinstance(x, ConcreteBytes) and x.bitwidth() <= 64:
-        return ConcreteBitVec(x.value(), x.bitwidth())
+        x.to_bv()
     return x
 
 
@@ -181,7 +184,7 @@ class ConcreteDomain(Domain):
             return ConcreteBitVec(1 if a.value() != 0 else 0, bw)
         if a.is_bytes():
             if ty.is_bv():
-                return ConcreteBitVec(a.value(), ty)
+                return a.to_bv()
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
         if a.is_bv():
@@ -220,8 +223,13 @@ class ConcreteDomain(Domain):
         elif a.is_float():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(a.value(), bw), bw)
-            elif ty.is_bv():
-                return ConcreteBitVec(to_bv(a), bw)
+            elif ty.is_bytes():
+                return ConcreteBytes(
+                    [
+                        ConcreteBitVec(val, 8)
+                        for val in concrete_float_val_to_bytes(a.value())
+                    ]
+                )
         return None  # unsupported conversion
 
     @staticmethod
@@ -267,7 +275,7 @@ class ConcreteDomain(Domain):
         return get_any_domain(a).Abs(a)
 
     @staticmethod
-    def FpOp(op, val: Value, val2: Value) -> Union[ConcreteBool, ConcreteBitVec]:
+    def FpOp(op, val: Value, val2: Value):
         return ConcreteFloatsDomain.FpOp(op, val, val2)
 
     ##

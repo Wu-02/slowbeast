@@ -1,15 +1,19 @@
-from typing import Type, Union
 from functools import reduce
 from operator import add
+from typing import Union
 
-from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
-from slowbeast.ir.types import type_mgr, BytesType
+from slowbeast.domains.concrete_value import ConcreteBool, ConcreteVal
+from slowbeast.ir.types import BytesType, type_mgr
 from .concrete_bitvec import ConcreteBitVec, ConcreteBitVecDomain
 from .domain import Domain
 from .value import Value
 
 
-def concat_to_bv(values: list):
+def int_to_bytes(n):
+    return [b for b in bytes(n)]
+
+
+def to_bv(values: list):
     l = len(values)
     if l == 1:
         return values[0]
@@ -22,22 +26,23 @@ def concat_to_bv(values: list):
     return val
 
 
-def bv_to_bytes(n):
-    return [b for b in bytes(n)]
-
-
 class ConcreteBytes(ConcreteVal):
     """
-    A sequence of concrete bytes. We represent them as Python int, so they are basically the same as ConcreteBitVec right now.
+    A sequence of concrete bitvectors of length 8.
     """
 
     def __init__(self, values: list) -> None:
         assert isinstance(values, list), values
+        assert all((a.bitwidth() == 8 for a in values)), values
+        assert all((isinstance(a, ConcreteBitVec) for a in values)), values
         ty = type_mgr().bytes_ty(len(values))
         super().__init__(values, ty)
 
+    def is_symbolic(self):
+        return any((v.is_symbolic() for v in self.value()))
+
     def to_bv(self):
-        return ConcreteBitVec(concat_to_bv(self.value()), 8 * len(self.value()))
+        return ConcreteBitVecDomain.Concat(*self.value())
 
 
 def _check_args(a, b):
@@ -53,7 +58,7 @@ class ConcreteBytesDomain(Domain):
     and computing the operations modulo.
     """
 
-    def get_value_cls(self) -> Type[ConcreteBytes]:
+    def get_value_cls(self):
         """
         Get the class of values managed by this domain
         """
@@ -80,8 +85,11 @@ class ConcreteBytesDomain(Domain):
         assert isinstance(start, int)
         assert isinstance(end, int)
         if start % 8 != 0:
+            # TODO: we could do this better...
             return ConcreteBytes(
-                bv_to_bytes(ConcreteBitVecDomain.Extract(a.to_bv(), start, end).value())
+                int_to_bytes(
+                    ConcreteBitVecDomain.Extract(to_bv(a.value()), start, end).value()
+                )
             )
         overflow = end % 8
         bstart, bend = (start / 8), int(end / 8)
@@ -99,18 +107,15 @@ class ConcreteBytesDomain(Domain):
 
     @staticmethod
     def And(a: Value, b: Value) -> ConcreteBytes:
-        assert isinstance(a, ConcreteBytes) and isinstance(b, ConcreteBytes)
-        assert a.type() == b.type(), f"{a}, {b}"
+        _check_args(a, b)
         return ConcreteBytes([a & b for a, b in zip(a.value(), b.value())])
 
     @staticmethod
     def Or(a: Value, b: Value) -> ConcreteBytes:
-        assert isinstance(a, ConcreteBytes) and isinstance(b, ConcreteBytes)
-        assert a.type() == b.type(), f"{a}, {b}"
+        _check_args(a, b)
         return ConcreteBytes([a | b for a, b in zip(a.value(), b.value())])
 
     @staticmethod
     def Xor(a: Value, b: Value) -> ConcreteBytes:
-        assert isinstance(a, ConcreteBytes) and isinstance(b, ConcreteBytes)
-        assert a.type() == b.type(), f"{a}, {b}"
+        _check_args(a, b)
         return ConcreteBytes([a ^ b for a, b in zip(a.value(), b.value())])

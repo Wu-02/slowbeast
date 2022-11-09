@@ -1,9 +1,11 @@
 from typing import Union
 
 from slowbeast.domains.concrete import ConcreteDomain
+from slowbeast.domains.concrete_bytes import ConcreteBytes
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.symbolic import SymbolicDomain
+from slowbeast.domains.symbolic_bytes import SymbolicBytes
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, type_mgr
 from slowbeast.util.debugging import FIXME
@@ -105,6 +107,17 @@ class ExpressionManager:
 
     def symbolic_bool(self, name: str):
         return self.symbolic_value(name, type_mgr().bool_ty())
+
+    def bytes(self, values: list):
+        """
+        Create and return BytesType() value
+        """
+        assert isinstance(values, list), values
+        assert all((v.is_bv() for v in values)), values
+        if all((v.is_concrete() for v in values)):
+            return ConcreteBytes(values)
+        lift = self.lift
+        return SymbolicBytes([lift(v) for v in values])
 
     def substitute(self, expr, *vals) -> Union[ConcreteVal, Expr]:
         if isinstance(expr, ConcreteVal):

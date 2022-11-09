@@ -1,9 +1,8 @@
-from typing import Union, List, Tuple, Optional
+from typing import Union, Tuple, Optional
 
 from slowbeast.core.errors import MemError
 from slowbeast.core.memoryobject import MemoryObject as CoreMO
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
-from slowbeast.domains.concrete_bytes import ConcreteBytes
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.value import Value
@@ -12,39 +11,26 @@ from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
 
 
-def get_byte(EM, x, bw, i: int):
+def get_byte(EM, x, i: int):
     off = 8 * i
     b = EM.Extract(x, off, off + 7)
     assert b.bitwidth() == 8
     return b
 
 
-def to_byte(x):
-    assert x.bitwidth() == 8
-    if isinstance(x, ConcreteBytes):
-        return x
-    if isinstance(x, ConcreteBitVec):
-        return ConcreteBytes(x.value(), 1)
-    return x
-
-
-def write_bytes(offval, values, size, x: Union[Expr, Value]) -> Optional[MemError]:
-    EM = global_expr_mgr()
+def write_bytes(values: list, offval, x: Union[Expr, Value]) -> Optional[MemError]:
+    """
+    Write value "x" at offval + offval + size(x) indices of values list
+    """
+    expr_mgr = global_expr_mgr()
     bw = x.bytewidth()
-    if not x.is_bv():
-        # rename to Cast and Cast to ReinterpretCast
-        newx = EM.BitCast(x, type_mgr().bv_ty(8 * bw))
-        if newx is None:
-            return MemError(
-                MemError.UNSUPPORTED, f"Cast of {x} to i{bw} is unsupported"
-            )
-        x = newx
-    n = 0
-    for i in range(offval, offval + bw):
-        b = get_byte(EM, x, bw, n)
-        values[i] = b
-        n += 1
-    return None
+    # first cast the value to bytes
+    x_to_bytes = expr_mgr.BitCast(x, type_mgr().bytes_ty(bw))
+    if x_to_bytes is None:
+        return MemError(MemError.UNSUPPORTED, f"Cast of {x} to i{bw} is unsupported")
+    xvalues = x_to_bytes.value()
+    for n, i in enumerate(range(offval, offval + bw)):
+        values[i] = xvalues[n]
 
 
 def read_bytes(values: list, offval, size, bts, zeroed):
@@ -55,12 +41,10 @@ def read_bytes(values: list, offval, size, bts, zeroed):
     if zeroed:
         c = offval + bts - 1
         # just make Extract return BytesType and it should work well then
-        val = expr_mgr.Concat(
-            *(
-                values[c - i] if values[c - i] else ConcreteBytes(0, 1)
-                for i in range(0, bts)
-            )
-        )
+        vals = [
+            values[c - i] if values[c - i] is not None else ConcreteBitVec(0, 8)
+            for i in range(0, bts)
+        ]
     else:
         if offval + bts > len(values):
             return None, MemError(
@@ -69,30 +53,23 @@ def read_bytes(values: list, offval, size, bts, zeroed):
                 f"from object with {len(values)} initialized "
                 "values.",
             )
-        if not all(values[i] for i in range(offval, offval + bts)):
+        if any(values[i] is None for i in range(offval, offval + bts)):
             return None, MemError(MemError.UNINIT_READ, "Read of uninitialized byte")
         c = offval + bts - 1
-        # just make Extract return BytesType and it should work well then
-        val = expr_mgr.Concat(*(to_byte(values[c - i]) for i in range(0, bts)))
-    return val, None
+        vals = [values[c - i] for i in range(0, bts)]
+
+    return expr_mgr.bytes(vals), None
 
 
-def mo_to_bytes(values, size) -> Tuple[Optional[List[None]], Optional[MemError]]:
+def mo_to_bytes(values, size):
     dbgv("Promoting MO to bytes", color="gray")
+    assert isinstance(values, dict), values
     newvalues = [None] * size
     for o, val in values.items():
-        tmp = write_bytes(o, newvalues, size, val)
+        tmp = write_bytes(newvalues, o, val)
         if tmp is not None:
             return None, tmp
-    # if __debug__:
-    #    rval, err = read_bytes(newvalues, o, size, val.bytewidth(), False)
-    #    assert err is None
-    #    crval = global_expr_mgr().Cast(rval, val.type())
-    #    assert val == crval, f"{cval} ({rval}) != {val}"
     return newvalues, None
-
-
-MAX_BYTES_SIZE = 64
 
 
 class MemoryObject(CoreMO):
@@ -142,22 +119,12 @@ class MemoryObject(CoreMO):
         values: dict = self._values
         val = values.get(offval)
         if val is None or val.bytewidth() != bts:
-            if size <= MAX_BYTES_SIZE:
-                bytevalues, err = mo_to_bytes(values, size)
-                if err:
-                    return None, err
-                self._values = bytevalues
-                assert isinstance(self._values, list)
-                return read_bytes(bytevalues, offval, size, bts, self._zeroed)
-
-            if self._zeroed:
-                return ConcreteBytes(0, bts), None
-            return None, MemError(
-                MemError.UNINIT_READ,
-                "uninitialized or unaligned read (the latter is unsupported)\n"
-                f"Reading bytes {offval}-{offval + bts - 1} from obj {self._id} with contents:\n"
-                f"{values}",
-            )
+            bytevalues, err = mo_to_bytes(values, size)
+            if err:
+                return None, err
+            self._values = bytevalues
+            assert isinstance(self._values, list)
+            return read_bytes(bytevalues, offval, size, bts, self._zeroed)
 
         # FIXME: make me return BytesType objects (a sequence of bytes)
         return val, None

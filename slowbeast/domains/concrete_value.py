@@ -10,7 +10,7 @@ class ConcreteVal(Value):
 
     KIND = CONCRETE_DOMAIN_KIND
 
-    def __init__(self, c: Union[bool, int, float], ty: Type) -> None:
+    def __init__(self, c: Union[bool, int, float, list], ty: Type) -> None:
         assert isinstance(ty, Type), f"Invalid type: {ty}"
         assert not isinstance(ty, PointerType), f"Invalid type: {ty}"
         super().__init__(c, ty)
