@@ -1,43 +1,29 @@
-from struct import unpack
 from typing import Type, Union
+from functools import reduce
+from operator import add
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import type_mgr, BytesType
+from .concrete_bitvec import ConcreteBitVec, ConcreteBitVecDomain
 from .domain import Domain
 from .value import Value
 
 
-def to_unsigned(x: int, bw: int) -> int:
-    """Get unsigned value for signed in 2's complement"""
-    assert not isinstance(x, float), x
-    if x >= 0:
-        return x
-    return x + (1 << bw)
+def concat_to_bv(values: list):
+    l = len(values)
+    if l == 1:
+        return values[0]
+    bw = 0
+    val = 0
+    for i in range(1, l + 1):
+        a = values[l - i]
+        val |= a << bw
+        bw += 8
+    return val
 
 
-def to_signed(x: int, bw: int) -> int:
-    """Get signed value for number in 2's complement"""
-    if x < (1 << (bw - 1)):
-        return x
-    return x - (1 << bw)
-
-
-def to_bv(x, unsigned: bool = True):
-    bw = x.bitwidth()
-    assert not x.is_float(), x
-    if unsigned:
-        # signed/unsigned conversion
-        uint = to_unsigned(x.value(), bw)
-        return (
-            unpack(">q", uint.to_bytes(8, "big"))
-            if bw == 64
-            else unpack(">i", uint.to_bytes(4, "big"))
-        )[0]
-    return x.value()
-
-
-def wrap_to_bw(x, bw: int):
-    return x % (1 << bw)
+def bv_to_bytes(n):
+    return [b for b in bytes(n)]
 
 
 class ConcreteBytes(ConcreteVal):
@@ -45,12 +31,13 @@ class ConcreteBytes(ConcreteVal):
     A sequence of concrete bytes. We represent them as Python int, so they are basically the same as ConcreteBitVec right now.
     """
 
-    def __init__(self, n: int, byteswidth: Union[int, BytesType]) -> None:
-        assert isinstance(n, int), n
-        if not isinstance(byteswidth, BytesType):
-            assert isinstance(byteswidth, int), byteswidth
-            byteswidth = type_mgr().bytes_ty(byteswidth)
-        super().__init__(n, byteswidth)
+    def __init__(self, values: list) -> None:
+        assert isinstance(values, list), values
+        ty = type_mgr().bytes_ty(len(values))
+        super().__init__(values, ty)
+
+    def to_bv(self):
+        return ConcreteBitVec(concat_to_bv(self.value()), 8 * len(self.value()))
 
 
 def _check_args(a, b):
@@ -73,212 +60,57 @@ class ConcreteBytesDomain(Domain):
         return ConcreteBytes
 
     @staticmethod
-    def get_value(c: int, bw: Union[int, BytesType]) -> ConcreteBytes:
-        return ConcreteBytes(c, bw)
-
-    ## Relational operations
-    @staticmethod
-    def Le(a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False) -> ConcreteBool:
-        _check_args(a, b)
-        aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) <= to_unsigned(bval, bw))
-        return ConcreteBool(aval <= bval)
-
-    @staticmethod
-    def Lt(a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False) -> ConcreteBool:
-        _check_args(a, b)
-        aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) < to_unsigned(bval, bw))
-        return ConcreteBool(aval < bval)
-
-    @staticmethod
-    def Ge(a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False) -> ConcreteBool:
-        _check_args(a, b)
-        aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) >= to_unsigned(bval, bw))
-        return ConcreteBool(aval >= bval)
-
-    @staticmethod
-    def Gt(a: ConcreteBytes, b: ConcreteBytes, unsigned: bool = False) -> ConcreteBool:
-        _check_args(a, b)
-        aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) > to_unsigned(bval, bw))
-        return ConcreteBool(aval > bval)
+    def get_value(values: list, bw: Union[int, BytesType]) -> ConcreteBytes:
+        assert 8 * len(values) == bw
+        return ConcreteBytes(values)
 
     @staticmethod
     def Eq(a: Value, b: Value, unsigned: bool = False) -> ConcreteBool:
         _check_args(a, b)
-        aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) == to_unsigned(bval, bw))
-        return ConcreteBool(aval == bval)
+        return ConcreteBool(a.value() == b.value())
 
     @staticmethod
     def Ne(a: Value, b: Value, unsigned: bool = False) -> ConcreteBool:
         _check_args(a, b)
-        aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) != to_unsigned(bval, bw))
-        return ConcreteBool(aval != bval)
-
-    ##
-    # Arithmetic operations
-    @staticmethod
-    def Add(a: Value, b: Value, isfloat: bool = False) -> Value:
-        assert not isfloat
-        assert isinstance(a, ConcreteBytes), a
-        assert isinstance(b, ConcreteBytes), b
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        bw = a.bitwidth()
-        assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
-        aval, bval = to_bv(a), to_bv(b)
-        return ConcreteBytes(wrap_to_bw(aval + bval, bw), bw)
-
-    @staticmethod
-    def Sub(a: Value, b: Value, isfloat: bool = False) -> Value:
-        assert isinstance(a, ConcreteBytes), a
-        assert isinstance(b, ConcreteBytes), b
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        bw = a.bitwidth()
-        assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
-        aval, bval = to_bv(a), to_bv(b)
-        return ConcreteBytes(wrap_to_bw(aval - bval, bw), bw)
-
-    @staticmethod
-    def Mul(a: ConcreteBytes, b: ConcreteBytes, isfloat: bool = False) -> ConcreteBytes:
-        assert isinstance(a, ConcreteBytes), a
-        assert isinstance(b, ConcreteBytes), b
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        bw = a.bitwidth()
-        assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
-        aval, bval = to_bv(a), to_bv(b)
-        return ConcreteBytes(wrap_to_bw(aval * bval, bw), bw)
-
-    @staticmethod
-    def Div(
-        a: ConcreteBytes,
-        b: ConcreteBytes,
-        unsigned: bool = False,
-    ) -> ConcreteBytes:
-        assert isinstance(a, ConcreteBytes), a
-        assert isinstance(b, ConcreteBytes), b
-        assert a.type() == b.type(), f"{a.type()} != {b.type()}"
-        bw = a.bitwidth()
-        assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
-        aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        return ConcreteBytes(wrap_to_bw(int(aval / bval), bw), bw)
-
-    @staticmethod
-    def Extend(a: Value, bw: int, unsigned: bool) -> Value:
-        assert isinstance(a, ConcreteBytes), f"{a} {type(a)}"
-        assert isinstance(bw, int), bw
-        assert isinstance(unsigned, bool), unsigned
-        assert a.bitwidth() < bw, f"Invalid extend argument: {bw}"
-        aval = to_bv(a, unsigned)
-        return ConcreteBytes(aval, bw)
-
-    @staticmethod
-    def Shl(a: Value, b: Value) -> Value:
-        assert isinstance(a, ConcreteBytes), a
-        assert isinstance(b, ConcreteBytes), b
-        bw = a.bitwidth()
-        assert b.value() < bw, "Invalid shift"
-        return ConcreteBytes(to_bv(a) << b.value(), bw)
-
-    @staticmethod
-    def AShr(a: Value, b: Value) -> Value:
-        assert isinstance(a, ConcreteBytes), a
-        assert isinstance(b, ConcreteBytes), b
-        bw = a.bitwidth()
-        assert b.value() < bw, "Invalid shift"
-        return ConcreteBytes(to_bv(a) >> b.value(), bw)
-
-    @staticmethod
-    def LShr(a: Value, b: Value) -> Value:
-        assert isinstance(a, ConcreteBytes), a
-        assert isinstance(b, ConcreteBytes), b
-        assert b.value() < a.bitwidth(), "Invalid shift"
-        val = to_bv(a)
-        bw = a.bitwidth()
-        return ConcreteBytes(
-            to_bv(a) >> b.value() if val >= 0 else (val + (1 << bw)) >> b.value(),
-            bw,
-        )
+        return ConcreteBool(a.value() != b.value())
 
     @staticmethod
     def Extract(a: Value, start: int, end: int) -> Value:
         assert isinstance(a, ConcreteBytes)
         assert isinstance(start, int)
         assert isinstance(end, int)
-        bitsnum = end - start + 1
-        return ConcreteBytes((to_bv(a) >> start) & ((1 << (bitsnum)) - 1), bitsnum)
+        if start % 8 != 0:
+            return ConcreteBytes(
+                bv_to_bytes(ConcreteBitVecDomain.Extract(a.to_bv(), start, end).value())
+            )
+        overflow = end % 8
+        bstart, bend = (start / 8), int(end / 8)
+        values = a.value()[bstart:bend]
+        if overflow > 0:
+            values.append(a.value()[bend + 1] & ((1 << overflow) - 1))
+        return ConcreteBytes(values)
 
     @staticmethod
     def Concat(*args) -> Value:
         l = len(args)
         assert l > 0, args
         assert all(map(lambda a: isinstance(a, ConcreteBytes), args)), args
-
-        if l == 1:
-            return args[0]
-        bw = 0
-        val = 0
-        for i in range(1, l + 1):
-            a = args[l - i]
-            val |= a.value() << bw
-            bw += a.bitwidth()
-        return ConcreteBytes(val, int(bw / 8))
-
-    @staticmethod
-    def Rem(a: Value, b: Value, unsigned: bool = False) -> Value:
-        assert isinstance(a, ConcreteBytes), a
-        assert isinstance(b, ConcreteBytes), b
-        assert b.value() != 0, "Invalid remainder"
-        bw = a.bitwidth()
-        if unsigned:
-            return ConcreteBytes(
-                to_unsigned(to_bv(a), bw) % to_unsigned(to_bv(b), b.bitwidth()),
-                bw,
-            )
-        return ConcreteBytes(a.value() % b.value(), bw)
-
-    @staticmethod
-    def Neg(a: Value) -> Value:
-        """Return the negated number"""
-        assert isinstance(a, ConcreteBytes), a
-        ty = a.type()
-        bw = ty.bitwidth()
-        return ConcreteBytes(wrap_to_bw(-a.value(), bw), bw)
-
-    @staticmethod
-    def Abs(a: Value) -> Value:
-        assert isinstance(a, ConcreteBytes), a
-        return ConcreteBytes(abs(a.value()), a.bitwidth())
+        return ConcreteBytes(reduce(add, args, []))
 
     @staticmethod
     def And(a: Value, b: Value) -> ConcreteBytes:
         assert isinstance(a, ConcreteBytes) and isinstance(b, ConcreteBytes)
         assert a.type() == b.type(), f"{a}, {b}"
-        return ConcreteBytes(a.value() & b.value(), a.bitwidth())
+        return ConcreteBytes([a & b for a, b in zip(a.value(), b.value())])
 
     @staticmethod
     def Or(a: Value, b: Value) -> ConcreteBytes:
         assert isinstance(a, ConcreteBytes) and isinstance(b, ConcreteBytes)
         assert a.type() == b.type(), f"{a}, {b}"
-        return ConcreteBytes(a.value() | b.value(), a.bitwidth())
+        return ConcreteBytes([a | b for a, b in zip(a.value(), b.value())])
 
     @staticmethod
     def Xor(a: Value, b: Value) -> ConcreteBytes:
         assert isinstance(a, ConcreteBytes) and isinstance(b, ConcreteBytes)
         assert a.type() == b.type(), f"{a}, {b}"
-        return ConcreteBytes(a.value() ^ b.value(), a.bitwidth())
+        return ConcreteBytes([a ^ b for a, b in zip(a.value(), b.value())])
