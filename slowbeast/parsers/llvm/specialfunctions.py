@@ -8,11 +8,13 @@ from slowbeast.ir.instruction import (
     FpOp,
     Cast,
     BinaryOperation,
+    Extend,
 )
 from slowbeast.ir.types import get_size_type_size, type_mgr
 from slowbeast.util.debugging import print_stderr
 from .utils import get_llvm_operands, type_size_in_bits, to_float_ty, get_sb_type
 from ...domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
+from ...domains.concrete_floats import ConcreteFloat
 
 concrete_value = ConcreteDomain.get_value
 
@@ -98,29 +100,6 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
     elif no_overflow and fun.startswith("__ubsan_handle"):
         A = Assert(ConstantFalse, "signed integer overflow")
         return A, [A]
-    elif fun == "__INSTR_check_assume":
-        operands = get_llvm_operands(inst)
-        cond = parser.operand(operands[0])
-        optypes = [get_sb_type(module, op.type) for op in operands]
-        C = Cmp(
-            Cmp.NE,
-            cond,
-            concrete_value(0, type_size_in_bits(module, operands[0].type)),
-            optypes,
-        )
-        A = Assert(C)
-        return A, [C, A]
-    elif fun == "__INSTR_check_nontermination_header":
-        return None, []
-    elif fun == "__INSTR_fail":
-        A = Assert(ConstantFalse)
-        return A, [A]
-    elif fun == "__INSTR_check_nontermination":
-        operands = get_llvm_operands(inst)
-        cond = parser.operand(operands[0])
-        C = Cmp(Cmp.NE, cond, ConstantTrue)
-        A = Assert(C)
-        return A, [C, A]
     elif fun == "malloc":
         operands = get_llvm_operands(inst)
         assert (
@@ -147,34 +126,41 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         return ADD, [MUL, ADD]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
-        O = FpOp(FpOp.IS_INF, val)
+        O = FpOp(FpOp.IS_INF, val, get_sb_type(module, inst.operands[0].type))
         P = Extend(
             O,
-            concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()),
+            type_size_in_bits(module, inst.type),
             True,  # unsigned
+            [get_sb_type(module, inst.operands[0].type)],
         )
         return P, [O, P]
     elif fun in "nan":
-        I = Cast(concrete_value(float("NaN"), 64), type_mgr().float_ty(64))
+        I = Cast(
+            ConcreteFloat("NaN", 64),
+            type_mgr().float_ty(64),
+            True,
+            [get_sb_type(module, inst.operands[0].type)],
+        )
         return I, [I]
     elif fun in ("__isnan", "__isnanf", "__isnanfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
-        O = FpOp(FpOp.IS_NAN, val)
+        O = FpOp(FpOp.IS_NAN, val, get_sb_type(module, inst.operands[0].type))
         # the functions return int
         P = Extend(
             O,
-            concrete_value(type_size_in_bits(module, inst.type), get_size_type_size()),
+            type_size_in_bits(module, inst.type),
             True,  # unsigned
+            [get_sb_type(module, inst.operands[0].type)],
         )
         return P, [O, P]
     elif fun in ("__fpclassify", "__fpclassifyf", "__fpclassifyl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
-        O = FpOp(FpOp.FPCLASSIFY, val)
+        O = FpOp(FpOp.FPCLASSIFY, val, get_sb_type(module, inst.operands[0].type))
         # the functions return int
         return O, [O]
     elif fun in ("__signbit", "__signbitf", "__signbitl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
-        O = FpOp(FpOp.SIGNBIT, val)
+        O = FpOp(FpOp.SIGNBIT, val, get_sb_type(module, inst.operands[0].type))
         # the functions return int
         return O, [O]
     elif fun == "fesetround":
