@@ -8,6 +8,7 @@ from z3 import (
     FPVal,
     Bool,
     FP,
+    is_bool
 )
 
 from slowbeast.domains.symbolic_helpers import (
@@ -124,6 +125,7 @@ class SymbolicDomain(Z3SymbolicDomain):
         """
         assert all((isinstance(a, Expr) for a in args))
         assert all((a.is_bool() for a in args))
+        assert all((is_bool(a.unwrap()) for a in args))
         return Expr(And(*(x.unwrap() for x in args)), type_mgr().bool_ty())
 
     @staticmethod
@@ -135,12 +137,14 @@ class SymbolicDomain(Z3SymbolicDomain):
         """
         assert all((isinstance(a, Expr) for a in args))
         assert all((a.is_bool() for a in args))
+        assert all((is_bool(a.unwrap()) for a in args))
         return Expr(Or(*(x.unwrap() for x in args)), type_mgr().bool_ty())
 
     @staticmethod
     def Ite(c: Expr, a, b) -> Expr:
         assert isinstance(c, Expr), c
         assert c.is_bool(), c
+        assert is_bool(c.unwrap()), c
         assert a.type() == b.type(), f"{a}, {b}"
         return Expr(If(c.unwrap(), a.unwrap(), b.unwrap()), a.type())
 

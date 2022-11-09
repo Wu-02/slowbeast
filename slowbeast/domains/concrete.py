@@ -103,7 +103,7 @@ class ConcreteDomain(Domain):
     """
 
     @staticmethod
-    def get_value(c: int, bw_or_ty: int) -> ConcreteVal:
+    def get_value(c: int, bw_or_ty: Union[Type, int]) -> ConcreteVal:
         if isinstance(bw_or_ty, int):
             bw = bw_or_ty
             if isinstance(c, bool):
