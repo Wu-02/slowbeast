@@ -364,11 +364,8 @@ class ExpressionManager:
         return opt(SymbolicDomain.Mul(lift(a), lift(b)))
 
     def Div(self, a, b: Value, unsigned: bool = False):
-        if isinstance(a, ConcreteVal):
-            if a.value() == 0:
-                return a
-            if isinstance(b, ConcreteVal):
-                return ConcreteDomain.Div(a, b, unsigned)
+        if isinstance(a, ConcreteVal) and isinstance(b, ConcreteVal):
+            return ConcreteDomain.Div(a, b, unsigned)
         lift = self.lift
         return opt(SymbolicDomain.Div(lift(a), lift(b), unsigned))
 

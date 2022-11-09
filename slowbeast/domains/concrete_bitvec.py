@@ -37,7 +37,7 @@ def to_bv(x, unsigned: bool = True):
             if bw == 64
             else unpack(">i", uint.to_bytes(4, "big"))
         )[0]
-    return x.value()
+    return to_signed(x.value(), bw)
 
 
 def wrap_to_bw(x, bw: int):
@@ -79,9 +79,6 @@ class ConcreteBitVecDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) <= to_unsigned(bval, bw))
         return ConcreteBool(aval <= bval)
 
     @staticmethod
@@ -93,9 +90,6 @@ class ConcreteBitVecDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) < to_unsigned(bval, bw))
         return ConcreteBool(aval < bval)
 
     @staticmethod
@@ -107,9 +101,6 @@ class ConcreteBitVecDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) >= to_unsigned(bval, bw))
         return ConcreteBool(aval >= bval)
 
     @staticmethod
@@ -121,9 +112,6 @@ class ConcreteBitVecDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) > to_unsigned(bval, bw))
         return ConcreteBool(aval > bval)
 
     @staticmethod
@@ -133,9 +121,6 @@ class ConcreteBitVecDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) == to_unsigned(bval, bw))
         return ConcreteBool(aval == bval)
 
     @staticmethod
@@ -145,9 +130,6 @@ class ConcreteBitVecDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         aval, bval = to_bv(a, unsigned), to_bv(b, unsigned)
-        if unsigned:
-            bw = a.bitwidth()
-            return ConcreteBool(to_unsigned(aval, bw) != to_unsigned(bval, bw))
         return ConcreteBool(aval != bval)
 
     ##

@@ -147,6 +147,18 @@ class ConcreteFloatsDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         bw = a.bitwidth()
         assert bw == b.bitwidth(), f"{a.bitwidth()} != {b.bitwidth()}"
+        aval, bval = a.value(), b.value()
+        if bval == 0:
+            # doing the divison works normally, but numpy warns about an error,
+            # so silence the warning this way
+            if aval == 0:
+                return ConcreteFloat("NaN", bw)
+            elif aval < 0:
+                return ConcreteFloat("-inf", bw)
+            elif aval > 0:
+                return ConcreteFloat("inf", bw)
+            else:
+                raise RuntimeError("Invalid value")
         return ConcreteFloat(a.unwrap() / b.unwrap(), bw)
 
     @staticmethod
