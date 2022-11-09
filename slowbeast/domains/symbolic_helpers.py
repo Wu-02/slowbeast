@@ -46,7 +46,7 @@ from z3 import (
     Z3_OP_SGEQ,
     Z3_OP_UGEQ,
     Z3_OP_SGT,
-    Z3_OP_UGT,
+    Z3_OP_UGT, BitVecNumRef, FPNumRef,
 )
 
 from slowbeast.domains.concrete import concrete_value
