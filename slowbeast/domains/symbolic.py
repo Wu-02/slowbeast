@@ -1,15 +1,6 @@
 from typing import Optional
 
-from z3 import (
-    And,
-    Or,
-    If,
-    BoolVal,
-    FPVal,
-    Bool,
-    FP,
-    is_bool
-)
+from z3 import And, Or, If, BoolVal, FPVal, Bool, FP, is_bool
 
 from slowbeast.domains.symbolic_helpers import (
     TRUE,

@@ -224,10 +224,10 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
                 ),
             )
             return Expr(expr, type_mgr().bv_ty(32))
-            if op == FpOp.SIGNBIT:
-                return Expr(
-                    If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))),
-                    type_mgr().bv_ty(32),
-                )
+        if op == FpOp.SIGNBIT:
+            return Expr(
+                If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))),
+                type_mgr().bv_ty(32),
+            )
 
         return None
