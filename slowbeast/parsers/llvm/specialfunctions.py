@@ -7,6 +7,7 @@ from slowbeast.ir.instruction import (
     Abs,
     FpOp,
     Cast,
+    BinaryOperation,
 )
 from slowbeast.ir.types import get_size_type_size, type_mgr
 from slowbeast.util.debugging import print_stderr
@@ -19,6 +20,8 @@ concrete_value = ConcreteDomain.get_value
 special_functions = [
     "llvm.fabs.f32",
     "llvm.fabs.f64",
+    "llvm.fmuladd.f32",
+    "llvm.fmuladd.f64",
     "fesetround",
     "nan",
     "__isnan",
@@ -135,6 +138,13 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
             [get_sb_type(module, operands[0].type)],
         )
         return A, [A]
+    elif fun.startswith("llvm.fmuladd."):
+        operands = get_llvm_operands(inst)
+        ops = [parser.operand(operands[i]) for i in range(0, 3)]
+        types = [get_sb_type(module, operands[i].type) for i in range(0, 3)]
+        MUL = BinaryOperation(BinaryOperation.MUL, ops[0], ops[1], types[:2])
+        ADD = BinaryOperation(BinaryOperation.ADD, MUL, ops[2], [MUL.type(), types[2]])
+        return ADD, [MUL, ADD]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
         O = FpOp(FpOp.IS_INF, val)

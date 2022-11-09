@@ -262,7 +262,8 @@ class Parser:
 
             M = BinaryOperation(
                 BinaryOperation.MUL,
-                concrete_value(tySize, SizeType), N,
+                concrete_value(tySize, SizeType),
+                N,
                 [SizeType, N.type()],
             )
             A = Alloc(M)
@@ -439,7 +440,11 @@ class Parser:
 
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for fneg"
-        I = Neg(to_float_ty(self.operand(operands[0])), fp=True)
+        I = Neg(
+            to_float_ty(self.operand(operands[0])),
+            get_sb_type(self.llvmmodule, inst.type),
+            [get_sb_type(self.llvmmodule, operands[0].type)],
+        )
         self._addMapping(inst, I)
         return [I]
 
