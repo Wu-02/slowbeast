@@ -47,7 +47,7 @@ def write_bytes(offval, values, size, x: Union[Expr, Value]) -> Optional[MemErro
     return None
 
 
-def read_bytes(values, offval, size, bts, zeroed):
+def read_bytes(values: list, offval, size, bts, zeroed):
     assert bts > 0, bts
     assert size > 0, size
     assert offval >= 0, offval
@@ -98,6 +98,9 @@ MAX_BYTES_SIZE = 64
 class MemoryObject(CoreMO):
     __slots__ = ()
 
+    def _is_bytes(self):
+        return isinstance(self._values, list)
+
     # FIXME: refactor
     def read(
         self, bts: int, off: Optional[ConcreteVal] = None
@@ -131,43 +134,29 @@ class MemoryObject(CoreMO):
                 MemError.OOB_ACCESS, f"Read {bts}B from object of size {size}"
             )
 
-        values = self._values
-        if isinstance(values, list):
-            return read_bytes(values, offval, size, bts, self._zeroed)
+        if self._is_bytes():
+            return read_bytes(self._values, offval, size, bts, self._zeroed)
+        return self.read_value(bts, offval, size)
 
+    def read_value(self, bts, offval, size):
+        values: dict = self._values
         val = values.get(offval)
-        if val is None:
+        if val is None or val.bytewidth() != bts:
             if size <= MAX_BYTES_SIZE:
-                values, err = mo_to_bytes(values, size)
+                bytevalues, err = mo_to_bytes(values, size)
                 if err:
                     return None, err
-                self._values = values
+                self._values = bytevalues
                 assert isinstance(self._values, list)
-                return read_bytes(values, offval, size, bts, self._zeroed)
+                return read_bytes(bytevalues, offval, size, bts, self._zeroed)
 
             if self._zeroed:
-                return ConcreteBitVec(0, bts * 8), None
+                return ConcreteBytes(0, bts), None
             return None, MemError(
                 MemError.UNINIT_READ,
                 "uninitialized or unaligned read (the latter is unsupported)\n"
                 f"Reading bytes {offval}-{offval + bts - 1} from obj {self._id} with contents:\n"
                 f"{values}",
-            )
-
-        valbw = val.bytewidth()
-        if valbw != bts:
-            if size <= MAX_BYTES_SIZE:
-                values, err = mo_to_bytes(values, size)
-                if err:
-                    return None, err
-                self._values = values
-                return read_bytes(values, offval, size, bts, self._zeroed)
-
-            return None, MemError(
-                MemError.UNSUPPORTED,
-                "Reading bytes from object defined by parts is unsupported atm: "
-                f"reading {bts} bytes from off {offval} where is value with "
-                f"{val.bytewidth()} bytes",
             )
 
         # FIXME: make me return BytesType objects (a sequence of bytes)
