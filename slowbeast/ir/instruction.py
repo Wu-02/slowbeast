@@ -667,14 +667,20 @@ class FpOp(ValueTypedInstruction):
     """Floating-point special operations"""
 
     # return bool
+    FIRST_OP = 1
     IS_INF = 1
     IS_NAN = 2
     SIGNBIT = 3
     # return int
-    FPCLASSIFY = 4
+    FPCLASSIFY = 21
     # return float
-    MIN = 5
-    MAX = 6
+    MIN = 31
+    MAX = 32
+    ROUND = 33
+    FLOOR = 34
+    CEIL = 35
+    TRUNC = 36
+    LAST_OP = 36
 
     def op_to_str(op) -> str:
         if op == FpOp.IS_INF:
@@ -689,16 +695,25 @@ class FpOp(ValueTypedInstruction):
             return "min"
         if op == FpOp.MAX:
             return "max"
+        if op == FpOp.ROUND:
+            return "round"
+        if op == FpOp.FLOOR:
+            return "floor"
+        if op == FpOp.CEIL:
+            return "ceil"
+        if op == FpOp.TRUNC:
+            return "trunc"
         return "uknwn"
 
     def __init__(self, fp_op, vals, optypes) -> None:
-        assert FpOp.IS_INF <= fp_op <= FpOp.MAX
+        assert FpOp.FIRST_OP <= fp_op <= FpOp.LAST_OP
         if FpOp.IS_INF <= fp_op <= FpOp.IS_NAN:
             retty = type_mgr().bool_ty()
         elif FpOp.FPCLASSIFY == fp_op:
             retty = type_mgr().bv_ty(32)
-        elif FpOp.MIN <= fp_op <= FpOp.MAX:
-            retty = type_mgr().bool_ty()
+        elif FpOp.MIN <= fp_op <= FpOp.TRUNC:
+            assert all(v.type() == vals[0].type() for v in vals), vals
+            retty = vals[0].type()
         else:
             raise RuntimeError("Invalid FpOp operation")
 

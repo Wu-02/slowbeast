@@ -26,6 +26,14 @@ special_functions = [
     "llvm.fmuladd.f64",
     "llvm.minnum.f32",
     "llvm.minnum.f64",
+    "llvm.round.f32",
+    "llvm.round.f64",
+    "llvm.floor.f32",
+    "llvm.floor.f64",
+    "llvm.ceil.f32",
+    "llvm.ceil.f64",
+    "llvm.trunc.f32",
+    "llvm.trunc.f64",
     "fesetround",
     "nan",
     "__isnan",
@@ -132,6 +140,30 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         types = [get_sb_type(module, operands[i].type) for i in range(0, 2)]
         MIN = FpOp(FpOp.MIN, ops, types)
         return MIN, [MIN]
+    elif fun.startswith("llvm.round."):
+        operands = get_llvm_operands(inst)
+        ops = [parser.operand(operands[i]) for i in range(0, 1)]
+        types = [get_sb_type(module, operands[i].type) for i in range(0, 1)]
+        ROUND = FpOp(FpOp.ROUND, ops, types)
+        return ROUND, [ROUND]
+    elif fun.startswith("llvm.floor."):
+        operands = get_llvm_operands(inst)
+        ops = [parser.operand(operands[i]) for i in range(0, 1)]
+        types = [get_sb_type(module, operands[i].type) for i in range(0, 1)]
+        fpop = FpOp(FpOp.FLOOR, ops, types)
+        return fpop, [fpop]
+    elif fun.startswith("llvm.ceil."):
+        operands = get_llvm_operands(inst)
+        ops = [parser.operand(operands[i]) for i in range(0, 1)]
+        types = [get_sb_type(module, operands[i].type) for i in range(0, 1)]
+        fpop = FpOp(FpOp.CEIL, ops, types)
+        return fpop, [fpop]
+    elif fun.startswith("llvm.trunc."):
+        operands = get_llvm_operands(inst)
+        ops = [parser.operand(operands[i]) for i in range(0, 1)]
+        types = [get_sb_type(module, operands[i].type) for i in range(0, 1)]
+        fpop = FpOp(FpOp.TRUNC, ops, types)
+        return fpop, [fpop]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
         O = FpOp(FpOp.IS_INF, [val], [get_sb_type(module, inst.operands[0].type)])

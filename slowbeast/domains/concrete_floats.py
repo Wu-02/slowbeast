@@ -1,7 +1,20 @@
-from numpy import float16, float32, float64, isnan, isinf, isfinite
+from typing import Union
+
+from numpy import (
+    float16,
+    float32,
+    float64,
+    isnan,
+    isinf,
+    isfinite,
+    round,
+    floor,
+    ceil,
+    trunc,
+)
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
-from slowbeast.ir.types import type_mgr, FloatType
+from slowbeast.ir.types import type_mgr, FloatType, Type
 from slowbeast.util.debugging import FIXME
 from .concrete_bitvec import ConcreteBitVec
 from .domain import Domain
@@ -27,7 +40,7 @@ from ..ir.instruction import FpOp
 
 
 class ConcreteFloat(ConcreteVal):
-    def __init__(self, n, bw: int) -> None:
+    def __init__(self, n, bw: Union[Type, int]) -> None:
         if isinstance(bw, FloatType):
             ty = bw
             bw = bw.bitwidth()
@@ -187,6 +200,18 @@ class ConcreteFloatsDomain(Domain):
         if op == FpOp.SIGNBIT:
             # FIXME! gosh this is ugly...
             return ConcreteBitVec(1 if str(val.value())[0] == "-" else 0, 32)
+        if op == FpOp.ROUND:
+            assert val2 is None, val2
+            return ConcreteFloat(round(val.value()), val.type())
+        if op == FpOp.FLOOR:
+            assert val2 is None, val2
+            return ConcreteFloat(floor(val.value()), val.type())
+        if op == FpOp.CEIL:
+            assert val2 is None, val2
+            return ConcreteFloat(ceil(val.value()), val.type())
+        if op == FpOp.TRUNC:
+            assert val2 is None, val2
+            return ConcreteFloat(trunc(val.value()), val.type())
         if op == FpOp.MIN:
             assert val2 is not None
             a, b = val.value(), val2.value()
