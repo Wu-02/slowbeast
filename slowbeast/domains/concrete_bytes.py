@@ -9,8 +9,8 @@ from .domain import Domain
 from .value import Value
 
 
-def int_to_bytes(n):
-    return [b for b in bytes(n)]
+def int_to_bytes(n, bw):
+    return [b for b in n.to_bytes(length=bw, byteorder="little", signed=(n < 0))]
 
 
 def to_bv(values: list):
@@ -86,11 +86,8 @@ class ConcreteBytesDomain(Domain):
         assert isinstance(end, int)
         if start % 8 != 0:
             # TODO: we could do this better...
-            return ConcreteBytes(
-                int_to_bytes(
-                    ConcreteBitVecDomain.Extract(to_bv(a.value()), start, end).value()
-                )
-            )
+            val = ConcreteBitVecDomain.Extract(to_bv(a.value()), start, end)
+            return ConcreteBytes(int_to_bytes(val.value(), val.bytewidth()))
         overflow = end % 8
         bstart, bend = (start / 8), int(end / 8)
         values = a.value()[bstart:bend]

@@ -11,13 +11,6 @@ from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.util.debugging import dbgv
 
 
-def get_byte(EM, x, i: int):
-    off = 8 * i
-    b = EM.Extract(x, off, off + 7)
-    assert b.bitwidth() == 8
-    return b
-
-
 def write_bytes(values: list, offval, x: Union[Expr, Value]) -> Optional[MemError]:
     """
     Write value "x" at offval + offval + size(x) indices of values list
@@ -25,17 +18,17 @@ def write_bytes(values: list, offval, x: Union[Expr, Value]) -> Optional[MemErro
     expr_mgr = global_expr_mgr()
     bw = x.bytewidth()
     # first cast the value to bytes
-    x_to_bytes = expr_mgr.BitCast(x, type_mgr().bytes_ty(bw))
+    ty = type_mgr().bytes_ty(bw)
+    x_to_bytes = expr_mgr.BitCast(x, ty)
     if x_to_bytes is None:
-        return MemError(MemError.UNSUPPORTED, f"Cast of {x} to i{bw} is unsupported")
+        return MemError(MemError.UNSUPPORTED, f"Cast of {x} to {ty} is unsupported")
     xvalues = x_to_bytes.value()
     for n, i in enumerate(range(offval, offval + bw)):
         values[i] = xvalues[n]
 
 
-def read_bytes(values: list, offval, size, bts, zeroed):
+def read_bytes(values: list, offval, bts, zeroed):
     assert bts > 0, bts
-    assert size > 0, size
     assert offval >= 0, offval
     expr_mgr = global_expr_mgr()
     if zeroed:
@@ -112,19 +105,21 @@ class MemoryObject(CoreMO):
             )
 
         if self._is_bytes():
-            return read_bytes(self._values, offval, size, bts, self._zeroed)
+            return read_bytes(self._values, offval, bts, self._zeroed)
         return self.read_value(bts, offval, size)
 
     def read_value(self, bts, offval, size):
         values: dict = self._values
         val = values.get(offval)
+        if val is None and self._zeroed:
+            val = ConcreteBitVec(0, 8 * bts)
         if val is None or val.bytewidth() != bts:
             bytevalues, err = mo_to_bytes(values, size)
             if err:
                 return None, err
             self._values = bytevalues
             assert isinstance(self._values, list)
-            return read_bytes(bytevalues, offval, size, bts, self._zeroed)
+            return read_bytes(bytevalues, offval, bts, self._zeroed)
 
         # FIXME: make me return BytesType objects (a sequence of bytes)
         return val, None
@@ -164,8 +159,8 @@ class MemoryObject(CoreMO):
             )
 
         values = self._values
-        if isinstance(values, list):
-            return write_bytes(offval, values, size, x)
+        if self._is_bytes():
+            return write_bytes(values, offval, x)
         else:
             # does the write overlap? should we promote the object
             # to bytes-object?
@@ -174,18 +169,14 @@ class MemoryObject(CoreMO):
             for o, val in values.items():
                 if offval < o + val.bytewidth() and offval + bw > o:
                     if o == offval and val.bytewidth() == bw:
-                        break  # the overlap is perfect, we just overwrite
-                        # the value
-                    if size <= MAX_BYTES_SIZE:  # For now...
-                        # promote to bytes
-                        tmp, err = mo_to_bytes(values, size)
-                        if err:
-                            return err
-                        self._values = tmp
-                        return write_bytes(offval, tmp, size, x)
-                    return MemError(
-                        MemError.UNSUPPORTED, "Overlapping writes to memory"
-                    )
+                        break  # the overlap is perfect, we just overwrite the value
+
+                    # promote to bytes
+                    tmp, err = mo_to_bytes(values, size)
+                    if err:
+                        return err
+                    self._values = tmp
+                    return write_bytes(tmp, offval, x)
 
             values[offval] = x
             return None

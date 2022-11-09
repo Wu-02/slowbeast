@@ -1,42 +1,13 @@
 from functools import reduce
 from operator import add
-from typing import Type, Union
+from typing import Type, Union, Optional
 
-from slowbeast.domains.concrete_value import ConcreteBool
-from slowbeast.ir.types import BytesType, type_mgr
+from slowbeast.ir.types import BytesType
 from .domain import Domain
-from .symbolic import SymbolicDomain
+from .expr import Expr
+from .symbolic import BVSymbolicDomain
+from .symbolic_value import SymbolicBytes
 from .value import Value
-
-
-def int_to_bytes(n):
-    return [b for b in bytes(n)]
-
-
-def to_bv(values: list):
-    l = len(values)
-    if l == 1:
-        return values[0]
-    bw = 0
-    val = 0
-    for i in range(1, l + 1):
-        a = values[l - i]
-        val |= a << bw
-        bw += 8
-    return val
-
-
-class SymbolicBytes(Value):
-    """
-    A sequence of concrete bitvectors of length 8.
-    """
-
-    def __init__(self, values: list) -> None:
-        assert isinstance(values, list), values
-        assert all((a.bitwidth() == 8 for a in values)), values
-        assert all((isinstance(a, Value) for a in values)), values
-        ty = type_mgr().bytes_ty(len(values))
-        super().__init__(values, ty)
 
 
 def _check_args(a, b):
@@ -64,18 +35,35 @@ class SymbolicBytesDomain(Domain):
         return SymbolicBytes(values)
 
     @staticmethod
+    def Cast(a: Value, ty: Type, signed: bool = True) -> Optional[Expr]:
+        """Reinterpret cast"""
+        assert isinstance(a, SymbolicBytes), a
+        tybw = ty.bitwidth()
+        if ty.is_float():
+            bv = BVSymbolicDomain.Concat(*a.value())
+            return BVSymbolicDomain.Cast(bv, ty, signed)
+        elif ty.is_bv():
+            return BVSymbolicDomain.Concat(*a.value())
+        elif ty.is_bool():
+            bv = BVSymbolicDomain.Concat(*a.value())
+            return BVSymbolicDomain.Ne(
+                bv, BVSymbolicDomain.get_constant(0, bv.bitwidth())
+            )
+        return None  # unsupported conversion
+
+    @staticmethod
     def Eq(a: Value, b: Value, unsigned: bool = False):
         _check_args(a, b)
-        return SymbolicDomain.And(
-            [SymbolicDomain.Eq(a, b) for a, b in zip(a.value(), b.value())]
+        return BVSymbolicDomain.And(
+            [BVSymbolicDomain.Eq(a, b) for a, b in zip(a.value(), b.value())]
         )
 
     @staticmethod
     def Ne(a: Value, b: Value, unsigned: bool = False):
         _check_args(a, b)
-        return SymbolicDomain.Not(
-            SymbolicDomain.And(
-                [SymbolicDomain.Eq(a, b) for a, b in zip(a.value(), b.value())]
+        return BVSymbolicDomain.Not(
+            BVSymbolicDomain.And(
+                [BVSymbolicDomain.Eq(a, b) for a, b in zip(a.value(), b.value())]
             )
         )
 
@@ -107,19 +95,19 @@ class SymbolicBytesDomain(Domain):
     def And(a: Value, b: Value) -> SymbolicBytes:
         _check_args(a, b)
         return SymbolicBytes(
-            [SymbolicDomain.And(a, b) for a, b in zip(a.value(), b.value())]
+            [BVSymbolicDomain.And(a, b) for a, b in zip(a.value(), b.value())]
         )
 
     @staticmethod
     def Or(a: Value, b: Value) -> SymbolicBytes:
         _check_args(a, b)
         return SymbolicBytes(
-            [SymbolicDomain.Or(a, b) for a, b in zip(a.value(), b.value())]
+            [BVSymbolicDomain.Or(a, b) for a, b in zip(a.value(), b.value())]
         )
 
     @staticmethod
     def Xor(a: Value, b: Value) -> SymbolicBytes:
         _check_args(a, b)
         return SymbolicBytes(
-            [SymbolicDomain.Xor(a, b) for a, b in zip(a.value(), b.value())]
+            [BVSymbolicDomain.Xor(a, b) for a, b in zip(a.value(), b.value())]
         )

@@ -5,7 +5,7 @@ from slowbeast.domains.concrete_bytes import ConcreteBytes
 from slowbeast.domains.concrete_value import ConcreteVal
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.symbolic import SymbolicDomain
-from slowbeast.domains.symbolic_bytes import SymbolicBytes
+from slowbeast.domains.symbolic_value import SymbolicBytes
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import Type, type_mgr
 from slowbeast.util.debugging import FIXME

@@ -15,7 +15,7 @@ from slowbeast.ir.types import Type
 from .concrete_bitvec import (
     ConcreteBitVecDomain,
 )
-from .concrete_bytes import ConcreteBytes, ConcreteBytesDomain
+from .concrete_bytes import ConcreteBytes, ConcreteBytesDomain, int_to_bytes
 from .domain import Domain
 from .value import Value
 
@@ -211,8 +211,8 @@ class ConcreteDomain(Domain):
         if a.is_bytes():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
-            if ty.is_bv() and bw <= 64:
-                return ConcreteBitVec(a.value(), bw)
+            if ty.is_bv():
+                return a.to_bv()
         if a.is_bv():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
@@ -220,6 +220,13 @@ class ConcreteDomain(Domain):
                 return ConcreteBitVec(a.value(), bw)
             elif ty.is_bool():
                 return ConcreteBool(False if a.value() == 0 else True)
+            elif ty.is_bytes():
+                return ConcreteBytes(
+                    [
+                        ConcreteBitVec(val, 8)
+                        for val in int_to_bytes(a.value(), a.bytewidth())
+                    ]
+                )
         elif a.is_float():
             if ty.is_float():
                 return ConcreteFloat(trunc_to_float(a.value(), bw), bw)

@@ -11,8 +11,10 @@ from slowbeast.ir.types import type_mgr, Type
 from .expr import Expr
 from .symbolic_bool import SymbolicDomainBools
 from .symbolic_bv import BVSymbolicDomain
+from .symbolic_bytes import SymbolicBytesDomain
 from .symbolic_floats import SymbolicDomainFloats
 from .symbolic_helpers import get_fp_sort, bv_const
+from .symbolic_value import SymbolicBytes
 from .symbolic_z3 import Z3SymbolicDomain
 from .value import Value
 
@@ -25,7 +27,7 @@ def get_any_domain(a: Expr):
     if a.is_float():
         return SymbolicDomainFloats
     if a.is_bytes():
-        return BVSymbolicDomain
+        return SymbolicBytesDomain
     raise NotImplementedError(f"Unknown domain for value: {a}")
 
 
@@ -169,7 +171,7 @@ class SymbolicDomain(Z3SymbolicDomain):
     @staticmethod
     def Cast(a: Value, ty: Type, signed: bool = True) -> Optional[Expr]:
         """Reinterpret cast"""
-        assert isinstance(a, Expr), a
+        assert isinstance(a, (Expr, SymbolicBytes)), a
         return get_any_domain(a).Cast(a, ty, signed)
 
     @staticmethod

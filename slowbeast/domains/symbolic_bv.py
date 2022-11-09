@@ -31,10 +31,10 @@ from slowbeast.domains.symbolic_helpers import (
     bv_const,
     bool_to_ubv,
 )
+from slowbeast.domains.symbolic_value import SymbolicBytes
 from slowbeast.domains.symbolic_z3 import Z3SymbolicDomain
 from slowbeast.domains.value import Value
 from slowbeast.ir.types import type_mgr, Type
-from slowbeast.util.debugging import FIXME
 
 
 class BVSymbolicDomain(Z3SymbolicDomain):
@@ -49,6 +49,9 @@ class BVSymbolicDomain(Z3SymbolicDomain):
     def get_value(name: str, ty: Type) -> Expr:
         assert ty.is_bv() or ty.is_pointer(), ty
         return Expr(bv(name, ty.bitwidth()), ty)
+
+    def get_constant(self, c, bw):
+        return bv_const(c, bw)
 
     @staticmethod
     def And(a: Expr, b: Expr) -> Expr:
@@ -108,12 +111,13 @@ class BVSymbolicDomain(Z3SymbolicDomain):
                 # from IEEE bitvector
                 expr = fpToFP(a.unwrap(), get_fp_sort(tybw))
                 return Expr(expr, ty)
-        elif a.is_bytes():
-            FIXME("Bytes should not be in BV domain...")
-            if ty.is_float():
-                # from IEEE bitvector
-                expr = fpToFP(a.unwrap(), get_fp_sort(tybw))
-                return Expr(expr, ty)
+            if ty.is_bytes():
+                return SymbolicBytes(
+                    [
+                        BVSymbolicDomain.Extract(a, 8 * off, 8 * off + 7)
+                        for off in range(0, a.bytewidth())
+                    ]
+                )
         return None  # unsupported conversion
 
     @staticmethod
