@@ -663,13 +663,18 @@ class ExtractBits(UnaryOperation):
         )
 
 
-class FpOp(UnaryOperation):
+class FpOp(ValueTypedInstruction):
     """Floating-point special operations"""
 
+    # return bool
     IS_INF = 1
     IS_NAN = 2
-    FPCLASSIFY = 3
-    SIGNBIT = 4
+    SIGNBIT = 3
+    # return int
+    FPCLASSIFY = 4
+    # return float
+    MIN = 5
+    MAX = 6
 
     def op_to_str(op) -> str:
         if op == FpOp.IS_INF:
@@ -680,19 +685,38 @@ class FpOp(UnaryOperation):
             return "fpclassify"
         if op == FpOp.SIGNBIT:
             return "signbit"
+        if op == FpOp.MIN:
+            return "min"
+        if op == FpOp.MAX:
+            return "max"
         return "uknwn"
 
-    def __init__(self, fp_op, val, valty) -> None:
-        assert FpOp.IS_INF <= fp_op <= FpOp.SIGNBIT
-        super().__init__(UnaryOperation.FP_OP, val, [valty])
+    def __init__(self, fp_op, vals, optypes) -> None:
+        assert FpOp.IS_INF <= fp_op <= FpOp.MAX
+        if FpOp.IS_INF <= fp_op <= FpOp.IS_NAN:
+            retty = type_mgr().bool_ty()
+        elif FpOp.FPCLASSIFY == fp_op:
+            retty = type_mgr().bv_ty(32)
+        elif FpOp.MIN <= fp_op <= FpOp.MAX:
+            retty = type_mgr().bool_ty()
+        else:
+            raise RuntimeError("Invalid FpOp operation")
+
+        super().__init__(retty, vals, optypes)
         self._fp_op = fp_op
 
     def fp_operation(self):
         return self._fp_op
 
     def __str__(self) -> str:
-        return "x{0} = fp {1} {2}".format(
-            self.get_id(), FpOp.op_to_str(self._fp_op), self.operand(0).as_value()
+        return "x{0}:{3} = fp {1} {2}".format(
+            self.get_id(),
+            FpOp.op_to_str(self._fp_op),
+            ", ".join(
+                f"({ty}){op.as_value()}"
+                for op, ty in zip(self.operands(), self.expected_op_types())
+            ),
+            self.type(),
         )
 
 

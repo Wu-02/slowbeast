@@ -1,9 +1,12 @@
-from numpy import float16, float32, float64, isnan, isinf
+from numpy import float16, float32, float64, isnan, isinf, isfinite
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import type_mgr, FloatType
+from slowbeast.util.debugging import FIXME
+from .concrete_bitvec import ConcreteBitVec
 from .domain import Domain
 from .value import Value
+from ..ir.instruction import FpOp
 
 
 # def float_to_bv(x):
@@ -158,3 +161,40 @@ class ConcreteFloatsDomain(Domain):
     def Abs(a: Value) -> Value:
         assert isinstance(a, ConcreteFloat), a
         return ConcreteFloat(abs(a.value()), a.bitwidth())
+
+    @staticmethod
+    def FpOp(op, val: Value, val2: Value):
+        assert isinstance(val, ConcreteFloat), val
+        assert val.is_float(), val
+        assert val2 is None or val2.is_float(), val2
+
+        if op == FpOp.IS_INF:
+            return ConcreteBool(isinf(val.value()))
+        if op == FpOp.IS_NAN:
+            return ConcreteBool(isnan(val.value()))
+        if op == FpOp.FPCLASSIFY:
+            FIXME("Using implementation dependent constants")
+            v = val.value()
+            if isnan(v):
+                return ConcreteBitVec(0, 32)
+            if isinf(v):
+                return ConcreteBitVec(1, 32)
+            if v >= 0 and v <= 0:
+                return ConcreteBitVec(2, 32)
+            if isfinite(v) and v > 1.1754942106924411e-38:
+                return ConcreteBitVec(4, 32)
+            return ConcreteBitVec(3, 32)  # subnormal
+        if op == FpOp.SIGNBIT:
+            # FIXME! gosh this is ugly...
+            return ConcreteBitVec(1 if str(val.value())[0] == "-" else 0, 32)
+        if op == FpOp.MIN:
+            assert val2 is not None
+            a, b = val.value(), val2.value()
+            if isnan(a):
+                return val2
+            if isnan(b):
+                return val
+            assert not (isnan(a) or isnan(b))
+            return val if a < b else val2
+
+        raise NotImplementedError("Invalid/unsupported FP operation")

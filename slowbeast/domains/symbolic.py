@@ -265,5 +265,5 @@ class SymbolicDomain(Z3SymbolicDomain):
         return get_any_domain(a).Neg(a)
 
     @staticmethod
-    def FpOp(op, val) -> Optional[Expr]:
-        return SymbolicDomainFloats.FpOp(op, val)
+    def FpOp(op, val, val2) -> Optional[Expr]:
+        return SymbolicDomainFloats.FpOp(op, val, val2)

@@ -1,4 +1,3 @@
-from math import isinf, isnan, isfinite
 from struct import pack, unpack
 from typing import Optional, Union
 
@@ -9,9 +8,7 @@ from slowbeast.domains.concrete_bool import ConcreteBoolDomain
 from slowbeast.domains.concrete_bytes import ConcreteBytesDomain, ConcreteBytes
 from slowbeast.domains.concrete_floats import ConcreteFloat, ConcreteFloatsDomain
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
-from slowbeast.ir.instruction import FpOp
 from slowbeast.ir.types import Type
-from slowbeast.util.debugging import FIXME
 from .concrete_bitvec import (
     to_bv,
     ConcreteBitVecDomain,
@@ -270,30 +267,8 @@ class ConcreteDomain(Domain):
         return get_any_domain(a).Abs(a)
 
     @staticmethod
-    def FpOp(op, val: ConcreteFloat) -> Union[ConcreteBool, ConcreteBitVec]:
-        assert isinstance(val, ConcreteFloat), val
-        assert val.is_float(), val
-
-        if op == FpOp.IS_INF:
-            return ConcreteBool(isinf(val.value()))
-        if op == FpOp.IS_NAN:
-            return ConcreteBool(isnan(val.value()))
-        if op == FpOp.FPCLASSIFY:
-            FIXME("Using implementation dependent constants")
-            v = val.value()
-            if isnan(v):
-                return ConcreteBitVec(0, 32)
-            if isinf(v):
-                return ConcreteBitVec(1, 32)
-            if v >= 0 and v <= 0:
-                return ConcreteBitVec(2, 32)
-            if isfinite(v) and v > 1.1754942106924411e-38:
-                return ConcreteBitVec(4, 32)
-            return ConcreteBitVec(3, 32)  # subnormal
-        if op == FpOp.SIGNBIT:
-            # FIXME! gosh this is ugly...
-            return ConcreteBitVec(1 if str(val.value())[0] == "-" else 0, 32)
-        raise NotImplementedError("Invalid/unsupported FP operation")
+    def FpOp(op, val: Value, val2: Value) -> Union[ConcreteBool, ConcreteBitVec]:
+        return ConcreteFloatsDomain.FpOp(op, val, val2)
 
     ##
     # Relational operators

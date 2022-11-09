@@ -207,10 +207,10 @@ class ExpressionManager:
             return ConcreteDomain.Abs(a)
         return opt(SymbolicDomain.Abs(self.lift(a)))
 
-    def FpOp(self, op, val: Value):
-        if isinstance(a, ConcreteVal):
-            return ConcreteDomain.FpOp(op, val)
-        r = SymbolicDomain.FpOp(op, self.lift(val))
+    def FpOp(self, op, val: Value, val2: Value):
+        if isinstance(val, ConcreteVal):
+            return ConcreteDomain.FpOp(op, val, val2)
+        r = SymbolicDomain.FpOp(op, self.lift(val), self.lift(val2) if val2 else None)
         return opt(r) if r else r  # FpOp may return None
 
     def Extend(self, a: Value, b: int, unsigned: bool) -> Union[ConcreteVal, Expr]:

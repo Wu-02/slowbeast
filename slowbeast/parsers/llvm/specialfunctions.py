@@ -10,10 +10,10 @@ from slowbeast.ir.instruction import (
     BinaryOperation,
     Extend,
 )
-from slowbeast.ir.types import get_size_type_size, type_mgr
+from slowbeast.ir.types import type_mgr
 from slowbeast.util.debugging import print_stderr
 from .utils import get_llvm_operands, type_size_in_bits, to_float_ty, get_sb_type
-from ...domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
+from ...domains.concrete import ConstantFalse, ConcreteDomain
 from ...domains.concrete_floats import ConcreteFloat
 
 concrete_value = ConcreteDomain.get_value
@@ -24,6 +24,8 @@ special_functions = [
     "llvm.fabs.f64",
     "llvm.fmuladd.f32",
     "llvm.fmuladd.f64",
+    "llvm.minnum.f32",
+    "llvm.minnum.f64",
     "fesetround",
     "nan",
     "__isnan",
@@ -124,9 +126,15 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         MUL = BinaryOperation(BinaryOperation.MUL, ops[0], ops[1], types[:2])
         ADD = BinaryOperation(BinaryOperation.ADD, MUL, ops[2], [MUL.type(), types[2]])
         return ADD, [MUL, ADD]
+    elif fun.startswith("llvm.minnum."):
+        operands = get_llvm_operands(inst)
+        ops = [parser.operand(operands[i]) for i in range(0, 2)]
+        types = [get_sb_type(module, operands[i].type) for i in range(0, 2)]
+        MIN = FpOp(FpOp.MIN, ops, types)
+        return MIN, [MIN]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
-        O = FpOp(FpOp.IS_INF, val, get_sb_type(module, inst.operands[0].type))
+        O = FpOp(FpOp.IS_INF, [val], [get_sb_type(module, inst.operands[0].type)])
         P = Extend(
             O,
             type_size_in_bits(module, inst.type),
@@ -144,7 +152,7 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         return I, [I]
     elif fun in ("__isnan", "__isnanf", "__isnanfl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
-        O = FpOp(FpOp.IS_NAN, val, get_sb_type(module, inst.operands[0].type))
+        O = FpOp(FpOp.IS_NAN, [val], [get_sb_type(module, inst.operands[0].type)])
         # the functions return int
         P = Extend(
             O,
@@ -155,12 +163,12 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         return P, [O, P]
     elif fun in ("__fpclassify", "__fpclassifyf", "__fpclassifyl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
-        O = FpOp(FpOp.FPCLASSIFY, val, get_sb_type(module, inst.operands[0].type))
+        O = FpOp(FpOp.FPCLASSIFY, [val], [get_sb_type(module, inst.operands[0].type)])
         # the functions return int
         return O, [O]
     elif fun in ("__signbit", "__signbitf", "__signbitl"):
         val = to_float_ty(parser.operand(get_llvm_operands(inst)[0]))
-        O = FpOp(FpOp.SIGNBIT, val, get_sb_type(module, inst.operands[0].type))
+        O = FpOp(FpOp.SIGNBIT, [val], [get_sb_type(module, inst.operands[0].type)])
         # the functions return int
         return O, [O]
     elif fun == "fesetround":

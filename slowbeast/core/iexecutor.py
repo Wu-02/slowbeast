@@ -271,6 +271,9 @@ class IExecutor:
     def exec_ite(self, state, instr):
         raise NotImplementedError("Ite not implemented in core")
 
+    def exec_fp_op(self, state: SEState, instr: FpOp) -> List[SEState]:
+        raise NotImplementedError("Ite not implemented in core")
+
     def exec_call(self, state, instr: Call):
         assert isinstance(instr, Call)
 
@@ -384,6 +387,8 @@ class IExecutor:
             states = self.exec_binary_op(state, instr)
         elif isinstance(instr, Ite):
             states = self.exec_ite(state, instr)
+        elif isinstance(instr, FpOp):
+            states = self.exec_fp_op(state, instr)
         elif isinstance(instr, (Thread, ThreadJoin)):
             # XXX: must be before Call and Return
             state.set_killed(f"Threads are not implemented by this executor: {instr}")

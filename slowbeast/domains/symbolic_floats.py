@@ -198,10 +198,11 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         return Expr(trunc_fp(fpNeg(to_double(a)), bw), type_mgr().float_ty(bw))
 
     @staticmethod
-    def FpOp(op, val) -> Optional[Expr]:
+    def FpOp(op, val, val2) -> Optional[Expr]:
         assert isinstance(val, Expr), val
         # FIXME: do not use the enum from instruction
         assert val.is_float()
+        assert val2 is None or val2.is_float()
 
         if op == FpOp.IS_INF:
             return Expr(fpIsInf(val.unwrap()), type_mgr().bool_ty())
@@ -229,5 +230,17 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
                 If(fpIsNegative(bv_const(1, 32), bv_const(0, 32))),
                 type_mgr().bv_ty(32),
             )
+        if op == FpOp.MIN:
+            assert False
+        # Ite(fstNan,
+        #    Ite(sndNan,  # both are NaN, return just one of them
+        #        sndNan,
+        #        ops[1]  # first is Nan and second not, return the second
+        #        ),
+        #    Ite(sndNan,
+        #        ops[0],  # first is not Nan and second is Nan, return the first
+        #        Ite(BinaryOperation(BinaryOperation.LT(op[0])  # none is Nan, return the minimum
+        #                            )
+        #            )
 
         return None

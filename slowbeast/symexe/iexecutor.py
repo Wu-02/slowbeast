@@ -627,6 +627,28 @@ class IExecutor(ConcreteIExecutor):
         state.pc = state.pc.get_next_inst()
         return [state]
 
+    def exec_fp_op(self, state: SEState, instr: FpOp) -> List[SEState]:
+        assert isinstance(instr, FpOp), instr
+        opnum = instr.operands_num()
+        expr_mgr = state.expr_manager()
+        r = None
+        if 1 <= opnum <= 2:
+            op1 = state.eval(instr.operand(0))
+            op2 = None
+            assert _types_check(instr, op1)
+            if opnum == 2:
+                op2 = state.eval(instr.operand(1))
+                assert _types_check(instr, op2)
+            r = expr_mgr.FpOp(instr.fp_operation(), op1, op2)
+
+        if r is None:
+            state.set_killed(f"Unsupported FP operation: {instr}")
+            return [state]
+
+        state.set(instr, r)
+        state.pc = state.pc.get_next_inst()
+        return [state]
+
     def exec_unary_op(self, state: SEState, instr: UnaryOperation) -> List[SEState]:
         assert isinstance(instr, UnaryOperation)
         op1 = state.eval(instr.operand(0))
@@ -649,11 +671,6 @@ class IExecutor(ConcreteIExecutor):
             r = expr_mgr.Neg(op1)
         elif opcode == UnaryOperation.ABS:
             r = expr_mgr.Abs(op1)
-        elif opcode == UnaryOperation.FP_OP:
-            r = expr_mgr.FpOp(instr.fp_operation(), op1)
-            if r is None:
-                state.set_killed(f"Unsupported FP operation: {instr}")
-                return [state]
         else:
             state.set_killed(f"Unary instruction not implemented: {instr}")
             return [state]

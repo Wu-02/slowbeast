@@ -188,5 +188,5 @@ class Domain:
         return not_implemented()
 
     @staticmethod
-    def FpOp(op, val) -> Value:
+    def FpOp(op, val, val2) -> Value:
         return not_implemented()
