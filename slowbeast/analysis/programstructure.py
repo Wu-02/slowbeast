@@ -46,6 +46,10 @@ class ProgramStructure:
         self._get_loops()
         return self.loops.get(loc)
 
+    def get_loops(self):
+        self._get_loops()
+        return self.loops
+
     def get_loop_headers(self):
         # FIXME: get loops on demand separately for each CFA
         self._get_loops()
