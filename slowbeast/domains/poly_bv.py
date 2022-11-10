@@ -211,7 +211,12 @@ class BVPolynomial(Polynomial):
 
         it = iter(M.items())
         m, c = next(it)
-        mexpr = bool_to_bv(m.expr())
+        mexpr = m.expr()
+        if is_bool(mexpr):
+            # if this is bool, just return it, we cannot multiply it
+            # (and it is idempotent anyway, but assert that c is 1 for finding bugs)
+            assert c == bv_const(1, self._bw)
+            return simplify(mexpr)
         expr = c if mexpr is None else c * mexpr
         for m, c in it:
             mexpr = m.expr()
@@ -266,21 +271,28 @@ class BVFormula(ArithFormula):
         "Convert this object into expression for solver"
         ty = self._ty
         if ty == ArithFormula.BOOLEAN:
+            assert is_bool(self._value), self._value
             return self._value
         if ty == ArithFormula.POLYNOM:
             return self._value.expr()
         if ty == ArithFormula.AND:
+            assert (is_bool(c.expr()) for c in self._children)
             return mk_and(*(c.expr() for c in self._children))
         if ty == ArithFormula.OR:
+            assert (is_bool(c.expr()) for c in self._children)
             return mk_or(*(c.expr() for c in self._children))
         if ty == ArithFormula.NOT:
             assert len(self._children) == 1
+            assert is_bool(
+                self._children[0].expr()
+            ), f"{self._children[0]} -> {type(self._children[0].expr())}"
             return Not(_bv_to_bool(self._children[0].expr()))
 
         chlds = self._children
         if len(chlds) != 2:
             raise NotImplementedError(f"Not implemented yet: {self}")
-            return None
+        assert is_bv(chlds[0].expr())
+        assert is_bv(chlds[1].expr())
         if ty == ArithFormula.EQ:
             return chlds[0].expr() == chlds[1].expr()
         if ty == ArithFormula.SLE:
@@ -301,4 +313,3 @@ class BVFormula(ArithFormula):
             return BVUGT(chlds[0].expr(), chlds[1].expr())
 
         raise NotImplementedError(f"Not implemented yet: {self}")
-        return None

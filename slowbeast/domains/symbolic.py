@@ -116,9 +116,9 @@ class SymbolicDomain(Z3SymbolicDomain):
         than two formulas at once (just simplifies the formulas for
         reading and simplifications), it is not needed, really.
         """
-        assert all((isinstance(a, Expr) for a in args))
-        assert all((a.is_bool() for a in args))
-        assert all((is_bool(a.unwrap()) for a in args))
+        assert all((isinstance(a, Expr) for a in args)), args
+        assert all((a.is_bool() for a in args)), args
+        assert all((is_bool(a.unwrap()) for a in args)), args
         return Expr(And(*(x.unwrap() for x in args)), type_mgr().bool_ty())
 
     @staticmethod

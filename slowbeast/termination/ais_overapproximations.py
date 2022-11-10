@@ -183,6 +183,7 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
         return have_feasible  # and change_is_monotonic
 
     def clauses_are_acyclic(self, clauses, assumptions):
+        print(clauses, assumptions)
         FIXME("Checking acyclicity in dropping clauses not implemented")
         return False
 
