@@ -11,6 +11,7 @@ from slowbeast.ir.instruction import (
     Call,
     Return,
 )
+from ..core.callstack import CallStack
 from ..solvers.symcrete import solve_incrementally
 from slowbeast.util.debugging import warn, ldbgv
 from .constraints import ConstraintsSet, IncrementalConstraintsSet
@@ -603,9 +604,11 @@ class ThreadedSEState(SEState):
 
         self._event_trace.append((self.thread_id(), self.pc))
 
-    def add_thread(self, pc) -> Thread:
+    def add_thread(self, thread_fn, pc, args) -> Thread:
         self._last_tid += 1
-        t = Thread(self._last_tid, pc, self.memory.get_cs().copy())
+        cs = CallStack()
+        cs.push_call(None, thread_fn, args)
+        t = Thread(self._last_tid, pc, cs)
         assert not t.is_paused()
         self._threads.append(t)
         # self._trace.append(f"add thread {t.get_id()}")

@@ -103,8 +103,7 @@ class ThreadedExecutor(IExecutor):
         mapping = {
             x: state.eval(y) for (x, y) in zip(fun.arguments(), instr.operands())
         }
-        t = state.add_thread(fun.bblock(0).instruction(0))
-        t.cs.push_call(None, fun, mapping or {})
+        t = state.add_thread(fun, fun.bblock(0).instruction(0), mapping or {})
 
         # we executed the thread inst, so move
         state.pc = state.pc.get_next_inst()

@@ -32,6 +32,13 @@ class Memory:
         # to particular frames
         self._cs = CallStack()
 
+    def __eq__(self, rhs: object):
+        return (
+            isinstance(rhs, Memory)
+            and self._objects == rhs._objects
+            and self._cs == self._cs
+        )
+
     def _copy_to(self, new):
         new._objects = self._objects
         new._objects_ro = True
@@ -89,12 +96,16 @@ class Memory:
             self._glob_bindings = copy(self._glob_bindings)
             self._glob_bindings_ro = False
 
-    def __eq__(self, rhs: object):
-        return (
-            isinstance(rhs, Memory)
-            and self._objects == rhs._objects
-            and self._cs == self._cs
-        )
+    def add_mo_to_current_scope(self, mo):
+        self.get_cs().add_scoped_object(mo)
+
+    def end_scope(self):
+        # pop current scope
+        scope = self.get_cs().current_scoped_objects()
+        # delete the memory objects
+        self._objs_reown()
+        for mo in scope:
+            del self._objects[mo.get_id()]
 
     def _allocate(
         self,
@@ -125,6 +136,9 @@ class Memory:
         o = self._allocate(size, instr, nm, objid, is_heap=is_heap)
         if zeroed:
             o.set_zeroed()
+
+        if not is_heap:
+            self.add_mo_to_current_scope(o)
 
         self._objs_reown()
         assert self._objects.get(o.get_id()) is None
@@ -242,6 +256,7 @@ class Memory:
         self._cs.push_call(callsite, fun, args_mapping)
 
     def pop_call(self):
+        self.end_scope()
         return self._cs.pop_call()
 
     def dump(self, stream: TextIO = sys.stdout) -> None:
