@@ -32,4 +32,4 @@ class InductiveSetsTree:
             assert len(successor.predecessors) > 0
 
         frontiers.add(nd)
-        self.all_states.add(iset)
+        self.all_states.add(iset).rewrite_and_simplify()

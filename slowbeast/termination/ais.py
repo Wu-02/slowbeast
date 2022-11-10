@@ -3,10 +3,10 @@ from typing import Optional
 from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.bse.bself import BSELFChecker
 from slowbeast.cfkind.naive.naivekindse import Result
-from slowbeast.symexe.statesset import intersection
+from slowbeast.symexe.statesset import intersection, complement
 from slowbeast.termination.ais_overapproximations import overapprox_state
 from slowbeast.termination.inductivesetstree import InductiveSetsTree
-from slowbeast.util.debugging import print_stdout, print_stderr, dbg
+from slowbeast.util.debugging import print_stdout, print_stderr, dbg, FIXME
 
 
 class AisInference(BSELFChecker):
@@ -111,9 +111,15 @@ class AisInference(BSELFChecker):
         X = state_as_set.copy()
         X.intersect(current_ais)
         if not X.is_empty():
-            # NOT HANDLED YET
             print_stdout("Prestate overlaps with AIS", color="red")
-            return None
+            # NOT HANDLED YET: build also a set of bad states and prune the AISTree whenever
+            # a bad state is found
+            FIXME("We found (some) cycle in state space, prove that it is unreachable")
+            state_as_set = intersection(
+                state_as_set, complement(current_ais)
+            ).rewrite_and_simplify()
+            if state_as_set.is_empty():
+                return None
 
         for overapprox in overapprox_state(
             executor=self,
