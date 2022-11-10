@@ -3,7 +3,7 @@ from slowbeast.cfkind.overapproximations import LoopStateOverapproximation
 from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
 from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.symexe.statesset import intersection, StatesSet
-from slowbeast.util.debugging import dbg, ldbg, dbgv, FIXME
+from slowbeast.util.debugging import dbg, ldbg, FIXME
 
 
 def overapprox_state(executor, state_as_set, errset: StatesSet, target, loopinfo):
@@ -69,8 +69,9 @@ def _yield_overapprox_with_assumption(
         )
 
 
-def get_monotonic_variables(state, solver):
-    MV = set()
+def get_changing_variables(state, solver):
+    decV = set()
+    incV = set()
     memory = state.memory
     expr_mgr = state.expr_manager()
     Not, Eq, Le = expr_mgr.Not, expr_mgr.Eq, expr_mgr.Le
@@ -87,13 +88,12 @@ def get_monotonic_variables(state, solver):
                 continue
             ival, val = ival.offset(), val.offset()
 
-        if (
-            solver.is_sat(Le(val, ival)) is False
-            or solver.is_sat(Le(ival, val)) is False
-        ):
-            MV.add(iptr)
+        if solver.is_sat(Le(val, ival)) is False:
+            incV.add(iptr)
+        elif solver.is_sat(Le(ival, val)) is False:
+            decV.add(iptr)
 
-    return MV
+    return decV, incV
 
 
 class AisLoopStateOverapproximation(LoopStateOverapproximation):
@@ -136,9 +136,10 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
         A = AssertAnnotation(
             substitute(I.expr(), (placeholder, lit)), I.substitutions(), expr_mgr
         )
-        # check that on all paths we monotonically change at least one variable
-        # (same on all paths)
-        monotonic_variables = None
+        # check that on all paths we strictly change at least one variable
+        # (same on all paths and in the same direction), i.e., it must hold
+        # for some variable a that (forall p: a' < a) or (forall p: a' > a)
+        inc_variables, dec_variables = None, None
         for s in ldata.loop_poststates:
             # feasability check
             solver.push()
@@ -151,13 +152,21 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
                     dbg("Solver failure/timeout")
                     return False
                 continue
-            # feasible means ok, but we want at least one feasible path
-            if monotonic_variables is None:
-                monotonic_variables = get_monotonic_variables(s, solver)
+
+            # we found at least one feasible path, good
+            # now check if we find some strictly changing variables
+            decV, incV = get_changing_variables(s, solver)
+            if inc_variables is None:
+                inc_variables = incV
             else:
-                tmp = get_monotonic_variables(s, solver)
-                monotonic_variables.intersection_update(tmp)
-            if not monotonic_variables:
+                inc_variables.intersection_update(incV)
+
+            if dec_variables is None:
+                dec_variables = decV
+            else:
+                dec_variables.intersection_update(decV)
+
+            if not (incV or decV):
                 dbg("No monotonically changing variable found")
                 return False
             have_feasible = True
