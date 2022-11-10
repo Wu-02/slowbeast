@@ -10,7 +10,6 @@ from slowbeast.util.debugging import (
     dec_print_indent,
 )
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
-from .iexecutor import IExecutor as SExecutor
 from .options import SEOptions
 from .stats import SEStats
 
@@ -29,7 +28,7 @@ class SymbolicInterpreter(Interpreter):
         ohandler=None,
         opts: SEOptions = SEOptions(),
         executor: Optional[IExecutor] = None,
-        ExecutorClass=SExecutor,
+        ExecutorClass=IExecutor,
     ) -> None:
         self._solver = Solver()
         super().__init__(P, opts, executor or ExecutorClass(P, self._solver, opts))
