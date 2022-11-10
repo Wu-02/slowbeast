@@ -4,11 +4,11 @@ from slowbeast.core.memorymodel import MemoryModel
 from slowbeast.symexe.executionstate import LazySEState
 from slowbeast.util.debugging import dbgv, ldbgv
 from .annotations import execute_annotations
-from .iexecutor import IExecutor as SExecutor
+from .iexecutor import IExecutor
 from ..core.executionresult import split_nonready_states, PathExecutionResult
 
 
-class PathExecutor(SExecutor):
+class PathExecutor(IExecutor):
     """
     Symbolic BSEPathExecutor instance adjusted to executing
     CFA paths possibly annotated with formulas.
