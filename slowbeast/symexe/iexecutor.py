@@ -1,5 +1,5 @@
 from random import getrandbits
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 
 from slowbeast.core.errors import AssertFailError
 from slowbeast.core.iexecutor import IExecutor as ConcreteIExecutor
@@ -11,7 +11,6 @@ from slowbeast.domains.exprmgr import ExpressionManager
 from slowbeast.domains.pointer import Pointer
 from slowbeast.domains.value import Value
 from slowbeast.ir.function import Function
-from slowbeast.ir.instruction import *
 from slowbeast.ir.program import Program
 from slowbeast.solvers.symcrete import SymbolicSolver
 from slowbeast.symexe.annotations import ExprAnnotation
@@ -20,9 +19,24 @@ from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.options import SEOptions
 from slowbeast.symexe.sestatedescription import SEStateDescription
 from slowbeast.symexe.statesset import StatesSet
-from slowbeast.util.debugging import dbgv, ldbgv, warn
+from slowbeast.util.debugging import dbgv, ldbgv, warn, dbg
 from .executionstate import IncrementalSEState
 from ..domains.concrete_value import ConcreteVal, ConcreteBool
+from ..ir.instruction import (
+    Instruction,
+    ValueInstruction,
+    Branch,
+    Switch,
+    Cmp,
+    Load,
+    Call,
+    BinaryOperation,
+    UnaryOperation,
+    Extend,
+    FpOp,
+    Assume,
+    Assert,
+)
 
 concrete_value = ConcreteDomain.get_value
 
@@ -107,11 +121,12 @@ class IExecutor(ConcreteIExecutor):
         self.stats = SEStats()
         # use these values in place of nondet values
         self._input_vector = None
+        self._error_funs = self.get_options().error_funs
 
     def is_error_fn(self, fun: str) -> bool:
         if isinstance(fun, str):
-            return fun in self.get_options().error_funs
-        return fun.name() in self.get_options().error_funs
+            return fun in self._error_funs
+        return fun.name() in self._error_funs
 
     def error_funs(self):
         return self._error_funs
@@ -169,10 +184,9 @@ class IExecutor(ConcreteIExecutor):
             assert cond.is_bool(), "Invalid constant"
             if cond.value():
                 return state, None
-            elif not cond.value():
+            if not cond.value():
                 return None, state
-            else:
-                raise RuntimeError(f"Invalid condition: {cond.value()}")
+            raise RuntimeError(f"Invalid condition: {cond.value()}")
 
         # check SAT of cond and its negation
         csat = state.is_sat(cond)
@@ -190,19 +204,19 @@ class IExecutor(ConcreteIExecutor):
         # in that case we do not need to add any constraint
         if csat is True and ncsat is False:
             return state, None
-        elif ncsat is True and csat is False:
+        if ncsat is True and csat is False:
             return None, state
-        else:
-            if csat is True:
-                T = state.copy()
-                T.add_constraint(cond)
 
-            if ncsat is True:
-                F = state.copy()
-                F.add_constraint(ncond)
+        if csat is True:
+            T = state.copy()
+            T.add_constraint(cond)
 
-            if T and F:
-                self.stats.forks += 1
+        if ncsat is True:
+            F = state.copy()
+            F.add_constraint(ncond)
+
+        if T and F:
+            self.stats.forks += 1
 
         return T, F
 
@@ -216,13 +230,12 @@ class IExecutor(ConcreteIExecutor):
             assert cond.is_bool(), "Invalid constant"
             if cond.value():
                 return state
-            else:
-                return None
+            return None
 
         r = state.is_sat(cond)
         if r is None:
             return None
-        elif r:
+        if r:
             state.add_constraint(cond)
             return state
         return None
@@ -253,9 +266,8 @@ class IExecutor(ConcreteIExecutor):
         if s is None:
             dbgv("branching is not feasible!")
             return []
-        else:
-            assert succ
-            s.pc = succ.instruction(0)
+        assert succ
+        s.pc = succ.instruction(0)
 
         return [s]
 
@@ -315,18 +327,17 @@ class IExecutor(ConcreteIExecutor):
     ) -> Expr:
         if p == Cmp.LE:
             return expr_mgr.Le(op1, op2, unsgn)
-        elif p == Cmp.LT:
+        if p == Cmp.LT:
             return expr_mgr.Lt(op1, op2, unsgn)
-        elif p == Cmp.GE:
+        if p == Cmp.GE:
             return expr_mgr.Ge(op1, op2, unsgn)
-        elif p == Cmp.GT:
+        if p == Cmp.GT:
             return expr_mgr.Gt(op1, op2, unsgn)
-        elif p == Cmp.EQ:
+        if p == Cmp.EQ:
             return expr_mgr.Eq(op1, op2)
-        elif p == Cmp.NE:
+        if p == Cmp.NE:
             return expr_mgr.Ne(op1, op2)
-        else:
-            raise RuntimeError("Invalid comparison")
+        raise RuntimeError("Invalid comparison")
 
     def compare_pointers(self, state, instr, p1, p2):
         mo1id = p1.object()
@@ -346,18 +357,14 @@ class IExecutor(ConcreteIExecutor):
             )
             state.pc = state.pc.get_next_inst()
             return [state]
+        if p not in (Cmp.EQ, Cmp.NE):
+            state.set_killed(
+                "Comparison of pointers implemented only for "
+                "(non-)equality or into the same object"
+            )
         else:
-            if p != Cmp.EQ and p != Cmp.NE:
-                state.set_killed(
-                    "Comparison of pointers implemented only for "
-                    "(non-)equality or into the same object"
-                )
-            else:
-                state.set(instr, ConcreteBool(p == Cmp.NE))
-                state.pc = state.pc.get_next_inst()
-            return [state]
-
-        state.set_killed("Invalid pointer comparison")
+            state.set(instr, ConcreteBool(p == Cmp.NE))
+            state.pc = state.pc.get_next_inst()
         return [state]
 
     def compare_ptr_and_nonptr(self, em, pred, op1, op2):
@@ -390,44 +397,44 @@ class IExecutor(ConcreteIExecutor):
         if op1isptr or op2isptr:
             if op1isptr and op2isptr:
                 return self.compare_pointers(state, instr, op1, op2)
+
+            # we handle only comparison of symbolic constant (pointer) to
+            # null
+            expr_mgr = state.expr_manager()
+            if op1isptr and op1.is_null():
+                state.set(
+                    instr,
+                    self.compare_values(
+                        expr_mgr,
+                        instr.predicate(),
+                        expr_mgr.concrete_value(0, op1.bitwidth()),
+                        op2,
+                        instr.is_unsigned(),
+                    ),
+                )
+            elif op2isptr and op2.is_null():
+                state.set(
+                    instr,
+                    self.compare_values(
+                        expr_mgr,
+                        instr.predicate(),
+                        op1,
+                        expr_mgr.concrete_value(0, op1.bitwidth()),
+                        instr.is_unsigned(),
+                    ),
+                )
             else:
-                # we handle only comparison of symbolic constant (pointer) to
-                # null
-                expr_mgr = state.expr_manager()
-                if op1isptr and op1.is_null():
-                    state.set(
-                        instr,
-                        self.compare_values(
-                            expr_mgr,
-                            instr.predicate(),
-                            expr_mgr.concrete_value(0, op1.bitwidth()),
-                            op2,
-                            instr.is_unsigned(),
-                        ),
+                expr = self.compare_ptr_and_nonptr(
+                    expr_mgr, instr.predicate(), op1, op2
+                )
+                if expr is None:
+                    state.set_killed(
+                        f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}"
                     )
-                elif op2isptr and op2.is_null():
-                    state.set(
-                        instr,
-                        self.compare_values(
-                            expr_mgr,
-                            instr.predicate(),
-                            op1,
-                            expr_mgr.concrete_value(0, op1.bitwidth()),
-                            instr.is_unsigned(),
-                        ),
-                    )
-                else:
-                    expr = self.compare_ptr_and_nonptr(
-                        expr_mgr, instr.predicate(), op1, op2
-                    )
-                    if expr is None:
-                        state.set_killed(
-                            f"Comparison of pointer to this constant not implemented: {op1} cmp {op2}"
-                        )
-                        return [state]
-                    state.set(instr, expr)
-                state.pc = state.pc.get_next_inst()
-                return [state]
+                    return [state]
+                state.set(instr, expr)
+            state.pc = state.pc.get_next_inst()
+            return [state]
 
         x = self.compare_values(
             state.expr_manager(),
@@ -742,7 +749,7 @@ class IExecutor(ConcreteIExecutor):
         states = []
         assert v.is_bool()
         if v.is_concrete():
-            if v.value() != True:
+            if v.value() is not True:
                 state.set_error(AssertFailError(msg))
             else:
                 state.pc = state.pc.get_next_inst()

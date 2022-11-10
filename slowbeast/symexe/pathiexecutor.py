@@ -60,7 +60,7 @@ class PathIExecutor(IExecutor):
 
         return ready, nonready
 
-    def execute_path(self, state, path: Sized, invariants=None) -> PathExecutionResult:
+    def execute_path(self, state, path: Sized) -> PathExecutionResult:
         """
         Execute the given CFA path. NOTE: the passed states may be modified.
 
