@@ -9,7 +9,7 @@ fixme:
 
 # FORMATTING
 black:
-	black slowbeast/
+	black sb slowbeast/
 
 autopep:
 	autopep8 --in-place --aggressive --aggressive --recursive slowbeast
