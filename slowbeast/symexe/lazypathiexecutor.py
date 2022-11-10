@@ -8,9 +8,9 @@ from .iexecutor import IExecutor
 from ..core.executionresult import split_nonready_states, PathExecutionResult
 
 
-class PathExecutor(IExecutor):
+class LazyPathIExecutor(IExecutor):
     """
-    Symbolic BSEPathExecutor instance adjusted to executing
+    Symbolic BSELazyPathIExecutor instance adjusted to executing
     CFA paths possibly annotated with formulas.
     """
 

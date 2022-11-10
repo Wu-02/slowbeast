@@ -6,7 +6,10 @@ from slowbeast.cfkind.naive.naivekindse import Result
 from slowbeast.symexe.annotations import Annotation, execute_annotation
 from slowbeast.symexe.executionstate import SEState, SEState as ExecutionState
 from slowbeast.symexe.memorymodel import LazySymbolicMemoryModel
-from slowbeast.symexe.pathexecutor import PathExecutor, PathExecutor as PathExecutor
+from slowbeast.symexe.lazypathiexecutor import (
+    LazyPathIExecutor,
+    LazyPathIExecutor as PathExecutor,
+)
 from slowbeast.symexe.interpreter import SymbolicInterpreter, SEOptions, SExecutor
 from slowbeast.util.debugging import (
     print_stdout,
@@ -191,7 +194,7 @@ class BSELFChecker(BSELFCheckerVanilla):
         )
         self.forward_states = forward_states
         memorymodel = LazySymbolicMemoryModel(opts)
-        pathexecutor = PathExecutor(program, self.solver(), opts, memorymodel)
+        pathexecutor = LazyPathIExecutor(program, self.solver(), opts, memorymodel)
         # forbid defined calls...
         # pathexecutor.forbid_calls()
         self._pathexecutor = pathexecutor

@@ -13,7 +13,7 @@ from slowbeast.symexe.interpreter import (
 )
 from slowbeast.util.debugging import print_stdout, print_stderr, dbg
 from .bsectx import BSEContext
-from .executor import BSEPathExecutor as BSEExecutor
+from .executor import BSELazyPathIExecutor as BSEExecutor
 from ..core.executionresult import PathExecutionResult
 
 
