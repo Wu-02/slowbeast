@@ -1,6 +1,5 @@
 from typing import List, Optional, Sized
 
-import slowbeast.symexe.iexecutor
 from slowbeast.core.iexecutor import IExecutor
 from slowbeast.interpreter.interactive import InteractiveHandler
 from slowbeast.ir.program import Program
@@ -25,7 +24,7 @@ class Interpreter:
     ) -> None:
         self._program = program
         self._options = opts
-        self._executor = IExecutor(opts) if executor is None else executor
+        self._executor = IExecutor(program, opts) if executor is None else executor
         self._interactive = InteractiveHandler(self) if opts.interactive else None
 
         self.states = []
