@@ -273,11 +273,13 @@ class Load(ValueTypedInstruction):
 
 
 class Alloc(ValueInstruction):
-    def __init__(self, size, on_heap: bool = False) -> None:
+    def __init__(self, size, on_heap: bool = False, zeroed: bool = False) -> None:
         assert isinstance(on_heap, bool), on_heap
-        super().__init__()
+        assert isinstance(zeroed, bool), on_heap
+        super().__init__([size], [size.type()])
         self._size = size
         self._is_heap = on_heap
+        self._zeroed = zeroed
 
     def size(self):
         return self._size
@@ -285,14 +287,18 @@ class Alloc(ValueInstruction):
     def is_heap_allocation(self):
         return self._is_heap
 
+    def is_zeroed(self):
+        return self._zeroed
+
     def type(self) -> PointerType:
         return type_mgr().pointer_ty()
 
     def __str__(self) -> str:
-        return "{0} = alloc {1} bytes{2}".format(
+        return "{0} = alloc {1} bytes{2}{3}".format(
             self.as_value(),
             self.size().as_value(),
             " on heap" if self._is_heap else "",
+            " zeroed" if self._zeroed else "",
         )
 
     # the allocations return pointers, we need to compare them

@@ -50,6 +50,7 @@ special_functions = [
     "__signbitf",
     "__signbitl",
     "malloc",
+    "calloc",
     "__assert_fail",
     "__VERIFIER_error",
     "__VERIFIER_assume",
@@ -118,6 +119,19 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         size = parser.operand(operands[0])
         A = Alloc(size, on_heap=True)
         return A, [A]
+    elif fun == "calloc":
+        operands = get_llvm_operands(inst)
+        assert (
+            len(operands) == 3
+        ), "Invalid calloc"  # (call has +1 operand for the function)
+        size = BinaryOperation(
+            BinaryOperation.MUL,
+            parser.operand(operands[0]),
+            parser.operand(operands[1]),
+            [get_sb_type(module, operands[i].type) for i in (0, 1)],
+        )
+        A = Alloc(size, on_heap=True, zeroed=True)
+        return A, [size, A]
     elif fun.startswith("llvm.fabs."):
         operands = get_llvm_operands(inst)
         val = parser.operand(operands[0])

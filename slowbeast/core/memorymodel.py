@@ -38,7 +38,7 @@ class MemoryModel:
         if instr.is_global():
             ptr = state.memory.allocate_global(instr, zeroed=instr.is_zeroed())
         else:
-            ptr = state.memory.allocate(size, instr)
+            ptr = state.memory.allocate(size, instr, zeroed=instr.is_zeroed())
         state.set(instr, ptr)
         return [state]
 
@@ -56,7 +56,7 @@ class MemoryModel:
             return [state]
 
         assert isinstance(value, Value)
-        assert to.is_pointer()
+        assert to.is_pointer(), to
         try:
             err = state.memory.write(to, value)
         except NotImplementedError as e:

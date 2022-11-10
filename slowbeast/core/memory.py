@@ -114,7 +114,7 @@ class Memory:
 
         return o
 
-    def allocate(self, size, instr=None, nm=None, objid=None) -> Pointer:
+    def allocate(self, size, instr=None, nm=None, objid=None, zeroed=False) -> Pointer:
         """Allocate a new memory object and return a pointer to it"""
         assert not instr or isinstance(instr, Alloc), instr
         assert (
@@ -123,6 +123,8 @@ class Memory:
 
         is_heap = instr is not None and instr.is_heap_allocation()
         o = self._allocate(size, instr, nm, objid, is_heap=is_heap)
+        if zeroed:
+            o.set_zeroed()
 
         self._objs_reown()
         assert self._objects.get(o.get_id()) is None
