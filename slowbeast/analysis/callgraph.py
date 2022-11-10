@@ -1,8 +1,9 @@
 from sys import stdout
+from typing import TextIO
 
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import Call
-from typing import TextIO
+from slowbeast.util.debugging import FIXME
 
 
 class CallGraph:
@@ -84,7 +85,12 @@ class CallGraph:
                     continue
 
                 # this function (node) contains call I that calls ...
-                node.add_callsite(I, [self._nodes[I.called_function()]])
+                cf = I.called_function()
+                called_node = self._nodes.get(cf)
+                if called_node:
+                    node.add_callsite(I, [called_node])
+                else:
+                    FIXME(f"Ignoring function pointer call: {I}")
 
     def get_reachable(self, node: Node):
         if isinstance(node, Function):

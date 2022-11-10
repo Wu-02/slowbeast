@@ -58,7 +58,22 @@ class AisInference(BSELFChecker):
 
         for path in self.loop.get_exit_paths():
             result = self.execute_path(path)
-            S.add(result.ready)
+            if result.ready:
+                S.add(result.ready)
+            if result.early:
+                print_stdout(
+                    "Loop path aborts early, using those states as terminating"
+                )
+                S.add(result.early)
+            if result.errors:
+                print_stdout(
+                    "Loop path aborts on error, using those states as terminating"
+                )
+                S.add(result.errors)
+            if result.other:
+                print_stdout("Loop path killed, using those states as terminating")
+                S.add(result.other)
+                continue
         assert not S.is_empty(), "Got no loop termination condition"
         return S
 

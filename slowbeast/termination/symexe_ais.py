@@ -73,6 +73,9 @@ def find_loop_body_entries(programstructure):
 
     loops = programstructure.get_loops()
     for header, loop in loops.items():
+        if not loop:
+            FIXME(f"Have no info about loop {header}, probably is not simple")
+            continue
         for path in loop.paths():
             first_inst = find_first_inst_on_path(path)
             ret[first_inst] = header
