@@ -311,6 +311,9 @@ class ExpressionManager:
         return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned))
 
     def Eq(self, a: Value, b: Value) -> Expr:
+        # comparing pointers must be broken down before encoding to expression
+        assert not a.is_pointer(), a
+        assert not b.is_pointer(), b
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if isinstance(a, ConcreteVal) and isinstance(b, ConcreteVal):
             return ConcreteDomain.Eq(a, b)

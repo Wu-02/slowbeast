@@ -275,6 +275,8 @@ def bv(name, bw):
 
 
 def bv_const(v, bw):
+    assert isinstance(v, int), v
+    assert isinstance(bw, int), bw
     return BitVecVal(v, bw)
 
 

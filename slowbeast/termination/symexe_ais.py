@@ -116,7 +116,14 @@ class SeAISForward(SymbolicInterpreter):
                 # TODO: if we take uninitialized memory as non-deterministic,
                 # we should assume that in this case the values may be the same
                 return False
-            expr = expr_mgr.Eq(val, prevval)
+            if val.is_pointer():
+                assert prevval.is_pointer(), prevval
+                expr = expr_mgr.And(
+                    expr_mgr.Eq(val.object(), prevval.object()),
+                    expr_mgr.Eq(val.offset(), prevval.offset()),
+                )
+            else:
+                expr = expr_mgr.Eq(val, prevval)
             if expr.is_concrete():
                 if not expr.value():
                     return False

@@ -81,6 +81,8 @@ class SymbolicDomain(Z3SymbolicDomain):
 
     @staticmethod
     def lift(v: Value) -> Expr:
+        assert v is not None, v
+        assert v.value() is not None, v
         assert isinstance(v, Value), f"Invalid value for lifting: {v}"
         if isinstance(v, Expr):
             return v

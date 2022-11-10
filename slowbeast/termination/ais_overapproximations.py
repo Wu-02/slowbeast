@@ -83,8 +83,8 @@ def get_changing_variables(state, solver):
         ival = ival[0]
         if ival.is_pointer():
             assert val.is_pointer()
-            # if segment may have been changed, we're screwed and can do notning
-            if solver.is_sat(Not(Eq(val.segment(), ival.seqment()))) is True:
+            # if object may have been changed, we're screwed and can do notning
+            if solver.is_sat(Not(Eq(val.object(), ival.object()))) is True:
                 continue
             ival, val = ival.offset(), val.offset()
 
