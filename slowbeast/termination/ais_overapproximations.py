@@ -3,7 +3,7 @@ from slowbeast.cfkind.overapproximations import LoopStateOverapproximation
 from slowbeast.cfkind.relations import get_const_cmp_relations, get_var_relations
 from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.symexe.statesset import intersection, StatesSet
-from slowbeast.util.debugging import dbg, ldbg, FIXME
+from slowbeast.util.debugging import dbg, ldbg, FIXME, dbgv
 
 
 def overapprox_state(executor, state_as_set, errset: StatesSet, target, loopinfo):
@@ -166,8 +166,9 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
             else:
                 dec_variables.intersection_update(decV)
 
-            if not (incV or decV):
-                dbg("No monotonically changing variable found")
+            if not (inc_variables or dec_variables):
+                dbgv("No monotonically changing variable found")
+                solver.pop()
                 return False
             have_feasible = True
 
@@ -183,7 +184,6 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
         return have_feasible  # and change_is_monotonic
 
     def clauses_are_acyclic(self, clauses, assumptions):
-        print(clauses, assumptions)
         FIXME("Checking acyclicity in dropping clauses not implemented")
         return False
 
