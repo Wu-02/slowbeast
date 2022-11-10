@@ -4,19 +4,64 @@ from slowbeast.analysis.programstructure import ProgramStructure
 from slowbeast.core.errors import NonTerminationError
 from slowbeast.solvers.symcrete import IncrementalSolver
 from slowbeast.symexe.interpreter import SymbolicInterpreter, SEOptions
+from slowbeast.termination.ais import AisInference
 from slowbeast.termination.forwardiexecutor import ForwardState, ForwardIExecutor
 from slowbeast.termination.memoryprojection import MemoryProjection
-from slowbeast.termination.ais import AisInference
 from slowbeast.util.debugging import (
     print_stdout,
     print_stderr,
     inc_print_indent,
     dec_print_indent,
     dbg,
-    dbgv,
     warn_once,
     FIXME,
 )
+
+
+def find_first_inst_on_path(path):
+    """
+    Find first inst inside the loop on a given path.
+    This instruction is the one that is after the first
+    assume edge (the jump into the body).
+    """
+    edgeit = (edge for edge in path)
+
+    # find first assume edge
+    first_assume = None
+    for edge in edgeit:
+        if edge.is_assume():
+            first_assume = edge
+            break
+
+    if first_assume is None:
+        assert sum((1 if e.is_assume() else 0 for e in path)) == 0, path
+        raise RuntimeError(f"Unhandled loop path, no assume edge found: {path}")
+
+    # find the first edge that has some elements or the next assume edge
+    # because the assume edge corresponds to a branch instruction
+    elems = None
+    for edge in edgeit:
+        assert edge.elems() is not None  # the code relies on this
+        elems = edge.elems()
+        if elems:
+            break
+        if edge.is_assume():
+            elems = [edge.orig_elem()]
+            break
+
+    if elems is None:
+        # If elems is None it means that the loop above did no iteration
+        # and therefore there is no next edge.
+        # If there is no next edge, it means that the first assume edge
+        # that we've found is also the jump to the header and the
+        # only instruction on this path is the jump. Get the jump then,
+        # which is not in elems() but it is the orig_elem().
+        assert sum((1 if e.is_assume() else 0 for e in path)) == 1, path
+        elems = [first_assume.orig_elem()]
+
+    if not elems:
+        raise RuntimeError(f"Unhandled loop path {path}")
+    return elems[0]
 
 
 def find_loop_body_entries(programstructure):
@@ -24,48 +69,13 @@ def find_loop_body_entries(programstructure):
     Find the first instruction from each loop body. Note that these instructions do not
     precisely correspond to loop headers in the backward analysis.
     """
-
-    headers = programstructure.get_loop_headers()
     ret = {}
-    # go from the header until we find the assume edges
-    for h in headers:
-        node = h
-        while not node.is_branching():
-            node = node.get_single_successor_loc()
-            if node == h:
-                raise NotImplementedError("Unconditional loops not handled")
-        if len(node.successors()) != 2 or any(
-            (not e.is_assume() for e in node.successors())
-        ):
-            raise NotImplementedError("Unhandled structure of the loop")
 
-        entry_edge = (
-            node.successors()[0]
-            if node.successors()[0].assume_true()
-            else node.successors()[1]
-        )
-        assert entry_edge.assume_true(), entry_edge
-        if len(entry_edge.elems()) != 1:
-            raise NotImplementedError("Unhandled structure of the loop")
-
-        # find the first instruction in the body of the loop. It is either on regular edge
-        # or on an assume edge that has no ops, but corresponds to an instruction.
-        following_edge = entry_edge.target().get_single_successor()
-        if following_edge is None:
-            raise NotImplementedError("Unhandled structure of the loop")
-        while (len(following_edge.elems()) == 0) and (not following_edge.is_assume()):
-            following_edge = following_edge.target().get_single_successor()
-            if following_edge is None:
-                raise NotImplementedError("Unhandled structure of the loop")
-            if following_edge.source() == h:
-                raise NotImplementedError("Unhandled structure of the loop")
-
-        if following_edge.is_assume():
-            entry_inst = following_edge.orig_elem()
-        else:
-            entry_inst = following_edge.elems()[0]
-        assert entry_inst not in ret, f"{entry_inst} in {ret}"
-        ret[entry_inst] = h
+    loops = programstructure.get_loops()
+    for header, loop in loops.items():
+        for path in loop.paths():
+            first_inst = find_first_inst_on_path(path)
+            ret[first_inst] = header
 
     return ret
 
