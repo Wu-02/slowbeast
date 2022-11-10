@@ -240,7 +240,7 @@ class SeAIS(SeAISForward):
 
     def _get_ais(self, pc):
         if pc not in self._ais:
-            self._ais[pc] = AisInference(
+            ais = AisInference(
                 self._loop_headers[pc],
                 self.get_program(),
                 self.programstructure,
@@ -249,16 +249,20 @@ class SeAIS(SeAISForward):
                 indsets=None,
                 max_loop_hits=None,
             )
+            if ais.aistree is None:
+                ais = None  # creating initial AIS failed
+            self._ais[pc] = ais
         return self._ais[pc]
 
     def handle_new_state(self, state: ForwardState) -> None:
         if self._is_loop_header(state.pc):
             ais = self._get_ais(state.pc)
-            if self._state_is_subsumed(ais, state):
-                dbg("State is subsumed, dropping it")
-                return
+            if ais is not None:
+                if self._state_is_subsumed(ais, state):
+                    dbg("State is subsumed, dropping it")
+                    return
 
-            ais.do_step()
+                ais.do_step()
         super().handle_new_state(state)
 
     def _state_is_subsumed(self, ais, state):

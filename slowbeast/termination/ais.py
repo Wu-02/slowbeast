@@ -35,20 +35,27 @@ class AisInference(BSELFChecker):
             max_loop_hits,
         )
 
+        self.aistree = None
         self.loop = self.get_loop(loc)
         # tell the super() class what is the assertion that we are looking for
         S = self.get_loop_termination_condition(loc)
-        self.aistree = InductiveSetsTree(S)
+        if S:
+            self.aistree = InductiveSetsTree(S)
 
-        # TODO: do we need this?
-        self.assertion = S.as_assert_annotation()
-        print_stdout(
-            f"Init AIS for loop {loc} with termination condition {self.assertion}",
-            color="cyan",
-        )
+            # TODO: do we need this?
+            self.assertion = S.as_assert_annotation()
+            print_stdout(
+                f"Init AIS for loop {loc} with termination condition {self.assertion}",
+                color="cyan",
+            )
 
     def get_loop_termination_condition(self, loc):
         S = self.create_set()
+        if not self.loop.get_exit_paths():
+            print_stdout(f"Loop {loc} is syntactically infinite")
+            # syntactically infinite loop
+            return None
+
         for path in self.loop.get_exit_paths():
             result = self.execute_path(path)
             S.add(result.ready)
@@ -60,6 +67,8 @@ class AisInference(BSELFChecker):
         return Result.UNKNOWN
 
     def do_step(self):
+        assert self.aistree
+
         print_stdout(
             f"[loop {self.location}] current AIS: {self.aistree.all_states.as_assume_annotation()}",
             color="blue",
