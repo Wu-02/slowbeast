@@ -2,15 +2,15 @@ from typing import Optional, Sized
 
 from slowbeast.core.memorymodel import MemoryModel
 from slowbeast.symexe.executionstate import LazySEState
-from slowbeast.util.debugging import dbgv, ldbgv
+from slowbeast.util.debugging import dbgv
 from .annotations import execute_annotations
-from .iexecutor import IExecutor
+from .pathiexecutor import PathIExecutor
 from ..core.executionresult import split_nonready_states, PathExecutionResult
 
 
-class LazyPathIExecutor(IExecutor):
+class LazyPathIExecutor(PathIExecutor):
     """
-    Symbolic BSELazyPathIExecutor instance adjusted to executing
+    Symbolic LazyPathIExecutor instance adjusted to executing
     CFA paths possibly annotated with formulas.
     """
 
@@ -60,35 +60,6 @@ class LazyPathIExecutor(IExecutor):
             nonready += tu
         assert all(map(lambda s: isinstance(s, LazySEState), ready)), "Wrong state type"
         return ready, nonready
-
-    def _exec_assume_edge(self, states, edge):
-        nonready = []
-        isnot = edge.assume_false()
-        for elem in edge:
-            newstates = []
-            for r in states:
-                cond = r.eval(elem)
-                # if cond is None:
-                #    r.set_terminated(f"Invalid assume edge: {elem}")
-                #    nonready.append(r)
-                #    continue
-                ldbgv(
-                    "assume {0}{1}",
-                    ("not " if isnot else "", cond),
-                    verbose_lvl=3,
-                    color="dark_green",
-                )
-                tmp = self.exec_assume_expr(
-                    r, r.expr_manager().Not(cond) if isnot else cond
-                )
-                for t in tmp:
-                    if t.is_ready():
-                        newstates.append(t)
-                    else:
-                        nonready.append(t)
-            states = newstates
-
-        return states, nonready
 
     def _execute_annotated_edge(self, states, edge, path, pre=None):
         assert all(map(lambda s: isinstance(s, LazySEState), states))
