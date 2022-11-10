@@ -189,6 +189,29 @@ class ValueTypedInstruction(ValueInstruction):
         return self._type
 
 
+class Noop(Instruction):
+    def __init__(self):
+        super().__init__([], [])
+
+
+class AnnotationInstruction(Noop):
+    """
+    Annotate a place in code.
+    """
+
+    def __init__(self, kind, descr, data=None):
+        super().__init__()
+        self._kind = kind
+        self._descr = descr
+        self._data = data
+
+    def __str__(self):
+        s = f"<{self._kind} | {self._descr}>"
+        if self._data:
+            return f"{s}: {self._data}"
+        return s
+
+
 class Store(Instruction):
     """Store 'val' to 'to'"""
 
