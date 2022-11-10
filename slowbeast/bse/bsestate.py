@@ -352,7 +352,6 @@ class BSEState(LazySEState):
             changed = False
             for ptr, inpval in self.memory._input_reads.items():
                 # try read the memory if it is written in the state
-                prestate.memory.dump()
                 val, _ = prestate.memory.read(ptr, inpval[1])
                 if val:
                     replace_value(inpval[0], val)
