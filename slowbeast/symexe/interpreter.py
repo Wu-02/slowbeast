@@ -16,10 +16,11 @@ from .stats import SEStats
 
 class SymbolicInterpreter(Interpreter):
     """
-    Symbolic execution of programs. According to most of the literature, the name should be 'SymbolicExecutor',
-    but we call it SymbolicInterpreter to follow the distinction between executor and interpreter in this project
-    (the first one is for executing instructions or sequences of instructions and the latter for executing
-    (interpreting) whole programs).
+    Symbolic execution of programs. According to most of the literature,
+    the name should be 'SymbolicExecutor', but we call it SymbolicInterpreter
+    to follow the distinction between executor and interpreter in this project
+    (the first one is for executing instructions or sequences of instructions
+    and the latter for executing (interpreting) whole programs).
     """
 
     def __init__(
@@ -96,7 +97,7 @@ class SymbolicInterpreter(Interpreter):
                     )
                 else:
                     print_stderr(
-                        f"{s.get_id()}: {s.get_error()} @ {s.pc}",
+                        f"{state.get_id()}: {state.get_error()} @ {state.pc}",
                         color="redul",
                     )
                 print_stderr("Error found.", color="red")
