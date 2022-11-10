@@ -13,7 +13,8 @@ from slowbeast.util.debugging import dbgv
 
 def write_bytes(values: list, offval, x: Union[Expr, Value]) -> Optional[MemError]:
     """
-    Write value "x" at offval + offval + size(x) indices of values list
+    Write value "x" at offval + offval + size(x) indices of values list.
+    Return None if all is fine or return a MemError object.
     """
     expr_mgr = global_expr_mgr()
     bw = x.bytewidth()
@@ -25,6 +26,7 @@ def write_bytes(values: list, offval, x: Union[Expr, Value]) -> Optional[MemErro
     xvalues = x_to_bytes.value()
     for n, i in enumerate(range(offval, offval + bw)):
         values[i] = xvalues[n]
+    return None
 
 
 def read_bytes(values: list, offval, bts, zeroed):
@@ -112,17 +114,23 @@ class MemoryObject(CoreMO):
         values: dict = self._values
         val = values.get(offval)
         if val is None and self._zeroed:
+            if any((values.get(off) for off in range(offval, offval + bts))):
+                # there exist some value that overlaps with the range of read bytes
+                return self.promote_and_read(bts, offval, size)
             val = ConcreteBitVec(0, 8 * bts)
         if val is None or val.bytewidth() != bts:
-            bytevalues, err = mo_to_bytes(values, size)
-            if err:
-                return None, err
-            self._values = bytevalues
-            assert isinstance(self._values, list)
-            return read_bytes(bytevalues, offval, bts, self._zeroed)
+            return self.promote_and_read(bts, offval, size)
 
         # FIXME: make me return BytesType objects (a sequence of bytes)
         return val, None
+
+    def promote_and_read(self, bts, offval, size):
+        bytevalues, err = mo_to_bytes(self._values, size)
+        if err:
+            return None, err
+        self._values = bytevalues
+        assert isinstance(self._values, list)
+        return read_bytes(bytevalues, offval, bts, self._zeroed)
 
     def write(self, x: Value, off: Optional[ConcreteVal] = None) -> Optional[MemError]:
         """
@@ -153,34 +161,30 @@ class MemoryObject(CoreMO):
             return MemError(
                 MemError.OOB_ACCESS,
                 "Written value too big for the object. "
-                "Writing {0}B to offset {1} of {2}B object".format(
-                    x.bytewidth(), offval, size
-                ),
+                f"Writing {x.bytewidth()}B to offset {offval} of {size}B object",
             )
 
         values = self._values
         if self._is_bytes():
             return write_bytes(values, offval, x)
-        else:
-            # does the write overlap? should we promote the object
-            # to bytes-object?
-            # FIXME: not efficient...
-            bw = x.bytewidth()
-            for o, val in values.items():
-                if offval < o + val.bytewidth() and offval + bw > o:
-                    if o == offval and val.bytewidth() == bw:
-                        break  # the overlap is perfect, we just overwrite the value
+        # does the write overlap? should we promote the object
+        # to bytes-object?
+        # FIXME: not efficient...
+        bw = x.bytewidth()
+        for o, val in values.items():
+            if offval < o + val.bytewidth() and offval + bw > o:
+                if o == offval and val.bytewidth() == bw:
+                    break  # the overlap is perfect, we just overwrite the value
 
-                    # promote to bytes
-                    tmp, err = mo_to_bytes(values, size)
-                    if err:
-                        return err
-                    self._values = tmp
-                    return write_bytes(tmp, offval, x)
+                # promote to bytes
+                tmp, err = mo_to_bytes(values, size)
+                if err:
+                    return err
+                self._values = tmp
+                return write_bytes(tmp, offval, x)
 
-            values[offval] = x
-            return None
-        return MemError(MemError.UNSUPPORTED, "Unsupported memory operation")
+        values[offval] = x
+        return None
 
     def __repr__(self) -> str:
         s = self._repr_header()
