@@ -167,7 +167,7 @@ class SymbolicDomain(Z3SymbolicDomain):
     @staticmethod
     def BitCast(a: Value, ty: Type) -> Optional[Expr]:
         """Static cast"""
-        assert isinstance(a, Expr), a
+        assert isinstance(a, (Expr, SymbolicBytes)), a
         return get_any_domain(a).BitCast(a, ty)
 
     @staticmethod

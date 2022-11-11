@@ -38,6 +38,7 @@ from slowbeast.domains.value import Value
 from slowbeast.ir.instruction import FpOp
 from slowbeast.ir.types import Type, type_mgr
 from slowbeast.util.debugging import FIXME
+from .symbolic_bv import BVSymbolicDomain
 from .symbolic_z3 import Z3SymbolicDomain
 
 
@@ -72,6 +73,12 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
             return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
         if ty.is_bv():
             return Expr(float_to_ubv(a, ty), ty)
+        if ty.is_bytes():
+            # bitcast to bitvec and then break the bitvec to btes
+            bvty = type_mgr().bv_ty(tybw)
+            bv = Expr(float_to_ubv(a, bvty), bvty)
+            return BVSymbolicDomain.BitCast(bv, ty)
+
         return None  # unsupported conversion
 
     @staticmethod

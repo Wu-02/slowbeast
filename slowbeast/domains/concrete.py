@@ -211,7 +211,7 @@ class ConcreteDomain(Domain):
             return ConcreteBitVec(1 if a.value() else 0, bw)
         if a.is_bytes():
             if ty.is_float():
-                return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
+                return ConcreteFloat(trunc_to_float(to_fp(a.to_bv()), bw), bw)
             if ty.is_bv():
                 return a.to_bv()
         if a.is_bv():

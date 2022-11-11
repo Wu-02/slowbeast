@@ -98,25 +98,24 @@ class BVSymbolicDomain(Z3SymbolicDomain):
     def BitCast(a: Value, ty: Type):
         """Static cast"""
         assert isinstance(a, Expr), a
+        assert a.is_bv(), a
         tybw = ty.bitwidth()
-        if a.is_bv():
-            if ty.is_bool():
-                return Expr(
-                    If((a.unwrap() != bv_const(0, a.bitwidth())), TRUE(), FALSE()),
-                    type_mgr().bool_ty(),
-                )
-            if ty.is_float():
-                # from IEEE bitvector
-                expr = fpToFP(a.unwrap(), get_fp_sort(tybw))
-                return Expr(expr, ty)
-            if ty.is_bytes():
-                return SymbolicBytes(
-                    [
-                        BVSymbolicDomain.Extract(a, 8 * off, 8 * off + 7)
-                        for off in range(0, a.bytewidth())
-                    ]
-                )
-        return None  # unsupported conversion
+        if ty.is_bool():
+            return Expr(
+                If((a.unwrap() != bv_const(0, a.bitwidth())), TRUE(), FALSE()),
+                type_mgr().bool_ty(),
+            )
+        if ty.is_float():
+            # from IEEE bitvector
+            expr = fpToFP(a.unwrap(), get_fp_sort(tybw))
+            return Expr(expr, ty)
+        if ty.is_bytes():
+            return SymbolicBytes(
+                [
+                    BVSymbolicDomain.Extract(a, 8 * off, 8 * off + 7)
+                    for off in range(0, a.bytewidth())
+                ]
+            )
 
     @staticmethod
     def Cast(a: Value, ty: Type, signed: bool = True) -> Optional[Expr]:
@@ -156,7 +155,6 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert isinstance(a, Expr), a
         assert isinstance(start, int)
         assert isinstance(end, int)
-        print(a, start, end)
         return Expr(
             BVExtract(end, start, a.unwrap()),
             type_mgr().bv_ty(end - start + 1),

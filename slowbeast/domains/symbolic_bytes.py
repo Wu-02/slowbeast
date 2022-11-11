@@ -35,13 +35,12 @@ class SymbolicBytesDomain(Domain):
         return SymbolicBytes(values)
 
     @staticmethod
-    def Cast(a: Value, ty: Type, signed: bool = True) -> Optional[Expr]:
-        """Reinterpret cast"""
+    def BitCast(a: Value, ty: Type) -> Optional[Expr]:
+        """Static cast of float (a) to some type"""
         assert isinstance(a, SymbolicBytes), a
-        tybw = ty.bitwidth()
         if ty.is_float():
             bv = BVSymbolicDomain.Concat(*a.value())
-            return BVSymbolicDomain.Cast(bv, ty, signed)
+            return BVSymbolicDomain.BitCast(bv, ty)
         elif ty.is_bv():
             return BVSymbolicDomain.Concat(*a.value())
         elif ty.is_bool():
@@ -50,6 +49,23 @@ class SymbolicBytesDomain(Domain):
                 bv, BVSymbolicDomain.get_constant(0, bv.bitwidth())
             )
         return None  # unsupported conversion
+
+    # @staticmethod
+    # def Cast(a: Value, ty: Type, signed: bool = True) -> Optional[Expr]:
+    #    """Reinterpret cast"""
+    #    assert isinstance(a, SymbolicBytes), a
+    #    tybw = ty.bitwidth()
+    #    if ty.is_float():
+    #        bv = BVSymbolicDomain.Concat(*a.value())
+    #        return BVSymbolicDomain.Cast(bv, ty, signed)
+    #    elif ty.is_bv():
+    #        return BVSymbolicDomain.Concat(*a.value())
+    #    elif ty.is_bool():
+    #        bv = BVSymbolicDomain.Concat(*a.value())
+    #        return BVSymbolicDomain.Ne(
+    #            bv, BVSymbolicDomain.get_constant(0, bv.bitwidth())
+    #        )
+    #    return None  # unsupported conversion
 
     @staticmethod
     def Eq(a: Value, b: Value, unsigned: bool = False):
