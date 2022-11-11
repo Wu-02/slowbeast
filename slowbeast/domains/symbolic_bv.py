@@ -60,7 +60,7 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
         # bitwise and
-        return Expr(to_bv(a) & to_bv(b), type_mgr().bv_ty(a.bitwidth()))
+        return Expr(a.unwrap() & b.unwrap(), type_mgr().bv_ty(a.bitwidth()))
 
     @staticmethod
     def Or(a: Expr, b: Expr) -> Expr:
@@ -68,8 +68,7 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert isinstance(b, Expr), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
-        # bitwise and
-        return Expr(to_bv(a) | to_bv(b), type_mgr().bv_ty(a.bitwidth()))
+        return Expr(a.unwrap() | b.unwrap(), type_mgr().bv_ty(a.bitwidth()))
 
     @staticmethod
     def Xor(a: Expr, b: Expr) -> Expr:
@@ -77,13 +76,12 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert isinstance(b, Expr), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a}, {b}"
-        # bitwise and
-        return Expr(to_bv(a) ^ to_bv(b), type_mgr().bv_ty(a.bitwidth()))
+        return Expr(a.unwrap() ^ b.unwrap(), type_mgr().bv_ty(a.bitwidth()))
 
     @staticmethod
     def Not(a: Expr) -> Expr:
         assert isinstance(a, Expr), a
-        return Expr(~to_bv(a), type_mgr().bv_ty(a.bitwidth()))
+        return Expr(~a.unwrap(), type_mgr().bv_ty(a.bitwidth()))
 
     @staticmethod
     def Extend(a: Value, bw: int, unsigned: bool) -> Expr:
@@ -97,7 +95,7 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         return Expr(BVSExt(bw - a.bitwidth(), ae), type_mgr().bv_ty(bw))
 
     @staticmethod
-    def BitCast(a: Value, ty: Type) -> Optional[Expr]:
+    def BitCast(a: Value, ty: Type):
         """Static cast"""
         assert isinstance(a, Expr), a
         tybw = ty.bitwidth()
@@ -158,6 +156,7 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert isinstance(a, Expr), a
         assert isinstance(start, int)
         assert isinstance(end, int)
+        print(a, start, end)
         return Expr(
             BVExtract(end, start, a.unwrap()),
             type_mgr().bv_ty(end - start + 1),

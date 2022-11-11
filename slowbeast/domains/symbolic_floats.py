@@ -71,8 +71,7 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         if ty.is_float():
             return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
         if ty.is_bv():
-            ae = fpToIEEEBV(a.unwrap())
-            return Expr(ae, ty)
+            return Expr(float_to_ubv(a, ty), ty)
         return None  # unsupported conversion
 
     @staticmethod

@@ -1,3 +1,4 @@
+from struct import pack, unpack
 from typing import Union
 
 from numpy import (
@@ -24,6 +25,22 @@ from ..ir.instruction import FpOp
 
 def concrete_float_val_to_bytes(x):
     return [b for b in x.tobytes()]
+
+
+def float_to_bv(x, bw):
+    if bw == 32:
+        return (
+            unpack("I", pack("f", float(x.value())))
+            # if unsigned
+            # else unpack("i", pack("f", x.value()))
+        )[0]
+
+    assert bw == 64, f"{x}, bw: {bw}"
+    return (
+        unpack("Q", pack("d", float(x.value())))
+        # if unsigned
+        # else unpack("q", pack("d", x.value()))
+    )[0]
 
 
 class ConcreteFloat(ConcreteVal):

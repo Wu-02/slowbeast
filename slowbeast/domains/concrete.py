@@ -9,6 +9,7 @@ from slowbeast.domains.concrete_floats import (
     ConcreteFloat,
     ConcreteFloatsDomain,
     concrete_float_val_to_bytes,
+    float_to_bv,
 )
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import Type
@@ -237,7 +238,9 @@ class ConcreteDomain(Domain):
                         for val in concrete_float_val_to_bytes(a.value())
                     ]
                 )
-        return None  # unsupported conversion
+            elif ty.is_bv():
+                return ConcreteBitVec(float_to_bv(a, bw), bw)
+            return None  # unsupported conversion
 
     @staticmethod
     def Shl(a: Value, b: Value) -> Value:

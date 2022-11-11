@@ -49,6 +49,7 @@ from z3 import (
     Z3_OP_UGT,
     BitVecNumRef,
     FPNumRef,
+    fpToSBV,
 )
 
 from slowbeast.domains.concrete import concrete_value
@@ -221,7 +222,7 @@ def float_to_ubv(x, ty=None):
 def float_to_sbv(x, ty=None):
     if x.is_float():
         bw = ty.bitwidth() if ty else x.bitwidth()
-        return simplify(fpToUBV(RNE(), x._value, BitVecSort(bw)))
+        return simplify(fpToSBV(RNE(), x._value, BitVecSort(bw)))
 
     return x.unwrap()
 

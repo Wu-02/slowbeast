@@ -23,9 +23,6 @@ def to_signed(x: int, bw: int) -> int:
 
 
 def to_bv(x, unsigned: bool = True):
-    if x.is_bytes():
-        # bytes and bitvec are now represented the same
-        return x
     bw = x.bitwidth()
     assert not x.is_float(), x
     assert not x.is_bytes(), "Not implemented"
