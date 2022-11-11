@@ -21,16 +21,6 @@ from .domain import Domain
 from .value import Value
 
 
-def trunc_to_float(x, bw):
-    # isnt there a more efficient way? Probably just to use numpy.float32
-    # (but it seem to use a different rounding mode), or write the float
-    # handling directly in C (there must be a library with Python bindings
-    # for that)
-    if bw == 32:
-        return unpack("f", pack("f", x))[0]
-    return x
-
-
 def to_fp(x):
     val = x.value()
     if x.is_float():
@@ -187,17 +177,17 @@ class ConcreteDomain(Domain):
             if ty.is_bv():
                 return a.to_bv()
             if ty.is_float():
-                return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
+                return ConcreteFloat(to_fp(a), bw)
         if a.is_bv():
             if ty.is_float():
-                return ConcreteFloat(trunc_to_float(float(a.value()), bw), bw)
+                return ConcreteFloat(a.value(), bw)
             elif ty.is_bv():
                 return ConcreteBitVec(a.value(), bw)
             elif ty.is_bool():
                 return ConcreteBool(False if a.value() == 0 else True)
         elif a.is_float():
             if ty.is_float():
-                return ConcreteFloat(trunc_to_float(a.value(), bw), bw)
+                return ConcreteFloat(a.value(), bw)
             elif ty.is_bv():
                 return ConcreteBitVec(int(a.value()), bw)
         return None  # unsupported conversion
@@ -211,12 +201,12 @@ class ConcreteDomain(Domain):
             return ConcreteBitVec(1 if a.value() else 0, bw)
         if a.is_bytes():
             if ty.is_float():
-                return ConcreteFloat(trunc_to_float(to_fp(a.to_bv()), bw), bw)
+                return ConcreteFloat(to_fp(a.to_bv()), bw)
             if ty.is_bv():
                 return a.to_bv()
         if a.is_bv():
             if ty.is_float():
-                return ConcreteFloat(trunc_to_float(to_fp(a), bw), bw)
+                return ConcreteFloat(to_fp(a), bw)
             elif ty.is_bv():
                 return ConcreteBitVec(a.value(), bw)
             elif ty.is_bool():
@@ -230,7 +220,7 @@ class ConcreteDomain(Domain):
                 )
         elif a.is_float():
             if ty.is_float():
-                return ConcreteFloat(trunc_to_float(a.value(), bw), bw)
+                return ConcreteFloat(a.value(), bw)
             elif ty.is_bytes():
                 return ConcreteBytes(
                     [

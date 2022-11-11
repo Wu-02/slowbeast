@@ -351,12 +351,15 @@ class IExecutor:
         Execute the next instruction in the state and modify the state accordingly.
         """
         # debug print
+        if __debug__:
+            dbgloc = instr.get_metadata("dbgloc")
         ldbgv(
-            "({2}) {0}: {1}",
+            "({2}) {3} {0}: {1}",
             (
                 "--" if not instr.bblock() else instr.fun().name(),
                 instr,
                 state.get_id(),
+                f"{dbgloc[1]}:{dbgloc[2]}: " if dbgloc else "",
             ),
             verbose_lvl=3,
         )
