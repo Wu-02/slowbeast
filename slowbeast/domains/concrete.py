@@ -32,9 +32,14 @@ def trunc_to_float(x, bw):
 
 
 def to_fp(x):
+    val = x.value()
     if x.is_float():
-        return x.value()
-    return float_to_bv(x, x.bitwidth())
+        return val
+    return (
+        unpack("f", pack("I", val))
+        if x.bitwidth() == 32
+        else unpack("d", pack("Q", val))
+    )[0]
 
 
 def get_any_domain(a: Value):
