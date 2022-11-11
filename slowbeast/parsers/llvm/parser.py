@@ -668,29 +668,25 @@ class Parser:
         self._addMapping(inst, A)
         return [A]
 
-    def _createZExt(self, inst: ValueRef) -> List[Extend]:
+    def _createExt(self, inst, signed) -> List[Extend]:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for load"
-        zext = Extend(
-            self.operand(operands[0]),
+        ret = []
+        op = self.operand(operands[0])
+        if (
+            op.type().is_bool()
+        ):  # LLVM does not make difference between i1 and bool, but we do, so do a cast if we got bool to extend
+            op = Cast(op, type_mgr().bv_ty(1), False, [op.type()])
+            ret.append(op)
+        ext = Extend(
+            op,
             type_size_in_bits(self.llvmmodule, inst.type),
-            False,  # signed
+            signed,  # signed
             [get_sb_type(self.llvmmodule, op.type) for op in operands],
         )
-        self._addMapping(inst, zext)
-        return [zext]
-
-    def _createSExt(self, inst) -> List[Extend]:
-        operands = get_llvm_operands(inst)
-        assert len(operands) == 1, "Invalid number of operands for load"
-        sext = Extend(
-            self.operand(operands[0]),
-            type_size_in_bits(self.llvmmodule, inst.type),
-            True,  # signed
-            [get_sb_type(self.llvmmodule, op.type) for op in operands],
-        )
-        self._addMapping(inst, sext)
-        return [sext]
+        ret.append(ext)
+        self._addMapping(inst, ext)
+        return ret
 
     def _createReinterpCast(self, inst: ValueRef, sgn: bool) -> List[Cast]:
         operands = get_llvm_operands(inst)
@@ -897,9 +893,9 @@ class Parser:
         elif opcode == "unreachable":
             return self._createUnreachable(inst)
         elif opcode == "zext":
-            return self._createZExt(inst)
+            return self._createExt(inst, False)
         elif opcode == "sext":
-            return self._createSExt(inst)
+            return self._createExt(inst, True)
         elif opcode in ("uitofp", "sitofp", "fptosi", "fptoui", "fpext", "fptrunc"):
             return self._createReinterpCast(inst, opcode in ("uitofp", "fptoui"))
         elif opcode == "ptrtoint":
