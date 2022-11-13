@@ -24,12 +24,10 @@ from z3 import (
 from slowbeast.domains.expr import Expr
 from slowbeast.domains.symbolic_helpers import (
     get_fp_sort,
-    to_bv,
     TRUE,
     FALSE,
     bv,
     bv_const,
-    bool_to_ubv,
 )
 from slowbeast.domains.symbolic_value import SymbolicBytes
 from slowbeast.domains.symbolic_z3 import Z3SymbolicDomain
@@ -176,21 +174,21 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert b.is_bv(), b
-        return Expr(to_bv(a) << b.unwrap(), type_mgr().bv_ty(a.bitwidth()))
+        return Expr(a.unwrap() << b.unwrap(), type_mgr().bv_ty(a.bitwidth()))
 
     @staticmethod
     def AShr(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert b.is_bv(), b
-        return Expr(to_bv(a) >> b.unwrap(), type_mgr().bv_ty(a.bitwidth()))
+        return Expr(a.unwrap() >> b.unwrap(), type_mgr().bv_ty(a.bitwidth()))
 
     @staticmethod
     def LShr(a: Expr, b: Expr) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert b.is_bv(), b
-        return Expr(BVLShR(to_bv(a), b.unwrap()), type_mgr().bv_ty(a.bitwidth()))
+        return Expr(BVLShR(a.unwrap(), b.unwrap()), type_mgr().bv_ty(a.bitwidth()))
 
     @staticmethod
     def get_true() -> Expr:
@@ -210,8 +208,8 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         # we need this explicit float cast for the cases when a or b are
         # nondet loads (in which case they are bitvectors)
         if unsigned:
-            return Expr(BVULE(to_bv(a), to_bv(b)), type_mgr().bool_ty())
-        return Expr(to_bv(a) <= to_bv(b), type_mgr().bool_ty())
+            return Expr(BVULE(a.unwrap(), b.unwrap()), type_mgr().bool_ty())
+        return Expr(a.unwrap() <= b.unwrap(), type_mgr().bool_ty())
 
     @staticmethod
     def Lt(a, b, unsigned: bool = False) -> Expr:
@@ -220,8 +218,8 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if unsigned:
-            return Expr(BVULT(to_bv(a), to_bv(b)), type_mgr().bool_ty())
-        return Expr(to_bv(a) < to_bv(b), type_mgr().bool_ty())
+            return Expr(BVULT(a.unwrap(), b.unwrap()), type_mgr().bool_ty())
+        return Expr(a.unwrap() < b.unwrap(), type_mgr().bool_ty())
 
     @staticmethod
     def Ge(a, b, unsigned: bool = False) -> Expr:
@@ -230,8 +228,8 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if unsigned:
-            return Expr(BVUGE(to_bv(a), to_bv(b)), type_mgr().bool_ty())
-        return Expr(to_bv(a) >= to_bv(b), type_mgr().bool_ty())
+            return Expr(BVUGE(a.unwrap(), b.unwrap()), type_mgr().bool_ty())
+        return Expr(a.unwrap() >= b.unwrap(), type_mgr().bool_ty())
 
     @staticmethod
     def Gt(a, b, unsigned: bool = False) -> Expr:
@@ -240,24 +238,24 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if unsigned:
-            return Expr(BVUGT(to_bv(a), to_bv(b)), type_mgr().bool_ty())
-        return Expr(to_bv(a) > to_bv(b), type_mgr().bool_ty())
+            return Expr(BVUGT(a.unwrap(), b.unwrap()), type_mgr().bool_ty())
+        return Expr(a.unwrap() > b.unwrap(), type_mgr().bool_ty())
 
     @staticmethod
-    def Eq(a, b) -> Expr:
+    def Eq(a, b, unsigned_or_unord=False) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a} != {b}"
-        return Expr(to_bv(a) == to_bv(b), type_mgr().bool_ty())
+        return Expr(a.unwrap() == b.unwrap(), type_mgr().bool_ty())
 
     @staticmethod
-    def Ne(a, b) -> Expr:
+    def Ne(a, b, unsigned_or_unord=False) -> Expr:
         assert isinstance(a, Expr), a
         assert isinstance(b, Expr), b
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
-        return Expr(to_bv(a) != to_bv(b), type_mgr().bool_ty())
+        return Expr(a.unwrap() != b.unwrap(), type_mgr().bool_ty())
 
     ##
     # Arithmetic operations
@@ -270,7 +268,7 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         ), f"Operation on invalid types: {a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a} + {b}"
         bw = a.bitwidth()
-        return Expr(to_bv(a) + to_bv(b), type_mgr().bv_ty(bw))
+        return Expr(a.unwrap() + b.unwrap(), type_mgr().bv_ty(bw))
 
     @staticmethod
     def Sub(a: Expr, b: Expr) -> Expr:
@@ -278,7 +276,7 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert isinstance(b, Expr), b
         assert a.bitwidth() == b.bitwidth(), f"{a} - {b}"
         bw = a.bitwidth()
-        return Expr(to_bv(a) - to_bv(b), type_mgr().bv_ty(bw))
+        return Expr(a.unwrap() - b.unwrap(), type_mgr().bv_ty(bw))
 
     @staticmethod
     def Mul(a: Expr, b: Expr) -> Expr:
@@ -286,7 +284,7 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert isinstance(b, Expr), b
         assert a.bitwidth() == b.bitwidth(), f"{a} * {b}"
         bw = a.bitwidth()
-        return Expr(to_bv(a) * to_bv(b), type_mgr().bv_ty(bw))
+        return Expr(a.unwrap() * b.unwrap(), type_mgr().bv_ty(bw))
 
     @staticmethod
     def Div(a: Expr, b: Expr, unsigned: bool = False) -> Expr:
@@ -295,8 +293,8 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert a.bitwidth() == b.bitwidth(), f"{a} / {b}"
         bw = a.bitwidth()
         if unsigned:
-            return Expr(UDiv(to_bv(a), to_bv(b)), type_mgr().bv_ty(bw))
-        return Expr(to_bv(a) / to_bv(b), type_mgr().bv_ty(bw))
+            return Expr(UDiv(a.unwrap(), b.unwrap()), type_mgr().bv_ty(bw))
+        return Expr(a.unwrap() / b.unwrap(), type_mgr().bv_ty(bw))
 
     @staticmethod
     def Rem(a: Expr, b: Expr, unsigned: bool = False) -> Expr:

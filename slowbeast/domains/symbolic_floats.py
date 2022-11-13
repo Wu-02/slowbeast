@@ -22,6 +22,7 @@ from z3 import (
     fpIsZero,
     fpIsSubnormal,
     fpIsNegative,
+    fpToFP,
 )
 
 from slowbeast.domains.expr import Expr
@@ -72,11 +73,11 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         if ty.is_float():
             return Expr(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw)), ty)
         if ty.is_bv():
-            return Expr(float_to_ubv(a, ty), ty)
+            assert tybw == a.bitwidth()
+            return Expr(fpToIEEEBV(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw))), ty)
         if ty.is_bytes():
             # bitcast to bitvec and then break the bitvec to btes
-            bvty = type_mgr().bv_ty(tybw)
-            bv = Expr(float_to_ubv(a, bvty), bvty)
+            bv = Expr(fpToIEEEBV(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw))), ty)
             return BVSymbolicDomain.BitCast(bv, ty)
 
         return None  # unsupported conversion
