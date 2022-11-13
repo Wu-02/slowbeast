@@ -87,10 +87,9 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert isinstance(bw, int), bw
         assert a.bitwidth() <= bw, "Invalid zext argument"
         # BVZExt takes only 'increase' of the bitwidth
-        ae = to_bv(a) if a.is_float() else bool_to_ubv(a)
         if unsigned:
-            return Expr(BVZExt(bw - a.bitwidth(), ae), type_mgr().bv_ty(bw))
-        return Expr(BVSExt(bw - a.bitwidth(), ae), type_mgr().bv_ty(bw))
+            return Expr(BVZExt(bw - a.bitwidth(), a.unwrap()), type_mgr().bv_ty(bw))
+        return Expr(BVSExt(bw - a.bitwidth(), a.unwrap()), type_mgr().bv_ty(bw))
 
     @staticmethod
     def BitCast(a: Value, ty: Type):

@@ -85,7 +85,7 @@ class ConcreteFloatsDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if unsigned:  # means unordered for floats
-            return ConcreteBool(bool(a.value() < b.value()))
+            return ConcreteBool(a.is_nan() or b.is_nan() or bool(a.value() < b.value()))
         return ConcreteBool(
             bool(not a.is_nan() and not b.is_nan() and a.value() < b.value())
         )
@@ -97,7 +97,7 @@ class ConcreteFloatsDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if unsigned:  # means unordered for floats
-            return ConcreteBool(bool(a.value() > b.value()))
+            return ConcreteBool(a.is_nan() or b.is_nan() or bool(a.value() > b.value()))
         return ConcreteBool(
             bool(not a.is_nan() and not b.is_nan() and a.value() > b.value())
         )
@@ -109,7 +109,9 @@ class ConcreteFloatsDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if unsigned:  # means unordered for floats
-            return ConcreteBool(bool(a.value() <= b.value()))
+            return ConcreteBool(
+                a.is_nan() or b.is_nan() or bool(a.value() <= b.value())
+            )
         return ConcreteBool(
             bool(not a.is_nan() and not b.is_nan() and a.value() <= b.value())
         )
@@ -121,9 +123,31 @@ class ConcreteFloatsDomain(Domain):
         assert a.type() == b.type(), f"{a.type()} != {b.type()}"
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if unsigned:  # means unordered for floats
-            return ConcreteBool(bool(a.value() >= b.value()))
+            return ConcreteBool(
+                a.is_nan() or b.is_nan() or bool(a.value() >= b.value())
+            )
         return ConcreteBool(
             bool(not a.is_nan() and not b.is_nan() and a.value() >= b.value())
+        )
+
+    @staticmethod
+    def Eq(a: Value, b: Value, unordered: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteFloat), f"{a} type: {type(a)}"
+        assert isinstance(b, ConcreteFloat), f"{b} type: {type(b)}"
+        if unordered:
+            return ConcreteBool(a.is_nan() or b.is_nan() or a.unwrap() == b.unwrap())
+        return ConcreteBool(
+            bool(not a.is_nan() and not b.is_nan() and a.unwrap() == b.unwrap())
+        )
+
+    @staticmethod
+    def Ne(a: Value, b: Value, unordered: bool = False) -> ConcreteBool:
+        assert isinstance(a, ConcreteFloat), f"{a} type: {type(a)}"
+        assert isinstance(b, ConcreteFloat), f"{b} type: {type(b)}"
+        if unordered:
+            return ConcreteBool(a.is_nan() or b.is_nan() or a.unwrap() != b.unwrap())
+        return ConcreteBool(
+            bool(not a.is_nan() and not b.is_nan() and a.unwrap() != b.unwrap())
         )
 
     ##
@@ -177,14 +201,6 @@ class ConcreteFloatsDomain(Domain):
             else:
                 raise RuntimeError("Invalid value")
         return ConcreteFloat(a.unwrap() / b.unwrap(), bw)
-
-    @staticmethod
-    def Eq(a: Value, b: Value, unordered: bool = False) -> ConcreteBool:
-        assert isinstance(a, ConcreteFloat), f"{a} type: {type(a)}"
-        assert isinstance(b, ConcreteFloat), f"{b} type: {type(b)}"
-        return ConcreteBool(
-            bool(not a.is_nan() and not b.is_nan() and a.unwrap() == b.unwrap())
-        )
 
     @staticmethod
     def Abs(a: Value) -> Value:

@@ -23,6 +23,7 @@ from z3 import (
     fpIsSubnormal,
     fpIsNegative,
     fpToFP,
+    Or,
 )
 
 from slowbeast.domains.expr import Expr
@@ -107,54 +108,54 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
         # nondet loads (in which case they are bitvectors)
         a, b = cast_to_fp(a), cast_to_fp(b)
         expr = fpLEQ(a, b)
-        if not unsigned:
-            expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, type_mgr().bool_ty())
+        if unsigned:
+            return Expr(Or(fpIsNaN(a), fpIsNaN(b), expr), type_mgr().bool_ty())
+        return Expr(And(Not(fpIsNaN(a)), Not(fpIsNaN(b)), expr), type_mgr().bool_ty())
 
     @staticmethod
     def Lt(a, b, unsigned: bool = False) -> Expr:
         check_args(a, b)
         a, b = cast_to_fp(a), cast_to_fp(b)
         expr = fpLT(a, b)
-        if not unsigned:
-            expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, type_mgr().bool_ty())
+        if unsigned:
+            return Expr(Or(fpIsNaN(a), fpIsNaN(b), expr), type_mgr().bool_ty())
+        return Expr(And(Not(fpIsNaN(a)), Not(fpIsNaN(b)), expr), type_mgr().bool_ty())
 
     @staticmethod
     def Ge(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
         check_args(a, b)
         a, b = cast_to_fp(a), cast_to_fp(b)
         expr = fpGEQ(a, b)
-        if not unsigned:
-            expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, type_mgr().bool_ty())
+        if unsigned:
+            return Expr(Or(fpIsNaN(a), fpIsNaN(b), expr), type_mgr().bool_ty())
+        return Expr(And(Not(fpIsNaN(a)), Not(fpIsNaN(b)), expr), type_mgr().bool_ty())
 
     @staticmethod
     def Gt(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
         check_args(a, b)
         a, b = cast_to_fp(a), cast_to_fp(b)
         expr = fpGT(a, b)
-        if not unsigned:
-            expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, type_mgr().bool_ty())
+        if unsigned:
+            return Expr(Or(fpIsNaN(a), fpIsNaN(b), expr), type_mgr().bool_ty())
+        return Expr(And(Not(fpIsNaN(a)), Not(fpIsNaN(b)), expr), type_mgr().bool_ty())
 
     @staticmethod
     def Eq(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
         check_args(a, b)
         a, b = cast_to_fp(a), cast_to_fp(b)
         expr = fpEQ(a, b)
-        if not unsigned:
-            expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, type_mgr().bool_ty())
+        if unsigned:
+            return Expr(Or(fpIsNaN(a), fpIsNaN(b), expr), type_mgr().bool_ty())
+        return Expr(And(Not(fpIsNaN(a)), Not(fpIsNaN(b)), expr), type_mgr().bool_ty())
 
     @staticmethod
     def Ne(a, b, unsigned: bool = False, floats: bool = False) -> Expr:
         check_args(a, b)
         a, b = cast_to_fp(a), cast_to_fp(b)
         expr = fpNEQ(a, b)
-        if not unsigned:
-            expr = And(expr, Not(fpIsNaN(a)), Not(fpIsNaN(b)))
-        return Expr(expr, type_mgr().bool_ty())
+        if unsigned:
+            return Expr(Or(fpIsNaN(a), fpIsNaN(b), expr), type_mgr().bool_ty())
+        return Expr(And(Not(fpIsNaN(a)), Not(fpIsNaN(b)), expr), type_mgr().bool_ty())
 
     ##
     # Arithmetic operations
