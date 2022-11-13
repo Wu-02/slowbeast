@@ -334,9 +334,9 @@ class IExecutor(ConcreteIExecutor):
         if p == Cmp.GT:
             return expr_mgr.Gt(op1, op2, unsgn)
         if p == Cmp.EQ:
-            return expr_mgr.Eq(op1, op2)
+            return expr_mgr.Eq(op1, op2, unsgn)
         if p == Cmp.NE:
-            return expr_mgr.Ne(op1, op2)
+            return expr_mgr.Ne(op1, op2, unsgn)
         raise RuntimeError("Invalid comparison")
 
     def compare_pointers(self, state, instr, p1, p2):

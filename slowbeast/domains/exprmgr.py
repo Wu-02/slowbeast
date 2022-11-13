@@ -310,21 +310,21 @@ class ExpressionManager:
         lift = self.lift
         return opt(SymbolicDomain.Gt(lift(a), lift(b), unsigned))
 
-    def Eq(self, a: Value, b: Value) -> Expr:
+    def Eq(self, a: Value, b: Value, unsigned_or_unordered: bool = False) -> Expr:
         # comparing pointers must be broken down before encoding to expression
         assert not a.is_pointer(), a
         assert not b.is_pointer(), b
         assert a.bitwidth() == b.bitwidth(), f"{a.type()} != {b.type()}"
         if isinstance(a, ConcreteVal) and isinstance(b, ConcreteVal):
-            return ConcreteDomain.Eq(a, b)
+            return ConcreteDomain.Eq(a, b, unsigned_or_unordered)
         lift = self.lift
-        return opt(SymbolicDomain.Eq(lift(a), lift(b)))
+        return opt(SymbolicDomain.Eq(lift(a), lift(b), unsigned_or_unordered))
 
-    def Ne(self, a: Value, b: Value):
+    def Ne(self, a: Value, b: Value, unsigned_or_unordered: bool = False):
         if isinstance(a, ConcreteVal) and isinstance(b, ConcreteVal):
-            return ConcreteDomain.Ne(a, b)
+            return ConcreteDomain.Ne(a, b, unsigned_or_unordered)
         lift = self.lift
-        return opt(SymbolicDomain.Ne(lift(a), lift(b)))
+        return opt(SymbolicDomain.Ne(lift(a), lift(b), unsigned_or_unordered))
 
     ##
     # Artihmetic operations

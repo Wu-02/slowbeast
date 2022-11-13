@@ -231,12 +231,12 @@ class SymbolicDomain(Z3SymbolicDomain):
         return get_any_domain_checked(a, b).Gt(a, b, unsigned)
 
     @staticmethod
-    def Eq(a, b) -> Expr:
-        return get_any_domain_checked(a, b).Eq(a, b)
+    def Eq(a, b, unsigned_or_unordered: bool = False) -> Expr:
+        return get_any_domain_checked(a, b).Eq(a, b, unsigned_or_unordered)
 
     @staticmethod
-    def Ne(a, b) -> Expr:
-        return get_any_domain_checked(a, b).Ne(a, b)
+    def Ne(a, b, unsigned_or_unordered: bool = False) -> Expr:
+        return get_any_domain_checked(a, b).Ne(a, b, unsigned_or_unordered)
 
     ##
     # Arithmetic operations
