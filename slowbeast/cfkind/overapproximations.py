@@ -429,7 +429,7 @@ class LoopStateOverapproximation:
         dliteral = DecomposedLiteral(l)
         if not dliteral:
             return l
-        assert dliteral.toformula() == l
+        assert dliteral.toformula() == l, f"{dliteral.toformula()} != {l}"
 
         # we always check S && unsafe && new_clause, so we can keep S  and unsafe
         # in the solver all the time
