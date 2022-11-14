@@ -27,6 +27,8 @@ special_functions = [
     "llvm.fmuladd.f64",
     "llvm.minnum.f32",
     "llvm.minnum.f64",
+    "llvm.maxnum.f32",
+    "llvm.maxnum.f64",
     "llvm.round.f32",
     "llvm.round.f64",
     "llvm.floor.f32",
@@ -156,6 +158,12 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         types = [get_sb_type(module, operands[i].type) for i in range(0, 2)]
         MIN = FpOp(FpOp.MIN, ops, types)
         return MIN, [MIN]
+    elif fun.startswith("llvm.maxnum."):
+        operands = get_llvm_operands(inst)
+        ops = [parser.operand(operands[i]) for i in range(0, 2)]
+        types = [get_sb_type(module, operands[i].type) for i in range(0, 2)]
+        MAX = FpOp(FpOp.MAX, ops, types)
+        return MAX, [MAX]
     elif fun.startswith("llvm.round."):
         operands = get_llvm_operands(inst)
         ops = [parser.operand(operands[i]) for i in range(0, 1)]

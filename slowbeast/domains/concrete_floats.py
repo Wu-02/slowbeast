@@ -261,6 +261,15 @@ class ConcreteFloatsDomain(Domain):
                 return val
             assert not (isnan(a) or isnan(b))
             return val if a < b else val2
+        if op == FpOp.MAX:
+            assert val2 is not None
+            a, b = val.value(), val2.value()
+            if isnan(a):
+                return val2
+            if isnan(b):
+                return val
+            assert not (isnan(a) or isnan(b))
+            return val if a > b else val2
         if op == FpOp.DIM:
             assert val2 is not None, val2
             v1, v2 = val.value(), val2.value()
