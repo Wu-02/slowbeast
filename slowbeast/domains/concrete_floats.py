@@ -261,5 +261,15 @@ class ConcreteFloatsDomain(Domain):
                 return val
             assert not (isnan(a) or isnan(b))
             return val if a < b else val2
+        if op == FpOp.DIM:
+            assert val2 is not None, val2
+            v1, v2 = val.value(), val2.value()
+            if isnan(v1) or isnan(v2):
+                return val
+            # TODO: check for overflow!
+            tmp = v1 - v2
+            if tmp < 0:
+                return ConcreteFloat(0.0, val.type())
+            return ConcreteFloat(tmp, val.type())
 
         raise NotImplementedError("Invalid/unsupported FP operation")

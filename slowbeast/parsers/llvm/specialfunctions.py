@@ -9,6 +9,7 @@ from slowbeast.ir.instruction import (
     Cast,
     BinaryOperation,
     Extend,
+    Ite,
 )
 from slowbeast.ir.types import type_mgr
 from slowbeast.util.debugging import print_stderr
@@ -34,6 +35,7 @@ special_functions = [
     "llvm.ceil.f64",
     "llvm.trunc.f32",
     "llvm.trunc.f64",
+    "fdim",
     "fesetround",
     "nan",
     "__isnan",
@@ -188,6 +190,12 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
             [get_sb_type(module, inst.operands[0].type)],
         )
         return P, [O, P]
+    elif fun == "fdim":
+        operands = get_llvm_operands(inst)
+        ops = [parser.operand(operands[i]) for i in range(0, 2)]
+        types = [get_sb_type(module, operands[i].type) for i in range(0, 2)]
+        fpop = FpOp(FpOp.DIM, ops, types)
+        return fpop, [fpop]
     elif fun in "nan":
         I = Cast(
             ConcreteFloat("NaN", 64),
