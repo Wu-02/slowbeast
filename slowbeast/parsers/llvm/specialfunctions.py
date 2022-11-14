@@ -83,7 +83,7 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         return ops, types
 
     module = parser.llvmmodule
-    no_overflow = to_check and "no-signed-overflow" in to_check
+    no_overflow = to_check and "no-overflow" in to_check
     ignore_asserts = len(error_funs) > 0 or no_overflow
     if fun in error_funs:
         A = Assert(ConstantFalse, "error function called!")
