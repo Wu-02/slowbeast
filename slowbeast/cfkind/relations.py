@@ -63,9 +63,9 @@ def get_var_diff_relations(state):
 
         bw = max(l1bw, l2bw)
         if l1bw != bw:
-            l1 = expr_mgr.SExt(l1, ConcreteBitVec(bw, bw))
+            l1 = expr_mgr.Extend(l1, bw, False)
         if l2bw != bw:
-            l2 = expr_mgr.SExt(l2, ConcreteBitVec(bw, bw))
+            l2 = expr_mgr.Extend(l2, bw, False)
 
         # relation between loads of the type l1 - l2 = constant
         c = Var(f"c_{l1name}_{l2name}", type_mgr().bv_ty(bw))
@@ -124,11 +124,11 @@ def get_var_diff_relations(state):
             l3name = nd3.instruction.as_value()
             bw = max(l3bw, bw)
             if l1bw != bw:
-                l1 = expr_mgr.SExt(l1, ConcreteBitVec(bw, bw))
+                l1 = expr_mgr.Extend(l1, bw, False)
             if l2bw != bw:
-                l2 = expr_mgr.SExt(l2, ConcreteBitVec(bw, bw))
+                l2 = expr_mgr.Extend(l2, bw, False)
             if l3bw != bw:
-                l3 = expr_mgr.SExt(l3, ConcreteBitVec(bw, bw))
+                l3 = expr_mgr.Extend(l3, bw, False)
 
             if is_sat(Ne(Sub(l2, l1), l3)) is False:
                 yield AssertAnnotation(Eq(Sub(l2, l1), l3), subs, expr_mgr)
@@ -291,9 +291,9 @@ def _get_eq_loads(state, is_sat):
 
         bw = max(l1bw, l2bw)
         if l1bw != bw:
-            l1 = EM.SExt(l1, ConcreteBitVec(bw, bw))
+            l1 = EM.Extend(l1, bw, False)
         if l2bw != bw:
-            l2 = EM.SExt(l2, ConcreteBitVec(bw, bw))
+            l2 = EM.Extend(l2, bw, False)
 
         # relation between loads of the type l1 - l2 = constant
         if is_sat(Ne(l1, l2)) is False:

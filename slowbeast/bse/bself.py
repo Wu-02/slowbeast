@@ -4,12 +4,14 @@ from slowbeast.symexe.annotations import AssertAnnotation
 from slowbeast.symexe.interpreter import SEStats
 from slowbeast.util.debugging import (
     print_stdout,
+    print_stderr,
 )
 from .bse import (
     report_state,
 )
 from .bselfchecker import BSELFChecker
 from .options import BSELFOptions
+from ..ir.instruction import Assert
 from ..solvers.symcrete import global_expr_mgr
 
 
@@ -76,6 +78,10 @@ class BSELF:
                     f"{state.get_id()}: [assertion error]: {loc} reachable.",
                     color="redul",
                 )
+                loc_elem = loc.elem()
+                if loc_elem and isinstance(loc_elem, Assert):
+                    print_stderr(f"[assertion error]: {loc_elem.msg()}", color="wine")
+
                 print_stdout(str(state), color="wine")
                 print_stdout("Error found.", color="redul")
                 self.stats.errors += 1
