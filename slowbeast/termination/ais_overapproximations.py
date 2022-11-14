@@ -192,9 +192,7 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
             for s in r.ready:
                 solver.push()
                 solver.add(s.path_condition())
-                print(solver)
                 decV, incV, nondecV, nonincV = get_changing_variables(s, solver)
-                print(decV, incV, nondecV, nonincV)
                 solver.pop()
 
                 # if inc_variables is None:
