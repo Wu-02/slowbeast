@@ -847,17 +847,18 @@ class BinaryOperation(ValueTypedInstruction):
 class Ite(ValueTypedInstruction):
     """if-then-else: assign a value based on a condition"""
 
-    def __init__(self, cond, op1, op2) -> None:
+    def __init__(self, cond, op1, op2, optypes) -> None:
         assert cond.type().bitwidth() == 1
         assert op1.type() == op2.type(), "Invalid types in Ite"
-        super().__init__(op1.type(), [op1, op2])
+        super().__init__(op1.type(), [op1, op2], optypes)
         self._cond = cond
 
     def condition(self):
         return self._cond
 
     def __repr__(self) -> str:
+        et = self.expected_op_types()
         return (
             f"{self.as_value()} = if {self._cond.as_value()} then "
-            f"{self.operand(0).as_value()} else {self.operand(1).as_value()}"
+            f"({et[0]}){self.operand(0).as_value()} else ({et[1]}){self.operand(1).as_value()}"
         )

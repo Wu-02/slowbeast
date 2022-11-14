@@ -410,8 +410,9 @@ class Parser:
         cond = self.operand(operands[0])
         op1 = self.operand(operands[1])
         op2 = self.operand(operands[2])
+        optypes = [get_sb_type(self.llvmmodule, op.type) for op in operands[1:]]
 
-        I = Ite(cond, op1, op2)
+        I = Ite(cond, op1, op2, optypes)
         self._addMapping(inst, I)
         return [I]
 

@@ -224,7 +224,7 @@ class ConcreteFloatsDomain(Domain):
         if op == FpOp.IS_INF:
             return ConcreteBool(isinf(val.value()))
         if op == FpOp.IS_NAN:
-            return ConcreteBool(isnan(val.value()))
+            return ConcreteBool(bool(isnan(val.value())))
         if op == FpOp.FPCLASSIFY:
             FIXME("Using implementation dependent constants")
             v = val.value()
@@ -282,3 +282,11 @@ class ConcreteFloatsDomain(Domain):
             return ConcreteFloat(tmp, val.type())
 
         raise NotImplementedError("Invalid/unsupported FP operation")
+
+    @staticmethod
+    def Neg(a: Value) -> Value:
+        """Return the negated number"""
+        assert isinstance(a, ConcreteFloat), a
+        ty = a.type()
+        bw = ty.bitwidth()
+        return ConcreteFloat(-a.value(), bw)
