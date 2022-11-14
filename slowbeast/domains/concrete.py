@@ -19,6 +19,7 @@ from .concrete_bitvec import (
 from .concrete_bytes import ConcreteBytes, ConcreteBytesDomain, int_to_bytes
 from .domain import Domain
 from .value import Value
+from ..ir.instruction import IntOp
 
 
 def to_fp(x):
@@ -231,6 +232,37 @@ class ConcreteDomain(Domain):
             elif ty.is_bv():
                 return ConcreteBitVec(float_to_bv(a, bw), bw)
             return None  # unsupported conversion
+
+    def IntOp(op, val: Value, val2: Value):
+        assert val is not None
+        assert val2 is not None
+        assert val.type() == val2.type()
+        assert isinstance(val, ConcreteVal)
+        assert isinstance(val2, ConcreteVal)
+
+        bw = val.bitwidth()
+        if op == IntOp.ADD_DONT_OVERFLOW:
+            # we use the fact that Python int is arbitrary precision!
+            return ConcreteBool(val.value() + val2.value() <= ((1 << (bw - 1)) - 1))
+        if op == IntOp.ADD_DONT_UNDERFLOW:
+            return ConcreteBool(val.value() + val2.value() >= -(1 << (bw - 1)))
+        if op == IntOp.SUB_DONT_OVERFLOW:
+            # we use the fact that Python int is arbitrary precision!
+            return ConcreteBool(val.value() - val2.value() <= ((1 << (bw - 1)) - 1))
+        if op == IntOp.SUB_DONT_UNDERFLOW:
+            return ConcreteBool(val.value() - val2.value() >= -(1 << (bw - 1)))
+        if op == IntOp.MUL_DONT_OVERFLOW:
+            # we use the fact that Python int is arbitrary precision!
+            return ConcreteBool(val.value() * val2.value() <= ((1 << (bw - 1)) - 1))
+        if op == IntOp.MUL_DONT_UNDERFLOW:
+            return ConcreteBool(val.value() * val2.value() >= -(1 << (bw - 1)))
+        if op == IntOp.DIV_DONT_OVERFLOW:
+            # we use the fact that Python int is arbitrary precision!
+            return ConcreteBool(
+                int(val.value() / val2.value()) <= ((1 << (bw - 1)) - 1)
+            )
+
+        return None
 
     @staticmethod
     def Shl(a: Value, b: Value) -> Value:

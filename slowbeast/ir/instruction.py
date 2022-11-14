@@ -196,7 +196,7 @@ class Noop(Instruction):
 
 class AnnotationInstruction(Noop):
     """
-    Annotate a place in code.
+    Annotate a place in code. This is entirely user-dependent.
     """
 
     def __init__(self, kind, descr, data=None):
@@ -843,6 +843,68 @@ class BinaryOperation(ValueTypedInstruction):
             ety[0],
             ety[1],
             BinaryOperation.op_str(self.operation()),
+        )
+
+
+class IntOp(ValueTypedInstruction):
+    """
+    Int special operations. These we could easily decompose into multiple regular instructions,
+    but this way we can avoid creating new basic blocks and we get more coincise and efficient IR.
+    The price is bigger instruction set.
+    We could, of course, do the check entirely in the executor, however, this way we can automatically use
+    BSE and BSELF to asserts that use IntOp to check possible errors.
+    """
+
+    # return bool
+    FIRST_OP = 1
+    ADD_DONT_OVERFLOW = 1
+    SUB_DONT_OVERFLOW = 2
+    MUL_DONT_OVERFLOW = 3
+    DIV_DONT_OVERFLOW = 4
+    ADD_DONT_UNDERFLOW = 5
+    SUB_DONT_UNDERFLOW = 6
+    MUL_DONT_UNDERFLOW = 7
+    LAST_OP = 7
+
+    def op_to_str(op) -> str:
+        if op == IntOp.ADD_DONT_OVERFLOW:
+            return "add-dont-overflow"
+        if op == IntOp.SUB_DONT_OVERFLOW:
+            return "sub-dont-overflow"
+        if op == IntOp.MUL_DONT_OVERFLOW:
+            return "mul-dont-overflow"
+        if op == IntOp.DIV_DONT_OVERFLOW:
+            return "div-dont-overflow"
+        if op == IntOp.ADD_DONT_UNDERFLOW:
+            return "add-dont-underflow"
+        if op == IntOp.SUB_DONT_UNDERFLOW:
+            return "sub-dont-underflow"
+        if op == IntOp.MUL_DONT_UNDERFLOW:
+            return "mul-dont-underflow"
+        return "uknwn"
+
+    def __init__(self, op, vals, optypes) -> None:
+        assert IntOp.FIRST_OP <= op <= IntOp.LAST_OP
+        if IntOp.ADD_DONT_OVERFLOW <= op <= IntOp.MUL_DONT_UNDERFLOW:
+            retty = type_mgr().bool_ty()
+        else:
+            raise RuntimeError("Invalid IntOp operation")
+
+        super().__init__(retty, vals, optypes)
+        self._op = op
+
+    def operation(self):
+        return self._op
+
+    def __str__(self) -> str:
+        return "x{0}:{3} = intop {1} {2}".format(
+            self.get_id(),
+            IntOp.op_to_str(self._op),
+            ", ".join(
+                f"({ty}){op.as_value()}"
+                for op, ty in zip(self.operands(), self.expected_op_types())
+            ),
+            self.type(),
         )
 
 

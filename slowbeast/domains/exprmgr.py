@@ -7,6 +7,7 @@ from slowbeast.domains.expr import Expr
 from slowbeast.domains.symbolic import SymbolicDomain
 from slowbeast.domains.symbolic_value import SymbolicBytes
 from slowbeast.domains.value import Value
+from slowbeast.ir.instruction import IntOp
 from slowbeast.ir.types import Type, type_mgr
 from slowbeast.util.debugging import FIXME
 
@@ -225,6 +226,47 @@ class ExpressionManager:
             return ConcreteDomain.FpOp(op, val, val2)
         r = SymbolicDomain.FpOp(op, self.lift(val), self.lift(val2) if val2 else None)
         return opt(r) if r else r  # FpOp may return None
+
+    def IntOp(self, op, val: Value, val2: Value):
+        assert val is not None
+        assert val2 is not None
+        assert val.type() == val2.type()
+        if isinstance(val, ConcreteVal) and isinstance(val2, ConcreteVal):
+            return ConcreteDomain.IntOp(op, val, val2)
+        return SymbolicDomain.IntOp(op, self.lift(val), self.lift(val2))
+
+        bw = val.bitwidth()
+        maxsignval = self.concrete_value((1 << (bw - 1)) - 1, bw)
+        minsignval = self.concrete_value(-(1 << (bw - 1)), bw)
+        if op == IntOp.ADD_DONT_OVERFLOW:
+            return self.Le(val, self.Sub(maxsignval, val2))
+        if op == IntOp.ADD_DONT_UNDERFLOW:
+            return self.get_true()
+            neg1 = self.Lt(val, self.concrete_value(0, bw))
+            neg2 = self.Lt(val, self.concrete_value(0, bw))
+            both_neg = self.And(neg1, neg2)
+            chk_neg = self.Ge(val, self.Sub(minsignval, val2))
+            return self.And(both_neg, chk_neg, chk_pos)
+        if op == IntOp.MUL_DONT_OVERFLOW:
+            Eq, And = self.Eq, self.And
+            return self.Not(
+                self.disjunction(
+                    And(
+                        self.Ne(val, self.concrete_value(0, bw)),
+                        self.Le(val, self.Div(maxsignval, val2)),
+                    ),
+                    And(Eq(val, self.concrete_value(-1, bw)), Eq(val2, minsignval)),
+                    And(Eq(val2, self.concrete_value(-1, bw)), Eq(val2, minsignval)),
+                )
+            )
+        if op == IntOp.SUB_DONT_OVERFLOW:
+            neg1 = self.Lt(val, self.concrete_value(0, bw))
+            neg2 = self.Lt(val, self.concrete_value(0, bw))
+            both_neg = self.And(neg1, neg2)
+            chk_neg = self.Gt(val, self.Sub(minsignval, val2))
+            chk_pos = self.Lt(val, self.Sub(maxsignval, val2))
+            return self.Ite(both_neg, chk_neg, chk_pos)
+        return None
 
     def Extend(self, a: Value, b: int, unsigned: bool) -> Union[ConcreteVal, Expr]:
         assert isinstance(b, int), f"Invalid extend argument: {b}"

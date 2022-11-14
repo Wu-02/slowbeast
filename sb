@@ -298,7 +298,9 @@ def create_arg_parser():
         action="append",
         help="Property to check (can be used multiple times). Possible options\n"
         "  - 'unreach'ability of error calls (default C assertions)\n"
-        "  - 'termination' of the program.",
+        "  - 'no-overflow' of arithmetic operations\n"
+        "  - 'termination' and non-termination of the program\n"
+        "  - 'non-termination' only.",
     )
 
     return parser

@@ -36,6 +36,7 @@ from ..ir.instruction import (
     FpOp,
     Assume,
     Assert,
+    IntOp,
 )
 
 concrete_value = ConcreteDomain.get_value
@@ -650,6 +651,26 @@ class IExecutor(ConcreteIExecutor):
 
         if r is None:
             state.set_killed(f"Unsupported FP operation: {instr}")
+            return [state]
+
+        state.set(instr, r)
+        state.pc = state.pc.get_next_inst()
+        return [state]
+
+    def exec_int_op(self, state: SEState, instr: IntOp) -> List[SEState]:
+        assert isinstance(instr, IntOp), instr
+        opnum = instr.operands_num()
+        expr_mgr = state.expr_manager()
+        r = None
+        if opnum == 2:
+            op1 = state.eval(instr.operand(0))
+            assert _types_check(instr, op1)
+            op2 = state.eval(instr.operand(1))
+            assert _types_check(instr, op2)
+            r = expr_mgr.IntOp(instr.operation(), op1, op2)
+
+        if r is None:
+            state.set_killed(f"Unsupported operation: {instr}")
             return [state]
 
         state.set(instr, r)

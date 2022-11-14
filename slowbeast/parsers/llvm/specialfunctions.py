@@ -9,7 +9,6 @@ from slowbeast.ir.instruction import (
     Cast,
     BinaryOperation,
     Extend,
-    Ite,
 )
 from slowbeast.ir.types import type_mgr
 from slowbeast.util.debugging import print_stderr

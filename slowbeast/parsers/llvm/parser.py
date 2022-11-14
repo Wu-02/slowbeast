@@ -203,6 +203,9 @@ class Parser:
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
 
+        self.current_bblock = None
+        self.current_fun = None
+
         if unsupp_funs:
             global unsupported_funs
             unsupported_funs += unsupp_funs
@@ -355,7 +358,70 @@ class Parser:
             raise NotImplementedError(f"Artihmetic operation unsupported: {inst}")
 
         self._addMapping(inst, I)
+        chck = self._create_overflow_check(I)
+        if chck:
+            return chck + [I]
         return [I]
+
+    def _create_overflow_check(self, I):
+        if self._to_check is None or "no-overflow" not in self._to_check:
+            return None
+        ty = I.type()
+        if not ty.is_bv():
+            return None
+
+        op = I.operation()
+        if op == BinaryOperation.ADD:
+            OCHK = IntOp(
+                IntOp.ADD_DONT_OVERFLOW,
+                I.operands(),
+                [op.type() for op in I.operands()],
+            )
+            OA = Assert(OCHK, "add: signed integer overflow")
+            UCHK = IntOp(
+                IntOp.ADD_DONT_UNDERFLOW,
+                I.operands(),
+                [op.type() for op in I.operands()],
+            )
+            UA = Assert(UCHK, "add: signed integer underflow")
+            return [OCHK, OA, UCHK, UA]
+        if op == BinaryOperation.SUB:
+            OCHK = IntOp(
+                IntOp.SUB_DONT_OVERFLOW,
+                I.operands(),
+                [op.type() for op in I.operands()],
+            )
+            OA = Assert(OCHK, "sub: signed integer overflow")
+            UCHK = IntOp(
+                IntOp.SUB_DONT_UNDERFLOW,
+                I.operands(),
+                [op.type() for op in I.operands()],
+            )
+            UA = Assert(UCHK, "sub: signed integer underflow")
+            return [OCHK, OA, UCHK, UA]
+        if op == BinaryOperation.MUL:
+            OCHK = IntOp(
+                IntOp.MUL_DONT_OVERFLOW,
+                I.operands(),
+                [op.type() for op in I.operands()],
+            )
+            OA = Assert(OCHK, "mul: signed integer overflow")
+            UCHK = IntOp(
+                IntOp.MUL_DONT_UNDERFLOW,
+                I.operands(),
+                [op.type() for op in I.operands()],
+            )
+            UA = Assert(UCHK, "mul: signed integer underflow")
+            return [OCHK, OA, UCHK, UA]
+        if op == BinaryOperation.DIV:
+            CHK = IntOp(
+                IntOp.DIV_DONT_OVERFLOW,
+                I.operands(),
+                [op.type() for op in I.operands()],
+            )
+            A = Assert(CHK, "div: signed integer overflow")
+            return [CHK, A]
+        raise NotImplementedError(f"Checking overflow of {I} is not implemented")
 
     def _createShift(self, inst) -> List[BinaryOperation]:
         operands = get_llvm_operands(inst)
@@ -376,6 +442,9 @@ class Parser:
             raise NotImplementedError(f"Shift operation unsupported: {inst}")
 
         self._addMapping(inst, I)
+        chck = self._create_overflow_check(I)
+        if chck:
+            return chck + [I]
         return [I]
 
     def _createLogicOp(self, inst) -> List[BinaryOperation]:
@@ -433,6 +502,9 @@ class Parser:
             raise NotImplementedError(f"Remainder operation unsupported: {inst}")
 
         self._addMapping(inst, I)
+        chck = self._create_overflow_check(I)
+        if chck:
+            return chck + [I]
         return [I]
 
     def _createFNeg(self, inst) -> List[Neg]:
@@ -944,6 +1016,8 @@ class Parser:
         B = self.bblock(block)
         assert B is not None, "Do not have a bblock"
 
+        self.current_bblock = B
+
         for inst in block.instructions:
             # the result of parsing one llvm instruction
             # may be several slowbeast instructions
@@ -960,10 +1034,12 @@ class Parser:
                 print_stderr(f"Failed parsing llvm while parsing: {inst}", color="RED")
                 raise e
 
+        self.current_bblock = None
         assert B.fun() is F
 
     def _parse_fun(self, f: ValueRef) -> None:
         F = self.fun(f.name)
+        self.current_fun = F
 
         # add mapping to arguments of the function
         for n, a in enumerate(f.arguments):
@@ -991,6 +1067,8 @@ class Parser:
                     )
                     S.insert_before(B.last())
             self.phis = []  # we handled these PHI nodes
+
+        self.current_fun = None
 
     def _parse_initializer(
         self, G: GlobalVariable, g: ValueRef, ty: BytesType, ts: int

@@ -585,7 +585,6 @@ class BSELFChecker(BaseBSE):
             tmp = create_set()
             tmp.add(r.ready)
             sets.append(tmp)
-        assert sets
         return sets
 
     def _initial_sets_from_exits(self, errs: StatesSet, loopinfo: LoopInfo):

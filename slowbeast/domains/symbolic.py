@@ -1,6 +1,22 @@
 from typing import Optional
 
-from z3 import And, Or, If, BoolVal, FPVal, Bool, FP, is_bool
+from z3 import (
+    And,
+    Or,
+    If,
+    BoolVal,
+    FPVal,
+    Bool,
+    FP,
+    is_bool,
+    BVAddNoOverflow,
+    BVAddNoUnderflow,
+    BVSubNoOverflow,
+    BVSubNoUnderflow,
+    BVMulNoOverflow,
+    BVMulNoUnderflow,
+    BVSDivNoOverflow,
+)
 
 from slowbeast.domains.symbolic_helpers import (
     TRUE,
@@ -17,6 +33,7 @@ from .symbolic_helpers import get_fp_sort, bv_const
 from .symbolic_value import SymbolicBytes
 from .symbolic_z3 import Z3SymbolicDomain
 from .value import Value
+from ..ir.instruction import IntOp
 
 
 def get_any_domain(a: Expr):
@@ -271,3 +288,44 @@ class SymbolicDomain(Z3SymbolicDomain):
     @staticmethod
     def FpOp(op, val, val2) -> Optional[Expr]:
         return SymbolicDomainFloats.FpOp(op, val, val2)
+
+    def IntOp(op, val: Value, val2: Value):
+        assert val is not None
+        assert val2 is not None
+        assert val.type() == val2.type()
+        assert isinstance(val, Expr)
+        assert isinstance(val2, Expr)
+
+        if op == IntOp.ADD_DONT_OVERFLOW:
+            return Expr(
+                BVAddNoOverflow(val.value(), val2.value(), signed=True),
+                type_mgr().bool_ty(),
+            )
+        if op == IntOp.ADD_DONT_UNDERFLOW:
+            return Expr(
+                BVAddNoUnderflow(val.value(), val2.value()), type_mgr().bool_ty()
+            )
+        if op == IntOp.SUB_DONT_OVERFLOW:
+            return Expr(
+                BVSubNoOverflow(val.value(), val2.value()), type_mgr().bool_ty()
+            )
+        if op == IntOp.SUB_DONT_UNDERFLOW:
+            return Expr(
+                BVSubNoUnderflow(val.value(), val2.value(), signed=True),
+                type_mgr().bool_ty(),
+            )
+        if op == IntOp.MUL_DONT_OVERFLOW:
+            return Expr(
+                BVMulNoOverflow(val.value(), val2.value(), signed=True),
+                type_mgr().bool_ty(),
+            )
+        if op == IntOp.MUL_DONT_UNDERFLOW:
+            return Expr(
+                BVMulNoUnderflow(val.value(), val2.value()), type_mgr().bool_ty()
+            )
+        if op == IntOp.DIV_DONT_OVERFLOW:
+            return Expr(
+                BVSDivNoOverflow(val.value(), val2.value()), type_mgr().bool_ty()
+            )
+
+        return None
