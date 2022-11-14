@@ -78,7 +78,10 @@ class SymbolicDomainFloats(Z3SymbolicDomain):
             return Expr(fpToIEEEBV(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw))), ty)
         if ty.is_bytes():
             # bitcast to bitvec and then break the bitvec to btes
-            bv = Expr(fpToIEEEBV(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw))), ty)
+            bv = Expr(
+                fpToIEEEBV(fpFPToFP(RNE(), a.unwrap(), get_fp_sort(tybw))),
+                type_mgr().bv_ty(tybw),
+            )
             return BVSymbolicDomain.BitCast(bv, ty)
 
         return None  # unsupported conversion
