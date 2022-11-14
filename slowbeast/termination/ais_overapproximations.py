@@ -192,7 +192,9 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
             for s in r.ready:
                 solver.push()
                 solver.add(s.path_condition())
+                print(solver)
                 decV, incV, nondecV, nonincV = get_changing_variables(s, solver)
+                print(decV, incV, nondecV, nonincV)
                 solver.pop()
 
                 # if inc_variables is None:
@@ -204,6 +206,10 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
                 #    dec_variables = decV
                 # else:
                 #    dec_variables.intersection_update(decV)
+
+                if not (decV or incV):
+                    # no variable strictly changes on this path, we're done
+                    return clauses
 
                 if lex_dec is None:
                     lex_dec = get_lexicographic_orderings(decV, nonincV)
@@ -282,6 +288,11 @@ class AisLoopStateOverapproximation(LoopStateOverapproximation):
             #    dec_variables = decV
             # else:
             #    dec_variables.intersection_update(decV)
+
+            if not (decV or incV):
+                # no variable strictly changes on this path, we're done
+                solver.pop()
+                return False
 
             if lex_dec is None:
                 lex_dec = get_lexicographic_orderings(decV, nonincV)
