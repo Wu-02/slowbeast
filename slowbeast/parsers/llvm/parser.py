@@ -438,6 +438,14 @@ class Parser:
             )
             A = Assert(CHK, "div: signed integer overflow")
             return [CHK, A]
+        if op == BinaryOperation.SHL:
+            CHK = IntOp(
+                IntOp.SHL_DONT_OVERFLOW,
+                I.operands(),
+                [op.type() for op in I.operands()],
+            )
+            A = Assert(CHK, "shl: signed integer overflow")
+            return [CHK, A]
         raise NotImplementedError(f"Checking overflow of {I} is not implemented")
 
     def _createShift(self, inst) -> List[BinaryOperation]:
@@ -459,7 +467,7 @@ class Parser:
             raise NotImplementedError(f"Shift operation unsupported: {inst}")
 
         self._addMapping(inst, I)
-        if opcode == "shl" and shl_nsw_flag(inst):
+        if opcode == "shl":  # and shl_nsw_flag(inst):
             chck = self._create_overflow_check(I)
             if chck:
                 return chck + [I]

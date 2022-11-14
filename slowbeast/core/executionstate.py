@@ -10,7 +10,8 @@ from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import ValueInstruction
 from slowbeast.ir.types import get_offset_type
 from slowbeast.symexe.memory import Memory
-#from slowbeast.util.debugging import dbgv
+
+# from slowbeast.util.debugging import dbgv
 
 
 class ExecutionState:
@@ -117,9 +118,9 @@ class ExecutionState:
         self, what: ValueInstruction, v: Union[ConcreteBitVec, Pointer, Expr]
     ) -> None:
         """Associate a value to a register (in the current stack frame)"""
-       #if __debug__:
-       #    h = f" ({hex(v.value())})" if v and v.is_concrete() and v.is_bv() else ""
-       #    dbgv(f"[{what}] -> {v}{h}", color="green")
+        # if __debug__:
+        #    h = f" ({hex(v.value())})" if v and v.is_concrete() and v.is_bv() else ""
+        #    dbgv(f"[{what}] -> {v}{h}", color="green")
         # XXX: rename to bind?
         self.memory.set(what, v)
 

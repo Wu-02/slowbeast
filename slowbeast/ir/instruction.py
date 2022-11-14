@@ -864,7 +864,8 @@ class IntOp(ValueTypedInstruction):
     ADD_DONT_UNDERFLOW = 5
     SUB_DONT_UNDERFLOW = 6
     MUL_DONT_UNDERFLOW = 7
-    LAST_OP = 7
+    SHL_DONT_OVERFLOW = 8
+    LAST_OP = 8
 
     def op_to_str(op) -> str:
         if op == IntOp.ADD_DONT_OVERFLOW:
@@ -875,6 +876,8 @@ class IntOp(ValueTypedInstruction):
             return "mul-dont-overflow"
         if op == IntOp.DIV_DONT_OVERFLOW:
             return "div-dont-overflow"
+        if op == IntOp.SHL_DONT_OVERFLOW:
+            return "shl-dont-overflow"
         if op == IntOp.ADD_DONT_UNDERFLOW:
             return "add-dont-underflow"
         if op == IntOp.SUB_DONT_UNDERFLOW:
@@ -885,7 +888,7 @@ class IntOp(ValueTypedInstruction):
 
     def __init__(self, op, vals, optypes) -> None:
         assert IntOp.FIRST_OP <= op <= IntOp.LAST_OP
-        if IntOp.ADD_DONT_OVERFLOW <= op <= IntOp.MUL_DONT_UNDERFLOW:
+        if IntOp.ADD_DONT_OVERFLOW <= op <= IntOp.SHL_DONT_OVERFLOW:
             retty = type_mgr().bool_ty()
         else:
             raise RuntimeError("Invalid IntOp operation")

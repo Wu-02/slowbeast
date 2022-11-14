@@ -48,7 +48,7 @@ class BVSymbolicDomain(Z3SymbolicDomain):
         assert ty.is_bv() or ty.is_pointer(), ty
         return Expr(bv(name, ty.bitwidth()), ty)
 
-    def get_constant(self, c, bw):
+    def get_constant(c, bw):
         return bv_const(c, bw)
 
     @staticmethod
