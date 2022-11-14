@@ -187,6 +187,14 @@ def arith_nsw_flag(inst):
     return parts[3] == "nsw"
 
 
+def shl_nsw_flag(inst):
+    # FIXME...
+    parts = str(inst).split()
+    assert parts[1] == "="
+    assert parts[2] == "shl"
+    return parts[3] == "nsw"
+
+
 class Parser:
     def __init__(
         self,
@@ -451,9 +459,10 @@ class Parser:
             raise NotImplementedError(f"Shift operation unsupported: {inst}")
 
         self._addMapping(inst, I)
-        chck = self._create_overflow_check(I)
-        if chck:
-            return chck + [I]
+        if opcode == "shl" and shl_nsw_flag(inst):
+            chck = self._create_overflow_check(I)
+            if chck:
+                return chck + [I]
         return [I]
 
     def _createLogicOp(self, inst) -> List[BinaryOperation]:
