@@ -34,10 +34,10 @@ class BSEContext:
         Derive a new context from this context - it must correctly preceed
         the current path.
         """
-        assert (
-            path.source().cfa() != self.path.source().cfa()
-            or path.target() == self.path[0].source()
-        ), f"{path};{self.path}"
+        # assert (
+        #    path.source().cfa() != self.path.source().cfa()
+        #    or path.target() == self.path[0].source()
+        # ), f"{path};{self.path}"
         return BSEContext(path, cond, self.loc_hits.copy(), self.errordescr)
 
     def extend_path(self, edge) -> "BSEContext":

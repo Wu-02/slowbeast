@@ -179,6 +179,14 @@ unsupported_funs = [
 thread_funs = ["pthread_create", "pthread_join", "pthread_exit"]
 
 
+def arith_nsw_flag(inst):
+    # FIXME...
+    parts = str(inst).split()
+    assert parts[1] == "="
+    assert parts[2] in ("add", "sub", "mul")
+    return parts[3] == "nsw"
+
+
 class Parser:
     def __init__(
         self,
@@ -358,9 +366,10 @@ class Parser:
             raise NotImplementedError(f"Artihmetic operation unsupported: {inst}")
 
         self._addMapping(inst, I)
-        chck = self._create_overflow_check(I)
-        if chck:
-            return chck + [I]
+        if opcode in ("add", "mul", "sub") and arith_nsw_flag(inst):
+            chck = self._create_overflow_check(I)
+            if chck:
+                return chck + [I]
         return [I]
 
     def _create_overflow_check(self, I):
@@ -502,9 +511,6 @@ class Parser:
             raise NotImplementedError(f"Remainder operation unsupported: {inst}")
 
         self._addMapping(inst, I)
-        chck = self._create_overflow_check(I)
-        if chck:
-            return chck + [I]
         return [I]
 
     def _createFNeg(self, inst) -> List[Neg]:
