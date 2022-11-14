@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 from numpy.core import float_
 
-from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.domains.concrete_bitvec import ConcreteBitVec, to_signed
 from slowbeast.domains.concrete_bool import ConcreteBoolDomain
 from slowbeast.domains.concrete_floats import (
     ConcreteFloat,
@@ -241,26 +241,25 @@ class ConcreteDomain(Domain):
         assert isinstance(val2, ConcreteVal)
 
         bw = val.bitwidth()
+        v1, v2 = to_signed(val.value(), bw), to_signed(val2.value(), bw)
         if op == IntOp.ADD_DONT_OVERFLOW:
             # we use the fact that Python int is arbitrary precision!
-            return ConcreteBool(val.value() + val2.value() <= ((1 << (bw - 1)) - 1))
+            return ConcreteBool(v1 + v2 <= ((1 << (bw - 1)) - 1))
         if op == IntOp.ADD_DONT_UNDERFLOW:
-            return ConcreteBool(val.value() + val2.value() >= -(1 << (bw - 1)))
+            return ConcreteBool(v1 + v2 >= -(1 << (bw - 1)))
         if op == IntOp.SUB_DONT_OVERFLOW:
             # we use the fact that Python int is arbitrary precision!
-            return ConcreteBool(val.value() - val2.value() <= ((1 << (bw - 1)) - 1))
+            return ConcreteBool(v1 - v2 <= ((1 << (bw - 1)) - 1))
         if op == IntOp.SUB_DONT_UNDERFLOW:
-            return ConcreteBool(val.value() - val2.value() >= -(1 << (bw - 1)))
+            return ConcreteBool(v1 - v2 >= -(1 << (bw - 1)))
         if op == IntOp.MUL_DONT_OVERFLOW:
             # we use the fact that Python int is arbitrary precision!
-            return ConcreteBool(val.value() * val2.value() <= ((1 << (bw - 1)) - 1))
+            return ConcreteBool(v1 * v2 <= ((1 << (bw - 1)) - 1))
         if op == IntOp.MUL_DONT_UNDERFLOW:
-            return ConcreteBool(val.value() * val2.value() >= -(1 << (bw - 1)))
+            return ConcreteBool(v1 * v2 >= -(1 << (bw - 1)))
         if op == IntOp.DIV_DONT_OVERFLOW:
             # we use the fact that Python int is arbitrary precision!
-            return ConcreteBool(
-                int(val.value() / val2.value()) <= ((1 << (bw - 1)) - 1)
-            )
+            return ConcreteBool(int(v1 / v2) <= ((1 << (bw - 1)) - 1))
 
         return None
 
