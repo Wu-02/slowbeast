@@ -88,6 +88,7 @@ class TestCaseGenerator:
             instruction = var.instruction
             if not isinstance(instruction, Call):
                 print("Unhandled nondet value: ", var)
+                continue
             var = instruction.called_function().name()
 
             lid += 1
