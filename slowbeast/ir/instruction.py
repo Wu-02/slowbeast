@@ -348,7 +348,11 @@ class Branch(Instruction):
 
 class Switch(Instruction):
     def __init__(self, val, default: BBlock, cases: list) -> None:
-        super().__init__([val, default] + cases)
+        super().__init__(
+            [val, default] + cases,
+            [val.type(), type_mgr().label_ty()]
+            + [(c[0].type(), type_mgr().label_ty()) for c in cases],
+        )
         assert isinstance(default, BBlock), default
         assert isinstance(cases, list), cases
         assert all(map(lambda p: p[0].type().is_bv(), cases)), cases
