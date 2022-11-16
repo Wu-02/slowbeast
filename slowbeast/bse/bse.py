@@ -11,7 +11,7 @@ from slowbeast.symexe.interpreter import (
     SymbolicInterpreter as SymbolicInterpreter,
     SEOptions,
 )
-from slowbeast.util.debugging import print_stdout, print_stderr, dbg
+from slowbeast.util.debugging import print_stdout, print_stderr, dbg, ldbgv
 from .bsectx import BSEContext
 from .executor import BSELazyPathIExecutor as BSEExecutor
 from ..core.executionresult import PathExecutionResult
@@ -207,9 +207,15 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         assert postcondition, postcondition
         had_one: bool = False
         edge = bsectx.path[0]
+        # forget the values that we gathered in the forward execution. The only thing
+        # that we need to remember are the input reads.
+        # FIXME: we could do it more efficiently -- all of it (but we still need the forward execution to work)
+        # Maybe have some class just for representing the 'postcondition' that we derive from forward state?
+        postcondition.memory.frame().clear()
         if edge.has_predecessors():
             for pedge in edge.predecessors():
-                # if is call edge...
+                # if predecessor is call edge, continue with the return edges
+                # of the called function
                 if pedge.is_call():
                     if not pedge.called_function().is_undefined():
                         self.extend_to_call(pedge, bsectx, postcondition)
@@ -225,51 +231,69 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         elif edge.cfa().is_init(edge):
             # This is entry to procedure. It cannot be the main procedure, otherwise
             # we would either report safe or unsafe, so this is a call of subprocedure
-            # that we do not support atm
             self.extend_to_callers(edge.cfa(), bsectx, postcondition)
-        # else: dead code, we have nothing to exted
+        else:  # dead code, we have nothing to exted
+            ldbgv("Nowhere to extend the state", ())
 
     def extend_to_callers(self, cfa, bsectx, postcondition) -> None:
+        # do we entry to some particular call via a call edge?
+        cs = postcondition.memory.get_cs()
+        if len(cs) > 1:
+            # FIXME: maybe create a LazyCallStack that would be bi-directional?
+            fun = cs.frame().function
+            calledge = postcondition.pop_call()
+            self.extend_to_caller(calledge, fun, bsectx, postcondition)
+            return
+
         fun = cfa.fun()
         PS = self.programstructure
         for _, callsite in PS.callgraph.get_node(fun).callers():
+            dbg(f"Extending to call-site: {callsite}")
             calledge = PS.calls[callsite]
-            if not calledge.has_predecessors():
-                state = postcondition.copy()
-                state.set_terminated(
-                    "Function with only return edge unsupported in BSE atm."
-                )
-                report_state(self.stats, state, self.reportfn)
-                self.problematic_states.append(state)
-                continue
-            for pedge in calledge.predecessors():
-                state = postcondition.copy()
-                n = 0
-                # map the arguments to the operands
-                for op in callsite.operands():
-                    arg = fun.argument(n)
-                    argval = state.input(arg)
-                    if argval is None:
-                        n += 1
-                        continue
-                    state.replace_input_value(argval.value, state.eval(op))
-                    n += 1
-                self.queue_state(bsectx.extension(pedge, state))
+            self.extend_to_caller(calledge, fun, bsectx, postcondition)
 
-    # postcondition.set_terminated("Calls unsupported in BSE atm.")
-    # report_state(self.stats, postcondition, self.reportfn)
-    # self.problematic_states.append(postcondition)
+    def extend_to_caller(self, calledge, fun, bsectx, postcondition):
+        if not calledge.has_predecessors():
+            state = postcondition.copy()
+            state.set_terminated(
+                "Function with only return edge unsupported in BSE atm."
+            )
+            report_state(self.stats, state, self.reportfn)
+            self.problematic_states.append(state)
+            return
+
+        assert len(calledge.elems()) == 1, calledge
+        callsite = calledge[0]
+        for pedge in calledge.predecessors():
+            state = postcondition.copy()
+            # map the arguments to the operands
+            for n, op in enumerate(callsite.operands()):
+                arg = fun.argument(n)
+                argval = state.input(arg)
+                if argval is None:
+                    continue
+                state.replace_input_value(argval.value, state.eval(op))
+            self.queue_state(bsectx.extension(pedge, state))
 
     def extend_to_call(self, edge, bsectx, postcondition) -> None:
+        """
+        Extend the current 'postcondition' backwards via return edges
+        of a called function.
+        """
         PS = self.programstructure
         fun = edge.called_function()
+
+        # get the return value
         retval = None
         retnd = postcondition.input(edge[0])
         if retnd is not None:
             retval = retnd.value
             assert fun.return_type() is not None, fun
+
+        # extend via return edges
         for B in fun.ret_bblocks():
             state = postcondition.copy()
+            state.push_call(edge, fun, {})
             ret = B[-1]
             if retval:
                 op = ret.operand(0)

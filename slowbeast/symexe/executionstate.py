@@ -62,11 +62,11 @@ class SEState(ExecutionState):
         self,
         executor=None,
         pc=None,
-        m: Optional[Memory] = None,
+        memory: Optional[Memory] = None,
         solver=None,
         constraints=None,
     ) -> None:
-        super().__init__(pc, m)
+        super().__init__(pc, memory)
 
         SEState.statesCounter += 1
         self._id = SEState.statesCounter

@@ -21,7 +21,7 @@ def _nondet_value(fresh, op, ty):
 
 
 # FIXME: do we need to inherit from SEMemory? We need that only for the
-# initial states...
+# initial states and call-stack...
 class BSEMemory(SEMemory):
     def __init__(self) -> None:
         super().__init__()

@@ -2,7 +2,6 @@ from sys import stdout
 from typing import Union, TextIO
 
 from slowbeast.bse.memorymodel import _nondet_value
-from slowbeast.core.executionstate import ExecutionState
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import Alloc, GlobalVariable
@@ -75,9 +74,9 @@ class BSEState(LazySEState):
     __slots__ = "_inputs"
 
     def __init__(
-        self, executor=None, pc=None, m=None, solver=None, constraints=None
+        self, executor=None, pc=None, memory=None, solver=None, constraints=None
     ) -> None:
-        super().__init__(executor, pc, m, solver, constraints)
+        super().__init__(executor, pc, memory, solver, constraints)
         # inputs are the subset of nondet values that we search for in pre-states
         # when joining states
         self._inputs: list = []

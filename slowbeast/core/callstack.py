@@ -70,9 +70,11 @@ class CallStack:
             self._objects_reown()
             self._scoped_objects.append(mo)
 
-        # def clear(self):
-        #    self._values_ro = False
-        #    self._values = {}
+        def clear(self):
+            self._values_ro = False
+            self._values = {}
+            self._scoped_objects_ro = False
+            self._scoped_objects = {}
 
         def set(self, what, v):
             self._values_reown()
@@ -121,18 +123,6 @@ class CallStack:
 
     def __len__(self) -> int:
         return len(self._cs)
-
-    # def __eq__(self, rhs: object):
-    #    return self._cs == rhs._cs
-
-    # def __hash__(self) -> int:
-    #    # FIXME: make more efficient
-    #    if not self._cs:
-    #        return 0
-    #    ret = 0
-    #    for c in self._cs:
-    #        ret ^= c.__hash__()
-    #    return ret
 
     def __iter__(self):
         return self._cs.__iter__()
