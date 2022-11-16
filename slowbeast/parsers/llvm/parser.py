@@ -303,7 +303,6 @@ class Parser:
         operands = get_llvm_operands(inst)
         assert len(operands) == 2, "Invalid number of operands for store"
 
-        bytes_num = type_size(self.llvmmodule, operands[0].type)
         S = Store(
             self.operand(operands[0]),
             self.operand(operands[1]),

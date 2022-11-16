@@ -622,7 +622,7 @@ class IExecutor(ConcreteIExecutor):
             if cval is True:
                 state.set(instr, state.eval(instr.operand(0)))
             elif cval is False:
-                state.set(instr, state.eval(instr.operand(0)))
+                state.set(instr, state.eval(instr.operand(1)))
             else:
                 raise RuntimeError(f"Invalid value of boolean condition: {cval}")
         else:
