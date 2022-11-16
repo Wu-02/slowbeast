@@ -9,7 +9,12 @@ from slowbeast.ir.program import Program
 from slowbeast.ir.programelement import ProgramElement
 from slowbeast.ir.types import *
 from slowbeast.util.debugging import print_stderr
-from .specialfunctions import special_functions, create_special_fun
+from .specialfunctions import (
+    special_functions,
+    create_special_fun,
+    modelled_functions,
+    try_model_function,
+)
 from .utils import *
 
 concrete_value = ConcreteDomain.get_value
@@ -261,7 +266,7 @@ class Parser:
         assert self._mapping.get(llinst) is None, "Duplicated mapping"
         self._mapping[llinst] = sbinst
 
-    def _createAlloca(self, inst: ValueRef) -> Union[List[Alloc]]:
+    def _createAlloca(self, inst: ValueRef) -> list:
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Array allocations not supported yet"
 
@@ -272,18 +277,18 @@ class Parser:
         if isinstance(num, ValueInstruction):  # VLA
             retlist = []
             bytewidth = type_size(self.llvmmodule, operands[0].type)
-            SizeType = get_size_type()
-            if bytewidth != SizeType.bytewidth():
-                N = Extend(num, concrete_value(SizeType.bitwidth(), SizeType))
+            size_type = get_size_type()
+            if bytewidth != size_type.bytewidth():
+                N = Extend(num, size_type.bitwidth(), False, [size_type])
                 retlist.append(N)
             else:
                 N = num
 
             M = BinaryOperation(
                 BinaryOperation.MUL,
-                concrete_value(tySize, SizeType),
+                concrete_value(tySize, size_type),
                 N,
-                [SizeType, N.type()],
+                [size_type, N.type()],
             )
             A = Alloc(M)
             self._addMapping(inst, A)
@@ -619,7 +624,13 @@ class Parser:
             self._addMapping(inst, mp)
         return seq
 
-    def _createThreadFun(self, inst, operands: Sized, fun):
+    def _try_model_function(self, inst: ValueRef, fun: str):
+        mp, seq = try_model_function(self, inst, fun, self.error_funs, self._to_check)
+        if mp:
+            self._addMapping(inst, mp)
+        return seq
+
+    def _createThreadFun(self, inst, operands: list, fun):
         if fun == "pthread_join":
             assert len(operands) == 3  # +1 for called fun
             ty = get_sb_type(self.llvmmodule, operands[1].type.element_type)
@@ -733,6 +744,11 @@ class Parser:
 
         if fun in special_functions or fun in self.error_funs:
             return self._createSpecialCall(inst, fun)
+
+        if fun in modelled_functions:
+            seq = self._try_model_function(inst, fun)
+            if seq:
+                return seq
 
         F = self.fun(fun)
         if not F:
@@ -863,7 +879,7 @@ class Parser:
                 assert 0 < mulbw <= 64, "Invalid type size: {mulbw}"
                 size_type = get_size_type()
                 if mulbw != size_type.bitwidth():
-                    C = Extend(var, size_type.bitwidth(), True)
+                    C = Extend(var, size_type.bitwidth(), True, [size_type])
                     varIdx.append(C)
                     var = C
 

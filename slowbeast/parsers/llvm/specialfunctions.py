@@ -57,13 +57,47 @@ special_functions = [
     "__assert_fail",
     "__VERIFIER_error",
     "__VERIFIER_assume",
-    "__VERIFIER_assert",
     "verifier.assume",
     "assume_abort_if_not",
     "__VERIFIER_silent_exit",
     "__slowbeast_print",
     "ldv_stop",
 ]
+
+modelled_functions = ["__VERIFIER_assert"]
+
+
+def try_model_function(parser, inst, fun, error_funs, to_check):
+    """
+    Return a pair R, S where R is the representant
+    used for mapping of instructions and S is the sequence
+    of instructions created
+    """
+
+    module = parser.llvmmodule
+    no_overflow = to_check and "no-overflow" in to_check
+    ignore_asserts = len(error_funs) > 0 or no_overflow
+    if fun == "__VERIFIER_assert":
+        if (
+            len(error_funs) > 0
+        ):  # if we look for some particular function, do not model this
+            return None, None
+        operands = get_llvm_operands(inst)
+        cond = parser.operand(operands[0])
+        optypes = [get_sb_type(module, op.type) for op in operands]
+        C = Cmp(
+            Cmp.NE,
+            cond,
+            concrete_value(0, type_size_in_bits(module, operands[0].type)),
+            optypes,
+        )
+        if ignore_asserts:
+            A = Assume(C)
+        else:
+            A = Assert(C)
+        return A, [C, A]
+
+    raise RuntimeError(f"Modelled function not handled: {fun}")
 
 
 def create_special_fun(parser, inst, fun, error_funs, to_check):
@@ -99,21 +133,6 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         else:
             A = Assert(ConstantFalse, "__VERIFIER_error called!")
         return A, [A]
-    elif fun == "__VERIFIER_assert":
-        operands = get_llvm_operands(inst)
-        cond = parser.operand(operands[0])
-        optypes = [get_sb_type(module, op.type) for op in operands]
-        C = Cmp(
-            Cmp.NE,
-            cond,
-            concrete_value(0, type_size_in_bits(module, operands[0].type)),
-            optypes,
-        )
-        if ignore_asserts:
-            A = Assume(C)
-        else:
-            A = Assert(C)
-        return A, [C, A]
     elif fun in ("__VERIFIER_assume", "assume_abort_if_not", "verifier.assume"):
         operands = get_llvm_operands(inst)
         cond = parser.operand(operands[0])
