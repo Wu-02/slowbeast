@@ -487,6 +487,16 @@ class Parser:
         optypes = [get_sb_type(self.llvmmodule, op.type) for op in operands]
         opcode = inst.opcode
 
+        casts = []
+        if op1.type().bitwidth() == 1:
+            assert op2.type().bitwidth() == 1, op2
+            if op1.type().is_bool() and not op2.type().is_bool():
+                op2 = Cast(op2, type_mgr().bool_ty(), False, [type_mgr().bool_ty()])
+                casts.append(op2)
+            elif not op1.type().is_bool() and op2.type().is_bool():
+                op1 = Cast(op1, type_mgr().bool_ty(), False, [type_mgr().bool_ty()])
+                casts.append(op1)
+
         # make sure both operands are bool if one is bool
         # if op1.type().is_bool() or op2.type().is_bool():
         #    op1, op2 = bv_to_bool_else_id(op1), bv_to_bool_else_id(op2)
@@ -501,7 +511,7 @@ class Parser:
             raise NotImplementedError(f"Logic operation unsupported: {inst}")
 
         self._addMapping(inst, I)
-        return [I]
+        return casts + [I]
 
     def _createSelect(self, inst) -> List[Ite]:
         operands = get_llvm_operands(inst)
@@ -719,7 +729,11 @@ class Parser:
                 and "dbgvar" in self._metadata_opts
             ):
                 var, name, ty = llvm.parse_dbg_declare(inst)
+                if str(var).endswith(" undef"):
+                    return []
                 varop = self.operand(var)
+                if isinstance(varop, ConcreteVal):
+                    return []
                 varop.add_metadata(
                     "dbgvar",
                     (name.decode("utf-8", "ignore"), ty.decode("utf-8", "ignore")),
