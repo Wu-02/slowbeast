@@ -1172,7 +1172,7 @@ class Parser:
             succ, retty = parse_fun_ret_ty(self.llvmmodule, f.type.element_type)
             if not succ:
                 raise NotImplementedError(
-                    f"Cannot parse function return type: {f.type.element_type}"
+                    f"Cannot parse function return type: {f.type.element_type} of fun: {f.name}"
                 )
             args = [Argument(get_sb_type(self.llvmmodule, a.type)) for a in f.arguments]
             fun = Function(f.name, args, retty)
