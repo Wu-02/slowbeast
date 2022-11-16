@@ -26,15 +26,7 @@ def to_bv(x, unsigned: bool = True):
     bw = x.bitwidth()
     assert not x.is_float(), x
     assert not x.is_bytes(), "Not implemented"
-    if unsigned:
-        # signed/unsigned conversion
-        uint = to_unsigned(x.value(), bw)
-        return (
-            unpack(">q", uint.to_bytes(8, "big"))
-            if bw == 64
-            else unpack(">i", uint.to_bytes(4, "big"))
-        )[0]
-    return to_signed(x.value(), bw)
+    return to_unsigned(x.value(), bw) if unsigned else to_signed(x.value(), bw)
 
 
 def wrap_to_bw(x, bw: int):
