@@ -57,13 +57,10 @@ special_functions = [
     "__assert_fail",
     "__VERIFIER_error",
     "__VERIFIER_assume",
+    "__VERIFIER_assert",
     "verifier.assume",
     "assume_abort_if_not",
     "__VERIFIER_silent_exit",
-    "__INSTR_check_nontermination_header",
-    "__INSTR_check_nontermination",
-    "__INSTR_check_assume",
-    "__INSTR_fail",
     "__slowbeast_print",
     "ldv_stop",
 ]
@@ -102,6 +99,21 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         else:
             A = Assert(ConstantFalse, "__VERIFIER_error called!")
         return A, [A]
+    elif fun == "__VERIFIER_assert":
+        operands = get_llvm_operands(inst)
+        cond = parser.operand(operands[0])
+        optypes = [get_sb_type(module, op.type) for op in operands]
+        C = Cmp(
+            Cmp.NE,
+            cond,
+            concrete_value(0, type_size_in_bits(module, operands[0].type)),
+            optypes,
+        )
+        if ignore_asserts:
+            A = Assume(C)
+        else:
+            A = Assert(C)
+        return A, [C, A]
     elif fun in ("__VERIFIER_assume", "assume_abort_if_not", "verifier.assume"):
         operands = get_llvm_operands(inst)
         cond = parser.operand(operands[0])
