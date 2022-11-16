@@ -1,5 +1,5 @@
 from slowbeast.analysis.callgraph import CallGraph
-from slowbeast.analysis.cfa import CFA
+from slowbeast.analysis.cfa import CFA, inline_short_cfas
 from slowbeast.analysis.dfs import DFSEdgeType, DFSVisitor
 from slowbeast.analysis.loops import compute_toplevel_loops
 from slowbeast.ir.program import Program
@@ -25,6 +25,11 @@ class ProgramStructure:
 
         self.callgraph = callgraph
         cfas = CFA.from_program(prog, callgraph)
+        # if __debug__:
+        #    for fun, cfa in cfas.items():
+        #        with self.new_dbg_file(f"cfa.{fun.name()}.orig.dot") as f:
+        #            cfa.dump(f)
+        # inline_short_cfas(cfas)
         if __debug__:
             for fun, cfa in cfas.items():
                 with self.new_dbg_file(f"cfa.{fun.name()}.dot") as f:

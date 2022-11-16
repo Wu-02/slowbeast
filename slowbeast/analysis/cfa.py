@@ -369,3 +369,39 @@ class CFA:
                 style = ""
             print(e, f' [label="{label}", {style}]', file=stream)
         print("}", file=stream)
+
+
+def _substitute_in_cfa(cfa, subs):
+    for edge in cfa.edges():
+        for elem in cfa.elems() or ():
+            print(edge, elem)
+
+
+def cfa_inline_call(calledge, inlined_cfa):
+    print("Inlining", calledge, inlined_cfa)
+    fun = calledge.called_function()
+    print(fun, calledge.elems()[0])
+
+    # -- reconnect edge
+
+    # -- remap arguments
+
+
+# mapping = {
+#    x: state.eval(y) for (x, y) in zip(fun.arguments(), instr.operands())
+# }
+
+# -- remap return value
+
+
+def inline_short_cfas(cfas: dict, exclude=None):
+    for fun, cfa in cfas.items():
+        print(fun, cfa)
+        if fun.is_undefined() or (exclude and fun in exclude):
+            continue
+        for edge in (edge for edge in cfa.edges() if edge.is_call()):
+            calledval = edge.called_function()
+            if not isinstance(calledval, Function) or calledval.is_undefined():
+                continue
+            if len(fun.bblocks()) < 6:  # TODO: do a better heuristics
+                cfa_inline_call(edge, cfas[edge.called_function()])
