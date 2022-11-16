@@ -882,9 +882,7 @@ class BSELFChecker(BaseBSE):
                 if mlh and lnm >= mlh:
                     dbg("Hit limit of visits to a loop in this context")
                     return Result.UNKNOWN, pre
-        newstates = self.extend_state(bsectx, pre)
-        for s in newstates:
-            self.queue_state(s)
+        self.extend_state(bsectx, pre)
         return None, None
 
     def check(self, onlyedges=None):
