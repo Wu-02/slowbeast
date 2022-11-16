@@ -323,7 +323,18 @@ class BSELFChecker(BaseBSE):
                         # and we do not want to proceed further
                         return Result.UNKNOWN
 
-                if any((edge.is_call() for edge in bsectx.path[0].predecessors())):
+                if any(
+                    (
+                        (
+                            edge.is_call()
+                            and not (
+                                edge.called_function()
+                                and edge.called_function().is_undefined()
+                            )
+                        )
+                        for edge in bsectx.path[0].predecessors()
+                    )
+                ):
                     ldbgv("Ran into a call edge while unwinding {0}", (bsectx.path,))
                     return Result.UNKNOWN
 
