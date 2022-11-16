@@ -56,17 +56,20 @@ class AisInference(BSELFChecker):
             # syntactically infinite loop
             return None
 
+        got_any = False
         for path in self.loop.get_exit_paths():
             result = self.execute_path(path)
             if result.ready:
+                got_any = True
                 S.add(result.ready)
             if result.errors:
+                got_any = True
                 print_stdout(
                     "Loop path aborts on error, using those states as terminating"
                 )
                 S.add(result.errors)
         assert not S.is_empty(), "Got no loop termination condition"
-        return S
+        return S if got_any else None
 
     def unwind(self, loc, errpre, maxk=None) -> int:
         raise RuntimeWarning("Do not want to do unwinding (not now)")
