@@ -323,6 +323,10 @@ class BSELFChecker(BaseBSE):
                         # and we do not want to proceed further
                         return Result.UNKNOWN
 
+                if any((edge.is_call() for edge in bsectx.path[0].predecessors())):
+                    ldbgv("Ran into a call edge while unwinding {0}", (bsectx.path,))
+                    return Result.UNKNOWN
+
                 newst.append((pre, bsectx))
 
             queue = [
