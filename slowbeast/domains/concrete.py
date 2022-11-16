@@ -260,12 +260,6 @@ class ConcreteDomain(Domain):
         if op == IntOp.DIV_DONT_OVERFLOW:
             # we use the fact that Python int is arbitrary precision!
             return ConcreteBool(int(v1 / v2) <= ((1 << (bw - 1)) - 1))
-        if op == IntOp.SHL_DONT_OVERFLOW:
-            if not (0 <= v2 < bw):
-                return ConstantFalse
-            if v1 < 0:
-                return ConcreteBool((v1 << v2) >= -(1 << (bw - 1)))
-            return ConcreteBool((v1 << v2) <= ((1 << (bw - 1)) - 1))
 
         return None
 
