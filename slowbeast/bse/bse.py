@@ -255,9 +255,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
     def extend_to_caller(self, calledge, fun, bsectx, postcondition):
         if not calledge.has_predecessors():
             state = postcondition.copy()
-            state.set_terminated(
-                "Function with only return edge unsupported in BSE atm."
-            )
+            state.set_killed("Function with only return edge unsupported in BSE atm.")
             report_state(self.stats, state, self.reportfn)
             self.problematic_states.append(state)
             return
