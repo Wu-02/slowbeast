@@ -13,11 +13,19 @@ def inv_to_c(inv):
 
 
 class TestCaseGenerator:
-    def __init__(self, outdir="sb-out", alltests=False, svwit=False, only_tests=None):
+    def __init__(
+        self,
+        outdir="sb-out",
+        alltests=False,
+        svwit=False,
+        only_tests=None,
+        checking=None,
+    ):
         self._outputdir = outdir
         self._alltests = alltests
         self._svcomp_witness = svwit
         self._only_tests = only_tests
+        self._checking = checking
 
     def _openfile(self, path):
         return open(pathjoin(self._outputdir, path), "w")
@@ -105,7 +113,12 @@ class TestCaseGenerator:
                     break
             write("</edge>\n")
         write(f'<node id="{lid+1}">\n')
-        write('  <data key="violation">true</data>\n')
+        if self._checking and (
+            "termination" in self._checking or "non-termination" in self._checking
+        ):
+            write('  <data key="cyclehead">true</data>\n')
+        else:
+            write('  <data key="violation">true</data>\n')
         write("</node>\n\n")
         write(f'<edge source="{lid}" target="{lid+1}"/>\n')
         self._svcomp_footer(fl)

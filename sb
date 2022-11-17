@@ -490,6 +490,7 @@ def main():
                 args.all_tests,
                 args.svcomp_witness,
                 only_tests=only_tests.split(",") if only_tests else None,
+                checking=args.check,
             )
 
     ohandler = OutputsHandler(testgen, None if args.no_output else args.out_dir)
