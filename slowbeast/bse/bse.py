@@ -247,17 +247,29 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
 
         fun = cfa.fun()
         PS = self.programstructure
-        for _, callsite in PS.callgraph.get_node(fun).callers():
+
+        node = PS.callgraph.get_node(fun)
+        if node is None:
+            # TODO: once we have a really sound call-graph (with function pointers),
+            # we can just return in this case
+            state = postcondition.copy()
+            state.set_killed(f"Cannot find CFA for function {fun.name()}")
+            report_state(self.stats, state, self.reportfn)
+            self.problematic_states.append(state)
+            return
+        for _, callsite in node.callers():
             dbg(f"Extending to call-site: {callsite}")
             calledge = PS.calls[callsite]
             self.extend_to_caller(calledge, fun, bsectx, postcondition)
 
     def extend_to_caller(self, calledge, fun, bsectx, postcondition):
         if not calledge.has_predecessors():
-            state = postcondition.copy()
-            state.set_killed("Function with only return edge unsupported in BSE atm.")
-            report_state(self.stats, state, self.reportfn)
-            self.problematic_states.append(state)
+            # this is the first edge from the CFA, we must extend to the callers
+            self.extend_to_callers(calledge.cfa(), bsectx, postcondition)
+            # state = postcondition.copy()
+            # state.set_killed(f"Function with only return edge unsupported in BSE atm (fun={fun.name()})")
+            # report_state(self.stats, state, self.reportfn)
+            # self.problematic_states.append(state)
             return
 
         assert len(calledge.elems()) == 1, calledge
