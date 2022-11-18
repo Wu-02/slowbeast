@@ -5,12 +5,14 @@ from slowbeast.symexe.interpreter import SEStats
 from slowbeast.util.debugging import (
     print_stdout,
     print_stderr,
+    dbg,
 )
 from .bse import (
     report_state,
 )
 from .bselfchecker import BSELFChecker
 from .options import BSELFOptions
+from ..core.errors import MemError
 from ..ir.instruction import Assert
 from ..solvers.symcrete import global_expr_mgr
 
@@ -71,6 +73,14 @@ class BSELF:
                 invariants=self.invariants,
             )
             result, state = checker.check()
+            if result is Result.UNSAFE and state.memory.input_reads():
+                dbg("Unmatched input reads found: {state.memory.input_reads()}")
+                state.set_error(
+                    MemError(MemError.UNINIT_READ, "Read of uninitialized byte")
+                )
+                checker.problematic_states.append(state)
+                result = Result.UNKNOWN
+
             self.stats.add(checker.stats)
             if result is Result.UNSAFE:
                 # FIXME: report the error from bsecontext
