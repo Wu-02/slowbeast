@@ -117,7 +117,7 @@ class Interpreter:
                         "Generated errorneous state during initialization of globals"
                     )
 
-    def _main_args(self, state: SEState) -> None:
+    def _main_args(self, state: SEState) -> dict:
         """
         Initialize argc and argv (if needed) for the main function
         """
@@ -146,8 +146,11 @@ class Interpreter:
 
         # push call to main to call stack
         for s in self.states:
+            s.push_call(None, self.get_program().entry())
+            # the method below needs the frame already created, so we can call it only after 'push_call'
             main_args = self._main_args(s)
-            s.push_call(None, self.get_program().entry(), args_mapping=main_args)
+            if main_args:
+                s.memory.get_cs().set_values(main_args)
 
     def report(self) -> None:
         pass

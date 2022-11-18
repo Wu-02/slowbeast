@@ -76,6 +76,10 @@ class CallStack:
             self._scoped_objects_ro = False
             self._scoped_objects = {}
 
+        def set_values(self, values):
+            self._values_reown()
+            self._values.update(values)
+
         def set(self, what, v):
             self._values_reown()
             self._values[what] = v
@@ -134,6 +138,11 @@ class CallStack:
         """Set a value in the current frame"""
         self._frame_reown()
         self.frame().set(what, v)
+
+    def set_values(self, values) -> None:
+        """Set a value in the current frame"""
+        self._frame_reown()
+        self.frame().set_values(values)
 
     def get(self, v):
         """Set a value from the current frame"""
