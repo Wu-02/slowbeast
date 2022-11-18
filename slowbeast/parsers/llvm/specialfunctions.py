@@ -62,6 +62,10 @@ special_functions = [
     "__VERIFIER_silent_exit",
     "__slowbeast_print",
     "ldv_stop",
+    "fscanf",
+    "scanf",
+    "__isoc99_fscanf",
+    "__isoc99_scanf",
 ]
 
 modelled_functions = ["__VERIFIER_assert"]
@@ -275,8 +279,8 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         O = FpOp(FpOp.SIGNBIT, [val], [get_sb_type(module, operands[0].type)])
         # the functions return int
         return O, [O]
-    elif fun == "fesetround":
-        raise NotImplementedError("fesetround is not supported yet")
+    elif fun in ("fesetround", "fscanf", "scanf", "__isoc99_fscanf", "__isoc99_scanf"):
+        raise NotImplementedError(f"{fun} is not supported atm")
     elif fun == "__slowbeast_print":
         P = Print(*[parser.operand(x) for x in get_llvm_operands(inst)[:-1]])
         return P, [P]
