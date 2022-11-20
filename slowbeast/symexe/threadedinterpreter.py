@@ -179,9 +179,11 @@ class ThreadedSymbolicInterpreter(SymbolicInterpreter):
         # push call to main to call stack
         entry = self.get_program().entry()
         for s in self.states:
+            s.push_call(None, entry)
             main_args = self._main_args(s)
-            s.push_call(None, entry, args_mapping=main_args)
             assert s.num_threads() == 1
+            if main_args:
+                s.memory.get_cs().set_values(main_args)
             s.sync_pc()
 
     def run(self) -> int:
