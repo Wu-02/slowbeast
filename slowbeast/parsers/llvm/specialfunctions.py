@@ -36,6 +36,10 @@ special_functions = [
     "llvm.ceil.f64",
     "llvm.trunc.f32",
     "llvm.trunc.f64",
+    "abs",
+    "sqrt",
+    "sqrtf",
+    "sqrtl",
     "fdim",
     "fesetround",
     "nan",
@@ -173,7 +177,7 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         )
         A = Alloc(size, on_heap=True, zeroed=True)
         return A, [size, A]
-    elif fun.startswith("llvm.fabs."):
+    elif fun.startswith("llvm.fabs.") or fun == "abs":
         operands = get_llvm_operands(inst)
         val = parser.operand(operands[0])
         A = Abs(
@@ -225,6 +229,12 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         types = [get_sb_type(module, operands[i].type) for i in range(0, 1)]
         fpop = FpOp(FpOp.TRUNC, ops, types)
         return fpop, [fpop]
+    elif fun in ("sqrt", "sqrtf", "sqrtl"):
+        operands = get_llvm_operands(inst)
+        ops = [parser.operand(operands[i]) for i in range(0, 1)]
+        types = [get_sb_type(module, operands[i].type) for i in range(0, 1)]
+        MIN = FpOp(FpOp.SQRT, ops, types)
+        return MIN, [MIN]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         operands = get_llvm_operands(inst)
         val = to_float_ty(parser.operand(operands[0]))
