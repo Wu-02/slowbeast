@@ -12,7 +12,7 @@ from numpy import (
     floor,
     ceil,
     trunc,
-    sqrt
+    sqrt,
 )
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
@@ -284,8 +284,10 @@ class ConcreteFloatsDomain(Domain):
         if op == FpOp.SQRT:
             assert val2 is None, val2
             v1 = val.value()
-            if isnan(v1) or isinf(v1) or v1 == 0: return v1
-            if v1 < -0.0: return ConcreteFloat("NaN")
+            if isnan(v1) or isinf(v1) or v1 == 0:
+                return v1
+            if v1 < -0.0:
+                return ConcreteFloat("NaN")
             return ConcreteFloat(sqrt(v1), val.type())
 
         raise NotImplementedError("Invalid/unsupported FP operation")
