@@ -9,6 +9,7 @@ from slowbeast.ir.instruction import (
     Cast,
     BinaryOperation,
     Extend,
+    Load,
 )
 from slowbeast.ir.types import type_mgr
 from slowbeast.util.debugging import print_stderr
@@ -66,6 +67,7 @@ special_functions = [
     "__VERIFIER_silent_exit",
     "__slowbeast_print",
     "ldv_stop",
+    "__errno_location",
 ]
 
 modelled_functions = ["__VERIFIER_assert"]
@@ -287,6 +289,10 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         return O, [O]
     elif fun == "fesetround":
         raise NotImplementedError("fesetround is not supported yet")
+    elif fun == "__errno_location":
+        errn = parser.get_or_create_errno()
+        L = Load(errn, errn.type(), [type_mgr().pointer_ty()])
+        return L, [L]
     elif fun == "__slowbeast_print":
         P = Print(*[parser.operand(x) for x in get_llvm_operands(inst)[:-1]])
         return P, [P]

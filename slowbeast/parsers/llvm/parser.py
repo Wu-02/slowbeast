@@ -223,6 +223,7 @@ class Parser:
         # records about PHIs that we created. We must place
         # the writes emulating PHIs only after all blocks were created.
         self.phis = []
+        self._errno_loc = None
 
         self.current_bblock = None
         self.current_fun = None
@@ -1161,6 +1162,25 @@ class Parser:
                 self._parse_initializer(G, g, ty, ts)
             self.program.add_global(G)
             self._addMapping(g, G)
+
+    def get_or_create_errno(self):
+        # FIXME: errno is thread local
+        errno_loc = self._errno_loc
+        if errno_loc is not None:
+            return errno_loc
+        errn = GlobalVariable(concrete_value(4, get_size_type()), "errno")
+        errno_loc = GlobalVariable(
+            concrete_value(int(get_pointer_bitwidth() / 8), get_size_type()),
+            "errno_loc",
+        )
+        self.program.add_global(errn)
+        self.program.add_global(errno_loc)
+
+        errno_loc.set_init([Store(errn, errno_loc, [errn.type(), errno_loc.type()])])
+        self._errno_loc = errno_loc
+        warn("errno not fully modelled, results may be invalid")
+
+        return errno_loc
 
     def _parse_module(self, m: ModuleRef) -> None:
         self._parse_globals(m)
