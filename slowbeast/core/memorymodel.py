@@ -82,7 +82,9 @@ class MemoryModel:
             state.set_killed(f"Use of unknown variable: {from_op}")
             return [state]
 
-        assert frm.is_pointer()
+        if not frm.is_pointer():
+            state.set_killed(f"Read from non-pointer value not implemented: {frm}")
+            return [state]
         try:
             val, err = state.memory.read(frm, bytes_num)
         except NotImplementedError as e:
