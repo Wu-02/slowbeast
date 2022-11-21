@@ -53,6 +53,7 @@ unsupported_funs = [
     "fgets",
     "__isoc99_fscanf",
     "__isoc99_scanf",
+    "socket"
 ]
 
 
