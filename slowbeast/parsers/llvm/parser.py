@@ -219,6 +219,7 @@ class Parser:
         self._metadata_opts = ["llvm", "dbgloc", "dbgvar"]
         self._name_vars = True
         self._allow_threads = allow_threads
+        self._created_thread_fun = False
         self._to_check = to_check
         # records about PHIs that we created. We must place
         # the writes emulating PHIs only after all blocks were created.
@@ -245,6 +246,9 @@ class Parser:
             ret = self._funs.get(op)
 
         return ret
+
+    def created_thread_fun(self):
+        return self._created_thread_fun
 
     def operand(self, op: ValueRef) -> Any:
         ret = self.try_get_operand(op)
@@ -753,6 +757,7 @@ class Parser:
 
         if fun in thread_funs:
             if self._allow_threads:
+                self._created_thread_fun = True
                 return self._createThreadFun(inst, operands, fun)
             raise NotImplementedError(f"Threads are forbiden: {fun}")
 

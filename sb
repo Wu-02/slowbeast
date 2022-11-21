@@ -255,7 +255,10 @@ def create_arg_parser():
         help="Use incremental SMT solving",
     )
     parser.add_argument(
-        "-threads", action="store_true", default=False, help="Enable handling threads"
+        "-forbid-threads",
+        action="store_true",
+        default=False,
+        help="Disable handling threads",
     )
     parser.add_argument(
         "-threads-dpor",
@@ -434,7 +437,7 @@ def main():
         unsupp_undefs = args.unsupported_undefs or None
         parser = LLVMParser(
             error_funs.split(",") if error_funs else None,
-            args.threads,
+            not args.forbid_threads,
             args.forbid_floats,
             unsupp_undefs.split(",") if unsupp_undefs else None,
             args.check,
@@ -470,6 +473,12 @@ def main():
         print("Entry function not found: {0}".format(args.entry))
         sys_exit(1)
 
+    has_threads = not args.forbid_threads and parser.created_thread_fun()
+    assert (
+        not has_threads
+        or P.fun("pthread_create") is not None
+        or P.fun("thrd_create") is not None
+    )
     testgen = None
     if not args.no_output:
         try:
@@ -484,7 +493,7 @@ def main():
 
         if not args.no_tests:
             only_tests = args.only_tests
-            Cls = ThreadedTestCaseGenerator if args.threads else TestCaseGenerator
+            Cls = ThreadedTestCaseGenerator if has_threads else TestCaseGenerator
             testgen = Cls(
                 args.out_dir,
                 args.all_tests,
@@ -539,6 +548,9 @@ def main():
     elif args.bse:
         from slowbeast.bse.bself import BSELFOptions
 
+        if parser.created_thread_fun():
+            warn("program contains threads, but BSE does not support them.")
+
         opts = BSELFOptions()
         opts.replay_errors = args.replay_errors
         if args.bse and not args.bself:
@@ -561,7 +573,7 @@ def main():
     elif args.se:
         opts = SEOptions()
 
-        opts.threads = args.threads
+        opts.threads = not args.forbid_threads
         opts.replay_errors = args.replay_errors
         opts.exit_on_error = args.exit_on_error
         opts.interactive = args.interactive
@@ -586,7 +598,8 @@ def main():
         # from slowbeast.symexe.futuresymbolicexecution import (
         #    FutureSymbolicInterpreter as SymbolicInterpreter,
         # )
-        elif args.threads:
+        elif has_threads:
+            dbg("Threads detected, enabling support for threads in SE")
             if args.threads_dpor:
                 from slowbeast.symexe.threadedinterpreter import (
                     ThreadedDPORSymbolicInterpreter as SymbolicInterpreter,
