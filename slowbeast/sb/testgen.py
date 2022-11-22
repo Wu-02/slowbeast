@@ -36,7 +36,7 @@ class TestCaseGenerator:
         fl.write("\n")
         fl.write("Nondeterministic values:\n")
         inpvec = state.input_vector()
-        for var, val in zip(state.nondets(), inpvec):
+        for var, val in zip(state.nondets(), inpvec or ()):
             # dump as unsigned and signed
             fl.write(f"  {var} -> {val.value()}u")
             fl.write(
@@ -92,7 +92,7 @@ class TestCaseGenerator:
         self._svcomp_header(fl)
 
         lid = 0
-        for var, val in zip(state.nondets(), inpvec):
+        for var, val in zip(state.nondets(), inpvec or ()):
             instruction = var.instruction
             if not isinstance(instruction, Call):
                 print("Unhandled nondet value: ", var)
