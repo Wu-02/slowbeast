@@ -594,8 +594,12 @@ class Parser:
 
     def _createBranch(self, inst: ValueRef) -> List[Branch]:
         operands = get_llvm_operands(inst)
+        ret = []
         if len(operands) == 3:
             cond = self.operand(operands[0])
+            if not cond.type().is_bool():
+                cond = Cast(cond, type_mgr().bool_ty(), False, [cond.type()])
+                ret.append(cond)
             # XXX: whaat? for some reason, the bindings return
             # the false branch as first
             b1 = self.bblock(operands[2])
@@ -606,8 +610,9 @@ class Parser:
             B = Branch(ConstantTrue, b1, b1)
         else:
             raise NotImplementedError("Invalid number of operands for br")
+        ret.append(B)
         self._addMapping(inst, B)
-        return [B]
+        return ret
 
     def _handleSwitch(self, inst) -> List[Switch]:
         toop = self.operand
