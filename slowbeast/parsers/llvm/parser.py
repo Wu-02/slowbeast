@@ -664,9 +664,9 @@ class Parser:
             )
             self._addMapping(inst, succ)
             ret = self.operand(operands[1])
-            if ret.is_concrete() and ret.is_null():
+            if isinstance(ret, Pointer) and ret.is_null():
                 return [succ, t]
-            s = Store(t, ret, type_mgr().pointer_ty())
+            s = Store(t, ret, [t.type(), type_mgr().pointer_ty()])
             return [succ, t, s]
         if fun == "pthread_create":
             assert len(operands) == 5  # +1 for called fun
