@@ -724,7 +724,7 @@ class IExecutor(ConcreteIExecutor):
             isunsat = tmp is None
 
         if isunsat:
-            state.set_terminated(f"Assumption unsat: {v} (!= True)")
+            state.set_terminated(f"Assumption unsat: {v} is False")
 
         return [state]
 
@@ -741,7 +741,7 @@ class IExecutor(ConcreteIExecutor):
                 isunsat = tmp is None
 
             if isunsat:
-                state.set_terminated(f"Assumption unsat: {o} == {v} (!= True)")
+                state.set_terminated(f"Assumption unsat: {o} is {v}")
                 return [state]
 
         state.pc = state.pc.get_next_inst()

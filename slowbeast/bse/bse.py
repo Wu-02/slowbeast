@@ -15,6 +15,7 @@ from slowbeast.util.debugging import print_stdout, print_stderr, dbg, ldbgv
 from .bsectx import BSEContext
 from .executor import BSELazyPathIExecutor as BSEExecutor
 from ..core.executionresult import PathExecutionResult
+from ..ir.function import Function
 
 
 def report_state(stats, n, msg=None, fn=print_stderr) -> None:
@@ -217,10 +218,18 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 # if predecessor is call edge, continue with the return edges
                 # of the called function
                 if pedge.is_call():
-                    if not pedge.called_function().is_undefined():
-                        self.extend_to_call(pedge, bsectx, postcondition)
-                        continue
-                    # fall-through
+                    calledval = pedge.called_function()
+                    if isinstance(calledval, Function):
+                        if not calledval.is_undefined():
+                            self.extend_to_call(pedge, bsectx, postcondition)
+                            continue
+                        # else: # fall-through
+                    else:  # it is a function pointer call, take it as undefined
+                        raise RuntimeError(
+                            f"Function pointers calls unsupported in BSE: {calledval}"
+                        )
+                        # dbg(f"Taking function pointer call as call of undefined function: {calledval}")
+                        # fall-through
                 self.queue_state(
                     bsectx.extension(
                         pedge,
