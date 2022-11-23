@@ -41,20 +41,20 @@ def parse_special_fcmp(inst, op1, op2, optypes):
     if parts[3] == "uno":
         if op1 == op2:
             # equivalent to isnan
-            return [FpOp(FpOp.IS_NAN, op1, optypes[0])]
-        seq.append(FpOp(FpOp.IS_NAN, op1, optypes[0]))
-        seq.append(FpOp(FpOp.IS_NAN, op2, optypes[1]))
+            return [FpOp(FpOp.IS_NAN, [op1], [optypes[0]])]
+        seq.append(FpOp(FpOp.IS_NAN, [op1], [optypes[0]]))
+        seq.append(FpOp(FpOp.IS_NAN, [op2], [optypes[1]]))
         seq.append(BinaryOperation(BinaryOperation.AND, *seq, [BoolType()] * 2))
         return seq
     if parts[3] == "ord":
         if op1 == op2:
             # equivalent to not isnan
-            seq.append(FpOp(FpOp.IS_NAN, op1, optypes[0]))
+            seq.append(FpOp(FpOp.IS_NAN, [op1], [optypes[0]]))
             seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse, [BoolType] * 2))
         else:
-            seq.append(FpOp(FpOp.IS_NAN, op1, optypes[0]))
+            seq.append(FpOp(FpOp.IS_NAN, [op1], [optypes[0]]))
             seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse, [BoolType] * 2))
-            seq.append(FpOp(FpOp.IS_NAN, op2, optypes[1]))
+            seq.append(FpOp(FpOp.IS_NAN, [op2], [optypes[1]]))
             seq.append(Cmp(Cmp.EQ, seq[-1], ConstantFalse, [BoolType] * 2))
             seq.append(
                 BinaryOperation(BinaryOperation.AND, seq[1], seq[-1], [BoolType] * 2)
@@ -579,7 +579,7 @@ class Parser:
             op1 = to_float_ty(op1)
             op2 = to_float_ty(op2)
             if not P:
-                seq = parse_special_fcmp(inst, op1, op2)
+                seq = parse_special_fcmp(inst, op1, op2, optypes)
                 if seq:
                     self._addMapping(inst, seq[-1])
                     return seq

@@ -263,7 +263,7 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
             [get_sb_type(module, operands[0].type)],
         )
         return I, [I]
-    elif fun in ("__isnan", "__isnanf", "__isnanfl"):
+    elif fun in ("__isnan", "__isnanf", "__isnanfl", "__isnanl"):
         operands = get_llvm_operands(inst)
         val = to_float_ty(parser.operand(operands[0]))
         O = FpOp(FpOp.IS_NAN, [val], [get_sb_type(module, operands[0].type)])
