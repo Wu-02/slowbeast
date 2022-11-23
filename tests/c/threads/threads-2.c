@@ -26,8 +26,7 @@ int main(void) {
 
 	pthread_join(tid, 0);
 
-	// CHECK: assertion failed
-	// CHECK: Found errors: 1
+	// CHECK: [assertion error]: assertion failed!
 
 	return 0;
 }

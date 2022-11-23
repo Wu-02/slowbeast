@@ -848,6 +848,10 @@ class Parser:
             ty = type_mgr().bv_ty(32)
         elif stype == "i64":
             ty = type_mgr().bv_ty(64)
+        elif stype == "x86_fp80":
+            ty = type_mgr().float_ty(80)
+        elif stype == "x86_fp128":
+            ty = type_mgr().float_ty(128)
         else:
             raise NotImplementedError(f"Unimplemented cast: {inst}")
         # just behave that there's no ZExt for now
@@ -883,9 +887,14 @@ class Parser:
     def _createCast(self, inst):
         operands = get_llvm_operands(inst)
         assert len(operands) == 1, "Invalid number of operands for cast"
-        op = self.operand(operands[0])
-        self._mapping[inst] = op
-        return []
+        cast = Cast(
+            self.operand(operands[0]),
+            get_sb_type(self.llvmmodule, inst.type),
+            True,
+            [get_sb_type(self.llvmmodule, operands[0].type)],
+        )
+        self._mapping[inst] = cast
+        return [cast]
 
     def _parseGep(self, inst):
         operands = get_llvm_operands(inst)
