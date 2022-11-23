@@ -795,7 +795,9 @@ class Parser:
             f"Unsupported ASM, taking as noop with nondet return value:", color="yellow"
         )
         print_stderr(str(inst))
-        C = self.create_nondet_call(f"asm_{ty}".replace(" ", "_"), ty)
+        C = self.create_nondet_call(
+            f"asm_{ty}".replace(" ", "_"), get_sb_type(self.llvmmodule, ty)
+        )
         self._addMapping(inst, C)
         return [C]
 
