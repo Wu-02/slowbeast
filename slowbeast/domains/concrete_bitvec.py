@@ -1,10 +1,9 @@
-from struct import unpack
 from typing import Type, Union
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.ir.types import type_mgr, BitVecType
-from .value import Value
 from .domain import Domain
+from .value import Value
 
 
 def to_unsigned(x: int, bw: int) -> int:

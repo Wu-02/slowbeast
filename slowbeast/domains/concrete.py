@@ -191,7 +191,7 @@ class ConcreteDomain(Domain):
             if ty.is_float():
                 return ConcreteFloat(a.value(), bw)
             elif ty.is_bv():
-                return ConcreteBitVec(int(a.value()), bw)
+                return ConcreteBitVec(float_to_bv(a, bw), bw)
         return None  # unsupported conversion
 
     @staticmethod

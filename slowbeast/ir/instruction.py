@@ -746,7 +746,7 @@ class FpOp(ValueTypedInstruction):
 
     def __init__(self, fp_op, vals, optypes) -> None:
         assert FpOp.FIRST_OP <= fp_op <= FpOp.LAST_OP
-        if FpOp.IS_INF <= fp_op <= FpOp.IS_NAN:
+        if FpOp.IS_INF <= fp_op <= FpOp.SIGNBIT:
             retty = type_mgr().bool_ty()
         elif FpOp.FPCLASSIFY == fp_op:
             retty = type_mgr().bv_ty(32)
