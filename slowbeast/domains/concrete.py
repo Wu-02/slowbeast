@@ -22,15 +22,16 @@ from .value import Value
 from ..ir.instruction import IntOp
 
 
-def to_fp(x):
+def to_fp(x, bw):
     val = x.value()
     if x.is_float():
         return val
-    return (
-        unpack("f", pack("I", val))
-        if x.bitwidth() == 32
-        else unpack("d", pack("Q", val))
-    )[0]
+    print(val)
+    if val < 0:
+        packed = pack("i", val) if x.bitwidth() == 32 else pack("l", val)
+    else:
+        packed = pack("I", val) if x.bitwidth() == 32 else pack("L", val)
+    return (unpack("f", packed) if bw == 32 else unpack("d", packed))[0]
 
 
 def get_any_domain(a: Value):
@@ -178,7 +179,7 @@ class ConcreteDomain(Domain):
             if ty.is_bv():
                 return a.to_bv()
             if ty.is_float():
-                return ConcreteFloat(to_fp(a), bw)
+                return ConcreteFloat(to_fp(a, bw), bw)
         if a.is_bv():
             if ty.is_float():
                 return ConcreteFloat(a.value(), bw)
@@ -202,12 +203,12 @@ class ConcreteDomain(Domain):
             return ConcreteBitVec(1 if a.value() else 0, bw)
         if a.is_bytes():
             if ty.is_float():
-                return ConcreteFloat(to_fp(a.to_bv()), bw)
+                return ConcreteFloat(to_fp(a.to_bv(), bw), bw)
             if ty.is_bv():
                 return a.to_bv()
         if a.is_bv():
             if ty.is_float():
-                return ConcreteFloat(to_fp(a), bw)
+                return ConcreteFloat(to_fp(a, bw), bw)
             elif ty.is_bv():
                 return ConcreteBitVec(a.value(), bw)
             elif ty.is_bool():

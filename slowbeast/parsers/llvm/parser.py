@@ -139,7 +139,9 @@ def parse_fun_ret_ty(
         return False, None
     if parts[0] == "void":
         return True, None
-    elif ty.is_struct:
+    if parts[0] == "x86_fp80":
+        return True, type_mgr().float_ty(80)
+    if ty.is_struct:
         sz = type_size_in_bits(m, parts[0])
         return True, type_mgr.bytes_ty(sz)
     else:
