@@ -323,6 +323,7 @@ def parse_arguments():
         "valid-free",
         "no-memleak",
         "valid-memcleanup",
+        "memcleanup",
     ]
     if args.check and any(
         (unsupp_prp in args.check for unsupp_prp in unsupported_properties)
