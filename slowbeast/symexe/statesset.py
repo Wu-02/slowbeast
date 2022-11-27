@@ -67,7 +67,9 @@ class StatesSet:
         return self.as_expr().to_cnf()
 
     def rewrite_and_simplify(self) -> "StatesSet":
-        self.reset_expr(self.as_expr().rewrite_and_simplify())
+        expr = self.as_expr()
+        if not expr.is_concrete():
+            self.reset_expr(expr.rewrite_and_simplify())
         return self
 
     def as_assume_annotation(self) -> AssumeAnnotation:
