@@ -51,6 +51,9 @@ class AisInference(BSELFChecker):
 
     def get_loop_termination_condition(self, loc):
         S = self.create_set()
+        if not self.loop:
+            print_stdout(f"Loop {loc} is nested... not handled")
+            return None
         if not self.loop.get_exit_paths():
             print_stdout(f"Loop {loc} is syntactically infinite")
             # syntactically infinite loop
