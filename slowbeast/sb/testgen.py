@@ -36,7 +36,9 @@ class TestCaseGenerator:
         fl.write("\n")
         fl.write("Nondeterministic values:\n")
         inpvec = state.input_vector()
-        for var, val in zip(state.nondets(), inpvec or ()):
+        if inpvec is None:
+            raise RuntimeError("No input vector, formula is UNSAT?")
+        for var, val in zip(state.nondets(), inpvec):
             # dump as unsigned and signed
             fl.write(f"  {var} -> {val.value()}u")
             fl.write(
@@ -88,11 +90,13 @@ class TestCaseGenerator:
 
     def generate_svcomp_violation_witness(self, fl, state):
         inpvec = state.input_vector()
+        if inpvec is None:
+            raise RuntimeError("No input vector, formula is UNSAT?")
         write = fl.write
         self._svcomp_header(fl)
 
         lid = 0
-        for var, val in zip(state.nondets(), inpvec or ()):
+        for var, val in zip(state.nondets(), inpvec):
             instruction = var.instruction
             if not isinstance(instruction, Call):
                 print("Unhandled nondet value: ", var)
