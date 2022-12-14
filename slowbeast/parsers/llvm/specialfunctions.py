@@ -235,8 +235,8 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         operands = get_llvm_operands(inst)
         ops = [parser.operand(operands[i]) for i in range(0, 1)]
         types = [get_sb_type(module, operands[i].type) for i in range(0, 1)]
-        MIN = FpOp(FpOp.SQRT, ops, types)
-        return MIN, [MIN]
+        SQRT = FpOp(FpOp.SQRT, ops, types)
+        return SQRT, [SQRT]
     elif fun in ("__isinf", "__isinff", "__isinfl"):
         operands = get_llvm_operands(inst)
         val = to_float_ty(parser.operand(operands[0]))

@@ -55,11 +55,20 @@ def _get_float(s):
 def _get_double(s):
     try:
         if s.startswith("0x"):
+            bts = 8
+            if s.startswith("0xK"):
+                s = f"0x{s[3:]}"
+                bts=10
+            elif s.startswith("0xL"):
+                s = f"0x{s[3:]}"
+                bts=16
             # llvm writes the constants as double (even when it is 32 bit)
-            return unpack(">d", int(s, 16).to_bytes(8, "big"))[0]
+            return unpack(">d", int(s, 16).to_bytes(bts, "big"))[0]
         else:
             return float(s)
-    except ValueError:
+    except ValueError as e:
+        print(float(int(s)))
+        warn(f"Failed parsing a float constant '{s}': {e}")
         return None
 
 
@@ -73,6 +82,8 @@ def _bitwidth(ty: Sized) -> Optional[int]:
         return 64
     elif ty.startswith("float"):
         return 32
+    elif ty.startswith("x86_fp80"):
+        return 80
     else:
         return None
 
@@ -162,7 +173,7 @@ def get_sb_type(m: ModuleRef, ty: str):
     if ts is None:
         return None
 
-    if sty in ("float", "double"):
+    if sty in ("float", "double", "x86_fp80"):
         return type_mgr().float_ty(ts)
     elif sty.startswith("i"):
         return type_mgr().bv_ty(ts)
@@ -201,7 +212,7 @@ def get_constant(val: ValueRef) -> Optional[ConcreteBitVec]:
     bw = _bitwidth(parts[0])
     if not bw:
         return None
-    isdouble = parts[0] == "double"
+    isdouble = parts[0] in ("double", "x86_fp80")
     isfloating = parts[0] == "float" or isdouble
 
     if isfloating:
