@@ -6,6 +6,7 @@ from llvmlite.binding.value import TypeRef, ValueRef
 
 from slowbeast.domains.concrete import ConstantTrue, ConstantFalse, ConcreteDomain
 from slowbeast.domains.concrete_bitvec import ConcreteBitVec
+from slowbeast.domains.concrete_bytes import ConcreteBytes
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
 from slowbeast.domains.pointer import Pointer, get_null_pointer
 from slowbeast.ir.types import BitVecType, FloatType, PointerType, type_mgr
@@ -58,10 +59,10 @@ def _get_double(s):
             bts = 8
             if s.startswith("0xK"):
                 s = f"0x{s[3:]}"
-                bts=10
+                bts = 10
             elif s.startswith("0xL"):
                 s = f"0x{s[3:]}"
-                bts=16
+                bts = 16
             # llvm writes the constants as double (even when it is 32 bit)
             return unpack(">d", int(s, 16).to_bytes(bts, "big"))[0]
         else:
@@ -199,16 +200,25 @@ def get_pointer_constant(val) -> Optional[Pointer]:
     return None
 
 
-def get_constant(val: ValueRef) -> Optional[ConcreteBitVec]:
+def get_constant(val: ValueRef) -> Optional[ConcreteVal]:
     # My, this is so ugly... but llvmlite does
     # not provide any other way...
     if is_pointer_ty(val.type):
         return get_pointer_constant(val)
 
-    parts = str(val).split()
+    sval = str(val)
+    parts = sval.split()
+    if is_array_ty(val.type):
+        if parts[1] == "x" and parts[2].endswith("i8]"):
+            # this is a string
+            s = sval[sval.find("x i8] c") + 7 :]
+            ss = s[1:-1]
+            assert s[0] == s[-1] == '"'
+            bts = llvm_string_to_bytes(ss)
+            return ConcreteBytes(bts)
+
     if len(parts) != 2:
         return None
-
     bw = _bitwidth(parts[0])
     if not bw:
         return None
@@ -229,6 +239,22 @@ def get_constant(val: ValueRef) -> Optional[ConcreteBitVec]:
             return None
 
     return concrete_value(c, bw)
+
+
+def llvm_string_to_bytes(ss):
+    bts = []
+    end = len(ss)
+    i = 0
+    while i < end:
+        c = ss[i]
+        if c == "\\":
+            # escape character, the value are the next two digits
+            bts.append(ConcreteBitVec(int(ss[i + 1 : i + 2], 16), 8))
+            i += 3
+        else:
+            bts.append(ConcreteBitVec(int(ord(c)), 8))
+            i += 1
+    return bts
 
 
 def bv_to_bool_else_id(bv: ConcreteBool) -> ConcreteBool:

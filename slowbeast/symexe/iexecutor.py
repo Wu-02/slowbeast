@@ -507,7 +507,9 @@ class IExecutor(ConcreteIExecutor):
 
     def call_fun(self, state: SEState, instr: Call, fun: Function) -> List[SEState]:
         # map values to arguments
-        assert len(instr.operands()) == len(fun.arguments()), f"{instr}, {fun.arguments()}"
+        assert len(instr.operands()) == len(
+            fun.arguments()
+        ), f"{instr}, {fun.arguments()}"
         mapping = {
             x: state.eval(y) for (x, y) in zip(fun.arguments(), instr.operands())
         }

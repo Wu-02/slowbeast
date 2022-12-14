@@ -44,6 +44,10 @@ class ConcreteBytes(ConcreteVal):
     def to_bv(self):
         return ConcreteBitVecDomain.Concat(*self.value())
 
+    def from_string(s):
+        assert all((c.isascii() for c in s)), s
+        return ConcreteBytes([ConcreteBitVec(ord(c), 8) for c in s])
+
 
 def _check_args(a, b):
     assert isinstance(a, ConcreteBytes), a
