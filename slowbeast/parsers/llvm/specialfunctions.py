@@ -68,6 +68,8 @@ special_functions = [
     "__slowbeast_print",
     "ldv_stop",
     "__errno_location",
+    # kernel functions
+    "printk"
 ]
 
 modelled_functions = ["__VERIFIER_assert"]
@@ -293,6 +295,8 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         errn = parser.get_or_create_errno()
         L = Load(errn, errn.type(), [type_mgr().pointer_ty()])
         return L, [L]
+    elif fun == "printk":
+        return None, []
     elif fun == "__slowbeast_print":
         P = Print(*[parser.operand(x) for x in get_llvm_operands(inst)[:-1]])
         return P, [P]
