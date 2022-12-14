@@ -16,6 +16,11 @@ def write_bytes(values: list, offval, x: Union[Expr, Value]) -> Optional[MemErro
     Write value "x" at offval + offval + size(x) indices of values list.
     Return None if all is fine or return a MemError object.
     """
+    assert values
+
+    if x.type().is_pointer():
+        return MemError(MemError.UNSUPPORTED, f"breaking pointer to bytes")
+
     expr_mgr = global_expr_mgr()
     bw = x.bytewidth()
     # first cast the value to bytes
@@ -24,6 +29,9 @@ def write_bytes(values: list, offval, x: Union[Expr, Value]) -> Optional[MemErro
     if x_to_bytes is None:
         return MemError(MemError.UNSUPPORTED, f"Cast of {x} to {ty} is unsupported")
     xvalues = x_to_bytes.value()
+    assert xvalues, values
+    if xvalues is None:  # for optimized runs
+        return None
     for n, i in enumerate(range(offval, offval + bw)):
         values[i] = xvalues[n]
     return None
