@@ -69,7 +69,7 @@ special_functions = [
     "ldv_stop",
     "__errno_location",
     # kernel functions
-    "printk"
+    "printk",
 ]
 
 modelled_functions = ["__VERIFIER_assert"]

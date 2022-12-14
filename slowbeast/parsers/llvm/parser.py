@@ -1149,23 +1149,28 @@ class Parser:
     def _parse_initializer(
         self, G: GlobalVariable, g: ValueRef, ty: BytesType, ts: int
     ) -> None:
-        c = get_constant(g.initializer)
+        init = g.initializer
+        c = get_constant(init)
         if c:
             # FIXME: add composed instruction
             G.set_init([Store(c, G, [ty, G.type()])])
             return
-        # elif is_array_ty(g.initializer.type):
-        #    parts=str(g.initializer.type).split()
-        #    if parts[1] == 'x' and parts[2] == 'i8]':
-        #    # FIXME: add String type to represent strings
         else:
-            initsize = type_size(self.llvmmodule, g.initializer.type)
-            if initsize and initsize == ts and "zeroinitializer" in str(g.initializer):
+            initsize = type_size(self.llvmmodule, init.type)
+            if initsize and initsize == ts and "zeroinitializer" in str(init):
                 # this global is whole zero-initialized
                 G.set_zeroed()
                 return
+            if is_pointer_ty(init.type) and init.is_constantexpr:
+                instr = self._parse_ce(init)
+                if isinstance(instr, Instruction):
+                    # if we created a new instruction, add it the initializer
+                    G.set_init([instr, Store(instr, G, [ty, G.type()])])
+                else:
+                    G.set_init([Store(instr, G, [ty, G.type()])])
+                return
         print_stderr(
-            f"Unsupported initializer: {g.initializer}",
+            f"Unsupported initializer: {init}",
             color="YELLOW",
         )
 
