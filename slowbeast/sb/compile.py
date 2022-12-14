@@ -25,7 +25,8 @@ def compile_c(path, outp=None, addargs=None):
     if outp is None:
         outp = pathjoin("/tmp/", basename(path) + ".bc")
 
-    cmd = ["clang", "-D__inline=", "-fgnu89-inline", "-emit-llvm", "-c", "-g"]
+    cmd = ["clang", "-D__inline=", "-fgnu89-inline",
+           "-fbracket-depth=100000", "-emit-llvm", "-c", "-g"]
     if addargs:
         cmd += addargs
     cmd += ["-o", outp, path]
