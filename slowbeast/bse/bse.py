@@ -190,13 +190,14 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
                 def process_state(self, s):
                     self.states.append(s)
 
-            def __init__(self):
+            def __init__(self, new_output_file):
                 self.testgen = GatherStates.Handler()
                 self.states = self.testgen.states
+                self.new_output_file = new_output_file
 
         opts = SEOptions(self.get_options())
         opts.replay_errors = False
-        handler = GatherStates()
+        handler = GatherStates(self.new_output_file)
         SE = SymbolicInterpreter(self.get_program(), handler, opts)
         SE.set_input_vector(ivec)
         SE.run()
