@@ -4,24 +4,24 @@ from slowbeast.core.errors import GenericError
 from slowbeast.domains.concrete import concrete_value
 from slowbeast.ir.instruction import ThreadJoin, Return, Thread
 from slowbeast.ir.types import get_offset_type
-from slowbeast.symexe.state import ThreadedSEState
-from slowbeast.symexe.iexecutor import IExecutor
+from slowbeast.symexe.iexecutor import IExecutor as BaseIExecutor
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
+from slowbeast.symexe.threads.state import TSEState
 from slowbeast.util.debugging import ldbgv, dbgv
 
 
-class ThreadedExecutor(IExecutor):
+class IExecutor(BaseIExecutor):
     def __init__(
         self, program, solver, opts, memorymodel: Optional[SymbolicMemoryModel] = None
     ) -> None:
         super().__init__(program, solver, opts, memorymodel)
 
-    def create_state(self, pc=None, m=None) -> ThreadedSEState:
+    def create_state(self, pc=None, m=None) -> TSEState:
         if m is None:
             m = self.get_memory_model().create_memory()
         # if self.get_options().incremental_solving:
         #    return IncrementalSEState(self, pc, m)
-        return ThreadedSEState(self, pc, m, self.solver)
+        return TSEState(self, pc, m, self.solver)
 
     def exec_undef_fun(self, state, instr, fun):
         fnname = fun.name()

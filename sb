@@ -602,12 +602,12 @@ def main():
         elif has_threads:
             dbg("Threads detected, enabling support for threads in SE")
             if args.threads_dpor:
-                from slowbeast.symexe.threadedinterpreter import (
-                    ThreadedDPORSymbolicInterpreter as SymbolicInterpreter,
+                from slowbeast.symexe.threads.interpreter import (
+                    DPORSymbolicInterpreter as SymbolicInterpreter,
                 )
             else:
-                from slowbeast.symexe.threadedinterpreter import (
-                    ThreadedSymbolicInterpreter as SymbolicInterpreter,
+                from slowbeast.symexe.threads.interpreter import (
+                    SymbolicInterpreter as SymbolicInterpreter,
                 )
         else:
             from slowbeast.symexe.interpreter import SymbolicInterpreter

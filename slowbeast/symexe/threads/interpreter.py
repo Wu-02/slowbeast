@@ -3,9 +3,9 @@ from typing import Union
 from slowbeast.core.errors import GenericError
 from slowbeast.ir.function import Function
 from slowbeast.ir.instruction import Alloc, Call, Load, Store, ThreadJoin, Thread
-from slowbeast.symexe.interpreter import SymbolicInterpreter
+from slowbeast.symexe.interpreter import SymbolicInterpreter as SymexeInterpreter
 from slowbeast.symexe.options import SEOptions
-from slowbeast.symexe.threadedexecutor import ThreadedExecutor
+from slowbeast.symexe.threads.iexecutor import IExecutor
 from slowbeast.util.debugging import print_stderr
 
 
@@ -101,9 +101,9 @@ def _is_global_event_fun(fn) -> bool:
     return False
 
 
-class ThreadedSymbolicInterpreter(SymbolicInterpreter):
+class SymbolicInterpreter(SymexeInterpreter):
     def __init__(self, P, ohandler=None, opts: SEOptions = SEOptions()) -> None:
-        super().__init__(P, ohandler, opts, ExecutorClass=ThreadedExecutor)
+        super().__init__(P, ohandler, opts, ExecutorClass=IExecutor)
 
     def _is_global_event(self, state, pc: Union[Call, Load, Store, ThreadJoin]) -> bool:
         if isinstance(pc, Load):
@@ -243,7 +243,7 @@ def has_conflicts(state, events, states_with_events) -> bool:
     return False
 
 
-class ThreadedDPORSymbolicInterpreter(ThreadedSymbolicInterpreter):
+class DPORSymbolicInterpreter(SymbolicInterpreter):
     def __init__(self, P, ohandler=None, opts: SEOptions = SEOptions()) -> None:
         super().__init__(P, ohandler, opts)
         print("Running symbolic execution with DPOR")
