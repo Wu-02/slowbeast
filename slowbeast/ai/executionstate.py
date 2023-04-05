@@ -8,7 +8,6 @@ from slowbeast.domains.signul import SignULDomain as Domain
 class AbstractState(ExecutionState):
     """State of abstract interpretation"""
 
-    # XXX do not store warnings in the state but keep them in a map in the interpreter or so?
     # FIXME: move this to the super class?
     __slots__ = (
         "_executor",

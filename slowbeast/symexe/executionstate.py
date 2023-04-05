@@ -24,16 +24,12 @@ from slowbeast.symexe.memory import Memory
 class SEState(ExecutionState):
     """Execution state of symbolic execution"""
 
-    # XXX do not store warnings in the state but keep them in a map in the
-    # interpreter or so?
     __slots__ = (
         "_executor",
         "_solver",
         "_constraints",
         "_constraints_ro",
         "_id",
-        "_warnings",
-        "_warnings_ro",
         "_nondets",
         "_nondets_ro",
     )
@@ -60,8 +56,6 @@ class SEState(ExecutionState):
         self._nondets = []
         self._nondets_ro = False
 
-        self._warnings = []
-        self._warnings_ro = False
 
     def get_id(self):
         return self._id
@@ -142,10 +136,6 @@ class SEState(ExecutionState):
         new._constraints_ro = True
         self._constraints_ro = True
 
-        new._warnings = self._warnings
-        new._warnings_ro = True
-        self._warnings_ro = True
-
         new._nondets = self._nondets
         new._nondets_ro = True
         self._nondets_ro = True
@@ -177,16 +167,6 @@ class SEState(ExecutionState):
             self._constraints = type(self._constraints)()
             self._constraints_ro = False
             self.add_constraint(*C)
-
-    def add_warning(self, msg) -> None:
-        warn(msg)
-        if self._warnings_ro:
-            self._warnings = copy(self._warnings)
-            self._warnings_ro = False
-        self._warnings.append(msg)
-
-    def warnings(self):
-        return self._warnings
 
     def create_nondet(self, instr, val) -> None:
         """
