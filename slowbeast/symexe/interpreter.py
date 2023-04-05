@@ -3,7 +3,7 @@ from typing import Optional, Sized
 from slowbeast.interpreter.interpreter import Interpreter
 from slowbeast.ir.program import Program
 from slowbeast.solvers.symcrete import SymbolicSolver, Solver
-from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.state import SEState
 from slowbeast.symexe.iexecutor import IExecutor
 from slowbeast.util.debugging import (
     inc_print_indent,

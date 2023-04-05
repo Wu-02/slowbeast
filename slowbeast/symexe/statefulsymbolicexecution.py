@@ -1,6 +1,6 @@
 from typing import Type
 
-from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.state import SEState
 from slowbeast.symexe.interpreter import SEOptions
 from .iexecutor import IExecutor as SExecutor
 from .interpreter import SymbolicInterpreter

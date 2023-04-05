@@ -14,13 +14,13 @@ from slowbeast.ir.function import Function
 from slowbeast.ir.program import Program
 from slowbeast.solvers.symcrete import SymbolicSolver
 from slowbeast.symexe.annotations import ExprAnnotation
-from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.state import SEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.options import SEOptions
 from slowbeast.symexe.sestatedescription import SEStateDescription
 from slowbeast.symexe.statesset import StatesSet
 from slowbeast.util.debugging import dbgv, ldbgv, warn, dbg
-from .executionstate import IncrementalSEState
+from .state import IncrementalSEState
 from ..domains.concrete_value import ConcreteVal, ConcreteBool
 from ..ir.instruction import (
     Instruction,

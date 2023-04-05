@@ -4,7 +4,7 @@ from ..ir.instruction import Alloc, GlobalVariable
 from slowbeast.core.memory import Memory
 from slowbeast.ir.instruction import BinaryOperation, Load, Store, Alloc, GlobalVariable
 from typing import Any, List, Optional, Union
-from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.state import SEState
 from slowbeast.symexe.options import SEOptions
 
 

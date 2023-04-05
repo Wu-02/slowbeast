@@ -1,7 +1,7 @@
 from typing import Optional, Sized
 
 from slowbeast.core.memorymodel import MemoryModel
-from slowbeast.symexe.executionstate import LazySEState
+from slowbeast.symexe.state import LazySEState
 from slowbeast.util.debugging import dbgv
 from .annotations import execute_annotations
 from .pathiexecutor import PathIExecutor

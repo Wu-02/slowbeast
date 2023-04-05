@@ -4,7 +4,7 @@ from slowbeast.core.errors import GenericError
 from slowbeast.domains.concrete import concrete_value
 from slowbeast.ir.instruction import ThreadJoin, Return, Thread
 from slowbeast.ir.types import get_offset_type
-from slowbeast.symexe.executionstate import ThreadedSEState
+from slowbeast.symexe.state import ThreadedSEState
 from slowbeast.symexe.iexecutor import IExecutor
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.util.debugging import ldbgv, dbgv

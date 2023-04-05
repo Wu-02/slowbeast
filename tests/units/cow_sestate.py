@@ -5,7 +5,7 @@ from slowbeast.ir.bblock import *
 from slowbeast.ir.instruction import *
 from slowbeast.ir.function import *
 
-from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.state import SEState
 from slowbeast.core.state import ExecutionState
 
 

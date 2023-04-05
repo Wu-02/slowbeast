@@ -1,6 +1,6 @@
 from typing import Optional
 
-from slowbeast.symexe.executionstate import SEState as ExecutionState
+from slowbeast.symexe.state import SEState as ExecutionState
 from slowbeast.symexe.iexecutor import IExecutor
 from slowbeast.symexe.memory import Memory
 from slowbeast.symexe.options import SEOptions

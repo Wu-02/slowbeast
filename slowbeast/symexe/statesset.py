@@ -10,7 +10,7 @@ from slowbeast.symexe.annotations import (
     AssumeAnnotation,
 )
 from slowbeast.symexe.constraints import ConstraintsSet
-from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.state import SEState
 from slowbeast.symexe.sestatedescription import (
     SEStateDescription,
     state_to_description,

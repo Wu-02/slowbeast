@@ -1,7 +1,7 @@
 from typing import Sized
 
 from slowbeast.core.executionresult import PathExecutionResult
-from slowbeast.symexe.executionstate import LazySEState
+from slowbeast.symexe.state import LazySEState
 from slowbeast.symexe.iexecutor import IExecutor
 from slowbeast.util.debugging import ldbgv, dbgv
 

@@ -3,7 +3,7 @@ from typing import List, Optional, Sized
 from slowbeast.core.iexecutor import IExecutor
 from slowbeast.interpreter.interactive import InteractiveHandler
 from slowbeast.ir.program import Program
-from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.state import SEState
 from .options import ExecutionOptions
 from ..util.debugging import print_stderr, dbg
 

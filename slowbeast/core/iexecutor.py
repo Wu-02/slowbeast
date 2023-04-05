@@ -5,7 +5,7 @@ from slowbeast.core.state import ExecutionState
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import *
 from slowbeast.ir.program import Program
-from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.state import SEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.options import SEOptions
 from slowbeast.util.debugging import ldbgv

@@ -7,7 +7,7 @@ from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import Alloc, GlobalVariable
 from slowbeast.solvers.symcrete import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
-from slowbeast.symexe.executionstate import LazySEState
+from slowbeast.symexe.state import LazySEState
 from slowbeast.symexe.nondetinput import NondetInput
 from slowbeast.util.debugging import ldbgv
 

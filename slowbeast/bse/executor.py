@@ -1,7 +1,7 @@
 from typing import Optional
 
 from slowbeast.bse.bsestate import BSEState
-from slowbeast.symexe.executionstate import LazySEState
+from slowbeast.symexe.state import LazySEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.lazypathiexecutor import LazyPathIExecutor as BasicPathExecutor
 from slowbeast.util.debugging import ldbgv

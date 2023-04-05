@@ -6,7 +6,7 @@ from slowbeast.cfkind.naive.naivekindse import (
     KindSymbolicInterpreter as BasicKindSymbolicExecutor,
 )
 from slowbeast.cfkind.naive.naivekindse import Result, KindSeOptions
-from slowbeast.symexe.executionstate import SEState
+from slowbeast.symexe.state import SEState
 from slowbeast.symexe.interpreter import SEOptions
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
 from slowbeast.cfkind import KindSEOptions
