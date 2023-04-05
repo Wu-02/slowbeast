@@ -1,10 +1,10 @@
 from slowbeast.core.errors import AssertFailError
-from ..domains.expr import Future
+from slowbeast.domains.expr import Future
 from slowbeast.interpreter.interpreter import Interpreter, ExecutionOptions
 from slowbeast.ir.instruction import Call
 from slowbeast.solvers.solver import Solver
 from slowbeast.util.debugging import print_stderr, print_stdout, dbg
-from .iexecutor import IExecutor as SExecutor
+from slowbeast.symexe.iexecutor import IExecutor as SExecutor
 from io import TextIOWrapper
 from typing import Optional, Sized, Type
 from slowbeast.ir.program import Program
