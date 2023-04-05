@@ -16,6 +16,28 @@ def split_nonready_states(states):
 
 
 class PathExecutionResult:
+    """
+    An object that contains sets of states obtained by executing a path
+    in a program. The sets are divided according to their status:
+      - ready: states that are ok after the execution of the path and can
+               be further executed,
+      - errors: states that contain an error (assertion violation, etc.)
+                that was it in the last step of executing the path
+      - early: states that were killed/terminated or hit an error before reaching
+               the end of the path (i.e., these can be also error states,
+               but those where the error occurred before entirely executing
+               the path).
+      - other: states that are not ready (were e.g., killed) in the last step
+               of executing the path. So these are similar to 'errors' but
+               they were killed/terminated, not reached an error.
+
+    Other view on the division is this: 'ready', 'errors', and 'other' states made
+    it through the execution of the whole path, but 'errors' states hit the error when executing
+    the last instruction and 'other' states hit some other problem (abort) or terminated (these
+    cannot be executed further and thus are not ready). 'early' states did not make it to the
+    end of the path.
+    """
+
     __slots__ = "ready", "errors", "early", "other"
 
     def __init__(self, ready=None, errors=None, early=None, other=None) -> None:
@@ -34,6 +56,8 @@ class PathExecutionResult:
         self.other = other
 
     def errors_to_early(self) -> None:
+        """Move errors states to early states"""
+
         errs = self.errors
         earl = self.early
         if earl and errs:
@@ -43,6 +67,7 @@ class PathExecutionResult:
         self.errors = None
 
     def other_to_early(self) -> None:
+        """Move other states to early states"""
         oth = self.other
         earl = self.early
         if earl and oth:
@@ -52,6 +77,11 @@ class PathExecutionResult:
         self.other = None
 
     def add(self, states) -> None:
+        """
+        Add 'states' to this PathExecutionResult.
+        The states are automatically divided into 'ready',
+        'errors', and 'other' according to their status.
+        """
         ready = self.ready or []
         errs = self.errors or []
         oth = self.other or []
@@ -67,6 +97,9 @@ class PathExecutionResult:
         self.other = oth
 
     def merge(self, r) -> None:
+        """
+        Merge two PathExecutionResults element-wise.
+        """
         if r.ready:
             ready = self.ready or []
             ready += r.ready
@@ -85,6 +118,7 @@ class PathExecutionResult:
             self.other = oth
 
     def killed(self):
+        """Return all states from 'other' and 'early' that have the status 'killed'"""
         other = self.other
         early = self.early
         killed1 = (s for s in other if s.was_killed()) if other else ()
