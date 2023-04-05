@@ -1,12 +1,11 @@
 from copy import copy
+from typing import Sized, Union
 
-from ..core.executionresult import split_ready_states
-from slowbeast.symexe.state import ExecutionState
-from slowbeast.util.debugging import dbgv_sec, ldbgv
-from .sestatedescription import SEStateDescription, unify_state_descriptions
 from slowbeast.core.state import ExecutionState
 from slowbeast.symexe.sestatedescription import SEStateDescription
-from typing import Sized, Union
+from slowbeast.util.debugging import dbgv_sec, ldbgv
+from .sestatedescription import unify_state_descriptions
+from ..core.executionresult import split_ready_states
 
 
 def get_subs(state):
