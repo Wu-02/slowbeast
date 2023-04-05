@@ -1,10 +1,22 @@
 from copy import deepcopy
 from sys import stdout
 from typing import TextIO
-from slowbeast.domains.concrete_bitvec import ConcreteBitVec
 
 
 class ExecutionStatus:
+    """
+    The status of a state:
+      READY      - ready for execution
+      EXITED     - normally exited (e.g., via a call of `exit`)
+      TERMINATED - terminated by an instruction (e.g., abort)
+      ERROR      - hit an error condition (assertion violation, memory error, ...)
+      KILLED     - killed because of an internal problem in slowbeast (e.g., an unsupported
+                   instruction)
+
+    Apart from the status, ExecutionStatus can carry also a detail about the status,
+    e.g., a string that specifies why the state was killed.
+    """
+
     READY = 1  # ready for execution
     EXITED = 2  # normally exited
     TERMINATED = 3  # terminated by instruction (abort, etc.)
@@ -38,11 +50,10 @@ class ExecutionStatus:
         self._status = ExecutionStatus.ERROR
 
     def set_killed(self, e) -> None:
-        # raise RuntimeError(e) # for debugging
         self._detail = e
         self._status = ExecutionStatus.KILLED
 
-    def set_exited(self, ec: ConcreteBitVec) -> None:
+    def set_exited(self, ec) -> None:
         self._detail = ec
         self._status = ExecutionStatus.EXITED
 

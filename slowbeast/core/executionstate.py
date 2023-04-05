@@ -66,7 +66,12 @@ class ExecutionState:
         assert self.has_error() or self.is_terminated() or self.was_killed(), self
         return self._status.detail()
 
+    # TODO: remove in the future
     def was_killed(self) -> bool:
+        return self._status.is_killed()
+
+    # an alias for `was_killed`, we'll remove `was_killed` in the future
+    def is_killed(self) -> bool:
         return self._status.is_killed()
 
     def set_killed(self, e) -> None:
@@ -81,11 +86,15 @@ class ExecutionState:
     def is_terminated(self) -> bool:
         return self._status.is_terminated()
 
+    # TODO: remove in the future
     def exited(self) -> bool:
         return self._status.is_exited()
 
+    def is_exited(self) -> bool:
+        return self._status.is_exited()
+
     def get_exit_code(self):
-        assert self.exited()
+        assert self.exited(), self
         return self._status.detail()
 
     def status(self) -> ExecutionStatus:
@@ -95,29 +104,43 @@ class ExecutionState:
         return self._status.is_ready()
 
     def eval(self, v):
-        # FIXME: make an attribute is_constant...
+        """
+        Take an IR value representation and get its value in this state,
+        e.g., for a register x123 return 0 if the register is 0 in this state.
+        Raise an exception if the value is not set in this state and it is not
+        a constant or other value that can be evaluated.
+        """
+        value = self.try_eval(v)
+        if value is None:
+            raise RuntimeError(f"Use of uninitialized/unknown variable {v}")
+        return value
+
+    def try_eval(self, v):
+        """
+        Take an IR value representation and get its value in this state,
+        e.g., for a register x123 return 0 if the register is 0 in this state.
+        Return None if the value is not set in this state and it is not
+        a constant or other value that can be evaluated.
+        """
         if isinstance(v, ConcreteVal):
             return v
         if isinstance(v, Pointer) and v.is_null():
             return v
         if isinstance(v, Function):
             return ConcreteBitVec(v.get_id(), get_offset_type())
-        value = self.get(v)
-        if value is None:
-            raise RuntimeError(f"Use of uninitialized/unknown variable {v}")
-        return value
 
-    def try_eval(self, v):
-        if isinstance(v, ConcreteVal):
-            return v
-        if isinstance(v, Pointer) and v.is_null():
-            return v
         return self.get(v)
 
     def set(
         self, what: ValueInstruction, v: Union[ConcreteBitVec, Pointer, Expr]
     ) -> None:
-        """Associate a value to a register (in the current stack frame)"""
+        """
+        Associate a value to with a register (in the current stack frame).
+
+        It holds that:
+          self.set(x, v)
+          assert self.eval(x) == v
+        """
         # if __debug__:
         #    h = f" ({hex(v.value())})" if v and v.is_concrete() and v.is_bv() else ""
         #    dbgv(f"[{what}] -> {v}{h}", color="green", verbose_lvl=3)
@@ -126,7 +149,8 @@ class ExecutionState:
 
     def get(self, v: ValueInstruction) -> Union[ConcreteBitVec, Pointer, Expr]:
         """
-        Get a value from a register (in the current stack frame or globals)
+        Get a value from a register (in the current stack frame or globals).
+        Return None if the value is not set.
         """
         return self.memory.get(v)
 
@@ -135,6 +159,7 @@ class ExecutionState:
         return self.memory.globals_list()
 
     def values_list(self):
+        """List of all set values (registers)"""
         return self.memory.values_list()
 
     def push_call(
@@ -144,16 +169,27 @@ class ExecutionState:
         Push a new frame to the call stack. Callsite and fun can be None
         in the cases where we create dummy states and we just need some
         frame on the stack.
+        `args_mapping` provides the mapping between the call function's parameters
+        and actual call values.
         """
         assert fun or not callsite, "Got no fun by some callsite..."
+        # push a new stack frame
         self.memory.push_call(callsite, fun, args_mapping or {})
         if fun:
+            # change the PC of the state to the first instruction of the function
             self.pc = fun.bblock(0).instruction(0)
 
     def pop_call(self) -> None:
+        """
+        Pop the last stack frame from the call stack after the current function
+        call is finished.
+        """
         return self.memory.pop_call()
 
     def frame(self, idx: int = -1):
+        """
+        Get a stack frame on index `idx` (by default the current stack frame)
+        """
         return self.memory.frame(idx)
 
     def dump(self, stream: TextIO = stdout) -> None:

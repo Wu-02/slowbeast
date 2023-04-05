@@ -118,7 +118,10 @@ class PathExecutionResult:
             self.other = oth
 
     def killed(self):
-        """Return all states from 'other' and 'early' that have the status 'killed'"""
+        """
+        Return all states from 'other' and 'early' that have the status 'killed',
+        i.e., that were killed by some internal problem of slowbeast.
+        """
         other = self.other
         early = self.early
         killed1 = (s for s in other if s.was_killed()) if other else ()
