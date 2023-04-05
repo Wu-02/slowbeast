@@ -590,7 +590,7 @@ def main():
             from slowbeast.termination.symexe_ais import SeAIS as SymbolicInterpreter
         elif args.stateful_se:
             assert not args.future_se, "Not compatible at this moment"
-            from slowbeast.symexe.statefulsymbolicexecution import (
+            from slowbeast.symexe.stateful.interpreter import (
                 StatefulSymbolicInterpreter as SymbolicInterpreter,
             )
         elif args.future_se:

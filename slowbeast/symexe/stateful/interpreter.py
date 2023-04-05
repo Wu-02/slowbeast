@@ -2,8 +2,8 @@ from typing import Type
 
 from slowbeast.symexe.state import SEState
 from slowbeast.symexe.interpreter import SEOptions
-from .iexecutor import IExecutor as SExecutor
-from .interpreter import SymbolicInterpreter
+from slowbeast.symexe.iexecutor import IExecutor as SExecutor
+from slowbeast.symexe.interpreter import SymbolicInterpreter
 
 
 def subsumed_memory(s, state) -> bool:
