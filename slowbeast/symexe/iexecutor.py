@@ -14,10 +14,10 @@ from slowbeast.ir.function import Function
 from slowbeast.ir.program import Program
 from slowbeast.solvers.symcrete import SymbolicSolver
 from slowbeast.symexe.annotations import ExprAnnotation
-from slowbeast.symexe.state import SEState
 from slowbeast.symexe.memorymodel import SymbolicMemoryModel
 from slowbeast.symexe.options import SEOptions
 from slowbeast.symexe.sestatedescription import SEStateDescription
+from slowbeast.symexe.state import SEState
 from slowbeast.symexe.statesset import StatesSet
 from slowbeast.util.debugging import dbgv, ldbgv, warn, dbg
 from .state import IncrementalSEState
@@ -286,19 +286,19 @@ class IExecutor(ConcreteIExecutor):
         cval = eval_condition(state, cond)
         assert cval.type().is_bool()
 
-        trueBranch, falseBranch = self.fork(state, cval)
+        true_branch, false_branch = self.fork(state, cval)
         # at least one must be feasable...
-        assert trueBranch or falseBranch, "Fatal Error: failed forking condition"
+        assert true_branch or false_branch, "Fatal Error: failed forking condition"
 
         states = []
-        if trueBranch:
-            trueBranch.pc = instr.true_successor().instruction(0)
-            states.append(trueBranch)
-        if falseBranch:
-            falseBranch.pc = instr.false_successor().instruction(0)
-            states.append(falseBranch)
+        if true_branch:
+            true_branch.pc = instr.true_successor().instruction(0)
+            states.append(true_branch)
+        if false_branch:
+            false_branch.pc = instr.false_successor().instruction(0)
+            states.append(false_branch)
 
-        if trueBranch and falseBranch:
+        if true_branch and false_branch:
             self.stats.branch_forks += 1
 
         return states
@@ -330,32 +330,32 @@ class IExecutor(ConcreteIExecutor):
         return states
 
     def compare_values(
-        self, expr_mgr: ExpressionManager, p: int, op1: Expr, op2: Expr, unsgn: bool
+        self, expr_mgr: ExpressionManager, p: int, op1: Expr, op2: Expr, unsigned: bool
     ) -> Expr:
         if p == Cmp.LE:
-            return expr_mgr.Le(op1, op2, unsgn)
+            return expr_mgr.Le(op1, op2, unsigned)
         if p == Cmp.LT:
-            return expr_mgr.Lt(op1, op2, unsgn)
+            return expr_mgr.Lt(op1, op2, unsigned)
         if p == Cmp.GE:
-            return expr_mgr.Ge(op1, op2, unsgn)
+            return expr_mgr.Ge(op1, op2, unsigned)
         if p == Cmp.GT:
-            return expr_mgr.Gt(op1, op2, unsgn)
+            return expr_mgr.Gt(op1, op2, unsigned)
         if p == Cmp.EQ:
-            return expr_mgr.Eq(op1, op2, unsgn)
+            return expr_mgr.Eq(op1, op2, unsigned)
         if p == Cmp.NE:
-            return expr_mgr.Ne(op1, op2, unsgn)
+            return expr_mgr.Ne(op1, op2, unsigned)
         raise RuntimeError("Invalid comparison")
 
     def compare_pointers(self, state, instr, p1, p2):
-        mo1id = p1.object()
-        mo2id = p2.object()
-        if mo1id.is_symbolic() or mo2id.is_symbolic():
+        mo1_id = p1.object()
+        mo2_id = p2.object()
+        if mo1_id.is_symbolic() or mo2_id.is_symbolic():
             state.set_killed(f"Comparison of symbolic pointers unimplemented: {instr}")
             return [state]
 
         E = state.expr_manager()
         p = instr.predicate()
-        if mo1id == mo2id:
+        if mo1_id == mo2_id:
             state.set(
                 instr,
                 self.compare_values(
@@ -393,22 +393,22 @@ class IExecutor(ConcreteIExecutor):
     def exec_cmp(self, state: SEState, instr: Cmp) -> List[SEState]:
         assert isinstance(instr, Cmp), instr
         assert instr.type().is_bool(), instr
-        seval = state.eval
-        getop = instr.operand
-        op1 = seval(getop(0))
-        op2 = seval(getop(1))
+        state_eval = state.eval
+        get_operand = instr.operand
+        op1 = state_eval(get_operand(0))
+        op2 = state_eval(get_operand(1))
         assert _types_check(instr, op1, op2)
 
-        op1isptr = op1.is_pointer()
-        op2isptr = op2.is_pointer()
-        if op1isptr or op2isptr:
-            if op1isptr and op2isptr:
+        op1_is_ptr = op1.is_pointer()
+        op2_is_ptr = op2.is_pointer()
+        if op1_is_ptr or op2_is_ptr:
+            if op1_is_ptr and op2_is_ptr:
                 return self.compare_pointers(state, instr, op1, op2)
 
             # we handle only comparison of symbolic constant (pointer) to
             # null
             expr_mgr = state.expr_manager()
-            if op1isptr and op1.is_null():
+            if op1_is_ptr and op1.is_null():
                 state.set(
                     instr,
                     self.compare_values(
@@ -419,7 +419,7 @@ class IExecutor(ConcreteIExecutor):
                         instr.is_unsigned(),
                     ),
                 )
-            elif op2isptr and op2.is_null():
+            elif op2_is_ptr and op2.is_null():
                 state.set(
                     instr,
                     self.compare_values(
@@ -519,23 +519,23 @@ class IExecutor(ConcreteIExecutor):
     def exec_undef_fun(
         self, state: SEState, instr: Call, fun: Function
     ) -> List[SEState]:
-        retTy = fun.return_type()
-        if retTy:
+        ret_ty = fun.return_type()
+        if ret_ty:
             if self.get_options().concretize_nondets:
-                val = concrete_value(getrandbits(32), retTy)
+                val = concrete_value(getrandbits(32), ret_ty)
             elif self._input_vector:
                 val = self._input_vector.pop()
                 ldbgv(f"Using value from input vector: {0}", (val,))
-                assert val.type() == retTy, f"{val.type()} != {retTy}"
+                assert val.type() == ret_ty, f"{val.type()} != {ret_ty}"
                 # if assertions are turned off, just return nondet-value
-                if val.type() != retTy:
+                if val.type() != ret_ty:
                     dbg(
-                        f"Input value type does not match ({val.type()} != {retTy}). "
+                        f"Input value type does not match ({val.type()} != {ret_ty}). "
                         "Using nondet value"
                     )
-                    val = state.solver().fresh_value(fun.name(), retTy)
+                    val = state.solver().fresh_value(fun.name(), ret_ty)
             else:
-                val = state.solver().fresh_value(fun.name(), retTy)
+                val = state.solver().fresh_value(fun.name(), ret_ty)
                 state.create_nondet(instr, val)
             state.set(instr, val)
         state.pc = state.pc.get_next_inst()
@@ -543,10 +543,10 @@ class IExecutor(ConcreteIExecutor):
 
     def exec_binary_op(self, state: SEState, instr: BinaryOperation) -> List[SEState]:
         assert isinstance(instr, BinaryOperation)
-        seval = state.eval
-        getop = instr.operand
-        op1 = seval(getop(0))
-        op2 = seval(getop(1))
+        state_eval = state.eval
+        get_operand = instr.operand
+        op1 = state_eval(get_operand(0))
+        op2 = state_eval(get_operand(1))
         assert _types_check(instr, op1, op2)
 
         states = []
@@ -720,12 +720,12 @@ class IExecutor(ConcreteIExecutor):
         assert v.is_bool(), v
         if v.is_concrete():
             assert isinstance(v.value(), bool)
-            isunsat = not v.value()
+            is_unsat = not v.value()
         else:
             tmp = self.assume(state, v)
-            isunsat = tmp is None
+            is_unsat = tmp is None
 
-        if isunsat:
+        if is_unsat:
             state.set_terminated(f"Assumption unsat: {v} is False")
 
         return [state]
@@ -737,12 +737,12 @@ class IExecutor(ConcreteIExecutor):
             assert v.is_bool()
             if v.is_concrete():
                 assert isinstance(v.value(), bool)
-                isunsat = not v.value()
+                is_unsat: bool = not v.value()
             else:
                 tmp = self.assume(state, v)
-                isunsat = tmp is None
+                is_unsat: bool = tmp is None
 
-            if isunsat:
+            if is_unsat:
                 state.set_terminated(f"Assumption unsat: {o} is {v}")
                 return [state]
 
@@ -758,12 +758,12 @@ class IExecutor(ConcreteIExecutor):
                 state.set_error(AssertFailError(msg))
             states.append(state)
         else:
-            okBranch, errBranch = self.fork(state, v)
-            if okBranch:
-                states.append(okBranch)
-            if errBranch:
-                errBranch.set_error(AssertFailError(msg))
-                states.append(errBranch)
+            ok_branch, err_branch = self.fork(state, v)
+            if ok_branch:
+                states.append(ok_branch)
+            if err_branch:
+                err_branch.set_error(AssertFailError(msg))
+                states.append(err_branch)
 
         assert states, "Generated no states"
         return states
@@ -784,13 +784,13 @@ class IExecutor(ConcreteIExecutor):
                 state.pc = state.pc.get_next_inst()
             states.append(state)
         else:
-            okBranch, errBranch = self.fork(state, v)
-            if okBranch:
-                okBranch.pc = okBranch.pc.get_next_inst()
-                states.append(okBranch)
-            if errBranch:
-                errBranch.set_error(AssertFailError(msg))
-                states.append(errBranch)
+            ok_branch, err_branch = self.fork(state, v)
+            if ok_branch:
+                ok_branch.pc = ok_branch.pc.get_next_inst()
+                states.append(ok_branch)
+            if err_branch:
+                err_branch.set_error(AssertFailError(msg))
+                states.append(err_branch)
 
         assert states, "Generated no states"
         return states
