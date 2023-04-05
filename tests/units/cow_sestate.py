@@ -6,7 +6,7 @@ from slowbeast.ir.instruction import *
 from slowbeast.ir.function import *
 
 from slowbeast.symexe.executionstate import SEState
-from slowbeast.core.executionstate import ExecutionState
+from slowbeast.core.state import ExecutionState
 
 
 FOO = Function("foo", 0)

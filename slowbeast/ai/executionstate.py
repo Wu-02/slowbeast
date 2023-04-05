@@ -1,4 +1,4 @@
-from slowbeast.core.executionstate import ExecutionState
+from slowbeast.core.state import ExecutionState
 from slowbeast.domains.concrete_value import ConcreteVal
 
 # from slowbeast.domains.sign import ZODomain

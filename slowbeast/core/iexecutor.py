@@ -1,7 +1,7 @@
 import sys
 from typing import List, Optional
 
-from slowbeast.core.executionstate import ExecutionState
+from slowbeast.core.state import ExecutionState
 from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import *
 from slowbeast.ir.program import Program

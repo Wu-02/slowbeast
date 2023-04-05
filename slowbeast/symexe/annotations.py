@@ -4,7 +4,7 @@ from ..core.executionresult import split_ready_states
 from slowbeast.symexe.executionstate import ExecutionState
 from slowbeast.util.debugging import dbgv_sec, ldbgv
 from .sestatedescription import SEStateDescription, unify_state_descriptions
-from slowbeast.core.executionstate import ExecutionState
+from slowbeast.core.state import ExecutionState
 from slowbeast.symexe.sestatedescription import SEStateDescription
 from typing import Sized, Union
 

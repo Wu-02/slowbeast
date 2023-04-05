@@ -1,7 +1,7 @@
 from copy import copy
 from sys import stdout
 
-from slowbeast.core.executionstate import ExecutionState
+from slowbeast.core.state import ExecutionState
 from slowbeast.ir.instruction import (
     Alloc,
     GlobalVariable,
