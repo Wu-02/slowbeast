@@ -63,14 +63,9 @@ class ExecutionState:
         return self._status.is_error()
 
     def get_error(self):
-        assert self.has_error() or self.is_terminated() or self.was_killed(), self
+        assert self.has_error() or self.is_terminated() or self.is_killed(), self
         return self._status.detail()
 
-    # TODO: remove in the future
-    def was_killed(self) -> bool:
-        return self._status.is_killed()
-
-    # an alias for `was_killed`, we'll remove `was_killed` in the future
     def is_killed(self) -> bool:
         return self._status.is_killed()
 

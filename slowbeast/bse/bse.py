@@ -25,7 +25,7 @@ def report_state(stats, n, msg=None, fn=print_stderr) -> None:
             color="red",
         )
         stats.errors += 1
-    elif n.was_killed():
+    elif n.is_killed():
         if fn:
             fn(n.status_detail(), prefix="KILLED STATE: ", color="wine")
         stats.killed_paths += 1
@@ -127,7 +127,7 @@ class BackwardSymbolicInterpreter(SymbolicInterpreter):
         ready, nonready = executor.execute_bse_path(
             states, bsectx.path, invariants=invariants
         )
-        for s in (s for s in nonready if s.was_killed()):
+        for s in (s for s in nonready if s.is_killed()):
             report_state(
                 self.stats, s, fn=self.reportfn, msg=f"Executing {bsectx.path}"
             )

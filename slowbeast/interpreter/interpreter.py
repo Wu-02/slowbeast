@@ -71,7 +71,7 @@ class Interpreter:
             state.dump()
         elif state.is_terminated():
             print_stderr(state.get_error(), color="BROWN")
-        elif state.was_killed():
+        elif state.is_killed():
             print_stderr(state.status_detail(), prefix="KILLED STATE: ", color="WINE")
         else:
             assert state.exited()

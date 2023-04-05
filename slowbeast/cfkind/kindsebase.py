@@ -20,7 +20,7 @@ def report_state(stats, n, fn=print_stderr) -> None:
                 color="RED",
             )
         stats.errors += 1
-    elif n.was_killed():
+    elif n.is_killed():
         if fn:
             fn(n.status_detail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
@@ -258,10 +258,10 @@ class KindSymbolicInterpreter(SymbolicInterpreter):
 
         r = self.execute_path(path, from_init=True)
         if not r.errors:
-            killed = any(True for s in r.early if s.was_killed()) if r.early else None
+            killed = any(True for s in r.early if s.is_killed()) if r.early else None
             if killed:
                 return Result.UNKNOWN, r
-            killed = any(True for s in r.other if s.was_killed()) if r.other else None
+            killed = any(True for s in r.other if s.is_killed()) if r.other else None
             if killed:
                 return Result.UNKNOWN, r
             if len(self._entry_loc.predecessors()) == 0:
@@ -292,7 +292,7 @@ class KindSymbolicInterpreter(SymbolicInterpreter):
             r = self.execute_path(path)
 
             oth = r.other
-            if oth and any(map(lambda s: s.was_killed(), oth)):
+            if oth and any(map(lambda s: s.is_killed(), oth)):
                 return Result.UNKNOWN, oth
 
             step = -1  # self.get_options().step

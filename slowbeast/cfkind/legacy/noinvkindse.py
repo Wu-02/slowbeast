@@ -121,7 +121,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
             print_stderr(f"{n.get_id()}: {n.pc}, {n.get_error()}", color="RED")
             self.stats.errors += 1
             return Result.UNSAFE
-        elif n.was_killed():
+        elif n.is_killed():
             print_stderr(n.status_detail(), prefix="KILLED STATE: ", color="WINE")
             self.stats.killed_paths += 1
             return Result.UNKNOWN
@@ -152,7 +152,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                         # we found a real error
                         if n.has_error():
                             return self.report(n)
-                        if n.was_killed():
+                        if n.is_killed():
                             return self.report(n)
 
             _, notready = self.execute_path(path)
@@ -163,7 +163,7 @@ class KindSymbolicExecutor(BasicKindSymbolicExecutor):
                     has_err = True
                     newpaths += self.extend_path(path, steps=step)
                     break
-                if n.was_killed():
+                if n.is_killed():
                     return self.report(n)
 
         self.paths = newpaths

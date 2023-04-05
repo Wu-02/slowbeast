@@ -131,7 +131,7 @@ def report_state(stats, n, fn=print_stderr) -> None:
                 color="RED",
             )
         stats.errors += 1
-    elif n.was_killed():
+    elif n.is_killed():
         if fn:
             fn(n.status_detail(), prefix="KILLED STATE: ", color="WINE")
         stats.killed_paths += 1
@@ -1096,12 +1096,12 @@ class KindSEChecker(BaseKindSE):
 
         r = self.execute_path(path)
 
-        killed1 = (s for s in r.other if s.was_killed()) if r.other else ()
+        killed1 = (s for s in r.other if s.is_killed()) if r.other else ()
         killed2 = (
             (
                 s
                 for s in r.early
-                if s.was_killed() or (s.has_error() and s.get_error().is_memory_error())
+                if s.is_killed() or (s.has_error() and s.get_error().is_memory_error())
             )
             if r.early
             else ()

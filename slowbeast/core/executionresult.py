@@ -124,8 +124,8 @@ class PathExecutionResult:
         """
         other = self.other
         early = self.early
-        killed1 = (s for s in other if s.was_killed()) if other else ()
-        killed2 = (s for s in early if s.was_killed()) if early else ()
+        killed1 = (s for s in other if s.is_killed()) if other else ()
+        killed2 = (s for s in early if s.is_killed()) if early else ()
         return chain(killed1, killed2)
 
     def check(self) -> bool:
@@ -133,7 +133,7 @@ class PathExecutionResult:
         assert not self.errors or all(map(lambda x: x.has_error(), self.errors))
         assert not self.early or all(map(lambda x: not x.is_ready(), self.early))
         assert not self.other or all(
-            map(lambda x: x.is_terminated() or x.was_killed() or x.exited(), self.other)
+            map(lambda x: x.is_terminated() or x.is_killed() or x.exited(), self.other)
         )
         return True
 

@@ -88,7 +88,7 @@ class AbstractInterpreter(Interpreter):
             stats.terminated_paths += 1
             if testgen:
                 testgen.process_state(s)
-        elif s.was_killed():
+        elif s.is_killed():
             stats.paths += 1
             stats.killed_paths += 1
             print_stderr(s.status_detail(), prefix="KILLED STATE: ", color="WINE")

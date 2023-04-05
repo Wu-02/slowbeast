@@ -47,7 +47,7 @@ class KindSymbolicInterpreter(SymbolicInterpreter):
                 print_stderr(ns.get_error(), color="BROWN")
                 self.stats.paths += 1
                 self.stats.terminated_paths += 1
-            elif ns.was_killed():
+            elif ns.is_killed():
                 self.stats.paths += 1
                 self.stats.killed_paths += 1
                 print_stderr(ns.status_detail(), prefix="KILLED STATE: ", color="WINE")
@@ -81,7 +81,7 @@ class KindSymbolicInterpreter(SymbolicInterpreter):
                 self.ind.append(ns)
             elif ns.is_terminated():
                 print_stderr(ns.get_error(), color="BROWN")
-            elif ns.was_killed():
+            elif ns.is_killed():
                 print_stderr(ns.status_detail(), prefix="KILLED STATE: ", color="WINE")
                 return Result.UNKNOWN
             else:
@@ -104,7 +104,7 @@ class KindSymbolicInterpreter(SymbolicInterpreter):
                     color="PURPLE",
                 )
                 break
-            elif ns.was_killed():
+            elif ns.is_killed():
                 print_stderr(ns.status_detail(), prefix="KILLED STATE: ", color="WINE")
                 return Result.UNKNOWN
 

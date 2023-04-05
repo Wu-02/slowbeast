@@ -162,7 +162,7 @@ class TestCaseGenerator:
         testty = None
         if state.has_error():
             testty = "err"
-        elif state.was_killed():
+        elif state.is_killed():
             testty = "killed"
         elif state.is_terminated():
             testty = "abort"
