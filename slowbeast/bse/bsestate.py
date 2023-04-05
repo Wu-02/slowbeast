@@ -7,7 +7,7 @@ from slowbeast.domains.pointer import Pointer
 from slowbeast.ir.instruction import Alloc, GlobalVariable
 from slowbeast.solvers.symcrete import solve_incrementally
 from slowbeast.symexe.annotations import ExprAnnotation, execute_annotation
-from slowbeast.symexe.executionstate import LazySEState, Nondet
+from slowbeast.symexe.executionstate import LazySEState, NondetInput
 from slowbeast.util.debugging import ldbgv
 
 
@@ -108,7 +108,7 @@ class BSEState(LazySEState):
             )
             self.set(v, value)
             self.create_nondet(v, value)
-            self.add_input(Nondet(v, value))
+            self.add_input(NondetInput(v, value))
         assert value
         return value
 
@@ -379,7 +379,7 @@ class BSEState(LazySEState):
 
         # add new inputs from pre-state
         for inp in prestate.nondets():
-            self.add_nondet(inp)
+            self.add_nondet_input(inp)
         for inp in prestate.inputs():
             add_input(inp)
         self.add_constraint(*prestate.constraints())

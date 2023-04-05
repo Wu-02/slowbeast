@@ -43,7 +43,7 @@ class FutureExecutor(SExecutor):
             future = Future(futureval.unwrap(), futureval.type(), instr, state)
             newstate = state.copy()
             newstate.set(instr, future)
-            newstate.add_nondet(future)
+            newstate.add_nondet_input(future)
             newstate.pc = nexti  # continue executing the next instruction
             newstate.dump()
             # FIXME: clear the state (the function may modify globals)

@@ -20,7 +20,7 @@ from slowbeast.symexe.constraints import ConstraintsSet
 from slowbeast.symexe.memory import Memory
 
 
-class Nondet:
+class NondetInput:
     __slots__ = "instruction", "value"
 
     def __init__(self, instr, val) -> None:
@@ -208,11 +208,18 @@ class SEState(ExecutionState):
         return self._warnings
 
     def create_nondet(self, instr, val) -> None:
+        """
+        Create a new non-deterministic input with value 'val' caused by
+        instruction 'instr'.
+        """
         # self.add_nondet(Nondet(instr, NondetInstrResult.from_expr(val, instr)))
-        self.add_nondet(Nondet(instr, val))
+        self.add_nondet_input(NondetInput(instr, val))
 
-    def add_nondet(self, n: Nondet) -> None:
-        assert isinstance(n, Nondet), n
+    def add_nondet_input(self, n: NondetInput) -> None:
+        """
+        Register new non-deterministic input to the state.
+        """
+        assert isinstance(n, NondetInput), n
         if self._nondets_ro:
             self._nondets = copy(self._nondets)
             self._nondets_ro = False
@@ -768,7 +775,7 @@ class ThreadedSEState(SEState):
             ev = self.get_last_event()
         ret, newc = [], []
         conflicts = ev.conflicts
-        for (cev, s) in self._conflicts:
+        for cev, s in self._conflicts:
             if conflicts(cev):
                 ret.append(s)
             else:
