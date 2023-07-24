@@ -180,7 +180,7 @@ def unify_state_descriptions(expr_mgr, sd1, sd2):
 
     subs = {}
     col = False
-    for (val, instr) in subs1.items():
+    for val, instr in subs1.items():
         instr2 = subs2.get(val)
         if instr2 and instr2 != instr:
             # collision
@@ -192,7 +192,7 @@ def unify_state_descriptions(expr_mgr, sd1, sd2):
         subs[val] = instr
 
     # add the rest of subs2
-    for (val, instr) in subs2.items():
+    for val, instr in subs2.items():
         if not subs.get(val):
             subs[val] = instr
 

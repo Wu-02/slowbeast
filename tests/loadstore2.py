@@ -1,6 +1,7 @@
 import sys
 from os.path import join, abspath, dirname
-pth = join(dirname(__file__), '..')
+
+pth = join(dirname(__file__), "..")
 sys.path.append(abspath(pth))
 
 from slowbeast.ir.program import *
@@ -29,7 +30,7 @@ if __name__ == "__main__":
 
     P.add_fun(F)
     P.set_entry(F)
-    #P.dump()
+    # P.dump()
 
     I = Interpreter(P)
     I.run()

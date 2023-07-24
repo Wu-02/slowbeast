@@ -111,7 +111,7 @@ class CallGraph:
     def prune_unreachable(self, frm: Node) -> None:
         reach = self.get_reachable(frm)
         nonreach = [(k, n) for (k, n) in self._nodes.items() if n not in reach]
-        for (k, n) in nonreach:
+        for k, n in nonreach:
             self._nodes.pop(k)
 
     def dump(self, stream: TextIO = stdout) -> None:

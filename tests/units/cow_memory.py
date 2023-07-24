@@ -52,6 +52,3 @@ assert err is None, "Failed writing to object"
 assert M._objects is not N._objects, "References to objects not changed"
 assert M._objects_ro is False, "Wrongly set RO flag after write()"
 assert N._objects_ro is False, "Wrongly set RO flag after write()"
-
-
-

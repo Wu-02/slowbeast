@@ -45,6 +45,7 @@ def em_optimize_expressions(b: bool = True) -> None:
 
 opt = SymbolicExprOpt.optimize
 
+
 # FIXME: This domain still has the methods as ExprManager (which it used to be),
 # other domains have only static methods...
 class ExpressionManager:

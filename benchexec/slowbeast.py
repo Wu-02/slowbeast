@@ -9,6 +9,7 @@ import benchexec.tools.template
 import benchexec.result as result
 import benchexec.util as util
 
+
 class Tool(benchexec.tools.template.BaseTool):
     """
     This tool is an imaginary tool that returns always UNSAFE.
@@ -29,7 +30,7 @@ class Tool(benchexec.tools.template.BaseTool):
         if output is None:
             return f"{result.RESULT_ERROR}(no output)"
 
-        noerrsline = False # the last line
+        noerrsline = False  # the last line
         noerrs = False
         nokilledpaths = False
         hitassert = False
@@ -39,7 +40,7 @@ class Tool(benchexec.tools.template.BaseTool):
                 noerrsline = True
                 if line == "Found errors: 0":
                     noerrs = True
-            elif 'assert False:bool' in line:
+            elif "assert False:bool" in line:
                 hitassert = True
             elif line == "Killed paths: 0":
                 nokilledpaths = True
@@ -61,4 +62,3 @@ class Tool(benchexec.tools.template.BaseTool):
             return f"{result.RESULT_ERROR}(returned {returncode}, {res})"
         else:
             return res
-

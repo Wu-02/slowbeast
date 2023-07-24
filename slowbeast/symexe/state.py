@@ -55,7 +55,6 @@ class SEState(ExecutionState):
         self._nondets = []
         self._nondets_ro = False
 
-
     def get_id(self):
         return self._id
 
@@ -456,5 +455,3 @@ class Event:
 
     def __str__(self) -> str:
         return f"{_evty_to_str(self.ty)} of {self.mem}, val: {self.val}"
-
-
