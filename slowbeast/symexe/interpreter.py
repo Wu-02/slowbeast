@@ -134,6 +134,7 @@ class SymbolicInterpreter(Interpreter):
     def replay_state(self, state):
         ivec = state.input_vector()
         dbg(f"Input vector: {ivec}")
+        new_output_file = self.new_output_file
 
         class GatherStates:
             class Handler:
@@ -146,6 +147,7 @@ class SymbolicInterpreter(Interpreter):
             def __init__(self):
                 self.testgen = GatherStates.Handler()
                 self.states = self.testgen.states
+                self.new_output_file = new_output_file
 
         opts = SEOptions(self.get_options())
         opts.replay_errors = False
