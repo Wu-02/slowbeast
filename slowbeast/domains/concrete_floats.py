@@ -13,6 +13,8 @@ from numpy import (
     ceil,
     trunc,
     sqrt,
+    sin,
+    cos
 )
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
@@ -301,7 +303,23 @@ class ConcreteFloatsDomain(Domain):
 
             # fall-through to unsupported operation
 
-            # return ConcreteFloat(sqrt(v1), val.type())
+        if op == FpOp.SIN:
+            assert val2 is None, val2
+            v1 = val.value()
+            if isnan(v1):
+                return val
+            if isinf(v1):
+                return ConcreteFloat("NaN")
+            return ConcreteFloat(sin(v1), val.type())
+        if op == FpOp.COS:
+            assert val2 is None, val2
+            v1 = val.value()
+            if isnan(v1):
+                return val
+            if isinf(v1):
+                return ConcreteFloat("NaN")
+            return ConcreteFloat(cos(v1), val.type())
+
 
 
 

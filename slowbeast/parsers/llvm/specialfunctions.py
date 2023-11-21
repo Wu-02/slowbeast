@@ -47,13 +47,33 @@ special_functions = [
     "erf",
     "erff",
     "erfl",
+    "sin",
+    "sinf",
+    "sinl",
+    "cos",
+    "cosf",
+    "cosl",
+    "exp",
+    "expf",
+    "expl",
+    "expm1",
+    "expm1f",
+    "expm1l",
+    "log",
+    "logf",
+    "logl",
+    "log1p",
+    "log1pf",
+    "log1pl",
+    "tanh",
+    "tanhf",
+    "tanhl",
     "__isnan",
     "__isnanf",
     "__isnanl",
     "__isinf",
     "__isinff",
     "__isinfl",
-    # NOTE: do we want to implement these as instructions? Probably not...
     "__fpclassify",
     "__fpclassifyf",
     "__fpclassifyl",
@@ -296,6 +316,30 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         operands = get_llvm_operands(inst)
         val = to_float_ty(parser.operand(operands[0]))
         O = FpOp(FpOp.ERF, [val], [get_sb_type(module, operands[0].type)])
+        # the functions return int
+        return O, [O]
+    elif fun in ("sin", "sinf", "sinl"):
+        operands = get_llvm_operands(inst)
+        val = to_float_ty(parser.operand(operands[0]))
+        O = FpOp(FpOp.SIN, [val], [get_sb_type(module, operands[0].type)])
+        # the functions return int
+        return O, [O]
+    elif fun in ("cos", "cosf", "cosl"):
+        operands = get_llvm_operands(inst)
+        val = to_float_ty(parser.operand(operands[0]))
+        O = FpOp(FpOp.COS, [val], [get_sb_type(module, operands[0].type)])
+        # the functions return int
+        return O, [O]
+    elif fun in ("exp", "expf", "expl"):
+        operands = get_llvm_operands(inst)
+        val = to_float_ty(parser.operand(operands[0]))
+        O = FpOp(FpOp.EXP, [val], [get_sb_type(module, operands[0].type)])
+        # the functions return int
+        return O, [O]
+    elif fun in ("log", "logf", "logl"):
+        operands = get_llvm_operands(inst)
+        val = to_float_ty(parser.operand(operands[0]))
+        O = FpOp(FpOp.LOG, [val], [get_sb_type(module, operands[0].type)])
         # the functions return int
         return O, [O]
     elif fun == "fesetround":

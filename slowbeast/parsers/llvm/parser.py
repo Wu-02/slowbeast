@@ -1169,8 +1169,9 @@ class Parser:
                 else:
                     G.set_init([Store(instr, G, [ty, G.type()])])
                 return
+        init_str = str(init)
         print_stderr(
-            f"Unsupported initializer: {init}",
+                f"Unsupported initializer: {init_str[:50]}{' ...' if len(init_str) > 50 else ''}",
             color="YELLOW",
         )
 
