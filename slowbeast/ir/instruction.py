@@ -715,7 +715,8 @@ class FpOp(ValueTypedInstruction):
     TRUNC = 36
     DIM = 37
     SQRT = 38
-    LAST_OP = 38
+    ERF = 39
+    LAST_OP = 39
 
     def op_to_str(op) -> str:
         if op == FpOp.IS_INF:
@@ -742,6 +743,8 @@ class FpOp(ValueTypedInstruction):
             return "dim"
         if op == FpOp.SQRT:
             return "sqrt"
+        if op == FpOp.ERF:
+            return "erf"
         return "uknwn"
 
     def __init__(self, fp_op, vals, optypes) -> None:
@@ -750,7 +753,7 @@ class FpOp(ValueTypedInstruction):
             retty = type_mgr().bool_ty()
         elif FpOp.FPCLASSIFY == fp_op:
             retty = type_mgr().bv_ty(32)
-        elif FpOp.MIN <= fp_op <= FpOp.SQRT:
+        elif FpOp.MIN <= fp_op <= FpOp.ERF:
             assert all(v.type() == vals[0].type() for v in vals), vals
             retty = vals[0].type()
         else:

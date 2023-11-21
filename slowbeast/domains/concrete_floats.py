@@ -285,12 +285,27 @@ class ConcreteFloatsDomain(Domain):
             assert val2 is None, val2
             v1 = val.value()
             if isnan(v1) or isinf(v1) or v1 == 0:
-                return v1
+                return val
             if v1 < -0.0:
                 return ConcreteFloat("NaN")
             return ConcreteFloat(sqrt(v1), val.type())
+        if op == FpOp.ERF:
+            assert val2 is None, val2
+            v1 = val.value()
+            if isnan(v1):
+                return val
+            if v1 == -0.0:
+                return ConcreteFloat(-0.0)
+            if v1 == +0.0:
+                return ConcreteFloat(+0.0)
 
-        raise NotImplementedError("Invalid/unsupported FP operation")
+            # fall-through to unsupported operation
+
+            # return ConcreteFloat(sqrt(v1), val.type())
+
+
+
+        raise NotImplementedError(f"Invalid/unsupported FP operation: FpOp({op}, {val1}, {val2}")
 
     @staticmethod
     def Neg(a: Value) -> Value:

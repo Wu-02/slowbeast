@@ -44,6 +44,9 @@ special_functions = [
     "fdim",
     "fesetround",
     "nan",
+    "erf",
+    "erff",
+    "erfl",
     "__isnan",
     "__isnanf",
     "__isnanl",
@@ -287,6 +290,12 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         operands = get_llvm_operands(inst)
         val = to_float_ty(parser.operand(operands[0]))
         O = FpOp(FpOp.SIGNBIT, [val], [get_sb_type(module, operands[0].type)])
+        # the functions return int
+        return O, [O]
+    elif fun in ("erf", "erff", "erfl"):
+        operands = get_llvm_operands(inst)
+        val = to_float_ty(parser.operand(operands[0]))
+        O = FpOp(FpOp.ERF, [val], [get_sb_type(module, operands[0].type)])
         # the functions return int
         return O, [O]
     elif fun == "fesetround":
