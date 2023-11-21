@@ -132,9 +132,9 @@ def get_fp_sort(bw):
         return Float32()
     if bw == 64:
         return Float64()
-    elif bw == 128:
+    if bw == 128:
         return Float128()
-    raise NotImplementedError("Invalid FP type")
+    raise NotImplementedError(f"Invalid FP type with bitwidth {bw}")
 
 
 def zext_expr(a, bw):

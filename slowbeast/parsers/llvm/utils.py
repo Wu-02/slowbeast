@@ -53,20 +53,25 @@ def _get_float(s):
         return None
 
 
-def _get_double(s):
+def _get_double(s, bw):
     try:
         if s.startswith("0x"):
-            bts = 8
             if s.startswith("0xK"):
                 s = f"0x{s[3:]}"
                 bts = 10
+                return ConcreteBytes([concrete_value(b, 8) for b in int(s, 16).to_bytes(bts, "big")])
             elif s.startswith("0xL"):
                 s = f"0x{s[3:]}"
                 bts = 16
-            # llvm writes the constants as double (even when it is 32 bit)
-            return unpack(">d", int(s, 16).to_bytes(bts, "big"))[0]
+                return ConcreteBytes([concrete_value(b, 8) for b in int(s, 16).to_bytes(bts, "big")])
+            else:
+                bts = 8
+                # llvm writes the constants as double (even when it is 32 bit)
+                return concrete_value(unpack(">d", int(s, 16).to_bytes(bts,
+                                                                       "big"))[0],
+                                      bw)
         else:
-            return float(s)
+            return concrete_value(float(s), bw)
     except ValueError as e:
         print(float(int(s)))
         warn(f"Failed parsing a float constant '{s}': {e}")
@@ -186,10 +191,10 @@ def get_sb_type(m: ModuleRef, ty: str):
     return None
 
 
-def get_float_constant(sval, isdouble: bool = True):
+def get_float_constant(sval, bw, isdouble: bool = True):
     if isdouble:
-        return _get_double(sval)
-    return _get_float(sval)
+        return _get_double(sval, bw)
+    return concrete_value(_get_float(sval), bw)
 
 
 def get_pointer_constant(val) -> Optional[Pointer]:
@@ -209,7 +214,7 @@ def get_constant(val: ValueRef) -> Optional[ConcreteVal]:
     sval = str(val)
     parts = sval.split()
     if is_array_ty(val.type):
-        if parts[1] == "x" and parts[2].endswith("i8]"):
+        if parts[1] == "x" and parts[2].endswith("i8]") and parts[3].startswith('c"'):
             # this is a string
             s = sval[sval.find("x i8] c") + 7 :]
             ss = s[1:-1]
@@ -226,9 +231,9 @@ def get_constant(val: ValueRef) -> Optional[ConcreteVal]:
     isfloating = parts[0] == "float" or isdouble
 
     if isfloating:
-        c = get_float_constant(parts[1], isdouble)
-    else:
-        c = _getInt(parts[1])
+        return get_float_constant(parts[1], bw, isdouble)
+
+    c = _getInt(parts[1])
     if c is None:
         if bw == 1:
             if parts[1] == "true":
