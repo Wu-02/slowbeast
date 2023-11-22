@@ -14,7 +14,7 @@ from numpy import (
     trunc,
     sqrt,
     sin,
-    cos
+    cos,
 )
 
 from slowbeast.domains.concrete_value import ConcreteVal, ConcreteBool
@@ -320,10 +320,9 @@ class ConcreteFloatsDomain(Domain):
                 return ConcreteFloat("NaN")
             return ConcreteFloat(cos(v1), val.type())
 
-
-
-
-        raise NotImplementedError(f"Invalid/unsupported FP operation: FpOp({op}, {val1}, {val2}")
+        raise NotImplementedError(
+            f"Invalid/unsupported FP operation: FpOp({op}, {val1}, {val2}"
+        )
 
     @staticmethod
     def Neg(a: Value) -> Value:

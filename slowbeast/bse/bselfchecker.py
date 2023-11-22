@@ -20,6 +20,7 @@ from slowbeast.core.errors import AssertFailError
 from slowbeast.domains.symbolic_helpers import to_c_expression
 from slowbeast.solvers.symcrete import global_expr_mgr
 from slowbeast.symexe.statesset import StatesSet, union, intersection, complement
+from slowbeast.symexe.annotations import AssumeAnnotation
 from slowbeast.util.debugging import (
     dbg,
     ldbg,
@@ -68,6 +69,35 @@ def _check_set_is_inductive_towards(executor, S: StatesSet, loopinfo, target) ->
     #    dbg("Starting sequence is empty")
     #    return False
     return True
+
+
+def find_instruction_by_id(fun, i: int):
+    for block in fun:
+        for inst in block:
+            if inst.get_id() == i:
+                return inst
+    raise RuntimeError(f"Could not find instruction with id {i}")
+    return None
+
+
+def annotation_does_not_hold(A, fun, create_set, reachable_states: list):
+    if not reachable_states:
+        return False
+
+    em = global_expr_mgr()
+    for r in reachable_states:
+        eqs = [
+            (find_instruction_by_id(fun, i), em.fresh_value(f"x{i}", val.type()), val)
+            for i, val in r.values.items()
+        ]
+        subs = {sym: inst for inst, sym, _ in eqs}
+        # XXX: add PartialAssignment class for this purposes
+        expr = em.conjunction(*[em.Eq(sym, val) for _, sym, val in eqs])
+        S = create_set(AssumeAnnotation(expr, subs, em)).intersect(A)
+        if S.is_empty():
+            print("XXX: Annotation does not hold based on reachable states")
+            return True
+    return False
 
 
 def overapprox_state(executor, state, errset: StatesSet, target, loopinfo):
@@ -191,9 +221,9 @@ class BSELFChecker(BaseBSE):
         self.loop_info = {}
 
         # inductive sets for deriving starting sequences
-        self.inductive_sets = indsets or {}
+        self.inductive_sets = {} if indsets is None else indsets
         # reachable states to help infer invariants
-        self.reachable_states = reachable_states or {}
+        self.reachable_states = {} if reachable_states is None else reachable_states
 
         if __debug__ and invariants:
             dbg("Have these invariants at hand:")
@@ -226,6 +256,12 @@ class BSELFChecker(BaseBSE):
     def check_loop_precondition(self, L, A):
         loc = L.header()
         print_stdout(f"Checking if {str(A)} holds on {loc}", color="purple")
+
+        header = loc.elem()[0]
+        R = self.reachable_states.get(header.get_id())
+        if R and annotation_does_not_hold(A, header.fun(), self.create_set, R):
+            return Result.UNKNOWN, None
+
         inc_print_indent()
 
         # run recursively BSELFChecker with already computed inductive sets
@@ -855,7 +891,6 @@ class BSELFChecker(BaseBSE):
             )
 
     def do_step(self):
-
         bsectx = self.get_next_state()
         if bsectx is None:
             return (

@@ -575,6 +575,7 @@ def main():
 
         if args.coop_channel:
             from slowbeast.bse.cooperative import CooperativeBSELF as Executor
+
             interpreter = Executor(P, args.coop_channel, ohandler, opts)
         else:
             if args.bselff:
@@ -622,7 +623,9 @@ def main():
                     SymbolicInterpreter as SymbolicInterpreter,
                 )
         elif args.coop_channel:
-            from slowbeast.symexe.cooperative import CooperativeSymbolicInterpreter as SymbolicInterpreter
+            from slowbeast.symexe.cooperative import (
+                CooperativeSymbolicInterpreter as SymbolicInterpreter,
+            )
         else:
             from slowbeast.symexe.interpreter import SymbolicInterpreter
 

@@ -59,17 +59,21 @@ def _get_double(s, bw):
             if s.startswith("0xK"):
                 s = f"0x{s[3:]}"
                 bts = 10
-                return ConcreteBytes([concrete_value(b, 8) for b in int(s, 16).to_bytes(bts, "big")])
+                return ConcreteBytes(
+                    [concrete_value(b, 8) for b in int(s, 16).to_bytes(bts, "big")]
+                )
             elif s.startswith("0xL"):
                 s = f"0x{s[3:]}"
                 bts = 16
-                return ConcreteBytes([concrete_value(b, 8) for b in int(s, 16).to_bytes(bts, "big")])
+                return ConcreteBytes(
+                    [concrete_value(b, 8) for b in int(s, 16).to_bytes(bts, "big")]
+                )
             else:
                 bts = 8
                 # llvm writes the constants as double (even when it is 32 bit)
-                return concrete_value(unpack(">d", int(s, 16).to_bytes(bts,
-                                                                       "big"))[0],
-                                      bw)
+                return concrete_value(
+                    unpack(">d", int(s, 16).to_bytes(bts, "big"))[0], bw
+                )
         else:
             return concrete_value(float(s), bw)
     except ValueError as e:

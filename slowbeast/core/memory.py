@@ -194,7 +194,7 @@ class Memory:
             isglob = True
 
         if obj is None:
-            return None, MemError(MemError.INVALID_OBJ, str(ptr.object()))
+            return MemError(MemError.INVALID_OBJ, str(ptr.object()))
 
         if isglob:
             self._globs_reown()

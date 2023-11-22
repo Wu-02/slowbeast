@@ -45,7 +45,7 @@ class BSELF:
         self.stats = SEStats()
 
         self.invariants = {}
-        self.reachable_states = []
+        self.reachable_states = {}
 
     def _get_possible_errors(self):
         EM = global_expr_mgr()
@@ -75,7 +75,7 @@ class BSELF:
                 self.programstructure,
                 self.options,
                 invariants=self.invariants,
-                reachable_states=self.reachable_states
+                reachable_states=self.reachable_states,
             )
             result, state = checker.check()
             if result is Result.UNSAFE and state.memory.input_reads():
