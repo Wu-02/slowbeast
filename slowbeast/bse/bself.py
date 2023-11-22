@@ -45,6 +45,7 @@ class BSELF:
         self.stats = SEStats()
 
         self.invariants = {}
+        self.reachable_states = []
 
     def _get_possible_errors(self):
         EM = global_expr_mgr()
@@ -60,17 +61,21 @@ class BSELF:
                 if iserr(l):
                     yield l, AssertAnnotation(EM.get_false(), {}, EM)
 
+    def create_checker(self, *args, **kwargs):
+        return BSELFChecker(*args, **kwargs)
+
     def run(self) -> int:
         has_unknown = False
         for loc, A in self._get_possible_errors():
             print_stdout(f"Checking possible error: {A.expr()} @ {loc}", color="white")
-            checker = BSELFChecker(
+            checker = self.create_checker(
                 loc,
                 A,
                 self.program,
                 self.programstructure,
                 self.options,
                 invariants=self.invariants,
+                reachable_states=self.reachable_states
             )
             result, state = checker.check()
             if result is Result.UNSAFE and state.memory.input_reads():

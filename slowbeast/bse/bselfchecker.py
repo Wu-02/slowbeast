@@ -166,6 +166,7 @@ class BSELFChecker(BaseBSE):
         opts: BSELFOptions,
         invariants=None,
         indsets=None,
+        reachable_states=None,
         max_loop_hits=None,
     ) -> None:
         super().__init__(
@@ -191,6 +192,8 @@ class BSELFChecker(BaseBSE):
 
         # inductive sets for deriving starting sequences
         self.inductive_sets = indsets or {}
+        # reachable states to help infer invariants
+        self.reachable_states = reachable_states or {}
 
         if __debug__ and invariants:
             dbg("Have these invariants at hand:")
@@ -212,13 +215,21 @@ class BSELFChecker(BaseBSE):
             self.loop_info[loc] = L
         return L
 
+    def create_checker(self, *args, **kwargs):
+        """
+        Create a new instance of this class in "recursive" invocations
+        of the checker. It can be overridden by subclasses to get the
+        right parameters in the ctor.
+        """
+        return type(self)(*args, **kwargs)
+
     def check_loop_precondition(self, L, A):
         loc = L.header()
         print_stdout(f"Checking if {str(A)} holds on {loc}", color="purple")
         inc_print_indent()
 
         # run recursively BSELFChecker with already computed inductive sets
-        checker = BSELFChecker(
+        checker = self.create_checker(
             loc,
             A,
             self.program,
@@ -226,6 +237,7 @@ class BSELFChecker(BaseBSE):
             self.options,
             indsets=self.inductive_sets,
             invariants=self.invariant_sets,
+            reachable_states=self.reachable_states,
             max_loop_hits=1,
         )
         result, states = checker.check(L.entries())
@@ -843,6 +855,7 @@ class BSELFChecker(BaseBSE):
             )
 
     def do_step(self):
+
         bsectx = self.get_next_state()
         if bsectx is None:
             return (

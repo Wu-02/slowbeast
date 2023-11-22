@@ -158,3 +158,4 @@ class SymbolicInterpreter(Interpreter):
         if len(handler.states) != 1:
             return None
         return handler.states[0]
+

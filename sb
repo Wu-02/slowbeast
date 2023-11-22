@@ -49,6 +49,12 @@ def create_arg_parser():
         help="Introspect the run of the algorithm",
     )
     parser.add_argument(
+        "-coop-channel",
+        action="append",
+        metavar="CHANNEL",
+        help="Use this channel to exchange data with other verification tools",
+    )
+    parser.add_argument(
         "-no-output",
         action="store_true",
         default=False,
@@ -566,12 +572,17 @@ def main():
         if args.bself_no_union_matched:
             assert opts.union_matched is True
             opts.union_matched = False
-        if args.bselff:
-            opts.fold_loops = True
-            from slowbeast.bse.bselff import BSELFF as Executor
+
+        if args.coop_channel:
+            from slowbeast.bse.cooperative import CooperativeBSELF as Executor
+            interpreter = Executor(P, args.coop_channel, ohandler, opts)
         else:
-            from slowbeast.bse.bself import BSELF as Executor
-        interpreter = Executor(P, ohandler, opts)
+            if args.bselff:
+                opts.fold_loops = True
+                from slowbeast.bse.bselff import BSELFF as Executor
+            else:
+                from slowbeast.bse.bself import BSELF as Executor
+            interpreter = Executor(P, ohandler, opts)
     elif args.se:
         opts = SEOptions()
 
@@ -610,9 +621,18 @@ def main():
                 from slowbeast.symexe.threads.interpreter import (
                     SymbolicInterpreter as SymbolicInterpreter,
                 )
+        elif args.coop_channel:
+            from slowbeast.symexe.cooperative import CooperativeSymbolicInterpreter as SymbolicInterpreter
         else:
             from slowbeast.symexe.interpreter import SymbolicInterpreter
-        interpreter = SymbolicInterpreter(P, ohandler, opts)
+
+        ###
+        # Create the symbolic executor (interpreter)
+        ###
+        if args.coop_channel:
+            interpreter = SymbolicInterpreter(P, args.coop_channel, ohandler, opts)
+        else:
+            interpreter = SymbolicInterpreter(P, ohandler, opts)
 
     opts.concretize_nondets = args.concretize_nondet
     opts.uninit_is_nondet = args.uninitialized_nondet
