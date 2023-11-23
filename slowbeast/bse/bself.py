@@ -89,13 +89,22 @@ class BSELF:
             self.stats.add(checker.stats)
             if result is Result.UNSAFE:
                 # FIXME: report the error from bsecontext
-                print_stdout(
-                    f"{state.get_id()}: [assertion error]: {loc} reachable.",
-                    color="redul",
-                )
                 loc_elem = loc.elem()
+                msg = ""
                 if loc_elem and isinstance(loc_elem, Assert):
-                    print_stderr(f"[assertion error]: {loc_elem.msg()}", color="wine")
+                    msg = f"({loc_elem.msg()})"
+
+                dbgloc = loc_elem.get_metadata("dbgloc")
+                if dbgloc:
+                    print_stderr(
+                        f"[{state.get_id()}] {dbgloc[0]}:{dbgloc[1]}:{dbgloc[2]}: [assertion error]: {loc} reachable {msg}.",
+                        color="redul",
+                    )
+                else:
+                    print_stderr(
+                        f"{state.get_id()}: [assertion error]: {loc} reachable {msg}.",
+                        color="redul",
+                    )
 
                 print_stdout(str(state), color="wine")
                 print_stdout("Error found.", color="redul")
