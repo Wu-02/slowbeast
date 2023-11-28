@@ -296,6 +296,11 @@ def create_arg_parser():
         help="Generate SV-COMP GraphML witnesses.",
     )
     parser.add_argument(
+        "-gen-harness",
+        action="store_true",
+        help="Generate C harness for found bugs.",
+    )
+    parser.add_argument(
         "-only-tests",
         action="store",
         help="Generate only tests of a given type. Types can "
@@ -503,9 +508,7 @@ def main():
             only_tests = args.only_tests
             Cls = ThreadedTestCaseGenerator if has_threads else TestCaseGenerator
             testgen = Cls(
-                args.out_dir,
-                args.all_tests,
-                args.svcomp_witness,
+                args,
                 only_tests=only_tests.split(",") if only_tests else None,
                 checking=args.check,
             )

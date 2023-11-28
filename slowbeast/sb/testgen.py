@@ -15,15 +15,14 @@ def inv_to_c(inv):
 class TestCaseGenerator:
     def __init__(
         self,
-        outdir="sb-out",
-        alltests=False,
-        svwit=False,
+        args,
         only_tests=None,
         checking=None,
     ):
-        self._outputdir = outdir
-        self._alltests = alltests
-        self._svcomp_witness = svwit
+        self._args = args
+        self._outputdir = args.out_dir or "sb-out"
+        self._alltests = args.all_tests
+        self._svcomp_witness = args.svcomp_witness
         self._only_tests = only_tests
         self._checking = checking
 
@@ -183,9 +182,63 @@ class TestCaseGenerator:
                 fl.write("\n")
                 state.dump(stream=fl)
 
-        if state.has_error() and self._svcomp_witness:
-            with self._openfile(f"witness-{state.get_id()}.graphml") as fl:
-                self.generate_svcomp_violation_witness(fl, state)
+        if state.has_error():
+            if self._svcomp_witness:
+                with self._openfile(f"witness-{state.get_id()}.graphml") as fl:
+                    self.generate_svcomp_violation_witness(fl, state)
+            if self._args.gen_harness:
+                with self._openfile(f"harness-{state.get_id()}.c") as fl:
+                    self.generate_c_harness(fl, state)
+
+    def generate_c_harness(self, fl, state):
+        inpvec = state.input_vector()
+        if inpvec is None:
+            raise RuntimeError("No input vector, formula is UNSAT?")
+        write = fl.write
+
+        write("#include <assert.h>\n\n")
+
+        funs = {}
+        # group inputs into sequences per functions
+        for var, val in zip(state.nondets(), inpvec):
+            instruction = var.instruction
+            if not isinstance(instruction, Call):
+                print("Unhandled nondet value: ", var)
+                continue
+            fun = instruction.called_function()
+            funs.setdefault(fun, []).append(val)
+
+        for fun, vals in funs.items():
+            self._function_decl(write, fun)
+            write(" {\n")
+
+            write("  static unsigned counter = 0;\n")
+            write("  switch (counter++) {\n")
+            for n, val in enumerate(vals):
+                write(f"    case {n}: return {val.value()};\n")
+
+            write("    default: return 0;\n")
+            write("  }\n")
+            write("}\n\n")
+
+    def _function_decl(self, write, fun):
+        args = ", ".join(f"{c_type(a.type())} a_{n}" for n, a in enumerate(fun.arguments())) or "void"
+        write(f"{c_type(fun.return_type())} {fun.name()}({args})")
+
+def c_type(ty):
+    if ty.is_bv():
+        # FIXME: use layout
+        if ty.bitwidth() == 8: return 'unsigned char'
+        if ty.bitwidth() == 16: return 'unsigned short'
+        if ty.bitwidth() == 32: return 'unsigned int'
+        if ty.bitwidth() == 64: return 'unsigned long int'
+    if ty.is_float():
+        if ty.bitwidth() == 32: return 'float'
+        if ty.bitwidth() == 64: return 'double'
+    if ty.is_bool():
+        return "_Bool"
+
+    return "void"
 
 
 class ThreadedTestCaseGenerator(TestCaseGenerator):
