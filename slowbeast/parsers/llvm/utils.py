@@ -129,10 +129,18 @@ def get_array_ty_size(m, ty: str) -> int:
     assert parts[-1].endswith("]")
     return int(parts[0][1:]) * type_size_in_bits(m, " ".join(parts[2:])[:-1])
 
+def ty_is_sized(ty):
+    # FIXME: do this properly
+    return 'opaque' not in str(ty)
+
 
 def type_size_in_bits(m: ModuleRef, ty: str) -> Optional[int]:
+    if not ty_is_sized(ty):
+        return None
+
     if not isinstance(ty, str) and hasattr(m, "get_type_size"):
         return m.get_type_size(ty)
+
 
     # FIXME: get rid of parsing str
     # FIXME: get rid of the magic constants and use the layout from the program

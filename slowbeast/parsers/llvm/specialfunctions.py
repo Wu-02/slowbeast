@@ -43,6 +43,9 @@ special_functions = [
     "sqrtl",
     "fdim",
     "fesetround",
+    "_setjmp",
+    "setjmp",
+    "longjmp",
     "nan",
     "erf",
     "erff",
@@ -342,8 +345,6 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
         O = FpOp(FpOp.LOG, [val], [get_sb_type(module, operands[0].type)])
         # the functions return int
         return O, [O]
-    elif fun == "fesetround":
-        raise NotImplementedError("fesetround is not supported yet")
     elif fun == "__errno_location":
         errn = parser.get_or_create_errno()
         L = Load(errn, errn.type(), [type_mgr().pointer_ty()])
@@ -353,5 +354,7 @@ def create_special_fun(parser, inst, fun, error_funs, to_check):
     elif fun == "__slowbeast_print":
         P = Print(*[parser.operand(x) for x in get_llvm_operands(inst)[:-1]])
         return P, [P]
+    elif fun in ("fesetround", "_setjmp", "setjmp", "longjmp"):
+        raise NotImplementedError(f"{fun} is not supported yet")
     else:
         raise NotImplementedError(f"Unknown special function: {fun}")

@@ -18,6 +18,7 @@ from .specialfunctions import (
 from .utils import *
 
 concrete_value = ConcreteDomain.get_value
+#sym_value = SymbolicDomain.get_value
 
 
 def _get_llvm_module(path: str) -> ModuleRef:
@@ -27,7 +28,6 @@ def _get_llvm_module(path: str) -> ModuleRef:
     else:
         with open(path, "rb") as f:
             return llvm.parse_bitcode(f.read())
-
 
 def parse_special_fcmp(inst, op1, op2, optypes):
     seq = []
@@ -1179,11 +1179,16 @@ class Parser:
         for g in m.global_variables:
             assert g.type.is_pointer
             # FIXME: check and set whether it is a constant
-            ts = type_size(self.llvmmodule, g.type.element_type)
+            if ty_is_sized(g.type.element_type):
+                ts = type_size(self.llvmmodule, g.type.element_type)
+                assert ts is not None, "Unsupported type size: {g.type.element_type}"
+                size = concrete_value(ts, get_size_type_size())
+            else:
+                size = None
             ty = get_sb_type(self.llvmmodule, g.type.element_type)
-            assert ts is not None, "Unsupported type size: {g.type.element_type}"
+
             G = GlobalVariable(
-                concrete_value(ts, get_size_type_size()),
+                size,
                 g.name,
                 const=g.is_global_constant(),
             )
