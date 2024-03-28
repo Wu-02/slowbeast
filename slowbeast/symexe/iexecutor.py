@@ -287,7 +287,7 @@ class IExecutor(ConcreteIExecutor):
         assert cval.type().is_bool()
 
         true_branch, false_branch = self.fork(state, cval)
-        # at least one must be feasable...
+        # at least one must be feasible...
         assert true_branch or false_branch, "Fatal Error: failed forking condition"
 
         states = []
@@ -800,3 +800,43 @@ class IExecutor(ConcreteIExecutor):
             return val
 
         return state.solver().concretize(val, *state.constraints())
+
+
+class PathReplayIExecutor(IExecutor):
+    """
+    This instruction executor is extended with the ability to
+    replay a path given as a sequence of branching decisions
+    (e.g., 0110 -> false, true, true, false branch in this order).
+    """
+
+    def __init__(
+        self,
+        program: Program,
+        solver: SymbolicSolver,
+        opts: SEOptions,
+        memorymodel: Optional[SymbolicMemoryModel] = None,
+    ) -> None:
+        super().__init__(program, solver, opts, memorymodel)
+        self._replay_path = None
+
+    def set_replay_path(self, pathfile: str) -> None:
+        def parse_branch(line):
+            branch = int(line.strip())
+            assert branch in (0, 1), f"Invalid branch: {line}"
+            return branch == 1
+
+        with open(pathfile, "r") as fl:
+            self._replay_path = [parse_branch(line) for line in fl]
+            # reverse the final vector so that we can just pop from it
+            self._replay_path.reverse()
+
+    def exec_branch(self, state: SEState, instr: Branch) -> List[SEState]:
+        if self._replay_path:
+            next_branch = self._replay_path.pop()
+            return self.exec_branch_to(state, instr, next_branch)
+
+        return super().exec_branch(state, instr)
+
+    def exec_switch(self, state: SEState, instr: Switch) -> List[SEState]:
+        state.set_killed("PathReplayIExecutor does not support switch instruction")
+        return [state]

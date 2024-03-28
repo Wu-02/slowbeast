@@ -256,6 +256,7 @@ def create_arg_parser():
         action="store_true",
         help="Confirm errors by replaying them without symbolic values",
     )
+    parser.add_argument("-replay-path", default=None, help="Replay a given path file")
     parser.add_argument(
         "-se-incremental-solving",
         action="store_true",
@@ -524,6 +525,10 @@ def main():
     if args.kind or args.bse:  # kind implies se
         args.se = True
 
+    if args.ai or args.kind or args.bse or args.cfkind:
+        if args.replay_path:
+            err("The chosen algorithm cannot replay paths ATM.")
+
     if args.ai and args.se:
         err("Can run only one technique")
     if not (args.ai or args.se):
@@ -635,10 +640,27 @@ def main():
         ###
         # Create the symbolic executor (interpreter)
         ###
-        if args.coop_channel:
-            interpreter = SymbolicInterpreter(P, args.coop_channel, ohandler, opts)
+        if args.replay_path:
+            from slowbeast.symexe.iexecutor import PathReplayIExecutor
+
+            executorClass = PathReplayIExecutor
         else:
-            interpreter = SymbolicInterpreter(P, ohandler, opts)
+            from slowbeast.symexe.iexecutor import IExecutor
+
+            executorClass = IExecutor
+
+        if args.coop_channel:
+            interpreter = SymbolicInterpreter(
+                P, args.coop_channel, ohandler, opts, ExecutorClass=executorClass
+            )
+        else:
+            interpreter = SymbolicInterpreter(
+                P, ohandler, opts, ExecutorClass=executorClass
+            )
+
+        if args.replay_path:
+            dbg(f"Will replay path prefix from: {args.replay_path}")
+            interpreter.executor().set_replay_path(args.replay_path)
 
     opts.concretize_nondets = args.concretize_nondet
     opts.uninit_is_nondet = args.uninitialized_nondet
